@@ -172,7 +172,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 
 **Reference:** [phase2-layout-design.md §6, §8](./phase2-layout-design.md#6-edge-cases-and-constraints)
 
-**Completed in commit:** (current)
+**Completed in commit:** 1e4564b
 
 - [x] Handle edge cases in `pkg/layout/flex.go` and `pkg/layout/calculate.go`
   - Zero/negative dimensions clamped to >= 0
