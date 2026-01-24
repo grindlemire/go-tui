@@ -1,21 +1,29 @@
 package layout
 
+import "math"
+
 // flexItem holds intermediate calculation state for a child.
 // This is stack-allocated per layout call, not stored on nodes.
+// Positions are stored as float64 to enable precise centering calculations
+// that only round at the final stage, preventing jitter during animation.
 type flexItem struct {
 	node      Layoutable
 	baseSize  int
 	mainSize  int
 	crossSize int
-	mainPos   int
-	crossPos  int
+	mainPos   float64 // float to avoid centering jitter
+	crossPos  float64 // float to avoid centering jitter
 	grow      float64
 	shrink    float64
 }
 
 // layoutChildren arranges the children of a node within the given content rect.
 // This implements the core flexbox algorithm.
-func layoutChildren(node Layoutable, contentRect Rect) {
+//
+// parentAbsX and parentAbsY are the parent's absolute float positions (content rect origin).
+// These are used for Yoga-style rounding: we compute each child's absolute float position
+// and only round once when creating the final integer Rect.
+func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY float64) {
 	children := node.LayoutChildren()
 	if len(children) == 0 {
 		return
@@ -124,13 +132,13 @@ func layoutChildren(node Layoutable, contentRect Rect) {
 	freeSpace = mainSize - totalUsed - totalGap
 
 	// Phase 4: Position children along main axis (justify)
-	// For Phase 2, we only handle JustifyStart
+	// Use float64 for offset to enable precise centering that only rounds at final stage
 	offset := calculateJustifyOffset(style.JustifyContent, freeSpace, len(items))
 	spacing := calculateJustifySpacing(style.JustifyContent, freeSpace, len(items))
 
 	for i := range items {
 		items[i].mainPos = offset
-		offset += items[i].mainSize + style.Gap + spacing
+		offset += float64(items[i].mainSize) + float64(style.Gap) + spacing
 	}
 
 	// Phase 5: Cross-axis sizing and alignment
@@ -174,60 +182,82 @@ func layoutChildren(node Layoutable, contentRect Rect) {
 	}
 
 	// Phase 6: Convert to rects and recurse
+	// Yoga-style rounding: compute each child's ABSOLUTE float position,
+	// then round once to get the integer Rect. This prevents jitter because
+	// fractional parts accumulate correctly before rounding.
 	for i, child := range children {
 		childStyle := child.LayoutStyle()
 
-		// Compute the slot allocated to this child (before margin)
+		// Compute child's ABSOLUTE float position (parent float + relative offset)
+		var childAbsX, childAbsY float64
+		if isRow {
+			childAbsX = parentAbsX + items[i].mainPos
+			childAbsY = parentAbsY + items[i].crossPos
+		} else {
+			childAbsX = parentAbsX + items[i].crossPos
+			childAbsY = parentAbsY + items[i].mainPos
+		}
+
+		// Round absolute position to get integer slot
 		var slot Rect
 		if isRow {
 			slot = Rect{
-				X:      contentRect.X + items[i].mainPos,
-				Y:      contentRect.Y + items[i].crossPos,
+				X:      int(math.Round(childAbsX)),
+				Y:      int(math.Round(childAbsY)),
 				Width:  items[i].mainSize,
 				Height: items[i].crossSize,
 			}
 		} else {
 			slot = Rect{
-				X:      contentRect.X + items[i].crossPos,
-				Y:      contentRect.Y + items[i].mainPos,
+				X:      int(math.Round(childAbsX)),
+				Y:      int(math.Round(childAbsY)),
 				Width:  items[i].crossSize,
 				Height: items[i].mainSize,
 			}
 		}
 
 		// Apply child's margin: shrink the slot to get the child's border box.
-		// The child receives this as 'available' and does NOT re-apply margin.
+		// Also adjust float position to account for margin.
+		if isRow {
+			childAbsX += float64(childStyle.Margin.Left)
+			childAbsY += float64(childStyle.Margin.Top)
+		} else {
+			childAbsX += float64(childStyle.Margin.Left)
+			childAbsY += float64(childStyle.Margin.Top)
+		}
 		childBorderBox := slot.Inset(childStyle.Margin)
 
 		// Force child to recalculate since parent layout changed.
-		// The child's available space is determined by parent's flex algorithm,
-		// so when parent recalculates, children must too.
 		child.SetDirty(true)
 
-		// Recurse—child computes its layout within this border box
-		calculateNode(child, childBorderBox)
+		// Recurse with FLOAT position for jitter-free child positioning
+		calculateNode(child, childBorderBox, childAbsX, childAbsY)
 	}
 }
 
 // calculateJustifyOffset returns the initial offset for positioning children
 // based on the justify mode and available free space.
-func calculateJustifyOffset(justify Justify, freeSpace, itemCount int) int {
+// Returns float64 to enable precise centering that only rounds at the final stage.
+func calculateJustifyOffset(justify Justify, freeSpace, itemCount int) float64 {
 	if freeSpace <= 0 || itemCount == 0 {
 		return 0
 	}
 
+	fs := float64(freeSpace)
+	ic := float64(itemCount)
+
 	switch justify {
 	case JustifyEnd:
-		return freeSpace
+		return fs
 	case JustifyCenter:
-		return freeSpace / 2
+		return fs / 2.0
 	case JustifySpaceAround:
 		if itemCount > 0 {
-			return freeSpace / (itemCount * 2)
+			return fs / (ic * 2.0)
 		}
 		return 0
 	case JustifySpaceEvenly:
-		return freeSpace / (itemCount + 1)
+		return fs / (ic + 1.0)
 	default: // JustifyStart, JustifySpaceBetween
 		return 0
 	}
@@ -235,30 +265,35 @@ func calculateJustifyOffset(justify Justify, freeSpace, itemCount int) int {
 
 // calculateJustifySpacing returns the extra spacing between children
 // based on the justify mode and available free space.
-func calculateJustifySpacing(justify Justify, freeSpace, itemCount int) int {
+// Returns float64 to enable precise spacing that only rounds at the final stage.
+func calculateJustifySpacing(justify Justify, freeSpace, itemCount int) float64 {
 	if freeSpace <= 0 || itemCount <= 1 {
 		return 0
 	}
 
+	fs := float64(freeSpace)
+	ic := float64(itemCount)
+
 	switch justify {
 	case JustifySpaceBetween:
-		return freeSpace / (itemCount - 1)
+		return fs / (ic - 1.0)
 	case JustifySpaceAround:
-		return freeSpace / itemCount
+		return fs / ic
 	case JustifySpaceEvenly:
-		return freeSpace / (itemCount + 1)
+		return fs / (ic + 1.0)
 	default: // JustifyStart, JustifyEnd, JustifyCenter
 		return 0
 	}
 }
 
 // calculateAlignOffset returns the offset for positioning a child on the cross axis.
-func calculateAlignOffset(align Align, crossSize, itemSize int) int {
+// Returns float64 to enable precise centering that only rounds at the final stage.
+func calculateAlignOffset(align Align, crossSize, itemSize int) float64 {
 	switch align {
 	case AlignEnd:
-		return crossSize - itemSize
+		return float64(crossSize - itemSize)
 	case AlignCenter:
-		return (crossSize - itemSize) / 2
+		return float64(crossSize-itemSize) / 2.0
 	default: // AlignStart, AlignStretch
 		return 0
 	}

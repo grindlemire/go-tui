@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
@@ -30,55 +31,161 @@ func main() {
 
 	width, height := term.Size()
 
-	// Build layout tree with Element API - much cleaner than before!
+	// Root container - full screen
 	root := element.New(
 		element.WithSize(width, height),
+		element.WithDirection(layout.Column),
+	)
+
+	// Top container (header) - fixed height
+	header := element.New(
+		element.WithHeight(3),
+		element.WithFlexGrow(0),
+		element.WithDirection(layout.Row),
+		element.WithJustify(layout.JustifyCenter),
+		element.WithAlign(layout.AlignCenter),
+		element.WithBorder(tui.BorderSingle),
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	)
+
+	headerTitle := element.NewText("Dashboard",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
+	)
+	header.AddChild(headerTitle.Element)
+
+	// Main content area - row with sidebar and main
+	mainArea := element.New(
+		element.WithFlexGrow(1),
+		element.WithDirection(layout.Row),
+	)
+
+	// Side container (sidebar) - fixed width
+	sidebar := element.New(
+		element.WithWidth(20),
+		element.WithFlexGrow(0),
+		element.WithDirection(layout.Column),
+		element.WithPadding(1),
+		element.WithGap(1),
+		element.WithBorder(tui.BorderSingle),
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
+	)
+
+	sidebarTitle := element.NewText("Menu",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta).Bold()),
+	)
+	menuItem1 := element.NewText("> Overview",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	)
+	menuItem2 := element.NewText("  Settings",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	menuItem3 := element.NewText("  Help",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	sidebar.AddChild(sidebarTitle.Element, menuItem1.Element, menuItem2.Element, menuItem3.Element)
+
+	// Main content - fills remaining space with centered floating card
+	content := element.New(
+		element.WithFlexGrow(1),
 		element.WithDirection(layout.Column),
 		element.WithJustify(layout.JustifyCenter),
 		element.WithAlign(layout.AlignCenter),
 	)
 
-	// Centered panel with rounded border
-	panel := element.New(
-		element.WithSize(40, 10),
+	// Floating card that will animate
+	card := element.New(
+		element.WithSize(30, 8),
 		element.WithBorder(tui.BorderRounded),
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		element.WithDirection(layout.Column),
 		element.WithPadding(1),
 		element.WithJustify(layout.JustifyCenter),
 		element.WithAlign(layout.AlignCenter),
-		element.WithGap(2),
+		element.WithGap(1),
 	)
 
-	// Title text
-	title := element.NewText("Layout Engine Demo",
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-		element.WithTextAlign(element.TextAlignCenter),
-		element.WithElementOption(element.WithHeight(1)),
+	cardTitle := element.NewText("Status Card",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-
-	// Hint text
-	hint := element.NewText("Press any key to exit",
+	cardStatus := element.NewText("Systems Online",
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	)
+	cardHint := element.NewText("Press any key to exit",
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
-		element.WithTextAlign(element.TextAlignCenter),
-		element.WithElementOption(element.WithHeight(1)),
 	)
+
+	card.AddChild(cardTitle.Element, cardStatus.Element, cardHint.Element)
+	content.AddChild(card)
+
+	mainArea.AddChild(sidebar, content)
 
 	// Build the tree
-	panel.AddChild(title.Element, hint.Element)
-	root.AddChild(panel)
+	root.AddChild(header, mainArea)
 
-	// Calculate layout and render
+	// Create buffer
 	buf := tui.NewBuffer(width, height)
-	root.Render(buf, width, height)
 
-	// Render text elements (Text content requires explicit rendering)
-	element.RenderText(buf, title)
-	element.RenderText(buf, hint)
+	// Animation parameters for the floating card
+	minWidth := 25
+	maxWidth := 50
+	minHeight := 6
+	maxHeight := 12
+	cardWidth := minWidth
+	cardHeight := minHeight
+	growing := true
 
-	tui.Render(term, buf)
+	// Channel for keypress to exit
+	done := make(chan struct{})
+	go func() {
+		b := make([]byte, 1)
+		os.Stdin.Read(b)
+		close(done)
+	}()
 
-	// Wait for keypress
-	b := make([]byte, 1)
-	os.Stdin.Read(b)
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			// Update card dimensions - animate expand/contract
+			if growing {
+				cardWidth++
+				cardHeight = minHeight + (cardWidth-minWidth)*(maxHeight-minHeight)/(maxWidth-minWidth)
+				if cardWidth >= maxWidth {
+					growing = false
+				}
+			} else {
+				cardWidth--
+				cardHeight = minHeight + (cardWidth-minWidth)*(maxHeight-minHeight)/(maxWidth-minWidth)
+				if cardWidth <= minWidth {
+					growing = true
+				}
+			}
+
+			// Update card style
+			style := card.Style()
+			style.Width = layout.Fixed(cardWidth)
+			style.Height = layout.Fixed(cardHeight)
+			card.SetStyle(style)
+
+			// Clear buffer and re-render
+			buf.Clear()
+			root.Render(buf, width, height)
+
+			// Render text elements
+			element.RenderText(buf, headerTitle)
+			element.RenderText(buf, sidebarTitle)
+			element.RenderText(buf, menuItem1)
+			element.RenderText(buf, menuItem2)
+			element.RenderText(buf, menuItem3)
+			element.RenderText(buf, cardTitle)
+			element.RenderText(buf, cardStatus)
+			element.RenderText(buf, cardHint)
+
+			tui.Render(term, buf)
+		}
+	}
 }

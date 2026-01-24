@@ -550,13 +550,13 @@ func TestCalculate_JustifyModes(t *testing.T) {
 			expectedX3: 80, // 20 + 20 + 20 + 20
 		},
 		"JustifySpaceAround": {
-			// Free space (40) / items = 40/3 ≈ 13 around each
-			// Start offset: 40 / (3*2) = 6
-			// Between spacing: 40 / 3 = 13
+			// Free space (40) / items = 40/3 ≈ 13.33 around each
+			// Start offset: 40 / (3*2) = 6.67 → rounds to 7
+			// Between spacing: 40 / 3 = 13.33 → rounds to 13
 			justify:    JustifySpaceAround,
-			expectedX1: 6,
-			expectedX2: 39, // 6 + 20 + 13
-			expectedX3: 72, // 39 + 20 + 13
+			expectedX1: 7,
+			expectedX2: 40, // 7 + 20 + 13
+			expectedX3: 73, // 40 + 20 + 13
 		},
 		"JustifySpaceEvenly": {
 			// Free space (40) / (items+1) = 40/4 = 10 everywhere

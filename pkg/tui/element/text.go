@@ -1,6 +1,7 @@
 package element
 
 import (
+	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
@@ -26,22 +27,34 @@ type Text struct {
 }
 
 // NewText creates a new Text element with the given content.
-// Text elements are sized based on their content by default.
+// Text elements are sized to their intrinsic content size by default.
+// This enables the parent's AlignItems to center the element, eliminating
+// the need for separate text-level centering (and preventing jitter).
 func NewText(content string, opts ...TextOption) *Text {
 	t := &Text{
 		Element: New(),
 		content: content,
 		align:   TextAlignLeft,
 	}
+
+	// Set intrinsic size based on content
+	// Width = display width of text, Height = 1 (single line)
+	t.Element.style.Width = layout.Fixed(stringWidth(content))
+	t.Element.style.Height = layout.Fixed(1)
+
+	// Apply options (may override the intrinsic size)
 	for _, opt := range opts {
 		opt(t)
 	}
 	return t
 }
 
-// SetContent updates the text content.
+// SetContent updates the text content and recalculates intrinsic width.
 func (t *Text) SetContent(content string) {
 	t.content = content
+	// Update intrinsic width to match new content
+	t.Element.style.Width = layout.Fixed(stringWidth(content))
+	t.Element.MarkDirty()
 }
 
 // Content returns the text content.
