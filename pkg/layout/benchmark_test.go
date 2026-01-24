@@ -4,11 +4,11 @@ import "testing"
 
 // buildTree creates a tree with the specified branching factor and depth.
 // Total nodes = sum of (branching^i) for i from 0 to depth = (branching^(depth+1) - 1) / (branching - 1)
-func buildTree(branching, depth int) *Node {
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(1000)
-	root.Style.Height = Fixed(1000)
-	root.Style.Direction = Row
+func buildTree(branching, depth int) *testNode {
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(1000)
+	root.style.Height = Fixed(1000)
+	root.style.Direction = Row
 
 	if depth > 0 {
 		addChildrenRecursive(root, branching, depth-1)
@@ -17,16 +17,16 @@ func buildTree(branching, depth int) *Node {
 	return root
 }
 
-func addChildrenRecursive(parent *Node, branching, remainingDepth int) {
+func addChildrenRecursive(parent *testNode, branching, remainingDepth int) {
 	for i := 0; i < branching; i++ {
-		child := NewNode(DefaultStyle())
-		child.Style.FlexGrow = 1
+		child := newTestNode(DefaultStyle())
+		child.style.FlexGrow = 1
 
 		// Alternate direction at each level
-		if parent.Style.Direction == Row {
-			child.Style.Direction = Column
+		if parent.style.Direction == Row {
+			child.style.Direction = Column
 		} else {
-			child.Style.Direction = Row
+			child.style.Direction = Row
 		}
 
 		parent.AddChild(child)
@@ -38,16 +38,16 @@ func addChildrenRecursive(parent *Node, branching, remainingDepth int) {
 }
 
 // buildLinearTree creates a tree with n nodes in a linear chain.
-func buildLinearTree(n int) *Node {
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(1000)
-	root.Style.Height = Fixed(1000)
-	root.Style.Direction = Row
+func buildLinearTree(n int) *testNode {
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(1000)
+	root.style.Height = Fixed(1000)
+	root.style.Direction = Row
 
 	for i := 0; i < n; i++ {
-		child := NewNode(DefaultStyle())
-		child.Style.Width = Fixed(10)
-		child.Style.Height = Fixed(100)
+		child := newTestNode(DefaultStyle())
+		child.style.Width = Fixed(10)
+		child.style.Height = Fixed(100)
 		root.AddChild(child)
 	}
 
@@ -55,12 +55,12 @@ func buildLinearTree(n int) *Node {
 }
 
 // countNodes counts the total number of nodes in a tree.
-func countNodes(node *Node) int {
+func countNodes(node *testNode) int {
 	if node == nil {
 		return 0
 	}
 	count := 1
-	for _, child := range node.Children {
+	for _, child := range node.children {
 		count += countNodes(child)
 	}
 	return count
@@ -79,7 +79,7 @@ func BenchmarkCalculate_10Nodes(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Mark root dirty to force full recalculation
-		root.MarkDirty()
+		root.markDirty()
 		Calculate(root, 1000, 1000)
 	}
 }
@@ -95,7 +95,7 @@ func BenchmarkCalculate_100Nodes(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		root.MarkDirty()
+		root.markDirty()
 		Calculate(root, 1000, 1000)
 	}
 }
@@ -111,7 +111,7 @@ func BenchmarkCalculate_1000Nodes(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		root.MarkDirty()
+		root.markDirty()
 		Calculate(root, 10000, 1000)
 	}
 }
@@ -124,14 +124,14 @@ func BenchmarkCalculate_Incremental(b *testing.B) {
 
 	// Find a leaf node
 	leaf := root
-	for len(leaf.Children) > 0 {
-		leaf = leaf.Children[0]
+	for len(leaf.children) > 0 {
+		leaf = leaf.children[0]
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Only mark the leaf dirty (should trigger path-to-root recalculation)
-		leaf.MarkDirty()
+		leaf.markDirty()
 		Calculate(root, 1000, 1000)
 	}
 }
@@ -146,20 +146,20 @@ func BenchmarkCalculate_IncrementalVsFull(b *testing.B) {
 
 	// Find a leaf node
 	leaf := root
-	for len(leaf.Children) > 0 {
-		leaf = leaf.Children[0]
+	for len(leaf.children) > 0 {
+		leaf = leaf.children[0]
 	}
 
 	b.Run("full", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			root.MarkDirty()
+			root.markDirty()
 			Calculate(root, 1000, 1000)
 		}
 	})
 
 	b.Run("incremental", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			leaf.MarkDirty()
+			leaf.markDirty()
 			Calculate(root, 1000, 1000)
 		}
 	})
@@ -175,7 +175,7 @@ func BenchmarkCalculate_AllocationsPerNode(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		root.MarkDirty()
+		root.markDirty()
 		Calculate(root, 1000, 1000)
 	}
 
@@ -183,13 +183,13 @@ func BenchmarkCalculate_AllocationsPerNode(b *testing.B) {
 	// Leaf nodes don't allocate since they have no children
 }
 
-// BenchmarkNewNode benchmarks node creation.
-func BenchmarkNewNode(b *testing.B) {
+// BenchmarkNewTestNode benchmarks node creation.
+func BenchmarkNewTestNode(b *testing.B) {
 	style := DefaultStyle()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_ = NewNode(style)
+		_ = newTestNode(style)
 	}
 }
 

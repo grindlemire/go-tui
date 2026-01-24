@@ -47,18 +47,18 @@ func TestCalculate_SingleNode_FixedSize(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			node := NewNode(tt.style)
+			node := newTestNode(tt.style)
 			Calculate(node, tt.availableW, tt.availableH)
 
-			if node.Layout.Rect.Width != tt.expectedWidth {
-				t.Errorf("Layout.Rect.Width = %d, want %d", node.Layout.Rect.Width, tt.expectedWidth)
+			if node.layout.Rect.Width != tt.expectedWidth {
+				t.Errorf("Layout.Rect.Width = %d, want %d", node.layout.Rect.Width, tt.expectedWidth)
 			}
-			if node.Layout.Rect.Height != tt.expectedHeight {
-				t.Errorf("Layout.Rect.Height = %d, want %d", node.Layout.Rect.Height, tt.expectedHeight)
+			if node.layout.Rect.Height != tt.expectedHeight {
+				t.Errorf("Layout.Rect.Height = %d, want %d", node.layout.Rect.Height, tt.expectedHeight)
 			}
-			if node.Layout.Rect.X != 0 || node.Layout.Rect.Y != 0 {
+			if node.layout.Rect.X != 0 || node.layout.Rect.Y != 0 {
 				t.Errorf("Layout.Rect position = (%d, %d), want (0, 0)",
-					node.Layout.Rect.X, node.Layout.Rect.Y)
+					node.layout.Rect.X, node.layout.Rect.Y)
 			}
 			if node.IsDirty() {
 				t.Error("node should not be dirty after Calculate")
@@ -73,205 +73,205 @@ func TestCalculate_SingleNode_WithPadding(t *testing.T) {
 	style.Height = Fixed(80)
 	style.Padding = EdgeAll(10)
 
-	node := NewNode(style)
+	node := newTestNode(style)
 	Calculate(node, 200, 200)
 
 	// Border box should be the full size
-	if node.Layout.Rect.Width != 100 || node.Layout.Rect.Height != 80 {
+	if node.layout.Rect.Width != 100 || node.layout.Rect.Height != 80 {
 		t.Errorf("Layout.Rect = %dx%d, want 100x80",
-			node.Layout.Rect.Width, node.Layout.Rect.Height)
+			node.layout.Rect.Width, node.layout.Rect.Height)
 	}
 
 	// Content rect should be inset by padding
-	if node.Layout.ContentRect.X != 10 || node.Layout.ContentRect.Y != 10 {
+	if node.layout.ContentRect.X != 10 || node.layout.ContentRect.Y != 10 {
 		t.Errorf("ContentRect position = (%d, %d), want (10, 10)",
-			node.Layout.ContentRect.X, node.Layout.ContentRect.Y)
+			node.layout.ContentRect.X, node.layout.ContentRect.Y)
 	}
-	if node.Layout.ContentRect.Width != 80 || node.Layout.ContentRect.Height != 60 {
+	if node.layout.ContentRect.Width != 80 || node.layout.ContentRect.Height != 60 {
 		t.Errorf("ContentRect size = %dx%d, want 80x60",
-			node.Layout.ContentRect.Width, node.Layout.ContentRect.Height)
+			node.layout.ContentRect.Width, node.layout.ContentRect.Height)
 	}
 }
 
 func TestCalculate_TwoChildren_Row(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(30)
-	child1.Style.Height = Fixed(50)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(30)
+	child1.style.Height = Fixed(50)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(40)
-	child2.Style.Height = Fixed(50)
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(40)
+	child2.style.Height = Fixed(50)
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// Child 1 should be at position 0
-	if child1.Layout.Rect.X != 0 || child1.Layout.Rect.Y != 0 {
+	if child1.layout.Rect.X != 0 || child1.layout.Rect.Y != 0 {
 		t.Errorf("child1 position = (%d, %d), want (0, 0)",
-			child1.Layout.Rect.X, child1.Layout.Rect.Y)
+			child1.layout.Rect.X, child1.layout.Rect.Y)
 	}
-	if child1.Layout.Rect.Width != 30 {
-		t.Errorf("child1 width = %d, want 30", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 30 {
+		t.Errorf("child1 width = %d, want 30", child1.layout.Rect.Width)
 	}
 
 	// Child 2 should be at position 30 (after child1)
-	if child2.Layout.Rect.X != 30 {
-		t.Errorf("child2.X = %d, want 30", child2.Layout.Rect.X)
+	if child2.layout.Rect.X != 30 {
+		t.Errorf("child2.X = %d, want 30", child2.layout.Rect.X)
 	}
-	if child2.Layout.Rect.Width != 40 {
-		t.Errorf("child2 width = %d, want 40", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 40 {
+		t.Errorf("child2 width = %d, want 40", child2.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_TwoChildren_Column(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Column
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Column
 
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(100)
-	child1.Style.Height = Fixed(30)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(100)
+	child1.style.Height = Fixed(30)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(100)
-	child2.Style.Height = Fixed(40)
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(100)
+	child2.style.Height = Fixed(40)
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// Child 1 should be at position 0
-	if child1.Layout.Rect.X != 0 || child1.Layout.Rect.Y != 0 {
+	if child1.layout.Rect.X != 0 || child1.layout.Rect.Y != 0 {
 		t.Errorf("child1 position = (%d, %d), want (0, 0)",
-			child1.Layout.Rect.X, child1.Layout.Rect.Y)
+			child1.layout.Rect.X, child1.layout.Rect.Y)
 	}
-	if child1.Layout.Rect.Height != 30 {
-		t.Errorf("child1 height = %d, want 30", child1.Layout.Rect.Height)
+	if child1.layout.Rect.Height != 30 {
+		t.Errorf("child1 height = %d, want 30", child1.layout.Rect.Height)
 	}
 
 	// Child 2 should be at Y position 30 (after child1)
-	if child2.Layout.Rect.Y != 30 {
-		t.Errorf("child2.Y = %d, want 30", child2.Layout.Rect.Y)
+	if child2.layout.Rect.Y != 30 {
+		t.Errorf("child2.Y = %d, want 30", child2.layout.Rect.Y)
 	}
-	if child2.Layout.Rect.Height != 40 {
-		t.Errorf("child2 height = %d, want 40", child2.Layout.Rect.Height)
+	if child2.layout.Rect.Height != 40 {
+		t.Errorf("child2 height = %d, want 40", child2.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_FlexGrow(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Fixed child
-	fixed := NewNode(DefaultStyle())
-	fixed.Style.Width = Fixed(30)
-	fixed.Style.Height = Fixed(50)
+	fixed := newTestNode(DefaultStyle())
+	fixed.style.Width = Fixed(30)
+	fixed.style.Height = Fixed(50)
 
 	// Growing child
-	growing := NewNode(DefaultStyle())
-	growing.Style.Width = Fixed(0) // Start at 0
-	growing.Style.Height = Fixed(50)
-	growing.Style.FlexGrow = 1
+	growing := newTestNode(DefaultStyle())
+	growing.style.Width = Fixed(0) // Start at 0
+	growing.style.Height = Fixed(50)
+	growing.style.FlexGrow = 1
 
 	parent.AddChild(fixed, growing)
 	Calculate(parent, 200, 200)
 
 	// Fixed child should stay at 30
-	if fixed.Layout.Rect.Width != 30 {
-		t.Errorf("fixed width = %d, want 30", fixed.Layout.Rect.Width)
+	if fixed.layout.Rect.Width != 30 {
+		t.Errorf("fixed width = %d, want 30", fixed.layout.Rect.Width)
 	}
 
 	// Growing child should expand to fill remaining space (100 - 30 = 70)
-	if growing.Layout.Rect.Width != 70 {
-		t.Errorf("growing width = %d, want 70", growing.Layout.Rect.Width)
+	if growing.layout.Rect.Width != 70 {
+		t.Errorf("growing width = %d, want 70", growing.layout.Rect.Width)
 	}
-	if growing.Layout.Rect.X != 30 {
-		t.Errorf("growing.X = %d, want 30", growing.Layout.Rect.X)
+	if growing.layout.Rect.X != 30 {
+		t.Errorf("growing.X = %d, want 30", growing.layout.Rect.X)
 	}
 }
 
 func TestCalculate_FlexGrow_ProportionalDistribution(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Two growing children with different flex values
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(0)
-	child1.Style.Height = Fixed(50)
-	child1.Style.FlexGrow = 1
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(0)
+	child1.style.Height = Fixed(50)
+	child1.style.FlexGrow = 1
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(0)
-	child2.Style.Height = Fixed(50)
-	child2.Style.FlexGrow = 3
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(0)
+	child2.style.Height = Fixed(50)
+	child2.style.FlexGrow = 3
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// Child1 should get 1/4 of space (25), child2 should get 3/4 (75)
-	if child1.Layout.Rect.Width != 25 {
-		t.Errorf("child1 width = %d, want 25", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 25 {
+		t.Errorf("child1 width = %d, want 25", child1.layout.Rect.Width)
 	}
-	if child2.Layout.Rect.Width != 75 {
-		t.Errorf("child2 width = %d, want 75", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 75 {
+		t.Errorf("child2 width = %d, want 75", child2.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_FlexShrink(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Two children that are too wide for the container
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(80)
-	child1.Style.Height = Fixed(50)
-	child1.Style.FlexShrink = 1
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(80)
+	child1.style.Height = Fixed(50)
+	child1.style.FlexShrink = 1
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(80)
-	child2.Style.Height = Fixed(50)
-	child2.Style.FlexShrink = 1
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(80)
+	child2.style.Height = Fixed(50)
+	child2.style.FlexShrink = 1
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// Total is 160, container is 100, deficit is 60
 	// Each should shrink by 30 (equal shrink factors)
-	if child1.Layout.Rect.Width != 50 {
-		t.Errorf("child1 width = %d, want 50", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 50 {
+		t.Errorf("child1 width = %d, want 50", child1.layout.Rect.Width)
 	}
-	if child2.Layout.Rect.Width != 50 {
-		t.Errorf("child2 width = %d, want 50", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 50 {
+		t.Errorf("child2 width = %d, want 50", child2.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_FlexShrink_ProportionalDistribution(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Two children that are too wide for the container
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(80)
-	child1.Style.Height = Fixed(50)
-	child1.Style.FlexShrink = 1 // Will shrink less
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(80)
+	child1.style.Height = Fixed(50)
+	child1.style.FlexShrink = 1 // Will shrink less
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(80)
-	child2.Style.Height = Fixed(50)
-	child2.Style.FlexShrink = 3 // Will shrink more
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(80)
+	child2.style.Height = Fixed(50)
+	child2.style.FlexShrink = 3 // Will shrink more
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
@@ -279,22 +279,22 @@ func TestCalculate_FlexShrink_ProportionalDistribution(t *testing.T) {
 	// Total is 160, container is 100, deficit is 60
 	// child1 shrinks by 60 * 1/4 = 15 -> 65
 	// child2 shrinks by 60 * 3/4 = 45 -> 35
-	if child1.Layout.Rect.Width != 65 {
-		t.Errorf("child1 width = %d, want 65", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 65 {
+		t.Errorf("child1 width = %d, want 65", child1.layout.Rect.Width)
 	}
-	if child2.Layout.Rect.Width != 35 {
-		t.Errorf("child2 width = %d, want 35", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 35 {
+		t.Errorf("child2 width = %d, want 35", child2.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_DirtyTracking(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(100)
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(100)
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(50)
-	child.Style.Height = Fixed(50)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(50)
+	child.style.Height = Fixed(50)
 
 	parent.AddChild(child)
 
@@ -306,17 +306,17 @@ func TestCalculate_DirtyTracking(t *testing.T) {
 	}
 
 	// Store original layout
-	originalChildRect := child.Layout.Rect
+	originalChildRect := child.layout.Rect
 
 	// Calculate again - should be a no-op since nodes are clean
 	Calculate(parent, 200, 200)
 
-	if child.Layout.Rect != originalChildRect {
+	if child.layout.Rect != originalChildRect {
 		t.Error("clean node layout should not change")
 	}
 
 	// Modify child style
-	child.SetStyle(child.Style) // This marks it dirty
+	child.SetStyle(child.style) // This marks it dirty
 
 	if !child.IsDirty() {
 		t.Error("child should be dirty after SetStyle")
@@ -328,17 +328,17 @@ func TestCalculate_DirtyTracking(t *testing.T) {
 
 func TestCalculate_CleanSubtreeSkipped(t *testing.T) {
 	// Create a tree where we can verify that clean subtrees are skipped
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(200)
-	root.Style.Height = Fixed(100)
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(200)
+	root.style.Height = Fixed(100)
 
-	left := NewNode(DefaultStyle())
-	left.Style.Width = Fixed(100)
-	left.Style.Height = Fixed(100)
+	left := newTestNode(DefaultStyle())
+	left.style.Width = Fixed(100)
+	left.style.Height = Fixed(100)
 
-	right := NewNode(DefaultStyle())
-	right.Style.Width = Fixed(100)
-	right.Style.Height = Fixed(100)
+	right := newTestNode(DefaultStyle())
+	right.style.Width = Fixed(100)
+	right.style.Height = Fixed(100)
 
 	root.AddChild(left, right)
 
@@ -351,10 +351,10 @@ func TestCalculate_CleanSubtreeSkipped(t *testing.T) {
 	right.dirty = false
 
 	// Mark only left subtree dirty
-	left.MarkDirty()
+	left.markDirty()
 
 	// Store right's layout
-	rightRect := right.Layout.Rect
+	rightRect := right.layout.Rect
 
 	// Calculate should skip right subtree
 	Calculate(root, 300, 200)
@@ -362,7 +362,7 @@ func TestCalculate_CleanSubtreeSkipped(t *testing.T) {
 	// Right should still have the same layout (wasn't recalculated)
 	// Note: This test verifies the dirty flag works, not that layout is literally skipped
 	// (since we can't easily measure "not recalculated" without instrumentation)
-	if right.Layout.Rect != rightRect {
+	if right.layout.Rect != rightRect {
 		t.Error("clean right subtree should maintain its layout")
 	}
 	if right.IsDirty() {
@@ -376,38 +376,38 @@ func TestCalculate_NilNode(t *testing.T) {
 }
 
 func TestCalculate_EmptyChildren(t *testing.T) {
-	node := NewNode(DefaultStyle())
-	node.Style.Width = Fixed(100)
-	node.Style.Height = Fixed(100)
+	node := newTestNode(DefaultStyle())
+	node.style.Width = Fixed(100)
+	node.style.Height = Fixed(100)
 
 	// Should not panic with no children
 	Calculate(node, 200, 200)
 
-	if node.Layout.Rect.Width != 100 || node.Layout.Rect.Height != 100 {
+	if node.layout.Rect.Width != 100 || node.layout.Rect.Height != 100 {
 		t.Errorf("Layout = %dx%d, want 100x100",
-			node.Layout.Rect.Width, node.Layout.Rect.Height)
+			node.layout.Rect.Width, node.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_NestedContainers(t *testing.T) {
 	// Root is a row, child is a column
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(200)
-	root.Style.Height = Fixed(100)
-	root.Style.Direction = Row
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(200)
+	root.style.Height = Fixed(100)
+	root.style.Direction = Row
 
-	column := NewNode(DefaultStyle())
-	column.Style.Width = Fixed(100)
-	column.Style.Height = Fixed(100)
-	column.Style.Direction = Column
+	column := newTestNode(DefaultStyle())
+	column.style.Width = Fixed(100)
+	column.style.Height = Fixed(100)
+	column.style.Direction = Column
 
-	grandchild1 := NewNode(DefaultStyle())
-	grandchild1.Style.Width = Fixed(100)
-	grandchild1.Style.Height = Fixed(40)
+	grandchild1 := newTestNode(DefaultStyle())
+	grandchild1.style.Width = Fixed(100)
+	grandchild1.style.Height = Fixed(40)
 
-	grandchild2 := NewNode(DefaultStyle())
-	grandchild2.Style.Width = Fixed(100)
-	grandchild2.Style.Height = Fixed(60)
+	grandchild2 := newTestNode(DefaultStyle())
+	grandchild2.style.Width = Fixed(100)
+	grandchild2.style.Height = Fixed(60)
 
 	column.AddChild(grandchild1, grandchild2)
 	root.AddChild(column)
@@ -415,101 +415,101 @@ func TestCalculate_NestedContainers(t *testing.T) {
 	Calculate(root, 300, 200)
 
 	// Column should be positioned at (0, 0)
-	if column.Layout.Rect.X != 0 || column.Layout.Rect.Y != 0 {
+	if column.layout.Rect.X != 0 || column.layout.Rect.Y != 0 {
 		t.Errorf("column position = (%d, %d), want (0, 0)",
-			column.Layout.Rect.X, column.Layout.Rect.Y)
+			column.layout.Rect.X, column.layout.Rect.Y)
 	}
 
 	// Grandchild1 should be at (0, 0) within the column
-	if grandchild1.Layout.Rect.X != 0 || grandchild1.Layout.Rect.Y != 0 {
+	if grandchild1.layout.Rect.X != 0 || grandchild1.layout.Rect.Y != 0 {
 		t.Errorf("grandchild1 position = (%d, %d), want (0, 0)",
-			grandchild1.Layout.Rect.X, grandchild1.Layout.Rect.Y)
+			grandchild1.layout.Rect.X, grandchild1.layout.Rect.Y)
 	}
 
 	// Grandchild2 should be at (0, 40) within the column
-	if grandchild2.Layout.Rect.X != 0 || grandchild2.Layout.Rect.Y != 40 {
+	if grandchild2.layout.Rect.X != 0 || grandchild2.layout.Rect.Y != 40 {
 		t.Errorf("grandchild2 position = (%d, %d), want (0, 40)",
-			grandchild2.Layout.Rect.X, grandchild2.Layout.Rect.Y)
+			grandchild2.layout.Rect.X, grandchild2.layout.Rect.Y)
 	}
 }
 
 func TestCalculate_AlignStretch(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(80)
-	parent.Style.Direction = Row
-	parent.Style.AlignItems = AlignStretch
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(80)
+	parent.style.Direction = Row
+	parent.style.AlignItems = AlignStretch
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(30)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(30)
 	// Height is Auto - should stretch
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// Child should stretch to fill cross axis (height)
-	if child.Layout.Rect.Height != 80 {
-		t.Errorf("child height = %d, want 80 (stretched)", child.Layout.Rect.Height)
+	if child.layout.Rect.Height != 80 {
+		t.Errorf("child height = %d, want 80 (stretched)", child.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_WithMargin(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(50)
-	child.Style.Height = Fixed(50)
-	child.Style.Margin = EdgeAll(10)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(50)
+	child.style.Height = Fixed(50)
+	child.style.Margin = EdgeAll(10)
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// Child border box should be inset by margin
-	if child.Layout.Rect.X != 10 || child.Layout.Rect.Y != 10 {
+	if child.layout.Rect.X != 10 || child.layout.Rect.Y != 10 {
 		t.Errorf("child position = (%d, %d), want (10, 10)",
-			child.Layout.Rect.X, child.Layout.Rect.Y)
+			child.layout.Rect.X, child.layout.Rect.Y)
 	}
 	// Child dimensions should account for margin being applied
-	if child.Layout.Rect.Width != 50 || child.Layout.Rect.Height != 50 {
+	if child.layout.Rect.Width != 50 || child.layout.Rect.Height != 50 {
 		t.Errorf("child size = %dx%d, want 50x50",
-			child.Layout.Rect.Width, child.Layout.Rect.Height)
+			child.layout.Rect.Width, child.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_WithGap(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
-	parent.Style.Gap = 10
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
+	parent.style.Gap = 10
 
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(20)
-	child1.Style.Height = Fixed(50)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(20)
+	child1.style.Height = Fixed(50)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(20)
-	child2.Style.Height = Fixed(50)
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(20)
+	child2.style.Height = Fixed(50)
 
-	child3 := NewNode(DefaultStyle())
-	child3.Style.Width = Fixed(20)
-	child3.Style.Height = Fixed(50)
+	child3 := newTestNode(DefaultStyle())
+	child3.style.Width = Fixed(20)
+	child3.style.Height = Fixed(50)
 
 	parent.AddChild(child1, child2, child3)
 	Calculate(parent, 200, 200)
 
 	// Children should be spaced with gaps
-	if child1.Layout.Rect.X != 0 {
-		t.Errorf("child1.X = %d, want 0", child1.Layout.Rect.X)
+	if child1.layout.Rect.X != 0 {
+		t.Errorf("child1.X = %d, want 0", child1.layout.Rect.X)
 	}
-	if child2.Layout.Rect.X != 30 { // 20 + 10 gap
-		t.Errorf("child2.X = %d, want 30", child2.Layout.Rect.X)
+	if child2.layout.Rect.X != 30 { // 20 + 10 gap
+		t.Errorf("child2.X = %d, want 30", child2.layout.Rect.X)
 	}
-	if child3.Layout.Rect.X != 60 { // 20 + 10 + 20 + 10 gap
-		t.Errorf("child3.X = %d, want 60", child3.Layout.Rect.X)
+	if child3.layout.Rect.X != 60 { // 20 + 10 + 20 + 10 gap
+		t.Errorf("child3.X = %d, want 60", child3.layout.Rect.X)
 	}
 }
 
@@ -569,35 +569,35 @@ func TestCalculate_JustifyModes(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			parent := NewNode(DefaultStyle())
-			parent.Style.Width = Fixed(100)
-			parent.Style.Height = Fixed(50)
-			parent.Style.Direction = Row
-			parent.Style.JustifyContent = tt.justify
+			parent := newTestNode(DefaultStyle())
+			parent.style.Width = Fixed(100)
+			parent.style.Height = Fixed(50)
+			parent.style.Direction = Row
+			parent.style.JustifyContent = tt.justify
 
-			child1 := NewNode(DefaultStyle())
-			child1.Style.Width = Fixed(20)
-			child1.Style.Height = Fixed(50)
+			child1 := newTestNode(DefaultStyle())
+			child1.style.Width = Fixed(20)
+			child1.style.Height = Fixed(50)
 
-			child2 := NewNode(DefaultStyle())
-			child2.Style.Width = Fixed(20)
-			child2.Style.Height = Fixed(50)
+			child2 := newTestNode(DefaultStyle())
+			child2.style.Width = Fixed(20)
+			child2.style.Height = Fixed(50)
 
-			child3 := NewNode(DefaultStyle())
-			child3.Style.Width = Fixed(20)
-			child3.Style.Height = Fixed(50)
+			child3 := newTestNode(DefaultStyle())
+			child3.style.Width = Fixed(20)
+			child3.style.Height = Fixed(50)
 
 			parent.AddChild(child1, child2, child3)
 			Calculate(parent, 200, 200)
 
-			if child1.Layout.Rect.X != tt.expectedX1 {
-				t.Errorf("child1.X = %d, want %d", child1.Layout.Rect.X, tt.expectedX1)
+			if child1.layout.Rect.X != tt.expectedX1 {
+				t.Errorf("child1.X = %d, want %d", child1.layout.Rect.X, tt.expectedX1)
 			}
-			if child2.Layout.Rect.X != tt.expectedX2 {
-				t.Errorf("child2.X = %d, want %d", child2.Layout.Rect.X, tt.expectedX2)
+			if child2.layout.Rect.X != tt.expectedX2 {
+				t.Errorf("child2.X = %d, want %d", child2.layout.Rect.X, tt.expectedX2)
 			}
-			if child3.Layout.Rect.X != tt.expectedX3 {
-				t.Errorf("child3.X = %d, want %d", child3.Layout.Rect.X, tt.expectedX3)
+			if child3.layout.Rect.X != tt.expectedX3 {
+				t.Errorf("child3.X = %d, want %d", child3.layout.Rect.X, tt.expectedX3)
 			}
 		})
 	}
@@ -621,21 +621,21 @@ func TestCalculate_JustifyModes_SingleChild(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			parent := NewNode(DefaultStyle())
-			parent.Style.Width = Fixed(100)
-			parent.Style.Height = Fixed(50)
-			parent.Style.Direction = Row
-			parent.Style.JustifyContent = tt.justify
+			parent := newTestNode(DefaultStyle())
+			parent.style.Width = Fixed(100)
+			parent.style.Height = Fixed(50)
+			parent.style.Direction = Row
+			parent.style.JustifyContent = tt.justify
 
-			child := NewNode(DefaultStyle())
-			child.Style.Width = Fixed(20)
-			child.Style.Height = Fixed(50)
+			child := newTestNode(DefaultStyle())
+			child.style.Width = Fixed(20)
+			child.style.Height = Fixed(50)
 
 			parent.AddChild(child)
 			Calculate(parent, 200, 200)
 
-			if child.Layout.Rect.X != tt.expectedX {
-				t.Errorf("child.X = %d, want %d", child.Layout.Rect.X, tt.expectedX)
+			if child.layout.Rect.X != tt.expectedX {
+				t.Errorf("child.X = %d, want %d", child.layout.Rect.X, tt.expectedX)
 			}
 		})
 	}
@@ -643,29 +643,29 @@ func TestCalculate_JustifyModes_SingleChild(t *testing.T) {
 
 func TestCalculate_JustifyModes_Column(t *testing.T) {
 	// Test justify in Column direction (Y positions)
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(50)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Column
-	parent.Style.JustifyContent = JustifyEnd
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(50)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Column
+	parent.style.JustifyContent = JustifyEnd
 
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(50)
-	child1.Style.Height = Fixed(20)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(50)
+	child1.style.Height = Fixed(20)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(50)
-	child2.Style.Height = Fixed(20)
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(50)
+	child2.style.Height = Fixed(20)
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// Free space: 100 - 40 = 60, JustifyEnd pushes children to end
-	if child1.Layout.Rect.Y != 60 {
-		t.Errorf("child1.Y = %d, want 60", child1.Layout.Rect.Y)
+	if child1.layout.Rect.Y != 60 {
+		t.Errorf("child1.Y = %d, want 60", child1.layout.Rect.Y)
 	}
-	if child2.Layout.Rect.Y != 80 {
-		t.Errorf("child2.Y = %d, want 80", child2.Layout.Rect.Y)
+	if child2.layout.Rect.Y != 80 {
+		t.Errorf("child2.Y = %d, want 80", child2.layout.Rect.Y)
 	}
 }
 
@@ -704,345 +704,345 @@ func TestCalculate_AlignModes(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			parent := NewNode(DefaultStyle())
-			parent.Style.Width = Fixed(100)
-			parent.Style.Height = Fixed(80)
-			parent.Style.Direction = Row
-			parent.Style.AlignItems = tt.align
+			parent := newTestNode(DefaultStyle())
+			parent.style.Width = Fixed(100)
+			parent.style.Height = Fixed(80)
+			parent.style.Direction = Row
+			parent.style.AlignItems = tt.align
 
-			child := NewNode(DefaultStyle())
-			child.Style.Width = Fixed(30)
-			child.Style.Height = Fixed(tt.childH)
+			child := newTestNode(DefaultStyle())
+			child.style.Width = Fixed(30)
+			child.style.Height = Fixed(tt.childH)
 
 			parent.AddChild(child)
 			Calculate(parent, 200, 200)
 
-			if child.Layout.Rect.Y != tt.expectedY {
-				t.Errorf("child.Y = %d, want %d", child.Layout.Rect.Y, tt.expectedY)
+			if child.layout.Rect.Y != tt.expectedY {
+				t.Errorf("child.Y = %d, want %d", child.layout.Rect.Y, tt.expectedY)
 			}
-			if child.Layout.Rect.Height != tt.childH {
-				t.Errorf("child.Height = %d, want %d", child.Layout.Rect.Height, tt.childH)
+			if child.layout.Rect.Height != tt.childH {
+				t.Errorf("child.Height = %d, want %d", child.layout.Rect.Height, tt.childH)
 			}
 		})
 	}
 }
 
 func TestCalculate_AlignStretch_AutoHeight(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(80)
-	parent.Style.Direction = Row
-	parent.Style.AlignItems = AlignStretch
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(80)
+	parent.style.Direction = Row
+	parent.style.AlignItems = AlignStretch
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(30)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(30)
 	// Height is Auto - should stretch
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
-	if child.Layout.Rect.Y != 0 {
-		t.Errorf("child.Y = %d, want 0", child.Layout.Rect.Y)
+	if child.layout.Rect.Y != 0 {
+		t.Errorf("child.Y = %d, want 0", child.layout.Rect.Y)
 	}
-	if child.Layout.Rect.Height != 80 {
-		t.Errorf("child.Height = %d, want 80 (stretched)", child.Layout.Rect.Height)
+	if child.layout.Rect.Height != 80 {
+		t.Errorf("child.Height = %d, want 80 (stretched)", child.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_AlignModes_Column(t *testing.T) {
 	// In Column direction, cross axis is X
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(80)
-	parent.Style.Direction = Column
-	parent.Style.AlignItems = AlignEnd
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(80)
+	parent.style.Direction = Column
+	parent.style.AlignItems = AlignEnd
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(30)
-	child.Style.Height = Fixed(20)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(30)
+	child.style.Height = Fixed(20)
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// AlignEnd in Column means X is at end
-	if child.Layout.Rect.X != 70 { // 100 - 30
-		t.Errorf("child.X = %d, want 70", child.Layout.Rect.X)
+	if child.layout.Rect.X != 70 { // 100 - 30
+		t.Errorf("child.X = %d, want 70", child.layout.Rect.X)
 	}
 }
 
 func TestCalculate_AlignSelf_Override(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(80)
-	parent.Style.Direction = Row
-	parent.Style.AlignItems = AlignStart
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(80)
+	parent.style.Direction = Row
+	parent.style.AlignItems = AlignStart
 
 	// First child inherits AlignStart
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(30)
-	child1.Style.Height = Fixed(30)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(30)
+	child1.style.Height = Fixed(30)
 
 	// Second child overrides with AlignEnd
 	alignEnd := AlignEnd
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(30)
-	child2.Style.Height = Fixed(30)
-	child2.Style.AlignSelf = &alignEnd
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(30)
+	child2.style.Height = Fixed(30)
+	child2.style.AlignSelf = &alignEnd
 
 	// Third child overrides with AlignCenter
 	alignCenter := AlignCenter
-	child3 := NewNode(DefaultStyle())
-	child3.Style.Width = Fixed(30)
-	child3.Style.Height = Fixed(30)
-	child3.Style.AlignSelf = &alignCenter
+	child3 := newTestNode(DefaultStyle())
+	child3.style.Width = Fixed(30)
+	child3.style.Height = Fixed(30)
+	child3.style.AlignSelf = &alignCenter
 
 	parent.AddChild(child1, child2, child3)
 	Calculate(parent, 200, 200)
 
-	if child1.Layout.Rect.Y != 0 {
-		t.Errorf("child1.Y = %d, want 0 (AlignStart)", child1.Layout.Rect.Y)
+	if child1.layout.Rect.Y != 0 {
+		t.Errorf("child1.Y = %d, want 0 (AlignStart)", child1.layout.Rect.Y)
 	}
-	if child2.Layout.Rect.Y != 50 { // 80 - 30
-		t.Errorf("child2.Y = %d, want 50 (AlignEnd)", child2.Layout.Rect.Y)
+	if child2.layout.Rect.Y != 50 { // 80 - 30
+		t.Errorf("child2.Y = %d, want 50 (AlignEnd)", child2.layout.Rect.Y)
 	}
-	if child3.Layout.Rect.Y != 25 { // (80 - 30) / 2
-		t.Errorf("child3.Y = %d, want 25 (AlignCenter)", child3.Layout.Rect.Y)
+	if child3.layout.Rect.Y != 25 { // (80 - 30) / 2
+		t.Errorf("child3.Y = %d, want 25 (AlignCenter)", child3.layout.Rect.Y)
 	}
 }
 
 // Tests for Min/Max constraints
 func TestCalculate_MinWidth_Constraint(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Child would naturally shrink, but has MinWidth
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(30)
-	child.Style.Height = Fixed(50)
-	child.Style.MinWidth = Fixed(40)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(30)
+	child.style.Height = Fixed(50)
+	child.style.MinWidth = Fixed(40)
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// MinWidth should enforce minimum
-	if child.Layout.Rect.Width < 40 {
-		t.Errorf("child.Width = %d, want >= 40 (MinWidth)", child.Layout.Rect.Width)
+	if child.layout.Rect.Width < 40 {
+		t.Errorf("child.Width = %d, want >= 40 (MinWidth)", child.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_MaxWidth_Constraint(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Growing child with MaxWidth limit
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(0)
-	child.Style.Height = Fixed(50)
-	child.Style.FlexGrow = 1
-	child.Style.MaxWidth = Fixed(60)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(0)
+	child.style.Height = Fixed(50)
+	child.style.FlexGrow = 1
+	child.style.MaxWidth = Fixed(60)
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// MaxWidth should cap the growth
-	if child.Layout.Rect.Width > 60 {
-		t.Errorf("child.Width = %d, want <= 60 (MaxWidth)", child.Layout.Rect.Width)
+	if child.layout.Rect.Width > 60 {
+		t.Errorf("child.Width = %d, want <= 60 (MaxWidth)", child.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_MinMax_FlexGrow(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Two growing children, one has max constraint
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(0)
-	child1.Style.Height = Fixed(50)
-	child1.Style.FlexGrow = 1
-	child1.Style.MaxWidth = Fixed(30)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(0)
+	child1.style.Height = Fixed(50)
+	child1.style.FlexGrow = 1
+	child1.style.MaxWidth = Fixed(30)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(0)
-	child2.Style.Height = Fixed(50)
-	child2.Style.FlexGrow = 1
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(0)
+	child2.style.Height = Fixed(50)
+	child2.style.FlexGrow = 1
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// child1 should be capped at 30
-	if child1.Layout.Rect.Width != 30 {
-		t.Errorf("child1.Width = %d, want 30 (MaxWidth)", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 30 {
+		t.Errorf("child1.Width = %d, want 30 (MaxWidth)", child1.layout.Rect.Width)
 	}
 	// child2 gets remaining space
-	if child2.Layout.Rect.Width != 50 {
-		t.Errorf("child2.Width = %d, want 50", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 50 {
+		t.Errorf("child2.Width = %d, want 50", child2.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_MinMax_FlexShrink(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Two children that need to shrink, one has min constraint
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(80)
-	child1.Style.Height = Fixed(50)
-	child1.Style.FlexShrink = 1
-	child1.Style.MinWidth = Fixed(60)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(80)
+	child1.style.Height = Fixed(50)
+	child1.style.FlexShrink = 1
+	child1.style.MinWidth = Fixed(60)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(80)
-	child2.Style.Height = Fixed(50)
-	child2.Style.FlexShrink = 1
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(80)
+	child2.style.Height = Fixed(50)
+	child2.style.FlexShrink = 1
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// child1 should not shrink below MinWidth
-	if child1.Layout.Rect.Width < 60 {
-		t.Errorf("child1.Width = %d, want >= 60 (MinWidth)", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width < 60 {
+		t.Errorf("child1.Width = %d, want >= 60 (MinWidth)", child1.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_MinHeight_Column(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(50)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Column
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(50)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Column
 
 	// Child with MinHeight
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(50)
-	child.Style.Height = Fixed(20)
-	child.Style.MinHeight = Fixed(40)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(50)
+	child.style.Height = Fixed(20)
+	child.style.MinHeight = Fixed(40)
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// MinHeight should enforce minimum
-	if child.Layout.Rect.Height < 40 {
-		t.Errorf("child.Height = %d, want >= 40 (MinHeight)", child.Layout.Rect.Height)
+	if child.layout.Rect.Height < 40 {
+		t.Errorf("child.Height = %d, want >= 40 (MinHeight)", child.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_MinMax_MinWins(t *testing.T) {
 	// When min > max, min should win (CSS behavior)
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(50)
-	child.Style.Height = Fixed(50)
-	child.Style.MinWidth = Fixed(60) // Min > Max
-	child.Style.MaxWidth = Fixed(40)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(50)
+	child.style.Height = Fixed(50)
+	child.style.MinWidth = Fixed(60) // Min > Max
+	child.style.MaxWidth = Fixed(40)
 
 	parent.AddChild(child)
 	Calculate(parent, 200, 200)
 
 	// Min should win
-	if child.Layout.Rect.Width != 60 {
-		t.Errorf("child.Width = %d, want 60 (MinWidth wins over MaxWidth)", child.Layout.Rect.Width)
+	if child.layout.Rect.Width != 60 {
+		t.Errorf("child.Width = %d, want 60 (MinWidth wins over MaxWidth)", child.layout.Rect.Width)
 	}
 }
 
 // Tests for Percent values
 func TestCalculate_PercentWidth(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(200)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(200)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Percent(50)
-	child.Style.Height = Fixed(100)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Percent(50)
+	child.style.Height = Fixed(100)
 
 	parent.AddChild(child)
 	Calculate(parent, 300, 300)
 
 	// 50% of parent's content width (200) = 100
-	if child.Layout.Rect.Width != 100 {
-		t.Errorf("child.Width = %d, want 100 (50%% of 200)", child.Layout.Rect.Width)
+	if child.layout.Rect.Width != 100 {
+		t.Errorf("child.Width = %d, want 100 (50%% of 200)", child.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_PercentHeight(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(200)
-	parent.Style.Direction = Column
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(200)
+	parent.style.Direction = Column
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(100)
-	child.Style.Height = Percent(25)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(100)
+	child.style.Height = Percent(25)
 
 	parent.AddChild(child)
 	Calculate(parent, 300, 300)
 
 	// 25% of parent's content height (200) = 50
-	if child.Layout.Rect.Height != 50 {
-		t.Errorf("child.Height = %d, want 50 (25%% of 200)", child.Layout.Rect.Height)
+	if child.layout.Rect.Height != 50 {
+		t.Errorf("child.Height = %d, want 50 (25%% of 200)", child.layout.Rect.Height)
 	}
 }
 
 func TestCalculate_NestedPercent(t *testing.T) {
 	// Root -> Parent (50%) -> Child (50%)
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(200)
-	root.Style.Height = Fixed(100)
-	root.Style.Direction = Row
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(200)
+	root.style.Height = Fixed(100)
+	root.style.Direction = Row
 
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Percent(50) // 100
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Percent(50) // 100
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Percent(50) // 50% of 100 = 50
-	child.Style.Height = Fixed(100)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Percent(50) // 50% of 100 = 50
+	child.style.Height = Fixed(100)
 
 	parent.AddChild(child)
 	root.AddChild(parent)
 	Calculate(root, 300, 300)
 
 	// Parent should be 50% of root = 100
-	if parent.Layout.Rect.Width != 100 {
-		t.Errorf("parent.Width = %d, want 100 (50%% of 200)", parent.Layout.Rect.Width)
+	if parent.layout.Rect.Width != 100 {
+		t.Errorf("parent.Width = %d, want 100 (50%% of 200)", parent.layout.Rect.Width)
 	}
 
 	// Child should be 50% of parent = 50
-	if child.Layout.Rect.Width != 50 {
-		t.Errorf("child.Width = %d, want 50 (50%% of 100)", child.Layout.Rect.Width)
+	if child.layout.Rect.Width != 50 {
+		t.Errorf("child.Width = %d, want 50 (50%% of 100)", child.layout.Rect.Width)
 	}
 }
 
 func TestCalculate_PercentMinMax(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(200)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(200)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(0)
-	child.Style.Height = Fixed(100)
-	child.Style.FlexGrow = 1
-	child.Style.MaxWidth = Percent(30) // 30% of 200 = 60
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(0)
+	child.style.Height = Fixed(100)
+	child.style.FlexGrow = 1
+	child.style.MaxWidth = Percent(30) // 30% of 200 = 60
 
 	parent.AddChild(child)
 	Calculate(parent, 300, 300)
 
 	// MaxWidth as percent should cap growth
-	if child.Layout.Rect.Width > 60 {
-		t.Errorf("child.Width = %d, want <= 60 (30%% max)", child.Layout.Rect.Width)
+	if child.layout.Rect.Width > 60 {
+		t.Errorf("child.Width = %d, want <= 60 (30%% max)", child.layout.Rect.Width)
 	}
 }
 
@@ -1058,25 +1058,25 @@ func TestCalculate_IncrementalLayout_LeafChange(t *testing.T) {
 	//  /  \
 	// a    b
 
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(200)
-	root.Style.Height = Fixed(100)
-	root.Style.Direction = Row
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(200)
+	root.style.Height = Fixed(100)
+	root.style.Direction = Row
 
-	left := NewNode(DefaultStyle())
-	left.Style.Width = Fixed(100)
-	left.Style.Direction = Column
+	left := newTestNode(DefaultStyle())
+	left.style.Width = Fixed(100)
+	left.style.Direction = Column
 
-	a := NewNode(DefaultStyle())
-	a.Style.Height = Fixed(50)
+	a := newTestNode(DefaultStyle())
+	a.style.Height = Fixed(50)
 
-	b := NewNode(DefaultStyle())
-	b.Style.Height = Fixed(50)
+	b := newTestNode(DefaultStyle())
+	b.style.Height = Fixed(50)
 
 	left.AddChild(a, b)
 
-	right := NewNode(DefaultStyle())
-	right.Style.Width = Fixed(100)
+	right := newTestNode(DefaultStyle())
+	right.style.Width = Fixed(100)
 
 	root.AddChild(left, right)
 
@@ -1089,7 +1089,7 @@ func TestCalculate_IncrementalLayout_LeafChange(t *testing.T) {
 	}
 
 	// Modify leaf node 'a'
-	a.SetStyle(a.Style)
+	a.SetStyle(a.style)
 
 	// Verify dirty propagation
 	if !a.IsDirty() {
@@ -1106,13 +1106,13 @@ func TestCalculate_IncrementalLayout_LeafChange(t *testing.T) {
 	}
 
 	// Store right's layout before recalculation
-	rightLayoutBefore := right.Layout.Rect
+	rightLayoutBefore := right.layout.Rect
 
 	// Recalculate
 	Calculate(root, 200, 100)
 
 	// Verify right was not recalculated (layout unchanged, still clean)
-	if right.Layout.Rect != rightLayoutBefore {
+	if right.layout.Rect != rightLayoutBefore {
 		t.Error("right's layout should not have changed")
 	}
 	if right.IsDirty() {
@@ -1123,9 +1123,9 @@ func TestCalculate_IncrementalLayout_LeafChange(t *testing.T) {
 // TestCalculate_IncrementalLayout_ReadDoesNotDirty tests that reading
 // Layout does not mark the node dirty.
 func TestCalculate_IncrementalLayout_ReadDoesNotDirty(t *testing.T) {
-	node := NewNode(DefaultStyle())
-	node.Style.Width = Fixed(100)
-	node.Style.Height = Fixed(100)
+	node := newTestNode(DefaultStyle())
+	node.style.Width = Fixed(100)
+	node.style.Height = Fixed(100)
 
 	Calculate(node, 200, 200)
 
@@ -1134,10 +1134,10 @@ func TestCalculate_IncrementalLayout_ReadDoesNotDirty(t *testing.T) {
 	}
 
 	// Read layout
-	_ = node.Layout.Rect
-	_ = node.Layout.ContentRect
-	_ = node.Layout.Rect.Width
-	_ = node.Layout.Rect.Height
+	_ = node.layout.Rect
+	_ = node.layout.ContentRect
+	_ = node.layout.Rect.Width
+	_ = node.layout.Rect.Height
 
 	if node.IsDirty() {
 		t.Error("reading Layout should NOT mark node dirty")
@@ -1147,16 +1147,16 @@ func TestCalculate_IncrementalLayout_ReadDoesNotDirty(t *testing.T) {
 // TestCalculate_IncrementalLayout_MultipleChanges tests multiple changes
 // before recalculation.
 func TestCalculate_IncrementalLayout_MultipleChanges(t *testing.T) {
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(100)
-	root.Style.Height = Fixed(100)
-	root.Style.Direction = Row
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(100)
+	root.style.Height = Fixed(100)
+	root.style.Direction = Row
 
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(50)
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(50)
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(50)
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(50)
 
 	root.AddChild(child1, child2)
 
@@ -1164,13 +1164,13 @@ func TestCalculate_IncrementalLayout_MultipleChanges(t *testing.T) {
 
 	// Make multiple changes
 	child1.SetStyle(func() Style {
-		s := child1.Style
+		s := child1.style
 		s.Width = Fixed(30)
 		return s
 	}())
 
 	child2.SetStyle(func() Style {
-		s := child2.Style
+		s := child2.style
 		s.Width = Fixed(70)
 		return s
 	}())
@@ -1183,11 +1183,11 @@ func TestCalculate_IncrementalLayout_MultipleChanges(t *testing.T) {
 	// Single recalculation should handle all changes
 	Calculate(root, 100, 100)
 
-	if child1.Layout.Rect.Width != 30 {
-		t.Errorf("child1.Width = %d, want 30", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 30 {
+		t.Errorf("child1.Width = %d, want 30", child1.layout.Rect.Width)
 	}
-	if child2.Layout.Rect.Width != 70 {
-		t.Errorf("child2.Width = %d, want 70", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 70 {
+		t.Errorf("child2.Width = %d, want 70", child2.layout.Rect.Width)
 	}
 
 	// All should be clean
@@ -1199,26 +1199,26 @@ func TestCalculate_IncrementalLayout_MultipleChanges(t *testing.T) {
 // TestCalculate_IncrementalLayout_ParentChange tests that changing a parent
 // recalculates children.
 func TestCalculate_IncrementalLayout_ParentChange(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.FlexGrow = 1
+	child := newTestNode(DefaultStyle())
+	child.style.FlexGrow = 1
 
 	parent.AddChild(child)
 
 	Calculate(parent, 100, 100)
 
 	// Child should fill parent
-	if child.Layout.Rect.Width != 100 {
-		t.Errorf("child.Width = %d, want 100", child.Layout.Rect.Width)
+	if child.layout.Rect.Width != 100 {
+		t.Errorf("child.Width = %d, want 100", child.layout.Rect.Width)
 	}
 
 	// Change parent size
 	parent.SetStyle(func() Style {
-		s := parent.Style
+		s := parent.style
 		s.Width = Fixed(200)
 		return s
 	}())
@@ -1227,7 +1227,7 @@ func TestCalculate_IncrementalLayout_ParentChange(t *testing.T) {
 	Calculate(parent, 200, 100)
 
 	// Child should now fill new parent size
-	if child.Layout.Rect.Width != 200 {
-		t.Errorf("child.Width = %d, want 200", child.Layout.Rect.Width)
+	if child.layout.Rect.Width != 200 {
+		t.Errorf("child.Width = %d, want 200", child.layout.Rect.Width)
 	}
 }

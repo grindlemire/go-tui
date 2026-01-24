@@ -15,250 +15,273 @@ func TestDefaultColor(t *testing.T) {
 }
 
 func TestANSIColor(t *testing.T) {
-	tests := []uint8{0, 1, 127, 255}
-	for _, idx := range tests {
-		c := ANSIColor(idx)
-		if c.Type() != ColorANSI {
-			t.Errorf("ANSIColor(%d).Type() = %v, want ColorANSI", idx, c.Type())
-		}
-		if c.IsDefault() {
-			t.Errorf("ANSIColor(%d).IsDefault() = true, want false", idx)
-		}
-		if got := c.ANSI(); got != idx {
-			t.Errorf("ANSIColor(%d).ANSI() = %d, want %d", idx, got, idx)
-		}
+	type tc struct {
+		idx uint8
+	}
+
+	tests := map[string]tc{
+		"zero":    {idx: 0},
+		"one":     {idx: 1},
+		"mid":     {idx: 127},
+		"max":     {idx: 255},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := ANSIColor(tt.idx)
+			if c.Type() != ColorANSI {
+				t.Errorf("ANSIColor(%d).Type() = %v, want ColorANSI", tt.idx, c.Type())
+			}
+			if c.IsDefault() {
+				t.Errorf("ANSIColor(%d).IsDefault() = true, want false", tt.idx)
+			}
+			if got := c.ANSI(); got != tt.idx {
+				t.Errorf("ANSIColor(%d).ANSI() = %d, want %d", tt.idx, got, tt.idx)
+			}
+		})
 	}
 }
 
 func TestRGBColor(t *testing.T) {
-	tests := []struct {
+	type tc struct {
 		r, g, b uint8
-	}{
-		{0, 0, 0},
-		{255, 255, 255},
-		{255, 0, 0},
-		{0, 255, 0},
-		{0, 0, 255},
-		{128, 64, 32},
 	}
-	for _, tt := range tests {
-		c := RGBColor(tt.r, tt.g, tt.b)
-		if c.Type() != ColorRGB {
-			t.Errorf("RGBColor(%d,%d,%d).Type() = %v, want ColorRGB", tt.r, tt.g, tt.b, c.Type())
-		}
-		if c.IsDefault() {
-			t.Errorf("RGBColor(%d,%d,%d).IsDefault() = true, want false", tt.r, tt.g, tt.b)
-		}
-		r, g, b := c.RGB()
-		if r != tt.r || g != tt.g || b != tt.b {
-			t.Errorf("RGBColor(%d,%d,%d).RGB() = %d,%d,%d, want %d,%d,%d",
-				tt.r, tt.g, tt.b, r, g, b, tt.r, tt.g, tt.b)
-		}
+
+	tests := map[string]tc{
+		"black":   {r: 0, g: 0, b: 0},
+		"white":   {r: 255, g: 255, b: 255},
+		"red":     {r: 255, g: 0, b: 0},
+		"green":   {r: 0, g: 255, b: 0},
+		"blue":    {r: 0, g: 0, b: 255},
+		"mixed":   {r: 128, g: 64, b: 32},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := RGBColor(tt.r, tt.g, tt.b)
+			if c.Type() != ColorRGB {
+				t.Errorf("RGBColor(%d,%d,%d).Type() = %v, want ColorRGB", tt.r, tt.g, tt.b, c.Type())
+			}
+			if c.IsDefault() {
+				t.Errorf("RGBColor(%d,%d,%d).IsDefault() = true, want false", tt.r, tt.g, tt.b)
+			}
+			r, g, b := c.RGB()
+			if r != tt.r || g != tt.g || b != tt.b {
+				t.Errorf("RGBColor(%d,%d,%d).RGB() = %d,%d,%d, want %d,%d,%d",
+					tt.r, tt.g, tt.b, r, g, b, tt.r, tt.g, tt.b)
+			}
+		})
 	}
 }
 
 func TestHexColor_Valid6Digit(t *testing.T) {
-	tests := []struct {
+	type tc struct {
 		hex     string
 		r, g, b uint8
-	}{
-		{"#000000", 0, 0, 0},
-		{"#FFFFFF", 255, 255, 255},
-		{"#ffffff", 255, 255, 255},
-		{"#FF0000", 255, 0, 0},
-		{"#00FF00", 0, 255, 0},
-		{"#0000FF", 0, 0, 255},
-		{"#1A2B3C", 26, 43, 60},
-		{"1A2B3C", 26, 43, 60}, // without #
 	}
-	for _, tt := range tests {
-		c, err := HexColor(tt.hex)
-		if err != nil {
-			t.Errorf("HexColor(%q) returned error: %v", tt.hex, err)
-			continue
-		}
-		if c.Type() != ColorRGB {
-			t.Errorf("HexColor(%q).Type() = %v, want ColorRGB", tt.hex, c.Type())
-			continue
-		}
-		r, g, b := c.RGB()
-		if r != tt.r || g != tt.g || b != tt.b {
-			t.Errorf("HexColor(%q).RGB() = %d,%d,%d, want %d,%d,%d",
-				tt.hex, r, g, b, tt.r, tt.g, tt.b)
-		}
+
+	tests := map[string]tc{
+		"black":            {hex: "#000000", r: 0, g: 0, b: 0},
+		"white uppercase":  {hex: "#FFFFFF", r: 255, g: 255, b: 255},
+		"white lowercase":  {hex: "#ffffff", r: 255, g: 255, b: 255},
+		"red":              {hex: "#FF0000", r: 255, g: 0, b: 0},
+		"green":            {hex: "#00FF00", r: 0, g: 255, b: 0},
+		"blue":             {hex: "#0000FF", r: 0, g: 0, b: 255},
+		"mixed":            {hex: "#1A2B3C", r: 26, g: 43, b: 60},
+		"without hash":     {hex: "1A2B3C", r: 26, g: 43, b: 60},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c, err := HexColor(tt.hex)
+			if err != nil {
+				t.Fatalf("HexColor(%q) returned error: %v", tt.hex, err)
+			}
+			if c.Type() != ColorRGB {
+				t.Fatalf("HexColor(%q).Type() = %v, want ColorRGB", tt.hex, c.Type())
+			}
+			r, g, b := c.RGB()
+			if r != tt.r || g != tt.g || b != tt.b {
+				t.Errorf("HexColor(%q).RGB() = %d,%d,%d, want %d,%d,%d",
+					tt.hex, r, g, b, tt.r, tt.g, tt.b)
+			}
+		})
 	}
 }
 
 func TestHexColor_Valid3Digit(t *testing.T) {
-	tests := []struct {
+	type tc struct {
 		hex     string
 		r, g, b uint8
-	}{
-		{"#000", 0, 0, 0},
-		{"#FFF", 255, 255, 255},
-		{"#fff", 255, 255, 255},
-		{"#F00", 255, 0, 0},
-		{"#0F0", 0, 255, 0},
-		{"#00F", 0, 0, 255},
-		{"#ABC", 0xAA, 0xBB, 0xCC},
-		{"ABC", 0xAA, 0xBB, 0xCC}, // without #
 	}
-	for _, tt := range tests {
-		c, err := HexColor(tt.hex)
-		if err != nil {
-			t.Errorf("HexColor(%q) returned error: %v", tt.hex, err)
-			continue
-		}
-		if c.Type() != ColorRGB {
-			t.Errorf("HexColor(%q).Type() = %v, want ColorRGB", tt.hex, c.Type())
-			continue
-		}
-		r, g, b := c.RGB()
-		if r != tt.r || g != tt.g || b != tt.b {
-			t.Errorf("HexColor(%q).RGB() = %d,%d,%d, want %d,%d,%d",
-				tt.hex, r, g, b, tt.r, tt.g, tt.b)
-		}
+
+	tests := map[string]tc{
+		"black":           {hex: "#000", r: 0, g: 0, b: 0},
+		"white uppercase": {hex: "#FFF", r: 255, g: 255, b: 255},
+		"white lowercase": {hex: "#fff", r: 255, g: 255, b: 255},
+		"red":             {hex: "#F00", r: 255, g: 0, b: 0},
+		"green":           {hex: "#0F0", r: 0, g: 255, b: 0},
+		"blue":            {hex: "#00F", r: 0, g: 0, b: 255},
+		"mixed":           {hex: "#ABC", r: 0xAA, g: 0xBB, b: 0xCC},
+		"without hash":    {hex: "ABC", r: 0xAA, g: 0xBB, b: 0xCC},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c, err := HexColor(tt.hex)
+			if err != nil {
+				t.Fatalf("HexColor(%q) returned error: %v", tt.hex, err)
+			}
+			if c.Type() != ColorRGB {
+				t.Fatalf("HexColor(%q).Type() = %v, want ColorRGB", tt.hex, c.Type())
+			}
+			r, g, b := c.RGB()
+			if r != tt.r || g != tt.g || b != tt.b {
+				t.Errorf("HexColor(%q).RGB() = %d,%d,%d, want %d,%d,%d",
+					tt.hex, r, g, b, tt.r, tt.g, tt.b)
+			}
+		})
 	}
 }
 
 func TestHexColor_Invalid(t *testing.T) {
-	invalids := []string{
-		"",
-		"#",
-		"#1",
-		"#12",
-		"#1234",
-		"#12345",
-		"#1234567",
-		"#GGG",
-		"#GGGGGG",
-		"#12345G",
-		"not-a-color",
+	type tc struct {
+		hex string
 	}
-	for _, hex := range invalids {
-		_, err := HexColor(hex)
-		if err == nil {
-			t.Errorf("HexColor(%q) should return error", hex)
-		}
+
+	tests := map[string]tc{
+		"empty":            {hex: ""},
+		"hash only":        {hex: "#"},
+		"one digit":        {hex: "#1"},
+		"two digits":       {hex: "#12"},
+		"four digits":      {hex: "#1234"},
+		"five digits":      {hex: "#12345"},
+		"seven digits":     {hex: "#1234567"},
+		"invalid 3 digit":  {hex: "#GGG"},
+		"invalid 6 digit":  {hex: "#GGGGGG"},
+		"partial invalid":  {hex: "#12345G"},
+		"not a color":      {hex: "not-a-color"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := HexColor(tt.hex)
+			if err == nil {
+				t.Errorf("HexColor(%q) should return error", tt.hex)
+			}
+		})
 	}
 }
 
 func TestColor_Equal(t *testing.T) {
-	tests := []struct {
-		name  string
+	type tc struct {
 		a, b  Color
 		equal bool
-	}{
-		{"default == default", DefaultColor(), DefaultColor(), true},
-		{"ansi 0 == ansi 0", ANSIColor(0), ANSIColor(0), true},
-		{"ansi 0 != ansi 1", ANSIColor(0), ANSIColor(1), false},
-		{"rgb black == rgb black", RGBColor(0, 0, 0), RGBColor(0, 0, 0), true},
-		{"rgb != rgb different", RGBColor(0, 0, 0), RGBColor(1, 0, 0), false},
-		{"default != ansi", DefaultColor(), ANSIColor(0), false},
-		{"default != rgb", DefaultColor(), RGBColor(0, 0, 0), false},
-		{"ansi != rgb", ANSIColor(0), RGBColor(0, 0, 0), false},
 	}
-	for _, tt := range tests {
-		if got := tt.a.Equal(tt.b); got != tt.equal {
-			t.Errorf("%s: Equal() = %v, want %v", tt.name, got, tt.equal)
-		}
-		// Test symmetry
-		if got := tt.b.Equal(tt.a); got != tt.equal {
-			t.Errorf("%s (symmetric): Equal() = %v, want %v", tt.name, got, tt.equal)
-		}
+
+	tests := map[string]tc{
+		"default == default":    {a: DefaultColor(), b: DefaultColor(), equal: true},
+		"ansi 0 == ansi 0":      {a: ANSIColor(0), b: ANSIColor(0), equal: true},
+		"ansi 0 != ansi 1":      {a: ANSIColor(0), b: ANSIColor(1), equal: false},
+		"rgb black == rgb black": {a: RGBColor(0, 0, 0), b: RGBColor(0, 0, 0), equal: true},
+		"rgb != rgb different":  {a: RGBColor(0, 0, 0), b: RGBColor(1, 0, 0), equal: false},
+		"default != ansi":       {a: DefaultColor(), b: ANSIColor(0), equal: false},
+		"default != rgb":        {a: DefaultColor(), b: RGBColor(0, 0, 0), equal: false},
+		"ansi != rgb":           {a: ANSIColor(0), b: RGBColor(0, 0, 0), equal: false},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := tt.a.Equal(tt.b); got != tt.equal {
+				t.Errorf("Equal() = %v, want %v", got, tt.equal)
+			}
+			// Test symmetry
+			if got := tt.b.Equal(tt.a); got != tt.equal {
+				t.Errorf("(symmetric) Equal() = %v, want %v", got, tt.equal)
+			}
+		})
 	}
 }
 
 func TestColor_ToANSI(t *testing.T) {
-	// Default color should remain default
-	t.Run("default unchanged", func(t *testing.T) {
-		c := DefaultColor().ToANSI()
-		if !c.IsDefault() {
-			t.Error("DefaultColor().ToANSI() should remain default")
-		}
-	})
+	type tc struct {
+		color       Color
+		checkType   ColorType
+		expected    uint8
+		inGrayRange bool
+		isDefault   bool
+	}
 
-	// ANSI color should remain unchanged
-	t.Run("ansi unchanged", func(t *testing.T) {
-		c := ANSIColor(42).ToANSI()
-		if c.Type() != ColorANSI || c.ANSI() != 42 {
-			t.Errorf("ANSIColor(42).ToANSI() = %v, want ANSIColor(42)", c)
-		}
-	})
+	tests := map[string]tc{
+		"default unchanged": {
+			color:     DefaultColor(),
+			isDefault: true,
+		},
+		"ansi unchanged": {
+			color:     ANSIColor(42),
+			checkType: ColorANSI,
+			expected:  42,
+		},
+		"pure red": {
+			color:     RGBColor(255, 0, 0),
+			checkType: ColorANSI,
+			expected:  uint8(16 + 5*36 + 0*6 + 0),
+		},
+		"pure green": {
+			color:     RGBColor(0, 255, 0),
+			checkType: ColorANSI,
+			expected:  uint8(16 + 0*36 + 5*6 + 0),
+		},
+		"pure blue": {
+			color:     RGBColor(0, 0, 255),
+			checkType: ColorANSI,
+			expected:  uint8(16 + 0*36 + 0*6 + 5),
+		},
+		"gray 128": {
+			color:       RGBColor(128, 128, 128),
+			checkType:   ColorANSI,
+			inGrayRange: true,
+		},
+		"very dark gray": {
+			color:     RGBColor(4, 4, 4),
+			checkType: ColorANSI,
+			expected:  16,
+		},
+		"very light gray": {
+			color:     RGBColor(252, 252, 252),
+			checkType: ColorANSI,
+			expected:  231,
+		},
+	}
 
-	// Pure red should map to red in color cube
-	t.Run("pure red", func(t *testing.T) {
-		c := RGBColor(255, 0, 0).ToANSI()
-		if c.Type() != ColorANSI {
-			t.Fatalf("ToANSI() type = %v, want ColorANSI", c.Type())
-		}
-		// Pure red (255, 0, 0) should map to color cube index 196 (5*36 + 0*6 + 0 + 16)
-		expected := uint8(16 + 5*36 + 0*6 + 0)
-		if c.ANSI() != expected {
-			t.Errorf("RGBColor(255,0,0).ToANSI().ANSI() = %d, want %d", c.ANSI(), expected)
-		}
-	})
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := tt.color.ToANSI()
 
-	// Pure green
-	t.Run("pure green", func(t *testing.T) {
-		c := RGBColor(0, 255, 0).ToANSI()
-		if c.Type() != ColorANSI {
-			t.Fatalf("ToANSI() type = %v, want ColorANSI", c.Type())
-		}
-		expected := uint8(16 + 0*36 + 5*6 + 0)
-		if c.ANSI() != expected {
-			t.Errorf("RGBColor(0,255,0).ToANSI().ANSI() = %d, want %d", c.ANSI(), expected)
-		}
-	})
+			if tt.isDefault {
+				if !c.IsDefault() {
+					t.Error("ToANSI() should remain default")
+				}
+				return
+			}
 
-	// Pure blue
-	t.Run("pure blue", func(t *testing.T) {
-		c := RGBColor(0, 0, 255).ToANSI()
-		if c.Type() != ColorANSI {
-			t.Fatalf("ToANSI() type = %v, want ColorANSI", c.Type())
-		}
-		expected := uint8(16 + 0*36 + 0*6 + 5)
-		if c.ANSI() != expected {
-			t.Errorf("RGBColor(0,0,255).ToANSI().ANSI() = %d, want %d", c.ANSI(), expected)
-		}
-	})
+			if c.Type() != tt.checkType {
+				t.Fatalf("ToANSI() type = %v, want %v", c.Type(), tt.checkType)
+			}
 
-	// Gray values should use grayscale ramp
-	t.Run("gray 128", func(t *testing.T) {
-		c := RGBColor(128, 128, 128).ToANSI()
-		if c.Type() != ColorANSI {
-			t.Fatalf("ToANSI() type = %v, want ColorANSI", c.Type())
-		}
-		// Should be in the grayscale range 232-255
-		idx := c.ANSI()
-		if idx < 232 || idx > 255 {
-			t.Errorf("Gray should map to grayscale range, got %d", idx)
-		}
-	})
+			if tt.inGrayRange {
+				idx := c.ANSI()
+				if idx < 232 || idx > 255 {
+					t.Errorf("Gray should map to grayscale range 232-255, got %d", idx)
+				}
+				return
+			}
 
-	// Very dark gray should map to color cube black
-	t.Run("very dark gray", func(t *testing.T) {
-		c := RGBColor(4, 4, 4).ToANSI()
-		if c.Type() != ColorANSI {
-			t.Fatalf("ToANSI() type = %v, want ColorANSI", c.Type())
-		}
-		// Very dark should use color cube black (16)
-		if c.ANSI() != 16 {
-			t.Errorf("Very dark gray should map to 16, got %d", c.ANSI())
-		}
-	})
-
-	// Very light gray should map to color cube white
-	t.Run("very light gray", func(t *testing.T) {
-		c := RGBColor(252, 252, 252).ToANSI()
-		if c.Type() != ColorANSI {
-			t.Fatalf("ToANSI() type = %v, want ColorANSI", c.Type())
-		}
-		// Very light should use color cube white (231)
-		if c.ANSI() != 231 {
-			t.Errorf("Very light gray should map to 231, got %d", c.ANSI())
-		}
-	})
+			if c.ANSI() != tt.expected {
+				t.Errorf("ToANSI().ANSI() = %d, want %d", c.ANSI(), tt.expected)
+			}
+		})
+	}
 }
 
 func TestColor_ANSIPanicOnRGB(t *testing.T) {
@@ -298,34 +321,38 @@ func TestColor_RGBPanicOnDefault(t *testing.T) {
 }
 
 func TestPredefinedColors(t *testing.T) {
-	colors := []struct {
-		name     string
+	type tc struct {
 		color    Color
 		expected uint8
-	}{
-		{"Black", Black, 0},
-		{"Red", Red, 1},
-		{"Green", Green, 2},
-		{"Yellow", Yellow, 3},
-		{"Blue", Blue, 4},
-		{"Magenta", Magenta, 5},
-		{"Cyan", Cyan, 6},
-		{"White", White, 7},
-		{"BrightBlack", BrightBlack, 8},
-		{"BrightRed", BrightRed, 9},
-		{"BrightGreen", BrightGreen, 10},
-		{"BrightYellow", BrightYellow, 11},
-		{"BrightBlue", BrightBlue, 12},
-		{"BrightMagenta", BrightMagenta, 13},
-		{"BrightCyan", BrightCyan, 14},
-		{"BrightWhite", BrightWhite, 15},
 	}
-	for _, tt := range colors {
-		if tt.color.Type() != ColorANSI {
-			t.Errorf("%s.Type() = %v, want ColorANSI", tt.name, tt.color.Type())
-		}
-		if tt.color.ANSI() != tt.expected {
-			t.Errorf("%s.ANSI() = %d, want %d", tt.name, tt.color.ANSI(), tt.expected)
-		}
+
+	tests := map[string]tc{
+		"Black":         {color: Black, expected: 0},
+		"Red":           {color: Red, expected: 1},
+		"Green":         {color: Green, expected: 2},
+		"Yellow":        {color: Yellow, expected: 3},
+		"Blue":          {color: Blue, expected: 4},
+		"Magenta":       {color: Magenta, expected: 5},
+		"Cyan":          {color: Cyan, expected: 6},
+		"White":         {color: White, expected: 7},
+		"BrightBlack":   {color: BrightBlack, expected: 8},
+		"BrightRed":     {color: BrightRed, expected: 9},
+		"BrightGreen":   {color: BrightGreen, expected: 10},
+		"BrightYellow":  {color: BrightYellow, expected: 11},
+		"BrightBlue":    {color: BrightBlue, expected: 12},
+		"BrightMagenta": {color: BrightMagenta, expected: 13},
+		"BrightCyan":    {color: BrightCyan, expected: 14},
+		"BrightWhite":   {color: BrightWhite, expected: 15},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tt.color.Type() != ColorANSI {
+				t.Errorf("Type() = %v, want ColorANSI", tt.color.Type())
+			}
+			if tt.color.ANSI() != tt.expected {
+				t.Errorf("ANSI() = %d, want %d", tt.color.ANSI(), tt.expected)
+			}
+		})
 	}
 }

@@ -1,54 +1,58 @@
 package layout
 
-// Calculate performs layout calculation on the tree rooted at node.
-// The node and all descendants will have their Layout field populated.
+// Calculate performs layout calculation on the tree rooted at root.
+// The root and all descendants will have their Layout field populated.
 // Only dirty nodes are recalculated (incremental layout).
 //
 // availableWidth and availableHeight specify the root constraint
 // (typically the terminal size).
-func Calculate(node *Node, availableWidth, availableHeight int) {
-	if node == nil {
+func Calculate(root Layoutable, availableWidth, availableHeight int) {
+	if root == nil {
 		return
 	}
 
 	// For the root node, resolve its width/height constraints against
 	// the available space. This is different from child nodes, which
 	// receive their size from the parent's flex calculations.
-	width := node.Style.Width.Resolve(availableWidth, availableWidth)
-	height := node.Style.Height.Resolve(availableHeight, availableHeight)
+	style := root.LayoutStyle()
+	width := style.Width.Resolve(availableWidth, availableWidth)
+	height := style.Height.Resolve(availableHeight, availableHeight)
 
 	available := NewRect(0, 0, width, height)
-	calculateNode(node, available)
+	calculateNode(root, available)
 }
 
 // calculateNode computes the layout for a single node within the available space.
 // The available rect represents the border box space allocated by the parent
 // (after the parent has already applied this node's margin).
-func calculateNode(node *Node, available Rect) {
+func calculateNode(node Layoutable, available Rect) {
 	// Dirty propagates up, so a clean node guarantees a clean subtree
-	if !node.dirty {
+	if !node.IsDirty() {
 		return
 	}
 
+	style := node.LayoutStyle()
+
 	// 1. Compute this node's border box within available space
-	borderBox := computeBorderBox(node.Style, available)
+	borderBox := computeBorderBox(style, available)
 
 	// 2. Compute content rect (border box minus padding)
-	contentRect := borderBox.Inset(node.Style.Padding)
+	contentRect := borderBox.Inset(style.Padding)
 
 	// 3. Layout children within content rect
-	if len(node.Children) > 0 {
+	children := node.LayoutChildren()
+	if len(children) > 0 {
 		layoutChildren(node, contentRect)
 	}
 
 	// 4. Store computed layout
-	node.Layout = Layout{
+	node.SetLayout(Layout{
 		Rect:        borderBox,
 		ContentRect: contentRect,
-	}
+	})
 
 	// 5. Clear dirty flag
-	node.dirty = false
+	node.SetDirty(false)
 }
 
 // computeBorderBox calculates the border box dimensions for a node.
