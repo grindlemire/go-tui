@@ -512,3 +512,536 @@ func TestCalculate_WithGap(t *testing.T) {
 		t.Errorf("child3.X = %d, want 60", child3.Layout.Rect.X)
 	}
 }
+
+// Tests for all Justify modes
+func TestCalculate_JustifyModes(t *testing.T) {
+	type tc struct {
+		justify    Justify
+		expectedX1 int // First child X position
+		expectedX2 int // Second child X position
+		expectedX3 int // Third child X position
+	}
+
+	// Container: 100 wide, Children: 20 each = 60 total, Free space: 40
+	tests := map[string]tc{
+		"JustifyStart": {
+			justify:    JustifyStart,
+			expectedX1: 0,
+			expectedX2: 20,
+			expectedX3: 40,
+		},
+		"JustifyEnd": {
+			justify:    JustifyEnd,
+			expectedX1: 40, // Free space at start
+			expectedX2: 60,
+			expectedX3: 80,
+		},
+		"JustifyCenter": {
+			justify:    JustifyCenter,
+			expectedX1: 20, // Free space / 2 = 20
+			expectedX2: 40,
+			expectedX3: 60,
+		},
+		"JustifySpaceBetween": {
+			// Free space (40) / (items-1) = 40/2 = 20 between each
+			justify:    JustifySpaceBetween,
+			expectedX1: 0,
+			expectedX2: 40, // 20 + 20
+			expectedX3: 80, // 20 + 20 + 20 + 20
+		},
+		"JustifySpaceAround": {
+			// Free space (40) / items = 40/3 ≈ 13 around each
+			// Start offset: 40 / (3*2) = 6
+			// Between spacing: 40 / 3 = 13
+			justify:    JustifySpaceAround,
+			expectedX1: 6,
+			expectedX2: 39, // 6 + 20 + 13
+			expectedX3: 72, // 39 + 20 + 13
+		},
+		"JustifySpaceEvenly": {
+			// Free space (40) / (items+1) = 40/4 = 10 everywhere
+			justify:    JustifySpaceEvenly,
+			expectedX1: 10,
+			expectedX2: 40, // 10 + 20 + 10
+			expectedX3: 70, // 40 + 20 + 10
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			parent := NewNode(DefaultStyle())
+			parent.Style.Width = Fixed(100)
+			parent.Style.Height = Fixed(50)
+			parent.Style.Direction = Row
+			parent.Style.JustifyContent = tt.justify
+
+			child1 := NewNode(DefaultStyle())
+			child1.Style.Width = Fixed(20)
+			child1.Style.Height = Fixed(50)
+
+			child2 := NewNode(DefaultStyle())
+			child2.Style.Width = Fixed(20)
+			child2.Style.Height = Fixed(50)
+
+			child3 := NewNode(DefaultStyle())
+			child3.Style.Width = Fixed(20)
+			child3.Style.Height = Fixed(50)
+
+			parent.AddChild(child1, child2, child3)
+			Calculate(parent, 200, 200)
+
+			if child1.Layout.Rect.X != tt.expectedX1 {
+				t.Errorf("child1.X = %d, want %d", child1.Layout.Rect.X, tt.expectedX1)
+			}
+			if child2.Layout.Rect.X != tt.expectedX2 {
+				t.Errorf("child2.X = %d, want %d", child2.Layout.Rect.X, tt.expectedX2)
+			}
+			if child3.Layout.Rect.X != tt.expectedX3 {
+				t.Errorf("child3.X = %d, want %d", child3.Layout.Rect.X, tt.expectedX3)
+			}
+		})
+	}
+}
+
+func TestCalculate_JustifyModes_SingleChild(t *testing.T) {
+	type tc struct {
+		justify   Justify
+		expectedX int
+	}
+
+	// Container: 100 wide, Child: 20, Free space: 80
+	tests := map[string]tc{
+		"JustifyStart":        {justify: JustifyStart, expectedX: 0},
+		"JustifyEnd":          {justify: JustifyEnd, expectedX: 80},
+		"JustifyCenter":       {justify: JustifyCenter, expectedX: 40},
+		"JustifySpaceBetween": {justify: JustifySpaceBetween, expectedX: 0},     // No between with 1 item
+		"JustifySpaceAround":  {justify: JustifySpaceAround, expectedX: 40},     // 80 / (1*2) = 40
+		"JustifySpaceEvenly":  {justify: JustifySpaceEvenly, expectedX: 40},     // 80 / 2 = 40
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			parent := NewNode(DefaultStyle())
+			parent.Style.Width = Fixed(100)
+			parent.Style.Height = Fixed(50)
+			parent.Style.Direction = Row
+			parent.Style.JustifyContent = tt.justify
+
+			child := NewNode(DefaultStyle())
+			child.Style.Width = Fixed(20)
+			child.Style.Height = Fixed(50)
+
+			parent.AddChild(child)
+			Calculate(parent, 200, 200)
+
+			if child.Layout.Rect.X != tt.expectedX {
+				t.Errorf("child.X = %d, want %d", child.Layout.Rect.X, tt.expectedX)
+			}
+		})
+	}
+}
+
+func TestCalculate_JustifyModes_Column(t *testing.T) {
+	// Test justify in Column direction (Y positions)
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(50)
+	parent.Style.Height = Fixed(100)
+	parent.Style.Direction = Column
+	parent.Style.JustifyContent = JustifyEnd
+
+	child1 := NewNode(DefaultStyle())
+	child1.Style.Width = Fixed(50)
+	child1.Style.Height = Fixed(20)
+
+	child2 := NewNode(DefaultStyle())
+	child2.Style.Width = Fixed(50)
+	child2.Style.Height = Fixed(20)
+
+	parent.AddChild(child1, child2)
+	Calculate(parent, 200, 200)
+
+	// Free space: 100 - 40 = 60, JustifyEnd pushes children to end
+	if child1.Layout.Rect.Y != 60 {
+		t.Errorf("child1.Y = %d, want 60", child1.Layout.Rect.Y)
+	}
+	if child2.Layout.Rect.Y != 80 {
+		t.Errorf("child2.Y = %d, want 80", child2.Layout.Rect.Y)
+	}
+}
+
+// Tests for all Align modes
+func TestCalculate_AlignModes(t *testing.T) {
+	type tc struct {
+		align     Align
+		childH    int // Child height (explicit, not auto)
+		expectedY int
+	}
+
+	// Container: 80 high, Children have explicit heights
+	tests := map[string]tc{
+		"AlignStart": {
+			align:     AlignStart,
+			childH:    30,
+			expectedY: 0,
+		},
+		"AlignEnd": {
+			align:     AlignEnd,
+			childH:    30,
+			expectedY: 50, // 80 - 30
+		},
+		"AlignCenter": {
+			align:     AlignCenter,
+			childH:    30,
+			expectedY: 25, // (80 - 30) / 2
+		},
+		"AlignStretch_explicit": {
+			// With explicit height, stretch doesn't change the height
+			align:     AlignStretch,
+			childH:    30,
+			expectedY: 0,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			parent := NewNode(DefaultStyle())
+			parent.Style.Width = Fixed(100)
+			parent.Style.Height = Fixed(80)
+			parent.Style.Direction = Row
+			parent.Style.AlignItems = tt.align
+
+			child := NewNode(DefaultStyle())
+			child.Style.Width = Fixed(30)
+			child.Style.Height = Fixed(tt.childH)
+
+			parent.AddChild(child)
+			Calculate(parent, 200, 200)
+
+			if child.Layout.Rect.Y != tt.expectedY {
+				t.Errorf("child.Y = %d, want %d", child.Layout.Rect.Y, tt.expectedY)
+			}
+			if child.Layout.Rect.Height != tt.childH {
+				t.Errorf("child.Height = %d, want %d", child.Layout.Rect.Height, tt.childH)
+			}
+		})
+	}
+}
+
+func TestCalculate_AlignStretch_AutoHeight(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(80)
+	parent.Style.Direction = Row
+	parent.Style.AlignItems = AlignStretch
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(30)
+	// Height is Auto - should stretch
+
+	parent.AddChild(child)
+	Calculate(parent, 200, 200)
+
+	if child.Layout.Rect.Y != 0 {
+		t.Errorf("child.Y = %d, want 0", child.Layout.Rect.Y)
+	}
+	if child.Layout.Rect.Height != 80 {
+		t.Errorf("child.Height = %d, want 80 (stretched)", child.Layout.Rect.Height)
+	}
+}
+
+func TestCalculate_AlignModes_Column(t *testing.T) {
+	// In Column direction, cross axis is X
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(80)
+	parent.Style.Direction = Column
+	parent.Style.AlignItems = AlignEnd
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(30)
+	child.Style.Height = Fixed(20)
+
+	parent.AddChild(child)
+	Calculate(parent, 200, 200)
+
+	// AlignEnd in Column means X is at end
+	if child.Layout.Rect.X != 70 { // 100 - 30
+		t.Errorf("child.X = %d, want 70", child.Layout.Rect.X)
+	}
+}
+
+func TestCalculate_AlignSelf_Override(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(80)
+	parent.Style.Direction = Row
+	parent.Style.AlignItems = AlignStart
+
+	// First child inherits AlignStart
+	child1 := NewNode(DefaultStyle())
+	child1.Style.Width = Fixed(30)
+	child1.Style.Height = Fixed(30)
+
+	// Second child overrides with AlignEnd
+	alignEnd := AlignEnd
+	child2 := NewNode(DefaultStyle())
+	child2.Style.Width = Fixed(30)
+	child2.Style.Height = Fixed(30)
+	child2.Style.AlignSelf = &alignEnd
+
+	// Third child overrides with AlignCenter
+	alignCenter := AlignCenter
+	child3 := NewNode(DefaultStyle())
+	child3.Style.Width = Fixed(30)
+	child3.Style.Height = Fixed(30)
+	child3.Style.AlignSelf = &alignCenter
+
+	parent.AddChild(child1, child2, child3)
+	Calculate(parent, 200, 200)
+
+	if child1.Layout.Rect.Y != 0 {
+		t.Errorf("child1.Y = %d, want 0 (AlignStart)", child1.Layout.Rect.Y)
+	}
+	if child2.Layout.Rect.Y != 50 { // 80 - 30
+		t.Errorf("child2.Y = %d, want 50 (AlignEnd)", child2.Layout.Rect.Y)
+	}
+	if child3.Layout.Rect.Y != 25 { // (80 - 30) / 2
+		t.Errorf("child3.Y = %d, want 25 (AlignCenter)", child3.Layout.Rect.Y)
+	}
+}
+
+// Tests for Min/Max constraints
+func TestCalculate_MinWidth_Constraint(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(50)
+	parent.Style.Direction = Row
+
+	// Child would naturally shrink, but has MinWidth
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(30)
+	child.Style.Height = Fixed(50)
+	child.Style.MinWidth = Fixed(40)
+
+	parent.AddChild(child)
+	Calculate(parent, 200, 200)
+
+	// MinWidth should enforce minimum
+	if child.Layout.Rect.Width < 40 {
+		t.Errorf("child.Width = %d, want >= 40 (MinWidth)", child.Layout.Rect.Width)
+	}
+}
+
+func TestCalculate_MaxWidth_Constraint(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(50)
+	parent.Style.Direction = Row
+
+	// Growing child with MaxWidth limit
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(0)
+	child.Style.Height = Fixed(50)
+	child.Style.FlexGrow = 1
+	child.Style.MaxWidth = Fixed(60)
+
+	parent.AddChild(child)
+	Calculate(parent, 200, 200)
+
+	// MaxWidth should cap the growth
+	if child.Layout.Rect.Width > 60 {
+		t.Errorf("child.Width = %d, want <= 60 (MaxWidth)", child.Layout.Rect.Width)
+	}
+}
+
+func TestCalculate_MinMax_FlexGrow(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(50)
+	parent.Style.Direction = Row
+
+	// Two growing children, one has max constraint
+	child1 := NewNode(DefaultStyle())
+	child1.Style.Width = Fixed(0)
+	child1.Style.Height = Fixed(50)
+	child1.Style.FlexGrow = 1
+	child1.Style.MaxWidth = Fixed(30)
+
+	child2 := NewNode(DefaultStyle())
+	child2.Style.Width = Fixed(0)
+	child2.Style.Height = Fixed(50)
+	child2.Style.FlexGrow = 1
+
+	parent.AddChild(child1, child2)
+	Calculate(parent, 200, 200)
+
+	// child1 should be capped at 30
+	if child1.Layout.Rect.Width != 30 {
+		t.Errorf("child1.Width = %d, want 30 (MaxWidth)", child1.Layout.Rect.Width)
+	}
+	// child2 gets remaining space
+	if child2.Layout.Rect.Width != 50 {
+		t.Errorf("child2.Width = %d, want 50", child2.Layout.Rect.Width)
+	}
+}
+
+func TestCalculate_MinMax_FlexShrink(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(50)
+	parent.Style.Direction = Row
+
+	// Two children that need to shrink, one has min constraint
+	child1 := NewNode(DefaultStyle())
+	child1.Style.Width = Fixed(80)
+	child1.Style.Height = Fixed(50)
+	child1.Style.FlexShrink = 1
+	child1.Style.MinWidth = Fixed(60)
+
+	child2 := NewNode(DefaultStyle())
+	child2.Style.Width = Fixed(80)
+	child2.Style.Height = Fixed(50)
+	child2.Style.FlexShrink = 1
+
+	parent.AddChild(child1, child2)
+	Calculate(parent, 200, 200)
+
+	// child1 should not shrink below MinWidth
+	if child1.Layout.Rect.Width < 60 {
+		t.Errorf("child1.Width = %d, want >= 60 (MinWidth)", child1.Layout.Rect.Width)
+	}
+}
+
+func TestCalculate_MinHeight_Column(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(50)
+	parent.Style.Height = Fixed(100)
+	parent.Style.Direction = Column
+
+	// Child with MinHeight
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(50)
+	child.Style.Height = Fixed(20)
+	child.Style.MinHeight = Fixed(40)
+
+	parent.AddChild(child)
+	Calculate(parent, 200, 200)
+
+	// MinHeight should enforce minimum
+	if child.Layout.Rect.Height < 40 {
+		t.Errorf("child.Height = %d, want >= 40 (MinHeight)", child.Layout.Rect.Height)
+	}
+}
+
+func TestCalculate_MinMax_MinWins(t *testing.T) {
+	// When min > max, min should win (CSS behavior)
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(50)
+	parent.Style.Direction = Row
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(50)
+	child.Style.Height = Fixed(50)
+	child.Style.MinWidth = Fixed(60) // Min > Max
+	child.Style.MaxWidth = Fixed(40)
+
+	parent.AddChild(child)
+	Calculate(parent, 200, 200)
+
+	// Min should win
+	if child.Layout.Rect.Width != 60 {
+		t.Errorf("child.Width = %d, want 60 (MinWidth wins over MaxWidth)", child.Layout.Rect.Width)
+	}
+}
+
+// Tests for Percent values
+func TestCalculate_PercentWidth(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(200)
+	parent.Style.Height = Fixed(100)
+	parent.Style.Direction = Row
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Percent(50)
+	child.Style.Height = Fixed(100)
+
+	parent.AddChild(child)
+	Calculate(parent, 300, 300)
+
+	// 50% of parent's content width (200) = 100
+	if child.Layout.Rect.Width != 100 {
+		t.Errorf("child.Width = %d, want 100 (50%% of 200)", child.Layout.Rect.Width)
+	}
+}
+
+func TestCalculate_PercentHeight(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(200)
+	parent.Style.Direction = Column
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(100)
+	child.Style.Height = Percent(25)
+
+	parent.AddChild(child)
+	Calculate(parent, 300, 300)
+
+	// 25% of parent's content height (200) = 50
+	if child.Layout.Rect.Height != 50 {
+		t.Errorf("child.Height = %d, want 50 (25%% of 200)", child.Layout.Rect.Height)
+	}
+}
+
+func TestCalculate_NestedPercent(t *testing.T) {
+	// Root -> Parent (50%) -> Child (50%)
+	root := NewNode(DefaultStyle())
+	root.Style.Width = Fixed(200)
+	root.Style.Height = Fixed(100)
+	root.Style.Direction = Row
+
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Percent(50) // 100
+	parent.Style.Height = Fixed(100)
+	parent.Style.Direction = Row
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Percent(50) // 50% of 100 = 50
+	child.Style.Height = Fixed(100)
+
+	parent.AddChild(child)
+	root.AddChild(parent)
+	Calculate(root, 300, 300)
+
+	// Parent should be 50% of root = 100
+	if parent.Layout.Rect.Width != 100 {
+		t.Errorf("parent.Width = %d, want 100 (50%% of 200)", parent.Layout.Rect.Width)
+	}
+
+	// Child should be 50% of parent = 50
+	if child.Layout.Rect.Width != 50 {
+		t.Errorf("child.Width = %d, want 50 (50%% of 100)", child.Layout.Rect.Width)
+	}
+}
+
+func TestCalculate_PercentMinMax(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(200)
+	parent.Style.Height = Fixed(100)
+	parent.Style.Direction = Row
+
+	child := NewNode(DefaultStyle())
+	child.Style.Width = Fixed(0)
+	child.Style.Height = Fixed(100)
+	child.Style.FlexGrow = 1
+	child.Style.MaxWidth = Percent(30) // 30% of 200 = 60
+
+	parent.AddChild(child)
+	Calculate(parent, 300, 300)
+
+	// MaxWidth as percent should cap growth
+	if child.Layout.Rect.Width > 60 {
+		t.Errorf("child.Width = %d, want <= 60 (30%% max)", child.Layout.Rect.Width)
+	}
+}

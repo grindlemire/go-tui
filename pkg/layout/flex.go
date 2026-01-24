@@ -104,8 +104,20 @@ func layoutChildren(node *Node, contentRect Rect) {
 		freeSpace = max(0, freeSpace) // For justify calculations
 	}
 
-	// Phase 3: Apply min/max constraints (basic version for now - full in Phase 3)
-	// Note: Full min/max clamping will be added in Phase 3 of the plan
+	// Phase 3: Apply min/max constraints
+	for i, child := range node.Children {
+		minMain := resolveMinMain(child.Style, isRow, mainSize)
+		maxMain := resolveMaxMain(child.Style, isRow, mainSize)
+		items[i].mainSize = clampFlex(items[i].mainSize, minMain, maxMain)
+	}
+
+	// Recalculate free space after min/max constraints
+	// (needed for justify calculations)
+	totalUsed := 0
+	for i := range items {
+		totalUsed += items[i].mainSize
+	}
+	freeSpace = mainSize - totalUsed - totalGap
 
 	// Phase 4: Position children along main axis (justify)
 	// For Phase 2, we only handle JustifyStart
@@ -238,4 +250,39 @@ func calculateAlignOffset(align Align, crossSize, itemSize int) int {
 	default: // AlignStart, AlignStretch
 		return 0
 	}
+}
+
+// resolveMinMain resolves the minimum size constraint for the main axis.
+func resolveMinMain(style Style, isRow bool, available int) int {
+	if isRow {
+		return style.MinWidth.Resolve(available, 0)
+	}
+	return style.MinHeight.Resolve(available, 0)
+}
+
+// resolveMaxMain resolves the maximum size constraint for the main axis.
+// Returns a large value if no max is set (UnitAuto).
+func resolveMaxMain(style Style, isRow bool, available int) int {
+	if isRow {
+		if style.MaxWidth.IsAuto() {
+			return available // No constraint - use available as upper bound
+		}
+		return style.MaxWidth.Resolve(available, available)
+	}
+	if style.MaxHeight.IsAuto() {
+		return available // No constraint - use available as upper bound
+	}
+	return style.MaxHeight.Resolve(available, available)
+}
+
+// clampFlex restricts v to the range [minVal, maxVal].
+// If minVal > maxVal, minVal wins (matches CSS behavior).
+func clampFlex(v, minVal, maxVal int) int {
+	if v < minVal {
+		return minVal
+	}
+	if maxVal >= minVal && v > maxVal {
+		return maxVal
+	}
+	return v
 }

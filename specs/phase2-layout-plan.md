@@ -120,7 +120,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 
 **Completed in commit:** (pending)
 
-- [ ] Implement all Justify modes in `pkg/layout/flex.go`
+- [x] Implement all Justify modes in `pkg/layout/flex.go`
   - `JustifyStart` — pack at start (already done)
   - `JustifyEnd` — pack at end
   - `JustifyCenter` — center children
@@ -131,7 +131,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Add helper: `calculateJustifySpacing(justify, freeSpace, itemCount) int`
   - See [phase2-layout-design.md §4.4](./phase2-layout-design.md#44-justify-content-distribution)
 
-- [ ] Implement all Align modes in `pkg/layout/flex.go`
+- [x] Implement all Align modes in `pkg/layout/flex.go`
   - `AlignStart` — align to start of cross axis
   - `AlignEnd` — align to end of cross axis
   - `AlignCenter` — center on cross axis
@@ -140,11 +140,11 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Add helper: `calculateAlignOffset(align, crossSize, itemSize) int`
   - See [phase2-layout-design.md §4.5](./phase2-layout-design.md#45-align-itemsself-positioning)
 
-- [ ] Implement Gap support in `pkg/layout/flex.go`
+- [x] Implement Gap support in `pkg/layout/flex.go`
   - Account for `style.Gap * (len(children) - 1)` in free space calculation
   - Add gap between children when positioning
 
-- [ ] Implement Min/Max constraints in `pkg/layout/flex.go`
+- [x] Implement Min/Max constraints in `pkg/layout/flex.go`
   - Phase 3: Apply min/max after flex distribution
   - Add helpers: `resolveMin(style, isRow, available) int`
   - Add helpers: `resolveMax(style, isRow, available) int`
@@ -152,11 +152,11 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - If min > max, min wins
   - See [phase2-layout-design.md §6.4](./phase2-layout-design.md#64-minmax-constraints)
 
-- [ ] Implement Percent value resolution
+- [x] Implement Percent value resolution
   - Percentages resolve against parent's content area
   - Test nested percentages
 
-- [ ] Extend `pkg/layout/calculate_test.go`
+- [x] Extend `pkg/layout/calculate_test.go`
   - Test all 6 Justify modes with 1, 2, 3+ children
   - Test all 4 Align modes
   - Test AlignSelf overriding AlignItems
@@ -164,7 +164,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Test Min/Max constraints clamping flex results
   - Test Percent values at various nesting levels
 
-**Tests:** Run `go test ./pkg/layout/...` once at phase end
+**Tests:** Run `go test ./pkg/layout/...` once at phase end ✓
 
 ---
 
@@ -213,7 +213,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 |-------|-------------|--------|
 | 1 | Foundation types (Rect, Point, Edges, Value) + tui migration | Complete |
 | 2 | Node, Style, basic flex algorithm (Row/Column, Grow/Shrink) | Complete |
-| 3 | All Justify/Align modes, Gap, Min/Max, Percent | Pending |
+| 3 | All Justify/Align modes, Gap, Min/Max, Percent | Complete |
 | 4 | Edge cases, integration tests, benchmarks, polish | Pending |
 
 ## Files to Create
