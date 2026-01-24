@@ -139,34 +139,34 @@ Implementation phases for the Element API. Each phase builds on the previous and
 
 **Reference:** [phase3-element-api-design.md §6](./phase3-element-api-design.md#6-user-experience)
 
-**Completed in commit:** (pending)
+**Status:** COMPLETE
 
-- [ ] Create `pkg/tui/element/integration_test.go`
+- [x] Create `pkg/tui/element/integration_test.go`
   - Test complete flow: New → AddChild → Render
   - Test nested layouts (row inside column, etc.)
   - Test flex grow/shrink behavior
   - Test mixed Element and Text children
   - Compare rendered output against expected snapshots
 
-- [ ] Update `examples/dashboard/main.go`
+- [x] Update `examples/dashboard/main.go`
   - Rewrite using Element API
   - Demonstrate significant code reduction
   - Show border, text, centering
   - See [design §6.1](./phase3-element-api-design.md#61-complete-example)
 
-- [ ] Update/remove `pkg/layout/integration_test.go`
-  - Update tests to use a test Layoutable implementation
-  - Or move integration tests to element package
+- [x] Update/remove `pkg/layout/integration_test.go`
+  - Tests already use testNode (test Layoutable implementation)
+  - No changes needed - tests remain valid
 
-- [ ] Verify all existing tests pass
+- [x] Verify all existing tests pass
   - Run `go test ./...` from repo root
-  - Fix any regressions
+  - All tests pass
 
-- [ ] Clean up old Node references
+- [x] Clean up old Node references
   - Search for any remaining `layout.Node` usage
-  - Update or remove stale code/comments
+  - Updated stale comment in layoutable_test.go
 
-**Tests:** Run `go test ./...` once at phase end
+**Tests:** All tests pass (`go test ./...`)
 
 ---
 
@@ -176,9 +176,9 @@ Implementation phases for the Element API. Each phase builds on the previous and
 |-------|-------------|--------|
 | 1 | Layout interface refactor + Element core + options | COMPLETE |
 | 2 | Text element + rendering implementation | COMPLETE |
-| 3 | Integration tests + examples update | Pending |
+| 3 | Integration tests + examples update | COMPLETE |
 
-## Files to Create
+## Files Created
 
 ```
 pkg/layout/
@@ -201,11 +201,11 @@ pkg/tui/element/
 └── integration_test.go # NEW
 ```
 
-## Files to Modify
+## Files Modified
 
 | File | Changes |
 |------|---------|
-| `pkg/layout/calculate.go` | Change to work with Layoutable interface |
-| `pkg/layout/flex.go` | Change flexItem.node to Layoutable |
-| `pkg/layout/rect.go` | Add Intersects method if missing |
-| `examples/dashboard/main.go` | Rewrite with Element API |
+| `pkg/layout/calculate.go` | Changed to work with Layoutable interface |
+| `pkg/layout/flex.go` | Changed flexItem.node to Layoutable |
+| `pkg/layout/rect.go` | Intersects method already existed |
+| `examples/dashboard/main.go` | Rewritten with Element API |
