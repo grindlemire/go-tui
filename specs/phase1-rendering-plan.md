@@ -238,9 +238,11 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
 
 **Reference:** [phase1-rendering-design.md §6, §7](./phase1-rendering-design.md#6-capability-detection)
 
-**Completed in commit:** (pending)
+**Review:** false
 
-- [ ] Create `pkg/tui/caps.go`
+**Completed in commit:** phase5-capabilities-integration
+
+- [x] Create `pkg/tui/caps.go`
   - Implement `DetectCapabilities() Capabilities`
     - Check `TERM` env var for "256color", "truecolor", "dumb"
     - Check `COLORTERM` for "truecolor" or "24bit"
@@ -249,7 +251,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Implement `(c Capabilities) SupportsColor(color Color) bool` helper
   - Implement `(c Capabilities) EffectiveColor(color Color) Color` returning original or fallback
 
-- [ ] Create `pkg/tui/caps_test.go`
+- [x] Create `pkg/tui/caps_test.go`
   - Test detection with `TERM=xterm-256color` → Color256
   - Test detection with `COLORTERM=truecolor` → ColorTrue
   - Test detection with `TERM=dumb` → ColorNone, no Unicode
@@ -257,20 +259,20 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Test `EffectiveColor` returns original when supported
   - Test `EffectiveColor` returns ANSI approximation when RGB not supported
 
-- [ ] Create `pkg/tui/border.go`
+- [x] Create `pkg/tui/border.go`
   - Define `BorderStyle` type (BorderNone, BorderSingle, BorderDouble, BorderRounded, BorderThick)
   - Define `BorderChars` struct with TopLeft, Top, TopRight, Left, Right, BottomLeft, Bottom, BottomRight rune fields
   - Implement `(b BorderStyle) Chars() BorderChars` returning appropriate box-drawing characters
   - Implement `DrawBox(buf *Buffer, rect Rect, border BorderStyle, style Style)`
   - Implement `DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, style Style)`
 
-- [ ] Create `pkg/tui/border_test.go`
+- [x] Create `pkg/tui/border_test.go`
   - Test `BorderSingle.Chars()` returns correct Unicode box-drawing chars
   - Test `DrawBox` renders corners and edges correctly
   - Test `DrawBoxWithTitle` centers title in top border
   - Test `DrawBox` with rect smaller than 2x2 handles gracefully
 
-- [ ] Create `pkg/tui/render.go`
+- [x] Create `pkg/tui/render.go`
   - Implement `Render(term Terminal, buf *Buffer)` convenience function
     - Call `buf.Diff()` to get changes
     - Call `term.Flush(changes)` to write to terminal
@@ -278,7 +280,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Implement `RenderFull(term Terminal, buf *Buffer)` forcing full redraw
     - Useful after resize or initial render
 
-- [ ] Create integration test `pkg/tui/integration_test.go`
+- [x] Create integration test `pkg/tui/integration_test.go`
   - Test full render pipeline: Buffer → Diff → MockTerminal → verify output
   - Test bordered box with title renders correctly (snapshot test)
   - Test styled text inside box renders correctly
@@ -286,9 +288,9 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Test resize and re-render produces correct diff
   - Test capability-based color fallback in full pipeline
 
-- [ ] Update `go.mod` with `golang.org/x/term` dependency (if used)
+- [x] Update `go.mod` with `golang.org/x/term` dependency (if used)
 
-**Tests:** `go test ./pkg/tui/...` — all tests passing, expect 80+ total test cases
+**Tests:** `go test ./pkg/tui/...` — all tests passing, expect 80+ total test cases (300+ tests passing)
 
 ---
 
@@ -300,7 +302,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
 | 2 | Geometry & Cell (Rect, Cell, RuneWidth) | Complete |
 | 3 | Buffer (double-buffered grid with wide char support) | Complete |
 | 4 | Terminal Core (interface, ANSI impl, escape sequences) | Complete |
-| 5 | Capabilities & Integration (detection, borders, full pipeline) | Pending |
+| 5 | Capabilities & Integration (detection, borders, full pipeline) | Complete |
 
 ## Files to Create
 
