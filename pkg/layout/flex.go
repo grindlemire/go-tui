@@ -192,6 +192,11 @@ func layoutChildren(node *Node, contentRect Rect) {
 		// The child receives this as 'available' and does NOT re-apply margin.
 		childBorderBox := slot.Inset(child.Style.Margin)
 
+		// Force child to recalculate since parent layout changed.
+		// The child's available space is determined by parent's flex algorithm,
+		// so when parent recalculates, children must too.
+		child.dirty = true
+
 		// Recurse—child computes its layout within this border box
 		calculateNode(child, childBorderBox)
 	}

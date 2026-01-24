@@ -1045,3 +1045,189 @@ func TestCalculate_PercentMinMax(t *testing.T) {
 		t.Errorf("child.Width = %d, want <= 60 (30%% max)", child.Layout.Rect.Width)
 	}
 }
+
+// Incremental layout efficiency tests
+
+// TestCalculate_IncrementalLayout_LeafChange tests that modifying a leaf
+// only recalculates the path to the root.
+func TestCalculate_IncrementalLayout_LeafChange(t *testing.T) {
+	// Build a tree:
+	//     root
+	//    /    \
+	//  left   right
+	//  /  \
+	// a    b
+
+	root := NewNode(DefaultStyle())
+	root.Style.Width = Fixed(200)
+	root.Style.Height = Fixed(100)
+	root.Style.Direction = Row
+
+	left := NewNode(DefaultStyle())
+	left.Style.Width = Fixed(100)
+	left.Style.Direction = Column
+
+	a := NewNode(DefaultStyle())
+	a.Style.Height = Fixed(50)
+
+	b := NewNode(DefaultStyle())
+	b.Style.Height = Fixed(50)
+
+	left.AddChild(a, b)
+
+	right := NewNode(DefaultStyle())
+	right.Style.Width = Fixed(100)
+
+	root.AddChild(left, right)
+
+	// Initial calculation
+	Calculate(root, 200, 100)
+
+	// Verify all nodes are clean
+	if root.IsDirty() || left.IsDirty() || right.IsDirty() || a.IsDirty() || b.IsDirty() {
+		t.Error("all nodes should be clean after Calculate")
+	}
+
+	// Modify leaf node 'a'
+	a.SetStyle(a.Style)
+
+	// Verify dirty propagation
+	if !a.IsDirty() {
+		t.Error("node 'a' should be dirty after SetStyle")
+	}
+	if !left.IsDirty() {
+		t.Error("node 'left' should be dirty (ancestor of 'a')")
+	}
+	if !root.IsDirty() {
+		t.Error("root should be dirty (ancestor of 'a')")
+	}
+	if right.IsDirty() {
+		t.Error("node 'right' should NOT be dirty (not an ancestor of 'a')")
+	}
+
+	// Store right's layout before recalculation
+	rightLayoutBefore := right.Layout.Rect
+
+	// Recalculate
+	Calculate(root, 200, 100)
+
+	// Verify right was not recalculated (layout unchanged, still clean)
+	if right.Layout.Rect != rightLayoutBefore {
+		t.Error("right's layout should not have changed")
+	}
+	if right.IsDirty() {
+		t.Error("right should still be clean (wasn't recalculated)")
+	}
+}
+
+// TestCalculate_IncrementalLayout_ReadDoesNotDirty tests that reading
+// Layout does not mark the node dirty.
+func TestCalculate_IncrementalLayout_ReadDoesNotDirty(t *testing.T) {
+	node := NewNode(DefaultStyle())
+	node.Style.Width = Fixed(100)
+	node.Style.Height = Fixed(100)
+
+	Calculate(node, 200, 200)
+
+	if node.IsDirty() {
+		t.Error("node should be clean after Calculate")
+	}
+
+	// Read layout
+	_ = node.Layout.Rect
+	_ = node.Layout.ContentRect
+	_ = node.Layout.Rect.Width
+	_ = node.Layout.Rect.Height
+
+	if node.IsDirty() {
+		t.Error("reading Layout should NOT mark node dirty")
+	}
+}
+
+// TestCalculate_IncrementalLayout_MultipleChanges tests multiple changes
+// before recalculation.
+func TestCalculate_IncrementalLayout_MultipleChanges(t *testing.T) {
+	root := NewNode(DefaultStyle())
+	root.Style.Width = Fixed(100)
+	root.Style.Height = Fixed(100)
+	root.Style.Direction = Row
+
+	child1 := NewNode(DefaultStyle())
+	child1.Style.Width = Fixed(50)
+
+	child2 := NewNode(DefaultStyle())
+	child2.Style.Width = Fixed(50)
+
+	root.AddChild(child1, child2)
+
+	Calculate(root, 100, 100)
+
+	// Make multiple changes
+	child1.SetStyle(func() Style {
+		s := child1.Style
+		s.Width = Fixed(30)
+		return s
+	}())
+
+	child2.SetStyle(func() Style {
+		s := child2.Style
+		s.Width = Fixed(70)
+		return s
+	}())
+
+	// All should be dirty
+	if !root.IsDirty() {
+		t.Error("root should be dirty")
+	}
+
+	// Single recalculation should handle all changes
+	Calculate(root, 100, 100)
+
+	if child1.Layout.Rect.Width != 30 {
+		t.Errorf("child1.Width = %d, want 30", child1.Layout.Rect.Width)
+	}
+	if child2.Layout.Rect.Width != 70 {
+		t.Errorf("child2.Width = %d, want 70", child2.Layout.Rect.Width)
+	}
+
+	// All should be clean
+	if root.IsDirty() || child1.IsDirty() || child2.IsDirty() {
+		t.Error("all nodes should be clean after Calculate")
+	}
+}
+
+// TestCalculate_IncrementalLayout_ParentChange tests that changing a parent
+// recalculates children.
+func TestCalculate_IncrementalLayout_ParentChange(t *testing.T) {
+	parent := NewNode(DefaultStyle())
+	parent.Style.Width = Fixed(100)
+	parent.Style.Height = Fixed(100)
+	parent.Style.Direction = Row
+
+	child := NewNode(DefaultStyle())
+	child.Style.FlexGrow = 1
+
+	parent.AddChild(child)
+
+	Calculate(parent, 100, 100)
+
+	// Child should fill parent
+	if child.Layout.Rect.Width != 100 {
+		t.Errorf("child.Width = %d, want 100", child.Layout.Rect.Width)
+	}
+
+	// Change parent size
+	parent.SetStyle(func() Style {
+		s := parent.Style
+		s.Width = Fixed(200)
+		return s
+	}())
+
+	// Parent dirty, child should be recalculated
+	Calculate(parent, 200, 100)
+
+	// Child should now fill new parent size
+	if child.Layout.Rect.Width != 200 {
+		t.Errorf("child.Width = %d, want 200", child.Layout.Rect.Width)
+	}
+}

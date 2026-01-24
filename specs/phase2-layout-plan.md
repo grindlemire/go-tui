@@ -172,38 +172,38 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 
 **Reference:** [phase2-layout-design.md §6, §8](./phase2-layout-design.md#6-edge-cases-and-constraints)
 
-**Completed in commit:** (pending)
+**Completed in commit:** (current)
 
-- [ ] Handle edge cases in `pkg/layout/flex.go` and `pkg/layout/calculate.go`
+- [x] Handle edge cases in `pkg/layout/flex.go` and `pkg/layout/calculate.go`
   - Zero/negative dimensions clamped to >= 0
   - Empty nodes (no children) size from Width/Height or collapse to 0x0
   - Overflow when shrink totals 0 (children clipped, no negative sizes)
   - Empty child list (no-op for layoutChildren)
   - See [phase2-layout-design.md §6](./phase2-layout-design.md#6-edge-cases-and-constraints)
 
-- [ ] Create integration tests in `pkg/layout/integration_test.go`
+- [x] Create integration tests in `pkg/layout/integration_test.go`
   - Dashboard layout: header (fixed), sidebar (fixed), main (grow), footer (fixed)
   - Nested flex: row containing columns containing rows
   - Form layout: labels (fixed) + inputs (grow) in column
   - Mixed direction: alternating Row/Column at different levels
 
-- [ ] Verify incremental layout efficiency
+- [x] Verify incremental layout efficiency
   - Test that modifying one leaf only recalculates path to root
   - Add calculation counter to verify clean subtrees skipped
   - Test that reading Layout does not mark dirty
 
-- [ ] Create benchmarks in `pkg/layout/benchmark_test.go`
+- [x] Create benchmarks in `pkg/layout/benchmark_test.go`
   - Benchmark full tree layout (10, 100, 1000 nodes)
   - Benchmark incremental layout (single node change)
   - Verify allocation count per layout pass
   - Document results in comments
 
-- [ ] Final verification
-  - Run `go test ./pkg/layout/... ./pkg/tui/...` — all tests pass
-  - Run `go vet ./pkg/layout/...` — no issues
-  - Verify `pkg/layout` has zero imports from `pkg/tui`
+- [x] Final verification
+  - Run `go test ./pkg/layout/... ./pkg/tui/...` — all tests pass ✓
+  - Run `go vet ./pkg/layout/...` — no issues ✓
+  - Verify `pkg/layout` has zero imports from `pkg/tui` ✓
 
-**Tests:** Run full test suite and benchmarks at phase end
+**Tests:** Run full test suite and benchmarks at phase end ✓
 
 ---
 
@@ -214,7 +214,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 | 1 | Foundation types (Rect, Point, Edges, Value) + tui migration | Complete |
 | 2 | Node, Style, basic flex algorithm (Row/Column, Grow/Shrink) | Complete |
 | 3 | All Justify/Align modes, Gap, Min/Max, Percent | Complete |
-| 4 | Edge cases, integration tests, benchmarks, polish | Pending |
+| 4 | Edge cases, integration tests, benchmarks, polish | Complete |
 
 ## Files to Create
 
