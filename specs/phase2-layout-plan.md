@@ -9,7 +9,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 **Reference:** [phase2-layout-design.md §3.1-3.2](./phase2-layout-design.md#31-rect)
 **Review:** false
 
-**Completed in commit:** (see below)
+**Completed in commit:** 7c8c873
 
 - [x] Create `pkg/layout/rect.go`
   - Define `Rect` struct with `X, Y, Width, Height int`
