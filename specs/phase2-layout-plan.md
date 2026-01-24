@@ -118,7 +118,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 
 **Reference:** [phase2-layout-design.md §4.3-4.5](./phase2-layout-design.md#43-flexbox-calculation)
 
-**Completed in commit:** (pending)
+**Completed in commit:** 331623d
 
 - [x] Implement all Justify modes in `pkg/layout/flex.go`
   - `JustifyStart` — pack at start (already done)
