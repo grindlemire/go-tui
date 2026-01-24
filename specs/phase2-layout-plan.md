@@ -58,7 +58,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 
 **Completed in commit:** (pending)
 
-- [ ] Create `pkg/layout/style.go`
+- [x] Create `pkg/layout/style.go`
   - Define `Direction` enum: `Row`, `Column`
   - Define `Justify` enum: `JustifyStart`, `JustifyEnd`, `JustifyCenter`, `JustifySpaceBetween`, `JustifySpaceAround`, `JustifySpaceEvenly`
   - Define `Align` enum: `AlignStart`, `AlignEnd`, `AlignCenter`, `AlignStretch`
@@ -66,7 +66,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Implement `DefaultStyle() Style`
   - See [phase2-layout-design.md §3.4](./phase2-layout-design.md#34-style)
 
-- [ ] Create `pkg/layout/node.go`
+- [x] Create `pkg/layout/node.go`
   - Define `Layout` struct with `Rect`, `ContentRect`
   - Define `Node` struct with `Style`, `Children`, `Layout`, `dirty`, `parent`
   - Implement `NewNode(style Style) *Node`
@@ -77,7 +77,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Implement `IsDirty() bool`
   - See [phase2-layout-design.md §3.5](./phase2-layout-design.md#35-node)
 
-- [ ] Create `pkg/layout/calculate.go`
+- [x] Create `pkg/layout/calculate.go`
   - Implement `Calculate(node *Node, availableWidth, availableHeight int)`
   - Implement internal `calculateNode(node *Node, available Rect)`
   - Handle dirty check early return
@@ -87,7 +87,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Store Layout and clear dirty flag
   - See [phase2-layout-design.md §4.2](./phase2-layout-design.md#42-algorithm-overview)
 
-- [ ] Create `pkg/layout/flex.go`
+- [x] Create `pkg/layout/flex.go`
   - Define internal `flexItem` struct
   - Implement `layoutChildren(node *Node, contentRect Rect)`
   - Phase 1: Compute base sizes from Width/Height values
@@ -96,12 +96,12 @@ Implementation phases for the layout engine. Each phase builds on the previous a
   - Initially only handle `JustifyStart` and `AlignStretch`
   - See [phase2-layout-design.md §4.3](./phase2-layout-design.md#43-flexbox-calculation)
 
-- [ ] Create `pkg/layout/node_test.go`
+- [x] Create `pkg/layout/node_test.go`
   - Test dirty propagation through tree
   - Test AddChild/RemoveChild parent management
   - Test SetStyle marks dirty
 
-- [ ] Create `pkg/layout/calculate_test.go`
+- [x] Create `pkg/layout/calculate_test.go`
   - Test single node sizing (Fixed width/height)
   - Test single node with padding
   - Test two children in Row direction with fixed sizes
@@ -212,7 +212,7 @@ Implementation phases for the layout engine. Each phase builds on the previous a
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Foundation types (Rect, Point, Edges, Value) + tui migration | Complete |
-| 2 | Node, Style, basic flex algorithm (Row/Column, Grow/Shrink) | Pending |
+| 2 | Node, Style, basic flex algorithm (Row/Column, Grow/Shrink) | Complete |
 | 3 | All Justify/Align modes, Gap, Min/Max, Percent | Pending |
 | 4 | Edge cases, integration tests, benchmarks, polish | Pending |
 
