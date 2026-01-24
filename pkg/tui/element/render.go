@@ -47,7 +47,14 @@ func RenderText(buf *tui.Buffer, t *Text) {
 	renderTextContent(buf, t)
 }
 
-// renderTextContent draws the text content with proper alignment.
+// renderTextContent draws the text content within the element's content rect.
+//
+// When the element width equals text width (intrinsic sizing), the text is drawn
+// at the content rect origin - the parent's AlignItems handles centering.
+//
+// When the element width is larger than text width (explicit sizing), text-level
+// alignment is applied. This supports use cases like centered text in a fixed-width
+// button, while avoiding jitter for intrinsic-width text in a centered layout.
 func renderTextContent(buf *tui.Buffer, t *Text) {
 	contentRect := t.ContentRect()
 
@@ -57,23 +64,19 @@ func renderTextContent(buf *tui.Buffer, t *Text) {
 	}
 
 	textWidth := stringWidth(t.content)
-
-	// Calculate x position based on alignment
 	x := contentRect.X
-	switch t.align {
-	case TextAlignCenter:
-		x += (contentRect.Width - textWidth) / 2
-		if x < contentRect.X {
-			x = contentRect.X
-		}
-	case TextAlignRight:
-		x += contentRect.Width - textWidth
-		if x < contentRect.X {
-			x = contentRect.X
+
+	// Only apply text-level alignment if element is wider than text content
+	// (i.e., user set explicit size larger than intrinsic)
+	if contentRect.Width > textWidth {
+		switch t.align {
+		case TextAlignCenter:
+			x += (contentRect.Width - textWidth) / 2
+		case TextAlignRight:
+			x += contentRect.Width - textWidth
 		}
 	}
 
-	// Draw the text
 	buf.SetString(x, contentRect.Y, t.content, t.contentStyle)
 }
 

@@ -1,5 +1,7 @@
 package layout
 
+import "math"
+
 // Calculate performs layout calculation on the tree rooted at root.
 // The root and all descendants will have their Layout field populated.
 // Only dirty nodes are recalculated (incremental layout).
@@ -19,13 +21,17 @@ func Calculate(root Layoutable, availableWidth, availableHeight int) {
 	height := style.Height.Resolve(availableHeight, availableHeight)
 
 	available := NewRect(0, 0, width, height)
-	calculateNode(root, available)
+	calculateNode(root, available, 0.0, 0.0)
 }
 
 // calculateNode computes the layout for a single node within the available space.
 // The available rect represents the border box space allocated by the parent
 // (after the parent has already applied this node's margin).
-func calculateNode(node Layoutable, available Rect) {
+//
+// absoluteX and absoluteY are the true float positions passed from the parent.
+// This enables Yoga-style rounding: we track float positions through the tree
+// and only round once when computing the final integer Rect.
+func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64) {
 	// Dirty propagates up, so a clean node guarantees a clean subtree
 	if !node.IsDirty() {
 		return
@@ -33,25 +39,38 @@ func calculateNode(node Layoutable, available Rect) {
 
 	style := node.LayoutStyle()
 
-	// 1. Compute this node's border box within available space
+	// 1. Compute this node's border box dimensions (width/height only)
 	borderBox := computeBorderBox(style, available)
 
-	// 2. Compute content rect (border box minus padding)
-	contentRect := borderBox.Inset(style.Padding)
+	// 2. Set border box position from the rounded absolute float position
+	borderBox.X = int(math.Round(absoluteX))
+	borderBox.Y = int(math.Round(absoluteY))
 
-	// 3. Layout children within content rect
-	children := node.LayoutChildren()
-	if len(children) > 0 {
-		layoutChildren(node, contentRect)
+	// 3. Compute content rect position from float position (then round)
+	contentAbsX := absoluteX + float64(style.Padding.Left)
+	contentAbsY := absoluteY + float64(style.Padding.Top)
+	contentRect := Rect{
+		X:      int(math.Round(contentAbsX)),
+		Y:      int(math.Round(contentAbsY)),
+		Width:  borderBox.Width - style.Padding.Horizontal(),
+		Height: borderBox.Height - style.Padding.Vertical(),
 	}
 
-	// 4. Store computed layout
+	// 4. Layout children within content rect, passing float positions
+	children := node.LayoutChildren()
+	if len(children) > 0 {
+		layoutChildren(node, contentRect, contentAbsX, contentAbsY)
+	}
+
+	// 5. Store computed layout with float positions for child calculations
 	node.SetLayout(Layout{
 		Rect:        borderBox,
 		ContentRect: contentRect,
+		AbsoluteX:   absoluteX,
+		AbsoluteY:   absoluteY,
 	})
 
-	// 5. Clear dirty flag
+	// 6. Clear dirty flag
 	node.SetDirty(false)
 }
 
