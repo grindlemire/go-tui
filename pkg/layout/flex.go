@@ -3,7 +3,7 @@ package layout
 // flexItem holds intermediate calculation state for a child.
 // This is stack-allocated per layout call, not stored on nodes.
 type flexItem struct {
-	node      *Node
+	node      Layoutable
 	baseSize  int
 	mainSize  int
 	crossSize int
@@ -15,12 +15,13 @@ type flexItem struct {
 
 // layoutChildren arranges the children of a node within the given content rect.
 // This implements the core flexbox algorithm.
-func layoutChildren(node *Node, contentRect Rect) {
-	if len(node.Children) == 0 {
+func layoutChildren(node Layoutable, contentRect Rect) {
+	children := node.LayoutChildren()
+	if len(children) == 0 {
 		return
 	}
 
-	style := node.Style
+	style := node.LayoutStyle()
 	isRow := style.Direction == Row
 
 	// Determine main/cross axis dimensions
@@ -33,37 +34,39 @@ func layoutChildren(node *Node, contentRect Rect) {
 	// Phase 1: Compute base sizes and flex factors
 	// Base size includes the child's content size plus its margin.
 	// Margin is part of the child's "outer size" in the flex calculation.
-	items := make([]flexItem, len(node.Children))
+	items := make([]flexItem, len(children))
 	totalFixed := 0
 	totalGrow := 0.0
 	totalShrink := 0.0
 
-	for i, child := range node.Children {
+	for i, child := range children {
 		item := &items[i]
 		item.node = child
+
+		childStyle := child.LayoutStyle()
 
 		// Compute margin on main and cross axes
 		var mainMargin, crossMargin int
 		if isRow {
-			mainMargin = child.Style.Margin.Horizontal()
-			crossMargin = child.Style.Margin.Vertical()
+			mainMargin = childStyle.Margin.Horizontal()
+			crossMargin = childStyle.Margin.Vertical()
 		} else {
-			mainMargin = child.Style.Margin.Vertical()
-			crossMargin = child.Style.Margin.Horizontal()
+			mainMargin = childStyle.Margin.Vertical()
+			crossMargin = childStyle.Margin.Horizontal()
 		}
 
 		// Resolve base content size (or 0 if auto), then add margin
 		if isRow {
-			item.baseSize = child.Style.Width.Resolve(mainSize, 0) + mainMargin
+			item.baseSize = childStyle.Width.Resolve(mainSize, 0) + mainMargin
 		} else {
-			item.baseSize = child.Style.Height.Resolve(mainSize, 0) + mainMargin
+			item.baseSize = childStyle.Height.Resolve(mainSize, 0) + mainMargin
 		}
 
 		// Store margin for later use
 		_ = crossMargin // Will be used in cross-axis sizing
 
-		item.grow = child.Style.FlexGrow
-		item.shrink = child.Style.FlexShrink
+		item.grow = childStyle.FlexGrow
+		item.shrink = childStyle.FlexShrink
 
 		totalFixed += item.baseSize
 		totalGrow += item.grow
@@ -71,7 +74,7 @@ func layoutChildren(node *Node, contentRect Rect) {
 	}
 
 	// Account for gaps
-	totalGap := style.Gap * max(0, len(node.Children)-1)
+	totalGap := style.Gap * max(0, len(children)-1)
 	freeSpace := mainSize - totalFixed - totalGap
 
 	// Phase 2: Distribute free space
@@ -105,9 +108,10 @@ func layoutChildren(node *Node, contentRect Rect) {
 	}
 
 	// Phase 3: Apply min/max constraints
-	for i, child := range node.Children {
-		minMain := resolveMinMain(child.Style, isRow, mainSize)
-		maxMain := resolveMaxMain(child.Style, isRow, mainSize)
+	for i, child := range children {
+		childStyle := child.LayoutStyle()
+		minMain := resolveMinMain(childStyle, isRow, mainSize)
+		maxMain := resolveMaxMain(childStyle, isRow, mainSize)
 		items[i].mainSize = clampFlex(items[i].mainSize, minMain, maxMain)
 	}
 
@@ -130,21 +134,22 @@ func layoutChildren(node *Node, contentRect Rect) {
 	}
 
 	// Phase 5: Cross-axis sizing and alignment
-	for i, child := range node.Children {
+	for i, child := range children {
+		childStyle := child.LayoutStyle()
 		align := style.AlignItems
-		if child.Style.AlignSelf != nil {
-			align = *child.Style.AlignSelf
+		if childStyle.AlignSelf != nil {
+			align = *childStyle.AlignSelf
 		}
 
 		// Determine cross-axis size value
 		var crossStyleValue Value
 		var crossMargin int
 		if isRow {
-			crossStyleValue = child.Style.Height
-			crossMargin = child.Style.Margin.Vertical()
+			crossStyleValue = childStyle.Height
+			crossMargin = childStyle.Margin.Vertical()
 		} else {
-			crossStyleValue = child.Style.Width
-			crossMargin = child.Style.Margin.Horizontal()
+			crossStyleValue = childStyle.Width
+			crossMargin = childStyle.Margin.Horizontal()
 		}
 
 		// Available cross space after margin
@@ -169,7 +174,9 @@ func layoutChildren(node *Node, contentRect Rect) {
 	}
 
 	// Phase 6: Convert to rects and recurse
-	for i, child := range node.Children {
+	for i, child := range children {
+		childStyle := child.LayoutStyle()
+
 		// Compute the slot allocated to this child (before margin)
 		var slot Rect
 		if isRow {
@@ -190,12 +197,12 @@ func layoutChildren(node *Node, contentRect Rect) {
 
 		// Apply child's margin: shrink the slot to get the child's border box.
 		// The child receives this as 'available' and does NOT re-apply margin.
-		childBorderBox := slot.Inset(child.Style.Margin)
+		childBorderBox := slot.Inset(childStyle.Margin)
 
 		// Force child to recalculate since parent layout changed.
 		// The child's available space is determined by parent's flex algorithm,
 		// so when parent recalculates, children must too.
-		child.dirty = true
+		child.SetDirty(true)
 
 		// Recurse—child computes its layout within this border box
 		calculateNode(child, childBorderBox)

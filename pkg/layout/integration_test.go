@@ -9,33 +9,33 @@ import "testing"
 // - Footer (fixed height at bottom)
 func TestIntegration_Dashboard(t *testing.T) {
 	// Root container - full terminal size
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(120)
-	root.Style.Height = Fixed(40)
-	root.Style.Direction = Column
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(120)
+	root.style.Height = Fixed(40)
+	root.style.Direction = Column
 
 	// Header - fixed height
-	header := NewNode(DefaultStyle())
-	header.Style.Height = Fixed(3)
+	header := newTestNode(DefaultStyle())
+	header.style.Height = Fixed(3)
 	// Width auto-stretches
 
 	// Middle section - row with sidebar and main
-	middle := NewNode(DefaultStyle())
-	middle.Style.FlexGrow = 1
-	middle.Style.Direction = Row
+	middle := newTestNode(DefaultStyle())
+	middle.style.FlexGrow = 1
+	middle.style.Direction = Row
 
 	// Sidebar - fixed width
-	sidebar := NewNode(DefaultStyle())
-	sidebar.Style.Width = Fixed(20)
+	sidebar := newTestNode(DefaultStyle())
+	sidebar.style.Width = Fixed(20)
 	// Height auto-stretches
 
 	// Main content - grows to fill
-	main := NewNode(DefaultStyle())
-	main.Style.FlexGrow = 1
+	main := newTestNode(DefaultStyle())
+	main.style.FlexGrow = 1
 
 	// Footer - fixed height
-	footer := NewNode(DefaultStyle())
-	footer.Style.Height = Fixed(2)
+	footer := newTestNode(DefaultStyle())
+	footer.style.Height = Fixed(2)
 
 	// Build tree
 	middle.AddChild(sidebar, main)
@@ -44,48 +44,48 @@ func TestIntegration_Dashboard(t *testing.T) {
 	Calculate(root, 120, 40)
 
 	// Verify header
-	if header.Layout.Rect.X != 0 || header.Layout.Rect.Y != 0 {
+	if header.layout.Rect.X != 0 || header.layout.Rect.Y != 0 {
 		t.Errorf("header position = (%d, %d), want (0, 0)",
-			header.Layout.Rect.X, header.Layout.Rect.Y)
+			header.layout.Rect.X, header.layout.Rect.Y)
 	}
-	if header.Layout.Rect.Width != 120 || header.Layout.Rect.Height != 3 {
+	if header.layout.Rect.Width != 120 || header.layout.Rect.Height != 3 {
 		t.Errorf("header size = %dx%d, want 120x3",
-			header.Layout.Rect.Width, header.Layout.Rect.Height)
+			header.layout.Rect.Width, header.layout.Rect.Height)
 	}
 
 	// Verify middle section
-	if middle.Layout.Rect.Y != 3 {
-		t.Errorf("middle.Y = %d, want 3", middle.Layout.Rect.Y)
+	if middle.layout.Rect.Y != 3 {
+		t.Errorf("middle.Y = %d, want 3", middle.layout.Rect.Y)
 	}
 	// Middle should be 40 - 3 (header) - 2 (footer) = 35 tall
-	if middle.Layout.Rect.Height != 35 {
-		t.Errorf("middle.Height = %d, want 35", middle.Layout.Rect.Height)
+	if middle.layout.Rect.Height != 35 {
+		t.Errorf("middle.Height = %d, want 35", middle.layout.Rect.Height)
 	}
 
 	// Verify sidebar
-	if sidebar.Layout.Rect.X != 0 || sidebar.Layout.Rect.Y != 3 {
+	if sidebar.layout.Rect.X != 0 || sidebar.layout.Rect.Y != 3 {
 		t.Errorf("sidebar position = (%d, %d), want (0, 3)",
-			sidebar.Layout.Rect.X, sidebar.Layout.Rect.Y)
+			sidebar.layout.Rect.X, sidebar.layout.Rect.Y)
 	}
-	if sidebar.Layout.Rect.Width != 20 {
-		t.Errorf("sidebar.Width = %d, want 20", sidebar.Layout.Rect.Width)
+	if sidebar.layout.Rect.Width != 20 {
+		t.Errorf("sidebar.Width = %d, want 20", sidebar.layout.Rect.Width)
 	}
 
 	// Verify main content
-	if main.Layout.Rect.X != 20 {
-		t.Errorf("main.X = %d, want 20", main.Layout.Rect.X)
+	if main.layout.Rect.X != 20 {
+		t.Errorf("main.X = %d, want 20", main.layout.Rect.X)
 	}
 	// Main should fill remaining width: 120 - 20 = 100
-	if main.Layout.Rect.Width != 100 {
-		t.Errorf("main.Width = %d, want 100", main.Layout.Rect.Width)
+	if main.layout.Rect.Width != 100 {
+		t.Errorf("main.Width = %d, want 100", main.layout.Rect.Width)
 	}
 
 	// Verify footer
-	if footer.Layout.Rect.Y != 38 { // 40 - 2
-		t.Errorf("footer.Y = %d, want 38", footer.Layout.Rect.Y)
+	if footer.layout.Rect.Y != 38 { // 40 - 2
+		t.Errorf("footer.Y = %d, want 38", footer.layout.Rect.Y)
 	}
-	if footer.Layout.Rect.Height != 2 {
-		t.Errorf("footer.Height = %d, want 2", footer.Layout.Rect.Height)
+	if footer.layout.Rect.Height != 2 {
+		t.Errorf("footer.Height = %d, want 2", footer.layout.Rect.Height)
 	}
 }
 
@@ -100,32 +100,32 @@ func TestIntegration_NestedFlex(t *testing.T) {
 	//     Row A2 (grow)
 	//   Column B (grow)
 
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(100)
-	root.Style.Height = Fixed(100)
-	root.Style.Direction = Row
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(100)
+	root.style.Height = Fixed(100)
+	root.style.Direction = Row
 
-	columnA := NewNode(DefaultStyle())
-	columnA.Style.Width = Fixed(50)
-	columnA.Style.Direction = Column
+	columnA := newTestNode(DefaultStyle())
+	columnA.style.Width = Fixed(50)
+	columnA.style.Direction = Column
 
-	rowA1 := NewNode(DefaultStyle())
-	rowA1.Style.Height = Fixed(30)
-	rowA1.Style.Direction = Row
+	rowA1 := newTestNode(DefaultStyle())
+	rowA1.style.Height = Fixed(30)
+	rowA1.style.Direction = Row
 
-	itemA1a := NewNode(DefaultStyle())
-	itemA1a.Style.Width = Fixed(20)
+	itemA1a := newTestNode(DefaultStyle())
+	itemA1a.style.Width = Fixed(20)
 
-	itemA1b := NewNode(DefaultStyle())
-	itemA1b.Style.FlexGrow = 1
+	itemA1b := newTestNode(DefaultStyle())
+	itemA1b.style.FlexGrow = 1
 
-	rowA2 := NewNode(DefaultStyle())
-	rowA2.Style.FlexGrow = 1
-	rowA2.Style.Direction = Row
+	rowA2 := newTestNode(DefaultStyle())
+	rowA2.style.FlexGrow = 1
+	rowA2.style.Direction = Row
 
-	columnB := NewNode(DefaultStyle())
-	columnB.Style.FlexGrow = 1
-	columnB.Style.Direction = Column
+	columnB := newTestNode(DefaultStyle())
+	columnB.style.FlexGrow = 1
+	columnB.style.Direction = Column
 
 	// Build tree
 	rowA1.AddChild(itemA1a, itemA1b)
@@ -135,39 +135,39 @@ func TestIntegration_NestedFlex(t *testing.T) {
 	Calculate(root, 100, 100)
 
 	// Verify column A
-	if columnA.Layout.Rect.Width != 50 {
-		t.Errorf("columnA.Width = %d, want 50", columnA.Layout.Rect.Width)
+	if columnA.layout.Rect.Width != 50 {
+		t.Errorf("columnA.Width = %d, want 50", columnA.layout.Rect.Width)
 	}
-	if columnA.Layout.Rect.Height != 100 {
-		t.Errorf("columnA.Height = %d, want 100", columnA.Layout.Rect.Height)
+	if columnA.layout.Rect.Height != 100 {
+		t.Errorf("columnA.Height = %d, want 100", columnA.layout.Rect.Height)
 	}
 
 	// Verify row A1
-	if rowA1.Layout.Rect.Height != 30 {
-		t.Errorf("rowA1.Height = %d, want 30", rowA1.Layout.Rect.Height)
+	if rowA1.layout.Rect.Height != 30 {
+		t.Errorf("rowA1.Height = %d, want 30", rowA1.layout.Rect.Height)
 	}
 
 	// Verify item A1a (within rowA1)
-	if itemA1a.Layout.Rect.Width != 20 {
-		t.Errorf("itemA1a.Width = %d, want 20", itemA1a.Layout.Rect.Width)
+	if itemA1a.layout.Rect.Width != 20 {
+		t.Errorf("itemA1a.Width = %d, want 20", itemA1a.layout.Rect.Width)
 	}
 
 	// Verify item A1b (should grow to fill remaining: 50 - 20 = 30)
-	if itemA1b.Layout.Rect.Width != 30 {
-		t.Errorf("itemA1b.Width = %d, want 30", itemA1b.Layout.Rect.Width)
+	if itemA1b.layout.Rect.Width != 30 {
+		t.Errorf("itemA1b.Width = %d, want 30", itemA1b.layout.Rect.Width)
 	}
 
 	// Verify row A2 (should grow to fill: 100 - 30 = 70)
-	if rowA2.Layout.Rect.Height != 70 {
-		t.Errorf("rowA2.Height = %d, want 70", rowA2.Layout.Rect.Height)
+	if rowA2.layout.Rect.Height != 70 {
+		t.Errorf("rowA2.Height = %d, want 70", rowA2.layout.Rect.Height)
 	}
 
 	// Verify column B (should grow to fill: 100 - 50 = 50)
-	if columnB.Layout.Rect.X != 50 {
-		t.Errorf("columnB.X = %d, want 50", columnB.Layout.Rect.X)
+	if columnB.layout.Rect.X != 50 {
+		t.Errorf("columnB.X = %d, want 50", columnB.layout.Rect.X)
 	}
-	if columnB.Layout.Rect.Width != 50 {
-		t.Errorf("columnB.Width = %d, want 50", columnB.Layout.Rect.Width)
+	if columnB.layout.Rect.Width != 50 {
+		t.Errorf("columnB.Width = %d, want 50", columnB.layout.Rect.Width)
 	}
 }
 
@@ -176,24 +176,24 @@ func TestIntegration_NestedFlex(t *testing.T) {
 // - Inputs (grow to fill)
 // - Arranged in a column
 func TestIntegration_FormLayout(t *testing.T) {
-	form := NewNode(DefaultStyle())
-	form.Style.Width = Fixed(80)
-	form.Style.Height = Fixed(30)
-	form.Style.Direction = Column
-	form.Style.Gap = 1
+	form := newTestNode(DefaultStyle())
+	form.style.Width = Fixed(80)
+	form.style.Height = Fixed(30)
+	form.style.Direction = Column
+	form.style.Gap = 1
 
 	// Create 3 form rows
 	for i := 0; i < 3; i++ {
-		row := NewNode(DefaultStyle())
-		row.Style.Height = Fixed(3)
-		row.Style.Direction = Row
-		row.Style.Gap = 2
+		row := newTestNode(DefaultStyle())
+		row.style.Height = Fixed(3)
+		row.style.Direction = Row
+		row.style.Gap = 2
 
-		label := NewNode(DefaultStyle())
-		label.Style.Width = Fixed(15)
+		label := newTestNode(DefaultStyle())
+		label.style.Width = Fixed(15)
 
-		input := NewNode(DefaultStyle())
-		input.Style.FlexGrow = 1
+		input := newTestNode(DefaultStyle())
+		input.style.FlexGrow = 1
 
 		row.AddChild(label, input)
 		form.AddChild(row)
@@ -202,28 +202,28 @@ func TestIntegration_FormLayout(t *testing.T) {
 	Calculate(form, 100, 50)
 
 	// Verify each row
-	for i, row := range form.Children {
+	for i, row := range form.children {
 		expectedY := i * 4 // 3 height + 1 gap
-		if row.Layout.Rect.Y != expectedY {
-			t.Errorf("row[%d].Y = %d, want %d", i, row.Layout.Rect.Y, expectedY)
+		if row.layout.Rect.Y != expectedY {
+			t.Errorf("row[%d].Y = %d, want %d", i, row.layout.Rect.Y, expectedY)
 		}
 
-		label := row.Children[0]
-		input := row.Children[1]
+		label := row.children[0]
+		input := row.children[1]
 
 		// Label should be fixed at 15
-		if label.Layout.Rect.Width != 15 {
-			t.Errorf("row[%d] label.Width = %d, want 15", i, label.Layout.Rect.Width)
+		if label.layout.Rect.Width != 15 {
+			t.Errorf("row[%d] label.Width = %d, want 15", i, label.layout.Rect.Width)
 		}
 
 		// Input should grow to fill: 80 - 15 - 2 (gap) = 63
-		if input.Layout.Rect.Width != 63 {
-			t.Errorf("row[%d] input.Width = %d, want 63", i, input.Layout.Rect.Width)
+		if input.layout.Rect.Width != 63 {
+			t.Errorf("row[%d] input.Width = %d, want 63", i, input.layout.Rect.Width)
 		}
 
 		// Input should be positioned after label + gap
-		if input.Layout.Rect.X != 17 { // 15 + 2 gap
-			t.Errorf("row[%d] input.X = %d, want 17", i, input.Layout.Rect.X)
+		if input.layout.Rect.X != 17 { // 15 + 2 gap
+			t.Errorf("row[%d] input.X = %d, want 17", i, input.layout.Rect.X)
 		}
 	}
 }
@@ -237,26 +237,26 @@ func TestIntegration_MixedDirection(t *testing.T) {
 	//     Column (vertical)
 	//   Row (horizontal)
 
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(100)
-	root.Style.Height = Fixed(100)
-	root.Style.Direction = Column
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(100)
+	root.style.Height = Fixed(100)
+	root.style.Direction = Column
 
-	row1 := NewNode(DefaultStyle())
-	row1.Style.Height = Fixed(50)
-	row1.Style.Direction = Row
+	row1 := newTestNode(DefaultStyle())
+	row1.style.Height = Fixed(50)
+	row1.style.Direction = Row
 
-	col1a := NewNode(DefaultStyle())
-	col1a.Style.Width = Fixed(30)
-	col1a.Style.Direction = Column
+	col1a := newTestNode(DefaultStyle())
+	col1a.style.Width = Fixed(30)
+	col1a.style.Direction = Column
 
-	col1b := NewNode(DefaultStyle())
-	col1b.Style.FlexGrow = 1
-	col1b.Style.Direction = Column
+	col1b := newTestNode(DefaultStyle())
+	col1b.style.FlexGrow = 1
+	col1b.style.Direction = Column
 
-	row2 := NewNode(DefaultStyle())
-	row2.Style.FlexGrow = 1
-	row2.Style.Direction = Row
+	row2 := newTestNode(DefaultStyle())
+	row2.style.FlexGrow = 1
+	row2.style.Direction = Row
 
 	row1.AddChild(col1a, col1b)
 	root.AddChild(row1, row2)
@@ -264,35 +264,35 @@ func TestIntegration_MixedDirection(t *testing.T) {
 	Calculate(root, 100, 100)
 
 	// Verify row1 position and size
-	if row1.Layout.Rect.Y != 0 {
-		t.Errorf("row1.Y = %d, want 0", row1.Layout.Rect.Y)
+	if row1.layout.Rect.Y != 0 {
+		t.Errorf("row1.Y = %d, want 0", row1.layout.Rect.Y)
 	}
-	if row1.Layout.Rect.Height != 50 {
-		t.Errorf("row1.Height = %d, want 50", row1.Layout.Rect.Height)
+	if row1.layout.Rect.Height != 50 {
+		t.Errorf("row1.Height = %d, want 50", row1.layout.Rect.Height)
 	}
 
 	// Verify col1a
-	if col1a.Layout.Rect.Width != 30 {
-		t.Errorf("col1a.Width = %d, want 30", col1a.Layout.Rect.Width)
+	if col1a.layout.Rect.Width != 30 {
+		t.Errorf("col1a.Width = %d, want 30", col1a.layout.Rect.Width)
 	}
-	if col1a.Layout.Rect.Height != 50 {
-		t.Errorf("col1a.Height = %d, want 50 (stretched)", col1a.Layout.Rect.Height)
+	if col1a.layout.Rect.Height != 50 {
+		t.Errorf("col1a.Height = %d, want 50 (stretched)", col1a.layout.Rect.Height)
 	}
 
 	// Verify col1b (grows to fill: 100 - 30 = 70)
-	if col1b.Layout.Rect.X != 30 {
-		t.Errorf("col1b.X = %d, want 30", col1b.Layout.Rect.X)
+	if col1b.layout.Rect.X != 30 {
+		t.Errorf("col1b.X = %d, want 30", col1b.layout.Rect.X)
 	}
-	if col1b.Layout.Rect.Width != 70 {
-		t.Errorf("col1b.Width = %d, want 70", col1b.Layout.Rect.Width)
+	if col1b.layout.Rect.Width != 70 {
+		t.Errorf("col1b.Width = %d, want 70", col1b.layout.Rect.Width)
 	}
 
 	// Verify row2 (grows to fill: 100 - 50 = 50)
-	if row2.Layout.Rect.Y != 50 {
-		t.Errorf("row2.Y = %d, want 50", row2.Layout.Rect.Y)
+	if row2.layout.Rect.Y != 50 {
+		t.Errorf("row2.Y = %d, want 50", row2.layout.Rect.Y)
 	}
-	if row2.Layout.Rect.Height != 50 {
-		t.Errorf("row2.Height = %d, want 50", row2.Layout.Rect.Height)
+	if row2.layout.Rect.Height != 50 {
+		t.Errorf("row2.Height = %d, want 50", row2.layout.Rect.Height)
 	}
 }
 
@@ -330,17 +330,17 @@ func TestEdgeCase_ZeroDimensions(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			node := NewNode(DefaultStyle())
-			node.Style.Width = Fixed(tt.width)
-			node.Style.Height = Fixed(tt.height)
+			node := newTestNode(DefaultStyle())
+			node.style.Width = Fixed(tt.width)
+			node.style.Height = Fixed(tt.height)
 
 			Calculate(node, 100, 100)
 
-			if node.Layout.Rect.Width != tt.expectedWidth {
-				t.Errorf("Width = %d, want %d", node.Layout.Rect.Width, tt.expectedWidth)
+			if node.layout.Rect.Width != tt.expectedWidth {
+				t.Errorf("Width = %d, want %d", node.layout.Rect.Width, tt.expectedWidth)
 			}
-			if node.Layout.Rect.Height != tt.expectedHeight {
-				t.Errorf("Height = %d, want %d", node.Layout.Rect.Height, tt.expectedHeight)
+			if node.layout.Rect.Height != tt.expectedHeight {
+				t.Errorf("Height = %d, want %d", node.layout.Rect.Height, tt.expectedHeight)
 			}
 		})
 	}
@@ -348,22 +348,22 @@ func TestEdgeCase_ZeroDimensions(t *testing.T) {
 
 // TestEdgeCase_ZeroSizeParent tests children of a zero-size parent.
 func TestEdgeCase_ZeroSizeParent(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(0)
-	parent.Style.Height = Fixed(0)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(0)
+	parent.style.Height = Fixed(0)
+	parent.style.Direction = Row
 
-	child := NewNode(DefaultStyle())
-	child.Style.Width = Fixed(50)
-	child.Style.Height = Fixed(30)
+	child := newTestNode(DefaultStyle())
+	child.style.Width = Fixed(50)
+	child.style.Height = Fixed(30)
 
 	parent.AddChild(child)
 	Calculate(parent, 100, 100)
 
 	// Parent should be zero size
-	if parent.Layout.Rect.Width != 0 || parent.Layout.Rect.Height != 0 {
+	if parent.layout.Rect.Width != 0 || parent.layout.Rect.Height != 0 {
 		t.Errorf("parent size = %dx%d, want 0x0",
-			parent.Layout.Rect.Width, parent.Layout.Rect.Height)
+			parent.layout.Rect.Width, parent.layout.Rect.Height)
 	}
 
 	// Child gets clamped due to min/max constraints from zero-size parent
@@ -373,77 +373,77 @@ func TestEdgeCase_ZeroSizeParent(t *testing.T) {
 
 // TestEdgeCase_OverflowNoShrink tests overflow when shrink totals to 0.
 func TestEdgeCase_OverflowNoShrink(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(100)
-	parent.Style.Height = Fixed(50)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(100)
+	parent.style.Height = Fixed(50)
+	parent.style.Direction = Row
 
 	// Children that overflow but don't shrink
-	child1 := NewNode(DefaultStyle())
-	child1.Style.Width = Fixed(80)
-	child1.Style.Height = Fixed(50)
-	child1.Style.FlexShrink = 0
+	child1 := newTestNode(DefaultStyle())
+	child1.style.Width = Fixed(80)
+	child1.style.Height = Fixed(50)
+	child1.style.FlexShrink = 0
 
-	child2 := NewNode(DefaultStyle())
-	child2.Style.Width = Fixed(80)
-	child2.Style.Height = Fixed(50)
-	child2.Style.FlexShrink = 0
+	child2 := newTestNode(DefaultStyle())
+	child2.style.Width = Fixed(80)
+	child2.style.Height = Fixed(50)
+	child2.style.FlexShrink = 0
 
 	parent.AddChild(child1, child2)
 	Calculate(parent, 200, 200)
 
 	// Children should maintain their sizes (overflow parent)
-	if child1.Layout.Rect.Width != 80 {
-		t.Errorf("child1.Width = %d, want 80", child1.Layout.Rect.Width)
+	if child1.layout.Rect.Width != 80 {
+		t.Errorf("child1.Width = %d, want 80", child1.layout.Rect.Width)
 	}
-	if child2.Layout.Rect.Width != 80 {
-		t.Errorf("child2.Width = %d, want 80", child2.Layout.Rect.Width)
+	if child2.layout.Rect.Width != 80 {
+		t.Errorf("child2.Width = %d, want 80", child2.layout.Rect.Width)
 	}
 
 	// Child2 should be positioned after child1
-	if child2.Layout.Rect.X != 80 {
-		t.Errorf("child2.X = %d, want 80", child2.Layout.Rect.X)
+	if child2.layout.Rect.X != 80 {
+		t.Errorf("child2.X = %d, want 80", child2.layout.Rect.X)
 	}
 }
 
 // TestEdgeCase_EmptyAutoNode tests a node with no children and auto dimensions.
 func TestEdgeCase_EmptyAutoNode(t *testing.T) {
-	node := NewNode(DefaultStyle())
+	node := newTestNode(DefaultStyle())
 	// Width and Height are Auto by default
 
 	Calculate(node, 100, 100)
 
 	// Auto dimensions should use available space (fill parent)
-	if node.Layout.Rect.Width != 100 {
-		t.Errorf("Width = %d, want 100 (auto fills available)", node.Layout.Rect.Width)
+	if node.layout.Rect.Width != 100 {
+		t.Errorf("Width = %d, want 100 (auto fills available)", node.layout.Rect.Width)
 	}
-	if node.Layout.Rect.Height != 100 {
-		t.Errorf("Height = %d, want 100 (auto fills available)", node.Layout.Rect.Height)
+	if node.layout.Rect.Height != 100 {
+		t.Errorf("Height = %d, want 100 (auto fills available)", node.layout.Rect.Height)
 	}
 }
 
 // TestEdgeCase_VeryLargeTree tests layout with a large number of children.
 func TestEdgeCase_VeryLargeTree(t *testing.T) {
-	parent := NewNode(DefaultStyle())
-	parent.Style.Width = Fixed(1000)
-	parent.Style.Height = Fixed(100)
-	parent.Style.Direction = Row
+	parent := newTestNode(DefaultStyle())
+	parent.style.Width = Fixed(1000)
+	parent.style.Height = Fixed(100)
+	parent.style.Direction = Row
 
 	// Add 100 children
 	for i := 0; i < 100; i++ {
-		child := NewNode(DefaultStyle())
-		child.Style.Width = Fixed(10)
-		child.Style.Height = Fixed(100)
+		child := newTestNode(DefaultStyle())
+		child.style.Width = Fixed(10)
+		child.style.Height = Fixed(100)
 		parent.AddChild(child)
 	}
 
 	Calculate(parent, 1000, 100)
 
 	// Verify all children are positioned correctly
-	for i, child := range parent.Children {
+	for i, child := range parent.children {
 		expectedX := i * 10
-		if child.Layout.Rect.X != expectedX {
-			t.Errorf("child[%d].X = %d, want %d", i, child.Layout.Rect.X, expectedX)
+		if child.layout.Rect.X != expectedX {
+			t.Errorf("child[%d].X = %d, want %d", i, child.layout.Rect.X, expectedX)
 		}
 	}
 }
@@ -451,15 +451,15 @@ func TestEdgeCase_VeryLargeTree(t *testing.T) {
 // TestEdgeCase_DeepNesting tests deeply nested layout.
 func TestEdgeCase_DeepNesting(t *testing.T) {
 	// Create a chain of 10 nested nodes
-	root := NewNode(DefaultStyle())
-	root.Style.Width = Fixed(100)
-	root.Style.Height = Fixed(100)
+	root := newTestNode(DefaultStyle())
+	root.style.Width = Fixed(100)
+	root.style.Height = Fixed(100)
 
 	current := root
 	for i := 0; i < 10; i++ {
-		child := NewNode(DefaultStyle())
-		child.Style.FlexGrow = 1
-		child.Style.Padding = EdgeAll(1)
+		child := newTestNode(DefaultStyle())
+		child.style.FlexGrow = 1
+		child.style.Padding = EdgeAll(1)
 		current.AddChild(child)
 		current = child
 	}
@@ -471,8 +471,8 @@ func TestEdgeCase_DeepNesting(t *testing.T) {
 	// Content area shrinks by 2 per level = 20 total per dimension
 	leaf := current
 	expectedSize := 100 - 20 // 80
-	if leaf.Layout.ContentRect.Width != expectedSize {
+	if leaf.layout.ContentRect.Width != expectedSize {
 		t.Errorf("leaf.ContentRect.Width = %d, want %d",
-			leaf.Layout.ContentRect.Width, expectedSize)
+			leaf.layout.ContentRect.Width, expectedSize)
 	}
 }

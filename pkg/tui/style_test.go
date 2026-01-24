@@ -69,98 +69,95 @@ func TestStyle_FluentChaining(t *testing.T) {
 }
 
 func TestStyle_AllAttributes(t *testing.T) {
-	attrs := []struct {
-		name   string
+	type tc struct {
 		method func(Style) Style
 		attr   Attr
-	}{
-		{"Bold", Style.Bold, AttrBold},
-		{"Dim", Style.Dim, AttrDim},
-		{"Italic", Style.Italic, AttrItalic},
-		{"Underline", Style.Underline, AttrUnderline},
-		{"Blink", Style.Blink, AttrBlink},
-		{"Reverse", Style.Reverse, AttrReverse},
-		{"Strikethrough", Style.Strikethrough, AttrStrikethrough},
 	}
 
-	for _, tt := range attrs {
-		s := tt.method(NewStyle())
-		if !s.HasAttr(tt.attr) {
-			t.Errorf("%s() should set %v attribute", tt.name, tt.attr)
-		}
+	tests := map[string]tc{
+		"Bold":          {method: Style.Bold, attr: AttrBold},
+		"Dim":           {method: Style.Dim, attr: AttrDim},
+		"Italic":        {method: Style.Italic, attr: AttrItalic},
+		"Underline":     {method: Style.Underline, attr: AttrUnderline},
+		"Blink":         {method: Style.Blink, attr: AttrBlink},
+		"Reverse":       {method: Style.Reverse, attr: AttrReverse},
+		"Strikethrough": {method: Style.Strikethrough, attr: AttrStrikethrough},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := tt.method(NewStyle())
+			if !s.HasAttr(tt.attr) {
+				t.Errorf("%s() should set %v attribute", name, tt.attr)
+			}
+		})
 	}
 }
 
 func TestStyle_Equal(t *testing.T) {
-	tests := []struct {
-		name  string
+	type tc struct {
 		a, b  Style
 		equal bool
-	}{
-		{
-			"empty styles",
-			NewStyle(),
-			NewStyle(),
-			true,
+	}
+
+	tests := map[string]tc{
+		"empty styles": {
+			a:     NewStyle(),
+			b:     NewStyle(),
+			equal: true,
 		},
-		{
-			"same foreground",
-			NewStyle().Foreground(Red),
-			NewStyle().Foreground(Red),
-			true,
+		"same foreground": {
+			a:     NewStyle().Foreground(Red),
+			b:     NewStyle().Foreground(Red),
+			equal: true,
 		},
-		{
-			"different foreground",
-			NewStyle().Foreground(Red),
-			NewStyle().Foreground(Blue),
-			false,
+		"different foreground": {
+			a:     NewStyle().Foreground(Red),
+			b:     NewStyle().Foreground(Blue),
+			equal: false,
 		},
-		{
-			"same background",
-			NewStyle().Background(Green),
-			NewStyle().Background(Green),
-			true,
+		"same background": {
+			a:     NewStyle().Background(Green),
+			b:     NewStyle().Background(Green),
+			equal: true,
 		},
-		{
-			"different background",
-			NewStyle().Background(Green),
-			NewStyle().Background(Yellow),
-			false,
+		"different background": {
+			a:     NewStyle().Background(Green),
+			b:     NewStyle().Background(Yellow),
+			equal: false,
 		},
-		{
-			"same attributes",
-			NewStyle().Bold().Italic(),
-			NewStyle().Bold().Italic(),
-			true,
+		"same attributes": {
+			a:     NewStyle().Bold().Italic(),
+			b:     NewStyle().Bold().Italic(),
+			equal: true,
 		},
-		{
-			"different attributes",
-			NewStyle().Bold(),
-			NewStyle().Italic(),
-			false,
+		"different attributes": {
+			a:     NewStyle().Bold(),
+			b:     NewStyle().Italic(),
+			equal: false,
 		},
-		{
-			"full match",
-			NewStyle().Foreground(Red).Background(Blue).Bold().Underline(),
-			NewStyle().Foreground(Red).Background(Blue).Bold().Underline(),
-			true,
+		"full match": {
+			a:     NewStyle().Foreground(Red).Background(Blue).Bold().Underline(),
+			b:     NewStyle().Foreground(Red).Background(Blue).Bold().Underline(),
+			equal: true,
 		},
-		{
-			"full mismatch on attr",
-			NewStyle().Foreground(Red).Background(Blue).Bold(),
-			NewStyle().Foreground(Red).Background(Blue).Italic(),
-			false,
+		"full mismatch on attr": {
+			a:     NewStyle().Foreground(Red).Background(Blue).Bold(),
+			b:     NewStyle().Foreground(Red).Background(Blue).Italic(),
+			equal: false,
 		},
 	}
 
-	for _, tt := range tests {
-		if got := tt.a.Equal(tt.b); got != tt.equal {
-			t.Errorf("%s: Equal() = %v, want %v", tt.name, got, tt.equal)
-		}
-		// Test symmetry
-		if got := tt.b.Equal(tt.a); got != tt.equal {
-			t.Errorf("%s (symmetric): Equal() = %v, want %v", tt.name, got, tt.equal)
-		}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := tt.a.Equal(tt.b); got != tt.equal {
+				t.Errorf("Equal() = %v, want %v", got, tt.equal)
+			}
+			// Test symmetry
+			if got := tt.b.Equal(tt.a); got != tt.equal {
+				t.Errorf("(symmetric) Equal() = %v, want %v", got, tt.equal)
+			}
+		})
 	}
 }
 
@@ -213,27 +210,49 @@ func TestStyle_Immutability(t *testing.T) {
 }
 
 func TestAttr_BitfieldValues(t *testing.T) {
-	// Verify attributes are distinct bit flags
-	attrs := []Attr{AttrBold, AttrDim, AttrItalic, AttrUnderline, AttrBlink, AttrReverse, AttrStrikethrough}
+	type tc struct {
+		attr Attr
+	}
 
-	for i, a := range attrs {
-		for j, b := range attrs {
+	tests := map[string]tc{
+		"Bold":          {attr: AttrBold},
+		"Dim":           {attr: AttrDim},
+		"Italic":        {attr: AttrItalic},
+		"Underline":     {attr: AttrUnderline},
+		"Blink":         {attr: AttrBlink},
+		"Reverse":       {attr: AttrReverse},
+		"Strikethrough": {attr: AttrStrikethrough},
+	}
+
+	// Collect all attrs for overlap and combination tests
+	var allAttrs []Attr
+	var attrNames []string
+	for name, tt := range tests {
+		allAttrs = append(allAttrs, tt.attr)
+		attrNames = append(attrNames, name)
+	}
+
+	// Verify attributes are distinct bit flags
+	for i, a := range allAttrs {
+		for j, b := range allAttrs {
 			if i != j && a&b != 0 {
-				t.Errorf("Attr %d and %d overlap in bits", i, j)
+				t.Errorf("Attr %s and %s overlap in bits", attrNames[i], attrNames[j])
 			}
 		}
 	}
 
 	// Verify we can combine all attributes
 	var combined Attr
-	for _, a := range attrs {
+	for _, a := range allAttrs {
 		combined |= a
 	}
 
-	for _, a := range attrs {
-		if combined&a == 0 {
-			t.Errorf("Combined attrs missing %v", a)
-		}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if combined&tt.attr == 0 {
+				t.Errorf("Combined attrs missing %v", tt.attr)
+			}
+		})
 	}
 }
 
