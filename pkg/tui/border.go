@@ -195,6 +195,6 @@ func FillBox(buf *Buffer, rect Rect, r rune, style Style) {
 		return
 	}
 
-	interior := rect.Inset(1, 1, 1, 1)
+	interior := rect.Inset(EdgeAll(1))
 	buf.Fill(interior, r, style)
 }

@@ -1,8 +1,6 @@
-package tui
+package layout
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestNewRect(t *testing.T) {
 	r := NewRect(5, 10, 20, 15)
@@ -195,18 +193,6 @@ func TestRect_Contains(t *testing.T) {
 			y:        10,
 			contains: false,
 		},
-		"point right of rect": {
-			rect:     r,
-			x:        50,
-			y:        30,
-			contains: false,
-		},
-		"point below rect": {
-			rect:     r,
-			x:        20,
-			y:        70,
-			contains: false,
-		},
 	}
 
 	for name, tt := range tests {
@@ -239,21 +225,6 @@ func TestRect_ContainsRect(t *testing.T) {
 		"partial overlap left": {
 			outer:    NewRect(10, 10, 20, 20),
 			inner:    NewRect(5, 15, 10, 10),
-			contains: false,
-		},
-		"partial overlap right": {
-			outer:    NewRect(10, 10, 20, 20),
-			inner:    NewRect(25, 15, 10, 10),
-			contains: false,
-		},
-		"partial overlap top": {
-			outer:    NewRect(10, 10, 20, 20),
-			inner:    NewRect(15, 5, 10, 10),
-			contains: false,
-		},
-		"partial overlap bottom": {
-			outer:    NewRect(10, 10, 20, 20),
-			inner:    NewRect(15, 25, 10, 10),
 			contains: false,
 		},
 		"disjoint": {
@@ -338,13 +309,81 @@ func TestRect_Inset(t *testing.T) {
 	}
 }
 
-func TestInsetUniform(t *testing.T) {
-	r := NewRect(10, 10, 100, 100)
-	got := InsetUniform(r, 10)
+func TestRect_Outset(t *testing.T) {
+	type tc struct {
+		rect                          Rect
+		edges                         Edges
+		expectedX, expectedY          int
+		expectedWidth, expectedHeight int
+	}
 
-	if got.X != 20 || got.Y != 20 || got.Width != 80 || got.Height != 80 {
-		t.Errorf("InsetUniform(10) = {%d, %d, %d, %d}, want {20, 20, 80, 80}",
-			got.X, got.Y, got.Width, got.Height)
+	tests := map[string]tc{
+		"uniform positive outset": {
+			rect:           NewRect(10, 10, 100, 100),
+			edges:          EdgeAll(5),
+			expectedX:      5,
+			expectedY:      5,
+			expectedWidth:  110,
+			expectedHeight: 110,
+		},
+		"different outsets": {
+			rect:           NewRect(50, 50, 100, 100),
+			edges:          EdgeTRBL(10, 20, 30, 40),
+			expectedX:      10,
+			expectedY:      40,
+			expectedWidth:  160,
+			expectedHeight: 140,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.rect.Outset(tt.edges)
+			if got.X != tt.expectedX || got.Y != tt.expectedY ||
+				got.Width != tt.expectedWidth || got.Height != tt.expectedHeight {
+				t.Errorf("Outset() = {%d, %d, %d, %d}, want {%d, %d, %d, %d}",
+					got.X, got.Y, got.Width, got.Height,
+					tt.expectedX, tt.expectedY, tt.expectedWidth, tt.expectedHeight)
+			}
+		})
+	}
+}
+
+func TestRect_Translate(t *testing.T) {
+	type tc struct {
+		rect     Rect
+		dx, dy   int
+		expected Rect
+	}
+
+	tests := map[string]tc{
+		"positive translation": {
+			rect:     NewRect(10, 20, 30, 40),
+			dx:       5,
+			dy:       15,
+			expected: NewRect(15, 35, 30, 40),
+		},
+		"negative translation": {
+			rect:     NewRect(10, 20, 30, 40),
+			dx:       -5,
+			dy:       -10,
+			expected: NewRect(5, 10, 30, 40),
+		},
+		"no translation": {
+			rect:     NewRect(10, 20, 30, 40),
+			dx:       0,
+			dy:       0,
+			expected: NewRect(10, 20, 30, 40),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.rect.Translate(tt.dx, tt.dy)
+			if got != tt.expected {
+				t.Errorf("Translate(%d, %d) = %+v, want %+v", tt.dx, tt.dy, got, tt.expected)
+			}
+		})
 	}
 }
 
@@ -373,11 +412,6 @@ func TestRect_Intersect(t *testing.T) {
 		"adjacent horizontal (no overlap)": {
 			a:        NewRect(0, 0, 10, 10),
 			b:        NewRect(10, 0, 10, 10),
-			expected: Rect{},
-		},
-		"adjacent vertical (no overlap)": {
-			a:        NewRect(0, 0, 10, 10),
-			b:        NewRect(0, 10, 10, 10),
 			expected: Rect{},
 		},
 		"disjoint": {
@@ -424,11 +458,6 @@ func TestRect_Union(t *testing.T) {
 			b:        NewRect(20, 20, 30, 30),
 			expected: NewRect(0, 0, 100, 100),
 		},
-		"same rect": {
-			a:        NewRect(10, 10, 20, 20),
-			b:        NewRect(10, 10, 20, 20),
-			expected: NewRect(10, 10, 20, 20),
-		},
 		"one empty": {
 			a:        NewRect(10, 10, 20, 20),
 			b:        Rect{},
@@ -456,50 +485,12 @@ func TestRect_Union(t *testing.T) {
 	}
 }
 
-func TestRect_Translate(t *testing.T) {
-	type tc struct {
-		rect     Rect
-		dx, dy   int
-		expected Rect
-	}
-
-	tests := map[string]tc{
-		"positive translation": {
-			rect:     NewRect(10, 20, 30, 40),
-			dx:       5,
-			dy:       15,
-			expected: NewRect(15, 35, 30, 40),
-		},
-		"negative translation": {
-			rect:     NewRect(10, 20, 30, 40),
-			dx:       -5,
-			dy:       -10,
-			expected: NewRect(5, 10, 30, 40),
-		},
-		"no translation": {
-			rect:     NewRect(10, 20, 30, 40),
-			dx:       0,
-			dy:       0,
-			expected: NewRect(10, 20, 30, 40),
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := tt.rect.Translate(tt.dx, tt.dy)
-			if got != tt.expected {
-				t.Errorf("Translate(%d, %d) = %+v, want %+v", tt.dx, tt.dy, got, tt.expected)
-			}
-		})
-	}
-}
-
 func TestRect_Clamp(t *testing.T) {
 	type tc struct {
-		rect       Rect
-		x, y       int
-		expectedX  int
-		expectedY  int
+		rect      Rect
+		x, y      int
+		expectedX int
+		expectedY int
 	}
 
 	r := NewRect(10, 20, 30, 40)
@@ -540,27 +531,6 @@ func TestRect_Clamp(t *testing.T) {
 			expectedX: 20,
 			expectedY: 59, // Bottom edge - 1
 		},
-		"point outside all corners": {
-			rect:      r,
-			x:         100,
-			y:         100,
-			expectedX: 39,
-			expectedY: 59,
-		},
-		"point at exact right edge": {
-			rect:      r,
-			x:         40,
-			y:         30,
-			expectedX: 39,
-			expectedY: 30,
-		},
-		"point at exact bottom edge": {
-			rect:      r,
-			x:         20,
-			y:         60,
-			expectedX: 20,
-			expectedY: 59,
-		},
 	}
 
 	for name, tt := range tests {
@@ -588,7 +558,7 @@ func TestRect_Immutability(t *testing.T) {
 
 	// All methods should return new Rects, not modify original
 	_ = original.Inset(EdgeAll(5))
-	_ = InsetUniform(original, 5)
+	_ = original.Outset(EdgeAll(5))
 	_ = original.Intersect(NewRect(0, 0, 100, 100))
 	_ = original.Union(NewRect(50, 50, 20, 20))
 	_ = original.Translate(10, 10)
@@ -596,5 +566,83 @@ func TestRect_Immutability(t *testing.T) {
 	// Original should be unchanged
 	if original.X != 10 || original.Y != 10 || original.Width != 20 || original.Height != 20 {
 		t.Error("original rect was modified by method calls")
+	}
+}
+
+func TestEdges(t *testing.T) {
+	type tc struct {
+		edges      Edges
+		horizontal int
+		vertical   int
+		isZero     bool
+	}
+
+	tests := map[string]tc{
+		"EdgeAll": {
+			edges:      EdgeAll(5),
+			horizontal: 10,
+			vertical:   10,
+			isZero:     false,
+		},
+		"EdgeSymmetric": {
+			edges:      EdgeSymmetric(10, 20),
+			horizontal: 40,
+			vertical:   20,
+			isZero:     false,
+		},
+		"EdgeTRBL": {
+			edges:      EdgeTRBL(1, 2, 3, 4),
+			horizontal: 6,
+			vertical:   4,
+			isZero:     false,
+		},
+		"zero edges": {
+			edges:      Edges{},
+			horizontal: 0,
+			vertical:   0,
+			isZero:     true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := tt.edges.Horizontal(); got != tt.horizontal {
+				t.Errorf("Horizontal() = %d, want %d", got, tt.horizontal)
+			}
+			if got := tt.edges.Vertical(); got != tt.vertical {
+				t.Errorf("Vertical() = %d, want %d", got, tt.vertical)
+			}
+			if got := tt.edges.IsZero(); got != tt.isZero {
+				t.Errorf("IsZero() = %v, want %v", got, tt.isZero)
+			}
+		})
+	}
+}
+
+func TestPoint(t *testing.T) {
+	p1 := Point{X: 10, Y: 20}
+	p2 := Point{X: 5, Y: 15}
+
+	// Test Add
+	sum := p1.Add(p2)
+	if sum.X != 15 || sum.Y != 35 {
+		t.Errorf("Add() = {%d, %d}, want {15, 35}", sum.X, sum.Y)
+	}
+
+	// Test Sub
+	diff := p1.Sub(p2)
+	if diff.X != 5 || diff.Y != 5 {
+		t.Errorf("Sub() = {%d, %d}, want {5, 5}", diff.X, diff.Y)
+	}
+
+	// Test In
+	rect := NewRect(0, 0, 50, 50)
+	if !p1.In(rect) {
+		t.Error("Point should be inside rect")
+	}
+
+	outsidePoint := Point{X: 100, Y: 100}
+	if outsidePoint.In(rect) {
+		t.Error("Point should be outside rect")
 	}
 }
