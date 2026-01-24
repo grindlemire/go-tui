@@ -3,7 +3,7 @@ package layout
 import "testing"
 
 // testNode is a minimal Layoutable implementation for testing the layout algorithm.
-// It mirrors the old Node type's functionality.
+// It provides the same tree structure and dirty tracking that Element uses.
 type testNode struct {
 	style    Style
 	children []*testNode
