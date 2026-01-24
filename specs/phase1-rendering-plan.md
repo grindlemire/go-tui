@@ -153,9 +153,11 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
 
 **Reference:** [phase1-rendering-design.md §5](./phase1-rendering-design.md#5-terminal-abstraction)
 
-**Completed in commit:** (pending)
+**Review:** false
 
-- [ ] Create `pkg/tui/terminal.go`
+**Completed in commit:** phase4-terminal-core
+
+- [x] Create `pkg/tui/terminal.go`
   - Define `Terminal` interface with methods:
     - `Size() (width, height int)`
     - `Flush(changes []CellChange)`
@@ -171,7 +173,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Define `Capabilities` struct (Colors ColorCapability, Unicode bool, TrueColor bool, AltScreen bool)
   - Define `ColorCapability` enum (ColorNone, Color16, Color256, ColorTrue)
 
-- [ ] Create `pkg/tui/escape.go` (internal escape sequence builder)
+- [x] Create `pkg/tui/escape.go` (internal escape sequence builder)
   - Define `escBuilder` struct with buf []byte
   - Implement `Reset()` clearing the buffer
   - Implement cursor methods: `MoveTo(x, y int)`, `MoveUp(n)`, `MoveDown(n)`, `MoveRight(n)`, `MoveLeft(n)`
@@ -185,7 +187,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Implement `WriteRune(r rune)` appending UTF-8 encoded rune
   - Implement `Bytes() []byte` returning built sequence
 
-- [ ] Create `pkg/tui/escape_test.go`
+- [x] Create `pkg/tui/escape_test.go`
   - Test `MoveTo` generates correct `\x1b[{row};{col}H` (1-indexed)
   - Test `ClearScreen` generates `\x1b[2J`
   - Test `HideCursor` generates `\x1b[?25l`
@@ -195,7 +197,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Test `SetStyle` respects Capabilities (falls back to ANSI when no TrueColor)
   - Test combined style generates minimal sequence
 
-- [ ] Create `pkg/tui/terminal_ansi.go`
+- [x] Create `pkg/tui/terminal_ansi.go`
   - Define `ANSITerminal` struct with out io.Writer, in io.Reader, caps Capabilities, lastStyle Style, buf bytes.Buffer
   - Implement `NewANSITerminal(out io.Writer, in io.Reader) (*ANSITerminal, error)` with capability detection
   - Implement `NewANSITerminalWithCaps(out, in, caps)` for explicit capability override
@@ -206,14 +208,14 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Implement `Caps()` returning stored capabilities
   - Stub `EnterRawMode()` and `ExitRawMode()` (platform-specific, implemented next)
 
-- [ ] Create `pkg/tui/terminal_unix.go` (build tag: `//go:build unix`)
-  - Import `golang.org/x/term` or use syscall directly
+- [x] Create `pkg/tui/terminal_unix.go` (build tag: `//go:build unix`)
+  - Import `golang.org/x/sys/unix` for syscalls
   - Define `rawModeState` storing original termios
   - Implement `EnterRawMode()` saving state and setting raw mode
   - Implement `ExitRawMode()` restoring original state
   - Implement `getTerminalSize(fd int) (width, height int, err error)`
 
-- [ ] Create `pkg/tui/mock_terminal.go`
+- [x] Create `pkg/tui/mock_terminal.go`
   - Define `MockTerminal` struct capturing all operations
   - Implement full `Terminal` interface
   - Add `CellAt(x, y int) Cell` for test assertions
@@ -221,14 +223,14 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
   - Add `Cursor() (x, y int)` returning cursor position
   - Add `IsCursorHidden() bool`, `IsInRawMode() bool`, `IsInAltScreen() bool`
 
-- [ ] Create `pkg/tui/terminal_test.go`
+- [x] Create `pkg/tui/terminal_test.go`
   - Test `MockTerminal` implements Terminal interface
   - Test `Flush` to MockTerminal updates correct cells
   - Test cursor tracking after `SetCursor` and `Flush`
   - Test `Clear` resets all MockTerminal cells
   - Test `EnterAltScreen`/`ExitAltScreen` state tracking
 
-**Tests:** `go test ./pkg/tui/... -run "Terminal|Escape|Mock"` — expect 20+ test cases passing
+**Tests:** `go test ./pkg/tui/... -run "Terminal|Escape|Mock"` — expect 20+ test cases passing (104 tests passing)
 
 ---
 
@@ -297,7 +299,7 @@ Implementation phases for the terminal rendering foundation. Each phase builds o
 | 1 | Core Types (Color, Style, Attr) | Complete |
 | 2 | Geometry & Cell (Rect, Cell, RuneWidth) | Complete |
 | 3 | Buffer (double-buffered grid with wide char support) | Complete |
-| 4 | Terminal Core (interface, ANSI impl, escape sequences) | Pending |
+| 4 | Terminal Core (interface, ANSI impl, escape sequences) | Complete |
 | 5 | Capabilities & Integration (detection, borders, full pipeline) | Pending |
 
 ## Files to Create
