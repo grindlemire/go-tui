@@ -116,6 +116,12 @@ func (r Rect) Union(other Rect) Rect {
 	return Rect{X: x, Y: y, Width: right - x, Height: bottom - y}
 }
 
+// Intersects returns true if the two rectangles overlap.
+// Touching edges do not count as overlapping.
+func (r Rect) Intersects(other Rect) bool {
+	return !r.Intersect(other).IsEmpty()
+}
+
 // Clamp constrains a point to be within the rectangle bounds.
 // Returns the clamped (x, y) coordinates.
 func (r Rect) Clamp(x, y int) (int, int) {

@@ -619,6 +619,70 @@ func TestEdges(t *testing.T) {
 	}
 }
 
+func TestRect_Intersects(t *testing.T) {
+	type tc struct {
+		a, b       Rect
+		intersects bool
+	}
+
+	tests := map[string]tc{
+		"overlapping rects": {
+			a:          NewRect(0, 0, 20, 20),
+			b:          NewRect(10, 10, 20, 20),
+			intersects: true,
+		},
+		"same rect": {
+			a:          NewRect(10, 10, 20, 20),
+			b:          NewRect(10, 10, 20, 20),
+			intersects: true,
+		},
+		"one inside other": {
+			a:          NewRect(0, 0, 100, 100),
+			b:          NewRect(20, 20, 30, 30),
+			intersects: true,
+		},
+		"adjacent horizontal (touching edges)": {
+			a:          NewRect(0, 0, 10, 10),
+			b:          NewRect(10, 0, 10, 10),
+			intersects: false,
+		},
+		"adjacent vertical (touching edges)": {
+			a:          NewRect(0, 0, 10, 10),
+			b:          NewRect(0, 10, 10, 10),
+			intersects: false,
+		},
+		"disjoint": {
+			a:          NewRect(0, 0, 10, 10),
+			b:          NewRect(50, 50, 10, 10),
+			intersects: false,
+		},
+		"empty rect": {
+			a:          NewRect(0, 0, 10, 10),
+			b:          Rect{},
+			intersects: false,
+		},
+		"both empty": {
+			a:          Rect{},
+			b:          Rect{},
+			intersects: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.a.Intersects(tt.b)
+			if got != tt.intersects {
+				t.Errorf("Intersects() = %v, want %v", got, tt.intersects)
+			}
+			// Test commutativity
+			got2 := tt.b.Intersects(tt.a)
+			if got2 != tt.intersects {
+				t.Errorf("Intersects() (reversed) = %v, want %v", got2, tt.intersects)
+			}
+		})
+	}
+}
+
 func TestPoint(t *testing.T) {
 	p1 := Point{X: 10, Y: 20}
 	p2 := Point{X: 5, Y: 15}

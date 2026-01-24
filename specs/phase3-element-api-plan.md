@@ -90,9 +90,9 @@ Implementation phases for the Element API. Each phase builds on the previous and
 
 **Reference:** [phase3-element-api-design.md §3.5, §5](./phase3-element-api-design.md#35-text-element)
 
-**Completed in commit:** (pending)
+**Status:** COMPLETE
 
-- [ ] Create `pkg/tui/element/text.go`
+- [x] Create `pkg/tui/element/text.go`
   - Define `Text` struct embedding `*Element`
   - Add `content`, `contentStyle`, `align` fields
   - Define `TextAlign` type and constants
@@ -102,36 +102,36 @@ Implementation phases for the Element API. Each phase builds on the previous and
   - Implement `WithTextStyle`, `WithTextAlign`, `WithElementOption`
   - See [design §3.5](./phase3-element-api-design.md#35-text-element)
 
-- [ ] Create `pkg/tui/element/render.go`
+- [x] Create `pkg/tui/element/render.go`
   - Implement `RenderTree(buf *tui.Buffer, root *Element)`
   - Implement `renderElement` that draws background, border, recurses children
   - Implement `renderText` that draws text content with alignment
   - Handle buffer bounds checking (skip elements outside visible area)
   - See [design §5.1](./phase3-element-api-design.md#51-render-implementation)
 
-- [ ] Add `Render` method to Element
+- [x] Add `Render` method to Element
   - Implement `func (e *Element) Render(buf *tui.Buffer, width, height int)`
   - Call `Calculate` if dirty, then `RenderTree`
   - See [design §5.2](./phase3-element-api-design.md#52-elementrender-method)
 
-- [ ] Add `Intersects` method to `layout.Rect` if missing
+- [x] Add `Intersects` method to `layout.Rect` if missing
   - Needed for render culling optimization
   - `func (r Rect) Intersects(other Rect) bool`
 
-- [ ] Create `pkg/tui/element/text_test.go`
+- [x] Create `pkg/tui/element/text_test.go`
   - Test `NewText` creates Text with content
   - Test `SetContent` / `Content`
   - Test text options work correctly
   - Test text alignment rendering
 
-- [ ] Create `pkg/tui/element/render_test.go`
+- [x] Create `pkg/tui/element/render_test.go`
   - Test `RenderTree` draws elements correctly
   - Test background fills interior
   - Test border draws at correct positions
   - Test nested elements render in correct order
   - Test culling works (elements outside buffer not drawn)
 
-**Tests:** Run `go test ./pkg/tui/element/...` once at phase end
+**Tests:** All tests pass (`go test ./pkg/tui/element/...`)
 
 ---
 
@@ -175,7 +175,7 @@ Implementation phases for the Element API. Each phase builds on the previous and
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Layout interface refactor + Element core + options | COMPLETE |
-| 2 | Text element + rendering implementation | Pending |
+| 2 | Text element + rendering implementation | COMPLETE |
 | 3 | Integration tests + examples update | Pending |
 
 ## Files to Create
