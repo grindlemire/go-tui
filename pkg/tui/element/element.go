@@ -9,6 +9,21 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
+var _ tui.Renderable = (*Element)(nil)
+var _ tui.Focusable = (*Element)(nil)
+
+// TextAlign specifies how text is aligned within its content area.
+type TextAlign int
+
+const (
+	// TextAlignLeft aligns text to the left edge (default).
+	TextAlignLeft TextAlign = iota
+	// TextAlignCenter centers text horizontally.
+	TextAlignCenter
+	// TextAlignRight aligns text to the right edge.
+	TextAlignRight
+)
+
 // Element is a layout container with visual properties.
 // It implements layout.Layoutable and owns its children directly.
 type Element struct {
@@ -25,6 +40,22 @@ type Element struct {
 	border      tui.BorderStyle
 	borderStyle tui.Style
 	background  *tui.Style // nil = transparent
+
+	// Text properties
+	text      string
+	textStyle tui.Style
+	textAlign TextAlign
+
+	// Focus properties
+	focusable bool
+	focused   bool
+	onFocus   func()
+	onBlur    func()
+	onEvent   func(tui.Event) bool
+
+	// Tree notification
+	onChildAdded      func(*Element)
+	onFocusableAdded  func(tui.Focusable)
 }
 
 // Compile-time check that Element implements Layoutable
@@ -82,12 +113,34 @@ func (e *Element) SetDirty(dirty bool) {
 // --- Element's own API ---
 
 // AddChild appends children to this Element.
+// Notifies root's onChildAdded callback for each child.
 func (e *Element) AddChild(children ...*Element) {
 	for _, child := range children {
 		child.parent = e
 		e.children = append(e.children, child)
+		e.notifyChildAdded(child)
 	}
 	e.MarkDirty()
+}
+
+// notifyChildAdded walks up to root and calls appropriate callbacks.
+func (e *Element) notifyChildAdded(child *Element) {
+	root := e
+	for root.parent != nil {
+		root = root.parent
+	}
+	if root.onChildAdded != nil {
+		root.onChildAdded(child)
+	}
+	// Notify App about focusable elements for auto-registration
+	if root.onFocusableAdded != nil && child.IsFocusable() {
+		root.onFocusableAdded(child)
+	}
+}
+
+// SetOnChildAdded sets the callback for when any descendant is added.
+func (e *Element) SetOnChildAdded(fn func(*Element)) {
+	e.onChildAdded = fn
 }
 
 // RemoveChild removes a child from this Element.
@@ -177,4 +230,111 @@ func (e *Element) Background() *tui.Style {
 // SetBackground sets the background style. Pass nil for transparent.
 func (e *Element) SetBackground(style *tui.Style) {
 	e.background = style
+}
+
+// --- Text API ---
+
+// Text returns the text content.
+func (e *Element) Text() string {
+	return e.text
+}
+
+// SetText updates the text content and recalculates intrinsic width.
+func (e *Element) SetText(content string) {
+	e.text = content
+	e.style.Width = layout.Fixed(stringWidth(content))
+	e.MarkDirty()
+}
+
+// TextStyle returns the style used to render the text.
+func (e *Element) TextStyle() tui.Style {
+	return e.textStyle
+}
+
+// SetTextStyle sets the style used to render the text.
+func (e *Element) SetTextStyle(style tui.Style) {
+	e.textStyle = style
+}
+
+// TextAlign returns the text alignment.
+func (e *Element) TextAlign() TextAlign {
+	return e.textAlign
+}
+
+// SetTextAlign sets the text alignment.
+func (e *Element) SetTextAlign(align TextAlign) {
+	e.textAlign = align
+}
+
+// stringWidth returns the display width of a string in terminal cells.
+func stringWidth(s string) int {
+	width := 0
+	for _, r := range s {
+		width += tui.RuneWidth(r)
+	}
+	return width
+}
+
+// --- Focus API ---
+
+// IsFocusable returns whether this element can receive focus.
+func (e *Element) IsFocusable() bool {
+	return e.focusable
+}
+
+// IsFocused returns whether this element currently has focus.
+func (e *Element) IsFocused() bool {
+	return e.focused
+}
+
+// Focus marks this element and all children as focused.
+// Calls onFocus callback if set, then cascades to children.
+func (e *Element) Focus() {
+	e.focused = true
+	if e.onFocus != nil {
+		e.onFocus()
+	}
+	for _, child := range e.children {
+		child.Focus()
+	}
+}
+
+// Blur marks this element and all children as not focused.
+// Calls onBlur callback if set, then cascades to children.
+func (e *Element) Blur() {
+	e.focused = false
+	if e.onBlur != nil {
+		e.onBlur()
+	}
+	for _, child := range e.children {
+		child.Blur()
+	}
+}
+
+// HandleEvent dispatches an event to this element's handler.
+// Returns true if the event was consumed.
+func (e *Element) HandleEvent(event tui.Event) bool {
+	if e.onEvent != nil {
+		return e.onEvent(event)
+	}
+	return false
+}
+
+// --- Focus Tree Discovery API ---
+
+// SetOnFocusableAdded sets a callback called when a focusable descendant is added.
+// This is used by App to auto-register focusable elements.
+func (e *Element) SetOnFocusableAdded(fn func(tui.Focusable)) {
+	e.onFocusableAdded = fn
+}
+
+// WalkFocusables calls fn for each focusable element in the tree.
+// This is used by App to discover existing focusable elements.
+func (e *Element) WalkFocusables(fn func(tui.Focusable)) {
+	if e.IsFocusable() {
+		fn(e)
+	}
+	for _, child := range e.children {
+		child.WalkFocusables(fn)
+	}
 }

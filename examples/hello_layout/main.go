@@ -52,17 +52,19 @@ func main() {
 	)
 
 	// Title text - intrinsic width, centered by panel's AlignCenter
-	title := element.NewText("Layout Engine Demo",
+	title := element.New(
+		element.WithText("Layout Engine Demo"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
 
 	// Hint text - intrinsic width, centered by panel's AlignCenter
-	hint := element.NewText("Press any key to exit",
+	hint := element.New(
+		element.WithText("Press any key to exit"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
 	// Build the tree
-	panel.AddChild(title.Element, hint.Element)
+	panel.AddChild(title, hint)
 	root.AddChild(panel)
 
 	// Create buffer once and reuse it
@@ -111,10 +113,6 @@ func main() {
 			// Clear buffer and re-render
 			buf.Clear()
 			root.Render(buf, width, height)
-
-			// Render text elements
-			element.RenderText(buf, title)
-			element.RenderText(buf, hint)
 
 			tui.Render(term, buf)
 		}

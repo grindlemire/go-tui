@@ -223,19 +223,20 @@ func TestIntegration_MixedElementAndText(t *testing.T) {
 		WithAlign(layout.AlignCenter),
 	)
 
-	// Text element inside panel
-	// Note: Text elements need a height for layout. In a real app, you'd typically
-	// give text elements a fixed height or let them stretch via AlignStretch.
-	title := NewText("Hello World",
+	// Text element inside panel using new WithText API
+	// WithText sets intrinsic width to text width and height to 1
+	title := New(
+		WithText("Hello World"),
 		WithTextStyle(tui.NewStyle().Bold()),
 		WithTextAlign(TextAlignCenter),
-		WithElementOption(WithHeight(1)), // Text needs height to be visible
+		WithSize(38, 1), // Override intrinsic size for centering to work
 	)
 
-	panel.AddChild(title.Element)
+	panel.AddChild(title)
 	root.AddChild(panel)
 
 	// Render elements first (for layout and borders)
+	// Text is now rendered automatically as part of RenderTree
 	buf := tui.NewBuffer(80, 24)
 	root.Render(buf, 80, 24)
 
@@ -255,10 +256,6 @@ func TestIntegration_MixedElementAndText(t *testing.T) {
 	if topLeft.Rune != '╭' {
 		t.Errorf("border top-left = %q, want '╭'", topLeft.Rune)
 	}
-
-	// Manually render text content
-	// Note: RenderTree only handles Element, so we need to render Text separately
-	RenderText(buf, title)
 
 	// Verify text was rendered
 	// Text element's ContentRect determines where text is drawn
@@ -563,14 +560,15 @@ func TestIntegration_TextAlignment(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			text := NewText(tt.content,
+			elem := New(
+				WithText(tt.content),
 				WithTextAlign(tt.align),
-				WithElementOption(WithSize(tt.boxWidth, 1)),
+				WithSize(tt.boxWidth, 1),
 			)
 
 			buf := tui.NewBuffer(tt.boxWidth, 1)
-			text.Calculate(tt.boxWidth, 1)
-			RenderText(buf, text)
+			elem.Calculate(tt.boxWidth, 1)
+			RenderTree(buf, elem)
 
 			// Find where 'H' appears
 			foundX := -1
@@ -581,7 +579,7 @@ func TestIntegration_TextAlignment(t *testing.T) {
 				}
 			}
 
-			contentRect := text.ContentRect()
+			contentRect := elem.ContentRect()
 			expectedX := contentRect.X + tt.expectedStartOffset
 			if foundX != expectedX {
 				t.Errorf("'H' found at x=%d, want %d", foundX, expectedX)
