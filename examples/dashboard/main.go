@@ -11,25 +11,15 @@ import (
 )
 
 func main() {
-	term, err := tui.NewANSITerminal(os.Stdout, os.Stdin)
+	// Create the application (handles terminal setup, raw mode, alternate screen)
+	app, err := tui.NewApp()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create terminal: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
 		os.Exit(1)
 	}
+	defer app.Close()
 
-	if err := term.EnterRawMode(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to enter raw mode: %v\n", err)
-		os.Exit(1)
-	}
-	defer term.ExitRawMode()
-
-	term.EnterAltScreen()
-	defer term.ExitAltScreen()
-
-	term.HideCursor()
-	defer term.ShowCursor()
-
-	width, height := term.Size()
+	width, height := app.Size()
 
 	// Root container - full screen
 	root := element.New(
@@ -48,10 +38,11 @@ func main() {
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
 
-	headerTitle := element.NewText("Dashboard",
+	headerTitle := element.New(
+		element.WithText("Dashboard"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
-	header.AddChild(headerTitle.Element)
+	header.AddChild(headerTitle)
 
 	// Main content area - row with sidebar and main
 	mainArea := element.New(
@@ -70,19 +61,23 @@ func main() {
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
 	)
 
-	sidebarTitle := element.NewText("Menu",
+	sidebarTitle := element.New(
+		element.WithText("Menu"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta).Bold()),
 	)
-	menuItem1 := element.NewText("> Overview",
+	menuItem1 := element.New(
+		element.WithText("> Overview"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	menuItem2 := element.NewText("  Settings",
+	menuItem2 := element.New(
+		element.WithText("  Settings"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
-	menuItem3 := element.NewText("  Help",
+	menuItem3 := element.New(
+		element.WithText("  Help"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
-	sidebar.AddChild(sidebarTitle.Element, menuItem1.Element, menuItem2.Element, menuItem3.Element)
+	sidebar.AddChild(sidebarTitle, menuItem1, menuItem2, menuItem3)
 
 	// Main content - fills remaining space with centered floating card
 	content := element.New(
@@ -104,26 +99,27 @@ func main() {
 		element.WithGap(1),
 	)
 
-	cardTitle := element.NewText("Status Card",
+	cardTitle := element.New(
+		element.WithText("Status Card"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	cardStatus := element.NewText("Systems Online",
+	cardStatus := element.New(
+		element.WithText("Systems Online"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	cardHint := element.NewText("Press any key to exit",
+	cardHint := element.New(
+		element.WithText("Press ESC to exit"),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
-	card.AddChild(cardTitle.Element, cardStatus.Element, cardHint.Element)
+	card.AddChild(cardTitle, cardStatus, cardHint)
 	content.AddChild(card)
 
 	mainArea.AddChild(sidebar, content)
 
 	// Build the tree
 	root.AddChild(header, mainArea)
-
-	// Create buffer
-	buf := tui.NewBuffer(width, height)
+	app.SetRoot(root)
 
 	// Animation parameters for the floating card
 	minWidth := 25
@@ -134,58 +130,52 @@ func main() {
 	cardHeight := minHeight
 	growing := true
 
-	// Channel for keypress to exit
-	done := make(chan struct{})
-	go func() {
-		b := make([]byte, 1)
-		os.Stdin.Read(b)
-		close(done)
-	}()
-
-	ticker := time.NewTicker(50 * time.Millisecond)
-	defer ticker.Stop()
-
+	// Main event loop using polling
 	for {
-		select {
-		case <-done:
-			return
-		case <-ticker.C:
-			// Update card dimensions - animate expand/contract
-			if growing {
-				cardWidth++
-				cardHeight = minHeight + (cardWidth-minWidth)*(maxHeight-minHeight)/(maxWidth-minWidth)
-				if cardWidth >= maxWidth {
-					growing = false
+		// Poll for events with a 50ms timeout (animation frame rate)
+		event, ok := app.PollEvent(50 * time.Millisecond)
+		if ok {
+			switch e := event.(type) {
+			case tui.KeyEvent:
+				// Exit on Escape key
+				if e.Key == tui.KeyEscape {
+					return
 				}
-			} else {
-				cardWidth--
-				cardHeight = minHeight + (cardWidth-minWidth)*(maxHeight-minHeight)/(maxWidth-minWidth)
-				if cardWidth <= minWidth {
-					growing = true
-				}
+				// Also exit on any other key press for backward compatibility
+				return
+			case tui.ResizeEvent:
+				// Handle resize: update root size and re-render
+				width, height = e.Width, e.Height
+				style := root.Style()
+				style.Width = layout.Fixed(width)
+				style.Height = layout.Fixed(height)
+				root.SetStyle(style)
+				app.Dispatch(event)
 			}
-
-			// Update card style
-			style := card.Style()
-			style.Width = layout.Fixed(cardWidth)
-			style.Height = layout.Fixed(cardHeight)
-			card.SetStyle(style)
-
-			// Clear buffer and re-render
-			buf.Clear()
-			root.Render(buf, width, height)
-
-			// Render text elements
-			element.RenderText(buf, headerTitle)
-			element.RenderText(buf, sidebarTitle)
-			element.RenderText(buf, menuItem1)
-			element.RenderText(buf, menuItem2)
-			element.RenderText(buf, menuItem3)
-			element.RenderText(buf, cardTitle)
-			element.RenderText(buf, cardStatus)
-			element.RenderText(buf, cardHint)
-
-			tui.Render(term, buf)
 		}
+
+		// Update card dimensions - animate expand/contract
+		if growing {
+			cardWidth++
+			cardHeight = minHeight + (cardWidth-minWidth)*(maxHeight-minHeight)/(maxWidth-minWidth)
+			if cardWidth >= maxWidth {
+				growing = false
+			}
+		} else {
+			cardWidth--
+			cardHeight = minHeight + (cardWidth-minWidth)*(maxHeight-minHeight)/(maxWidth-minWidth)
+			if cardWidth <= minWidth {
+				growing = true
+			}
+		}
+
+		// Update card style
+		cardStyle := card.Style()
+		cardStyle.Width = layout.Fixed(cardWidth)
+		cardStyle.Height = layout.Fixed(cardHeight)
+		card.SetStyle(cardStyle)
+
+		// Render using App
+		app.Render()
 	}
 }

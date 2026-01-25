@@ -149,16 +149,17 @@ func TestRenderTree_CullsElementsOutsideBuffer(t *testing.T) {
 	}
 }
 
-func TestRenderText_DrawsContent(t *testing.T) {
+func TestRenderTree_DrawsTextContent(t *testing.T) {
 	buf := tui.NewBuffer(30, 10)
 
-	text := NewText("Hello",
+	elem := New(
+		WithText("Hello"),
 		WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
-		WithElementOption(WithSize(20, 3)),
+		WithSize(20, 3),
 	)
-	text.Calculate(30, 10)
+	elem.Calculate(30, 10)
 
-	RenderText(buf, text)
+	RenderTree(buf, elem)
 
 	// Check that text was drawn at left-aligned position
 	// Text should start at (0, 0) with content "Hello"
@@ -171,16 +172,17 @@ func TestRenderText_DrawsContent(t *testing.T) {
 	}
 }
 
-func TestRenderText_CenterAlignment(t *testing.T) {
+func TestRenderTree_TextCenterAlignment(t *testing.T) {
 	buf := tui.NewBuffer(30, 10)
 
-	text := NewText("Hi",
+	elem := New(
+		WithText("Hi"),
 		WithTextAlign(TextAlignCenter),
-		WithElementOption(WithSize(10, 3)),
+		WithSize(10, 3),
 	)
-	text.Calculate(30, 10)
+	elem.Calculate(30, 10)
 
-	RenderText(buf, text)
+	RenderTree(buf, elem)
 
 	// "Hi" is 2 chars wide, in a 10-wide container
 	// Center position: (10 - 2) / 2 = 4
@@ -195,16 +197,17 @@ func TestRenderText_CenterAlignment(t *testing.T) {
 	}
 }
 
-func TestRenderText_RightAlignment(t *testing.T) {
+func TestRenderTree_TextRightAlignment(t *testing.T) {
 	buf := tui.NewBuffer(30, 10)
 
-	text := NewText("Hi",
+	elem := New(
+		WithText("Hi"),
 		WithTextAlign(TextAlignRight),
-		WithElementOption(WithSize(10, 3)),
+		WithSize(10, 3),
 	)
-	text.Calculate(30, 10)
+	elem.Calculate(30, 10)
 
-	RenderText(buf, text)
+	RenderTree(buf, elem)
 
 	// "Hi" is 2 chars wide, in a 10-wide container
 	// Right-aligned position: 10 - 2 = 8
@@ -218,20 +221,21 @@ func TestRenderText_RightAlignment(t *testing.T) {
 	}
 }
 
-func TestRenderText_WithBorderAndPadding(t *testing.T) {
+func TestRenderTree_TextWithBorderAndPadding(t *testing.T) {
 	buf := tui.NewBuffer(30, 10)
 
 	// Note: Border is a visual property that draws on the element's rect.
 	// Padding creates space inside the border box for content.
 	// If you want space between border and content, use padding >= 1.
-	text := NewText("Test",
-		WithElementOption(WithSize(20, 5)),
-		WithElementOption(WithBorder(tui.BorderSingle)),
-		WithElementOption(WithPadding(1)), // 1 cell padding on all sides
+	elem := New(
+		WithText("Test"),
+		WithSize(20, 5),
+		WithBorder(tui.BorderSingle),
+		WithPadding(1), // 1 cell padding on all sides
 	)
-	text.Calculate(30, 10)
+	elem.Calculate(30, 10)
 
-	RenderText(buf, text)
+	RenderTree(buf, elem)
 
 	// Border should be drawn
 	corner := buf.Cell(0, 0)
@@ -241,7 +245,7 @@ func TestRenderText_WithBorderAndPadding(t *testing.T) {
 
 	// Content rect is border box inset by padding
 	// With padding of 1, content starts at (1, 1)
-	contentRect := text.ContentRect()
+	contentRect := elem.ContentRect()
 	if contentRect.X != 1 || contentRect.Y != 1 {
 		t.Errorf("content rect starts at (%d,%d), want (1,1)", contentRect.X, contentRect.Y)
 	}
@@ -295,6 +299,62 @@ func TestElement_Render_SkipsCalculateIfClean(t *testing.T) {
 	}
 
 	_ = originalX // Unused intentionally
+}
+
+func TestRenderTree_EmptyTextDoesNotRender(t *testing.T) {
+	buf := tui.NewBuffer(20, 10)
+
+	// Element with empty text and background
+	elem := New(
+		WithText(""),
+		WithSize(10, 5),
+		WithBackground(tui.NewStyle().Background(tui.Blue)),
+	)
+	elem.Calculate(20, 10)
+
+	RenderTree(buf, elem)
+
+	// Background should be drawn, but no text rendering should occur
+	// This just verifies no panic and background is correct
+	cell := buf.Cell(5, 2)
+	if cell.Style.Bg != tui.Blue {
+		t.Errorf("background not drawn correctly, got Bg=%v", cell.Style.Bg)
+	}
+}
+
+func TestRenderTree_NestedTextElements(t *testing.T) {
+	buf := tui.NewBuffer(40, 20)
+
+	parent := New(
+		WithSize(30, 10),
+		WithPadding(2),
+		WithBackground(tui.NewStyle().Background(tui.Blue)),
+	)
+
+	child := New(
+		WithText("Hello"),
+		WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	)
+
+	parent.AddChild(child)
+	parent.Calculate(40, 20)
+
+	RenderTree(buf, parent)
+
+	// Child should be positioned at (2, 2) due to padding
+	childRect := child.Rect()
+	if childRect.X != 2 || childRect.Y != 2 {
+		t.Errorf("child position = (%d,%d), want (2,2)", childRect.X, childRect.Y)
+	}
+
+	// Text should be rendered at child position
+	checkString(t, buf, 2, 2, "Hello")
+
+	// Check text style
+	cell := buf.Cell(2, 2)
+	if cell.Style.Fg != tui.Green {
+		t.Errorf("text style.Fg = %v, want Green", cell.Style.Fg)
+	}
 }
 
 func TestStringWidth(t *testing.T) {

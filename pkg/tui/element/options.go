@@ -179,3 +179,58 @@ func WithBackground(style tui.Style) Option {
 		e.background = &style
 	}
 }
+
+// --- Text Options ---
+
+// WithText sets the text content and calculates intrinsic size.
+// Width is set to the text width, height is set to 1 (single line).
+func WithText(content string) Option {
+	return func(e *Element) {
+		e.text = content
+		e.style.Width = layout.Fixed(stringWidth(content))
+		e.style.Height = layout.Fixed(1)
+	}
+}
+
+// WithTextStyle sets the style for text content.
+func WithTextStyle(style tui.Style) Option {
+	return func(e *Element) {
+		e.textStyle = style
+	}
+}
+
+// WithTextAlign sets text alignment within the content area.
+func WithTextAlign(align TextAlign) Option {
+	return func(e *Element) {
+		e.textAlign = align
+	}
+}
+
+// --- Focus Options ---
+
+// WithOnFocus sets the callback for when this element gains focus.
+// Implicitly sets focusable = true.
+func WithOnFocus(fn func()) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.onFocus = fn
+	}
+}
+
+// WithOnBlur sets the callback for when this element loses focus.
+// Implicitly sets focusable = true.
+func WithOnBlur(fn func()) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.onBlur = fn
+	}
+}
+
+// WithOnEvent sets the event handler for this element.
+// Implicitly sets focusable = true.
+func WithOnEvent(fn func(tui.Event) bool) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.onEvent = fn
+	}
+}
