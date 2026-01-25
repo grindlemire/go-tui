@@ -93,6 +93,12 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 	lastX, lastY := -1, -1
 
 	for _, ch := range changes {
+		// Skip continuation cells entirely - they represent the second column
+		// of a wide character, which was already rendered by the primary cell.
+		// Processing them would incorrectly move the cursor backwards.
+		if ch.Cell.IsContinuation() {
+			continue
+		}
 		// Optimize cursor movement
 		needsMove := false
 		if ch.Y != lastY {
@@ -136,8 +142,10 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 func (t *ANSITerminal) Clear() {
 	t.esc.Reset()
 	t.esc.ResetStyle()
-	t.esc.ClearScreen()
-	t.esc.MoveTo(0, 0)
+	t.esc.MoveTo(0, 0)     // Home first
+	t.esc.ClearScreen()    // ESC[2J - clear visible screen
+	t.esc.ClearScrollback() // ESC[3J - also clear scrollback (helps with resize)
+	t.esc.MoveTo(0, 0)     // Ensure cursor at home after clear
 	t.out.Write(t.esc.Bytes())
 	t.lastStyle = NewStyle()
 }
@@ -196,6 +204,21 @@ func (t *ANSITerminal) EnterAltScreen() {
 func (t *ANSITerminal) ExitAltScreen() {
 	t.esc.Reset()
 	t.esc.ExitAltScreen()
+	t.out.Write(t.esc.Bytes())
+}
+
+// BeginSyncUpdate starts a synchronized update block.
+// Output is buffered until EndSyncUpdate, then displayed atomically.
+func (t *ANSITerminal) BeginSyncUpdate() {
+	t.esc.Reset()
+	t.esc.BeginSyncUpdate()
+	t.out.Write(t.esc.Bytes())
+}
+
+// EndSyncUpdate ends a synchronized update block.
+func (t *ANSITerminal) EndSyncUpdate() {
+	t.esc.Reset()
+	t.esc.EndSyncUpdate()
 	t.out.Write(t.esc.Bytes())
 }
 

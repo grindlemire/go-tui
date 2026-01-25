@@ -20,13 +20,19 @@ type EventReader interface {
 	Close() error
 }
 
+// resizeDebounceWindow is the duration to wait for additional resize events before emitting.
+// This coalesces rapid resize signals during window dragging into a single event.
+const resizeDebounceWindow = 16 * time.Millisecond
+
 // stdinReader implements EventReader for a real terminal.
 type stdinReader struct {
-	fd         int           // stdin file descriptor
-	buf        []byte        // Read buffer for escape sequences
-	partialBuf []byte        // Buffer for incomplete UTF-8 sequences
-	pending    []Event       // Parsed events waiting to be returned
-	sigCh      chan os.Signal // For SIGWINCH (resize) handling
+	fd             int            // stdin file descriptor
+	buf            []byte         // Read buffer for escape sequences
+	partialBuf     []byte         // Buffer for incomplete UTF-8 sequences
+	pending        []Event        // Parsed events waiting to be returned
+	sigCh          chan os.Signal // For SIGWINCH (resize) handling
+	lastResizeTime time.Time      // Track last resize for debouncing
+	pendingResize  *ResizeEvent   // Buffered resize event waiting to be emitted
 }
 
 // NewEventReader creates an EventReader for the given terminal input.
@@ -35,7 +41,7 @@ func NewEventReader(in *os.File) (EventReader, error) {
 	r := &stdinReader{
 		fd:    int(in.Fd()),
 		buf:   make([]byte, 256),
-		sigCh: make(chan os.Signal, 1),
+		sigCh: make(chan os.Signal, 10),
 	}
 
 	// Set up SIGWINCH signal for resize events
@@ -46,6 +52,8 @@ func NewEventReader(in *os.File) (EventReader, error) {
 
 // PollEvent reads the next event with a timeout.
 // Returns (event, true) if an event was read, or (nil, false) on timeout.
+// Resize events (SIGWINCH) are debounced: rapid resize signals within the debounce
+// window are coalesced into a single event with the final dimensions.
 func (r *stdinReader) PollEvent(timeout time.Duration) (Event, bool) {
 	// Return pending events first
 	if len(r.pending) > 0 {
@@ -54,16 +62,45 @@ func (r *stdinReader) PollEvent(timeout time.Duration) (Event, bool) {
 		return ev, true
 	}
 
-	// Check for resize signal (non-blocking)
-	select {
-	case <-r.sigCh:
-		w, h := getTerminalSizeForReader(r.fd)
-		return ResizeEvent{Width: w, Height: h}, true
-	default:
+	// Check for resize signal (non-blocking) and update pending resize
+	r.drainResizeSignals()
+
+	// If we have a pending resize and the debounce window has passed, emit it
+	if r.pendingResize != nil {
+		elapsed := time.Since(r.lastResizeTime)
+		if elapsed >= resizeDebounceWindow {
+			event := *r.pendingResize
+			r.pendingResize = nil
+			return event, true
+		}
+	}
+
+	// Calculate actual timeout: if we have a pending resize, cap the timeout
+	// to ensure we emit the resize event once the debounce window passes
+	actualTimeout := timeout
+	if r.pendingResize != nil {
+		remaining := resizeDebounceWindow - time.Since(r.lastResizeTime)
+		if remaining > 0 && (actualTimeout < 0 || remaining < actualTimeout) {
+			actualTimeout = remaining
+		}
 	}
 
 	// Use select() with timeout for non-blocking stdin check
-	ready, err := selectWithTimeout(r.fd, timeout)
+	ready, err := selectWithTimeout(r.fd, actualTimeout)
+
+	// After waiting, check for any resize signals that arrived
+	r.drainResizeSignals()
+
+	// If we have a pending resize and the debounce window has now passed, emit it
+	if r.pendingResize != nil {
+		elapsed := time.Since(r.lastResizeTime)
+		if elapsed >= resizeDebounceWindow {
+			event := *r.pendingResize
+			r.pendingResize = nil
+			return event, true
+		}
+	}
+
 	if err != nil || !ready {
 		return nil, false
 	}
@@ -96,6 +133,21 @@ func (r *stdinReader) PollEvent(timeout time.Duration) (Event, bool) {
 	}
 
 	return nil, false
+}
+
+// drainResizeSignals reads all pending SIGWINCH signals and updates pendingResize.
+// Multiple signals are coalesced - only the latest terminal size is kept.
+func (r *stdinReader) drainResizeSignals() {
+	for {
+		select {
+		case <-r.sigCh:
+			w, h := getTerminalSizeForReader(r.fd)
+			r.pendingResize = &ResizeEvent{Width: w, Height: h}
+			r.lastResizeTime = time.Now()
+		default:
+			return
+		}
+	}
 }
 
 // Close releases resources.
