@@ -501,7 +501,15 @@ func (p *Parser) parseElement() *Element {
 func (p *Parser) parseAttributes() []*Attribute {
 	var attrs []*Attribute
 
-	for p.current.Type == TokenIdent {
+	for {
+		// Skip newlines between attributes (for multi-line attribute lists)
+		p.skipNewlines()
+
+		// Stop if we hit end of attributes (> or /> or EOF)
+		if p.current.Type != TokenIdent {
+			break
+		}
+
 		attr := p.parseAttribute()
 		if attr != nil {
 			attrs = append(attrs, attr)
@@ -647,19 +655,33 @@ func (p *Parser) parseGoExprNode() *GoExpr {
 		return nil
 	}
 
-	// Use lexer's ReadGoExpr to handle brace balancing
-	// First, we need to position the lexer at the '{' character
+	// The parser has already peeked ahead, consuming some characters via Next().
+	// We need to reconstruct the expression by:
+	// 1. Including any token that was peeked (the first token after {)
+	// 2. Using ReadGoExpr to get the rest
+
+	var exprParts []string
+
+	// If peek isn't } or EOF, it's part of the expression
+	if p.peek.Type != TokenRBrace && p.peek.Type != TokenEOF {
+		exprParts = append(exprParts, p.peek.Literal)
+	}
+
+	// Now read the rest of the expression
 	tok := p.lexer.ReadGoExpr()
 	if tok.Type == TokenError {
 		return nil
 	}
+
+	exprParts = append(exprParts, tok.Literal)
+	code := strings.Join(exprParts, "")
 
 	// Update parser state after lexer advanced
 	p.peek = p.lexer.Next()
 	p.advance()
 
 	return &GoExpr{
-		Code:     tok.Literal,
+		Code:     code,
 		Position: pos,
 	}
 }
@@ -799,12 +821,15 @@ func (p *Parser) parseIf() *IfStmt {
 	stmt := &IfStmt{Position: pos}
 
 	// Parse condition until {
+	// We need to be smart about spacing - don't add spaces around operators
 	var condParts []string
 	for p.current.Type != TokenLBrace && p.current.Type != TokenEOF && p.current.Type != TokenNewline {
 		condParts = append(condParts, p.current.Literal)
 		p.advance()
 	}
-	stmt.Condition = strings.TrimSpace(strings.Join(condParts, " "))
+	// Join without spaces, but we need to handle this differently
+	// Actually, we need to join smartly based on token types
+	stmt.Condition = joinConditionTokens(condParts)
 
 	p.skipNewlines()
 
@@ -895,4 +920,46 @@ func (p *Parser) parseGoFunc() *GoFunc {
 		Code:     code.String(),
 		Position: pos,
 	}
+}
+
+// joinConditionTokens joins condition tokens smartly, adding spaces only where needed.
+// Operators like !=, ==, <=, >= should not have spaces inserted between their parts.
+func joinConditionTokens(parts []string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+
+	var result strings.Builder
+	for i, part := range parts {
+		if i > 0 {
+			prev := parts[i-1]
+			// Don't add space if current or previous is an operator character
+			// that should be adjacent (like ! before =, or = after !)
+			needsSpace := true
+
+			// Check if we're building a compound operator
+			if (prev == "!" || prev == "=" || prev == "<" || prev == ">" || prev == ":" || prev == "&" || prev == "|") &&
+				(part == "=" || part == "&" || part == "|") {
+				needsSpace = false
+			}
+			// Don't add space before/after dots (for qualified names like pkg.Type)
+			if prev == "." || part == "." {
+				needsSpace = false
+			}
+			// Don't add space around parens
+			if prev == "(" || part == "(" || prev == ")" || part == ")" {
+				needsSpace = false
+			}
+			// Don't add space around brackets
+			if prev == "[" || part == "[" || prev == "]" || part == "]" {
+				needsSpace = false
+			}
+
+			if needsSpace {
+				result.WriteString(" ")
+			}
+		}
+		result.WriteString(part)
+	}
+	return result.String()
 }

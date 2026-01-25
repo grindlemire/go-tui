@@ -324,6 +324,12 @@ func TestLexer_GoExpressions(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			l := NewLexer("test.tui", tt.input)
+			// First, consume the opening brace via Next()
+			// ReadGoExpr expects to be called after { was tokenized
+			brace := l.Next()
+			if brace.Type != TokenLBrace {
+				t.Fatalf("expected TokenLBrace, got %v", brace.Type)
+			}
 			tok := l.ReadGoExpr()
 			if tok.Type != TokenGoExpr {
 				t.Errorf("Type = %v, want TokenGoExpr", tok.Type)

@@ -49,9 +49,9 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 
 **Reference:** [dsl-codegen-design.md §3.2](./dsl-codegen-design.md#32-ast-types)
 
-**Completed in commit:** (pending)
+**Status:** COMPLETE
 
-- [ ] Create `pkg/tuigen/ast.go`
+- [x] Create `pkg/tuigen/ast.go`
   - Define `Node` interface with `node()` marker and `Position()` method
   - Define `File` struct (Package, Imports, Components, Funcs)
   - Define `Import` struct (Alias, Path)
@@ -67,7 +67,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Define `GoCode` struct for embedded Go code blocks
   - Implement `node()` for all types
 
-- [ ] Create `pkg/tuigen/parser.go`
+- [x] Create `pkg/tuigen/parser.go`
   - Implement `Parser` struct with lexer, current token, peek token, errors
   - Implement `NewParser(lexer *Lexer) *Parser`
   - Implement `ParseFile() (*File, error)` entry point
@@ -84,7 +84,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Implement `parseGoExpr() *GoExpr`
   - Implement error recovery for common mistakes
 
-- [ ] Create `pkg/tuigen/parser_test.go`
+- [x] Create `pkg/tuigen/parser_test.go`
   - Test package and import parsing
   - Test simple component parsing
   - Test element parsing (self-closing, with children)
@@ -204,7 +204,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Core Types & Lexer | Complete |
-| 2 | Parser & AST | Pending |
+| 2 | Parser & AST | Complete |
 | 3 | Code Generator | Pending |
 | 4 | CLI & Integration | Pending |
 
