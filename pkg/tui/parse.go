@@ -299,6 +299,9 @@ func parseCSI(params []int, final byte) (Key, Modifier) {
 		return KeyF3, mod
 	case 'S':
 		return KeyF4, mod
+	case 'Z':
+		// Backtab (Shift+Tab) - CSI Z
+		return KeyTab, ModShift
 	}
 
 	return KeyNone, ModNone

@@ -267,18 +267,19 @@ func TestParseInput_FunctionKeys_CSI(t *testing.T) {
 func TestParseInput_NavigationKeys(t *testing.T) {
 	type tc struct {
 		input    []byte
-		expected Key
+		expected KeyEvent
 	}
 
 	tests := map[string]tc{
-		"home csi H":    {input: []byte("\x1b[H"), expected: KeyHome},
-		"end csi F":     {input: []byte("\x1b[F"), expected: KeyEnd},
-		"home csi 1~":   {input: []byte("\x1b[1~"), expected: KeyHome},
-		"insert":        {input: []byte("\x1b[2~"), expected: KeyInsert},
-		"delete":        {input: []byte("\x1b[3~"), expected: KeyDelete},
-		"end csi 4~":    {input: []byte("\x1b[4~"), expected: KeyEnd},
-		"pageup":        {input: []byte("\x1b[5~"), expected: KeyPageUp},
-		"pagedown":      {input: []byte("\x1b[6~"), expected: KeyPageDown},
+		"home csi H":  {input: []byte("\x1b[H"), expected: KeyEvent{Key: KeyHome}},
+		"end csi F":   {input: []byte("\x1b[F"), expected: KeyEvent{Key: KeyEnd}},
+		"home csi 1~": {input: []byte("\x1b[1~"), expected: KeyEvent{Key: KeyHome}},
+		"insert":      {input: []byte("\x1b[2~"), expected: KeyEvent{Key: KeyInsert}},
+		"delete":      {input: []byte("\x1b[3~"), expected: KeyEvent{Key: KeyDelete}},
+		"end csi 4~":  {input: []byte("\x1b[4~"), expected: KeyEvent{Key: KeyEnd}},
+		"pageup":      {input: []byte("\x1b[5~"), expected: KeyEvent{Key: KeyPageUp}},
+		"pagedown":    {input: []byte("\x1b[6~"), expected: KeyEvent{Key: KeyPageDown}},
+		"backtab":     {input: []byte("\x1b[Z"), expected: KeyEvent{Key: KeyTab, Mod: ModShift}},
 	}
 
 	for name, tt := range tests {
@@ -291,8 +292,9 @@ func TestParseInput_NavigationKeys(t *testing.T) {
 			if !ok {
 				t.Fatalf("event is not KeyEvent")
 			}
-			if ke.Key != tt.expected {
-				t.Errorf("parseInput(%q): got Key = %v, want %v", tt.input, ke.Key, tt.expected)
+			if ke.Key != tt.expected.Key || ke.Mod != tt.expected.Mod {
+				t.Errorf("parseInput(%q): got {Key: %v, Mod: %v}, want {Key: %v, Mod: %v}",
+					tt.input, ke.Key, ke.Mod, tt.expected.Key, tt.expected.Mod)
 			}
 		})
 	}
