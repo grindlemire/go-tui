@@ -8,20 +8,20 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 
 **Reference:** [dsl-codegen-design.md §3.1-3.2](./dsl-codegen-design.md#31-token-types)
 
-**Completed in commit:** (pending)
+**Status:** COMPLETE
 
-- [ ] Create `pkg/tuigen/token.go`
+- [x] Create `pkg/tuigen/token.go`
   - Define `TokenType` enum with all token types
   - Define `Token` struct with Type, Literal, Line, Column
   - Define `Position` struct for error locations
   - Implement `String()` for debugging
 
-- [ ] Create `pkg/tuigen/errors.go`
+- [x] Create `pkg/tuigen/errors.go`
   - Define `Error` struct with Position, Message, Hint
   - Implement `Error()` interface for error formatting
   - Implement `ErrorList` for collecting multiple errors
 
-- [ ] Create `pkg/tuigen/lexer.go`
+- [x] Create `pkg/tuigen/lexer.go`
   - Implement `Lexer` struct with source, position tracking
   - Implement `NewLexer(filename, source string) *Lexer`
   - Implement `Next() Token` main tokenization method
@@ -33,7 +33,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Handle Go expressions inside `{...}` with brace balancing
   - Handle XML-like tokens: `<`, `</`, `/>`, `>`
 
-- [ ] Create `pkg/tuigen/lexer_test.go`
+- [x] Create `pkg/tuigen/lexer_test.go`
   - Test basic tokens (keywords, identifiers, literals)
   - Test operators and punctuation
   - Test Go expression extraction with nested braces
@@ -203,7 +203,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Core Types & Lexer | Pending |
+| 1 | Core Types & Lexer | Complete |
 | 2 | Parser & AST | Pending |
 | 3 | Code Generator | Pending |
 | 4 | CLI & Integration | Pending |
