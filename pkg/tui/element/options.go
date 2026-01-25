@@ -234,3 +234,30 @@ func WithOnEvent(fn func(tui.Event) bool) Option {
 		e.onEvent = fn
 	}
 }
+
+// --- Scroll Options ---
+
+// WithScrollable enables scrolling in the specified mode.
+// Implicitly sets focusable = true so the element can receive scroll events.
+func WithScrollable(mode ScrollMode) Option {
+	return func(e *Element) {
+		e.scrollMode = mode
+		e.focusable = true
+		e.scrollbarStyle = tui.NewStyle().Foreground(tui.BrightBlack)
+		e.scrollbarThumbStyle = tui.NewStyle().Foreground(tui.White)
+	}
+}
+
+// WithScrollbarStyle sets the style for the scrollbar track.
+func WithScrollbarStyle(style tui.Style) Option {
+	return func(e *Element) {
+		e.scrollbarStyle = style
+	}
+}
+
+// WithScrollbarThumbStyle sets the style for the scrollbar thumb.
+func WithScrollbarThumbStyle(style tui.Style) Option {
+	return func(e *Element) {
+		e.scrollbarThumbStyle = style
+	}
+}

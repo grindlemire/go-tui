@@ -24,6 +24,20 @@ const (
 	TextAlignRight
 )
 
+// ScrollMode specifies how an element scrolls its content.
+type ScrollMode int
+
+const (
+	// ScrollNone disables scrolling (default).
+	ScrollNone ScrollMode = iota
+	// ScrollVertical enables vertical scrolling.
+	ScrollVertical
+	// ScrollHorizontal enables horizontal scrolling.
+	ScrollHorizontal
+	// ScrollBoth enables both vertical and horizontal scrolling.
+	ScrollBoth
+)
+
 // Element is a layout container with visual properties.
 // It implements layout.Layoutable and owns its children directly.
 type Element struct {
@@ -54,8 +68,22 @@ type Element struct {
 	onEvent   func(tui.Event) bool
 
 	// Tree notification
-	onChildAdded      func(*Element)
-	onFocusableAdded  func(tui.Focusable)
+	onChildAdded     func(*Element)
+	onFocusableAdded func(tui.Focusable)
+
+	// Custom render hook (used by wrappers that need custom rendering)
+	onRender func(*Element, *tui.Buffer)
+
+	// Scroll properties
+	scrollMode    ScrollMode
+	scrollX       int // Current horizontal scroll offset
+	scrollY       int // Current vertical scroll offset
+	contentWidth  int // Computed content width (may exceed viewport)
+	contentHeight int // Computed content height (may exceed viewport)
+
+	// Scrollbar styles
+	scrollbarStyle      tui.Style
+	scrollbarThumbStyle tui.Style
 }
 
 // Compile-time check that Element implements Layoutable
@@ -314,9 +342,71 @@ func (e *Element) Blur() {
 // HandleEvent dispatches an event to this element's handler.
 // Returns true if the event was consumed.
 func (e *Element) HandleEvent(event tui.Event) bool {
+	// First, let user handler try to consume the event
 	if e.onEvent != nil {
-		return e.onEvent(event)
+		if e.onEvent(event) {
+			return true
+		}
 	}
+
+	// Handle scroll events for scrollable elements
+	if e.scrollMode != ScrollNone {
+		if e.handleScrollEvent(event) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// handleScrollEvent handles keyboard events for scrolling.
+func (e *Element) handleScrollEvent(event tui.Event) bool {
+	key, ok := event.(tui.KeyEvent)
+	if !ok {
+		return false
+	}
+
+	_, viewportHeight := e.ViewportSize()
+
+	switch key.Key {
+	case tui.KeyUp:
+		if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+			e.ScrollBy(0, -1)
+			return true
+		}
+	case tui.KeyDown:
+		if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+			e.ScrollBy(0, 1)
+			return true
+		}
+	case tui.KeyLeft:
+		if e.scrollMode == ScrollHorizontal || e.scrollMode == ScrollBoth {
+			e.ScrollBy(-1, 0)
+			return true
+		}
+	case tui.KeyRight:
+		if e.scrollMode == ScrollHorizontal || e.scrollMode == ScrollBoth {
+			e.ScrollBy(1, 0)
+			return true
+		}
+	case tui.KeyPageUp:
+		if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+			e.ScrollBy(0, -viewportHeight)
+			return true
+		}
+	case tui.KeyPageDown:
+		if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+			e.ScrollBy(0, viewportHeight)
+			return true
+		}
+	case tui.KeyHome:
+		e.ScrollTo(0, 0)
+		return true
+	case tui.KeyEnd:
+		e.ScrollToBottom()
+		return true
+	}
+
 	return false
 }
 

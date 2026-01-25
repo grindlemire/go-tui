@@ -202,6 +202,49 @@ func (b *Buffer) SetString(x, y int, s string, style Style) int {
 	return totalWidth
 }
 
+// SetStringClipped writes a string clipped to a rectangle.
+// Characters outside clipRect are not rendered.
+// Returns the total display width of rendered characters.
+func (b *Buffer) SetStringClipped(x, y int, s string, style Style, clipRect Rect) int {
+	if y < clipRect.Y || y >= clipRect.Bottom() {
+		return 0
+	}
+
+	totalWidth := 0
+	curX := x
+
+	for _, r := range s {
+		width := RuneWidth(r)
+
+		// Skip if entirely before clip region
+		if curX+width <= clipRect.X {
+			curX += width
+			continue
+		}
+
+		// Stop if past clip region
+		if curX >= clipRect.Right() {
+			break
+		}
+
+		// Render if within clip (also check buffer bounds)
+		if curX >= clipRect.X && curX < clipRect.Right() {
+			// For wide characters, ensure both cells fit in clip region
+			if width == 2 && curX+1 >= clipRect.Right() {
+				// Wide char doesn't fit, skip it
+				curX += width
+				continue
+			}
+			b.SetRune(curX, y, r, style)
+			totalWidth += width
+		}
+
+		curX += width
+	}
+
+	return totalWidth
+}
+
 // Fill fills a rectangle with the given rune and style.
 // Handles wide characters appropriately.
 func (b *Buffer) Fill(rect Rect, r rune, style Style) {

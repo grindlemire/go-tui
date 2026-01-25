@@ -21,6 +21,12 @@ func renderElement(buf *tui.Buffer, e *Element) {
 		return
 	}
 
+	// Use custom render hook if set (used by wrappers)
+	if e.onRender != nil {
+		e.onRender(e, buf)
+		return
+	}
+
 	// 1. Fill background
 	if e.background != nil {
 		buf.Fill(rect, ' ', *e.background)
@@ -36,9 +42,130 @@ func renderElement(buf *tui.Buffer, e *Element) {
 		renderTextContent(buf, e)
 	}
 
-	// 4. Recurse to children
+	// 4. Render children (with scroll handling if scrollable)
+	if e.IsScrollable() {
+		renderScrollableChildren(buf, e)
+	} else {
+		for _, child := range e.children {
+			renderElement(buf, child)
+		}
+	}
+}
+
+// renderScrollableChildren renders children with scroll offset and clipping.
+func renderScrollableChildren(buf *tui.Buffer, e *Element) {
+	// First, do scroll-aware layout
+	e.layoutScrollContent()
+
+	// Get viewport (clip region)
+	clipRect := e.ContentRect()
+
+	// Reserve space for vertical scrollbar if needed
+	if e.needsVerticalScrollbar() {
+		clipRect.Width = max(0, clipRect.Width-1)
+	}
+
+	// Render each child with scroll offset and clipping
 	for _, child := range e.children {
-		renderElement(buf, child)
+		renderClippedElement(buf, child, clipRect, e.scrollX, e.scrollY, clipRect.X, clipRect.Y)
+	}
+
+	// Draw scrollbar
+	if e.needsVerticalScrollbar() {
+		renderVerticalScrollbar(buf, e)
+	}
+}
+
+// renderClippedElement renders an element with scroll offset and clipping.
+func renderClippedElement(buf *tui.Buffer, e *Element, clipRect layout.Rect, scrollX, scrollY, viewportX, viewportY int) {
+	childRect := e.Rect()
+
+	// Translate from content space to screen space
+	// Children are laid out starting from (0,0) in content space
+	// We add viewport origin and subtract scroll offset
+	screenX := viewportX + childRect.X - scrollX
+	screenY := viewportY + childRect.Y - scrollY
+
+	screenRect := layout.Rect{
+		X:      screenX,
+		Y:      screenY,
+		Width:  childRect.Width,
+		Height: childRect.Height,
+	}
+
+	// Check if visible within clip region
+	visibleRect := screenRect.Intersect(clipRect)
+	if visibleRect.IsEmpty() {
+		return
+	}
+
+	// Check if fully visible (for border rendering decision)
+	fullyVisible := clipRect.ContainsRect(screenRect)
+
+	// Render background (only visible portion)
+	if e.background != nil {
+		buf.Fill(visibleRect, ' ', *e.background)
+	}
+
+	// Render border only if fully visible
+	if e.border != tui.BorderNone && fullyVisible {
+		tui.DrawBox(buf, screenRect, e.border, e.borderStyle)
+	}
+
+	// Render text with clipping
+	if e.text != "" {
+		textX := screenX + e.style.Padding.Left
+		textY := screenY + e.style.Padding.Top
+
+		if textY >= clipRect.Y && textY < clipRect.Bottom() {
+			buf.SetStringClipped(textX, textY, e.text, e.textStyle, clipRect)
+		}
+	}
+
+	// Recurse to children
+	for _, child := range e.children {
+		renderClippedElement(buf, child, clipRect, 0, 0, screenX, screenY)
+	}
+}
+
+// renderVerticalScrollbar draws the vertical scrollbar for a scrollable element.
+func renderVerticalScrollbar(buf *tui.Buffer, e *Element) {
+	viewportRect := e.ContentRect()
+
+	// Scrollbar position: right edge of content area
+	trackX := viewportRect.Right() - 1
+	trackTop := viewportRect.Y
+	trackHeight := viewportRect.Height
+
+	if trackHeight <= 0 {
+		return
+	}
+
+	viewportHeight := viewportRect.Height
+	contentHeight := e.contentHeight
+
+	if contentHeight <= viewportHeight {
+		return
+	}
+
+	// Thumb size proportional to viewport/content ratio
+	thumbHeight := max(1, trackHeight*viewportHeight/contentHeight)
+
+	// Thumb position based on scroll offset
+	maxScroll := contentHeight - viewportHeight
+	if maxScroll <= 0 {
+		return
+	}
+	thumbTop := e.scrollY * (trackHeight - thumbHeight) / maxScroll
+
+	// Draw track and thumb
+	for y := 0; y < trackHeight; y++ {
+		screenY := trackTop + y
+		if y >= thumbTop && y < thumbTop+thumbHeight {
+			buf.SetRune(trackX, screenY, '█', e.scrollbarThumbStyle)
+		} else {
+			buf.SetRune(trackX, screenY, '│', e.scrollbarStyle)
+		}
 	}
 }
 

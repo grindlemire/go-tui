@@ -1,5 +1,10 @@
 package layout
 
+// Size represents dimensions without position.
+type Size struct {
+	Width, Height int
+}
+
 // Rect represents a rectangle with integer coordinates.
 // X and Y are the top-left corner; Width and Height are dimensions.
 type Rect struct {
