@@ -107,6 +107,13 @@ func (e *escBuilder) ClearScreen() {
 	e.buf = append(e.buf, '2', 'J')
 }
 
+// ClearScrollback clears the scrollback buffer (ESC[3J).
+// This helps ensure a clean screen after terminal resize.
+func (e *escBuilder) ClearScrollback() {
+	e.writeCSI()
+	e.buf = append(e.buf, '3', 'J')
+}
+
 // ClearLine clears the entire current line.
 func (e *escBuilder) ClearLine() {
 	e.writeCSI()
@@ -135,6 +142,23 @@ func (e *escBuilder) EnterAltScreen() {
 func (e *escBuilder) ExitAltScreen() {
 	e.writeCSI()
 	e.buf = append(e.buf, '?', '1', '0', '4', '9', 'l')
+}
+
+// BeginSyncUpdate starts a synchronized update block.
+// The terminal will buffer all output until EndSyncUpdate is called,
+// then display it atomically. This prevents tearing during updates.
+// Supported by: iTerm2, Terminal.app, kitty, alacritty, foot, etc.
+// Terminals that don't support it will simply ignore this sequence.
+func (e *escBuilder) BeginSyncUpdate() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '2', '0', '2', '6', 'h')
+}
+
+// EndSyncUpdate ends a synchronized update block.
+// The terminal will now display all buffered output atomically.
+func (e *escBuilder) EndSyncUpdate() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '2', '0', '2', '6', 'l')
 }
 
 // ResetStyle resets all text attributes to default.

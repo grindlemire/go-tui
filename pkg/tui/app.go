@@ -30,11 +30,12 @@ type focusableTreeWalker interface {
 
 // App manages the application lifecycle: terminal setup, event loop, and rendering.
 type App struct {
-	terminal *ANSITerminal
-	buffer   *Buffer
-	reader   EventReader
-	focus    *FocusManager
-	root     Renderable
+	terminal        *ANSITerminal
+	buffer          *Buffer
+	reader          EventReader
+	focus           *FocusManager
+	root            Renderable
+	needsFullRedraw bool // Set after resize, cleared after RenderFull
 }
 
 // NewApp creates a new application with the terminal set up for TUI usage.
@@ -206,7 +207,7 @@ func (a *App) PollEvent(timeout time.Duration) (Event, bool) {
 }
 
 // Dispatch sends an event to the focused element.
-// Handles ResizeEvent internally by updating buffer size.
+// Handles ResizeEvent internally by updating buffer size and scheduling a full redraw.
 // Returns true if the event was consumed.
 func (a *App) Dispatch(event Event) bool {
 	// Handle ResizeEvent specially
@@ -219,6 +220,9 @@ func (a *App) Dispatch(event Event) bool {
 			a.root.MarkDirty()
 		}
 
+		// Schedule full redraw to clear any visual artifacts
+		a.needsFullRedraw = true
+
 		return true
 	}
 
@@ -227,8 +231,23 @@ func (a *App) Dispatch(event Event) bool {
 }
 
 // Render clears the buffer, renders the element tree, and flushes to terminal.
+// If a resize occurred since the last render, this automatically performs a full
+// redraw to eliminate visual artifacts.
 func (a *App) Render() {
 	width, height := a.terminal.Size()
+
+	// Ensure buffer matches current terminal size (handles rapid resize)
+	if a.buffer.Width() != width || a.buffer.Height() != height {
+		// Clear terminal to remove any corrupt content from resize
+		a.terminal.Clear()
+
+		// Resize buffer to match terminal
+		a.buffer.Resize(width, height)
+		if a.root != nil {
+			a.root.MarkDirty()
+		}
+		a.needsFullRedraw = true
+	}
 
 	// Clear buffer
 	a.buffer.Clear()
@@ -238,8 +257,13 @@ func (a *App) Render() {
 		a.root.Render(a.buffer, width, height)
 	}
 
-	// Render to terminal
-	Render(a.terminal, a.buffer)
+	// Use full redraw after resize to clear artifacts, otherwise use diff-based render
+	if a.needsFullRedraw {
+		RenderFull(a.terminal, a.buffer)
+		a.needsFullRedraw = false
+	} else {
+		Render(a.terminal, a.buffer)
+	}
 }
 
 // RenderFull forces a complete redraw of the buffer to the terminal.
