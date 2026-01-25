@@ -445,15 +445,13 @@ func (l *Lexer) readNumber() Token {
 
 // ReadGoExpr reads a Go expression inside {}, handling nested braces.
 // This is called by the parser when it encounters { in an attribute or content context.
+// Note: The opening '{' has already been consumed by the lexer when producing TokenLBrace,
+// so we start reading from the current position (after the '{').
 func (l *Lexer) ReadGoExpr() Token {
 	l.startToken()
 
-	if l.ch != '{' {
-		l.errors.AddError(l.position(), "expected '{' at start of Go expression")
-		return l.makeToken(TokenError, "")
-	}
-	l.readChar() // consume opening {
-
+	// The '{' was already consumed when TokenLBrace was created,
+	// so we start with braceDepth=1 and read from current position.
 	startPos := l.pos
 	braceDepth := 1
 	parenDepth := 0
