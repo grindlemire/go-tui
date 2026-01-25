@@ -31,16 +31,17 @@ func NewAnalyzer() *Analyzer {
 	}
 }
 
-// knownTags lists all supported element tags.
+// knownTags lists all supported element tags (HTML-style).
 var knownTags = map[string]bool{
-	"box":        true,
-	"text":       true,
-	"scrollable": true,
-	"button":     true,
-	"input":      true,
-	"list":       true,
-	"table":      true,
-	"progress":   true,
+	"div":      true,
+	"span":     true,
+	"p":        true,
+	"ul":       true,
+	"li":       true,
+	"button":   true,
+	"input":    true,
+	"table":    true,
+	"progress": true,
 }
 
 // knownAttributes lists all supported element attributes.
@@ -93,6 +94,9 @@ var knownAttributes = map[string]bool{
 	// Generic
 	"disabled": true,
 	"id":       true,
+
+	// Tailwind-style class attribute
+	"class": true,
 }
 
 // attributeSimilar maps common typos to correct attribute names.
@@ -347,6 +351,20 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 		}
 
 		a.errors.Add(err)
+		return
+	}
+
+	// Check if class attribute uses Tailwind classes that need imports
+	if attr.Name == "class" {
+		if v, ok := attr.Value.(*StringLit); ok {
+			result := ParseTailwindClasses(v.Value)
+			if result.NeedsImports["layout"] {
+				a.usesLayout = true
+			}
+			if result.NeedsImports["tui"] {
+				a.usesTUI = true
+			}
+		}
 		return
 	}
 

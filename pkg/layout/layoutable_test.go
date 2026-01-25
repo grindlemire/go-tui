@@ -10,6 +10,10 @@ type testNode struct {
 	layout   Layout
 	dirty    bool
 	parent   *testNode
+
+	// Explicit intrinsic size for testing (simulates text content)
+	intrinsicW int
+	intrinsicH int
 }
 
 // newTestNode creates a new testNode with the given style.
@@ -36,6 +40,76 @@ func (n *testNode) SetLayout(l Layout) { n.layout = l }
 func (n *testNode) GetLayout() Layout  { return n.layout }
 func (n *testNode) IsDirty() bool      { return n.dirty }
 func (n *testNode) SetDirty(d bool)    { n.dirty = d }
+
+// IntrinsicSize returns the intrinsic dimensions of the node.
+// For leaf nodes: uses explicit intrinsicW/intrinsicH or Fixed style values.
+// For containers: recursively computes from children.
+func (n *testNode) IntrinsicSize() (width, height int) {
+	// First check explicit intrinsic size (simulates text content)
+	if n.intrinsicW > 0 || n.intrinsicH > 0 {
+		return n.intrinsicW, n.intrinsicH
+	}
+
+	// Check for explicit Fixed size
+	if !n.style.Width.IsAuto() {
+		width = int(n.style.Width.Amount)
+	}
+	if !n.style.Height.IsAuto() {
+		height = int(n.style.Height.Amount)
+	}
+	if width > 0 || height > 0 {
+		return width, height
+	}
+
+	// For containers: compute from children
+	if len(n.children) == 0 {
+		return 0, 0
+	}
+
+	isRow := n.style.Direction == Row
+	var intrinsicW, intrinsicH int
+
+	for i, child := range n.children {
+		childW, childH := child.IntrinsicSize()
+		childStyle := child.LayoutStyle()
+		marginH := childStyle.Margin.Horizontal()
+		marginV := childStyle.Margin.Vertical()
+
+		if isRow {
+			intrinsicW += childW + marginH
+			if childH+marginV > intrinsicH {
+				intrinsicH = childH + marginV
+			}
+		} else {
+			if childW+marginH > intrinsicW {
+				intrinsicW = childW + marginH
+			}
+			intrinsicH += childH + marginV
+		}
+
+		// Add gap between children (not before first)
+		if i > 0 {
+			if isRow {
+				intrinsicW += n.style.Gap
+			} else {
+				intrinsicH += n.style.Gap
+			}
+		}
+	}
+
+	// Add padding
+	intrinsicW += n.style.Padding.Horizontal()
+	intrinsicH += n.style.Padding.Vertical()
+
+	return intrinsicW, intrinsicH
+}
+
+// SetIntrinsicSize sets explicit intrinsic dimensions for testing.
+// This simulates elements like text that have content-based size.
+func (n *testNode) SetIntrinsicSize(width, height int) {
+	n.intrinsicW = width
+	n.intrinsicH = height
+}
 
 // Additional methods for testing
 

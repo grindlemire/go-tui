@@ -20,4 +20,10 @@ type Layoutable interface {
 
 	// SetDirty marks this element as needing recalculation.
 	SetDirty(dirty bool)
+
+	// IntrinsicSize returns the natural content-based dimensions of this element.
+	// For leaf elements (like text), this returns the size needed to display content.
+	// For containers, this returns the computed size based on children.
+	// The layout engine uses this as the base size for Auto-sized elements.
+	IntrinsicSize() (width, height int)
 }

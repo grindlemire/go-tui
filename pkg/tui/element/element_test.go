@@ -798,3 +798,223 @@ func TestElement_WalkFocusables(t *testing.T) {
 		})
 	}
 }
+
+// --- Intrinsic Sizing Tests ---
+
+func TestElement_IntrinsicSize_TextElement(t *testing.T) {
+	type tc struct {
+		text           string
+		expectedWidth  int
+		expectedHeight int
+	}
+
+	tests := map[string]tc{
+		"short text": {
+			text:           "Hello",
+			expectedWidth:  5,
+			expectedHeight: 1,
+		},
+		"longer text": {
+			text:           "Hello, World!",
+			expectedWidth:  13,
+			expectedHeight: 1,
+		},
+		"empty text": {
+			text:           "",
+			expectedWidth:  0,
+			expectedHeight: 0,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(WithText(tt.text))
+			w, h := e.IntrinsicSize()
+
+			if w != tt.expectedWidth {
+				t.Errorf("IntrinsicSize().Width = %d, want %d", w, tt.expectedWidth)
+			}
+			if h != tt.expectedHeight {
+				t.Errorf("IntrinsicSize().Height = %d, want %d", h, tt.expectedHeight)
+			}
+		})
+	}
+}
+
+func TestElement_IntrinsicSize_TextWithPadding(t *testing.T) {
+	e := New(
+		WithText("Hello"),
+		WithPadding(2),
+	)
+
+	w, h := e.IntrinsicSize()
+
+	// Text is 5 chars, padding adds 2 on each side
+	// Width = 5 + 4 = 9, Height = 1 + 4 = 5
+	if w != 9 {
+		t.Errorf("IntrinsicSize().Width = %d, want 9 (5 text + 4 padding)", w)
+	}
+	if h != 5 {
+		t.Errorf("IntrinsicSize().Height = %d, want 5 (1 text + 4 padding)", h)
+	}
+}
+
+func TestElement_IntrinsicSize_TextWithBorder(t *testing.T) {
+	e := New(
+		WithText("Hello"),
+		WithBorder(tui.BorderSingle),
+	)
+
+	w, h := e.IntrinsicSize()
+
+	// Text is 5 chars, border adds 1 on each side
+	// Width = 5 + 2 = 7, Height = 1 + 2 = 3
+	if w != 7 {
+		t.Errorf("IntrinsicSize().Width = %d, want 7 (5 text + 2 border)", w)
+	}
+	if h != 3 {
+		t.Errorf("IntrinsicSize().Height = %d, want 3 (1 text + 2 border)", h)
+	}
+}
+
+func TestElement_IntrinsicSize_EmptyContainer(t *testing.T) {
+	e := New(WithDirection(layout.Column))
+
+	w, h := e.IntrinsicSize()
+
+	if w != 0 || h != 0 {
+		t.Errorf("IntrinsicSize() = %dx%d, want 0x0 for empty container", w, h)
+	}
+}
+
+func TestElement_IntrinsicSize_ContainerWithChildren(t *testing.T) {
+	// Column container with two text children
+	parent := New(WithDirection(layout.Column))
+
+	child1 := New(WithText("Hello"))    // 5x1
+	child2 := New(WithText("World!!!")) // 8x1
+
+	parent.AddChild(child1, child2)
+
+	w, h := parent.IntrinsicSize()
+
+	// Column: width = max(5, 8) = 8, height = 1 + 1 = 2
+	if w != 8 {
+		t.Errorf("IntrinsicSize().Width = %d, want 8 (max child width)", w)
+	}
+	if h != 2 {
+		t.Errorf("IntrinsicSize().Height = %d, want 2 (sum of child heights)", h)
+	}
+}
+
+func TestElement_IntrinsicSize_RowContainerWithChildren(t *testing.T) {
+	// Row container with two text children
+	parent := New(WithDirection(layout.Row))
+
+	child1 := New(WithText("Hello")) // 5x1
+	child2 := New(WithText("World")) // 5x1
+
+	parent.AddChild(child1, child2)
+
+	w, h := parent.IntrinsicSize()
+
+	// Row: width = 5 + 5 = 10, height = max(1, 1) = 1
+	if w != 10 {
+		t.Errorf("IntrinsicSize().Width = %d, want 10 (sum of child widths)", w)
+	}
+	if h != 1 {
+		t.Errorf("IntrinsicSize().Height = %d, want 1 (max child height)", h)
+	}
+}
+
+func TestElement_IntrinsicSize_ContainerWithGap(t *testing.T) {
+	parent := New(
+		WithDirection(layout.Column),
+		WithGap(5),
+	)
+
+	child1 := New(WithText("A")) // 1x1
+	child2 := New(WithText("B")) // 1x1
+	child3 := New(WithText("C")) // 1x1
+
+	parent.AddChild(child1, child2, child3)
+
+	w, h := parent.IntrinsicSize()
+
+	// Column with gap: width = max(1,1,1) = 1, height = 1 + 5 + 1 + 5 + 1 = 13
+	if w != 1 {
+		t.Errorf("IntrinsicSize().Width = %d, want 1", w)
+	}
+	if h != 13 {
+		t.Errorf("IntrinsicSize().Height = %d, want 13 (3 children + 2 gaps)", h)
+	}
+}
+
+func TestElement_IntrinsicSize_NestedContainers(t *testing.T) {
+	// Nested structure similar to DSL counter
+	root := New(WithDirection(layout.Column))
+
+	box := New(
+		WithDirection(layout.Column),
+		WithPadding(1),
+	)
+	text := New(WithText("Title")) // 5x1
+	box.AddChild(text)
+
+	footer := New(WithText("Footer text here")) // 16x1
+
+	root.AddChild(box, footer)
+
+	w, h := root.IntrinsicSize()
+
+	// box: width = 5 + 2 = 7, height = 1 + 2 = 3
+	// root: width = max(7, 16) = 16, height = 3 + 1 = 4
+	if w != 16 {
+		t.Errorf("IntrinsicSize().Width = %d, want 16", w)
+	}
+	if h != 4 {
+		t.Errorf("IntrinsicSize().Height = %d, want 4", h)
+	}
+}
+
+func TestElement_IntrinsicSize_ContainerWithPadding(t *testing.T) {
+	parent := New(
+		WithDirection(layout.Column),
+		WithPadding(3),
+	)
+
+	child := New(WithText("Hi")) // 2x1
+
+	parent.AddChild(child)
+
+	w, h := parent.IntrinsicSize()
+
+	// width = 2 + 6 = 8, height = 1 + 6 = 7
+	if w != 8 {
+		t.Errorf("IntrinsicSize().Width = %d, want 8 (2 text + 6 padding)", w)
+	}
+	if h != 7 {
+		t.Errorf("IntrinsicSize().Height = %d, want 7 (1 text + 6 padding)", h)
+	}
+}
+
+func TestElement_IntrinsicSize_ContainerWithBorder(t *testing.T) {
+	parent := New(
+		WithDirection(layout.Column),
+		WithBorder(tui.BorderSingle),
+	)
+
+	child := New(WithText("Hi")) // 2x1
+
+	parent.AddChild(child)
+
+	w, h := parent.IntrinsicSize()
+
+	// width = 2 + 2 = 4, height = 1 + 2 = 3
+	if w != 4 {
+		t.Errorf("IntrinsicSize().Width = %d, want 4 (2 text + 2 border)", w)
+	}
+	if h != 3 {
+		t.Errorf("IntrinsicSize().Height = %d, want 3 (1 text + 2 border)", h)
+	}
+}

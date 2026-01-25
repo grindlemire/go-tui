@@ -13,24 +13,24 @@ func TestAnalyzer_UnknownElementTag(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"known tag box": {
+		"known tag div": {
 			input: `package x
 @component Test() {
-	<box></box>
+	<div></div>
 }`,
 			wantError: false,
 		},
-		"known tag text": {
+		"known tag span": {
 			input: `package x
 @component Test() {
-	<text>hello</text>
+	<span>hello</span>
 }`,
 			wantError: false,
 		},
-		"known tag scrollable": {
+		"known tag ul": {
 			input: `package x
 @component Test() {
-	<scrollable></scrollable>
+	<ul><li /></ul>
 }`,
 			wantError: false,
 		},
@@ -84,21 +84,21 @@ func TestAnalyzer_UnknownAttribute(t *testing.T) {
 		"known attribute width": {
 			input: `package x
 @component Test() {
-	<box width=100></box>
+	<div width=100></div>
 }`,
 			wantError: false,
 		},
 		"known attribute direction": {
 			input: `package x
 @component Test() {
-	<box direction={layout.Column}></box>
+	<div direction={layout.Column}></div>
 }`,
 			wantError: false,
 		},
 		"unknown attribute": {
 			input: `package x
 @component Test() {
-	<box unknownAttr=123></box>
+	<div unknownAttr=123></div>
 }`,
 			wantError:   true,
 			errorContains: "unknown attribute unknownAttr",
@@ -106,7 +106,7 @@ func TestAnalyzer_UnknownAttribute(t *testing.T) {
 		"typo colour": {
 			input: `package x
 @component Test() {
-	<box colour="red"></box>
+	<div colour="red"></div>
 }`,
 			wantError:   true,
 			errorContains: "unknown attribute colour",
@@ -144,7 +144,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 		"adds element import": {
 			input: `package x
 @component Test() {
-	<box></box>
+	<div></div>
 }`,
 			wantImports: []string{
 				"github.com/grindlemire/go-tui/pkg/tui/element",
@@ -153,7 +153,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 		"adds layout import when used": {
 			input: `package x
 @component Test() {
-	<box direction={layout.Column}></box>
+	<div direction={layout.Column}></div>
 }`,
 			wantImports: []string{
 				"github.com/grindlemire/go-tui/pkg/tui/element",
@@ -163,7 +163,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 		"adds tui import when used": {
 			input: `package x
 @component Test() {
-	<box border={tui.BorderSingle}></box>
+	<div border={tui.BorderSingle}></div>
 }`,
 			wantImports: []string{
 				"github.com/grindlemire/go-tui/pkg/tui/element",
@@ -174,7 +174,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 			input: `package x
 import "fmt"
 @component Test() {
-	<text>hello</text>
+	<span>hello</span>
 }`,
 			wantImports: []string{
 				"fmt",
@@ -185,7 +185,7 @@ import "fmt"
 			input: `package x
 import "github.com/grindlemire/go-tui/pkg/tui/element"
 @component Test() {
-	<box></box>
+	<div></div>
 }`,
 			wantImports: []string{
 				"github.com/grindlemire/go-tui/pkg/tui/element",
@@ -233,17 +233,18 @@ func TestAnalyzer_ValidateElement(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"box":        {tag: "box", valid: true},
-		"text":       {tag: "text", valid: true},
-		"scrollable": {tag: "scrollable", valid: true},
-		"button":     {tag: "button", valid: true},
-		"input":      {tag: "input", valid: true},
-		"list":       {tag: "list", valid: true},
-		"table":      {tag: "table", valid: true},
-		"progress":   {tag: "progress", valid: true},
-		"unknown":    {tag: "unknown", valid: false},
-		"div":        {tag: "div", valid: false},
-		"span":       {tag: "span", valid: false},
+		"div":      {tag: "div", valid: true},
+		"span":     {tag: "span", valid: true},
+		"p":        {tag: "p", valid: true},
+		"ul":       {tag: "ul", valid: true},
+		"li":       {tag: "li", valid: true},
+		"button":   {tag: "button", valid: true},
+		"input":    {tag: "input", valid: true},
+		"table":    {tag: "table", valid: true},
+		"progress": {tag: "progress", valid: true},
+		"unknown":  {tag: "unknown", valid: false},
+		"box":      {tag: "box", valid: false},
+		"text":     {tag: "text", valid: false},
 	}
 
 	for name, tt := range tests {
@@ -276,8 +277,8 @@ func TestAnalyzer_ValidateAttribute(t *testing.T) {
 		"onEvent":     {attr: "onEvent", valid: true},
 		"onFocus":     {attr: "onFocus", valid: true},
 		"flexGrow":    {attr: "flexGrow", valid: true},
+		"class":       {attr: "class", valid: true},
 		"unknown":     {attr: "unknown", valid: false},
-		"class":       {attr: "class", valid: false},
 		"style":       {attr: "style", valid: false},
 	}
 
@@ -338,11 +339,11 @@ func TestAnalyzer_NestedElements(t *testing.T) {
 	// Test that nested elements are all validated
 	input := `package x
 @component Test() {
-	<box>
-		<box>
+	<div>
+		<div>
 			<unknownTag />
-		</box>
-	</box>
+		</div>
+	</div>
 }`
 
 	_, err := AnalyzeFile("test.tui", input)
@@ -367,22 +368,22 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		"valid for loop": {
 			input: `package x
 @component Test(items []string) {
-	<box>
+	<div>
 		@for _, item := range items {
-			<text>{item}</text>
+			<span>{item}</span>
 		}
-	</box>
+	</div>
 }`,
 			wantError: false,
 		},
 		"invalid element in for loop": {
 			input: `package x
 @component Test(items []string) {
-	<box>
+	<div>
 		@for _, item := range items {
 			<badTag />
 		}
-	</box>
+	</div>
 }`,
 			wantError:   true,
 			errorContains: "unknown element tag <badTag>",
@@ -390,22 +391,22 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		"valid if statement": {
 			input: `package x
 @component Test(show bool) {
-	<box>
+	<div>
 		@if show {
-			<text>visible</text>
+			<span>visible</span>
 		}
-	</box>
+	</div>
 }`,
 			wantError: false,
 		},
 		"invalid element in if then": {
 			input: `package x
 @component Test(show bool) {
-	<box>
+	<div>
 		@if show {
 			<badTag />
 		}
-	</box>
+	</div>
 }`,
 			wantError:   true,
 			errorContains: "unknown element tag <badTag>",
@@ -413,13 +414,13 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		"invalid element in if else": {
 			input: `package x
 @component Test(show bool) {
-	<box>
+	<div>
 		@if show {
-			<text>yes</text>
+			<span>yes</span>
 		} @else {
 			<badTag />
 		}
-	</box>
+	</div>
 }`,
 			wantError:   true,
 			errorContains: "unknown element tag <badTag>",
@@ -458,8 +459,8 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 		"valid let binding": {
 			input: `package x
 @component Test() {
-	@let myText = <text>hello</text>
-	<box></box>
+	@let myText = <span>hello</span>
+	<div></div>
 }`,
 			wantError: false,
 		},
@@ -467,7 +468,7 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 			input: `package x
 @component Test() {
 	@let myText = <badTag />
-	<box></box>
+	<div></div>
 }`,
 			wantError:   true,
 			errorContains: "unknown element tag <badTag>",
@@ -475,8 +476,8 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 		"let binding with invalid attribute": {
 			input: `package x
 @component Test() {
-	@let myText = <text badAttr="value">hello</text>
-	<box></box>
+	@let myText = <span badAttr="value">hello</span>
+	<div></div>
 }`,
 			wantError:   true,
 			errorContains: "unknown attribute badAttr",
@@ -523,7 +524,7 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 		t.Run(attr, func(t *testing.T) {
 			input := `package x
 @component Test() {
-	<box ` + attr + `=1></box>
+	<div ` + attr + `=1></div>
 }`
 			_, err := AnalyzeFile("test.tui", input)
 			if err != nil {
@@ -536,8 +537,8 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 func TestAnalyzer_AllKnownTags(t *testing.T) {
 	// Test all known tags are accepted
 	tags := []string{
-		"box", "text", "scrollable", "button",
-		"input", "list", "table", "progress",
+		"div", "span", "p", "ul", "li",
+		"button", "input", "table", "progress",
 	}
 
 	for _, tag := range tags {
@@ -581,7 +582,7 @@ func TestAnalyzer_MultipleErrors(t *testing.T) {
 func TestAnalyzer_ErrorHint(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box colour="red"></box>
+	<div colour="red"></div>
 }`
 
 	_, err := AnalyzeFile("test.tui", input)

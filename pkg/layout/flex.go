@@ -63,11 +63,12 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			crossMargin = childStyle.Margin.Horizontal()
 		}
 
-		// Resolve base content size (or 0 if auto), then add margin
+		// Resolve base content size, using intrinsic size as fallback for Auto
+		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
 		if isRow {
-			item.baseSize = childStyle.Width.Resolve(mainSize, 0) + mainMargin
+			item.baseSize = childStyle.Width.Resolve(mainSize, childIntrinsicW) + mainMargin
 		} else {
-			item.baseSize = childStyle.Height.Resolve(mainSize, 0) + mainMargin
+			item.baseSize = childStyle.Height.Resolve(mainSize, childIntrinsicH) + mainMargin
 		}
 
 		// Store margin for later use
@@ -149,15 +150,19 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			align = *childStyle.AlignSelf
 		}
 
-		// Determine cross-axis size value
+		// Determine cross-axis size value and intrinsic size
 		var crossStyleValue Value
 		var crossMargin int
+		var crossIntrinsic int
+		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
 		if isRow {
 			crossStyleValue = childStyle.Height
 			crossMargin = childStyle.Margin.Vertical()
+			crossIntrinsic = childIntrinsicH
 		} else {
 			crossStyleValue = childStyle.Width
 			crossMargin = childStyle.Margin.Horizontal()
+			crossIntrinsic = childIntrinsicW
 		}
 
 		// Available cross space after margin
@@ -168,12 +173,13 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			items[i].crossSize = availableCross + crossMargin // Include margin in slot size
 			items[i].crossPos = 0
 		} else {
-			// Non-stretch or explicit size: use the specified value or stretch to available
+			// Non-stretch or explicit size: use the specified value or intrinsic size
 			var contentCross int
 			if crossStyleValue.IsAuto() {
-				contentCross = availableCross
+				// Use intrinsic size for Auto, clamped to available space
+				contentCross = min(crossIntrinsic, availableCross)
 			} else {
-				contentCross = crossStyleValue.Resolve(availableCross, availableCross)
+				contentCross = crossStyleValue.Resolve(availableCross, crossIntrinsic)
 			}
 			// Slot size includes content + margin
 			items[i].crossSize = contentCross + crossMargin

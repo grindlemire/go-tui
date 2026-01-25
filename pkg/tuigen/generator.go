@@ -217,26 +217,58 @@ func (g *Generator) buildElementOptions(elem *Element) []string {
 
 	// Handle tag-specific options
 	switch elem.Tag {
-	case "text":
+	case "span", "p":
 		// If text element has children that are text content, add WithText
 		textContent := g.extractTextContent(elem.Children)
 		if textContent != "" {
 			options = append(options, fmt.Sprintf("element.WithText(%s)", textContent))
 		}
-	case "scrollable":
-		// Default to vertical scrolling
-		options = append(options, "element.WithScrollable(element.ScrollVertical)")
 	}
+
+	// Track text style methods from class attribute separately
+	var classTextMethods []string
 
 	// Generate options from attributes
 	for _, attr := range elem.Attributes {
+		// Handle class attribute specially - parse Tailwind classes
+		if attr.Name == "class" {
+			classValue := g.getClassAttributeValue(attr)
+			if classValue != "" {
+				result := ParseTailwindClasses(classValue)
+				// Add direct options
+				options = append(options, result.Options...)
+				// Collect text style methods for combining later
+				classTextMethods = append(classTextMethods, result.TextMethods...)
+			}
+			continue
+		}
+
 		opt := g.generateAttributeOption(attr)
 		if opt != "" {
 			options = append(options, opt)
 		}
 	}
 
+	// Build combined text style from class attribute if any
+	if len(classTextMethods) > 0 {
+		textStyleOpt := BuildTextStyleOption(classTextMethods)
+		if textStyleOpt != "" {
+			options = append(options, textStyleOpt)
+		}
+	}
+
 	return options
+}
+
+// getClassAttributeValue extracts the string value from a class attribute.
+func (g *Generator) getClassAttributeValue(attr *Attribute) string {
+	switch v := attr.Value.(type) {
+	case *StringLit:
+		return v.Value
+	default:
+		// class attribute only supports string literals for now
+		return ""
+	}
 }
 
 // extractTextContent extracts text from element children for WithText.
@@ -799,7 +831,7 @@ func ParseAndGenerate(filename, source string) ([]byte, error) {
 // textElementWithOptions checks if this is a text element that needs options
 // extracted from its children for WithText.
 func textElementWithOptions(elem *Element) bool {
-	if elem.Tag != "text" {
+	if elem.Tag != "span" && elem.Tag != "p" {
 		return false
 	}
 	// Has text content that should go into WithText
@@ -815,7 +847,7 @@ func textElementWithOptions(elem *Element) bool {
 // skipTextChildren returns true if text element children should not be
 // processed as AddChild calls (they're already in WithText).
 func skipTextChildren(elem *Element) bool {
-	if elem.Tag != "text" {
+	if elem.Tag != "span" && elem.Tag != "p" {
 		return false
 	}
 	// Only skip if there's a single text/expr child that was used for WithText

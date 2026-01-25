@@ -138,6 +138,76 @@ func (e *Element) SetDirty(dirty bool) {
 	e.dirty = dirty
 }
 
+// IntrinsicSize returns the natural content-based dimensions of this element.
+// For text elements, returns the text width and height (1 line).
+// For containers, returns the computed intrinsic size based on children.
+func (e *Element) IntrinsicSize() (width, height int) {
+	// Text content has explicit intrinsic size
+	if e.text != "" {
+		textWidth := stringWidth(e.text)
+		textHeight := 1
+		// Add padding to get the element's intrinsic size
+		width = textWidth + e.style.Padding.Horizontal()
+		height = textHeight + e.style.Padding.Vertical()
+		// Add border if present (borders take 1 cell on each side)
+		if e.border != tui.BorderNone {
+			width += 2
+			height += 2
+		}
+		return width, height
+	}
+
+	// For containers without text, compute from children
+	if len(e.children) == 0 {
+		// Empty container has no intrinsic size
+		return 0, 0
+	}
+
+	// Compute intrinsic size from children
+	isRow := e.style.Direction == layout.Row
+	var intrinsicW, intrinsicH int
+
+	for i, child := range e.children {
+		childW, childH := child.IntrinsicSize()
+		childStyle := child.LayoutStyle()
+		marginH := childStyle.Margin.Horizontal()
+		marginV := childStyle.Margin.Vertical()
+
+		if isRow {
+			intrinsicW += childW + marginH
+			if childH+marginV > intrinsicH {
+				intrinsicH = childH + marginV
+			}
+		} else {
+			if childW+marginH > intrinsicW {
+				intrinsicW = childW + marginH
+			}
+			intrinsicH += childH + marginV
+		}
+
+		// Add gap between children (not before first)
+		if i > 0 {
+			if isRow {
+				intrinsicW += e.style.Gap
+			} else {
+				intrinsicH += e.style.Gap
+			}
+		}
+	}
+
+	// Add padding
+	intrinsicW += e.style.Padding.Horizontal()
+	intrinsicH += e.style.Padding.Vertical()
+
+	// Add border if present
+	if e.border != tui.BorderNone {
+		intrinsicW += 2
+		intrinsicH += 2
+	}
+
+	return intrinsicW, intrinsicH
+}
+
 // --- Element's own API ---
 
 // AddChild appends children to this Element.

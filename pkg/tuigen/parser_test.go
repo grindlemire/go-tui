@@ -129,7 +129,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		"no params": {
 			input: `package x
 @component Header() {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantName:   "Header",
 			wantParams: 0,
@@ -137,7 +137,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		"one param": {
 			input: `package x
 @component Greeting(name string) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantName:   "Greeting",
 			wantParams: 1,
@@ -145,7 +145,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		"multiple params": {
 			input: `package x
 @component Counter(count int, label string) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantName:   "Counter",
 			wantParams: 2,
@@ -153,7 +153,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		"complex types": {
 			input: `package x
 @component List(items []string, onClick func()) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantName:   "List",
 			wantParams: 2,
@@ -161,7 +161,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		"pointer type": {
 			input: `package x
 @component View(elem *element.Element) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantName:   "View",
 			wantParams: 1,
@@ -203,7 +203,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 func TestParser_ComponentParams(t *testing.T) {
 	input := `package x
 @component Test(name string, count int, items []string, handler func()) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -281,10 +281,10 @@ func TestParser_SelfClosingElement(t *testing.T) {
 func TestParser_ElementWithChildren(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box>
-		<text>Hello</text>
-		<text>World</text>
-	</box>
+	<div>
+		<span>Hello</span>
+		<span>World</span>
+	</div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -305,8 +305,8 @@ func TestParser_ElementWithChildren(t *testing.T) {
 		t.Fatalf("expected *Element, got %T", comp.Body[0])
 	}
 
-	if box.Tag != "box" {
-		t.Errorf("Tag = %q, want 'box'", box.Tag)
+	if box.Tag != "div" {
+		t.Errorf("Tag = %q, want 'div'", box.Tag)
 	}
 
 	if len(box.Children) != 2 {
@@ -319,8 +319,8 @@ func TestParser_ElementWithChildren(t *testing.T) {
 			t.Errorf("child %d: expected *Element, got %T", i, child)
 			continue
 		}
-		if elem.Tag != "text" {
-			t.Errorf("child %d: Tag = %q, want 'text'", i, elem.Tag)
+		if elem.Tag != "span" {
+			t.Errorf("child %d: Tag = %q, want 'span'", i, elem.Tag)
 		}
 	}
 }
@@ -335,35 +335,35 @@ func TestParser_ElementWithAttributes(t *testing.T) {
 		"no attributes": {
 			input: `package x
 @component Test() {
-	<box></box>
+	<div></div>
 }`,
 			wantAttrs: 0,
 		},
 		"string attribute": {
 			input: `package x
 @component Test() {
-	<text textAlign="center"></text>
+	<span textAlign="center"></span>
 }`,
 			wantAttrs: 1,
 		},
 		"int attribute": {
 			input: `package x
 @component Test() {
-	<box width=100></box>
+	<div width=100></div>
 }`,
 			wantAttrs: 1,
 		},
 		"expression attribute": {
 			input: `package x
 @component Test() {
-	<box direction={layout.Column}></box>
+	<div direction={layout.Column}></div>
 }`,
 			wantAttrs: 1,
 		},
 		"multiple attributes": {
 			input: `package x
 @component Test() {
-	<box width=100 height=50 direction={layout.Row}></box>
+	<div width=100 height=50 direction={layout.Row}></div>
 }`,
 			wantAttrs: 3,
 		},
@@ -397,14 +397,14 @@ func TestParser_ElementWithAttributes(t *testing.T) {
 func TestParser_AttributeValues(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box
+	<div
 		strAttr="hello"
 		intAttr=42
 		floatAttr=3.14
 		exprAttr={layout.Column}
 		boolAttr=true
 		shorthand
-	></box>
+	></div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -481,8 +481,8 @@ func TestParser_AttributeValues(t *testing.T) {
 func TestParser_LetBinding(t *testing.T) {
 	input := `package x
 @component Test() {
-	@let myText = <text>Hello</text>
-	<box></box>
+	@let myText = <span>Hello</span>
+	<div></div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -511,8 +511,8 @@ func TestParser_LetBinding(t *testing.T) {
 		t.Fatal("Element is nil")
 	}
 
-	if let.Element.Tag != "text" {
-		t.Errorf("Element.Tag = %q, want 'text'", let.Element.Tag)
+	if let.Element.Tag != "span" {
+		t.Errorf("Element.Tag = %q, want 'span'", let.Element.Tag)
 	}
 }
 
@@ -529,7 +529,7 @@ func TestParser_ForLoop(t *testing.T) {
 			input: `package x
 @component Test() {
 	@for i, item := range items {
-		<text>Hello</text>
+		<span>Hello</span>
 	}
 }`,
 			wantIndex: "i",
@@ -540,7 +540,7 @@ func TestParser_ForLoop(t *testing.T) {
 			input: `package x
 @component Test() {
 	@for _, item := range items {
-		<text>Hello</text>
+		<span>Hello</span>
 	}
 }`,
 			wantIndex: "_",
@@ -551,7 +551,7 @@ func TestParser_ForLoop(t *testing.T) {
 			input: `package x
 @component Test() {
 	@for item := range items {
-		<text>Hello</text>
+		<span>Hello</span>
 	}
 }`,
 			wantIndex: "",
@@ -603,7 +603,7 @@ func TestParser_IfStatement(t *testing.T) {
 			input: `package x
 @component Test() {
 	@if showHeader {
-		<text>Header</text>
+		<span>Header</span>
 	}
 }`,
 			wantCondition: "showHeader",
@@ -613,9 +613,9 @@ func TestParser_IfStatement(t *testing.T) {
 			input: `package x
 @component Test() {
 	@if isLoading {
-		<text>Loading</text>
+		<span>Loading</span>
 	} @else {
-		<text>Done</text>
+		<span>Done</span>
 	}
 }`,
 			wantCondition: "isLoading",
@@ -625,7 +625,7 @@ func TestParser_IfStatement(t *testing.T) {
 			input: `package x
 @component Test() {
 	@if err != nil {
-		<text>Error</text>
+		<span>Error</span>
 	}
 }`,
 			wantCondition: "err != nil",
@@ -668,11 +668,11 @@ func TestParser_IfElseIf(t *testing.T) {
 	input := `package x
 @component Test() {
 	@if a {
-		<text>A</text>
+		<span>A</span>
 	} @else @if b {
-		<text>B</text>
+		<span>B</span>
 	} @else {
-		<text>C</text>
+		<span>C</span>
 	}
 }`
 
@@ -716,7 +716,7 @@ func TestParser_IfElseIf(t *testing.T) {
 func TestParser_GoExpression(t *testing.T) {
 	input := `package x
 @component Test() {
-	<text>{fmt.Sprintf("Count: %d", count)}</text>
+	<span>{fmt.Sprintf("Count: %d", count)}</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -746,11 +746,11 @@ func TestParser_GoExpression(t *testing.T) {
 func TestParser_NestedElements(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box>
-		<box>
-			<text>Deep</text>
-		</box>
-	</box>
+	<div>
+		<div>
+			<span>Deep</span>
+		</div>
+	</div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -762,8 +762,8 @@ func TestParser_NestedElements(t *testing.T) {
 	}
 
 	outerBox := file.Components[0].Body[0].(*Element)
-	if outerBox.Tag != "box" {
-		t.Errorf("outer tag = %q, want 'box'", outerBox.Tag)
+	if outerBox.Tag != "div" {
+		t.Errorf("outer tag = %q, want 'div'", outerBox.Tag)
 	}
 
 	if len(outerBox.Children) != 1 {
@@ -771,8 +771,8 @@ func TestParser_NestedElements(t *testing.T) {
 	}
 
 	innerBox := outerBox.Children[0].(*Element)
-	if innerBox.Tag != "box" {
-		t.Errorf("inner tag = %q, want 'box'", innerBox.Tag)
+	if innerBox.Tag != "div" {
+		t.Errorf("inner tag = %q, want 'div'", innerBox.Tag)
 	}
 
 	if len(innerBox.Children) != 1 {
@@ -780,8 +780,8 @@ func TestParser_NestedElements(t *testing.T) {
 	}
 
 	text := innerBox.Children[0].(*Element)
-	if text.Tag != "text" {
-		t.Errorf("text tag = %q, want 'text'", text.Tag)
+	if text.Tag != "span" {
+		t.Errorf("text tag = %q, want 'span'", text.Tag)
 	}
 }
 
@@ -794,16 +794,16 @@ import (
 )
 
 @component Dashboard(items []string, selectedIndex int) {
-	<box direction={layout.Column} padding=1>
-		<text>Dashboard</text>
+	<div direction={layout.Column} padding=1>
+		<span>Dashboard</span>
 		@for i, item := range items {
 			@if i == selectedIndex {
-				<text textStyle={highlightStyle}>{item}</text>
+				<span textStyle={highlightStyle}>{item}</span>
 			} @else {
-				<text>{item}</text>
+				<span>{item}</span>
 			}
 		}
-	</box>
+	</div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -844,8 +844,8 @@ import (
 	}
 
 	box := comp.Body[0].(*Element)
-	if box.Tag != "box" {
-		t.Errorf("box.Tag = %q, want 'box'", box.Tag)
+	if box.Tag != "div" {
+		t.Errorf("box.Tag = %q, want 'div'", box.Tag)
 	}
 
 	// Should have text and for loop as children
@@ -864,22 +864,22 @@ func TestParser_ErrorRecovery(t *testing.T) {
 		"missing component name": {
 			input: `package x
 @component () {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			errorContains: "expected component name",
 		},
 		"unclosed element": {
 			input: `package x
 @component Test() {
-	<box>
-		<text>Hello</text>
+	<div>
+		<span>Hello</span>
 }`,
 			errorContains: "expected closing tag",
 		},
 		"mismatched tags": {
 			input: `package x
 @component Test() {
-	<box>Hello</text>
+	<div>Hello</span>
 }`,
 			errorContains: "mismatched closing tag",
 		},
@@ -906,7 +906,7 @@ func TestParser_Position(t *testing.T) {
 	input := `package x
 
 @component Test() {
-	<text>Hello</text>
+	<span>Hello</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -934,11 +934,11 @@ func TestParser_MultipleComponents(t *testing.T) {
 	input := `package x
 
 @component Header() {
-	<text>Header</text>
+	<span>Header</span>
 }
 
 @component Footer() {
-	<text>Footer</text>
+	<span>Footer</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -965,7 +965,7 @@ func TestParser_MultipleComponents(t *testing.T) {
 func TestParser_TextContent(t *testing.T) {
 	input := `package x
 @component Test() {
-	<text>Hello World</text>
+	<span>Hello World</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -977,8 +977,8 @@ func TestParser_TextContent(t *testing.T) {
 	}
 
 	textElem := file.Components[0].Body[0].(*Element)
-	if textElem.Tag != "text" {
-		t.Errorf("Tag = %q, want 'text'", textElem.Tag)
+	if textElem.Tag != "span" {
+		t.Errorf("Tag = %q, want 'span'", textElem.Tag)
 	}
 
 	// Text content is parsed as identifier tokens (Hello, World)
@@ -990,14 +990,14 @@ func TestParser_TextContent(t *testing.T) {
 func TestParser_ControlFlowInChildren(t *testing.T) {
 	input := `package x
 @component Test(items []string) {
-	<box>
+	<div>
 		@for _, item := range items {
-			<text>{item}</text>
+			<span>{item}</span>
 		}
 		@if len(items) == 0 {
-			<text>No items</text>
+			<span>No items</span>
 		}
-	</box>
+	</div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -1040,28 +1040,28 @@ func TestParser_ComplexTypeSignatures(t *testing.T) {
 		"channel type": {
 			input: `package x
 @component Test(ch chan int) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantTypes: []string{"chan int"},
 		},
 		"receive channel": {
 			input: `package x
 @component Test(ch <-chan string) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantTypes: []string{"<-chan string"},
 		},
 		"complex map": {
 			input: `package x
 @component Test(m map[string][]int) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantTypes: []string{"map[string][]int"},
 		},
 		"function with return": {
 			input: `package x
 @component Test(fn func(a, b int) (string, error)) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantTypes: []string{"func(a, b int) (string, error)"},
 		},
@@ -1098,7 +1098,7 @@ func TestParser_ComplexTypeSignatures(t *testing.T) {
 func TestParser_TextContentCoalescing(t *testing.T) {
 	input := `package x
 @component Test() {
-	<text>Hello World from component</text>
+	<span>Hello World from component</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -1110,8 +1110,8 @@ func TestParser_TextContentCoalescing(t *testing.T) {
 	}
 
 	textElem := file.Components[0].Body[0].(*Element)
-	if textElem.Tag != "text" {
-		t.Fatalf("expected text element, got %s", textElem.Tag)
+	if textElem.Tag != "span" {
+		t.Fatalf("expected span element, got %s", textElem.Tag)
 	}
 
 	// Text should be coalesced into a single TextContent node
@@ -1136,11 +1136,11 @@ func TestParser_ErrorRecoveryMultipleComponents(t *testing.T) {
 	input := `package x
 
 @component Broken(
-	<text>Hello</text>
+	<span>Hello</span>
 }
 
 @component Working() {
-	<text>World</text>
+	<span>World</span>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -1167,10 +1167,10 @@ func TestParser_RawSourcePreservation(t *testing.T) {
 	input := `package x
 @component Test() {
 	@if user.Name != "" && user.Age >= 18 {
-		<text>Adult</text>
+		<span>Adult</span>
 	}
 	@for i, v := range items[0:10] {
-		<text>{v}</text>
+		<span>{v}</span>
 	}
 }`
 
@@ -1210,7 +1210,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test() {
 	x := 1
-	<text>{x}</text>
+	<span>{x}</span>
 }`,
 			wantCodes: []string{"x := 1"},
 		},
@@ -1218,7 +1218,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test() {
 	fmt.Println("hello")
-	<text>world</text>
+	<span>world</span>
 }`,
 			wantCodes: []string{`fmt.Println("hello")`},
 		},
@@ -1229,7 +1229,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		arg1,
 		arg2,
 	)
-	<text>{result}</text>
+	<span>{result}</span>
 }`,
 			wantCodes: []string{"result := compute(\n\t\targ1,\n\t\targ2,\n\t)"},
 		},
@@ -1239,7 +1239,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 	x := 1
 	y := 2
 	z := x + y
-	<text>{z}</text>
+	<span>{z}</span>
 }`,
 			wantCodes: []string{"x := 1", "y := 2", "z := x + y"},
 		},
@@ -1247,7 +1247,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test(err error) {
 	if err != nil { log.Error(err) }
-	<text>done</text>
+	<span>done</span>
 }`,
 			wantCodes: []string{"if err != nil { log.Error(err) }"},
 		},
@@ -1255,7 +1255,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test() {
 	defer cleanup()
-	<text>running</text>
+	<span>running</span>
 }`,
 			wantCodes: []string{"defer cleanup()"},
 		},
@@ -1263,7 +1263,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test() {
 	go doWork()
-	<text>spawned</text>
+	<span>spawned</span>
 }`,
 			wantCodes: []string{"go doWork()"},
 		},
@@ -1271,7 +1271,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test() {
 	for i := 0; i < 10; i++ { sum += i }
-	<text>{sum}</text>
+	<span>{sum}</span>
 }`,
 			wantCodes: []string{"for i := 0; i < 10; i++ { sum += i }"},
 		},
@@ -1279,7 +1279,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Test(x int) {
 	switch x { case 1: y = "one"; case 2: y = "two" }
-	<text>{y}</text>
+	<span>{y}</span>
 }`,
 			wantCodes: []string{`switch x { case 1: y = "one"; case 2: y = "two" }`},
 		},
@@ -1328,9 +1328,9 @@ func TestParser_RawGoStatementsWithElements(t *testing.T) {
 @component Counter(count int) {
 	formattedCount := fmt.Sprintf("%d", count)
 	log.Printf("Rendering counter")
-	<box>
-		<text>{formattedCount}</text>
-	</box>
+	<div>
+		<span>{formattedCount}</span>
+	</div>
 }`
 
 	l := NewLexer("test.tui", input)
@@ -1368,8 +1368,8 @@ func TestParser_RawGoStatementsWithElements(t *testing.T) {
 	if !ok {
 		t.Fatalf("body[2]: expected *Element, got %T", body[2])
 	}
-	if elem.Tag != "box" {
-		t.Errorf("body[2].Tag = %q, want 'box'", elem.Tag)
+	if elem.Tag != "div" {
+		t.Errorf("body[2].Tag = %q, want 'div'", elem.Tag)
 	}
 }
 
@@ -1404,8 +1404,8 @@ func TestParser_ComponentCall(t *testing.T) {
 			input: `package x
 @component App() {
 	@Card("Title") {
-		<text>Child 1</text>
-		<text>Child 2</text>
+		<span>Child 1</span>
+		<span>Child 2</span>
 	}
 }`,
 			wantName:     "Card",
@@ -1416,7 +1416,7 @@ func TestParser_ComponentCall(t *testing.T) {
 			input: `package x
 @component App() {
 	@Wrapper() {
-		<text>Content</text>
+		<span>Content</span>
 	}
 }`,
 			wantName:     "Wrapper",
@@ -1465,10 +1465,10 @@ func TestParser_ComponentCall(t *testing.T) {
 func TestParser_ChildrenSlot(t *testing.T) {
 	input := `package x
 @component Card(title string) {
-	<box>
-		<text>{title}</text>
+	<div>
+		<span>{title}</span>
 		{children...}
-	</box>
+	</div>
 }`
 	l := NewLexer("test.tui", input)
 	p := NewParser(l)
@@ -1510,10 +1510,10 @@ func TestParser_ChildrenSlot(t *testing.T) {
 func TestParser_ComponentCallNestedInElement(t *testing.T) {
 	input := `package x
 @component App() {
-	<box>
+	<div>
 		@Header("Title")
 		@Footer()
-	</box>
+	</div>
 }`
 	l := NewLexer("test.tui", input)
 	p := NewParser(l)

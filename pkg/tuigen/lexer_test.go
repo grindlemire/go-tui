@@ -423,7 +423,7 @@ func TestLexer_LineTracking(t *testing.T) {
 import "fmt"
 
 @component Foo() {
-    <text>Hello</text>
+    <span>Hello</span>
 }`
 
 	type tc struct {
@@ -447,11 +447,11 @@ import "fmt"
 		{TokenLBrace, 5},
 		{TokenNewline, 5},
 		{TokenLAngle, 6},
-		{TokenIdent, 6}, // text
+		{TokenIdent, 6}, // span
 		{TokenRAngle, 6},
 		{TokenIdent, 6}, // Hello
 		{TokenLAngleSlash, 6},
-		{TokenIdent, 6}, // text
+		{TokenIdent, 6}, // span
 		{TokenRAngle, 6},
 		{TokenNewline, 6},
 		{TokenRBrace, 7},
@@ -471,10 +471,10 @@ import "fmt"
 }
 
 func TestLexer_XMLLikeTokens(t *testing.T) {
-	input := `<box direction={layout.Column}>
-    <text>Hello</text>
+	input := `<div direction={layout.Column}>
+    <span>Hello</span>
     <input />
-</box>`
+</div>`
 
 	type tc struct {
 		expectedType TokenType
@@ -483,7 +483,7 @@ func TestLexer_XMLLikeTokens(t *testing.T) {
 
 	expected := []tc{
 		{TokenLAngle, "<"},
-		{TokenIdent, "box"},
+		{TokenIdent, "div"},
 		{TokenIdent, "direction"},
 		{TokenEquals, "="},
 		// Note: { starts a Go expression context, parser handles this
@@ -580,9 +580,9 @@ func TestLexer_Underscore(t *testing.T) {
 
 func TestLexer_CompleteComponent(t *testing.T) {
 	input := `@component Counter(count int) {
-    <box direction={layout.Column}>
-        <text>{fmt.Sprintf("Count: %d", count)}</text>
-    </box>
+    <div direction={layout.Column}>
+        <span>{fmt.Sprintf("Count: %d", count)}</span>
+    </div>
 }`
 
 	l := NewLexer("test.tui", input)

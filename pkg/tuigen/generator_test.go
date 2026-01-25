@@ -26,7 +26,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 		"component with single element": {
 			input: `package x
 @component Header() {
-	<box></box>
+	<div></div>
 }`,
 			wantContains: []string{
 				"func Header() *element.Element",
@@ -37,7 +37,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 		"component with params": {
 			input: `package x
 @component Greeting(name string, count int) {
-	<text>Hello</text>
+	<span>Hello</span>
 }`,
 			wantContains: []string{
 				"func Greeting(name string, count int) *element.Element",
@@ -77,7 +77,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		"width attribute": {
 			input: `package x
 @component Box() {
-	<box width=100></box>
+	<div width=100></div>
 }`,
 			wantContains: []string{
 				"element.WithWidth(100)",
@@ -86,7 +86,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		"multiple attributes": {
 			input: `package x
 @component Box() {
-	<box width=100 height=50 gap=2></box>
+	<div width=100 height=50 gap=2></div>
 }`,
 			wantContains: []string{
 				"element.WithWidth(100)",
@@ -97,7 +97,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		"string attribute": {
 			input: `package x
 @component Text() {
-	<text text="hello"></text>
+	<span text="hello"></span>
 }`,
 			wantContains: []string{
 				`element.WithText("hello")`,
@@ -106,7 +106,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		"expression attribute": {
 			input: `package x
 @component Box() {
-	<box direction={layout.Column}></box>
+	<div direction={layout.Column}></div>
 }`,
 			wantContains: []string{
 				"element.WithDirection(layout.Column)",
@@ -115,7 +115,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		"border attribute": {
 			input: `package x
 @component Box() {
-	<box border={tui.BorderSingle}></box>
+	<div border={tui.BorderSingle}></div>
 }`,
 			wantContains: []string{
 				"element.WithBorder(tui.BorderSingle)",
@@ -124,7 +124,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		"onEvent attribute": {
 			input: `package x
 @component Button() {
-	<box onEvent={handleClick}></box>
+	<div onEvent={handleClick}></div>
 }`,
 			wantContains: []string{
 				"element.WithOnEvent(handleClick)",
@@ -152,11 +152,11 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 func TestGenerator_NestedElements(t *testing.T) {
 	input := `package x
 @component Layout() {
-	<box>
-		<box>
-			<text>nested</text>
-		</box>
-	</box>
+	<div>
+		<div>
+			<span>nested</span>
+		</div>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -185,8 +185,8 @@ func TestGenerator_NestedElements(t *testing.T) {
 func TestGenerator_LetBinding(t *testing.T) {
 	input := `package x
 @component Counter() {
-	@let countText = <text>{"0"}</text>
-	<box></box>
+	@let countText = <span>{"0"}</span>
+	<div></div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -218,11 +218,11 @@ func TestGenerator_ForLoop(t *testing.T) {
 		"basic for loop": {
 			input: `package x
 @component List(items []string) {
-	<box>
+	<div>
 		@for i, item := range items {
-			<text>{item}</text>
+			<span>{item}</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"for i, item := range items {",
@@ -232,11 +232,11 @@ func TestGenerator_ForLoop(t *testing.T) {
 		"for with underscore index": {
 			input: `package x
 @component List(items []string) {
-	<box>
+	<div>
 		@for _, item := range items {
-			<text>{item}</text>
+			<span>{item}</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"for _, item := range items {",
@@ -245,11 +245,11 @@ func TestGenerator_ForLoop(t *testing.T) {
 		"for with value only": {
 			input: `package x
 @component List(items []string) {
-	<box>
+	<div>
 		@for item := range items {
-			<text>{item}</text>
+			<span>{item}</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"for item := range items {",
@@ -284,11 +284,11 @@ func TestGenerator_IfStatement(t *testing.T) {
 		"simple if": {
 			input: `package x
 @component View(show bool) {
-	<box>
+	<div>
 		@if show {
-			<text>visible</text>
+			<span>visible</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"if show {",
@@ -297,13 +297,13 @@ func TestGenerator_IfStatement(t *testing.T) {
 		"if-else": {
 			input: `package x
 @component View(loading bool) {
-	<box>
+	<div>
 		@if loading {
-			<text>loading</text>
+			<span>loading</span>
 		} @else {
-			<text>done</text>
+			<span>done</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"if loading {",
@@ -313,15 +313,15 @@ func TestGenerator_IfStatement(t *testing.T) {
 		"if-else-if": {
 			input: `package x
 @component View(state int) {
-	<box>
+	<div>
 		@if state == 0 {
-			<text>zero</text>
+			<span>zero</span>
 		} @else @if state == 1 {
-			<text>one</text>
+			<span>one</span>
 		} @else {
-			<text>other</text>
+			<span>other</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"if state == 0 {",
@@ -332,11 +332,11 @@ func TestGenerator_IfStatement(t *testing.T) {
 		"complex condition": {
 			input: `package x
 @component View(err error) {
-	<box>
+	<div>
 		@if err != nil {
-			<text>error</text>
+			<span>error</span>
 		}
-	</box>
+	</div>
 }`,
 			wantContains: []string{
 				"if err != nil {",
@@ -371,7 +371,7 @@ func TestGenerator_TextElement(t *testing.T) {
 		"text with literal content": {
 			input: `package x
 @component Text() {
-	<text>Hello World</text>
+	<span>Hello World</span>
 }`,
 			wantContains: []string{
 				`element.WithText("Hello World")`,
@@ -380,7 +380,7 @@ func TestGenerator_TextElement(t *testing.T) {
 		"text with expression content": {
 			input: `package x
 @component Text(msg string) {
-	<text>{msg}</text>
+	<span>{msg}</span>
 }`,
 			wantContains: []string{
 				"element.WithText(msg)",
@@ -389,7 +389,7 @@ func TestGenerator_TextElement(t *testing.T) {
 		"text with formatted expression": {
 			input: `package x
 @component Text(count int) {
-	<text>{fmt.Sprintf("Count: %d", count)}</text>
+	<span>{fmt.Sprintf("Count: %d", count)}</span>
 }`,
 			wantContains: []string{
 				`element.WithText(fmt.Sprintf("Count: %d", count))`,
@@ -425,7 +425,7 @@ func TestGenerator_RawGoStatements(t *testing.T) {
 			input: `package x
 @component Counter() {
 	count := 0
-	<text>hello</text>
+	<span>hello</span>
 }`,
 			wantContains: []string{
 				"count := 0",
@@ -436,7 +436,7 @@ func TestGenerator_RawGoStatements(t *testing.T) {
 import "fmt"
 @component Debug() {
 	fmt.Println("debug")
-	<text>hello</text>
+	<span>hello</span>
 }`,
 			wantContains: []string{
 				`fmt.Println("debug")`,
@@ -448,7 +448,7 @@ import "fmt"
 	x := 1
 	y := 2
 	z := x + y
-	<text>hello</text>
+	<span>hello</span>
 }`,
 			wantContains: []string{
 				"x := 1",
@@ -483,7 +483,7 @@ func helper(x int) int {
 }
 
 @component Test() {
-	<text>hello</text>
+	<span>hello</span>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -510,7 +510,7 @@ import (
 )
 
 @component Test() {
-	<box direction={layout.Column}></box>
+	<div direction={layout.Column}></div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -538,7 +538,7 @@ import (
 func TestGenerator_Header(t *testing.T) {
 	input := `package x
 @component Test() {
-	<text>hello</text>
+	<span>hello</span>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -570,16 +570,16 @@ import (
 )
 
 @component Dashboard(items []string) {
-	<box direction={layout.Column} padding=1>
-		<text>Header</text>
+	<div direction={layout.Column} padding=1>
+		<span>Header</span>
 		@for i, item := range items {
 			@if i == 0 {
-				<text textStyle={highlightStyle}>{item}</text>
+				<span textStyle={highlightStyle}>{item}</span>
 			} @else {
-				<text>{item}</text>
+				<span>{item}</span>
 			}
 		}
-	</box>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -623,26 +623,26 @@ func countDone(items []Item) int {
 }
 
 @component Dashboard(items []Item, selectedIndex int) {
-	<box direction={layout.Column} padding=1>
-		<box
+	<div direction={layout.Column} padding=1>
+		<div
 			border={tui.BorderRounded}
 			padding=1
 			direction={layout.Row}
 		>
-			<text>Todo List</text>
-			<text>{fmt.Sprintf("%d/%d done", countDone(items), len(items))}</text>
-		</box>
+			<span>Todo List</span>
+			<span>{fmt.Sprintf("%d/%d done", countDone(items), len(items))}</span>
+		</div>
 
-		<box direction={layout.Column} flexGrow=1>
+		<div direction={layout.Column} flexGrow=1>
 			@for i, item := range items {
 				@if i == selectedIndex {
-					<text borderStyle={selectedStyle}>{item.Name}</text>
+					<span borderStyle={selectedStyle}>{item.Name}</span>
 				} @else {
-					<text>{item.Name}</text>
+					<span>{item.Name}</span>
 				}
 			}
-		</box>
-	</box>
+		</div>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("components.tui", input)
@@ -682,12 +682,12 @@ func countDone(items []Item) int {
 	}
 }
 
-func TestGenerator_ScrollableElement(t *testing.T) {
+func TestGenerator_ScrollableAttribute(t *testing.T) {
 	input := `package x
 @component ScrollView() {
-	<scrollable>
-		<text>content</text>
-	</scrollable>
+	<div scrollable={element.ScrollVertical}>
+		<span>content</span>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -705,9 +705,9 @@ func TestGenerator_ScrollableElement(t *testing.T) {
 func TestGenerator_SelfClosingElement(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box>
+	<div>
 		<input />
-	</box>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -726,9 +726,9 @@ func TestGenerator_SelfClosingElement(t *testing.T) {
 func TestGenerator_LetBindingAsChild(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box>
-		@let item = <text>hello</text>
-	</box>
+	<div>
+		@let item = <span>hello</span>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -753,11 +753,11 @@ func TestGenerator_MultipleComponents(t *testing.T) {
 	input := `package x
 
 @component Header() {
-	<text>Header</text>
+	<span>Header</span>
 }
 
 @component Footer() {
-	<text>Footer</text>
+	<span>Footer</span>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -779,11 +779,11 @@ func TestGenerator_MultipleComponents(t *testing.T) {
 func TestGenerator_ExpressionInLoopBody(t *testing.T) {
 	input := `package x
 @component List(items []string) {
-	<box>
+	<div>
 		@for _, item := range items {
 			{item}
 		}
-	</box>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -802,7 +802,7 @@ func TestGenerator_ExpressionInLoopBody(t *testing.T) {
 func TestGenerator_BooleanAttributes(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box scrollable={element.ScrollVertical}></box>
+	<div scrollable={element.ScrollVertical}></div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -820,7 +820,7 @@ func TestGenerator_BooleanAttributes(t *testing.T) {
 func TestGenerator_FlexAttributes(t *testing.T) {
 	input := `package x
 @component Test() {
-	<box flexGrow=1 flexShrink=0></box>
+	<div flexGrow=1 flexShrink=0></div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)
@@ -842,10 +842,10 @@ func TestGenerator_FlexAttributes(t *testing.T) {
 func TestGenerator_ComponentWithChildren(t *testing.T) {
 	input := `package x
 @component Card(title string) {
-	<box>
-		<text>{title}</text>
+	<div>
+		<span>{title}</span>
 		{children...}
-	</box>
+	</div>
 }`
 
 	// First parse and analyze
@@ -889,7 +889,7 @@ func TestGenerator_ComponentWithChildren(t *testing.T) {
 func TestGenerator_ComponentCall(t *testing.T) {
 	input := `package x
 @component Header(title string) {
-	<text>{title}</text>
+	<span>{title}</span>
 }
 
 @component App() {
@@ -927,16 +927,16 @@ func TestGenerator_ComponentCall(t *testing.T) {
 func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 	input := `package x
 @component Card(title string) {
-	<box>
-		<text>{title}</text>
+	<div>
+		<span>{title}</span>
 		{children...}
-	</box>
+	</div>
 }
 
 @component App() {
 	@Card("My Card") {
-		<text>Line 1</text>
-		<text>Line 2</text>
+		<span>Line 1</span>
+		<span>Line 2</span>
 	}
 }`
 
@@ -980,5 +980,116 @@ func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 	// Check that Card is called with children
 	if !strings.Contains(code, `Card("My Card"`) {
 		t.Errorf("Should call Card\nGot:\n%s", code)
+	}
+}
+
+func TestGenerator_TailwindClassAttribute(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"layout classes": {
+			input: `package x
+@component Box() {
+	<div class="flex flex-col gap-2 p-4"></div>
+}`,
+			wantContains: []string{
+				"element.WithDirection(layout.Row)",
+				"element.WithDirection(layout.Column)",
+				"element.WithGap(2)",
+				"element.WithPadding(4)",
+			},
+		},
+		"border class": {
+			input: `package x
+@component Box() {
+	<div class="border-rounded"></div>
+}`,
+			wantContains: []string{
+				"element.WithBorder(tui.BorderRounded)",
+			},
+		},
+		"text style classes": {
+			input: `package x
+@component Text() {
+	<span class="font-bold text-cyan">hello</span>
+}`,
+			wantContains: []string{
+				"element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan))",
+			},
+		},
+		"combined text and layout classes": {
+			input: `package x
+@component Card() {
+	<div class="flex-col p-2 border">
+		<span class="font-bold italic">Title</span>
+	</div>
+}`,
+			wantContains: []string{
+				"element.WithDirection(layout.Column)",
+				"element.WithPadding(2)",
+				"element.WithBorder(tui.BorderSingle)",
+				"element.WithTextStyle(tui.NewStyle().Bold().Italic())",
+			},
+		},
+		"alignment classes": {
+			input: `package x
+@component Center() {
+	<div class="flex items-center justify-center"></div>
+}`,
+			wantContains: []string{
+				"element.WithAlign(layout.AlignCenter)",
+				"element.WithJustify(layout.JustifyCenter)",
+			},
+		},
+		"sizing classes": {
+			input: `package x
+@component Sized() {
+	<div class="w-50 h-20 min-w-10 max-w-100"></div>
+}`,
+			wantContains: []string{
+				"element.WithWidth(50)",
+				"element.WithHeight(20)",
+				"element.WithMinWidth(10)",
+				"element.WithMaxWidth(100)",
+			},
+		},
+		"scroll classes": {
+			input: `package x
+@component Scrollable() {
+	<div class="overflow-y-scroll"></div>
+}`,
+			wantContains: []string{
+				"element.WithScrollable(element.ScrollVertical)",
+			},
+		},
+		"class with explicit attribute": {
+			input: `package x
+@component Mixed() {
+	<div class="flex-col" gap=5></div>
+}`,
+			wantContains: []string{
+				"element.WithDirection(layout.Column)",
+				"element.WithGap(5)",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := ParseAndGenerate("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+		})
 	}
 }
