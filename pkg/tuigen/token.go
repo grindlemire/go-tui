@@ -30,6 +30,7 @@ const (
 	TokenAtFor       // @for
 	TokenAtIf        // @if
 	TokenAtElse      // @else
+	TokenAtCall      // @ComponentName (uppercase, component call)
 
 	// Literals
 	TokenIdent     // identifier
@@ -87,6 +88,7 @@ var tokenNames = map[TokenType]string{
 	TokenAtFor:       "@for",
 	TokenAtIf:        "@if",
 	TokenAtElse:      "@else",
+	TokenAtCall:      "@Call",
 	TokenIdent:       "Ident",
 	TokenInt:         "Int",
 	TokenFloat:       "Float",
@@ -129,10 +131,11 @@ func (t TokenType) String() string {
 
 // Token represents a lexical token with its type, literal value, and source position.
 type Token struct {
-	Type    TokenType
-	Literal string
-	Line    int
-	Column  int
+	Type     TokenType
+	Literal  string
+	Line     int
+	Column   int
+	StartPos int // byte offset in source where token starts
 }
 
 // String returns a debug representation of the token.

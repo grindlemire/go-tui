@@ -78,6 +78,19 @@ func (p *Parser) expectSkipNewlines(typ TokenType) bool {
 	return true
 }
 
+// synchronize skips tokens until a synchronization point is found.
+// Synchronization points are top-level declarations: @component or func.
+// This allows the parser to recover from errors and continue parsing.
+func (p *Parser) synchronize() {
+	for p.current.Type != TokenEOF {
+		// Sync points: top-level declarations
+		if p.current.Type == TokenAtComponent || p.current.Type == TokenFunc {
+			return
+		}
+		p.advance()
+	}
+}
+
 // ParseFile parses a complete .tui file into a File AST node.
 func (p *Parser) ParseFile() (*File, error) {
 	file := &File{
@@ -111,15 +124,22 @@ func (p *Parser) ParseFile() (*File, error) {
 			comp := p.parseComponent()
 			if comp != nil {
 				file.Components = append(file.Components, comp)
+			} else {
+				// Error recovery: skip to next top-level declaration
+				p.synchronize()
 			}
 		case TokenFunc:
 			fn := p.parseGoFunc()
 			if fn != nil {
 				file.Funcs = append(file.Funcs, fn)
+			} else {
+				// Error recovery: skip to next top-level declaration
+				p.synchronize()
 			}
 		default:
 			p.errors.AddErrorf(p.position(), "unexpected token %s, expected @component or func", p.current.Type)
-			p.advance()
+			// Error recovery: skip to next top-level declaration
+			p.synchronize()
 		}
 	}
 
@@ -307,96 +327,39 @@ func (p *Parser) parseParam() *Param {
 	}
 }
 
-// parseType parses a Go type expression.
+// parseType parses a Go type expression by capturing raw source.
+// This handles all Go types including generics, channels, and complex function signatures.
 func (p *Parser) parseType() string {
-	var sb strings.Builder
+	startPos := p.current.StartPos
+	depth := 0 // track [], (), {}
 
-	// Handle pointer
-	for p.current.Type == TokenStar {
-		sb.WriteString("*")
-		p.advance()
-	}
-
-	// Handle slice
-	if p.current.Type == TokenLBracket {
-		sb.WriteString("[")
-		p.advance()
-		if p.current.Type == TokenRBracket {
-			sb.WriteString("]")
-			p.advance()
-		} else {
-			// Could be [N]Type or map[K]V
-			sb.WriteString(p.current.Literal)
-			p.advance()
-			if p.current.Type == TokenRBracket {
-				sb.WriteString("]")
-				p.advance()
+	for p.current.Type != TokenEOF {
+		switch p.current.Type {
+		case TokenComma:
+			// Comma at depth 0 means end of this type
+			if depth == 0 {
+				return strings.TrimSpace(p.lexer.SourceRange(startPos, p.current.StartPos))
 			}
-		}
-	}
-
-	// Handle func type
-	if p.current.Type == TokenFunc {
-		sb.WriteString("func")
-		p.advance()
-		if p.current.Type == TokenLParen {
-			sb.WriteString("(")
 			p.advance()
-			depth := 1
-			for depth > 0 && p.current.Type != TokenEOF {
-				if p.current.Type == TokenLParen {
-					depth++
-				} else if p.current.Type == TokenRParen {
-					depth--
-				}
-				sb.WriteString(p.current.Literal)
-				p.advance()
+		case TokenRParen:
+			// Right paren at depth 0 means end of parameter list
+			if depth == 0 {
+				return strings.TrimSpace(p.lexer.SourceRange(startPos, p.current.StartPos))
 			}
-		}
-		return sb.String()
-	}
-
-	// Handle map type
-	if p.current.Type == TokenIdent && p.current.Literal == "map" {
-		sb.WriteString("map")
-		p.advance()
-		if p.current.Type == TokenLBracket {
-			sb.WriteString("[")
+			depth--
 			p.advance()
-			// Parse key type
-			keyType := p.parseType()
-			sb.WriteString(keyType)
-			if p.current.Type == TokenRBracket {
-				sb.WriteString("]")
-				p.advance()
-			}
-			// Parse value type
-			valType := p.parseType()
-			sb.WriteString(valType)
-		}
-		return sb.String()
-	}
-
-	// Base type (identifier, possibly qualified like pkg.Type)
-	if p.current.Type != TokenIdent {
-		p.errors.AddError(p.position(), "expected type")
-		return sb.String()
-	}
-
-	sb.WriteString(p.current.Literal)
-	p.advance()
-
-	// Check for qualified type (pkg.Type)
-	for p.current.Type == TokenDot {
-		sb.WriteString(".")
-		p.advance()
-		if p.current.Type == TokenIdent {
-			sb.WriteString(p.current.Literal)
+		case TokenLBracket, TokenLParen, TokenLBrace:
+			depth++
+			p.advance()
+		case TokenRBracket, TokenRBrace:
+			depth--
+			p.advance()
+		default:
 			p.advance()
 		}
 	}
 
-	return sb.String()
+	return strings.TrimSpace(p.lexer.SourceRange(startPos, p.lexer.SourcePos()))
 }
 
 // parseComponentBody parses the body of a component.
@@ -429,8 +392,14 @@ func (p *Parser) parseBodyNode() Node {
 		return p.parseFor()
 	case TokenAtIf:
 		return p.parseIf()
+	case TokenAtCall:
+		return p.parseComponentCall()
 	case TokenLBrace:
-		return p.parseGoExprNode()
+		return p.parseGoExprOrChildrenSlot()
+	case TokenIdent, TokenIf, TokenFor, TokenFunc, TokenReturn:
+		// Raw Go statement (e.g., fmt.Printf("x"), x := 1, if err != nil {...})
+		// Note: go, defer, switch, select are lexed as TokenIdent
+		return p.parseGoStatement()
 	default:
 		p.errors.AddErrorf(p.position(), "unexpected token %s in body", p.current.Type)
 		p.advance()
@@ -604,10 +573,10 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 				children = append(children, elem)
 			}
 		case TokenLBrace:
-			// Go expression
-			expr := p.parseGoExprNode()
-			if expr != nil {
-				children = append(children, expr)
+			// Go expression or children slot
+			node := p.parseGoExprOrChildrenSlot()
+			if node != nil {
+				children = append(children, node)
 			}
 		case TokenAtLet:
 			let := p.parseLet()
@@ -624,14 +593,24 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 			if i != nil {
 				children = append(children, i)
 			}
+		case TokenAtCall:
+			call := p.parseComponentCall()
+			if call != nil {
+				children = append(children, call)
+			}
 		case TokenIdent:
-			// Text content
+			// Coalesce consecutive text tokens into a single TextContent
+			var textParts []string
+			textPos := p.position()
+			for p.current.Type == TokenIdent {
+				textParts = append(textParts, p.current.Literal)
+				p.advance()
+			}
 			text := &TextContent{
-				Text:     p.current.Literal,
-				Position: p.position(),
+				Text:     strings.Join(textParts, " "),
+				Position: textPos,
 			}
 			children = append(children, text)
-			p.advance()
 		default:
 			// Try to collect text content
 			if p.current.Type != TokenEOF && p.current.Type != TokenLAngleSlash {
@@ -655,35 +634,70 @@ func (p *Parser) parseGoExprNode() *GoExpr {
 		return nil
 	}
 
-	// The parser has already peeked ahead, consuming some characters via Next().
-	// We need to reconstruct the expression by:
-	// 1. Including any token that was peeked (the first token after {)
-	// 2. Using ReadGoExpr to get the rest
-
-	var exprParts []string
-
-	// If peek isn't } or EOF, it's part of the expression
-	if p.peek.Type != TokenRBrace && p.peek.Type != TokenEOF {
-		exprParts = append(exprParts, p.peek.Literal)
-	}
-
-	// Now read the rest of the expression
-	tok := p.lexer.ReadGoExpr()
-	if tok.Type == TokenError {
+	// Use the token's source position to capture raw content between braces
+	bracePos := p.current.StartPos
+	code, err := p.lexer.ReadBalancedBracesFrom(bracePos)
+	if err != nil {
+		p.errors.AddError(pos, err.Error())
 		return nil
 	}
 
-	exprParts = append(exprParts, tok.Literal)
-	code := strings.Join(exprParts, "")
-
-	// Update parser state after lexer advanced
+	// Re-sync parser state after lexer advanced
+	p.current = p.lexer.Next()
 	p.peek = p.lexer.Next()
-	p.advance()
 
 	return &GoExpr{
-		Code:     code,
+		Code:     strings.TrimSpace(code),
 		Position: pos,
 	}
+}
+
+// parseGoStatement parses a raw Go statement (e.g., fmt.Printf("x"), x := 1).
+// Called when we see an identifier or Go keyword at the start of a body line.
+// Captures the statement as raw source until newline or semicolon at bracket depth 0.
+func (p *Parser) parseGoStatement() *GoCode {
+	pos := p.position()
+	startPos := p.current.StartPos
+
+	// Track bracket depth to handle multi-line statements
+	depth := 0
+
+	// Special handling for 'for' loops: semicolons in the for clause (before the body {)
+	// are NOT statement terminators. e.g., "for i := 0; i < 10; i++ { ... }"
+	isForLoop := p.current.Type == TokenFor || (p.current.Type == TokenIdent && p.current.Literal == "for")
+	inForHeader := isForLoop
+
+	for p.current.Type != TokenEOF {
+		switch p.current.Type {
+		case TokenLParen, TokenLBracket, TokenLBrace:
+			if p.current.Type == TokenLBrace && isForLoop {
+				inForHeader = false // entered for body, semicolons can now terminate
+			}
+			depth++
+		case TokenRParen, TokenRBracket, TokenRBrace:
+			depth--
+		case TokenNewline:
+			if depth == 0 {
+				// End of statement
+				code := strings.TrimSpace(p.lexer.SourceRange(startPos, p.current.StartPos))
+				p.advance() // consume newline
+				return &GoCode{Code: code, Position: pos}
+			}
+		case TokenSemicolon:
+			// Don't terminate on semicolons inside a for-loop header
+			if depth == 0 && !inForHeader {
+				// End of statement - capture up to but not including semicolon
+				code := strings.TrimSpace(p.lexer.SourceRange(startPos, p.current.StartPos))
+				p.advance() // consume semicolon
+				return &GoCode{Code: code, Position: pos}
+			}
+		}
+		p.advance()
+	}
+
+	// EOF reached
+	code := strings.TrimSpace(p.lexer.SourceRange(startPos, p.lexer.SourcePos()))
+	return &GoCode{Code: code, Position: pos}
 }
 
 // parseLet parses @let name = <element>
@@ -785,13 +799,12 @@ func (p *Parser) parseFor() *ForLoop {
 	}
 	p.advance()
 
-	// Parse iterable expression until {
-	var iterParts []string
+	// Capture iterable as raw source from current position until {
+	iterStart := p.current.StartPos
 	for p.current.Type != TokenLBrace && p.current.Type != TokenEOF && p.current.Type != TokenNewline {
-		iterParts = append(iterParts, p.current.Literal)
 		p.advance()
 	}
-	loop.Iterable = strings.TrimSpace(strings.Join(iterParts, ""))
+	loop.Iterable = strings.TrimSpace(p.lexer.SourceRange(iterStart, p.current.StartPos))
 
 	p.skipNewlines()
 
@@ -820,16 +833,12 @@ func (p *Parser) parseIf() *IfStmt {
 
 	stmt := &IfStmt{Position: pos}
 
-	// Parse condition until {
-	// We need to be smart about spacing - don't add spaces around operators
-	var condParts []string
+	// Capture condition as raw source from current position until {
+	condStart := p.current.StartPos
 	for p.current.Type != TokenLBrace && p.current.Type != TokenEOF && p.current.Type != TokenNewline {
-		condParts = append(condParts, p.current.Literal)
 		p.advance()
 	}
-	// Join without spaces, but we need to handle this differently
-	// Actually, we need to join smartly based on token types
-	stmt.Condition = joinConditionTokens(condParts)
+	stmt.Condition = strings.TrimSpace(p.lexer.SourceRange(condStart, p.current.StartPos))
 
 	p.skipNewlines()
 
@@ -878,11 +887,11 @@ func (p *Parser) parseIf() *IfStmt {
 func (p *Parser) parseGoFunc() *GoFunc {
 	pos := p.position()
 
-	var code strings.Builder
-	code.WriteString("func")
-	p.advance()
+	// Record the start position of the func keyword
+	startPos := p.current.StartPos
+	p.advance() // move past 'func'
 
-	// Collect the entire function definition
+	// Skip to matching closing brace
 	braceDepth := 0
 	started := false
 
@@ -892,74 +901,120 @@ func (p *Parser) parseGoFunc() *GoFunc {
 			started = true
 		} else if p.current.Type == TokenRBrace {
 			braceDepth--
-		}
-
-		if p.current.Type == TokenNewline {
-			code.WriteString("\n")
-		} else {
-			code.WriteString(p.current.Literal)
+			if started && braceDepth == 0 {
+				// Capture raw source from func to after closing brace
+				endPos := p.current.StartPos + 1 // +1 to include the '}'
+				code := p.lexer.SourceRange(startPos, endPos)
+				p.advance() // move past '}'
+				p.skipNewlines()
+				return &GoFunc{
+					Code:     code,
+					Position: pos,
+				}
+			}
 		}
 		p.advance()
-
-		// Check if function body is complete
-		if started && braceDepth == 0 {
-			break
-		}
-
-		// Add spacing between tokens (rough approximation)
-		if p.current.Type != TokenEOF && p.current.Type != TokenNewline &&
-			p.current.Type != TokenLParen && p.current.Type != TokenRParen &&
-			p.current.Type != TokenLBrace && p.current.Type != TokenRBrace {
-			code.WriteString(" ")
-		}
 	}
 
+	// If we reach here, function was not properly closed
+	p.errors.AddError(pos, "unterminated function definition")
+	code := p.lexer.SourceRange(startPos, p.lexer.SourcePos())
 	p.skipNewlines()
 
 	return &GoFunc{
-		Code:     code.String(),
+		Code:     code,
 		Position: pos,
 	}
 }
 
-// joinConditionTokens joins condition tokens smartly, adding spaces only where needed.
-// Operators like !=, ==, <=, >= should not have spaces inserted between their parts.
-func joinConditionTokens(parts []string) string {
-	if len(parts) == 0 {
-		return ""
+// parseComponentCall parses @ComponentName(args) or @ComponentName(args) { children }
+func (p *Parser) parseComponentCall() *ComponentCall {
+	pos := p.position()
+
+	// Current token is TokenAtCall with the component name as Literal
+	name := p.current.Literal
+	p.advance()
+
+	// Parse arguments (required parentheses, may be empty)
+	if !p.expect(TokenLParen) {
+		return nil
 	}
 
-	var result strings.Builder
-	for i, part := range parts {
-		if i > 0 {
-			prev := parts[i-1]
-			// Don't add space if current or previous is an operator character
-			// that should be adjacent (like ! before =, or = after !)
-			needsSpace := true
-
-			// Check if we're building a compound operator
-			if (prev == "!" || prev == "=" || prev == "<" || prev == ">" || prev == ":" || prev == "&" || prev == "|") &&
-				(part == "=" || part == "&" || part == "|") {
-				needsSpace = false
-			}
-			// Don't add space before/after dots (for qualified names like pkg.Type)
-			if prev == "." || part == "." {
-				needsSpace = false
-			}
-			// Don't add space around parens
-			if prev == "(" || part == "(" || prev == ")" || part == ")" {
-				needsSpace = false
-			}
-			// Don't add space around brackets
-			if prev == "[" || part == "[" || prev == "]" || part == "]" {
-				needsSpace = false
-			}
-
-			if needsSpace {
-				result.WriteString(" ")
+	// Capture arguments as raw source until matching )
+	argsStart := p.current.StartPos
+	parenDepth := 1
+	for parenDepth > 0 && p.current.Type != TokenEOF {
+		switch p.current.Type {
+		case TokenLParen:
+			parenDepth++
+		case TokenRParen:
+			parenDepth--
+			if parenDepth == 0 {
+				continue // don't advance, we'll handle below
 			}
 		}
-		result.WriteString(part)
+		if parenDepth > 0 {
+			p.advance()
+		}
 	}
-	return result.String()
+	args := strings.TrimSpace(p.lexer.SourceRange(argsStart, p.current.StartPos))
+
+	if !p.expect(TokenRParen) {
+		return nil
+	}
+
+	p.skipNewlines()
+
+	call := &ComponentCall{
+		Name:     name,
+		Args:     args,
+		Position: pos,
+	}
+
+	// Optional children block
+	if p.current.Type == TokenLBrace {
+		p.advance()
+		p.skipNewlines()
+		call.Children = p.parseComponentBody()
+		if !p.expectSkipNewlines(TokenRBrace) {
+			return nil
+		}
+	}
+
+	return call
 }
+
+// parseGoExprOrChildrenSlot parses either a Go expression {expr} or children slot {children...}
+func (p *Parser) parseGoExprOrChildrenSlot() Node {
+	pos := p.position()
+
+	if p.current.Type != TokenLBrace {
+		p.errors.AddError(p.position(), "expected '{'")
+		return nil
+	}
+
+	// Use the token's source position to capture raw content between braces
+	bracePos := p.current.StartPos
+	code, err := p.lexer.ReadBalancedBracesFrom(bracePos)
+	if err != nil {
+		p.errors.AddError(pos, err.Error())
+		return nil
+	}
+
+	// Re-sync parser state after lexer advanced
+	p.current = p.lexer.Next()
+	p.peek = p.lexer.Next()
+
+	trimmed := strings.TrimSpace(code)
+
+	// Check for children slot syntax
+	if trimmed == "children..." {
+		return &ChildrenSlot{Position: pos}
+	}
+
+	return &GoExpr{
+		Code:     trimmed,
+		Position: pos,
+	}
+}
+

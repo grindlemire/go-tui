@@ -30,11 +30,12 @@ func (i *Import) Pos() Position { return i.Position }
 
 // Component represents a @component definition.
 type Component struct {
-	Name       string
-	Params     []*Param
-	ReturnType string // defaults to "*element.Element"
-	Body       []Node // Element, GoCode, LetBinding, ForLoop, IfStmt
-	Position   Position
+	Name            string
+	Params          []*Param
+	ReturnType      string // defaults to "*element.Element"
+	Body            []Node // Element, GoCode, LetBinding, ForLoop, IfStmt
+	AcceptsChildren bool   // true if body contains {children...}
+	Position        Position
 }
 
 func (c *Component) node()        {}
@@ -186,3 +187,22 @@ type RawGoExpr struct {
 
 func (r *RawGoExpr) node()        {}
 func (r *RawGoExpr) Pos() Position { return r.Position }
+
+// ComponentCall represents @ComponentName(args) { children }
+type ComponentCall struct {
+	Name     string // component name (e.g., "Card", "Header")
+	Args     string // raw Go expression for arguments
+	Children []Node // child elements (may be empty if no children block)
+	Position Position
+}
+
+func (c *ComponentCall) node()        {}
+func (c *ComponentCall) Pos() Position { return c.Position }
+
+// ChildrenSlot represents {children...} placeholder in a component body
+type ChildrenSlot struct {
+	Position Position
+}
+
+func (c *ChildrenSlot) node()        {}
+func (c *ChildrenSlot) Pos() Position { return c.Position }

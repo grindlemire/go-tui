@@ -670,3 +670,139 @@ func TestPosition_String(t *testing.T) {
 		})
 	}
 }
+
+func TestLexer_SourcePos(t *testing.T) {
+	input := "package test"
+	l := NewLexer("test.tui", input)
+
+	// After creation, pos should be at start
+	if l.SourcePos() != 0 {
+		t.Errorf("initial SourcePos() = %d, want 0", l.SourcePos())
+	}
+
+	// After tokenizing "package", pos should advance
+	l.Next()
+	pos := l.SourcePos()
+	if pos <= 0 {
+		t.Errorf("SourcePos() after 'package' = %d, want > 0", pos)
+	}
+}
+
+func TestLexer_SourceRange(t *testing.T) {
+	type tc struct {
+		input    string
+		start    int
+		end      int
+		expected string
+	}
+
+	tests := map[string]tc{
+		"full range":    {input: "hello world", start: 0, end: 11, expected: "hello world"},
+		"partial":       {input: "hello world", start: 0, end: 5, expected: "hello"},
+		"middle":        {input: "hello world", start: 6, end: 11, expected: "world"},
+		"empty":         {input: "hello", start: 5, end: 5, expected: ""},
+		"out of bounds": {input: "hi", start: 0, end: 100, expected: "hi"},
+		"negative":      {input: "hi", start: -5, end: 2, expected: "hi"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			result := l.SourceRange(tt.start, tt.end)
+			if result != tt.expected {
+				t.Errorf("SourceRange(%d, %d) = %q, want %q", tt.start, tt.end, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestLexer_ReadBalancedBracesFrom(t *testing.T) {
+	type tc struct {
+		input    string
+		startPos int
+		expected string
+		hasError bool
+	}
+
+	tests := map[string]tc{
+		"simple":          {input: "{x}", startPos: 0, expected: "x"},
+		"with spaces":     {input: "{ x + y }", startPos: 0, expected: " x + y "},
+		"nested braces":   {input: "{map[string]int{}}", startPos: 0, expected: "map[string]int{}"},
+		"with string":     {input: `{fmt.Sprintf("%d", x)}`, startPos: 0, expected: `fmt.Sprintf("%d", x)`},
+		"with raw string": {input: "{`hello`}", startPos: 0, expected: "`hello`"},
+		"deeply nested":   {input: "{func() { if true { x } }()}", startPos: 0, expected: "func() { if true { x } }()"},
+		"not at brace":    {input: "abc{x}", startPos: 0, hasError: true},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			result, err := l.ReadBalancedBracesFrom(tt.startPos)
+
+			if tt.hasError {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if result != tt.expected {
+				t.Errorf("ReadBalancedBracesFrom(%d) = %q, want %q", tt.startPos, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestLexer_ComponentCall(t *testing.T) {
+	type tc struct {
+		input       string
+		wantType    TokenType
+		wantLiteral string
+	}
+
+	tests := map[string]tc{
+		"simple call": {
+			input:       "@Card",
+			wantType:    TokenAtCall,
+			wantLiteral: "Card",
+		},
+		"multi-word name": {
+			input:       "@MyCustomComponent",
+			wantType:    TokenAtCall,
+			wantLiteral: "MyCustomComponent",
+		},
+		"header component": {
+			input:       "@Header",
+			wantType:    TokenAtCall,
+			wantLiteral: "Header",
+		},
+		"component keyword": {
+			input:       "@component",
+			wantType:    TokenAtComponent,
+			wantLiteral: "@component",
+		},
+		"lowercase still keyword error": {
+			input:    "@unknown",
+			wantType: TokenError,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			tok := l.Next()
+
+			if tok.Type != tt.wantType {
+				t.Errorf("token type = %v, want %v", tok.Type, tt.wantType)
+			}
+			if tt.wantLiteral != "" && tok.Literal != tt.wantLiteral {
+				t.Errorf("token literal = %q, want %q", tok.Literal, tt.wantLiteral)
+			}
+		})
+	}
+}

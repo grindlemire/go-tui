@@ -1,8 +1,8 @@
 # DSL & Code Generation Specification
 
 **Status:** Draft\
-**Version:** 1.0\
-**Last Updated:** 2025-01-24
+**Version:** 1.2\
+**Last Updated:** 2026-01-25
 
 ---
 
@@ -26,6 +26,7 @@ Users write `.tui` files that compile to pure Go functions. The generated code u
 - **Direct mapping to Element API**: Each tag maps to `element.New()` with options
 - **Go expression embedding**: Full Go expressions via `{expr}`
 - **Element references**: `@let` for capturing elements for later mutation
+- **Component composition**: `@ComponentName(args) { children }` with `{children...}` slots
 - **Standard Go imports**: Familiar import syntax at top of file
 - **Zero framework**: No runtime, no state management, no magic
 
@@ -69,7 +70,7 @@ cmd/tui/
 |-----------|---------|
 | `token.go` | Token types: keywords, operators, literals, identifiers |
 | `lexer.go` | Convert `.tui` source to token stream |
-| `ast.go` | AST nodes: File, Component, Element, Expression, ControlFlow |
+| `ast.go` | AST nodes: File, Component, Element, Expression, ControlFlow, ComponentCall |
 | `parser.go` | Parse tokens into AST with error recovery |
 | `analyzer.go` | Validate AST, resolve types, check imports |
 | `generator.go` | Generate Go source code from validated AST |
@@ -147,6 +148,7 @@ const (
     TokenFor         // @for
     TokenIf          // @if
     TokenElse        // @else
+    TokenAtCall      // @ComponentName (uppercase, component call)
     TokenRange       // range
 
     // Literals
@@ -183,12 +185,22 @@ const (
 )
 
 type Token struct {
-    Type    TokenType
-    Literal string
-    Line    int
-    Column  int
+    Type     TokenType
+    Literal  string
+    Line     int
+    Column   int
+    StartPos int       // byte offset in source for raw capture
 }
 ```
+
+**Raw Source Capture**: The lexer supports capturing raw source text for complex Go constructs:
+- `SourcePos() int` - Current byte position in source
+- `SourceRange(start, end int) string` - Extract substring from source
+- `ReadBalancedBracesFrom(pos int) (string, error)` - Read balanced `{...}` content from position
+- `ReadUntilBrace() string` - Read until next `{`
+
+This enables the parser to capture Go expressions, conditions, and types as raw source
+instead of reconstructing them from tokens, preserving original formatting.
 
 ### 3.2 AST Types
 
@@ -199,7 +211,8 @@ type Token struct {
 type File struct {
     Package    string
     Imports    []Import
-    Components []Component
+    Components []*Component
+    Funcs      []*GoFunc     // top-level Go functions
 }
 
 // Import represents a Go import
@@ -210,11 +223,12 @@ type Import struct {
 
 // Component represents a @component definition
 type Component struct {
-    Name       string
-    Params     []Param
-    ReturnType string   // defaults to "*element.Element"
-    Body       Node     // Element or ControlFlow
-    Pos        Position
+    Name            string
+    Params          []*Param
+    ReturnType      string   // defaults to "*element.Element"
+    Body            []Node   // Elements, GoCode, ControlFlow, etc.
+    AcceptsChildren bool     // true if body contains {children...}
+    Position        Position
 }
 
 // Param represents a function parameter
@@ -287,10 +301,48 @@ type ForLoop struct {
 
 // IfStmt represents @if condition { ... } @else { ... }
 type IfStmt struct {
-    Condition string   // Go expression
+    Condition string   // Go expression (raw source)
     Then      []Node
     Else      []Node   // optional
-    Pos       Position
+    Position  Position
+}
+
+// GoCode represents raw Go statements in component bodies
+// e.g., fmt.Printf("debug"), x := compute(), defer cleanup()
+type GoCode struct {
+    Code     string   // raw Go statement
+    Position Position
+}
+
+// ComponentCall represents @ComponentName(args) { children }
+type ComponentCall struct {
+    Name     string   // component name (e.g., "Card", "Header")
+    Args     string   // raw Go expression for arguments
+    Children []Node   // child elements (may be empty if no children block)
+    Position Position
+}
+
+// ChildrenSlot represents {children...} placeholder in a component body
+type ChildrenSlot struct {
+    Position Position
+}
+
+// GoFunc represents a top-level Go function definition
+type GoFunc struct {
+    Code     string   // raw function source including "func" keyword
+    Position Position
+}
+
+// TextContent represents literal text inside elements
+type TextContent struct {
+    Text     string
+    Position Position
+}
+
+// BoolLit represents true/false
+type BoolLit struct {
+    Value    bool
+    Position Position
 }
 
 // Position tracks source location for errors
@@ -524,26 +576,93 @@ import (
 
 ### 4.6 Embedded Go Code
 
+Raw Go statements can be included directly in component bodies. The parser captures
+complete statements from the start of the line until newline or semicolon (at bracket depth 0).
+
 ```
 @component DynamicList(items []string) {
-    // Pure Go code before the element tree
-    if len(items) == 0 {
-        return <text>No items</text>
-    }
+    // Variable assignments
+    filtered := filterItems(items)
+    count := len(filtered)
 
-    filtered := make([]string, 0, len(items))
-    for _, item := range items {
-        if strings.TrimSpace(item) != "" {
-            filtered = append(filtered, item)
-        }
-    }
+    // Function calls
+    fmt.Printf("Rendering %d items\n", count)
+    log.Debug("list render started")
 
-    // Return the element tree
+    // Control flow (captured as single statements)
+    if count == 0 { return emptyView() }
+
+    // Defer, go, etc.
+    defer cleanup()
+    go backgroundTask()
+
+    // For loops with bodies
+    for i := 0; i < count; i++ { process(i) }
+
+    // The element tree
     <box direction={layout.Column}>
         @for _, item := range filtered {
             <text>{item}</text>
         }
     </box>
+}
+```
+
+**Supported Go statement starters:**
+- Identifiers: `x := 1`, `fmt.Println()`, `myFunc()`
+- Keywords: `if`, `for`, `switch`, `go`, `defer`, `return`
+- Multi-line statements: Bracket depth is tracked, so statements spanning lines are captured correctly
+
+**Note:** The `return <element>` syntax is not yet supported. Use DSL control flow (`@if`) for conditional rendering.
+
+### 4.7 Component Calls with Children
+
+Components can accept children using the `{children...}` slot, similar to templ's children pattern.
+
+**Defining a component with children slot:**
+```
+@component Card(title string) {
+    <box border={tui.BorderSingle}>
+        <text bold>{title}</text>
+        {children...}
+    </box>
+}
+```
+
+**Calling a component with children:**
+```
+@component App() {
+    @Card("My Card") {
+        <text>Line 1</text>
+        <text>Line 2</text>
+    }
+}
+```
+
+**Calling a component without children:**
+```
+@component App() {
+    @Header("Welcome")
+}
+```
+
+**Rules:**
+- Component calls use `@ComponentName(args)` syntax (uppercase first letter)
+- Children block is optional: `@Header("title")` vs `@Card("title") { ... }`
+- Components that accept children must have `{children...}` in their body
+- Calling a component with children that doesn't have `{children...}` is an error
+- Only one `{children...}` slot per component (multiple slots not supported)
+
+**Children in control flow:**
+```
+@component ConditionalWrapper(show bool) {
+    @if show {
+        <box border={tui.BorderSingle}>
+            {children...}
+        </box>
+    } @else {
+        {children...}
+    }
 }
 ```
 
@@ -627,6 +746,66 @@ counter := element.New(
     element.WithText("0"),
 )
 ```
+
+### 5.6 Component Call Generation
+
+**Components with children parameter:**
+```
+// Source:
+@component Card(title string) {
+    <box border={tui.BorderSingle}>
+        <text>{title}</text>
+        {children...}
+    </box>
+}
+
+// Generated:
+func Card(title string, children []*element.Element) *element.Element {
+    __tui_0 := element.New(
+        element.WithBorder(tui.BorderSingle),
+    )
+    __tui_1 := element.New(
+        element.WithText(title),
+    )
+    __tui_0.AddChild(__tui_1)
+    for _, __child := range children {
+        __tui_0.AddChild(__child)
+    }
+    return __tui_0
+}
+```
+
+**Calling components without children:**
+```
+// Source:
+@Header("Welcome")
+
+// Generated:
+__tui_0 := Header("Welcome")
+```
+
+**Calling components with children:**
+```
+// Source:
+@Card("My Card") {
+    <text>Line 1</text>
+    <text>Line 2</text>
+}
+
+// Generated:
+__card_children := []*element.Element{}
+__tui_1 := element.New(
+    element.WithText("Line 1"),
+)
+__card_children = append(__card_children, __tui_1)
+__tui_2 := element.New(
+    element.WithText("Line 2"),
+)
+__card_children = append(__card_children, __tui_2)
+__tui_0 := Card("My Card", __card_children)
+```
+
+**Children parameter position:** Always last, after all user-defined parameters.
 
 ---
 
@@ -1150,13 +1329,26 @@ func main() {
 
 | Factor | Assessment |
 |--------|------------|
-| Lexer | Moderate — escape sequences, multi-line strings, Go expressions |
-| Parser | Moderate — recursive descent, error recovery |
+| Lexer | Moderate — escape sequences, multi-line strings, Go expressions, raw source capture |
+| Parser | Moderate — recursive descent, error recovery, raw source preservation |
 | AST | Low — straightforward tree structure |
 | Analyzer | Low — basic type checking, import validation |
 | Generator | Moderate — template-based, maintains formatting |
 | CLI | Low — standard file discovery pattern |
 | Testing | Significant — many edge cases in parsing |
+
+### Implementation Notes
+
+**Raw Source Capture Strategy**: Instead of tokenizing Go expressions and reconstructing
+them (which loses formatting and is fragile), the parser captures raw source text:
+- Token struct includes `StartPos` for byte offset tracking
+- Lexer provides `SourceRange(start, end)` to extract source substrings
+- Parser uses this for: Go expressions `{...}`, conditions, iterables, type signatures, raw statements
+
+**Benefits:**
+- Preserves original formatting
+- Handles arbitrary Go syntax without parser changes
+- Avoids edge cases in reconstruction
 
 **Assessed Size:** Medium\
 **Recommended Phases:** 4
@@ -1181,6 +1373,8 @@ func main() {
 8. Error messages include file, line, and column numbers
 9. Generated code is formatted (gofmt compatible)
 10. Dashboard example can be rewritten using DSL with equivalent functionality
+11. Component calls with `@ComponentName(args)` generate correct function calls
+12. Components with `{children...}` receive children parameter and iterate correctly
 
 ---
 

@@ -12,8 +12,9 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 
 - [x] Create `pkg/tuigen/token.go`
   - Define `TokenType` enum with all token types
-  - Define `Token` struct with Type, Literal, Line, Column
+  - Define `Token` struct with Type, Literal, Line, Column, StartPos
   - Define `Position` struct for error locations
+  - Define `LookupIdent()` for keyword detection
   - Implement `String()` for debugging
 
 - [x] Create `pkg/tuigen/errors.go`
@@ -22,7 +23,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Implement `ErrorList` for collecting multiple errors
 
 - [x] Create `pkg/tuigen/lexer.go`
-  - Implement `Lexer` struct with source, position tracking
+  - Implement `Lexer` struct with source, position tracking, tokenStartPos
   - Implement `NewLexer(filename, source string) *Lexer`
   - Implement `Next() Token` main tokenization method
   - Handle whitespace, newlines, comments
@@ -32,6 +33,11 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Handle operators and punctuation
   - Handle Go expressions inside `{...}` with brace balancing
   - Handle XML-like tokens: `<`, `</`, `/>`, `>`
+  - Implement raw source capture methods:
+    - `SourcePos() int` - current byte position
+    - `SourceRange(start, end int) string` - extract source substring
+    - `ReadBalancedBracesFrom(pos int) (string, error)` - read balanced `{...}`
+    - `ReadUntilBrace() string` - read until `{`
 
 - [x] Create `pkg/tuigen/lexer_test.go`
   - Test basic tokens (keywords, identifiers, literals)
@@ -40,6 +46,8 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Test string literals with escapes
   - Test multi-line input with position tracking
   - Test error cases (unclosed strings, invalid characters)
+  - Test `SourcePos()` and `SourceRange()` methods
+  - Test `ReadBalancedBracesFrom()` with nested structures
 
 **Tests:** Run `go test ./pkg/tuigen/...` at phase end
 
@@ -52,20 +60,22 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 **Status:** COMPLETE
 
 - [x] Create `pkg/tuigen/ast.go`
-  - Define `Node` interface with `node()` marker and `Position()` method
+  - Define `Node` interface with `node()` marker and `Pos()` method
   - Define `File` struct (Package, Imports, Components, Funcs)
-  - Define `Import` struct (Alias, Path)
-  - Define `Component` struct (Name, Params, Body, Pos)
-  - Define `Param` struct (Name, Type)
-  - Define `Element` struct (Tag, Attributes, Children, SelfClose, Pos)
-  - Define `Attribute` struct (Name, Value, Pos)
-  - Define `GoExpr` struct (Code, Pos)
-  - Define `StringLit`, `IntLit`, `FloatLit` structs
-  - Define `LetBinding` struct (Name, Element, Pos)
-  - Define `ForLoop` struct (Index, Value, Iterable, Body, Pos)
-  - Define `IfStmt` struct (Condition, Then, Else, Pos)
-  - Define `GoCode` struct for embedded Go code blocks
-  - Implement `node()` for all types
+  - Define `Import` struct (Alias, Path, Position)
+  - Define `Component` struct (Name, Params, ReturnType, Body, Position)
+  - Define `Param` struct (Name, Type, Position)
+  - Define `Element` struct (Tag, Attributes, Children, SelfClose, Position)
+  - Define `Attribute` struct (Name, Value, Position)
+  - Define `GoExpr` struct (Code, Position) for `{expr}` expressions
+  - Define `GoCode` struct (Code, Position) for raw Go statements
+  - Define `GoFunc` struct (Code, Position) for top-level functions
+  - Define `StringLit`, `IntLit`, `FloatLit`, `BoolLit` structs
+  - Define `TextContent` struct for literal text in elements
+  - Define `LetBinding` struct (Name, Element, Position)
+  - Define `ForLoop` struct (Index, Value, Iterable, Body, Position)
+  - Define `IfStmt` struct (Condition, Then, Else, Position)
+  - Implement `node()` and `Pos()` for all types
 
 - [x] Create `pkg/tuigen/parser.go`
   - Implement `Parser` struct with lexer, current token, peek token, errors
@@ -74,15 +84,19 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Implement `parsePackage() string`
   - Implement `parseImports() []Import`
   - Implement `parseComponent() *Component`
-  - Implement `parseParams() []Param`
+  - Implement `parseParams() []*Param`
+  - Implement `parseType() string` using raw source capture
   - Implement `parseElement() *Element`
   - Implement `parseAttribute() *Attribute`
-  - Implement `parseChildren() []Node`
+  - Implement `parseChildren() []Node` with text coalescing
+  - Implement `parseBodyNode() Node` for component body items
+  - Implement `parseGoStatement() *GoCode` for raw Go statements
+  - Implement `parseGoExprNode() *GoExpr` using raw source capture
+  - Implement `parseGoFunc() *GoFunc` for top-level functions
   - Implement `parseLet() *LetBinding`
-  - Implement `parseFor() *ForLoop`
-  - Implement `parseIf() *IfStmt`
-  - Implement `parseGoExpr() *GoExpr`
-  - Implement error recovery for common mistakes
+  - Implement `parseFor() *ForLoop` with raw iterable capture
+  - Implement `parseIf() *IfStmt` with raw condition capture
+  - Implement `synchronize()` for error recovery
 
 - [x] Create `pkg/tuigen/parser_test.go`
   - Test package and import parsing
@@ -90,10 +104,15 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Test element parsing (self-closing, with children)
   - Test attribute parsing (literals, expressions)
   - Test @let binding parsing
-  - Test @for loop parsing
-  - Test @if/@else parsing
+  - Test @for loop parsing with various variable patterns
+  - Test @if/@else/@else-if parsing
   - Test nested elements
   - Test Go expression parsing in attributes and content
+  - Test complex type signatures (channels, maps, generics, func types)
+  - Test text content coalescing
+  - Test raw Go statements in component bodies
+  - Test raw source preservation for conditions/iterables
+  - Test error recovery across multiple components
   - Test error messages for invalid syntax
 
 **Tests:** Run `go test ./pkg/tuigen/...` at phase end
@@ -104,9 +123,9 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 
 **Reference:** [dsl-codegen-design.md §5](./dsl-codegen-design.md#5-code-generation)
 
-**Completed in commit:** (pending)
+**Status:** COMPLETE
 
-- [ ] Create `pkg/tuigen/generator.go`
+- [x] Create `pkg/tuigen/generator.go`
   - Implement `Generator` struct with output buffer, indent level, var counter
   - Implement `NewGenerator() *Generator`
   - Implement `Generate(file *File) ([]byte, error)` entry point
@@ -120,12 +139,15 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Implement `generateForLoop(f *ForLoop)`
   - Implement `generateIfStmt(i *IfStmt)`
   - Implement `generateGoExpr(g *GoExpr) string`
+  - Implement `generateGoCode(g *GoCode)` for raw Go statements
+  - Implement `generateGoFunc(f *GoFunc)` for top-level functions
+  - Implement `generateTextContent(t *TextContent) string`
   - Implement `generateChildren(parent string, children []Node)`
   - Implement attribute-to-option mapping table
   - Implement element tag-to-options mapping (box, text, scrollable, button)
   - Handle proper Go formatting of output
 
-- [ ] Create `pkg/tuigen/generator_test.go`
+- [x] Create `pkg/tuigen/generator_test.go`
   - Test simple component generation
   - Test element generation with attributes
   - Test nested element generation
@@ -134,10 +156,13 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Test @if/@else generation
   - Test text element content generation
   - Test attribute expression generation
+  - Test raw Go statement generation in component bodies
+  - Test top-level Go function generation
+  - Test text content generation
   - Test import propagation
   - Verify generated code compiles (go build check)
 
-- [ ] Create `pkg/tuigen/analyzer.go`
+- [x] Create `pkg/tuigen/analyzer.go`
   - Implement `Analyzer` struct
   - Implement `Analyze(file *File) []error`
   - Validate element tags are known
@@ -146,7 +171,7 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Add missing standard imports (element, layout, tui)
   - Warn on unused @let bindings
 
-- [ ] Create `pkg/tuigen/analyzer_test.go`
+- [x] Create `pkg/tuigen/analyzer_test.go`
   - Test unknown element tag detection
   - Test unknown attribute detection
   - Test import validation
@@ -160,14 +185,14 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 
 **Reference:** [dsl-codegen-design.md §6](./dsl-codegen-design.md#6-cli-tool)
 
-**Completed in commit:** (pending)
+**Status:** COMPLETE
 
-- [ ] Create `cmd/tui/main.go`
+- [x] Create `cmd/tui/main.go`
   - Implement CLI entry point
   - Parse command-line arguments
   - Dispatch to subcommands
 
-- [ ] Create `cmd/tui/generate.go`
+- [x] Create `cmd/tui/generate.go`
   - Implement `generate` subcommand
   - Implement `-v` verbose flag
   - Implement file/directory argument handling
@@ -177,12 +202,12 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Implement error collection and reporting
   - Format output with gofmt
 
-- [ ] Create `cmd/tui/check.go`
+- [x] Create `cmd/tui/check.go`
   - Implement `check` subcommand
   - Parse and analyze without generating
   - Report errors with line numbers
 
-- [ ] Create integration test
+- [x] Create integration test
   - Create `testdata/simple.tui` with basic component
   - Create `testdata/complex.tui` with loops, conditionals, @let
   - Run `tui generate testdata/`
@@ -190,10 +215,9 @@ Implementation phases for the DSL and code generation system. Each phase builds 
   - Verify `testdata/complex_tui.go` exists and compiles
   - Run generated code to verify runtime behavior
 
-- [ ] Create end-to-end example
+- [x] Create end-to-end example
   - Create `examples/dsl-counter/counter.tui`
   - Create `examples/dsl-counter/main.go` using generated component
-  - Document workflow in README
 
 **Tests:** Run `go test ./cmd/tui/...` and integration tests at phase end
 
@@ -205,8 +229,8 @@ Implementation phases for the DSL and code generation system. Each phase builds 
 |-------|-------------|--------|
 | 1 | Core Types & Lexer | Complete |
 | 2 | Parser & AST | Complete |
-| 3 | Code Generator | Pending |
-| 4 | CLI & Integration | Pending |
+| 3 | Code Generator | Complete |
+| 4 | CLI & Integration | Complete |
 
 ## Files to Create
 
