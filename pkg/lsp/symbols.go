@@ -68,6 +68,39 @@ const (
 	SymbolKindTypeParameter SymbolKind = 26
 )
 
+// positionBefore returns true if a is before b.
+func positionBefore(a, b Position) bool {
+	if a.Line != b.Line {
+		return a.Line < b.Line
+	}
+	return a.Character < b.Character
+}
+
+// positionAfter returns true if a is after b.
+func positionAfter(a, b Position) bool {
+	if a.Line != b.Line {
+		return a.Line > b.Line
+	}
+	return a.Character > b.Character
+}
+
+// clampSelectionRange ensures selectionRange is contained within fullRange.
+func clampSelectionRange(fullRange, selectionRange Range) Range {
+	// Clamp start
+	if positionBefore(selectionRange.Start, fullRange.Start) {
+		selectionRange.Start = fullRange.Start
+	}
+	// Clamp end
+	if positionAfter(selectionRange.End, fullRange.End) {
+		selectionRange.End = fullRange.End
+	}
+	// Ensure start <= end
+	if positionAfter(selectionRange.Start, selectionRange.End) {
+		selectionRange.Start = selectionRange.End
+	}
+	return selectionRange
+}
+
 // handleDocumentSymbol handles textDocument/documentSymbol requests.
 func (s *Server) handleDocumentSymbol(params json.RawMessage) (any, *Error) {
 	var p DocumentSymbolParams
@@ -126,18 +159,21 @@ func (s *Server) componentToSymbol(comp *tuigen.Component, content string) Docum
 	// Find end of component (rough estimate - find matching brace)
 	endPos := s.findComponentEnd(comp, content)
 
+	fullRange := Range{
+		Start: startPos,
+		End:   endPos,
+	}
+	selRange := clampSelectionRange(fullRange, Range{
+		Start: startPos,
+		End:   nameEndPos,
+	})
+
 	symbol := DocumentSymbol{
-		Name:   comp.Name,
-		Detail: detail,
-		Kind:   SymbolKindFunction,
-		Range: Range{
-			Start: startPos,
-			End:   endPos,
-		},
-		SelectionRange: Range{
-			Start: startPos,
-			End:   nameEndPos,
-		},
+		Name:           comp.Name,
+		Detail:         detail,
+		Kind:           SymbolKindFunction,
+		Range:          fullRange,
+		SelectionRange: selRange,
 	}
 
 	// Add child symbols (let bindings, nested elements with IDs)
@@ -181,18 +217,21 @@ func (s *Server) funcToSymbol(fn *tuigen.GoFunc, content string) DocumentSymbol 
 		}
 	}
 
+	fullRange := Range{
+		Start: startPos,
+		End:   endPos,
+	}
+	selRange := clampSelectionRange(fullRange, Range{
+		Start: startPos,
+		End:   Position{Line: startPos.Line, Character: startPos.Character + len("func") + 1 + len(name)},
+	})
+
 	return DocumentSymbol{
-		Name:   name,
-		Detail: "func",
-		Kind:   SymbolKindFunction,
-		Range: Range{
-			Start: startPos,
-			End:   endPos,
-		},
-		SelectionRange: Range{
-			Start: startPos,
-			End:   Position{Line: startPos.Line, Character: startPos.Character + len("func") + 1 + len(name)},
-		},
+		Name:           name,
+		Detail:         "func",
+		Kind:           SymbolKindFunction,
+		Range:          fullRange,
+		SelectionRange: selRange,
 	}
 }
 
@@ -225,30 +264,34 @@ func extractFuncName(code string) string {
 func (s *Server) nodeToSymbol(node tuigen.Node) *DocumentSymbol {
 	switch n := node.(type) {
 	case *tuigen.LetBinding:
+		fullRange := TuigenPosToRange(n.Position, len(n.Name)+5) // "@let " + name
+		selRange := clampSelectionRange(fullRange, Range{
+			Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + 5},
+			End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + 5 + len(n.Name)},
+		})
 		return &DocumentSymbol{
-			Name:   n.Name,
-			Detail: "let binding",
-			Kind:   SymbolKindVariable,
-			Range:  TuigenPosToRange(n.Position, len(n.Name)+5), // "@let " + name
-			SelectionRange: Range{
-				Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + 5},
-				End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + 5 + len(n.Name)},
-			},
+			Name:           n.Name,
+			Detail:         "let binding",
+			Kind:           SymbolKindVariable,
+			Range:          fullRange,
+			SelectionRange: selRange,
 		}
 	case *tuigen.Element:
 		// Only create symbol for elements with an ID attribute
 		for _, attr := range n.Attributes {
 			if attr.Name == "id" {
 				if str, ok := attr.Value.(*tuigen.StringLit); ok {
+					fullRange := TuigenPosToRange(n.Position, len(n.Tag)+2) // "<tag>"
+					selRange := clampSelectionRange(fullRange, Range{
+						Start: Position{Line: attr.Position.Line - 1, Character: attr.Position.Column - 1},
+						End:   Position{Line: attr.Position.Line - 1, Character: attr.Position.Column - 1 + len(attr.Name) + 2 + len(str.Value)},
+					})
 					return &DocumentSymbol{
-						Name:   str.Value,
-						Detail: fmt.Sprintf("<%s>", n.Tag),
-						Kind:   SymbolKindField,
-						Range:  TuigenPosToRange(n.Position, len(n.Tag)+2), // "<tag>"
-						SelectionRange: Range{
-							Start: Position{Line: attr.Position.Line - 1, Character: attr.Position.Column - 1},
-							End:   Position{Line: attr.Position.Line - 1, Character: attr.Position.Column - 1 + len(attr.Name) + 2 + len(str.Value)},
-						},
+						Name:           str.Value,
+						Detail:         fmt.Sprintf("<%s>", n.Tag),
+						Kind:           SymbolKindField,
+						Range:          fullRange,
+						SelectionRange: selRange,
 					}
 				}
 			}

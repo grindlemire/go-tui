@@ -2,6 +2,11 @@ package lsp
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
 // route dispatches a request to the appropriate handler.
@@ -227,6 +232,9 @@ func (s *Server) handleInitialized() (any, *Error) {
 	s.initialized = true
 	s.log("Server initialized")
 
+	// Index all .tui files in the workspace for cross-file references
+	go s.indexWorkspace()
+
 	// Start gopls proxy in the background
 	go s.InitGopls()
 
@@ -276,6 +284,11 @@ func (s *Server) handleDidOpen(params json.RawMessage) (any, *Error) {
 
 	// Index components from this document
 	s.index.IndexDocument(p.TextDocument.URI, doc.AST)
+
+	// Remove from workspace cache (now managed by docs)
+	s.workspaceASTsMu.Lock()
+	delete(s.workspaceASTs, p.TextDocument.URI)
+	s.workspaceASTsMu.Unlock()
 
 	// Update virtual Go file for gopls
 	s.UpdateVirtualFile(doc)
@@ -354,10 +367,26 @@ func (s *Server) handleDidClose(params json.RawMessage) (any, *Error) {
 
 	s.log("Document closed: %s", p.TextDocument.URI)
 
+	// Get the AST before closing so we can cache it
+	doc := s.docs.Get(p.TextDocument.URI)
+	var ast *tuigen.File
+	if doc != nil {
+		ast = doc.AST
+	}
+
 	s.docs.Close(p.TextDocument.URI)
 
-	// Remove components from index
-	s.index.Remove(p.TextDocument.URI)
+	// Re-add to workspace cache if we have an AST, and re-index
+	if ast != nil {
+		s.workspaceASTsMu.Lock()
+		s.workspaceASTs[p.TextDocument.URI] = ast
+		s.workspaceASTsMu.Unlock()
+		// Re-index so lookups still work
+		s.index.IndexDocument(p.TextDocument.URI, ast)
+	} else {
+		// Remove components from index
+		s.index.Remove(p.TextDocument.URI)
+	}
 
 	// Close virtual Go file in gopls
 	s.CloseVirtualFile(p.TextDocument.URI)
@@ -397,4 +426,84 @@ func (s *Server) handleDidSave(params json.RawMessage) (any, *Error) {
 	}
 
 	return nil, nil
+}
+
+// indexWorkspace scans the workspace for .tui files and indexes them.
+// This enables cross-file go-to-definition for components and functions.
+func (s *Server) indexWorkspace() {
+	if s.rootURI == "" {
+		s.log("Cannot index workspace: no rootURI")
+		return
+	}
+
+	// Convert file:// URI to path
+	rootPath := strings.TrimPrefix(s.rootURI, "file://")
+	s.log("=== WORKSPACE INDEXING START ===")
+	s.log("rootURI: %s", s.rootURI)
+	s.log("rootPath: %s", rootPath)
+
+	count := 0
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil // Continue on errors
+		}
+
+		// Skip hidden directories and common non-source directories
+		if info.IsDir() {
+			name := info.Name()
+			if strings.HasPrefix(name, ".") || name == "node_modules" || name == "vendor" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Only process .tui files
+		if !strings.HasSuffix(path, ".tui") {
+			return nil
+		}
+
+		// Skip if file is already open (will be indexed via didOpen)
+		uri := "file://" + path
+		if s.docs.Get(uri) != nil {
+			return nil
+		}
+
+		// Read and parse the file
+		content, err := os.ReadFile(path)
+		if err != nil {
+			s.log("Failed to read %s: %v", path, err)
+			return nil
+		}
+
+		// Parse the file
+		lexer := tuigen.NewLexer(path, string(content))
+		parser := tuigen.NewParser(lexer)
+		ast, err := parser.ParseFile()
+		if err != nil {
+			s.log("Parse error in %s: %v", path, err)
+			// Still index what we can
+		}
+
+		if ast != nil {
+			s.index.IndexDocument(uri, ast)
+			// Cache the AST for later use (e.g., find references)
+			s.workspaceASTsMu.Lock()
+			s.workspaceASTs[uri] = ast
+			s.workspaceASTsMu.Unlock()
+			count++
+			s.log("Indexed %s: %d components, %d functions",
+				path, len(ast.Components), len(ast.Funcs))
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		s.log("Error walking workspace: %v", err)
+	}
+
+	s.log("Workspace indexing complete: %d files indexed", count)
+	s.log("All indexed functions: %v", s.index.AllFunctions())
+	s.log("All indexed components: %v", s.index.All())
+	s.log("=== WORKSPACE INDEXING END ===")
 }

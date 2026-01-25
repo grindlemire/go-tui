@@ -1,19 +1,12 @@
-/*
- * Complex TUI component example
- * Tests all DSL features for syntax highlighting
- */
-
 package example
 
 import (
 	"fmt"
 	"strings"
-
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
-// ItemList renders a list of items with selection highlighting
 @component ItemList(items []string, selected int) {
 	<div direction={layout.Column} gap={1}>
 		@for i, item := range items {
@@ -28,25 +21,20 @@ import (
 	</div>
 }
 
-// Counter demonstrates @let binding
 @component Counter(count int, label string) {
 	@let countText = <span class="font-bold">{fmt.Sprintf("%d", count)}</span>
-
 	<div direction={layout.Column} gap={1} padding={1}>
 		<span>{label}</span>
 		{countText}
 	</div>
 }
 
-// ConditionalContent shows @if/@else with multiple conditions
 @component ConditionalContent(showHeader bool, showFooter bool) {
 	<div direction={layout.Column}>
 		@if showHeader {
 			<span>Header</span>
 		}
-
 		<span>Main Content</span>
-
 		@if showFooter {
 			<span>Footer</span>
 		} @else {
@@ -55,55 +43,50 @@ import (
 	</div>
 }
 
-// Helper Go function defined in the same file
-func helperFunction(s string) string {
-	return fmt.Sprintf("[%s]", strings.ToUpper(s))
-}
-
-// WithHelper uses the helper function
 @component WithHelper(text string) {
 	<div>
 		<span>{helperFunction(text)}</span>
 	</div>
 }
 
-// Dashboard demonstrates component composition
 @component Dashboard(user string, items []string, count int) {
 	<div class="flex-col gap-2 p-2">
-		// Using component calls
 		@Header(fmt.Sprintf("Welcome, %s!", user))
-
 		<div class="flex gap-1">
 			@ItemList(items, 0)
 			@Counter(count, "Total:")
 		</div>
-
 		@Footer()
 	</div>
 }
 
-// NumericValues tests number highlighting
 @component NumericValues() {
 	<div>
-		<span padding={10}>Integer: {42}</span>
-		<span padding={3.14}>Float: {3.14159}</span>
+		<span padding={10}>
+			Integer
+			{42}
+		</span>
+		<span padding={3.14}>
+			Float
+			{3.14159}
+		</span>
 		<span>{0xFF}</span>
 		<span>{0b1010}</span>
 		<span>{0o755}</span>
 	</div>
 }
 
-// StringValues tests string highlighting
 @component StringValues() {
 	<div>
 		<span>{"Hello, World!"}</span>
-		<span>{`Raw string
-with newlines`}</span>
+		<span>
+			{`Raw string
+with newlines`}
+		</span>
 		<span>{"Escaped: \n\t\""}</span>
 	</div>
 }
 
-// Self-closing elements
 @component SelfClosing() {
 	<div>
 		<hr />
@@ -112,17 +95,18 @@ with newlines`}</span>
 	</div>
 }
 
-// Attributes with various value types
 @component AttributeTypes(enabled bool, size int) {
-	<div
-		border={tui.BorderDouble}
-		padding={2}
-		margin={1}
-		width="100%"
-		height={size}
-		visible={enabled && size > 0}
-		class="flex-col items-center"
-	>
+	<div border={tui.BorderDouble}
+	     padding={2}
+	     margin={1}
+	     width="100%"
+	     height={size}
+	     visible={enabled && size > 0}
+	     class="flex-col items-center">
 		<span>Content</span>
 	</div>
+}
+
+func helperFunction(s string) string {
+	return fmt.Sprintf("[%s]", strings.ToUpper(s))
 }

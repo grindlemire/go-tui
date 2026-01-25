@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/grindlemire/go-tui/pkg/lsp/gopls"
+	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
 // Server represents the TUI LSP server.
@@ -27,6 +28,10 @@ type Server struct {
 
 	// Component index for workspace symbols and go-to-definition
 	index *ComponentIndex
+
+	// Workspace AST cache for files not open in editor
+	workspaceASTs   map[string]*tuigen.File // URI -> AST
+	workspaceASTsMu sync.RWMutex
 
 	// gopls proxy for Go expression intelligence
 	goplsProxy *gopls.GoplsProxy
@@ -51,13 +56,14 @@ type Server struct {
 func NewServer(reader io.Reader, writer io.Writer) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
-		reader:       bufio.NewReader(reader),
-		writer:       writer,
-		docs:         NewDocumentManager(),
-		index:        NewComponentIndex(),
-		virtualFiles: gopls.NewVirtualFileCache(),
-		ctx:          ctx,
-		cancel:       cancel,
+		reader:        bufio.NewReader(reader),
+		writer:        writer,
+		docs:          NewDocumentManager(),
+		index:         NewComponentIndex(),
+		workspaceASTs: make(map[string]*tuigen.File),
+		virtualFiles:  gopls.NewVirtualFileCache(),
+		ctx:           ctx,
+		cancel:        cancel,
 	}
 }
 
