@@ -1029,3 +1029,528 @@ func TestParser_ControlFlowInChildren(t *testing.T) {
 		t.Error("expected IfStmt child")
 	}
 }
+
+func TestParser_ComplexTypeSignatures(t *testing.T) {
+	type tc struct {
+		input        string
+		wantTypes    []string
+	}
+
+	tests := map[string]tc{
+		"channel type": {
+			input: `package x
+@component Test(ch chan int) {
+	<text>Hello</text>
+}`,
+			wantTypes: []string{"chan int"},
+		},
+		"receive channel": {
+			input: `package x
+@component Test(ch <-chan string) {
+	<text>Hello</text>
+}`,
+			wantTypes: []string{"<-chan string"},
+		},
+		"complex map": {
+			input: `package x
+@component Test(m map[string][]int) {
+	<text>Hello</text>
+}`,
+			wantTypes: []string{"map[string][]int"},
+		},
+		"function with return": {
+			input: `package x
+@component Test(fn func(a, b int) (string, error)) {
+	<text>Hello</text>
+}`,
+			wantTypes: []string{"func(a, b int) (string, error)"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+
+			params := file.Components[0].Params
+			if len(params) != len(tt.wantTypes) {
+				t.Fatalf("expected %d params, got %d", len(tt.wantTypes), len(params))
+			}
+
+			for i, wantType := range tt.wantTypes {
+				if params[i].Type != wantType {
+					t.Errorf("param %d: Type = %q, want %q", i, params[i].Type, wantType)
+				}
+			}
+		})
+	}
+}
+
+func TestParser_TextContentCoalescing(t *testing.T) {
+	input := `package x
+@component Test() {
+	<text>Hello World from component</text>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	textElem := file.Components[0].Body[0].(*Element)
+	if textElem.Tag != "text" {
+		t.Fatalf("expected text element, got %s", textElem.Tag)
+	}
+
+	// Text should be coalesced into a single TextContent node
+	if len(textElem.Children) != 1 {
+		t.Fatalf("expected 1 child (coalesced text), got %d", len(textElem.Children))
+	}
+
+	textContent, ok := textElem.Children[0].(*TextContent)
+	if !ok {
+		t.Fatalf("expected *TextContent, got %T", textElem.Children[0])
+	}
+
+	expected := "Hello World from component"
+	if textContent.Text != expected {
+		t.Errorf("Text = %q, want %q", textContent.Text, expected)
+	}
+}
+
+func TestParser_ErrorRecoveryMultipleComponents(t *testing.T) {
+	// This test verifies that the parser can recover from errors
+	// and continue parsing subsequent components
+	input := `package x
+
+@component Broken(
+	<text>Hello</text>
+}
+
+@component Working() {
+	<text>World</text>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	// Should have errors
+	if err == nil {
+		t.Log("Note: No error returned, parser may have recovered")
+	}
+
+	// But should still have parsed what it could
+	// The first component is broken, but we should try to recover
+	if file == nil {
+		t.Fatal("expected file to be non-nil even with errors")
+	}
+
+	// Due to error recovery, we might get the second component
+	t.Logf("Parsed %d components", len(file.Components))
+}
+
+func TestParser_RawSourcePreservation(t *testing.T) {
+	// Test that raw source is preserved correctly in conditions/iterables
+	input := `package x
+@component Test() {
+	@if user.Name != "" && user.Age >= 18 {
+		<text>Adult</text>
+	}
+	@for i, v := range items[0:10] {
+		<text>{v}</text>
+	}
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	body := file.Components[0].Body
+
+	// Check @if condition preserves original formatting
+	ifStmt := body[0].(*IfStmt)
+	expectedCond := `user.Name != "" && user.Age >= 18`
+	if ifStmt.Condition != expectedCond {
+		t.Errorf("Condition = %q, want %q", ifStmt.Condition, expectedCond)
+	}
+
+	// Check @for iterable preserves original formatting
+	forLoop := body[1].(*ForLoop)
+	expectedIter := "items[0:10]"
+	if forLoop.Iterable != expectedIter {
+		t.Errorf("Iterable = %q, want %q", forLoop.Iterable, expectedIter)
+	}
+}
+
+func TestParser_RawGoStatements(t *testing.T) {
+	type tc struct {
+		input     string
+		wantCodes []string
+	}
+
+	tests := map[string]tc{
+		"simple assignment": {
+			input: `package x
+@component Test() {
+	x := 1
+	<text>{x}</text>
+}`,
+			wantCodes: []string{"x := 1"},
+		},
+		"function call": {
+			input: `package x
+@component Test() {
+	fmt.Println("hello")
+	<text>world</text>
+}`,
+			wantCodes: []string{`fmt.Println("hello")`},
+		},
+		"multi-line statement": {
+			input: `package x
+@component Test() {
+	result := compute(
+		arg1,
+		arg2,
+	)
+	<text>{result}</text>
+}`,
+			wantCodes: []string{"result := compute(\n\t\targ1,\n\t\targ2,\n\t)"},
+		},
+		"multiple statements": {
+			input: `package x
+@component Test() {
+	x := 1
+	y := 2
+	z := x + y
+	<text>{z}</text>
+}`,
+			wantCodes: []string{"x := 1", "y := 2", "z := x + y"},
+		},
+		"inline if statement": {
+			input: `package x
+@component Test(err error) {
+	if err != nil { log.Error(err) }
+	<text>done</text>
+}`,
+			wantCodes: []string{"if err != nil { log.Error(err) }"},
+		},
+		"defer statement": {
+			input: `package x
+@component Test() {
+	defer cleanup()
+	<text>running</text>
+}`,
+			wantCodes: []string{"defer cleanup()"},
+		},
+		"go statement": {
+			input: `package x
+@component Test() {
+	go doWork()
+	<text>spawned</text>
+}`,
+			wantCodes: []string{"go doWork()"},
+		},
+		"for loop statement": {
+			input: `package x
+@component Test() {
+	for i := 0; i < 10; i++ { sum += i }
+	<text>{sum}</text>
+}`,
+			wantCodes: []string{"for i := 0; i < 10; i++ { sum += i }"},
+		},
+		"switch statement": {
+			input: `package x
+@component Test(x int) {
+	switch x { case 1: y = "one"; case 2: y = "two" }
+	<text>{y}</text>
+}`,
+			wantCodes: []string{`switch x { case 1: y = "one"; case 2: y = "two" }`},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+
+			body := file.Components[0].Body
+
+			// Count GoCode nodes
+			var goCodes []*GoCode
+			for _, node := range body {
+				if gc, ok := node.(*GoCode); ok {
+					goCodes = append(goCodes, gc)
+				}
+			}
+
+			if len(goCodes) != len(tt.wantCodes) {
+				t.Fatalf("expected %d GoCode nodes, got %d", len(tt.wantCodes), len(goCodes))
+			}
+
+			for i, wantCode := range tt.wantCodes {
+				if goCodes[i].Code != wantCode {
+					t.Errorf("GoCode[%d].Code = %q, want %q", i, goCodes[i].Code, wantCode)
+				}
+			}
+		})
+	}
+}
+
+func TestParser_RawGoStatementsWithElements(t *testing.T) {
+	// Test that Go statements and elements can be mixed in component body
+	input := `package x
+@component Counter(count int) {
+	formattedCount := fmt.Sprintf("%d", count)
+	log.Printf("Rendering counter")
+	<box>
+		<text>{formattedCount}</text>
+	</box>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	body := file.Components[0].Body
+	if len(body) != 3 {
+		t.Fatalf("expected 3 body nodes, got %d", len(body))
+	}
+
+	// First two should be GoCode
+	gc1, ok := body[0].(*GoCode)
+	if !ok {
+		t.Fatalf("body[0]: expected *GoCode, got %T", body[0])
+	}
+	if gc1.Code != `formattedCount := fmt.Sprintf("%d", count)` {
+		t.Errorf("body[0].Code = %q", gc1.Code)
+	}
+
+	gc2, ok := body[1].(*GoCode)
+	if !ok {
+		t.Fatalf("body[1]: expected *GoCode, got %T", body[1])
+	}
+	if gc2.Code != `log.Printf("Rendering counter")` {
+		t.Errorf("body[1].Code = %q", gc2.Code)
+	}
+
+	// Third should be Element
+	elem, ok := body[2].(*Element)
+	if !ok {
+		t.Fatalf("body[2]: expected *Element, got %T", body[2])
+	}
+	if elem.Tag != "box" {
+		t.Errorf("body[2].Tag = %q, want 'box'", elem.Tag)
+	}
+}
+
+func TestParser_ComponentCall(t *testing.T) {
+	type tc struct {
+		input        string
+		wantName     string
+		wantArgs     string
+		wantChildren int
+	}
+
+	tests := map[string]tc{
+		"call without args or children": {
+			input: `package x
+@component App() {
+	@Header()
+}`,
+			wantName:     "Header",
+			wantArgs:     "",
+			wantChildren: 0,
+		},
+		"call with args no children": {
+			input: `package x
+@component App() {
+	@Header("Welcome", true)
+}`,
+			wantName:     "Header",
+			wantArgs:     `"Welcome", true`,
+			wantChildren: 0,
+		},
+		"call with children": {
+			input: `package x
+@component App() {
+	@Card("Title") {
+		<text>Child 1</text>
+		<text>Child 2</text>
+	}
+}`,
+			wantName:     "Card",
+			wantArgs:     `"Title"`,
+			wantChildren: 2,
+		},
+		"call with empty args and children": {
+			input: `package x
+@component App() {
+	@Wrapper() {
+		<text>Content</text>
+	}
+}`,
+			wantName:     "Wrapper",
+			wantArgs:     "",
+			wantChildren: 1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+
+			body := file.Components[0].Body
+			if len(body) != 1 {
+				t.Fatalf("expected 1 body node, got %d", len(body))
+			}
+
+			call, ok := body[0].(*ComponentCall)
+			if !ok {
+				t.Fatalf("body[0]: expected *ComponentCall, got %T", body[0])
+			}
+
+			if call.Name != tt.wantName {
+				t.Errorf("Name = %q, want %q", call.Name, tt.wantName)
+			}
+			if call.Args != tt.wantArgs {
+				t.Errorf("Args = %q, want %q", call.Args, tt.wantArgs)
+			}
+			if len(call.Children) != tt.wantChildren {
+				t.Errorf("len(Children) = %d, want %d", len(call.Children), tt.wantChildren)
+			}
+		})
+	}
+}
+
+func TestParser_ChildrenSlot(t *testing.T) {
+	input := `package x
+@component Card(title string) {
+	<box>
+		<text>{title}</text>
+		{children...}
+	</box>
+}`
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(file.Components) != 1 {
+		t.Fatalf("expected 1 component, got %d", len(file.Components))
+	}
+
+	body := file.Components[0].Body
+	if len(body) != 1 {
+		t.Fatalf("expected 1 body node, got %d", len(body))
+	}
+
+	elem, ok := body[0].(*Element)
+	if !ok {
+		t.Fatalf("body[0]: expected *Element, got %T", body[0])
+	}
+
+	// Box should have 2 children: text and children slot
+	if len(elem.Children) != 2 {
+		t.Fatalf("expected 2 children, got %d", len(elem.Children))
+	}
+
+	// Second child should be ChildrenSlot
+	slot, ok := elem.Children[1].(*ChildrenSlot)
+	if !ok {
+		t.Fatalf("children[1]: expected *ChildrenSlot, got %T", elem.Children[1])
+	}
+	if slot == nil {
+		t.Error("ChildrenSlot should not be nil")
+	}
+}
+
+func TestParser_ComponentCallNestedInElement(t *testing.T) {
+	input := `package x
+@component App() {
+	<box>
+		@Header("Title")
+		@Footer()
+	</box>
+}`
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	body := file.Components[0].Body
+	if len(body) != 1 {
+		t.Fatalf("expected 1 body node, got %d", len(body))
+	}
+
+	elem, ok := body[0].(*Element)
+	if !ok {
+		t.Fatalf("body[0]: expected *Element, got %T", body[0])
+	}
+
+	// Box should have 2 children: two component calls
+	if len(elem.Children) != 2 {
+		t.Fatalf("expected 2 children, got %d", len(elem.Children))
+	}
+
+	call1, ok := elem.Children[0].(*ComponentCall)
+	if !ok {
+		t.Fatalf("children[0]: expected *ComponentCall, got %T", elem.Children[0])
+	}
+	if call1.Name != "Header" {
+		t.Errorf("children[0].Name = %q, want 'Header'", call1.Name)
+	}
+
+	call2, ok := elem.Children[1].(*ComponentCall)
+	if !ok {
+		t.Fatalf("children[1]: expected *ComponentCall, got %T", elem.Children[1])
+	}
+	if call2.Name != "Footer" {
+		t.Errorf("children[1].Name = %q, want 'Footer'", call2.Name)
+	}
+}

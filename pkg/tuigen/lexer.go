@@ -16,8 +16,9 @@ type Lexer struct {
 	column   int  // current column (1-based)
 
 	// Track the start position of current token
-	tokenLine   int
-	tokenColumn int
+	tokenLine     int
+	tokenColumn   int
+	tokenStartPos int // byte offset where current token starts
 
 	errors *ErrorList
 }
@@ -83,15 +84,17 @@ func (l *Lexer) peekChar() rune {
 func (l *Lexer) startToken() {
 	l.tokenLine = l.line
 	l.tokenColumn = l.column
+	l.tokenStartPos = l.pos
 }
 
 // makeToken creates a token with the current start position.
 func (l *Lexer) makeToken(typ TokenType, literal string) Token {
 	return Token{
-		Type:    typ,
-		Literal: literal,
-		Line:    l.tokenLine,
-		Column:  l.tokenColumn,
+		Type:     typ,
+		Literal:  literal,
+		Line:     l.tokenLine,
+		Column:   l.tokenColumn,
+		StartPos: l.tokenStartPos,
 	}
 }
 
@@ -331,6 +334,13 @@ func (l *Lexer) readAtKeyword() Token {
 	case "else":
 		return l.makeToken(TokenAtElse, "@else")
 	default:
+		// Check if this is a component call (uppercase first letter)
+		if len(keyword) > 0 {
+			firstRune, _ := utf8.DecodeRuneInString(keyword)
+			if unicode.IsUpper(firstRune) {
+				return l.makeToken(TokenAtCall, keyword)
+			}
+		}
 		l.errors.AddErrorf(l.position(), "unknown @ keyword: @%s", keyword)
 		return l.makeToken(TokenError, "@"+keyword)
 	}
@@ -588,4 +598,179 @@ func (l *Lexer) CurrentChar() rune {
 // SkipWhitespace is a public method for the parser to skip whitespace.
 func (l *Lexer) SkipWhitespace() {
 	l.skipWhitespaceAndComments()
+}
+
+// SourcePos returns the current position in the source string.
+// Used by the parser to mark start positions for raw source capture.
+func (l *Lexer) SourcePos() int {
+	return l.pos
+}
+
+// SourceRange extracts a substring of the original source from start to end positions.
+// Used by the parser to capture raw Go code without tokenization.
+func (l *Lexer) SourceRange(start, end int) string {
+	if start < 0 {
+		start = 0
+	}
+	if end > len(l.source) {
+		end = len(l.source)
+	}
+	if start >= end {
+		return ""
+	}
+	return l.source[start:end]
+}
+
+// ReadBalancedBraces reads content inside balanced braces, handling nested braces,
+// strings, raw strings, and character literals. The opening '{' should NOT have been
+// consumed yet - this method reads from the current position expecting to see '{'.
+// Returns the content between braces (excluding the braces themselves).
+func (l *Lexer) ReadBalancedBraces() (string, error) {
+	// Expect opening brace
+	if l.ch != '{' {
+		return "", NewError(l.position(), "expected '{' at start of balanced braces")
+	}
+	l.readChar() // consume opening {
+
+	startPos := l.pos
+	braceDepth := 1
+
+	for braceDepth > 0 && l.ch != 0 {
+		switch l.ch {
+		case '{':
+			braceDepth++
+			l.readChar()
+		case '}':
+			braceDepth--
+			if braceDepth > 0 {
+				l.readChar()
+			}
+		case '"':
+			l.skipStringInExpr()
+		case '`':
+			l.skipRawStringInExpr()
+		case '\'':
+			l.skipCharInExpr()
+		default:
+			l.readChar()
+		}
+	}
+
+	if braceDepth != 0 {
+		return "", NewError(l.position(), "unterminated braces: unmatched '{'")
+	}
+
+	content := l.source[startPos:l.pos]
+	l.readChar() // consume closing }
+
+	return content, nil
+}
+
+// ReadUntilBrace reads raw source from the current position until a '{' is encountered.
+// Used for capturing @if conditions and @for iterables as raw Go code.
+// Does not consume the '{'.
+func (l *Lexer) ReadUntilBrace() string {
+	l.skipWhitespaceAndComments()
+	startPos := l.pos
+
+	for l.ch != '{' && l.ch != 0 && l.ch != '\n' {
+		l.readChar()
+	}
+
+	return l.source[startPos:l.pos]
+}
+
+// ReadBalancedBracesFrom reads balanced brace content starting from a given source position.
+// The startPos should point to the opening '{'. Returns the content between braces
+// (excluding the braces themselves) and updates the lexer position to after the closing '}'.
+// This is used by the parser when it has a TokenLBrace and needs to capture raw Go code.
+func (l *Lexer) ReadBalancedBracesFrom(startPos int) (string, error) {
+	// Validate startPos points to '{'
+	if startPos < 0 || startPos >= len(l.source) || l.source[startPos] != '{' {
+		return "", NewError(l.position(), "invalid start position for balanced braces")
+	}
+
+	// Scan forward from startPos+1 to find matching '}'
+	contentStart := startPos + 1
+	pos := contentStart
+	braceDepth := 1
+
+	for pos < len(l.source) && braceDepth > 0 {
+		ch := l.source[pos]
+
+		switch ch {
+		case '{':
+			braceDepth++
+			pos++
+		case '}':
+			braceDepth--
+			if braceDepth > 0 {
+				pos++
+			}
+		case '"':
+			// Skip string literal
+			pos++
+			for pos < len(l.source) && l.source[pos] != '"' {
+				if l.source[pos] == '\\' && pos+1 < len(l.source) {
+					pos += 2 // skip escape sequence
+				} else {
+					pos++
+				}
+			}
+			if pos < len(l.source) {
+				pos++ // skip closing "
+			}
+		case '`':
+			// Skip raw string literal
+			pos++
+			for pos < len(l.source) && l.source[pos] != '`' {
+				pos++
+			}
+			if pos < len(l.source) {
+				pos++ // skip closing `
+			}
+		case '\'':
+			// Skip character literal
+			pos++
+			if pos < len(l.source) && l.source[pos] == '\\' {
+				pos += 2 // skip escape
+			} else if pos < len(l.source) {
+				pos++ // skip char
+			}
+			if pos < len(l.source) && l.source[pos] == '\'' {
+				pos++ // skip closing '
+			}
+		default:
+			pos++
+		}
+	}
+
+	if braceDepth != 0 {
+		return "", NewError(l.position(), "unterminated braces: unmatched '{'")
+	}
+
+	content := l.source[contentStart:pos]
+
+	// Update lexer position to after closing '}'
+	l.pos = pos
+	l.readPos = pos + 1
+	if l.readPos <= len(l.source) {
+		r, _ := utf8.DecodeRuneInString(l.source[pos:])
+		l.ch = r
+	} else {
+		l.ch = 0
+	}
+	// Recalculate line/column by scanning from contentStart to pos
+	// This is approximate but should work for error reporting
+	for i := contentStart; i <= pos && i < len(l.source); i++ {
+		if l.source[i] == '\n' {
+			l.line++
+			l.column = 1
+		} else {
+			l.column++
+		}
+	}
+	l.readChar() // advance past '}'
+
+	return content, nil
 }
