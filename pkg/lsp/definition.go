@@ -28,6 +28,27 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 		return nil, nil
 	}
 
+	// First, check if the word at cursor is a locally-defined function.
+	// This prevents gopls from returning the generated .go file instead of .tui.
+	if word := s.getWordAtPosition(doc, p.Position); word != "" {
+		s.log("Looking up function '%s' in index (all functions: %v)", word, s.index.AllFunctions())
+		// Check if this is a helper function defined in a .tui file
+		if funcInfo, ok := s.index.LookupFunc(word); ok {
+			s.log("Found local function %s at %s (before gopls)", word, funcInfo.Location.URI)
+			return funcInfo.Location, nil
+		}
+		s.log("Function '%s' not found in index", word)
+
+		// Check if this is a for loop variable (defined in .tui DSL, not Go)
+		// Must check BEFORE gopls since gopls doesn't understand .tui for loop syntax
+		if componentCtx := s.findComponentAtPosition(doc, p.Position); componentCtx != "" {
+			if loc := s.findLoopVariableDefinition(doc, componentCtx, word, p.Position); loc != nil {
+				s.log("Found loop variable %s in %s (before gopls)", word, componentCtx)
+				return loc, nil
+			}
+		}
+	}
+
 	// Check if we're inside a Go expression - use gopls if available
 	if s.isInGoExpression(doc, p.Position) {
 		locs, err := s.getGoplsDefinition(doc, p.Position)

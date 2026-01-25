@@ -86,10 +86,21 @@ func ConditionalContent(showHeader bool, showFooter bool) *element.Element {
 }
 
 func WithHelper(text string) *element.Element {
+	shouldShowHeader := true
+	otherHelperFunction("test")
 	__tui_0 := element.New()
 	__tui_1 := element.New(
 		element.WithText(helperFunction(text)),
 	)
 	__tui_0.AddChild(__tui_1)
+	if shouldShowHeader {
+		__tui_2 := ConditionalContent(true, false, nil)
+		__tui_0.AddChild(__tui_2)
+	} else {
+		__tui_3 := element.New(
+			element.WithText("False"),
+		)
+		__tui_0.AddChild(__tui_3)
+	}
 	return __tui_0
 }

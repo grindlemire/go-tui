@@ -44,6 +44,7 @@ import (
 
 @component WithHelper(text string) {
 	shouldShowHeader := true
+	otherHelperFunction("test")
 	<div>
 		<span>{helperFunction(text)}</span>
 		@if shouldShowHeader {
