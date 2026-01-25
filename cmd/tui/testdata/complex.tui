@@ -1,0 +1,59 @@
+package testdata
+
+import (
+	"fmt"
+	"github.com/grindlemire/go-tui/pkg/layout"
+	"github.com/grindlemire/go-tui/pkg/tui"
+)
+
+@component ItemList(items []string, selected int) {
+	<div direction={layout.Column} gap={1}>
+		@for i, item := range items {
+			@if i == selected {
+				<div border={tui.BorderSingle}>
+					<span>{fmt.Sprintf("> %s", item)}</span>
+				</div>
+			} @else {
+				<span>{fmt.Sprintf("  %s", item)}</span>
+			}
+		}
+	</div>
+}
+
+@component Counter(count int, label string) {
+	@let countText = <span>{fmt.Sprintf("%d", count)}</span>
+	<div direction={layout.Column} gap={1} padding={1}>
+		<span>{label}</span>
+		{countText}
+	</div>
+}
+
+@component ConditionalContent(showHeader bool, showFooter bool) {
+	<div direction={layout.Column}>
+		@if showHeader {
+			<span>Header</span>
+		}
+		<span>Main Content</span>
+		@if showFooter {
+			<span>Footer</span>
+		} @else {
+			<span>No Footer</span>
+		}
+	</div>
+}
+
+@component WithHelper(text string) {
+	shouldShowHeader := true
+	<div>
+		<span>{helperFunction(text)}</span>
+		@if shouldShowHeader {
+			@ConditionalContent(true, false)
+		} @else {
+			<span>False</span>
+		}
+	</div>
+}
+
+func helperFunction(s string) string {
+	return fmt.Sprintf("[%s]", s)
+}

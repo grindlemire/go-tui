@@ -1,0 +1,400 @@
+package lsp
+
+import (
+	"encoding/json"
+)
+
+// route dispatches a request to the appropriate handler.
+func (s *Server) route(req Request) (any, *Error) {
+	switch req.Method {
+	// Lifecycle
+	case "initialize":
+		return s.handleInitialize(req.Params)
+	case "initialized":
+		return s.handleInitialized()
+	case "shutdown":
+		return s.handleShutdown()
+	case "exit":
+		s.handleExit()
+		return nil, nil
+
+	// Document synchronization
+	case "textDocument/didOpen":
+		return s.handleDidOpen(req.Params)
+	case "textDocument/didChange":
+		return s.handleDidChange(req.Params)
+	case "textDocument/didClose":
+		return s.handleDidClose(req.Params)
+	case "textDocument/didSave":
+		return s.handleDidSave(req.Params)
+
+	// Language features
+	case "textDocument/definition":
+		return s.handleDefinition(req.Params)
+	case "textDocument/hover":
+		return s.handleHover(req.Params)
+	case "textDocument/completion":
+		return s.handleCompletion(req.Params)
+	case "textDocument/documentSymbol":
+		return s.handleDocumentSymbol(req.Params)
+	case "workspace/symbol":
+		return s.handleWorkspaceSymbol(req.Params)
+	case "textDocument/references":
+		return s.handleReferences(req.Params)
+	case "textDocument/formatting":
+		return s.handleFormatting(req.Params)
+	case "textDocument/semanticTokens/full":
+		return s.handleSemanticTokensFull(req.Params)
+
+	default:
+		s.log("Unknown method: %s", req.Method)
+		return nil, &Error{Code: CodeMethodNotFound, Message: "Method not found: " + req.Method}
+	}
+}
+
+// InitializeParams represents the parameters for the initialize request.
+type InitializeParams struct {
+	ProcessID             *int               `json:"processId"`
+	RootURI               string             `json:"rootUri"`
+	RootPath              string             `json:"rootPath"`
+	Capabilities          ClientCapabilities `json:"capabilities"`
+	InitializationOptions json.RawMessage    `json:"initializationOptions,omitempty"`
+}
+
+// ClientCapabilities represents client capabilities.
+type ClientCapabilities struct {
+	TextDocument TextDocumentClientCapabilities `json:"textDocument,omitempty"`
+}
+
+// TextDocumentClientCapabilities represents text document capabilities.
+type TextDocumentClientCapabilities struct {
+	Synchronization    *SynchronizationCapabilities `json:"synchronization,omitempty"`
+	Completion         *CompletionCapabilities      `json:"completion,omitempty"`
+	Hover              *HoverCapabilities           `json:"hover,omitempty"`
+	Definition         *DefinitionCapabilities      `json:"definition,omitempty"`
+	PublishDiagnostics *PublishDiagnostics          `json:"publishDiagnostics,omitempty"`
+}
+
+// SynchronizationCapabilities represents synchronization capabilities.
+type SynchronizationCapabilities struct {
+	DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+	WillSave            bool `json:"willSave,omitempty"`
+	WillSaveWaitUntil   bool `json:"willSaveWaitUntil,omitempty"`
+	DidSave             bool `json:"didSave,omitempty"`
+}
+
+// CompletionCapabilities represents completion capabilities.
+type CompletionCapabilities struct {
+	DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+}
+
+// HoverCapabilities represents hover capabilities.
+type HoverCapabilities struct {
+	DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+}
+
+// DefinitionCapabilities represents definition capabilities.
+type DefinitionCapabilities struct {
+	DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+}
+
+// PublishDiagnostics represents publish diagnostics capabilities.
+type PublishDiagnostics struct {
+	RelatedInformation bool `json:"relatedInformation,omitempty"`
+}
+
+// InitializeResult represents the result of the initialize request.
+type InitializeResult struct {
+	Capabilities ServerCapabilities `json:"capabilities"`
+}
+
+// ServerCapabilities represents server capabilities.
+type ServerCapabilities struct {
+	TextDocumentSync           *TextDocumentSyncOptions  `json:"textDocumentSync,omitempty"`
+	CompletionProvider         *CompletionOptions        `json:"completionProvider,omitempty"`
+	HoverProvider              bool                      `json:"hoverProvider,omitempty"`
+	DefinitionProvider         bool                      `json:"definitionProvider,omitempty"`
+	ReferencesProvider         bool                      `json:"referencesProvider,omitempty"`
+	DocumentSymbolProvider     bool                      `json:"documentSymbolProvider,omitempty"`
+	WorkspaceSymbolProvider    bool                      `json:"workspaceSymbolProvider,omitempty"`
+	DocumentFormattingProvider bool                      `json:"documentFormattingProvider,omitempty"`
+	SemanticTokensProvider     *SemanticTokensOptions    `json:"semanticTokensProvider,omitempty"`
+}
+
+// SemanticTokensOptions represents semantic tokens capabilities.
+type SemanticTokensOptions struct {
+	Legend SemanticTokensLegend `json:"legend"`
+	Full   bool                 `json:"full"`
+}
+
+// SemanticTokensLegend describes the token types and modifiers.
+type SemanticTokensLegend struct {
+	TokenTypes     []string `json:"tokenTypes"`
+	TokenModifiers []string `json:"tokenModifiers"`
+}
+
+// TextDocumentSyncOptions represents text document sync options.
+type TextDocumentSyncOptions struct {
+	OpenClose bool                 `json:"openClose"`
+	Change    TextDocumentSyncKind `json:"change"`
+	Save      *SaveOptions         `json:"save,omitempty"`
+}
+
+// TextDocumentSyncKind represents how documents are synced.
+type TextDocumentSyncKind int
+
+const (
+	// TextDocumentSyncKindNone means documents should not be synced.
+	TextDocumentSyncKindNone TextDocumentSyncKind = 0
+	// TextDocumentSyncKindFull means full documents are synced.
+	TextDocumentSyncKindFull TextDocumentSyncKind = 1
+	// TextDocumentSyncKindIncremental means incremental updates are sent.
+	TextDocumentSyncKindIncremental TextDocumentSyncKind = 2
+)
+
+// SaveOptions represents save options.
+type SaveOptions struct {
+	IncludeText bool `json:"includeText,omitempty"`
+}
+
+// CompletionOptions represents completion options.
+type CompletionOptions struct {
+	TriggerCharacters []string `json:"triggerCharacters,omitempty"`
+	ResolveProvider   bool     `json:"resolveProvider,omitempty"`
+}
+
+// handleInitialize handles the initialize request.
+func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
+	var p InitializeParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
+	}
+
+	s.rootURI = p.RootURI
+	s.log("Initialize with root: %s", s.rootURI)
+
+	result := InitializeResult{
+		Capabilities: ServerCapabilities{
+			TextDocumentSync: &TextDocumentSyncOptions{
+				OpenClose: true,
+				Change:    TextDocumentSyncKindFull,
+				Save: &SaveOptions{
+					IncludeText: true,
+				},
+			},
+			CompletionProvider: &CompletionOptions{
+				TriggerCharacters: []string{"@", "<", "{"},
+			},
+			HoverProvider:              true,
+			DefinitionProvider:         true,
+			ReferencesProvider:         true,
+			DocumentSymbolProvider:     true,
+			WorkspaceSymbolProvider:    true,
+			DocumentFormattingProvider: true,
+			SemanticTokensProvider: &SemanticTokensOptions{
+				Legend: SemanticTokensLegend{
+					TokenTypes: []string{
+						"namespace",   // 0: package
+						"type",        // 1: types
+						"class",       // 2: components
+						"function",    // 3: functions
+						"parameter",   // 4: parameters
+						"variable",    // 5: variables
+						"property",    // 6: attributes
+						"keyword",     // 7: keywords (@component, @for, etc.)
+						"string",      // 8: strings
+						"number",      // 9: numbers
+						"operator",    // 10: operators
+						"decorator",   // 11: @ prefix
+					},
+					TokenModifiers: []string{
+						"declaration",  // 0: where defined
+						"definition",   // 1: where defined
+						"readonly",     // 2: const/let
+						"modification", // 3: where modified
+					},
+				},
+				Full: true,
+			},
+		},
+	}
+
+	return result, nil
+}
+
+// handleInitialized handles the initialized notification.
+func (s *Server) handleInitialized() (any, *Error) {
+	s.initialized = true
+	s.log("Server initialized")
+
+	// Start gopls proxy in the background
+	go s.InitGopls()
+
+	return nil, nil
+}
+
+// handleShutdown handles the shutdown request.
+func (s *Server) handleShutdown() (any, *Error) {
+	s.log("Shutdown requested")
+	s.shutdown = true
+
+	// Shutdown gopls proxy
+	s.ShutdownGopls()
+
+	return nil, nil
+}
+
+// handleExit handles the exit notification.
+func (s *Server) handleExit() {
+	s.log("Exit requested")
+	// The server will exit after returning from the handler
+}
+
+// DidOpenParams represents textDocument/didOpen parameters.
+type DidOpenParams struct {
+	TextDocument TextDocumentItem `json:"textDocument"`
+}
+
+// TextDocumentItem represents an item passed in didOpen.
+type TextDocumentItem struct {
+	URI        string `json:"uri"`
+	LanguageID string `json:"languageId"`
+	Version    int    `json:"version"`
+	Text       string `json:"text"`
+}
+
+// handleDidOpen handles textDocument/didOpen.
+func (s *Server) handleDidOpen(params json.RawMessage) (any, *Error) {
+	var p DidOpenParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
+	}
+
+	s.log("Document opened: %s", p.TextDocument.URI)
+
+	doc := s.docs.Open(p.TextDocument.URI, p.TextDocument.Text, p.TextDocument.Version)
+
+	// Index components from this document
+	s.index.IndexDocument(p.TextDocument.URI, doc.AST)
+
+	// Update virtual Go file for gopls
+	s.UpdateVirtualFile(doc)
+
+	// Publish diagnostics
+	s.publishDiagnostics(doc)
+
+	return nil, nil
+}
+
+// DidChangeParams represents textDocument/didChange parameters.
+type DidChangeParams struct {
+	TextDocument   VersionedTextDocumentIdentifier  `json:"textDocument"`
+	ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
+}
+
+// VersionedTextDocumentIdentifier represents a versioned document ID.
+type VersionedTextDocumentIdentifier struct {
+	URI     string `json:"uri"`
+	Version int    `json:"version"`
+}
+
+// TextDocumentContentChangeEvent represents a content change.
+type TextDocumentContentChangeEvent struct {
+	// Full text sync: Text contains the whole document
+	Text string `json:"text"`
+}
+
+// handleDidChange handles textDocument/didChange.
+func (s *Server) handleDidChange(params json.RawMessage) (any, *Error) {
+	var p DidChangeParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
+	}
+
+	s.log("Document changed: %s", p.TextDocument.URI)
+
+	if len(p.ContentChanges) == 0 {
+		return nil, nil
+	}
+
+	// We use full document sync, so take the last change
+	newContent := p.ContentChanges[len(p.ContentChanges)-1].Text
+	doc := s.docs.Update(p.TextDocument.URI, newContent, p.TextDocument.Version)
+
+	if doc != nil {
+		// Re-index components from this document
+		s.index.IndexDocument(p.TextDocument.URI, doc.AST)
+
+		// Update virtual Go file for gopls
+		s.UpdateVirtualFile(doc)
+
+		// Publish diagnostics
+		s.publishDiagnostics(doc)
+	}
+
+	return nil, nil
+}
+
+// DidCloseParams represents textDocument/didClose parameters.
+type DidCloseParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+// TextDocumentIdentifier represents a document identifier.
+type TextDocumentIdentifier struct {
+	URI string `json:"uri"`
+}
+
+// handleDidClose handles textDocument/didClose.
+func (s *Server) handleDidClose(params json.RawMessage) (any, *Error) {
+	var p DidCloseParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
+	}
+
+	s.log("Document closed: %s", p.TextDocument.URI)
+
+	s.docs.Close(p.TextDocument.URI)
+
+	// Remove components from index
+	s.index.Remove(p.TextDocument.URI)
+
+	// Close virtual Go file in gopls
+	s.CloseVirtualFile(p.TextDocument.URI)
+
+	// Clear diagnostics for closed document
+	s.sendNotification("textDocument/publishDiagnostics", PublishDiagnosticsParams{
+		URI:         p.TextDocument.URI,
+		Diagnostics: []Diagnostic{},
+	})
+
+	return nil, nil
+}
+
+// DidSaveParams represents textDocument/didSave parameters.
+type DidSaveParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Text         *string                `json:"text,omitempty"`
+}
+
+// handleDidSave handles textDocument/didSave.
+func (s *Server) handleDidSave(params json.RawMessage) (any, *Error) {
+	var p DidSaveParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
+	}
+
+	s.log("Document saved: %s", p.TextDocument.URI)
+
+	// If text is provided, update the document
+	if p.Text != nil {
+		doc := s.docs.Get(p.TextDocument.URI)
+		if doc != nil {
+			doc = s.docs.Update(p.TextDocument.URI, *p.Text, doc.Version+1)
+			s.index.IndexDocument(p.TextDocument.URI, doc.AST)
+			s.publishDiagnostics(doc)
+		}
+	}
+
+	return nil, nil
+}

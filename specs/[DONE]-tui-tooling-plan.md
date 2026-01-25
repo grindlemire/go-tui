@@ -8,21 +8,21 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 **Reference:** [tui-tooling-design.md §2](./tui-tooling-design.md#2-architecture), [§5.1](./tui-tooling-design.md#51-textmate-grammar-vs-code)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `editor/vscode/package.json`
+- [x] Create `editor/vscode/package.json`
   - Extension manifest with name, version, publisher
   - Declare `.tui` language contribution
   - Register TextMate grammar for `source.tui`
   - Configure file icons and associations
 
-- [ ] Create `editor/vscode/language-configuration.json`
+- [x] Create `editor/vscode/language-configuration.json`
   - Bracket pairs: `{}`, `()`, `[]`, `<>`
   - Auto-closing pairs for quotes and brackets
   - Comment configuration: `//` and `/* */`
   - Folding markers
 
-- [ ] Create `editor/vscode/syntaxes/tui.tmLanguage.json`
+- [x] Create `editor/vscode/syntaxes/tui.tmLanguage.json`
   - `keyword.control.tui` for `@component`, `@for`, `@if`, `@else`, `@let`
   - `entity.name.function.tui` for component names
   - `entity.name.tag.tui` for element tags (`<box>`, `</text>`)
@@ -33,11 +33,11 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
   - `meta.embedded.expression.go` for Go expressions in `{}`
   - Grammar injection for Go code inside braces
 
-- [ ] Create `editor/vscode/README.md`
+- [x] Create `editor/vscode/README.md`
   - Installation instructions
   - Feature overview with screenshots placeholders
 
-- [ ] Add tests: Create `editor/vscode/test/` with sample `.tui` files
+- [x] Add tests: Create `editor/vscode/test/` with sample `.tui` files
   - `simple.tui` - basic component
   - `complex.tui` - all DSL features
 
@@ -49,13 +49,13 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 **Reference:** [tui-tooling-design.md §5.2](./tui-tooling-design.md#52-tree-sitter-grammar)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `editor/tree-sitter-tui/package.json`
+- [x] Create `editor/tree-sitter-tui/package.json`
   - Tree-sitter grammar package configuration
   - Build scripts for generating parser
 
-- [ ] Create `editor/tree-sitter-tui/grammar.js`
+- [x] Create `editor/tree-sitter-tui/grammar.js`
   - `source_file` root rule with package, imports, declarations
   - `package_clause` for `package name`
   - `import_declaration` for single and grouped imports
@@ -69,7 +69,7 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
   - `go_expression` for `{expr}` blocks
   - `comment` for `//` and `/* */`
 
-- [ ] Create `editor/tree-sitter-tui/queries/highlights.scm`
+- [x] Create `editor/tree-sitter-tui/queries/highlights.scm`
   - Map Tree-sitter node types to highlight groups
   - `@keyword` for DSL keywords
   - `@function` for component names
@@ -77,11 +77,11 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
   - `@property` for attributes
   - `@string`, `@number`, `@comment`
 
-- [ ] Create `editor/tree-sitter-tui/queries/injections.scm`
+- [x] Create `editor/tree-sitter-tui/queries/injections.scm`
   - Inject Go language for `go_expression` nodes
   - Inject Go for import paths (string highlighting)
 
-- [ ] Create `editor/tree-sitter-tui/test/corpus/` test files
+- [x] Create `editor/tree-sitter-tui/test/corpus/` test files
   - Test cases for each grammar rule
   - Expected parse tree output
 
@@ -93,16 +93,16 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 **Reference:** [tui-tooling-design.md §5.5](./tui-tooling-design.md#55-formatter-rules)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `pkg/formatter/formatter.go`
+- [x] Create `pkg/formatter/formatter.go`
   - `type Formatter struct` with configuration options
   - `func (f *Formatter) Format(source string) (string, error)`
   - Parse source using `tuigen.NewParser`
   - Call printer to generate formatted output
   - Return error if source has parse errors
 
-- [ ] Create `pkg/formatter/printer.go`
+- [x] Create `pkg/formatter/printer.go`
   - `type Printer struct` with output buffer, indent tracking
   - `func (p *Printer) PrintFile(file *tuigen.File) string`
   - `printPackage`, `printImports`, `printComponent`
@@ -111,14 +111,14 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
   - Consistent indentation (tabs by default)
   - Line width aware formatting (break long attribute lists)
 
-- [ ] Create `cmd/tui/fmt.go`
+- [x] Create `cmd/tui/fmt.go`
   - `tui fmt <files...>` command implementation
   - `--stdout` flag to print instead of modifying
   - `--check` flag for CI (exit 1 if not formatted)
   - `./...` glob pattern support for directories
   - Parallel file processing for performance
 
-- [ ] Create `pkg/formatter/formatter_test.go`
+- [x] Create `pkg/formatter/formatter_test.go`
   - Table-driven tests for formatting scenarios
   - Round-trip tests: format(format(x)) == format(x)
   - Test preservation of comments
@@ -132,23 +132,23 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 **Reference:** [tui-tooling-design.md §2](./tui-tooling-design.md#2-architecture), [§5.3](./tui-tooling-design.md#53-lsp-capabilities)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `pkg/lsp/server.go`
+- [x] Create `pkg/lsp/server.go`
   - `type Server struct` with connection, document manager, component index
   - `func NewServer() *Server`
   - `func (s *Server) Run(ctx context.Context) error` - main loop
   - JSON-RPC 2.0 message handling over stdio
   - Use `go.lsp.dev/protocol` for LSP types
 
-- [ ] Create `pkg/lsp/handler.go`
+- [x] Create `pkg/lsp/handler.go`
   - LSP method router
   - `initialize` / `initialized` handlers
   - `shutdown` / `exit` handlers
   - `textDocument/didOpen`, `didChange`, `didClose` handlers
   - Capability negotiation (advertise supported features)
 
-- [ ] Create `pkg/lsp/document.go`
+- [x] Create `pkg/lsp/document.go`
   - `type Document struct` with URI, content, version, AST, errors
   - `type DocumentManager struct` tracking open documents
   - `func (dm *DocumentManager) Open(uri, content string)`
@@ -156,18 +156,18 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
   - `func (dm *DocumentManager) Close(uri string)`
   - Re-parse on every change (incremental parsing later)
 
-- [ ] Create `pkg/lsp/diagnostics.go`
+- [x] Create `pkg/lsp/diagnostics.go`
   - `func (s *Server) publishDiagnostics(uri string)`
   - Convert `tuigen.Error` to LSP `Diagnostic`
   - Map severity (Error, Warning, Information, Hint)
   - Publish diagnostics after every document change
 
-- [ ] Create `cmd/tui/lsp.go`
+- [x] Create `cmd/tui/lsp.go`
   - `tui lsp` subcommand
   - `--log` flag for debug logging to file
   - Start server on stdio
 
-- [ ] Create `pkg/lsp/server_test.go`
+- [x] Create `pkg/lsp/server_test.go`
   - Test server initialization
   - Test document open/change/close lifecycle
   - Test diagnostics published on parse errors
@@ -180,41 +180,41 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 **Reference:** [tui-tooling-design.md §5.3](./tui-tooling-design.md#53-lsp-capabilities)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `pkg/lsp/index.go`
+- [x] Create `pkg/lsp/index.go`
   - `type ComponentIndex struct` mapping component names to locations
   - `func (idx *ComponentIndex) Add(uri string, comp *tuigen.Component)`
   - `func (idx *ComponentIndex) Remove(uri string)`
   - `func (idx *ComponentIndex) Lookup(name string) (Location, bool)`
   - Rebuild index on document changes
 
-- [ ] Create `pkg/lsp/definition.go`
+- [x] Create `pkg/lsp/definition.go`
   - `textDocument/definition` handler
   - Detect if cursor is on `@ComponentName` call
   - Look up component in index
   - Return location of `@component` definition
 
-- [ ] Create `pkg/lsp/hover.go`
+- [x] Create `pkg/lsp/hover.go`
   - `textDocument/hover` handler
   - Hover on `@ComponentName` shows signature: `func Name(params) *element.Element`
   - Hover on element tags shows available attributes
   - Hover on attributes shows type information
 
-- [ ] Create `pkg/lsp/completion.go`
+- [x] Create `pkg/lsp/completion.go`
   - `textDocument/completion` handler
   - After `@` - suggest component names from index
   - After `<` - suggest element tags (`box`, `text`, etc.)
   - After element tag - suggest attributes for that element
   - Inside `{` - defer to gopls proxy (Phase 6)
 
-- [ ] Create `pkg/lsp/symbols.go`
+- [x] Create `pkg/lsp/symbols.go`
   - `textDocument/documentSymbol` handler
   - Return list of components in current file
   - `workspace/symbol` handler
   - Search components across all indexed files
 
-- [ ] Create `pkg/lsp/features_test.go`
+- [x] Create `pkg/lsp/features_test.go`
   - Test go-to-definition finds component
   - Test hover returns correct signature
   - Test completion returns components after `@`
@@ -228,9 +228,9 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 **Reference:** [tui-tooling-design.md §5.4](./tui-tooling-design.md#54-gopls-proxy)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `pkg/lsp/gopls/proxy.go`
+- [x] Create `pkg/lsp/gopls/proxy.go`
   - `type GoplsProxy struct` managing gopls subprocess
   - `func NewGoplsProxy() (*GoplsProxy, error)` - start gopls
   - `func (p *GoplsProxy) Initialize(rootURI string) error`
@@ -239,34 +239,34 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
   - `func (p *GoplsProxy) Definition(uri string, pos Position) ([]Location, error)`
   - JSON-RPC communication over stdin/stdout pipes
 
-- [ ] Create `pkg/lsp/gopls/generate.go`
+- [x] Create `pkg/lsp/gopls/generate.go`
   - `func GenerateVirtualGo(file *tuigen.File) (string, *SourceMap)`
   - Generate valid Go code from `.tui` AST
   - Preserve Go expressions, imports, package declaration
   - Generate dummy variable assignments for expressions (to preserve positions)
   - Return source map for position translation
 
-- [ ] Create `pkg/lsp/gopls/mapping.go`
+- [x] Create `pkg/lsp/gopls/mapping.go`
   - `type SourceMap struct` with bidirectional mappings
   - `func (sm *SourceMap) TuiToGo(line, col int) (int, int)`
   - `func (sm *SourceMap) GoToTui(line, col int) (int, int)`
   - Handle multi-line Go expressions
   - Cache virtual files and source maps per document
 
-- [ ] Update `pkg/lsp/completion.go`
+- [x] Update `pkg/lsp/completion.go`
   - Inside `{expr}` - call `gopls.Completion()` via proxy
   - Translate positions using source map
   - Merge gopls results with TUI-specific completions
 
-- [ ] Update `pkg/lsp/hover.go`
+- [x] Update `pkg/lsp/hover.go`
   - Inside `{expr}` - call `gopls.Hover()` via proxy
   - Translate positions and return Go type information
 
-- [ ] Update `pkg/lsp/definition.go`
+- [x] Update `pkg/lsp/definition.go`
   - Inside `{expr}` - call `gopls.Definition()` via proxy
   - Handle jumps to Go standard library / dependencies
 
-- [ ] Create `pkg/lsp/gopls/proxy_test.go`
+- [x] Create `pkg/lsp/gopls/proxy_test.go`
   - Test gopls subprocess lifecycle
   - Test position mapping accuracy
   - Test completion inside Go expressions
@@ -280,12 +280,12 @@ Implementation phases for TUI developer tooling. Each phase builds on the previo
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | VS Code Extension (TextMate Grammar) | Pending |
-| 2 | Tree-sitter Grammar | Pending |
-| 3 | Code Formatter (`tui fmt`) | Pending |
-| 4 | LSP Server Foundation | Pending |
-| 5 | LSP Features (Definition, Hover, Completion, Symbols) | Pending |
-| 6 | gopls Proxy for Go Intelligence | Pending |
+| 1 | VS Code Extension (TextMate Grammar) | Complete |
+| 2 | Tree-sitter Grammar | Complete |
+| 3 | Code Formatter (`tui fmt`) | Complete |
+| 4 | LSP Server Foundation | Complete |
+| 5 | LSP Features (Definition, Hover, Completion, Symbols) | Complete |
+| 6 | gopls Proxy for Go Intelligence | Complete |
 
 ## Files to Create
 

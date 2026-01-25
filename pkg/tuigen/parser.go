@@ -382,29 +382,46 @@ func (p *Parser) parseComponentBody() []Node {
 }
 
 // parseBodyNode parses a single node in a component/element body.
+// NOTE: We explicitly check for nil before returning to avoid the Go interface
+// nil gotcha where a typed nil pointer (e.g., (*ComponentCall)(nil)) converted
+// to an interface would pass `node != nil` checks in callers.
 func (p *Parser) parseBodyNode() Node {
 	switch p.current.Type {
 	case TokenLAngle:
-		return p.parseElement()
+		if el := p.parseElement(); el != nil {
+			return el
+		}
 	case TokenAtLet:
-		return p.parseLet()
+		if let := p.parseLet(); let != nil {
+			return let
+		}
 	case TokenAtFor:
-		return p.parseFor()
+		if f := p.parseFor(); f != nil {
+			return f
+		}
 	case TokenAtIf:
-		return p.parseIf()
+		if i := p.parseIf(); i != nil {
+			return i
+		}
 	case TokenAtCall:
-		return p.parseComponentCall()
+		if call := p.parseComponentCall(); call != nil {
+			return call
+		}
 	case TokenLBrace:
-		return p.parseGoExprOrChildrenSlot()
+		if node := p.parseGoExprOrChildrenSlot(); node != nil {
+			return node
+		}
 	case TokenIdent, TokenIf, TokenFor, TokenFunc, TokenReturn:
 		// Raw Go statement (e.g., fmt.Printf("x"), x := 1, if err != nil {...})
 		// Note: go, defer, switch, select are lexed as TokenIdent
-		return p.parseGoStatement()
+		if stmt := p.parseGoStatement(); stmt != nil {
+			return stmt
+		}
 	default:
 		p.errors.AddErrorf(p.position(), "unexpected token %s in body", p.current.Type)
 		p.advance()
-		return nil
 	}
+	return nil
 }
 
 // parseElement parses an XML-like element.

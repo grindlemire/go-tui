@@ -1,0 +1,19 @@
+package main
+
+import (
+	"fmt"
+)
+
+@component CounterUI(count int) {
+	<div class="flex-col gap-1 p-2">
+		<div class="border-rounded p-1 flex-col items-center justify-center">
+			<span class="font-bold">Counter Example</span>
+			<span>{"Count:"}</span>
+			<span class="font-bold text-cyan">{fmt.Sprintf("%d", count)}</span>
+		</div>
+
+		<div class="flex gap-1 justify-center">
+			<span class="font-dim">{"Press +/- to change, q to quit"}</span>
+		</div>
+	</div>
+}

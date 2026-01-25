@@ -1,0 +1,89 @@
+{
+  "name": "tui-language",
+  "displayName": "TUI Language Support",
+  "description": "Syntax highlighting and LSP support for .tui files (go-tui DSL)",
+  "version": "0.1.0",
+  "publisher": "grindlemire",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grindlemire/go-tui"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "tui",
+    "go-tui",
+    "terminal",
+    "ui",
+    "dsl"
+  ],
+  "activationEvents": [
+    "onLanguage:tui"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "tui",
+        "aliases": [
+          "TUI",
+          "tui"
+        ],
+        "extensions": [
+          ".tui"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tui",
+        "scopeName": "source.tui",
+        "path": "./syntaxes/tui.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.go": "go"
+        }
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "TUI Language Server",
+      "properties": {
+        "tui.lsp.path": {
+          "type": "string",
+          "default": "tui",
+          "description": "Path to the tui CLI binary (must be in PATH or an absolute path)"
+        },
+        "tui.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the TUI language server"
+        },
+        "tui.lsp.logPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to LSP log file for debugging (e.g., /tmp/tui-lsp.log)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "bun run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "bunx @vscode/vsce package --allow-missing-repository"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0"
+  }
+}

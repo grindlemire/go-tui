@@ -1,0 +1,364 @@
+================================================================================
+Package declaration
+================================================================================
+
+package main
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (package_clause
+    name: (identifier)))
+
+================================================================================
+Single import
+================================================================================
+
+package main
+
+import "fmt"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (import_section
+    (import_declaration
+      (import_spec
+        path: (string)))))
+
+================================================================================
+Simple component
+================================================================================
+
+@component Header(title string) {
+	<div><span>{title}</span></div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (identifier))))
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          (element
+            (element_with_children
+              tag: (identifier)
+              (go_expression
+                (expression_content))
+              (identifier)))
+          (identifier))))))
+
+================================================================================
+Component with no parameters
+================================================================================
+
+@component Footer() {
+	<div></div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          (identifier))))))
+
+================================================================================
+Self-closing element
+================================================================================
+
+@component Spacer() {
+	<hr />
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (self_closing_element
+          tag: (identifier))))))
+
+================================================================================
+Component call
+================================================================================
+
+@component App() {
+	@Header("Title")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (component_call
+        name: (identifier)
+        arguments: (argument_list
+          (string))))))
+
+================================================================================
+For loop
+================================================================================
+
+@component List(items []string) {
+	@for i, item := range items {
+		<span>{item}</span>
+	}
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (slice_type
+            (type_expression
+              (identifier))))))
+    body: (component_body
+      (for_statement
+        clause: (for_clause
+          index: (identifier)
+          value: (identifier)
+          collection: (identifier))
+        body: (block
+          (element
+            (element_with_children
+              tag: (identifier)
+              (go_expression
+                (expression_content))
+              (identifier))))))))
+
+================================================================================
+If statement
+================================================================================
+
+@component Conditional(show bool) {
+	@if show {
+		<span>Visible</span>
+	}
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (identifier))))
+    body: (component_body
+      (if_statement
+        condition: (identifier)
+        consequence: (block
+          (element
+            (element_with_children
+              tag: (identifier)
+              (text_content)
+              (identifier))))))))
+
+================================================================================
+Let binding
+================================================================================
+
+@component WithLet() {
+	@let header = <span>Title</span>
+	<div>{header}</div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (let_binding
+        name: (identifier)
+        value: (element
+          (element_with_children
+            tag: (identifier)
+            (text_content)
+            (identifier))))
+      (element
+        (element_with_children
+          tag: (identifier)
+          (go_expression
+            (expression_content))
+          (identifier))))))
+
+================================================================================
+Comments
+================================================================================
+
+// Single line comment
+package main
+
+@component Test() {
+	<span>Hello</span>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment)
+  (package_clause
+    name: (identifier))
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          (text_content)
+          (identifier))))))
+
+================================================================================
+Grouped imports
+================================================================================
+
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (import_section
+    (import_declaration
+      (import_spec_list
+        (import_spec
+          path: (string))
+        (import_spec
+          path: (string))))))
+
+================================================================================
+If-else statement
+================================================================================
+
+@component Conditional(show bool) {
+	@if show {
+		<span>Yes</span>
+	} @else {
+		<span>No</span>
+	}
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (identifier))))
+    body: (component_body
+      (if_statement
+        condition: (identifier)
+        consequence: (block
+          (element
+            (element_with_children
+              tag: (identifier)
+              (text_content)
+              (identifier))))
+        alternative: (block
+          (element
+            (element_with_children
+              tag: (identifier)
+              (text_content)
+              (identifier))))))))
+
+================================================================================
+Qualified type parameter
+================================================================================
+
+@component WithLayout(dir layout.Direction) {
+	<div></div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (qualified_type
+            (identifier)
+            (identifier)))))
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          (identifier))))))
+
+================================================================================
+Element with attributes
+================================================================================
+
+@component Box() {
+	<div border={true} padding={2}>
+		<span>Content</span>
+	</div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          (attribute
+            name: (identifier)
+            value: (go_expression
+              (expression_content)))
+          (attribute
+            name: (identifier)
+            value: (go_expression
+              (expression_content)))
+          (element
+            (element_with_children
+              tag: (identifier)
+              (text_content)
+              (identifier)))
+          (identifier))))))

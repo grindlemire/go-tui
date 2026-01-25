@@ -1,7 +1,9 @@
+node_modules/
+out/
 .claude/
-dashboard
-hello_layout
-hello_rect
-dsl-counter
-focus
-tui
+./dashboard
+./hello_layout
+./hello_rect
+./dsl-counter
+./focus
+./tui

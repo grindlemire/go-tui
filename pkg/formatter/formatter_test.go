@@ -1,0 +1,523 @@
+package formatter
+
+import (
+	"strings"
+	"testing"
+)
+
+// TestFormat tests basic formatting scenarios.
+func TestFormat(t *testing.T) {
+	type tc struct {
+		name   string
+		input  string
+		want   string
+	}
+
+	tests := map[string]tc{
+		"simple package and component": {
+			input: `package main
+
+@component Hello() {
+<span>Hello</span>
+}
+`,
+			want: `package main
+
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"single import": {
+			input: `package main
+
+import "fmt"
+
+@component Hello() {
+<span>{fmt.Sprintf("hi")}</span>
+}
+`,
+			want: `package main
+
+import "fmt"
+
+@component Hello() {
+	<span>{fmt.Sprintf("hi")}</span>
+}
+`,
+		},
+		"multiple imports": {
+			input: `package main
+
+import (
+"fmt"
+"strings"
+)
+
+@component Hello() {
+<span>{strings.ToUpper(fmt.Sprintf("hi"))}</span>
+}
+`,
+			want: `package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+@component Hello() {
+	<span>{strings.ToUpper(fmt.Sprintf("hi"))}</span>
+}
+`,
+		},
+		"import with alias": {
+			input: `package main
+
+import (
+tui "github.com/grindlemire/go-tui/pkg/tui"
+)
+
+@component Hello() {
+<div border={tui.BorderSingle}></div>
+}
+`,
+			want: `package main
+
+import tui "github.com/grindlemire/go-tui/pkg/tui"
+
+@component Hello() {
+	<div border={tui.BorderSingle}></div>
+}
+`,
+		},
+		"component with parameters": {
+			input: `package main
+
+@component Card(title string, count int) {
+<span>{title}</span>
+}
+`,
+			want: `package main
+
+@component Card(title string, count int) {
+	<span>{title}</span>
+}
+`,
+		},
+		"nested elements": {
+			input: `package main
+
+@component Layout() {
+<div>
+<div>
+<span>Hello</span>
+</div>
+</div>
+}
+`,
+			want: `package main
+
+@component Layout() {
+	<div>
+		<div>
+			<span>Hello</span>
+		</div>
+	</div>
+}
+`,
+		},
+		"self-closing element": {
+			input: `package main
+
+@component Divider() {
+<hr />
+}
+`,
+			want: `package main
+
+@component Divider() {
+	<hr />
+}
+`,
+		},
+		"for loop": {
+			input: `package main
+
+@component List(items []string) {
+@for i, item := range items {
+<span>{item}</span>
+}
+}
+`,
+			want: `package main
+
+@component List(items []string) {
+	@for i, item := range items {
+		<span>{item}</span>
+	}
+}
+`,
+		},
+		"if statement": {
+			input: `package main
+
+@component Cond(show bool) {
+@if show {
+<span>Visible</span>
+}
+}
+`,
+			want: `package main
+
+@component Cond(show bool) {
+	@if show {
+		<span>Visible</span>
+	}
+}
+`,
+		},
+		"if-else statement": {
+			input: `package main
+
+@component Cond(show bool) {
+@if show {
+<span>Yes</span>
+} @else {
+<span>No</span>
+}
+}
+`,
+			want: `package main
+
+@component Cond(show bool) {
+	@if show {
+		<span>Yes</span>
+	} @else {
+		<span>No</span>
+	}
+}
+`,
+		},
+		"let binding": {
+			input: `package main
+
+@component WithLet() {
+@let x = <span>Hello</span>
+{x}
+}
+`,
+			want: `package main
+
+@component WithLet() {
+	@let x = <span>Hello</span>
+	{x}
+}
+`,
+		},
+		"component call": {
+			input: `package main
+
+@component Parent() {
+@Child("arg1", "arg2")
+}
+
+@component Child(a string, b string) {
+<span>{a}</span>
+}
+`,
+			want: `package main
+
+@component Parent() {
+	@Child("arg1", "arg2")
+}
+
+@component Child(a string, b string) {
+	<span>{a}</span>
+}
+`,
+		},
+		"component call with children": {
+			input: `package main
+
+@component Parent() {
+@Card("Title") {
+<span>Content</span>
+}
+}
+
+@component Card(title string) {
+<div>
+<span>{title}</span>
+{children...}
+</div>
+}
+`,
+			want: `package main
+
+@component Parent() {
+	@Card("Title") {
+		<span>Content</span>
+	}
+}
+
+@component Card(title string) {
+	<div>
+		<span>{title}</span>
+		{children...}
+	</div>
+}
+`,
+		},
+		"multiple attributes": {
+			input: `package main
+
+@component Box() {
+<div border={1} padding={2} margin={1}>
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+@component Box() {
+	<div border={1} padding={2} margin={1}>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"string attribute": {
+			input: `package main
+
+@component Styled() {
+<div class="flex-col gap-1">
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+@component Styled() {
+	<div class="flex-col gap-1">
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+			got, err := fmtr.Format("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("Format() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Format() mismatch:\ngot:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestFormatRoundTrip tests that format(format(x)) == format(x).
+func TestFormatRoundTrip(t *testing.T) {
+	type tc struct {
+		input string
+	}
+
+	tests := map[string]tc{
+		"simple component": {
+			input: `package main
+
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"complex nested": {
+			input: `package main
+
+import (
+	"fmt"
+)
+
+@component Complex(items []string, selected int) {
+	<div border={1}>
+		@for i, item := range items {
+			@if i == selected {
+				<span class="bold">{fmt.Sprintf("> %s", item)}</span>
+			} @else {
+				<span>{item}</span>
+			}
+		}
+	</div>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+
+			// First format
+			first, err := fmtr.Format("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("First Format() error = %v", err)
+			}
+
+			// Second format (should be identical)
+			second, err := fmtr.Format("test.tui", first)
+			if err != nil {
+				t.Fatalf("Second Format() error = %v", err)
+			}
+
+			if first != second {
+				t.Errorf("Round-trip failed:\nfirst:\n%s\nsecond:\n%s", first, second)
+			}
+		})
+	}
+}
+
+// TestFormatWithResult tests the FormatWithResult method.
+func TestFormatWithResult(t *testing.T) {
+	type tc struct {
+		input       string
+		wantChanged bool
+	}
+
+	tests := map[string]tc{
+		"already formatted": {
+			input: `package main
+
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+			wantChanged: false,
+		},
+		"needs formatting": {
+			input: `package main
+
+@component Hello() {
+<span>Hello</span>
+}
+`,
+			wantChanged: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+			res, err := fmtr.FormatWithResult("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("FormatWithResult() error = %v", err)
+			}
+			if res.Changed != tt.wantChanged {
+				t.Errorf("FormatWithResult() Changed = %v, want %v", res.Changed, tt.wantChanged)
+			}
+		})
+	}
+}
+
+// TestFormatParseError tests that parse errors are returned.
+func TestFormatParseError(t *testing.T) {
+	type tc struct {
+		input string
+	}
+
+	tests := map[string]tc{
+		"missing package": {
+			input: `@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"invalid syntax": {
+			input: `package main
+
+@component Hello( {
+	<span>Hello</span>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+			_, err := fmtr.Format("test.tui", tt.input)
+			if err == nil {
+				t.Error("Format() expected error, got nil")
+			}
+		})
+	}
+}
+
+// TestEscapeString tests the string escaping function.
+func TestEscapeString(t *testing.T) {
+	type tc struct {
+		input string
+		want  string
+	}
+
+	tests := map[string]tc{
+		"no escaping needed": {
+			input: "hello world",
+			want:  "hello world",
+		},
+		"newline": {
+			input: "hello\nworld",
+			want:  `hello\nworld`,
+		},
+		"tab": {
+			input: "hello\tworld",
+			want:  `hello\tworld`,
+		},
+		"quote": {
+			input: `hello "world"`,
+			want:  `hello \"world\"`,
+		},
+		"backslash": {
+			input: `hello\world`,
+			want:  `hello\\world`,
+		},
+		"multiple escapes": {
+			input: "line1\nline2\ttab\"quote\"",
+			want:  `line1\nline2\ttab\"quote\"`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := escapeString(tt.input)
+			if got != tt.want {
+				t.Errorf("escapeString(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestFormatPreservesGoExpressions tests that Go expressions are preserved as-is.
+func TestFormatPreservesGoExpressions(t *testing.T) {
+	input := `package main
+
+import "fmt"
+
+@component Complex() {
+	<span>{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}</span>
+}
+`
+	fmtr := New()
+	got, err := fmtr.Format("test.tui", input)
+	if err != nil {
+		t.Fatalf("Format() error = %v", err)
+	}
+
+	// Check that the Go expression is preserved
+	if !strings.Contains(got, `{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}`) {
+		t.Errorf("Go expression not preserved in output:\n%s", got)
+	}
+}
