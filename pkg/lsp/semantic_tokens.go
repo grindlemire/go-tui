@@ -447,7 +447,7 @@ func (s *Server) collectTokensInGoCodeDirect(code string, pos tuigen.Position, p
 }
 
 // collectTokensInGoCode tokenizes Go code for semantic highlighting.
-// Handles identifiers (variables, parameters, functions), string literals, boolean literals, and numbers.
+// Handles identifiers (variables, parameters, functions), string literals, boolean literals, numbers, and comments.
 func (s *Server) collectTokensInGoCode(code string, pos tuigen.Position, startOffset int, paramNames map[string]bool, localVars map[string]bool, tokens *[]semanticToken) {
 	log.Server("collectTokensInGoCode: code=%q pos.Line=%d pos.Column=%d startOffset=%d", code, pos.Line, pos.Column, startOffset)
 	i := 0
@@ -457,6 +457,44 @@ func (s *Server) collectTokensInGoCode(code string, pos tuigen.Position, startOf
 		// Skip whitespace
 		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
 			i++
+			continue
+		}
+
+		// Block comment /* ... */
+		if ch == '/' && i+1 < len(code) && code[i+1] == '*' {
+			start := i
+			i += 2 // skip /*
+			for i+1 < len(code) && !(code[i] == '*' && code[i+1] == '/') {
+				i++
+			}
+			if i+1 < len(code) {
+				i += 2 // skip */
+			}
+			charPos := pos.Column - 1 + startOffset + start
+			*tokens = append(*tokens, semanticToken{
+				line:      pos.Line - 1,
+				startChar: charPos,
+				length:    i - start,
+				tokenType: tokenTypeComment,
+				modifiers: 0,
+			})
+			continue
+		}
+
+		// Line comment // ...
+		if ch == '/' && i+1 < len(code) && code[i+1] == '/' {
+			start := i
+			for i < len(code) && code[i] != '\n' {
+				i++
+			}
+			charPos := pos.Column - 1 + startOffset + start
+			*tokens = append(*tokens, semanticToken{
+				line:      pos.Line - 1,
+				startChar: charPos,
+				length:    i - start,
+				tokenType: tokenTypeComment,
+				modifiers: 0,
+			})
 			continue
 		}
 

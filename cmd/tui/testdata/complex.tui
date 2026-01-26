@@ -1,3 +1,4 @@
+// Complex.tui
 package testdata
 
 import (
@@ -5,6 +6,9 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
+
+// Unassigned block comment
+// For package comment
 
 // ItemList test
 @component ItemList(items []string, selected int) {
@@ -25,7 +29,9 @@ import (
 	</div>
 }
 
-/*test comment
+/*
+Counter
+tests block comment
 */
 @component Counter(count int, label string) {
 	@let countText = <span>{fmt.Sprintf("%d", count)}</span>

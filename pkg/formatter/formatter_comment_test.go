@@ -95,8 +95,10 @@ func TestFormatCommentLeading(t *testing.T) {
 `,
 			want: `package main
 
-/* Block comment
-   spanning multiple lines */
+/*
+Block comment
+spanning multiple lines
+*/
 @component Hello() {
 	<span>Hello</span>
 }
@@ -289,6 +291,258 @@ import "fmt"
 
 			if first != second {
 				t.Errorf("Round-trip failed:\nfirst:\n%s\nsecond:\n%s", first, second)
+			}
+		})
+	}
+}
+
+// TestFormatCommentGroupSeparation tests that blank lines between comment groups are preserved.
+func TestFormatCommentGroupSeparation(t *testing.T) {
+	type tc struct {
+		input string
+		want  string
+	}
+
+	tests := map[string]tc{
+		"preserve blank line between comment groups": {
+			input: `package main
+
+// Unassigned block comment
+// For package comment
+
+// ItemList test
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+			want: `package main
+
+// Unassigned block comment
+// For package comment
+
+// ItemList test
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"preserve blank line inside component": {
+			input: `package main
+
+@component Hello() {
+	// First comment
+
+	// Second comment
+	<span>Hello</span>
+}
+`,
+			want: `package main
+
+@component Hello() {
+	// First comment
+
+	// Second comment
+	<span>Hello</span>
+}
+`,
+		},
+		"no blank line when comments are adjacent": {
+			input: `package main
+
+// First comment
+// Second comment
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+			want: `package main
+
+// First comment
+// Second comment
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+			got, err := fmtr.Format("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("Format() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Format() mismatch:\ngot:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestFormatLineCommentSpacing tests proper spacing after // in line comments.
+func TestFormatLineCommentSpacing(t *testing.T) {
+	type tc struct {
+		input string
+		want  string
+	}
+
+	tests := map[string]tc{
+		"missing space after //": {
+			input: `package main
+
+//comment without space
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+			want: `package main
+
+// comment without space
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"already has space": {
+			input: `package main
+
+// comment with space
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+			want: `package main
+
+// comment with space
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"trailing comment missing space": {
+			input: `package main
+
+@component Hello() {
+	<span>Hello</span>  //trailing
+}
+`,
+			want: `package main
+
+@component Hello() {
+	<span>Hello</span>  // trailing
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+			got, err := fmtr.Format("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("Format() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Format() mismatch:\ngot:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestFormatInlineBlockComment tests proper formatting of inline block comments.
+func TestFormatInlineBlockComment(t *testing.T) {
+	type tc struct {
+		input string
+		want  string
+	}
+
+	tests := map[string]tc{
+		"missing space before closing": {
+			input: `package main
+
+import "fmt"
+
+@component Hello(item string) {
+	<span>{fmt.Sprintf("> %s", /* ItemList item*/ item)}</span>
+}
+`,
+			want: `package main
+
+import "fmt"
+
+@component Hello(item string) {
+	<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
+}
+`,
+		},
+		"missing space after opening": {
+			input: `package main
+
+@component Hello(x int) {
+	<span>{/*test*/ x}</span>
+}
+`,
+			want: `package main
+
+@component Hello(x int) {
+	<span>{/* test */ x}</span>
+}
+`,
+		},
+		"missing both spaces": {
+			input: `package main
+
+@component Hello(x int) {
+	<span>{/*test comment*/ x}</span>
+}
+`,
+			want: `package main
+
+@component Hello(x int) {
+	<span>{/* test comment */ x}</span>
+}
+`,
+		},
+		"already properly formatted": {
+			input: `package main
+
+@component Hello(x int) {
+	<span>{/* test */ x}</span>
+}
+`,
+			want: `package main
+
+@component Hello(x int) {
+	<span>{/* test */ x}</span>
+}
+`,
+		},
+		"empty block comment": {
+			input: `package main
+
+@component Hello(x int) {
+	<span>{/**/ x}</span>
+}
+`,
+			want: `package main
+
+@component Hello(x int) {
+	<span>{/* */ x}</span>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New()
+			got, err := fmtr.Format("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("Format() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Format() mismatch:\ngot:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
 	}

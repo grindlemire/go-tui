@@ -23,6 +23,10 @@ type Lexer struct {
 	// Comments collected since last ConsumeComments() call
 	pendingComments []*Comment
 
+	// Track the end line of the last comment that was collected
+	// (persists across ConsumeComments calls to detect blank lines between comment batches)
+	lastCommentEndLine int
+
 	errors *ErrorList
 }
 
@@ -92,6 +96,12 @@ func (l *Lexer) startToken() {
 
 // makeToken creates a token with the current start position.
 func (l *Lexer) makeToken(typ TokenType, literal string) Token {
+	// Reset lastCommentEndLine for non-newline tokens
+	// This ensures we don't detect false "blank lines" between comment groups
+	// that are actually separated by code
+	if typ != TokenNewline && typ != TokenEOF {
+		l.lastCommentEndLine = 0
+	}
 	return Token{
 		Type:     typ,
 		Literal:  literal,
@@ -292,19 +302,24 @@ func (l *Lexer) collectLineComment() {
 	startLine := l.line
 	startCol := l.column
 
+	// Check if there was a blank line before this comment
+	blankLineBefore := l.hadBlankLineBefore(startLine)
+
 	// Read until end of line or EOF
 	for l.ch != '\n' && l.ch != 0 {
 		l.readChar()
 	}
 
 	comment := &Comment{
-		Text:     l.source[startPos:l.pos],
-		Position: Position{File: l.filename, Line: startLine, Column: startCol},
-		EndLine:  l.line,
-		EndCol:   l.column,
-		IsBlock:  false,
+		Text:            l.source[startPos:l.pos],
+		Position:        Position{File: l.filename, Line: startLine, Column: startCol},
+		EndLine:         l.line,
+		EndCol:          l.column,
+		IsBlock:         false,
+		BlankLineBefore: blankLineBefore,
 	}
 	l.pendingComments = append(l.pendingComments, comment)
+	l.lastCommentEndLine = l.line
 }
 
 // collectBlockComment reads a /* */ comment and adds it to pendingComments.
@@ -312,6 +327,9 @@ func (l *Lexer) collectBlockComment() {
 	startPos := l.pos
 	startLine := l.line
 	startCol := l.column
+
+	// Check if there was a blank line before this comment
+	blankLineBefore := l.hadBlankLineBefore(startLine)
 
 	l.readChar() // skip /
 	l.readChar() // skip *
@@ -330,13 +348,33 @@ func (l *Lexer) collectBlockComment() {
 	}
 
 	comment := &Comment{
-		Text:     l.source[startPos:l.pos],
-		Position: Position{File: l.filename, Line: startLine, Column: startCol},
-		EndLine:  l.line,
-		EndCol:   l.column,
-		IsBlock:  true,
+		Text:            l.source[startPos:l.pos],
+		Position:        Position{File: l.filename, Line: startLine, Column: startCol},
+		EndLine:         l.line,
+		EndCol:          l.column,
+		IsBlock:         true,
+		BlankLineBefore: blankLineBefore,
 	}
 	l.pendingComments = append(l.pendingComments, comment)
+	l.lastCommentEndLine = l.line
+}
+
+// hadBlankLineBefore checks if there was a blank line before the given line.
+// This only returns true if there's a previous comment (in pending list or recently consumed)
+// and there's a blank line between that comment and the current line.
+func (l *Lexer) hadBlankLineBefore(currentLine int) bool {
+	// Check against the last pending comment first
+	if len(l.pendingComments) > 0 {
+		lastComment := l.pendingComments[len(l.pendingComments)-1]
+		return currentLine > lastComment.EndLine+1
+	}
+
+	// Check against the last consumed comment (if any)
+	if l.lastCommentEndLine > 0 {
+		return currentLine > l.lastCommentEndLine+1
+	}
+
+	return false
 }
 
 // ConsumeComments returns and clears pending comments.

@@ -271,6 +271,62 @@ func TestBlockCommentTokens(t *testing.T) {
 	}
 }
 
+func TestInlineBlockCommentInGoExpr(t *testing.T) {
+	// Test that inline block comments inside Go expressions are properly tokenized
+	type tc struct {
+		content string
+	}
+
+	tests := map[string]tc{
+		"inline block comment in sprintf": {
+			content: `package main
+
+import "fmt"
+
+@component Hello(item string) {
+	<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
+}
+`,
+		},
+		"inline block comment in simple expression": {
+			content: `package main
+
+@component Hello(x int) {
+	<span>{/* test */ x}</span>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			server := NewServer(nil, nil)
+
+			doc := server.docs.Open("file:///test.tui", tt.content, 1)
+			server.index.IndexDocument("file:///test.tui", doc.AST)
+
+			tokens := server.collectSemanticTokens(doc)
+
+			// Find comment tokens
+			var foundComment *semanticToken
+			for i := range tokens {
+				if tokens[i].tokenType == tokenTypeComment {
+					foundComment = &tokens[i]
+					break
+				}
+			}
+
+			if foundComment == nil {
+				t.Fatalf("expected to find a comment token for inline block comment")
+			}
+
+			// Just verify we found a comment token - the actual highlighting will work
+			t.Logf("Found comment token: line=%d startChar=%d length=%d",
+				foundComment.line, foundComment.startChar, foundComment.length)
+		})
+	}
+}
+
 func TestCommentsInVariousPositions(t *testing.T) {
 	// Test that comments are collected from all supported positions
 	content := `package main

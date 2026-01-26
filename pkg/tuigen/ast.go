@@ -10,11 +10,12 @@ type Node interface {
 
 // Comment represents a single comment (line or block).
 type Comment struct {
-	Text     string   // Raw text including delimiters (// or /* */)
-	Position Position // Start position
-	EndLine  int      // End line (for multi-line block comments)
-	EndCol   int      // End column
-	IsBlock  bool     // true for /* */ comments, false for // comments
+	Text            string   // Raw text including delimiters (// or /* */)
+	Position        Position // Start position
+	EndLine         int      // End line (for multi-line block comments)
+	EndCol          int      // End column
+	IsBlock         bool     // true for /* */ comments, false for // comments
+	BlankLineBefore bool     // true if there was a blank line before this comment
 }
 
 // CommentGroup represents a sequence of comments with no blank lines between them.
