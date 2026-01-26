@@ -213,6 +213,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 						"operator",    // 10: operators
 						"decorator",   // 11: @ prefix
 						"regexp",      // 12: format specifiers (often purple)
+						"comment",     // 13: comments
 					},
 					TokenModifiers: []string{
 						"declaration",  // 0: where defined

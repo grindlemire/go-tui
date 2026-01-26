@@ -6,20 +6,27 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
+// ItemList test
 @component ItemList(items []string, selected int) {
 	<div direction={layout.Column} gap={1}>
+		// ItemList direction
 		@for i, item := range items {
+			// ItemList for loop
 			@if i == selected {
 				<div border={tui.BorderSingle}>
-					<span>{fmt.Sprintf("> %s", item)}</span>
+					// ItemList border
+					<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
 				</div>
 			} @else {
+				// ItemList else
 				<span>{fmt.Sprintf("  %s", item)}</span>
 			}
 		}
 	</div>
 }
 
+/*test comment
+*/
 @component Counter(count int, label string) {
 	@let countText = <span>{fmt.Sprintf("%d", count)}</span>
 	<div direction={layout.Column} gap={1} padding={1}>

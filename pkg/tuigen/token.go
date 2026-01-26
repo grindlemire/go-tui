@@ -64,9 +64,13 @@ const (
 	TokenUnderscore  // _
 
 	// Composite tokens
-	TokenGoExpr     // Go expression inside {}
-	TokenSlashAngle // />  (self-closing tag end)
+	TokenGoExpr      // Go expression inside {}
+	TokenSlashAngle  // />  (self-closing tag end)
 	TokenLAngleSlash // </ (closing tag start)
+
+	// Comment tokens (collected but not emitted by lexer)
+	TokenLineComment  // // comment
+	TokenBlockComment // /* comment */
 )
 
 // tokenNames maps token types to their string names for debugging.
@@ -116,9 +120,11 @@ var tokenNames = map[TokenType]string{
 	TokenMinus:       "-",
 	TokenBang:        "!",
 	TokenUnderscore:  "_",
-	TokenGoExpr:      "GoExpr",
-	TokenSlashAngle:  "/>",
-	TokenLAngleSlash: "</",
+	TokenGoExpr:       "GoExpr",
+	TokenSlashAngle:   "/>",
+	TokenLAngleSlash:  "</",
+	TokenLineComment:  "LineComment",
+	TokenBlockComment: "BlockComment",
 }
 
 // String returns a human-readable name for the token type.

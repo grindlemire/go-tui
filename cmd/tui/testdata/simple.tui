@@ -1,8 +1,6 @@
 package testdata
 
-import (
-	"github.com/grindlemire/go-tui/pkg/tui"
-)
+import "github.com/grindlemire/go-tui/pkg/tui"
 
 @component Header(title string) {
 	<div border={tui.BorderSingle} padding={1}>

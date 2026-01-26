@@ -1,9 +1,50 @@
 package tuigen
 
+import "strings"
+
 // Node is the interface implemented by all AST nodes.
 type Node interface {
-	node()        // marker method to ensure type safety
+	node()         // marker method to ensure type safety
 	Pos() Position // returns the source position of the node
+}
+
+// Comment represents a single comment (line or block).
+type Comment struct {
+	Text     string   // Raw text including delimiters (// or /* */)
+	Position Position // Start position
+	EndLine  int      // End line (for multi-line block comments)
+	EndCol   int      // End column
+	IsBlock  bool     // true for /* */ comments, false for // comments
+}
+
+// CommentGroup represents a sequence of comments with no blank lines between them.
+// Adjacent line comments or a single block comment form a group.
+type CommentGroup struct {
+	List []*Comment
+}
+
+// Text returns the text of the comment group, with comment markers removed
+// and lines joined with newlines.
+func (g *CommentGroup) Text() string {
+	if g == nil || len(g.List) == 0 {
+		return ""
+	}
+	var lines []string
+	for _, c := range g.List {
+		text := c.Text
+		if c.IsBlock {
+			// Remove /* and */
+			text = strings.TrimPrefix(text, "/*")
+			text = strings.TrimSuffix(text, "*/")
+			text = strings.TrimSpace(text)
+		} else {
+			// Remove //
+			text = strings.TrimPrefix(text, "//")
+			text = strings.TrimSpace(text)
+		}
+		lines = append(lines, text)
+	}
+	return strings.Join(lines, "\n")
 }
 
 // File represents a complete .tui source file.
@@ -13,6 +54,9 @@ type File struct {
 	Components []*Component
 	Funcs      []*GoFunc // top-level Go functions
 	Position   Position
+	// Comment fields
+	LeadingComments *CommentGroup   // Comments before package declaration
+	OrphanComments  []*CommentGroup // Comments not attached to any node
 }
 
 func (f *File) node()        {}
@@ -23,6 +67,8 @@ type Import struct {
 	Alias    string // optional alias (empty if none)
 	Path     string // import path
 	Position Position
+	// Comment fields
+	TrailingComments *CommentGroup // Inline comment on import line
 }
 
 func (i *Import) node()        {}
@@ -36,6 +82,10 @@ type Component struct {
 	Body            []Node // Element, GoCode, LetBinding, ForLoop, IfStmt
 	AcceptsChildren bool   // true if body contains {children...}
 	Position        Position
+	// Comment fields
+	LeadingComments  *CommentGroup   // Doc comments before @component
+	TrailingComments *CommentGroup   // Comments on same line after opening {
+	OrphanComments   []*CommentGroup // Comments in body not attached to any node
 }
 
 func (c *Component) node()        {}
@@ -58,6 +108,9 @@ type Element struct {
 	Children   []Node // Elements, GoExpr, TextContent, ForLoop, IfStmt, LetBinding
 	SelfClose  bool
 	Position   Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before this element
+	TrailingComments *CommentGroup // Comments on same line after this element
 }
 
 func (e *Element) node()        {}
@@ -77,6 +130,9 @@ func (a *Attribute) Pos() Position { return a.Position }
 type GoExpr struct {
 	Code     string
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before this expression
+	TrailingComments *CommentGroup // Comments on same line after this expression
 }
 
 func (g *GoExpr) node()        {}
@@ -132,6 +188,9 @@ type LetBinding struct {
 	Name     string
 	Element  *Element
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before @let
+	TrailingComments *CommentGroup // Comments on same line after element
 }
 
 func (l *LetBinding) node()        {}
@@ -144,6 +203,10 @@ type ForLoop struct {
 	Iterable string // Go expression for the iterable
 	Body     []Node // Elements and other nodes
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup   // Comments immediately before @for
+	TrailingComments *CommentGroup   // Comments on same line after opening {
+	OrphanComments   []*CommentGroup // Comments in body not attached to any node
 }
 
 func (f *ForLoop) node()        {}
@@ -155,6 +218,10 @@ type IfStmt struct {
 	Then      []Node
 	Else      []Node // optional else branch
 	Position  Position
+	// Comment fields
+	LeadingComments  *CommentGroup   // Comments immediately before @if
+	TrailingComments *CommentGroup   // Comments on same line after opening {
+	OrphanComments   []*CommentGroup // Comments in body not attached to any node
 }
 
 func (i *IfStmt) node()        {}
@@ -164,6 +231,9 @@ func (i *IfStmt) Pos() Position { return i.Position }
 type GoCode struct {
 	Code     string
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before Go code
+	TrailingComments *CommentGroup // Comments on same line after Go code
 }
 
 func (g *GoCode) node()        {}
@@ -173,6 +243,9 @@ func (g *GoCode) Pos() Position { return g.Position }
 type GoFunc struct {
 	Code     string // the entire function definition
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before func
+	TrailingComments *CommentGroup // Comments on same line after closing }
 }
 
 func (g *GoFunc) node()        {}
@@ -194,6 +267,9 @@ type ComponentCall struct {
 	Args     string // raw Go expression for arguments
 	Children []Node // child elements (may be empty if no children block)
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before @ComponentName
+	TrailingComments *CommentGroup // Comments on same line after )
 }
 
 func (c *ComponentCall) node()        {}
@@ -202,6 +278,9 @@ func (c *ComponentCall) Pos() Position { return c.Position }
 // ChildrenSlot represents {children...} placeholder in a component body
 type ChildrenSlot struct {
 	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before {children...}
+	TrailingComments *CommentGroup // Comments on same line after {children...}
 }
 
 func (c *ChildrenSlot) node()        {}

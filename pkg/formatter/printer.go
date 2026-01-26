@@ -27,6 +27,9 @@ func newPrinter(indent string, maxLineWidth int) *printer {
 func (p *printer) PrintFile(file *tuigen.File) string {
 	p.buf.Reset()
 
+	// Leading comments before package declaration
+	p.printLeadingComments(file.LeadingComments)
+
 	// Package declaration
 	p.printPackage(file.Package)
 	p.newline()
@@ -52,6 +55,9 @@ func (p *printer) PrintFile(file *tuigen.File) string {
 		p.printGoFunc(fn)
 	}
 
+	// Orphan comments at end of file
+	p.printOrphanComments(file.OrphanComments)
+
 	return p.buf.String()
 }
 
@@ -75,6 +81,7 @@ func (p *printer) printImports(imports []tuigen.Import) {
 		p.write(`"`)
 		p.write(imp.Path)
 		p.write(`"`)
+		p.printTrailingComment(imp.TrailingComments)
 		p.newline()
 		return
 	}
@@ -93,6 +100,7 @@ func (p *printer) printImports(imports []tuigen.Import) {
 		p.write(`"`)
 		p.write(imp.Path)
 		p.write(`"`)
+		p.printTrailingComment(imp.TrailingComments)
 		p.newline()
 	}
 
@@ -103,6 +111,9 @@ func (p *printer) printImports(imports []tuigen.Import) {
 
 // printComponent outputs a component declaration.
 func (p *printer) printComponent(comp *tuigen.Component) {
+	// Leading comments (doc comments)
+	p.printLeadingComments(comp.LeadingComments)
+
 	p.write("@component ")
 	p.write(comp.Name)
 	p.write("(")
@@ -118,10 +129,12 @@ func (p *printer) printComponent(comp *tuigen.Component) {
 	}
 
 	p.write(") {")
+	p.printTrailingComment(comp.TrailingComments)
 	p.newline()
 
 	// Body
 	p.depth++
+	p.printOrphanComments(comp.OrphanComments)
 	p.printBody(comp.Body)
 	p.depth--
 
@@ -150,28 +163,37 @@ func (p *printer) printNode(node tuigen.Node) {
 	case *tuigen.ComponentCall:
 		p.printComponentCall(n)
 	case *tuigen.GoExpr:
+		p.printLeadingComments(n.LeadingComments)
 		p.writeIndent()
 		p.write("{")
 		p.write(n.Code)
 		p.write("}")
+		p.printTrailingComment(n.TrailingComments)
 		p.newline()
 	case *tuigen.GoCode:
+		p.printLeadingComments(n.LeadingComments)
 		p.writeIndent()
 		p.write(n.Code)
+		p.printTrailingComment(n.TrailingComments)
 		p.newline()
 	case *tuigen.TextContent:
 		p.writeIndent()
 		p.write(n.Text)
 		p.newline()
 	case *tuigen.ChildrenSlot:
+		p.printLeadingComments(n.LeadingComments)
 		p.writeIndent()
 		p.write("{children...}")
+		p.printTrailingComment(n.TrailingComments)
 		p.newline()
 	}
 }
 
 // printElement outputs an element with its attributes and children.
 func (p *printer) printElement(elem *tuigen.Element) {
+	// Leading comments
+	p.printLeadingComments(elem.LeadingComments)
+
 	p.writeIndent()
 	p.write("<")
 	p.write(elem.Tag)
@@ -208,6 +230,7 @@ func (p *printer) printElement(elem *tuigen.Element) {
 
 	if elem.SelfClose {
 		p.write(" />")
+		p.printTrailingComment(elem.TrailingComments)
 		p.newline()
 		return
 	}
@@ -220,9 +243,13 @@ func (p *printer) printElement(elem *tuigen.Element) {
 		p.write("</")
 		p.write(elem.Tag)
 		p.write(">")
+		p.printTrailingComment(elem.TrailingComments)
 		p.newline()
 		return
 	}
+
+	// Trailing comment after opening tag
+	p.printTrailingComment(elem.TrailingComments)
 
 	// Multi-line children
 	p.newline()
@@ -327,6 +354,9 @@ func (p *printer) printChildrenInline(children []tuigen.Node) {
 
 // printForLoop outputs a @for loop.
 func (p *printer) printForLoop(f *tuigen.ForLoop) {
+	// Leading comments
+	p.printLeadingComments(f.LeadingComments)
+
 	p.writeIndent()
 	p.write("@for ")
 
@@ -339,10 +369,12 @@ func (p *printer) printForLoop(f *tuigen.ForLoop) {
 	p.write(" := range ")
 	p.write(f.Iterable)
 	p.write(" {")
+	p.printTrailingComment(f.TrailingComments)
 	p.newline()
 
 	// Body
 	p.depth++
+	p.printOrphanComments(f.OrphanComments)
 	p.printBody(f.Body)
 	p.depth--
 
@@ -353,14 +385,19 @@ func (p *printer) printForLoop(f *tuigen.ForLoop) {
 
 // printIfStmt outputs an @if statement.
 func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
+	// Leading comments
+	p.printLeadingComments(stmt.LeadingComments)
+
 	p.writeIndent()
 	p.write("@if ")
 	p.write(stmt.Condition)
 	p.write(" {")
+	p.printTrailingComment(stmt.TrailingComments)
 	p.newline()
 
 	// Then branch
 	p.depth++
+	p.printOrphanComments(stmt.OrphanComments)
 	p.printBody(stmt.Then)
 	p.depth--
 
@@ -376,9 +413,11 @@ func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 				p.write("@if ")
 				p.write(elseIf.Condition)
 				p.write(" {")
+				p.printTrailingComment(elseIf.TrailingComments)
 				p.newline()
 
 				p.depth++
+				p.printOrphanComments(elseIf.OrphanComments)
 				p.printBody(elseIf.Then)
 				p.depth--
 
@@ -419,9 +458,11 @@ func (p *printer) printElseBranch(nodes []tuigen.Node) {
 			p.write("@if ")
 			p.write(elseIf.Condition)
 			p.write(" {")
+			p.printTrailingComment(elseIf.TrailingComments)
 			p.newline()
 
 			p.depth++
+			p.printOrphanComments(elseIf.OrphanComments)
 			p.printBody(elseIf.Then)
 			p.depth--
 
@@ -448,6 +489,9 @@ func (p *printer) printElseBranch(nodes []tuigen.Node) {
 
 // printLetBinding outputs a @let binding.
 func (p *printer) printLetBinding(let *tuigen.LetBinding) {
+	// Leading comments
+	p.printLeadingComments(let.LeadingComments)
+
 	p.writeIndent()
 	p.write("@let ")
 	p.write(let.Name)
@@ -500,6 +544,9 @@ func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 
 // printComponentCall outputs a component call.
 func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
+	// Leading comments
+	p.printLeadingComments(call.LeadingComments)
+
 	p.writeIndent()
 	p.write("@")
 	p.write(call.Name)
@@ -509,6 +556,7 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 
 	if len(call.Children) > 0 {
 		p.write(" {")
+		p.printTrailingComment(call.TrailingComments)
 		p.newline()
 
 		p.depth++
@@ -517,14 +565,20 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 
 		p.writeIndent()
 		p.write("}")
+	} else {
+		p.printTrailingComment(call.TrailingComments)
 	}
 	p.newline()
 }
 
 // printGoFunc outputs a top-level Go function.
 func (p *printer) printGoFunc(fn *tuigen.GoFunc) {
+	// Leading comments
+	p.printLeadingComments(fn.LeadingComments)
+
 	// Go functions are printed as-is since they're raw Go code
 	p.write(fn.Code)
+	p.printTrailingComment(fn.TrailingComments)
 	p.newline()
 }
 
@@ -568,4 +622,54 @@ func escapeString(s string) string {
 		}
 	}
 	return buf.String()
+}
+
+// Comment printing helpers
+
+// printCommentGroup outputs a comment group with proper indentation.
+// Each comment in the group is printed on its own line.
+func (p *printer) printCommentGroup(cg *tuigen.CommentGroup) {
+	if cg == nil || len(cg.List) == 0 {
+		return
+	}
+	for _, c := range cg.List {
+		p.writeIndent()
+		p.write(c.Text)
+		p.newline()
+	}
+}
+
+// printLeadingComments outputs leading comments (before a node).
+// Comments are printed with proper indentation, each on its own line.
+func (p *printer) printLeadingComments(cg *tuigen.CommentGroup) {
+	if cg == nil || len(cg.List) == 0 {
+		return
+	}
+	for _, c := range cg.List {
+		p.writeIndent()
+		p.write(c.Text)
+		p.newline()
+	}
+}
+
+// printTrailingComment outputs a trailing comment (on same line as node).
+// Prints with leading spaces, no newline (caller handles newline).
+func (p *printer) printTrailingComment(cg *tuigen.CommentGroup) {
+	if cg == nil || len(cg.List) == 0 {
+		return
+	}
+	// Only print the first comment as trailing (others would be on next lines)
+	p.write("  ")
+	p.write(cg.List[0].Text)
+}
+
+// printOrphanComments outputs orphan comments (not attached to any node).
+// Each comment group is printed with proper indentation.
+func (p *printer) printOrphanComments(groups []*tuigen.CommentGroup) {
+	if len(groups) == 0 {
+		return
+	}
+	for _, cg := range groups {
+		p.printCommentGroup(cg)
+	}
 }

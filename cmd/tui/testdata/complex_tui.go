@@ -26,7 +26,7 @@ func ItemList(items []string, selected int) *element.Element {
 				element.WithBorder(tui.BorderSingle),
 			)
 			__tui_2 := element.New(
-				element.WithText(fmt.Sprintf("> %s", item)),
+				element.WithText(fmt.Sprintf("> %s" /* ItemList item*/, item)),
 			)
 			__tui_1.AddChild(__tui_2)
 			__tui_0.AddChild(__tui_1)
@@ -51,6 +51,7 @@ func Counter(count int, label string) *element.Element {
 	)
 	__tui_1 := element.New(
 		element.WithText(label),
+		element.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_0.AddChild(countText)

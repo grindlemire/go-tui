@@ -28,6 +28,7 @@ const (
 	tokenTypeOperator  = 10 // operators
 	tokenTypeDecorator = 11 // @ prefix
 	tokenTypeRegexp    = 12 // format specifiers (often purple)
+	tokenTypeComment   = 13 // comments
 )
 
 // Semantic token modifiers (bit flags)
@@ -100,6 +101,9 @@ func (s *Server) handleSemanticTokensFull(params json.RawMessage) (any, *Error) 
 func (s *Server) collectSemanticTokens(doc *Document) []semanticToken {
 	var tokens []semanticToken
 	ast := doc.AST
+
+	// Collect comment tokens from the entire AST
+	s.collectAllCommentTokens(ast, &tokens)
 
 	// Collect component-related tokens
 	for _, comp := range ast.Components {
@@ -985,5 +989,200 @@ func (s *Server) collectTokensFromFuncBody(code string, pos tuigen.Position, par
 		// Tokenize the line for function calls, parameters, etc.
 		linePos := tuigen.Position{Line: docLine, Column: lineStartCol}
 		s.collectTokensInGoCode(line, linePos, 0, paramNames, localVars, tokens)
+	}
+}
+
+// collectCommentGroupTokens adds semantic tokens for all comments in a comment group.
+func (s *Server) collectCommentGroupTokens(cg *tuigen.CommentGroup, tokens *[]semanticToken) {
+	if cg == nil {
+		return
+	}
+	for _, c := range cg.List {
+		s.collectCommentToken(c, tokens)
+	}
+}
+
+// collectCommentToken adds a semantic token for a single comment.
+// For multi-line block comments, we emit a token for each line.
+func (s *Server) collectCommentToken(c *tuigen.Comment, tokens *[]semanticToken) {
+	if c == nil {
+		return
+	}
+
+	if !c.IsBlock {
+		// Line comment: single token
+		*tokens = append(*tokens, semanticToken{
+			line:      c.Position.Line - 1,
+			startChar: c.Position.Column - 1,
+			length:    len(c.Text),
+			tokenType: tokenTypeComment,
+			modifiers: 0,
+		})
+		return
+	}
+
+	// Block comment: may span multiple lines
+	// Split by newlines and emit a token for each line
+	lines := strings.Split(c.Text, "\n")
+	for i, line := range lines {
+		lineNum := c.Position.Line - 1 + i
+		var startChar int
+		if i == 0 {
+			// First line starts at the comment's column
+			startChar = c.Position.Column - 1
+		} else {
+			// Subsequent lines: find the actual start column
+			// For multi-line block comments, the text includes leading whitespace
+			// We need to calculate based on the original text position
+			startChar = 0
+			for j := 0; j < len(line) && (line[j] == ' ' || line[j] == '\t'); j++ {
+				startChar++
+			}
+		}
+		if len(line) > 0 {
+			*tokens = append(*tokens, semanticToken{
+				line:      lineNum,
+				startChar: startChar,
+				length:    len(line),
+				tokenType: tokenTypeComment,
+				modifiers: 0,
+			})
+		}
+	}
+}
+
+// collectAllCommentTokens walks the AST and collects semantic tokens for all comments.
+func (s *Server) collectAllCommentTokens(file *tuigen.File, tokens *[]semanticToken) {
+	if file == nil {
+		return
+	}
+
+	// File-level comments
+	s.collectCommentGroupTokens(file.LeadingComments, tokens)
+	for _, cg := range file.OrphanComments {
+		s.collectCommentGroupTokens(cg, tokens)
+	}
+
+	// Import trailing comments
+	for _, imp := range file.Imports {
+		s.collectCommentGroupTokens(imp.TrailingComments, tokens)
+	}
+
+	// Component comments
+	for _, comp := range file.Components {
+		s.collectComponentCommentTokens(comp, tokens)
+	}
+
+	// Function comments
+	for _, fn := range file.Funcs {
+		s.collectCommentGroupTokens(fn.LeadingComments, tokens)
+		s.collectCommentGroupTokens(fn.TrailingComments, tokens)
+	}
+}
+
+// collectComponentCommentTokens collects comment tokens from a component and its body.
+func (s *Server) collectComponentCommentTokens(comp *tuigen.Component, tokens *[]semanticToken) {
+	if comp == nil {
+		return
+	}
+
+	s.collectCommentGroupTokens(comp.LeadingComments, tokens)
+	s.collectCommentGroupTokens(comp.TrailingComments, tokens)
+	for _, cg := range comp.OrphanComments {
+		s.collectCommentGroupTokens(cg, tokens)
+	}
+
+	// Collect from body nodes
+	for _, node := range comp.Body {
+		s.collectNodeCommentTokens(node, tokens)
+	}
+}
+
+// collectNodeCommentTokens collects comment tokens from any AST node.
+func (s *Server) collectNodeCommentTokens(node tuigen.Node, tokens *[]semanticToken) {
+	if node == nil {
+		return
+	}
+
+	switch n := node.(type) {
+	case *tuigen.Element:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+		for _, child := range n.Children {
+			s.collectNodeCommentTokens(child, tokens)
+		}
+
+	case *tuigen.GoExpr:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+
+	case *tuigen.GoCode:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+
+	case *tuigen.ForLoop:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+		for _, cg := range n.OrphanComments {
+			s.collectCommentGroupTokens(cg, tokens)
+		}
+		for _, child := range n.Body {
+			s.collectNodeCommentTokens(child, tokens)
+		}
+
+	case *tuigen.IfStmt:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+		for _, cg := range n.OrphanComments {
+			s.collectCommentGroupTokens(cg, tokens)
+		}
+		for _, child := range n.Then {
+			s.collectNodeCommentTokens(child, tokens)
+		}
+		for _, child := range n.Else {
+			s.collectNodeCommentTokens(child, tokens)
+		}
+
+	case *tuigen.LetBinding:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+		if n.Element != nil {
+			s.collectNodeCommentTokens(n.Element, tokens)
+		}
+
+	case *tuigen.ComponentCall:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
+		for _, child := range n.Children {
+			s.collectNodeCommentTokens(child, tokens)
+		}
+
+	case *tuigen.ChildrenSlot:
+		if n == nil {
+			return
+		}
+		s.collectCommentGroupTokens(n.LeadingComments, tokens)
+		s.collectCommentGroupTokens(n.TrailingComments, tokens)
 	}
 }

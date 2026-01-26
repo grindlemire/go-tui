@@ -20,6 +20,9 @@ type Lexer struct {
 	tokenColumn   int
 	tokenStartPos int // byte offset where current token starts
 
+	// Comments collected since last ConsumeComments() call
+	pendingComments []*Comment
+
 	errors *ErrorList
 }
 
@@ -109,7 +112,8 @@ func (l *Lexer) position() Position {
 
 // Next returns the next token from the source.
 func (l *Lexer) Next() Token {
-	l.skipWhitespaceAndComments()
+	// Skip whitespace and collect any comments
+	l.skipWhitespaceAndCollectComments()
 
 	l.startToken()
 
@@ -253,19 +257,19 @@ func (l *Lexer) Next() Token {
 	}
 }
 
-// skipWhitespaceAndComments skips spaces, tabs, and comments (but not newlines).
-func (l *Lexer) skipWhitespaceAndComments() {
+// skipWhitespaceAndCollectComments skips spaces, tabs, and collects comments (but not newlines).
+func (l *Lexer) skipWhitespaceAndCollectComments() {
 	for {
 		switch l.ch {
 		case ' ', '\t', '\r':
 			l.readChar()
 		case '/':
 			if l.peekChar() == '/' {
-				// Line comment: skip until newline
-				l.skipLineComment()
+				// Line comment: collect it
+				l.collectLineComment()
 			} else if l.peekChar() == '*' {
-				// Block comment: skip until */
-				l.skipBlockComment()
+				// Block comment: collect it
+				l.collectBlockComment()
 			} else {
 				return
 			}
@@ -275,30 +279,72 @@ func (l *Lexer) skipWhitespaceAndComments() {
 	}
 }
 
-// skipLineComment skips a // comment until end of line.
-func (l *Lexer) skipLineComment() {
-	for l.ch != '\n' && l.ch != 0 {
+// skipWhitespaceOnly skips spaces and tabs only, no comments.
+func (l *Lexer) skipWhitespaceOnly() {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
 		l.readChar()
 	}
 }
 
-// skipBlockComment skips a /* */ comment.
-func (l *Lexer) skipBlockComment() {
+// collectLineComment reads a // comment and adds it to pendingComments.
+func (l *Lexer) collectLineComment() {
+	startPos := l.pos
+	startLine := l.line
+	startCol := l.column
+
+	// Read until end of line or EOF
+	for l.ch != '\n' && l.ch != 0 {
+		l.readChar()
+	}
+
+	comment := &Comment{
+		Text:     l.source[startPos:l.pos],
+		Position: Position{File: l.filename, Line: startLine, Column: startCol},
+		EndLine:  l.line,
+		EndCol:   l.column,
+		IsBlock:  false,
+	}
+	l.pendingComments = append(l.pendingComments, comment)
+}
+
+// collectBlockComment reads a /* */ comment and adds it to pendingComments.
+func (l *Lexer) collectBlockComment() {
+	startPos := l.pos
+	startLine := l.line
+	startCol := l.column
+
 	l.readChar() // skip /
 	l.readChar() // skip *
 
 	for {
 		if l.ch == 0 {
-			l.errors.AddError(l.position(), "unterminated block comment")
+			l.errors.AddError(Position{File: l.filename, Line: startLine, Column: startCol}, "unterminated block comment")
 			return
 		}
 		if l.ch == '*' && l.peekChar() == '/' {
 			l.readChar() // skip *
 			l.readChar() // skip /
-			return
+			break
 		}
 		l.readChar()
 	}
+
+	comment := &Comment{
+		Text:     l.source[startPos:l.pos],
+		Position: Position{File: l.filename, Line: startLine, Column: startCol},
+		EndLine:  l.line,
+		EndCol:   l.column,
+		IsBlock:  true,
+	}
+	l.pendingComments = append(l.pendingComments, comment)
+}
+
+// ConsumeComments returns and clears pending comments.
+// Called by parser after each node is parsed.
+func (l *Lexer) ConsumeComments() []*Comment {
+	comments := l.pendingComments
+	l.pendingComments = nil
+	return comments
 }
 
 // readIdentifier reads an identifier or keyword.
@@ -573,6 +619,7 @@ func (l *Lexer) PeekToken() Token {
 	column := l.column
 	tokenLine := l.tokenLine
 	tokenColumn := l.tokenColumn
+	pendingComments := l.pendingComments
 
 	// Get next token
 	tok := l.Next()
@@ -585,6 +632,7 @@ func (l *Lexer) PeekToken() Token {
 	l.column = column
 	l.tokenLine = tokenLine
 	l.tokenColumn = tokenColumn
+	l.pendingComments = pendingComments
 
 	return tok
 }
@@ -595,9 +643,9 @@ func (l *Lexer) CurrentChar() rune {
 	return l.ch
 }
 
-// SkipWhitespace is a public method for the parser to skip whitespace.
+// SkipWhitespace is a public method for the parser to skip whitespace and collect comments.
 func (l *Lexer) SkipWhitespace() {
-	l.skipWhitespaceAndComments()
+	l.skipWhitespaceAndCollectComments()
 }
 
 // SourcePos returns the current position in the source string.
@@ -670,7 +718,7 @@ func (l *Lexer) ReadBalancedBraces() (string, error) {
 // Used for capturing @if conditions and @for iterables as raw Go code.
 // Does not consume the '{'.
 func (l *Lexer) ReadUntilBrace() string {
-	l.skipWhitespaceAndComments()
+	l.skipWhitespaceAndCollectComments()
 	startPos := l.pos
 
 	for l.ch != '{' && l.ch != 0 && l.ch != '\n' {

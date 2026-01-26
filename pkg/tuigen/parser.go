@@ -7,10 +7,11 @@ import (
 
 // Parser parses .tui source files into an AST.
 type Parser struct {
-	lexer   *Lexer
-	current Token
-	peek    Token
-	errors  *ErrorList
+	lexer           *Lexer
+	current         Token
+	peek            Token
+	errors          *ErrorList
+	pendingComments []*Comment // Comments collected since last attachment
 }
 
 // NewParser creates a new Parser for the given lexer.
@@ -91,6 +92,93 @@ func (p *Parser) synchronize() {
 	}
 }
 
+// collectPendingComments collects comments from the lexer and adds them to
+// the parser's pending comments buffer.
+func (p *Parser) collectPendingComments() {
+	comments := p.lexer.ConsumeComments()
+	p.pendingComments = append(p.pendingComments, comments...)
+}
+
+// consumePendingComments returns all pending comments and clears the buffer.
+func (p *Parser) consumePendingComments() []*Comment {
+	comments := p.pendingComments
+	p.pendingComments = nil
+	return comments
+}
+
+// groupComments groups comments into CommentGroups based on blank lines.
+// Adjacent comments (no blank line between) form a group.
+// A blank line (2+ newlines) starts a new group.
+func groupComments(comments []*Comment) []*CommentGroup {
+	if len(comments) == 0 {
+		return nil
+	}
+
+	var groups []*CommentGroup
+	var current []*Comment
+
+	for i, c := range comments {
+		if i == 0 {
+			current = append(current, c)
+			continue
+		}
+
+		// Check if there's a blank line between this comment and the previous one
+		prev := comments[i-1]
+		// A blank line means the previous comment's EndLine is at least 2 less than
+		// this comment's start line
+		if c.Position.Line > prev.EndLine+1 {
+			// Blank line - start a new group
+			if len(current) > 0 {
+				groups = append(groups, &CommentGroup{List: current})
+			}
+			current = []*Comment{c}
+		} else {
+			// Adjacent - add to current group
+			current = append(current, c)
+		}
+	}
+
+	// Don't forget the last group
+	if len(current) > 0 {
+		groups = append(groups, &CommentGroup{List: current})
+	}
+
+	return groups
+}
+
+// getLeadingCommentGroup returns a single CommentGroup containing all pending
+// comments, or nil if no comments are pending.
+func (p *Parser) getLeadingCommentGroup() *CommentGroup {
+	p.collectPendingComments()
+	comments := p.consumePendingComments()
+	if len(comments) == 0 {
+		return nil
+	}
+	return &CommentGroup{List: comments}
+}
+
+// getTrailingCommentOnLine checks if there's a comment on the same line as the given position.
+// If so, returns it as a CommentGroup. Otherwise returns nil.
+// The comment must start on the same line to be considered trailing.
+func (p *Parser) getTrailingCommentOnLine(line int) *CommentGroup {
+	p.collectPendingComments()
+	if len(p.pendingComments) == 0 {
+		return nil
+	}
+
+	// Check if first pending comment is on the same line
+	first := p.pendingComments[0]
+	if first.Position.Line == line {
+		// This is a trailing comment
+		trailing := p.pendingComments[0]
+		p.pendingComments = p.pendingComments[1:]
+		return &CommentGroup{List: []*Comment{trailing}}
+	}
+
+	return nil
+}
+
 // ParseFile parses a complete .tui file into a File AST node.
 func (p *Parser) ParseFile() (*File, error) {
 	file := &File{
@@ -98,6 +186,9 @@ func (p *Parser) ParseFile() (*File, error) {
 	}
 
 	p.skipNewlines()
+
+	// Collect any leading comments before package
+	file.LeadingComments = p.getLeadingCommentGroup()
 
 	// Parse package declaration
 	file.Package = p.parsePackage()
@@ -119,10 +210,14 @@ func (p *Parser) ParseFile() (*File, error) {
 			break
 		}
 
+		// Collect comments before the next declaration
+		leadingComments := p.getLeadingCommentGroup()
+
 		switch p.current.Type {
 		case TokenAtComponent:
 			comp := p.parseComponent()
 			if comp != nil {
+				comp.LeadingComments = leadingComments
 				file.Components = append(file.Components, comp)
 			} else {
 				// Error recovery: skip to next top-level declaration
@@ -131,6 +226,7 @@ func (p *Parser) ParseFile() (*File, error) {
 		case TokenFunc:
 			fn := p.parseGoFunc()
 			if fn != nil {
+				fn.LeadingComments = leadingComments
 				file.Funcs = append(file.Funcs, fn)
 			} else {
 				// Error recovery: skip to next top-level declaration
@@ -141,6 +237,13 @@ func (p *Parser) ParseFile() (*File, error) {
 			// Error recovery: skip to next top-level declaration
 			p.synchronize()
 		}
+	}
+
+	// Collect any orphan comments at end of file
+	p.collectPendingComments()
+	orphanComments := p.consumePendingComments()
+	if len(orphanComments) > 0 {
+		file.OrphanComments = groupComments(orphanComments)
 	}
 
 	// Merge lexer errors
@@ -268,12 +371,16 @@ func (p *Parser) parseComponent() *Component {
 	p.skipNewlines()
 
 	// Parse body
+	openBraceLine := p.current.Line
 	if !p.expect(TokenLBrace) {
 		return nil
 	}
 
+	// Check for trailing comment on the same line as opening brace
+	comp.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
+
 	p.skipNewlines()
-	comp.Body = p.parseComponentBody()
+	comp.Body, comp.OrphanComments = p.parseComponentBodyWithOrphans()
 
 	if !p.expectSkipNewlines(TokenRBrace) {
 		return nil
@@ -364,7 +471,15 @@ func (p *Parser) parseType() string {
 
 // parseComponentBody parses the body of a component.
 func (p *Parser) parseComponentBody() []Node {
+	nodes, _ := p.parseComponentBodyWithOrphans()
+	return nodes
+}
+
+// parseComponentBodyWithOrphans parses the body of a component and also
+// returns any orphan comments that weren't attached to nodes.
+func (p *Parser) parseComponentBodyWithOrphans() ([]Node, []*CommentGroup) {
 	var nodes []Node
+	var orphanComments []*CommentGroup
 
 	for p.current.Type != TokenRBrace && p.current.Type != TokenEOF {
 		p.skipNewlines()
@@ -372,13 +487,55 @@ func (p *Parser) parseComponentBody() []Node {
 			break
 		}
 
+		// Collect any pending comments before parsing the next node
+		leadingComments := p.getLeadingCommentGroup()
+
 		node := p.parseBodyNode()
 		if node != nil {
+			// Attach leading comments to the node
+			p.attachLeadingComments(node, leadingComments)
 			nodes = append(nodes, node)
+		} else if leadingComments != nil {
+			// No node was parsed, these comments are orphans
+			orphanComments = append(orphanComments, leadingComments)
 		}
 	}
 
-	return nodes
+	// Collect any remaining orphan comments before the closing brace
+	p.collectPendingComments()
+	remaining := p.consumePendingComments()
+	if len(remaining) > 0 {
+		orphanComments = append(orphanComments, groupComments(remaining)...)
+	}
+
+	return nodes, orphanComments
+}
+
+// attachLeadingComments attaches leading comments to a node.
+// This handles all node types that support LeadingComments.
+func (p *Parser) attachLeadingComments(node Node, comments *CommentGroup) {
+	if comments == nil {
+		return
+	}
+
+	switch n := node.(type) {
+	case *Element:
+		n.LeadingComments = comments
+	case *LetBinding:
+		n.LeadingComments = comments
+	case *ForLoop:
+		n.LeadingComments = comments
+	case *IfStmt:
+		n.LeadingComments = comments
+	case *ComponentCall:
+		n.LeadingComments = comments
+	case *GoCode:
+		n.LeadingComments = comments
+	case *GoExpr:
+		n.LeadingComments = comments
+	case *ChildrenSlot:
+		n.LeadingComments = comments
+	}
 }
 
 // parseBodyNode parses a single node in a component/element body.
@@ -450,7 +607,10 @@ func (p *Parser) parseElement() *Element {
 	if p.current.Type == TokenSlashAngle {
 		// Self-closing: <tag />
 		elem.SelfClose = true
+		closeLine := p.current.Line
 		p.advanceSkipNewlines()
+		// Check for trailing comment on same line as />
+		elem.TrailingComments = p.getTrailingCommentOnLine(closeLine)
 		return elem
 	}
 
@@ -475,9 +635,13 @@ func (p *Parser) parseElement() *Element {
 		p.advance()
 	}
 
+	closeLine := p.current.Line
 	if !p.expect(TokenRAngle) {
 		return elem
 	}
+
+	// Check for trailing comment on same line as closing >
+	elem.TrailingComments = p.getTrailingCommentOnLine(closeLine)
 
 	p.skipNewlines()
 	return elem
@@ -581,40 +745,26 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 			break
 		}
 
+		// Collect any pending comments before parsing the next child
+		leadingComments := p.getLeadingCommentGroup()
+
 		// Parse child based on token type
+		var child Node
 		switch p.current.Type {
 		case TokenLAngle:
 			// Nested element
-			elem := p.parseElement()
-			if elem != nil {
-				children = append(children, elem)
-			}
+			child = p.parseElement()
 		case TokenLBrace:
 			// Go expression or children slot
-			node := p.parseGoExprOrChildrenSlot()
-			if node != nil {
-				children = append(children, node)
-			}
+			child = p.parseGoExprOrChildrenSlot()
 		case TokenAtLet:
-			let := p.parseLet()
-			if let != nil {
-				children = append(children, let)
-			}
+			child = p.parseLet()
 		case TokenAtFor:
-			f := p.parseFor()
-			if f != nil {
-				children = append(children, f)
-			}
+			child = p.parseFor()
 		case TokenAtIf:
-			i := p.parseIf()
-			if i != nil {
-				children = append(children, i)
-			}
+			child = p.parseIf()
 		case TokenAtCall:
-			call := p.parseComponentCall()
-			if call != nil {
-				children = append(children, call)
-			}
+			child = p.parseComponentCall()
 		case TokenIdent:
 			// Coalesce consecutive text tokens into a single TextContent
 			var textParts []string
@@ -623,11 +773,10 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 				textParts = append(textParts, p.current.Literal)
 				p.advance()
 			}
-			text := &TextContent{
+			child = &TextContent{
 				Text:     strings.Join(textParts, " "),
 				Position: textPos,
 			}
-			children = append(children, text)
 		default:
 			// Try to collect text content
 			if p.current.Type != TokenEOF && p.current.Type != TokenLAngleSlash {
@@ -637,6 +786,14 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 				break
 			}
 		}
+
+		// Attach leading comments to the child if one was parsed
+		if child != nil {
+			p.attachLeadingComments(child, leadingComments)
+			children = append(children, child)
+		}
+		// Note: if child is nil and we had leading comments, they become orphans
+		// but we don't track orphan comments in element children for simplicity
 	}
 
 	return children
@@ -826,12 +983,16 @@ func (p *Parser) parseFor() *ForLoop {
 	p.skipNewlines()
 
 	// Parse body
+	openBraceLine := p.current.Line
 	if !p.expect(TokenLBrace) {
 		return nil
 	}
 
+	// Check for trailing comment on same line as opening brace
+	loop.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
+
 	p.skipNewlines()
-	loop.Body = p.parseComponentBody()
+	loop.Body, loop.OrphanComments = p.parseComponentBodyWithOrphans()
 
 	if !p.expectSkipNewlines(TokenRBrace) {
 		return nil
@@ -860,12 +1021,16 @@ func (p *Parser) parseIf() *IfStmt {
 	p.skipNewlines()
 
 	// Parse then body
+	openBraceLine := p.current.Line
 	if !p.expect(TokenLBrace) {
 		return nil
 	}
 
+	// Check for trailing comment on same line as opening brace
+	stmt.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
+
 	p.skipNewlines()
-	stmt.Then = p.parseComponentBody()
+	stmt.Then, stmt.OrphanComments = p.parseComponentBodyWithOrphans()
 
 	if !p.expectSkipNewlines(TokenRBrace) {
 		return nil
@@ -889,6 +1054,8 @@ func (p *Parser) parseIf() *IfStmt {
 			}
 
 			p.skipNewlines()
+			// Note: else orphan comments are stored in the nested IfStmt or lost
+			// This is a simplification - full support would require a separate field
 			stmt.Else = p.parseComponentBody()
 
 			if !p.expectSkipNewlines(TokenRBrace) {
