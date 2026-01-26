@@ -1018,3 +1018,66 @@ func TestElement_IntrinsicSize_ContainerWithBorder(t *testing.T) {
 		t.Errorf("IntrinsicSize().Height = %d, want 3 (1 text + 2 border)", h)
 	}
 }
+
+// --- OnUpdate Hook Tests ---
+
+func TestElement_SetOnUpdate_CalledDuringRender(t *testing.T) {
+	updateCalled := false
+	e := New(WithSize(10, 10))
+	e.SetOnUpdate(func() {
+		updateCalled = true
+	})
+
+	buf := tui.NewBuffer(20, 20)
+	e.Render(buf, 20, 20)
+
+	if !updateCalled {
+		t.Error("onUpdate hook should be called during Render()")
+	}
+}
+
+func TestElement_Render_NilOnUpdateDoesNotPanic(t *testing.T) {
+	// Create an element without an onUpdate hook
+	e := New(WithSize(10, 10))
+
+	buf := tui.NewBuffer(20, 20)
+
+	// This should not panic
+	e.Render(buf, 20, 20)
+}
+
+func TestElement_WithOnUpdate_SetsHook(t *testing.T) {
+	updateCalled := false
+	e := New(
+		WithSize(10, 10),
+		WithOnUpdate(func() {
+			updateCalled = true
+		}),
+	)
+
+	buf := tui.NewBuffer(20, 20)
+	e.Render(buf, 20, 20)
+
+	if !updateCalled {
+		t.Error("WithOnUpdate should set the onUpdate hook")
+	}
+}
+
+func TestElement_OnUpdate_CalledOnEachRender(t *testing.T) {
+	callCount := 0
+	e := New(WithSize(10, 10))
+	e.SetOnUpdate(func() {
+		callCount++
+	})
+
+	buf := tui.NewBuffer(20, 20)
+
+	// Render multiple times
+	e.Render(buf, 20, 20)
+	e.Render(buf, 20, 20)
+	e.Render(buf, 20, 20)
+
+	if callCount != 3 {
+		t.Errorf("onUpdate should be called on each render, got %d calls, want 3", callCount)
+	}
+}

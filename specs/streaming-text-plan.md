@@ -8,27 +8,27 @@ Implementation phases for streaming text support. Each phase builds on the previ
 
 **Reference:** [streaming-text-design.md §3](./streaming-text-design.md#3-core-entities)
 
-**Completed in commit:** (pending)
+**Completed in commit:** (pending review)
 
-- [ ] Modify `pkg/tui/element/element.go`
+- [x] Modify `pkg/tui/element/element.go`
   - Add `onUpdate func()` field to Element struct
   - Add `SetOnUpdate(fn func())` method
   - See [streaming-text-design.md §3 - Element onUpdate Hook](./streaming-text-design.md#element-onupdate-hook)
 
-- [ ] Modify `pkg/tui/element/render.go`
+- [x] Modify `pkg/tui/element/render.go`
   - Call `e.onUpdate()` at the start of `Render()` method (before layout calculation)
   - Only call if `e.onUpdate != nil`
 
-- [ ] Modify `pkg/tui/element/options.go`
+- [x] Modify `pkg/tui/element/options.go`
   - Add `WithOnUpdate(fn func()) Option` function
   - See [streaming-text-design.md §3 - WithOnUpdate Option](./streaming-text-design.md#withonupdate-option)
 
-- [ ] Add tests in `pkg/tui/element/element_test.go`
+- [x] Add tests in `pkg/tui/element/element_test.go`
   - Test that onUpdate hook is called during Render()
   - Test that nil hook doesn't cause panic
   - Test WithOnUpdate option sets the hook correctly
 
-**Tests:** (pending)
+**Tests:** PASS - 4 new tests added
 
 ---
 
@@ -76,7 +76,7 @@ Implementation phases for streaming text support. Each phase builds on the previ
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Add onUpdate hook to Element | Pending |
+| 1 | Add onUpdate hook to Element | Complete |
 | 2 | Create streaming example | Pending |
 
 ## Files to Modify

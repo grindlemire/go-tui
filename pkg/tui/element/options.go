@@ -280,3 +280,13 @@ func WithHR() Option {
 		e.style.AlignSelf = &stretch // Always stretch to fill width
 	}
 }
+
+// --- OnUpdate Hook Options ---
+
+// WithOnUpdate sets a function called before each render.
+// Useful for polling channels, updating animations, etc.
+func WithOnUpdate(fn func()) Option {
+	return func(e *Element) {
+		e.onUpdate = fn
+	}
+}

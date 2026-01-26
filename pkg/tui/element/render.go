@@ -211,6 +211,11 @@ func renderTextContent(buf *tui.Buffer, e *Element) {
 // Render calculates layout (if needed) and renders the entire tree to the buffer.
 // This is the main entry point for rendering an Element tree.
 func (e *Element) Render(buf *tui.Buffer, width, height int) {
+	// Call pre-render hook for custom update logic
+	if e.onUpdate != nil {
+		e.onUpdate()
+	}
+
 	if e.dirty {
 		layout.Calculate(e, width, height)
 	}
