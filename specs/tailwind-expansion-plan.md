@@ -4,18 +4,18 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 
 ---
 
-## Phase 1: Expand Tailwind Class Mappings
+## Phase 1: Expand Tailwind Class Mappings ✓
 
 **Reference:** [tailwind-expansion-design.md §3](./tailwind-expansion-design.md#3-core-entities)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Create `pkg/tui/element/options_auto.go`
+- [x] Create `pkg/tui/element/options_auto.go`
   - Add `WithWidthAuto()` option that sets `e.style.Width = layout.Auto()`
   - Add `WithHeightAuto()` option that sets `e.style.Height = layout.Auto()`
   - Keep minimal, just these two functions
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add new regex patterns
+- [x] Modify `pkg/tuigen/tailwind.go` - Add new regex patterns
   - Add `widthFractionPattern = regexp.MustCompile("^w-(\\d+)/(\\d+)$")`
   - Add `heightFractionPattern = regexp.MustCompile("^h-(\\d+)/(\\d+)$")`
   - Add `widthKeywordPattern = regexp.MustCompile("^w-(full|auto)$")`
@@ -25,21 +25,21 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
   - Add `flexGrowPattern = regexp.MustCompile("^flex-grow-(\\d+)$")`
   - Add `flexShrinkPattern = regexp.MustCompile("^flex-shrink-(\\d+)$")`
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add new static mappings
+- [x] Modify `pkg/tuigen/tailwind.go` - Add new static mappings
   - Add width/height keywords: `w-full`, `w-auto`, `h-full`, `h-auto`
   - Add flex utilities: `justify-evenly`, `justify-around`, `items-stretch`
   - Add self-alignment: `self-start`, `self-end`, `self-center`, `self-stretch`
   - Add text alignment: `text-left`, `text-center`, `text-right`
   - Add border colors: `border-red`, `border-green`, `border-blue`, `border-cyan`, `border-magenta`, `border-yellow`, `border-white`, `border-black`
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Implement `PaddingAccumulator` and `MarginAccumulator`
+- [x] Modify `pkg/tuigen/tailwind.go` - Implement `PaddingAccumulator` and `MarginAccumulator`
   - Add `PaddingAccumulator` struct with `Top, Right, Bottom, Left int` and `HasTop, HasRight, HasBottom, HasLeft bool`
   - Add `MarginAccumulator` struct with same fields
   - Add `(p *PaddingAccumulator) Merge(side string, value int)` method
   - Add `(p *PaddingAccumulator) ToOption() string` method - generates `WithPaddingTRBL(T, R, B, L)`
   - Same methods for `MarginAccumulator`
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Update `ParseTailwindClass()`
+- [x] Modify `pkg/tuigen/tailwind.go` - Update `ParseTailwindClass()`
   - Handle width fraction patterns (w-1/2, w-2/3, etc.) → `WithWidthPercent(percent)`
   - Handle height fraction patterns → `WithHeightPercent(percent)`
   - Handle width/height keywords (w-full → 100%, w-auto → Auto option)
@@ -47,14 +47,14 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
   - Handle individual margin patterns (mt-N, mr-N, mb-N, ml-N, mx-N, my-N) → return marker for accumulation
   - Handle flex-grow-N and flex-shrink-N patterns
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Update `ParseTailwindClasses()`
+- [x] Modify `pkg/tuigen/tailwind.go` - Update `ParseTailwindClasses()`
   - Add padding/margin accumulation logic
   - Collect individual side classes during iteration
   - After loop, call accumulators' `ToOption()` if any sides were set
   - Ensure existing `p-N`, `px-N`, `py-N`, `m-N` continue to work
   - Note: when both `p-2` and `pt-4` are used, `p-2` sets all sides, then `pt-4` overrides top only
 
-- [ ] Add tests in `pkg/tuigen/tailwind_test.go`
+- [x] Add tests in `pkg/tuigen/tailwind_test.go`
   - Test width fractions: `w-1/2` → 50%, `w-1/3` → 33.33%, `w-2/3` → 66.67%
   - Test height fractions: `h-1/2`, `h-1/4`, `h-3/4`
   - Test keywords: `w-full` → 100%, `w-auto`, `h-full`, `h-auto`
@@ -66,7 +66,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
   - Test text alignment: `text-center`, `text-right`
   - Test flex patterns: `flex-grow-0`, `flex-grow-2`, `flex-shrink-0`
 
-- [ ] Add test in `pkg/tui/element/options_test.go`
+- [x] Add test in `pkg/tui/element/options_test.go`
   - Test `WithWidthAuto()` sets `style.Width` to `layout.Auto()`
   - Test `WithHeightAuto()` sets `style.Height` to `layout.Auto()`
 
@@ -239,7 +239,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Expand Tailwind class mappings with new patterns and accumulation | Pending |
+| 1 | Expand Tailwind class mappings with new patterns and accumulation | ✓ Complete |
 | 2 | Add validation, similarity matching, and class info registry | Pending |
 | 3 | Integrate validation into analyzer and LSP diagnostics | Pending |
 | 4 | Add class autocomplete to LSP completion handler | Pending |

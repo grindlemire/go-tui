@@ -291,3 +291,17 @@ func TestOptions_Override(t *testing.T) {
 		t.Errorf("Later WithWidth should override earlier, got %+v", e.style.Width)
 	}
 }
+
+func TestWithWidthAuto(t *testing.T) {
+	e := New(WithWidthAuto())
+	if e.style.Width != layout.Auto() {
+		t.Errorf("WithWidthAuto() = %+v, want Auto()", e.style.Width)
+	}
+}
+
+func TestWithHeightAuto(t *testing.T) {
+	e := New(WithHeightAuto())
+	if e.style.Height != layout.Auto() {
+		t.Errorf("WithHeightAuto() = %+v, want Auto()", e.style.Height)
+	}
+}
