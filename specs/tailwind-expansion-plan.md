@@ -74,34 +74,34 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 
 ---
 
-## Phase 2: Add Validation and Similarity Matching
+## Phase 2: Add Validation and Similarity Matching ✓
 
 **Reference:** [tailwind-expansion-design.md §3.1](./tailwind-expansion-design.md#31-technical-design-details)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add validation types
+- [x] Modify `pkg/tuigen/tailwind.go` - Add validation types
   - Add `TailwindValidationResult` struct: `Valid bool`, `Class string`, `Suggestion string`
   - Add `TailwindClassInfo` struct: `Name string`, `Category string`, `Description string`, `Example string`
   - Add `TailwindClassWithPosition` struct: `Class string`, `StartCol int`, `EndCol int`, `Valid bool`, `Suggestion string`
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add `similarClasses` map
+- [x] Modify `pkg/tuigen/tailwind.go` - Add `similarClasses` map
   - Map common typos/alternatives to correct class names
   - Include: `flex-column` → `flex-col`, `bold` → `font-bold`, `center` → `text-center`, etc.
   - See design document §3 for full list
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add similarity matching function
+- [x] Modify `pkg/tuigen/tailwind.go` - Add similarity matching function
   - Add `findSimilarClass(class string) string` function
   - First check exact match in `similarClasses` map
   - Then use Levenshtein distance for fuzzy matching against all known classes
   - Return best match if distance ≤ 3, otherwise empty string
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add `ValidateTailwindClass()` function
+- [x] Modify `pkg/tuigen/tailwind.go` - Add `ValidateTailwindClass()` function
   - Attempt to parse the class with `ParseTailwindClass()`
   - If valid, return `TailwindValidationResult{Valid: true, Class: class}`
   - If invalid, call `findSimilarClass()` and return with suggestion
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add `ParseTailwindClassesWithPositions()` function
+- [x] Modify `pkg/tuigen/tailwind.go` - Add `ParseTailwindClassesWithPositions()` function
   - Parse class string while tracking character positions
   - For each whitespace-separated class:
     - Record `StartCol` as offset from attribute value start
@@ -109,18 +109,18 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
     - Call `ValidateTailwindClass()` to get validity and suggestion
   - Return slice of `TailwindClassWithPosition`
 
-- [ ] Modify `pkg/tuigen/tailwind.go` - Add `AllTailwindClasses()` function
+- [x] Modify `pkg/tuigen/tailwind.go` - Add `AllTailwindClasses()` function
   - Return slice of `TailwindClassInfo` for all known classes
   - Include static classes from `tailwindClasses` map
   - Include pattern-based classes with examples (e.g., `gap-N` with description)
   - Categorize: "layout", "spacing", "typography", "visual", "flex"
 
-- [ ] Add Levenshtein distance helper in `pkg/tuigen/tailwind.go`
+- [x] Add Levenshtein distance helper in `pkg/tuigen/tailwind.go`
   - Add `levenshteinDistance(a, b string) int` function
   - Standard dynamic programming implementation
   - Used for fuzzy class name matching
 
-- [ ] Add tests in `pkg/tuigen/tailwind_test.go`
+- [x] Add tests in `pkg/tuigen/tailwind_test.go`
   - Test `ValidateTailwindClass()` with valid classes
   - Test `ValidateTailwindClass()` with invalid classes, check suggestions
   - Test `findSimilarClass()` with typos: `flex-columns` → `flex-col`
@@ -240,7 +240,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Expand Tailwind class mappings with new patterns and accumulation | ✓ Complete |
-| 2 | Add validation, similarity matching, and class info registry | Pending |
+| 2 | Add validation, similarity matching, and class info registry | ✓ Complete |
 | 3 | Integrate validation into analyzer and LSP diagnostics | Pending |
 | 4 | Add class autocomplete to LSP completion handler | Pending |
 
