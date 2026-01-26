@@ -8,6 +8,7 @@ import (
 // Error represents a compilation error with source location and optional hint.
 type Error struct {
 	Pos     Position
+	EndPos  Position // optional end position for range-based highlighting
 	Message string
 	Hint    string // optional suggestion for fixing the error
 }
@@ -39,6 +40,16 @@ func NewErrorf(pos Position, format string, args ...any) *Error {
 // NewErrorWithHint creates a new Error with a hint for fixing the error.
 func NewErrorWithHint(pos Position, message, hint string) *Error {
 	return &Error{Pos: pos, Message: message, Hint: hint}
+}
+
+// NewErrorWithRange creates a new Error with start and end positions for range highlighting.
+func NewErrorWithRange(pos, endPos Position, message string) *Error {
+	return &Error{Pos: pos, EndPos: endPos, Message: message}
+}
+
+// NewErrorWithRangeAndHint creates a new Error with range and hint.
+func NewErrorWithRangeAndHint(pos, endPos Position, message, hint string) *Error {
+	return &Error{Pos: pos, EndPos: endPos, Message: message, Hint: hint}
 }
 
 // ErrorList collects multiple errors during compilation.

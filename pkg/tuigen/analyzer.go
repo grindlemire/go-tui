@@ -379,6 +379,34 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 			if result.NeedsImports["tui"] {
 				a.usesTUI = true
 			}
+
+			// Validate individual Tailwind classes and report errors
+			classesWithPos := ParseTailwindClassesWithPositions(v.Value, 0)
+			for _, cwp := range classesWithPos {
+				if !cwp.Valid {
+					// Calculate the position of this specific class within the attribute value
+					// attr.ValuePosition is the start of the string content (after the opening quote)
+					classPos := Position{
+						File:   attr.ValuePosition.File,
+						Line:   attr.ValuePosition.Line,
+						Column: attr.ValuePosition.Column + cwp.StartCol,
+					}
+					classEndPos := Position{
+						File:   attr.ValuePosition.File,
+						Line:   attr.ValuePosition.Line,
+						Column: attr.ValuePosition.Column + cwp.EndCol,
+					}
+
+					msg := "unknown Tailwind class \"" + cwp.Class + "\""
+					var err *Error
+					if cwp.Suggestion != "" {
+						err = NewErrorWithRangeAndHint(classPos, classEndPos, msg, "did you mean \""+cwp.Suggestion+"\"?")
+					} else {
+						err = NewErrorWithRange(classPos, classEndPos, msg)
+					}
+					a.errors.Add(err)
+				}
+			}
 		}
 		return
 	}

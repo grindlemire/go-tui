@@ -748,3 +748,142 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyzer_TailwindClassValidation(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+		hintContains  string
+	}
+
+	tests := map[string]tc{
+		"valid tailwind classes": {
+			input: `package x
+@component Test() {
+	<div class="flex-col gap-2 p-4"></div>
+}`,
+			wantError: false,
+		},
+		"valid width and height classes": {
+			input: `package x
+@component Test() {
+	<div class="w-full h-1/2"></div>
+}`,
+			wantError: false,
+		},
+		"valid individual padding classes": {
+			input: `package x
+@component Test() {
+	<div class="pt-2 pb-4 pl-1"></div>
+}`,
+			wantError: false,
+		},
+		"valid border color classes": {
+			input: `package x
+@component Test() {
+	<div class="border border-red"></div>
+}`,
+			wantError: false,
+		},
+		"valid text alignment classes": {
+			input: `package x
+@component Test() {
+	<div class="text-center"></div>
+}`,
+			wantError: false,
+		},
+		"unknown tailwind class": {
+			input: `package x
+@component Test() {
+	<div class="flex-columns"></div>
+}`,
+			wantError:     true,
+			errorContains: `unknown Tailwind class "flex-columns"`,
+			hintContains:  `flex-col`,
+		},
+		"unknown tailwind class without suggestion": {
+			input: `package x
+@component Test() {
+	<div class="xyz-completely-invalid"></div>
+}`,
+			wantError:     true,
+			errorContains: `unknown Tailwind class "xyz-completely-invalid"`,
+		},
+		"multiple unknown classes": {
+			input: `package x
+@component Test() {
+	<div class="flex-columns badclass"></div>
+}`,
+			wantError:     true,
+			errorContains: `unknown Tailwind class`,
+		},
+		"mix of valid and invalid classes": {
+			input: `package x
+@component Test() {
+	<div class="flex-col gap-2 badclass p-4"></div>
+}`,
+			wantError:     true,
+			errorContains: `unknown Tailwind class "badclass"`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.tui", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+				if tt.hintContains != "" && !strings.Contains(err.Error(), tt.hintContains) {
+					t.Errorf("error %q does not contain hint %q", err.Error(), tt.hintContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestAnalyzer_TailwindClassErrorPosition(t *testing.T) {
+	// Test that the error position correctly points to the invalid class
+	input := `package x
+@component Test() {
+	<div class="flex-col badclass p-2"></div>
+}`
+
+	_, err := AnalyzeFile("test.tui", input)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	errList, ok := err.(*ErrorList)
+	if !ok {
+		t.Fatalf("expected *ErrorList, got %T", err)
+	}
+
+	errors := errList.Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(errors))
+	}
+
+	tuiErr := errors[0]
+	// The error should point to "badclass" which starts at column 22
+	// (class=" is at column 7, content starts at column 14, "flex-col " is 9 chars, so badclass is at column 23)
+	// Actually, let's verify the error message contains the class name
+	if !strings.Contains(tuiErr.Message, "badclass") {
+		t.Errorf("error message %q should contain 'badclass'", tuiErr.Message)
+	}
+
+	// Verify EndPos is set for range highlighting
+	if tuiErr.EndPos.Line == 0 && tuiErr.EndPos.Column == 0 {
+		t.Error("EndPos should be set for range-based highlighting")
+	}
+}

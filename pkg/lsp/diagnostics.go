@@ -41,8 +41,16 @@ func (s *Server) publishDiagnostics(doc *Document) {
 	diagnostics := make([]Diagnostic, 0, len(doc.Errors))
 
 	for _, err := range doc.Errors {
+		var rng Range
+		// Check if EndPos is set (non-zero) for range-based highlighting
+		if err.EndPos.Line > 0 || err.EndPos.Column > 0 {
+			rng = TuigenPosToRangeWithEnd(err.Pos, err.EndPos)
+		} else {
+			rng = TuigenPosToRange(err.Pos, estimateErrorLength(err.Message))
+		}
+
 		diag := Diagnostic{
-			Range:    TuigenPosToRange(err.Pos, estimateErrorLength(err.Message)),
+			Range:    rng,
 			Severity: DiagnosticSeverityError,
 			Source:   "tui",
 			Message:  err.Message,
