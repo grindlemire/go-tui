@@ -23,7 +23,7 @@ import (
 @component Counter(count int, label string) {
 	@let countText = <span>{fmt.Sprintf("%d", count)}</span>
 	<div direction={layout.Column} gap={1} padding={1}>
-		<span>{label}</span>
+		<span class="font-bold">{label}</span>
 		{countText}
 	</div>
 }

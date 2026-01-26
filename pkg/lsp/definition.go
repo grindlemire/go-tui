@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grindlemire/go-tui/pkg/lsp/gopls"
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -21,7 +22,7 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Definition request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
+	log.Server("Definition request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil {
@@ -31,19 +32,19 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 	// First, check if the word at cursor is a locally-defined function.
 	// This prevents gopls from returning the generated .go file instead of .tui.
 	if word := s.getWordAtPosition(doc, p.Position); word != "" {
-		s.log("Looking up function '%s' in index (all functions: %v)", word, s.index.AllFunctions())
+		log.Server("Looking up function '%s' in index (all functions: %v)", word, s.index.AllFunctions())
 		// Check if this is a helper function defined in a .tui file
 		if funcInfo, ok := s.index.LookupFunc(word); ok {
-			s.log("Found local function %s at %s (before gopls)", word, funcInfo.Location.URI)
+			log.Server("Found local function %s at %s (before gopls)", word, funcInfo.Location.URI)
 			return funcInfo.Location, nil
 		}
-		s.log("Function '%s' not found in index", word)
+		log.Server("Function '%s' not found in index", word)
 
 		// Check if this is a for loop variable (defined in .tui DSL, not Go)
 		// Must check BEFORE gopls since gopls doesn't understand .tui for loop syntax
 		if componentCtx := s.findComponentAtPosition(doc, p.Position); componentCtx != "" {
 			if loc := s.findLoopVariableDefinition(doc, componentCtx, word, p.Position); loc != nil {
-				s.log("Found loop variable %s in %s (before gopls)", word, componentCtx)
+				log.Server("Found loop variable %s in %s (before gopls)", word, componentCtx)
 				return loc, nil
 			}
 		}
@@ -53,17 +54,17 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 	if s.isInGoExpression(doc, p.Position) {
 		locs, err := s.getGoplsDefinition(doc, p.Position)
 		if err != nil {
-			s.log("gopls definition error: %v", err)
+			log.Server("gopls definition error: %v", err)
 			// Fall through to TUI definition
 		} else if len(locs) > 0 {
 			if len(locs) == 1 {
 				loc := locs[0]
-				s.log("FINAL RESPONSE (single): URI=%s Range=(%d:%d)-(%d:%d)",
+				log.Server("FINAL RESPONSE (single): URI=%s Range=(%d:%d)-(%d:%d)",
 					loc.URI, loc.Range.Start.Line, loc.Range.Start.Character,
 					loc.Range.End.Line, loc.Range.End.Character)
 				return loc, nil
 			}
-			s.log("FINAL RESPONSE (multiple): %d locations", len(locs))
+			log.Server("FINAL RESPONSE (multiple): %d locations", len(locs))
 			return locs, nil
 		}
 	}
@@ -74,7 +75,7 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 		return nil, nil
 	}
 
-	s.log("Word at position: %s", word)
+	log.Server("Word at position: %s", word)
 
 	// Check if this is a component call (starts with @ or is a known component)
 	componentName := word
@@ -85,38 +86,38 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 	// Look up component in index
 	info, ok := s.index.Lookup(componentName)
 	if ok {
-		s.log("Found component %s at %s", componentName, info.Location.URI)
+		log.Server("Found component %s at %s", componentName, info.Location.URI)
 		return info.Location, nil
 	}
 
 	// Check if this is a helper function
 	if funcInfo, ok := s.index.LookupFunc(word); ok {
-		s.log("Found function %s at %s", word, funcInfo.Location.URI)
+		log.Server("Found function %s at %s", word, funcInfo.Location.URI)
 		return funcInfo.Location, nil
 	}
 
 	// Check if this is a component parameter
 	if componentCtx := s.findComponentAtPosition(doc, p.Position); componentCtx != "" {
 		if paramInfo, ok := s.index.LookupParam(componentCtx, word); ok {
-			s.log("Found param %s.%s at %s", componentCtx, word, paramInfo.Location.URI)
+			log.Server("Found param %s.%s at %s", componentCtx, word, paramInfo.Location.URI)
 			return paramInfo.Location, nil
 		}
 
 		// Check if this is a local variable (@let binding)
 		if loc := s.findLocalVariableDefinition(doc, componentCtx, word); loc != nil {
-			s.log("Found local variable %s in %s", word, componentCtx)
+			log.Server("Found local variable %s in %s", word, componentCtx)
 			return loc, nil
 		}
 
 		// Check if this is a for loop variable
 		if loc := s.findLoopVariableDefinition(doc, componentCtx, word, p.Position); loc != nil {
-			s.log("Found loop variable %s in %s", word, componentCtx)
+			log.Server("Found loop variable %s in %s", word, componentCtx)
 			return loc, nil
 		}
 
 		// Check if this is a GoCode variable (e.g., x := 1)
 		if loc := s.findGoCodeVariableDefinition(doc, componentCtx, word); loc != nil {
-			s.log("Found GoCode variable %s in %s", word, componentCtx)
+			log.Server("Found GoCode variable %s in %s", word, componentCtx)
 			return loc, nil
 		}
 	}
@@ -555,11 +556,11 @@ func (s *Server) getGoplsDefinition(doc *Document, pos Position) ([]Location, er
 	// Translate position from .tui to .go
 	goLine, goCol, found := cached.SourceMap.TuiToGo(pos.Line, pos.Character)
 	if !found {
-		s.log("No mapping found for definition position %d:%d", pos.Line, pos.Character)
+		log.Server("No mapping found for definition position %d:%d", pos.Line, pos.Character)
 		return nil, nil
 	}
 
-	s.log("Translated definition position %d:%d -> %d:%d", pos.Line, pos.Character, goLine, goCol)
+	log.Server("Translated definition position %d:%d -> %d:%d", pos.Line, pos.Character, goLine, goCol)
 
 	// Call gopls for definition
 	goplsLocs, err := s.goplsProxy.Definition(cached.GoURI, gopls.Position{
@@ -571,16 +572,16 @@ func (s *Server) getGoplsDefinition(doc *Document, pos Position) ([]Location, er
 	}
 
 	if len(goplsLocs) == 0 {
-		s.log("gopls returned no definition locations")
+		log.Server("gopls returned no definition locations")
 		return nil, nil
 	}
 
-	s.log("gopls returned %d definition location(s)", len(goplsLocs))
+	log.Server("gopls returned %d definition location(s)", len(goplsLocs))
 
 	// Convert gopls locations to our Location format
 	var locs []Location
 	for i, gl := range goplsLocs {
-		s.log("gopls location[%d]: URI=%s Range=(%d:%d)-(%d:%d)",
+		log.Server("gopls location[%d]: URI=%s Range=(%d:%d)-(%d:%d)",
 			i, gl.URI, gl.Range.Start.Line, gl.Range.Start.Character, gl.Range.End.Line, gl.Range.End.Character)
 
 		// Check if this is a virtual file - if so, translate back to .tui
@@ -588,10 +589,10 @@ func (s *Server) getGoplsDefinition(doc *Document, pos Position) ([]Location, er
 			tuiURI := gopls.GoURIToTuiURI(gl.URI)
 			cachedFile := s.virtualFiles.Get(tuiURI)
 			if cachedFile != nil && cachedFile.SourceMap != nil {
-				s.log("Translating virtual file range back to .tui")
+				log.Server("Translating virtual file range back to .tui")
 				tuiStartLine, tuiStartCol, startFound := cachedFile.SourceMap.GoToTui(gl.Range.Start.Line, gl.Range.Start.Character)
 				tuiEndLine, tuiEndCol, endFound := cachedFile.SourceMap.GoToTui(gl.Range.End.Line, gl.Range.End.Character)
-				s.log("GoToTui translation: start(%d:%d->%d:%d, found=%v) end(%d:%d->%d:%d, found=%v)",
+				log.Server("GoToTui translation: start(%d:%d->%d:%d, found=%v) end(%d:%d->%d:%d, found=%v)",
 					gl.Range.Start.Line, gl.Range.Start.Character, tuiStartLine, tuiStartCol, startFound,
 					gl.Range.End.Line, gl.Range.End.Character, tuiEndLine, tuiEndCol, endFound)
 				finalLoc := Location{
@@ -601,7 +602,7 @@ func (s *Server) getGoplsDefinition(doc *Document, pos Position) ([]Location, er
 						End:   Position{Line: tuiEndLine, Character: tuiEndCol},
 					},
 				}
-				s.log("RETURNING definition location: URI=%s Range=(%d:%d)-(%d:%d)",
+				log.Server("RETURNING definition location: URI=%s Range=(%d:%d)-(%d:%d)",
 					finalLoc.URI, finalLoc.Range.Start.Line, finalLoc.Range.Start.Character,
 					finalLoc.Range.End.Line, finalLoc.Range.End.Character)
 				locs = append(locs, finalLoc)

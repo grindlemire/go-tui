@@ -1,5 +1,7 @@
 package lsp
 
+import "github.com/grindlemire/go-tui/pkg/lsp/log"
+
 // DiagnosticSeverity represents the severity of a diagnostic.
 type DiagnosticSeverity int
 
@@ -57,7 +59,7 @@ func (s *Server) publishDiagnostics(doc *Document) {
 	}
 
 	if err := s.sendNotification("textDocument/publishDiagnostics", params); err != nil {
-		s.log("Error publishing diagnostics: %v", err)
+		log.Server("Error publishing diagnostics: %v", err)
 	}
 }
 

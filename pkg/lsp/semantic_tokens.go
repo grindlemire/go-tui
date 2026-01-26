@@ -2,11 +2,16 @@ package lsp
 
 import (
 	"encoding/json"
+	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
+
+// formatSpecifierRegex matches Go format specifiers like %s, %d, %v, %.2f, %#x, etc.
+var formatSpecifierRegex = regexp.MustCompile(`%[-+# 0]*(\*|\d+)?(\.\*|\.\d+)?[vTtbcdoqxXUeEfFgGsp%]`)
 
 // Semantic token types (must match the order in SemanticTokensLegend.TokenTypes)
 const (
@@ -22,6 +27,7 @@ const (
 	tokenTypeNumber    = 9  // numbers
 	tokenTypeOperator  = 10 // operators
 	tokenTypeDecorator = 11 // @ prefix
+	tokenTypeRegexp    = 12 // format specifiers (often purple)
 )
 
 // Semantic token modifiers (bit flags)
@@ -58,7 +64,7 @@ func (s *Server) handleSemanticTokensFull(params json.RawMessage) (any, *Error) 
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Semantic tokens request for %s", p.TextDocument.URI)
+	log.Server("=== Semantic tokens request for %s ===", p.TextDocument.URI)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil {
@@ -81,6 +87,11 @@ func (s *Server) handleSemanticTokensFull(params json.RawMessage) (any, *Error) 
 
 	// Encode tokens into delta format
 	data := encodeSemanticTokens(tokens)
+
+	// Log a sample of the encoded data for debugging
+	if len(data) > 0 {
+		log.Server("Encoded %d tokens (%d ints). First 25 values: %v", len(tokens), len(data), data[:min(25, len(data))])
+	}
 
 	return SemanticTokens{Data: data}, nil
 }
@@ -162,6 +173,15 @@ func (s *Server) collectSemanticTokens(doc *Document) []semanticToken {
 				// Move past "name type, "
 				paramStart += len(p.Name) + 1 + len(p.Type) + 2
 			}
+
+			// Build parameter names map for body tokenization
+			paramNames := make(map[string]bool)
+			for _, p := range params {
+				paramNames[p.Name] = true
+			}
+
+			// Tokenize function body (line by line for multi-line support)
+			s.collectTokensFromFuncBody(fn.Code, fn.Position, paramNames, &tokens)
 		}
 	}
 
@@ -198,13 +218,13 @@ func (s *Server) collectTokensFromNode(node tuigen.Node, paramNames map[string]b
 		// Note: We don't tokenize element tags - let syntax highlighting handle them
 		// This avoids overriding the default pink color with semantic token colors
 
-		// Attributes
+		// Attributes - using tokenTypeFunction which is typically green
 		for _, attr := range n.Attributes {
 			*tokens = append(*tokens, semanticToken{
 				line:      attr.Position.Line - 1,
 				startChar: attr.Position.Column - 1,
 				length:    len(attr.Name),
-				tokenType: tokenTypeProperty,
+				tokenType: tokenTypeFunction,
 				modifiers: 0,
 			})
 
@@ -223,6 +243,10 @@ func (s *Server) collectTokensFromNode(node tuigen.Node, paramNames map[string]b
 		if n == nil {
 			return
 		}
+		// Log position and verify against expected. The position should point to '{',
+		// so if we add startOffset=1, we should land on the first char of Code
+		log.Server("GoExpr node: Code=%q Position.Line=%d Position.Column=%d (expect Column to point to '{')",
+			n.Code, n.Position.Line, n.Position.Column)
 		s.collectVariableTokensInCode(n.Code, n.Position, paramNames, localVars, tokens)
 
 	case *tuigen.RawGoExpr:
@@ -277,8 +301,14 @@ func (s *Server) collectTokensFromNode(node tuigen.Node, paramNames map[string]b
 			})
 		}
 
-		// Iterable expression
-		s.collectVariableTokensInCode(n.Iterable, n.Position, paramNames, loopVars, tokens)
+		// Iterable expression - calculate position after "@for index, value := range "
+		iterableOffset := len("@for ")
+		if n.Index != "" {
+			iterableOffset += len(n.Index) + 2 // ", "
+		}
+		iterableOffset += len(n.Value) + len(" := range ")
+		iterablePos := tuigen.Position{Line: n.Position.Line, Column: n.Position.Column + iterableOffset}
+		s.collectTokensInGoCodeDirect(n.Iterable, iterablePos, paramNames, loopVars, tokens)
 
 		// Body with loop variables in scope
 		for _, child := range n.Body {
@@ -298,9 +328,9 @@ func (s *Server) collectTokensFromNode(node tuigen.Node, paramNames map[string]b
 			modifiers: 0,
 		})
 
-		// Condition
+		// Condition - position points directly to start of condition
 		condPos := tuigen.Position{Line: n.Position.Line, Column: n.Position.Column + len("@if ")}
-		s.collectVariableTokensInCode(n.Condition, condPos, paramNames, localVars, tokens)
+		s.collectTokensInGoCodeDirect(n.Condition, condPos, paramNames, localVars, tokens)
 
 		// Then branch
 		for _, child := range n.Then {
@@ -348,14 +378,22 @@ func (s *Server) collectTokensFromNode(node tuigen.Node, paramNames map[string]b
 			return
 		}
 		// Extract variable declarations from Go code (e.g., "x := 1" or "var x = 1")
-		// and add them to localVars for subsequent highlighting
-		varNames := extractVarDeclarations(n.Code)
-		for _, varName := range varNames {
-			localVars[varName] = true
+		// and emit declaration tokens for them
+		varDecls := extractVarDeclarationsWithPositions(n.Code)
+		for _, decl := range varDecls {
+			localVars[decl.name] = true
+			// Emit token for the variable declaration
+			*tokens = append(*tokens, semanticToken{
+				line:      n.Position.Line - 1,
+				startChar: n.Position.Column - 1 + decl.offset,
+				length:    len(decl.name),
+				tokenType: tokenTypeVariable,
+				modifiers: tokenModDeclaration,
+			})
 		}
-		// Generate tokens for variables in the Go code
+		// Generate tokens for other elements in the Go code (strings, booleans, etc.)
 		// Use offset 0 because GoCode position points to the first char (no braces)
-		s.collectVariableTokensInCodeWithOffset(n.Code, n.Position, 0, paramNames, localVars, tokens)
+		s.collectTokensInGoCode(n.Code, n.Position, 0, paramNames, localVars, tokens)
 
 	case *tuigen.ComponentCall:
 		if n == nil {
@@ -393,62 +431,326 @@ func (s *Server) collectTokensFromNode(node tuigen.Node, paramNames map[string]b
 }
 
 // collectVariableTokensInCode finds and tokenizes variable references in Go code.
-// The startOffset parameter adjusts for the leading character(s) before the code
-// (e.g., 1 for GoExpr inside {}, 0 for raw GoCode).
+// GoExpr.Position points to '{', so we use startOffset=1 to skip past it.
 func (s *Server) collectVariableTokensInCode(code string, pos tuigen.Position, paramNames map[string]bool, localVars map[string]bool, tokens *[]semanticToken) {
-	s.collectVariableTokensInCodeWithOffset(code, pos, 1, paramNames, localVars, tokens)
+	s.collectTokensInGoCode(code, pos, 1, paramNames, localVars, tokens)
 }
 
-// collectVariableTokensInCodeWithOffset is like collectVariableTokensInCode but allows
-// specifying the offset from the position to the start of the code.
-func (s *Server) collectVariableTokensInCodeWithOffset(code string, pos tuigen.Position, startOffset int, paramNames map[string]bool, localVars map[string]bool, tokens *[]semanticToken) {
-	// Simple tokenization to find identifiers
+// collectTokensInGoCodeDirect tokenizes Go code without any offset adjustment.
+// Use this when the position already points to the exact start of the code.
+func (s *Server) collectTokensInGoCodeDirect(code string, pos tuigen.Position, paramNames map[string]bool, localVars map[string]bool, tokens *[]semanticToken) {
+	s.collectTokensInGoCode(code, pos, 0, paramNames, localVars, tokens)
+}
+
+// collectTokensInGoCode tokenizes Go code for semantic highlighting.
+// Handles identifiers (variables, parameters, functions), string literals, boolean literals, and numbers.
+func (s *Server) collectTokensInGoCode(code string, pos tuigen.Position, startOffset int, paramNames map[string]bool, localVars map[string]bool, tokens *[]semanticToken) {
+	log.Server("collectTokensInGoCode: code=%q pos.Line=%d pos.Column=%d startOffset=%d", code, pos.Line, pos.Column, startOffset)
 	i := 0
 	for i < len(code) {
-		// Skip non-identifier characters
-		if !isWordChar(code[i]) {
+		ch := code[i]
+
+		// Skip whitespace
+		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
 			i++
 			continue
 		}
 
-		// Find identifier
-		start := i
-		for i < len(code) && isWordChar(code[i]) {
-			i++
+		// String literal (double-quoted)
+		if ch == '"' {
+			start := i
+			i++ // skip opening quote
+			for i < len(code) && code[i] != '"' {
+				if code[i] == '\\' && i+1 < len(code) {
+					i += 2 // skip escaped char
+				} else {
+					i++
+				}
+			}
+			if i < len(code) {
+				i++ // skip closing quote
+			}
+			stringContent := code[start:i]
+			charPos := pos.Column - 1 + startOffset + start
+			log.Server("Found string in GoCode: code=%q stringContent=%q start=%d pos.Column=%d startOffset=%d charPos=%d",
+				code, stringContent, start, pos.Column, startOffset, charPos)
+			// Emit string tokens with format specifiers highlighted separately
+			s.emitStringWithFormatSpecifiers(stringContent, pos.Line-1, charPos, tokens)
+			continue
 		}
-		ident := code[start:i]
 
-		// Calculate the character position:
-		// pos.Column is 1-indexed, LSP wants 0-indexed
-		// startOffset accounts for leading chars (1 for '{' in GoExpr, 0 for GoCode)
-		charPos := pos.Column - 1 + startOffset + start
+		// String literal (backtick/raw string)
+		if ch == '`' {
+			start := i
+			i++ // skip opening backtick
+			for i < len(code) && code[i] != '`' {
+				i++
+			}
+			if i < len(code) {
+				i++ // skip closing backtick
+			}
+			stringContent := code[start:i]
+			charPos := pos.Column - 1 + startOffset + start
+			// Emit string tokens with format specifiers highlighted separately
+			s.emitStringWithFormatSpecifiers(stringContent, pos.Line-1, charPos, tokens)
+			continue
+		}
 
-		// Check if it's a parameter or local variable
-		if paramNames[ident] {
+		// Rune literal (single-quoted)
+		if ch == '\'' {
+			start := i
+			i++ // skip opening quote
+			for i < len(code) && code[i] != '\'' {
+				if code[i] == '\\' && i+1 < len(code) {
+					i += 2 // skip escaped char
+				} else {
+					i++
+				}
+			}
+			if i < len(code) {
+				i++ // skip closing quote
+			}
+			charPos := pos.Column - 1 + startOffset + start
 			*tokens = append(*tokens, semanticToken{
 				line:      pos.Line - 1,
 				startChar: charPos,
-				length:    len(ident),
-				tokenType: tokenTypeParameter,
+				length:    i - start,
+				tokenType: tokenTypeString,
 				modifiers: 0,
 			})
-		} else if localVars[ident] {
+			continue
+		}
+
+		// Number literal
+		if isDigit(ch) || (ch == '.' && i+1 < len(code) && isDigit(code[i+1])) {
+			start := i
+			// Handle hex, octal, binary prefixes
+			if ch == '0' && i+1 < len(code) {
+				next := code[i+1]
+				if next == 'x' || next == 'X' {
+					i += 2
+					for i < len(code) && isHexDigit(code[i]) {
+						i++
+					}
+				} else if next == 'b' || next == 'B' {
+					i += 2
+					for i < len(code) && (code[i] == '0' || code[i] == '1') {
+						i++
+					}
+				} else if next == 'o' || next == 'O' {
+					i += 2
+					for i < len(code) && code[i] >= '0' && code[i] <= '7' {
+						i++
+					}
+				} else {
+					// Regular number or octal
+					for i < len(code) && (isDigit(code[i]) || code[i] == '.' || code[i] == 'e' || code[i] == 'E' || code[i] == '+' || code[i] == '-') {
+						i++
+					}
+				}
+			} else {
+				// Regular decimal or float
+				for i < len(code) && (isDigit(code[i]) || code[i] == '.' || code[i] == 'e' || code[i] == 'E' || code[i] == '+' || code[i] == '-') {
+					i++
+				}
+			}
+			charPos := pos.Column - 1 + startOffset + start
 			*tokens = append(*tokens, semanticToken{
 				line:      pos.Line - 1,
 				startChar: charPos,
-				length:    len(ident),
-				tokenType: tokenTypeVariable,
+				length:    i - start,
+				tokenType: tokenTypeNumber,
 				modifiers: 0,
 			})
-		} else if s.isFunctionName(ident) {
+			continue
+		}
+
+		// Identifier or keyword
+		if isWordStartChar(ch) {
+			start := i
+			for i < len(code) && isWordChar(code[i]) {
+				i++
+			}
+			ident := code[start:i]
+			charPos := pos.Column - 1 + startOffset + start
+
+			// Check for boolean literals and nil (use number type for literal coloring)
+			if ident == "true" || ident == "false" || ident == "nil" {
+				*tokens = append(*tokens, semanticToken{
+					line:      pos.Line - 1,
+					startChar: charPos,
+					length:    len(ident),
+					tokenType: tokenTypeNumber, // Use number type for consistent literal coloring
+					modifiers: 0,
+				})
+				continue
+			}
+
+			// Check if it's a parameter
+			if paramNames[ident] {
+				*tokens = append(*tokens, semanticToken{
+					line:      pos.Line - 1,
+					startChar: charPos,
+					length:    len(ident),
+					tokenType: tokenTypeParameter,
+					modifiers: 0,
+				})
+				continue
+			}
+
+			// Check if it's a local variable
+			if localVars[ident] {
+				*tokens = append(*tokens, semanticToken{
+					line:      pos.Line - 1,
+					startChar: charPos,
+					length:    len(ident),
+					tokenType: tokenTypeVariable,
+					modifiers: 0,
+				})
+				continue
+			}
+
+			// Check what comes after the identifier (skip whitespace)
+			peekIdx := i
+			for peekIdx < len(code) && (code[peekIdx] == ' ' || code[peekIdx] == '\t') {
+				peekIdx++
+			}
+
+			// If followed by '.', this is a package/namespace - leave white (no token)
+			if peekIdx < len(code) && code[peekIdx] == '.' {
+				continue
+			}
+
+			// If followed by '(' or preceded by '.', this is a function call
+			isPrecededByDot := start > 0 && code[start-1] == '.'
+			isFollowedByParen := peekIdx < len(code) && code[peekIdx] == '('
+			if isPrecededByDot || isFollowedByParen {
+				*tokens = append(*tokens, semanticToken{
+					line:      pos.Line - 1,
+					startChar: charPos,
+					length:    len(ident),
+					tokenType: tokenTypeFunction,
+					modifiers: 0,
+				})
+				continue
+			}
+
+			// Check if it's a known function (built-in or indexed)
+			if s.isFunctionName(ident) {
+				*tokens = append(*tokens, semanticToken{
+					line:      pos.Line - 1,
+					startChar: charPos,
+					length:    len(ident),
+					tokenType: tokenTypeFunction,
+					modifiers: 0,
+				})
+				continue
+			}
+
+			// Skip other identifiers (types, packages, etc. - let syntax highlighting handle them)
+			continue
+		}
+
+		// Check for := operator
+		if ch == ':' && i+1 < len(code) && code[i+1] == '=' {
+			charPos := pos.Column - 1 + startOffset + i
 			*tokens = append(*tokens, semanticToken{
 				line:      pos.Line - 1,
 				startChar: charPos,
-				length:    len(ident),
-				tokenType: tokenTypeFunction,
+				length:    2,
+				tokenType: tokenTypeOperator,
+				modifiers: 0,
+			})
+			i += 2
+			continue
+		}
+
+		// Skip other characters (operators, punctuation, etc.)
+		i++
+	}
+}
+
+// isDigit returns true if c is a decimal digit.
+func isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
+}
+
+// safeCharAt returns the character at index i, or "OOB" if out of bounds.
+func safeCharAt(s string, i int) string {
+	if i < 0 || i >= len(s) {
+		return "OOB"
+	}
+	return string(s[i])
+}
+
+// isHexDigit returns true if c is a hexadecimal digit.
+func isHexDigit(c byte) bool {
+	return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+}
+
+// isWordStartChar returns true if c can start an identifier.
+func isWordStartChar(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+}
+
+// emitStringWithFormatSpecifiers emits tokens for a string, splitting it into
+// string parts and format specifier parts (since VSCode doesn't support overlapping tokens).
+func (s *Server) emitStringWithFormatSpecifiers(str string, line int, stringStartChar int, tokens *[]semanticToken) {
+	log.Server("emitStringWithFormatSpecifiers: str=%q line=%d startChar=%d", str, line, stringStartChar)
+	matches := formatSpecifierRegex.FindAllStringIndex(str, -1)
+	log.Server("  format specifier matches: %v", matches)
+
+	if len(matches) == 0 {
+		// No format specifiers, emit the whole string as one token
+		log.Server("  emitting whole string token: line=%d startChar=%d len=%d type=string", line, stringStartChar, len(str))
+		*tokens = append(*tokens, semanticToken{
+			line:      line,
+			startChar: stringStartChar,
+			length:    len(str),
+			tokenType: tokenTypeString,
+			modifiers: 0,
+		})
+		return
+	}
+
+	// Emit tokens for parts between format specifiers
+	idx := 0
+	for _, match := range matches {
+		// Emit string part before this format specifier
+		if match[0] > idx {
+			log.Server("  emit STRING token: line=%d startChar=%d length=%d (content=%q)",
+				line, stringStartChar+idx, match[0]-idx, str[idx:match[0]])
+			*tokens = append(*tokens, semanticToken{
+				line:      line,
+				startChar: stringStartChar + idx,
+				length:    match[0] - idx,
+				tokenType: tokenTypeString,
 				modifiers: 0,
 			})
 		}
+		// Emit format specifier as number (regexp doesn't work in embedded contexts)
+		log.Server("  emit NUMBER token for format spec: line=%d startChar=%d length=%d (content=%q)",
+			line, stringStartChar+match[0], match[1]-match[0], str[match[0]:match[1]])
+		*tokens = append(*tokens, semanticToken{
+			line:      line,
+			startChar: stringStartChar + match[0],
+			length:    match[1] - match[0],
+			tokenType: tokenTypeNumber,
+			modifiers: 0,
+		})
+		idx = match[1]
+	}
+	// Emit remaining string part after last format specifier
+	if idx < len(str) {
+		log.Server("  emit STRING token (tail): line=%d startChar=%d length=%d (content=%q)",
+			line, stringStartChar+idx, len(str)-idx, str[idx:])
+		*tokens = append(*tokens, semanticToken{
+			line:      line,
+			startChar: stringStartChar + idx,
+			length:    len(str) - idx,
+			tokenType: tokenTypeString,
+			modifiers: 0,
+		})
 	}
 }
 
@@ -513,33 +815,51 @@ func isGoKeyword(word string) bool {
 	return keywords[strings.ToLower(word)]
 }
 
-// extractVarDeclarations extracts variable names from Go code declarations.
+// varDecl represents a variable declaration with its position.
+type varDecl struct {
+	name   string
+	offset int // offset from start of code string
+}
+
+// extractVarDeclarationsWithPositions extracts variable names and their positions from Go code.
 // Handles patterns like "x := 1", "x, y := 1, 2", "var x = 1", "var x, y = 1, 2"
-func extractVarDeclarations(code string) []string {
-	var varNames []string
+func extractVarDeclarationsWithPositions(code string) []varDecl {
+	var decls []varDecl
 
 	// Handle short variable declaration: x := or x, y :=
 	if idx := strings.Index(code, ":="); idx > 0 {
-		lhs := strings.TrimSpace(code[:idx])
+		lhs := code[:idx]
 		// Split by comma for multiple declarations
 		parts := strings.Split(lhs, ",")
+		pos := 0
 		for _, part := range parts {
-			name := strings.TrimSpace(part)
-			if name != "" && name != "_" && isValidIdentifier(name) {
-				varNames = append(varNames, name)
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" && trimmed != "_" && isValidIdentifier(trimmed) {
+				// Find actual position of identifier in the original string
+				identStart := strings.Index(lhs[pos:], trimmed)
+				if identStart >= 0 {
+					decls = append(decls, varDecl{
+						name:   trimmed,
+						offset: pos + identStart,
+					})
+				}
 			}
+			pos += len(part) + 1 // +1 for comma
 		}
-		return varNames
+		return decls
 	}
 
 	// Handle var declaration: var x = or var x, y =
-	if strings.HasPrefix(strings.TrimSpace(code), "var ") {
-		rest := strings.TrimPrefix(strings.TrimSpace(code), "var ")
+	trimmed := strings.TrimSpace(code)
+	if strings.HasPrefix(trimmed, "var ") {
+		varIdx := strings.Index(code, "var ")
+		rest := code[varIdx+4:]
 		// Find = sign
-		if idx := strings.Index(rest, "="); idx > 0 {
-			lhs := strings.TrimSpace(rest[:idx])
-			// Remove type annotation if present (e.g., "x int" -> "x")
+		if eqIdx := strings.Index(rest, "="); eqIdx > 0 {
+			lhs := rest[:eqIdx]
+			// Split by comma for multiple declarations
 			parts := strings.Split(lhs, ",")
+			pos := 0
 			for _, part := range parts {
 				part = strings.TrimSpace(part)
 				// Take first word (variable name before type)
@@ -547,14 +867,32 @@ func extractVarDeclarations(code string) []string {
 				if len(fields) > 0 {
 					name := fields[0]
 					if name != "_" && isValidIdentifier(name) {
-						varNames = append(varNames, name)
+						// Find actual position
+						identStart := strings.Index(lhs[pos:], name)
+						if identStart >= 0 {
+							decls = append(decls, varDecl{
+								name:   name,
+								offset: varIdx + 4 + pos + identStart,
+							})
+						}
 					}
 				}
+				pos += len(part) + 1
 			}
 		}
 	}
 
-	return varNames
+	return decls
+}
+
+// extractVarDeclarations extracts variable names from Go code declarations (legacy).
+func extractVarDeclarations(code string) []string {
+	decls := extractVarDeclarationsWithPositions(code)
+	names := make([]string, len(decls))
+	for i, d := range decls {
+		names[i] = d.name
+	}
+	return names
 }
 
 // isValidIdentifier checks if a string is a valid Go identifier.
@@ -574,4 +912,78 @@ func isValidIdentifier(s string) bool {
 		}
 	}
 	return true
+}
+
+// collectTokensFromFuncBody tokenizes the body of a Go function.
+// It parses line by line to handle multi-line function bodies correctly.
+func (s *Server) collectTokensFromFuncBody(code string, pos tuigen.Position, paramNames map[string]bool, tokens *[]semanticToken) {
+	// Find the opening brace of the function body
+	braceIdx := strings.Index(code, "{")
+	if braceIdx == -1 {
+		return
+	}
+
+	// Split the code into lines to track line positions
+	lines := strings.Split(code, "\n")
+	if len(lines) == 0 {
+		return
+	}
+
+	// Track local variables declared in the function body
+	localVars := make(map[string]bool)
+
+	// Find which line and column the opening brace is on
+	charCount := 0
+	bodyStartLine := 0
+	for lineIdx, line := range lines {
+		lineEnd := charCount + len(line)
+		if braceIdx >= charCount && braceIdx < lineEnd+1 { // +1 for newline
+			bodyStartLine = lineIdx
+			break
+		}
+		charCount = lineEnd + 1 // +1 for newline
+	}
+
+	// Process each line after the opening brace
+	for lineIdx := bodyStartLine; lineIdx < len(lines); lineIdx++ {
+		line := lines[lineIdx]
+
+		// Skip if this is just the opening or closing brace line with no content
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "{" || trimmed == "}" {
+			continue
+		}
+
+		// Calculate the actual line number in the document
+		docLine := pos.Line + lineIdx
+
+		// For the first line of the body (same line as signature), adjust start position
+		lineStartCol := 1
+		if lineIdx == bodyStartLine {
+			// Find position after the opening brace on this line
+			braceInLine := strings.Index(line, "{")
+			if braceInLine != -1 {
+				line = line[braceInLine+1:]
+				lineStartCol = pos.Column + braceInLine + 1
+			}
+		}
+
+		// Extract variable declarations from this line
+		varDecls := extractVarDeclarationsWithPositions(line)
+		for _, decl := range varDecls {
+			localVars[decl.name] = true
+			// Emit token for the variable declaration
+			*tokens = append(*tokens, semanticToken{
+				line:      docLine - 1,
+				startChar: lineStartCol - 1 + decl.offset,
+				length:    len(decl.name),
+				tokenType: tokenTypeVariable,
+				modifiers: tokenModDeclaration,
+			})
+		}
+
+		// Tokenize the line for function calls, parameters, etc.
+		linePos := tuigen.Position{Line: docLine, Column: lineStartCol}
+		s.collectTokensInGoCode(line, linePos, 0, paramNames, localVars, tokens)
+	}
 }

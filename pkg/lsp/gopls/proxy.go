@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 )
 
 // GoplsProxy manages communication with a gopls subprocess.
@@ -36,9 +38,6 @@ type GoplsProxy struct {
 
 	// Root URI for the workspace
 	rootURI string
-
-	// Logging
-	logFile *os.File
 
 	// Context for managing shutdown
 	ctx    context.Context
@@ -194,17 +193,6 @@ func NewGoplsProxy(ctx context.Context) (*GoplsProxy, error) {
 	return p, nil
 }
 
-// SetLogFile sets a file for debug logging.
-func (p *GoplsProxy) SetLogFile(f *os.File) {
-	p.logFile = f
-}
-
-func (p *GoplsProxy) log(format string, args ...any) {
-	if p.logFile != nil {
-		fmt.Fprintf(p.logFile, "[gopls] "+format+"\n", args...)
-	}
-}
-
 // Initialize initializes the gopls server with the workspace root.
 func (p *GoplsProxy) Initialize(rootURI string) error {
 	p.rootURI = rootURI
@@ -231,7 +219,7 @@ func (p *GoplsProxy) Initialize(rootURI string) error {
 		return fmt.Errorf("initialize: %w", err)
 	}
 
-	p.log("Initialize result: %s", string(result))
+	log.Gopls("Initialize result: %s", string(result))
 
 	// Send initialized notification
 	if err := p.notify("initialized", map[string]any{}); err != nil {
@@ -451,7 +439,7 @@ func (p *GoplsProxy) send(req Request) error {
 		return err
 	}
 
-	p.log("Sending: %s", string(data))
+	log.Gopls("Sending: %s", string(data))
 
 	header := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(data))
 
@@ -479,15 +467,15 @@ func (p *GoplsProxy) readResponses() {
 
 		msg, err := p.readMessage()
 		if err != nil {
-			p.log("Error reading message: %v", err)
+			log.Gopls("Error reading message: %v", err)
 			return
 		}
 
-		p.log("Received: %s", string(msg))
+		log.Gopls("Received: %s", string(msg))
 
 		var resp Response
 		if err := json.Unmarshal(msg, &resp); err != nil {
-			p.log("Error parsing response: %v", err)
+			log.Gopls("Error parsing response: %v", err)
 			continue
 		}
 

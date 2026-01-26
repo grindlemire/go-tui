@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -108,7 +109,7 @@ func (s *Server) handleDocumentSymbol(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("DocumentSymbol request for %s", p.TextDocument.URI)
+	log.Server("DocumentSymbol request for %s", p.TextDocument.URI)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil || doc.AST == nil {
@@ -332,7 +333,7 @@ func (s *Server) handleWorkspaceSymbol(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("WorkspaceSymbol request: %q", p.Query)
+	log.Server("WorkspaceSymbol request: %q", p.Query)
 
 	query := strings.ToLower(p.Query)
 	var symbols []SymbolInformation

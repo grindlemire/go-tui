@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/grindlemire/go-tui/pkg/lsp/gopls"
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -47,9 +48,6 @@ type Server struct {
 	// Context for gopls
 	ctx    context.Context
 	cancel context.CancelFunc
-
-	// Logging
-	logFile *os.File
 }
 
 // NewServer creates a new LSP server that communicates over the given reader/writer.
@@ -69,43 +67,30 @@ func NewServer(reader io.Reader, writer io.Writer) *Server {
 
 // SetLogFile sets a file for debug logging.
 func (s *Server) SetLogFile(f *os.File) {
-	s.logFile = f
-	// Also set debug logging for gopls package
-	gopls.SetDebugLog(f)
-	gopls.SetMappingDebugLog(f)
-}
-
-func (s *Server) log(format string, args ...any) {
-	if s.logFile != nil {
-		fmt.Fprintf(s.logFile, format+"\n", args...)
-	}
+	log.SetOutput(f)
 }
 
 // InitGopls initializes the gopls proxy. Call this after Initialize.
 func (s *Server) InitGopls() error {
 	if s.rootURI == "" {
-		s.log("Cannot init gopls without rootURI")
+		log.Server("Cannot init gopls without rootURI")
 		return nil
 	}
 
 	proxy, err := gopls.NewGoplsProxy(s.ctx)
 	if err != nil {
-		s.log("Failed to start gopls: %v", err)
+		log.Server("Failed to start gopls: %v", err)
 		return nil // Non-fatal, continue without gopls
 	}
 
-	if s.logFile != nil {
-		proxy.SetLogFile(s.logFile)
-	}
-
 	if err := proxy.Initialize(s.rootURI); err != nil {
-		s.log("Failed to initialize gopls: %v", err)
+		log.Server("Failed to initialize gopls: %v", err)
 		proxy.Shutdown()
 		return nil // Non-fatal
 	}
 
 	s.goplsProxy = proxy
-	s.log("gopls proxy initialized successfully")
+	log.Server("gopls proxy initialized successfully")
 
 	// Update virtual files for all already-open documents
 	for _, doc := range s.docs.All() {
@@ -133,32 +118,32 @@ func (s *Server) UpdateVirtualFile(doc *Document) {
 	}
 
 	// Generate virtual Go file
-	s.log("=== Generating virtual Go file for %s ===", doc.URI)
+	log.Server("=== Generating virtual Go file for %s ===", doc.URI)
 	goContent, sourceMap := gopls.GenerateVirtualGo(doc.AST)
 	goURI := gopls.TuiURIToGoURI(doc.URI)
 
 	// Log the generated content
-	s.log("Generated Go content:\n%s", goContent)
+	log.Server("Generated Go content:\n%s", goContent)
 
 	// Log all mappings
-	s.log("=== Source mappings (%d total) ===", sourceMap.Len())
+	log.Server("=== Source mappings (%d total) ===", sourceMap.Len())
 	for i, m := range sourceMap.AllMappings() {
-		s.log("  [%d] TuiLine=%d TuiCol=%d -> GoLine=%d GoCol=%d Len=%d",
+		log.Server("  [%d] TuiLine=%d TuiCol=%d -> GoLine=%d GoCol=%d Len=%d",
 			i, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length)
 	}
-	s.log("=== End mappings ===")
+	log.Server("=== End mappings ===")
 
 	// Check if we already have this file open in gopls
 	cached := s.virtualFiles.Get(doc.URI)
 	if cached != nil {
 		// Update existing file
 		if err := s.goplsProxy.UpdateVirtualFile(goURI, goContent, doc.Version); err != nil {
-			s.log("Failed to update virtual file: %v", err)
+			log.Server("Failed to update virtual file: %v", err)
 		}
 	} else {
 		// Open new file
 		if err := s.goplsProxy.OpenVirtualFile(goURI, goContent, doc.Version); err != nil {
-			s.log("Failed to open virtual file: %v", err)
+			log.Server("Failed to open virtual file: %v", err)
 		}
 	}
 
@@ -175,7 +160,7 @@ func (s *Server) CloseVirtualFile(uri string) {
 	cached := s.virtualFiles.Get(uri)
 	if cached != nil {
 		if err := s.goplsProxy.CloseVirtualFile(cached.GoURI); err != nil {
-			s.log("Failed to close virtual file: %v", err)
+			log.Server("Failed to close virtual file: %v", err)
 		}
 		s.virtualFiles.Remove(uri)
 	}
@@ -183,7 +168,7 @@ func (s *Server) CloseVirtualFile(uri string) {
 
 // Run starts the LSP server main loop.
 func (s *Server) Run(ctx context.Context) error {
-	s.log("LSP server starting")
+	log.Server("LSP server starting")
 
 	for {
 		select {
@@ -195,31 +180,31 @@ func (s *Server) Run(ctx context.Context) error {
 		msg, err := s.readMessage()
 		if err != nil {
 			if err == io.EOF {
-				s.log("Connection closed")
+				log.Server("Connection closed")
 				return nil
 			}
-			s.log("Error reading message: %v", err)
+			log.Server("Error reading message: %v", err)
 			return fmt.Errorf("reading message: %w", err)
 		}
 
-		s.log("Received: %s", string(msg))
+		log.Server("Received: %s", string(msg))
 
 		response, err := s.handleMessage(msg)
 		if err != nil {
-			s.log("Error handling message: %v", err)
+			log.Server("Error handling message: %v", err)
 			// Send error response if we have an ID
 			continue
 		}
 
 		if response != nil {
 			if err := s.writeMessage(response); err != nil {
-				s.log("Error writing response: %v", err)
+				log.Server("Error writing response: %v", err)
 				return fmt.Errorf("writing response: %w", err)
 			}
 		}
 
 		if s.shutdown {
-			s.log("Server shutdown requested")
+			log.Server("Server shutdown requested")
 			return nil
 		}
 	}
@@ -278,7 +263,7 @@ func (s *Server) writeMessage(msg []byte) error {
 		return err
 	}
 
-	s.log("Sent: %s", string(msg))
+	log.Server("Sent: %s", string(msg))
 	return nil
 }
 
@@ -335,7 +320,7 @@ func (s *Server) handleMessage(msg []byte) ([]byte, error) {
 		return s.errorResponse(nil, CodeParseError, "Parse error")
 	}
 
-	s.log("Handling method: %s", req.Method)
+	log.Server("Handling method: %s", req.Method)
 
 	// Route to appropriate handler
 	result, rpcErr := s.route(req)

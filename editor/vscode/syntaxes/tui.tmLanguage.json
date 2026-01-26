@@ -116,10 +116,10 @@
     "body-contents": {
       "patterns": [
         { "include": "#comments" },
+        { "include": "#go-expression-block" },
         { "include": "#control-keywords" },
         { "include": "#component-call" },
-        { "include": "#element" },
-        { "include": "#go-expression-block" }
+        { "include": "#element" }
       ]
     },
     "control-keywords": {
@@ -184,30 +184,14 @@
     },
     "element": {
       "patterns": [
-        { "include": "#self-closing-element" },
         { "include": "#element-open-tag" },
         { "include": "#element-close-tag" }
       ]
     },
-    "self-closing-element": {
-      "name": "meta.element.self-closing.tui",
-      "begin": "(<)([a-zA-Z][a-zA-Z0-9-]*)(?=[^>]*/>)",
-      "end": "(/>)",
-      "beginCaptures": {
-        "1": { "name": "punctuation.definition.tag.begin.tui" },
-        "2": { "name": "entity.name.tag.tui" }
-      },
-      "endCaptures": {
-        "1": { "name": "punctuation.definition.tag.end.tui" }
-      },
-      "patterns": [
-        { "include": "#attributes" }
-      ]
-    },
     "element-open-tag": {
       "name": "meta.element.open-tag.tui",
-      "begin": "(<)([a-zA-Z][a-zA-Z0-9-]*)(?=[^>]*[^/]>|[^>]*>)",
-      "end": "(>)",
+      "begin": "(<)([a-zA-Z][a-zA-Z0-9-]*)",
+      "end": "(/?>)",
       "beginCaptures": {
         "1": { "name": "punctuation.definition.tag.begin.tui" },
         "2": { "name": "entity.name.tag.tui" }
@@ -269,7 +253,7 @@
     },
     "go-expression-block": {
       "name": "meta.expression.go.tui",
-      "begin": "(\\{)(?![\\s\\n]*[<@])",
+      "begin": "(\\{)(?!\\s*$)",
       "end": "(\\})",
       "beginCaptures": {
         "1": { "name": "punctuation.definition.expression.begin.tui" }
@@ -321,11 +305,22 @@
       "name": "keyword.operator.go.tui"
     },
     "go-function-call": {
-      "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?:\\.\\s*([a-zA-Z_][a-zA-Z0-9_]*))?\\s*(?=\\()",
-      "captures": {
-        "1": { "name": "entity.name.function.go.tui" },
-        "2": { "name": "entity.name.function.go.tui" }
-      }
+      "patterns": [
+        {
+          "comment": "Qualified function call: pkg.Func() - only Func is green",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)(\\.([a-zA-Z_][a-zA-Z0-9_]*))\\s*(?=\\()",
+          "captures": {
+            "3": { "name": "entity.name.function.go.tui" }
+          }
+        },
+        {
+          "comment": "Unqualified function call: Func() - Func is green",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.go.tui" }
+          }
+        }
+      ]
     },
     "go-identifiers": {
       "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
@@ -341,6 +336,11 @@
             {
               "name": "constant.character.escape.tui",
               "match": "\\\\."
+            },
+            {
+              "comment": "Go format specifiers like %s, %d, %v, %.2f, %#x, etc.",
+              "name": "constant.other.placeholder.tui",
+              "match": "%[-+# 0]*(\\*|\\d+)?(\\.\\*|\\.\\d+)?[vTtbcdoqxXUeEfFgGsp%]"
             }
           ]
         },
@@ -358,7 +358,14 @@
         {
           "name": "string.quoted.raw.tui",
           "begin": "`",
-          "end": "`"
+          "end": "`",
+          "patterns": [
+            {
+              "comment": "Go format specifiers in raw strings too",
+              "name": "constant.other.placeholder.tui",
+              "match": "%[-+# 0]*(\\*|\\d+)?(\\.\\*|\\.\\d+)?[vTtbcdoqxXUeEfFgGsp%]"
+            }
+          ]
         }
       ]
     },

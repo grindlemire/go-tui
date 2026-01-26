@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/grindlemire/go-tui/pkg/lsp/gopls"
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -76,7 +77,7 @@ func (s *Server) handleCompletion(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Completion request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
+	log.Server("Completion request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil {
@@ -87,7 +88,7 @@ func (s *Server) handleCompletion(params json.RawMessage) (any, *Error) {
 	if s.isInGoExpression(doc, p.Position) {
 		items, err := s.getGoplsCompletions(doc, p.Position)
 		if err != nil {
-			s.log("gopls completion error: %v", err)
+			log.Server("gopls completion error: %v", err)
 			// Fall through to TUI completions
 		} else if len(items) > 0 {
 			return CompletionList{
@@ -106,7 +107,7 @@ func (s *Server) handleCompletion(params json.RawMessage) (any, *Error) {
 		trigger = s.getCharBeforePosition(doc, p.Position)
 	}
 
-	s.log("Completion trigger: %q", trigger)
+	log.Server("Completion trigger: %q", trigger)
 
 	var items []CompletionItem
 
@@ -520,11 +521,11 @@ func (s *Server) getGoplsCompletions(doc *Document, pos Position) ([]CompletionI
 	// Translate position from .tui to .go
 	goLine, goCol, found := cached.SourceMap.TuiToGo(pos.Line, pos.Character)
 	if !found {
-		s.log("No mapping found for position %d:%d", pos.Line, pos.Character)
+		log.Server("No mapping found for position %d:%d", pos.Line, pos.Character)
 		return nil, nil
 	}
 
-	s.log("Translated position %d:%d -> %d:%d", pos.Line, pos.Character, goLine, goCol)
+	log.Server("Translated position %d:%d -> %d:%d", pos.Line, pos.Character, goLine, goCol)
 
 	// Call gopls for completions
 	goplsItems, err := s.goplsProxy.Completion(cached.GoURI, gopls.Position{
