@@ -13,6 +13,11 @@ func RenderTree(buf *tui.Buffer, root *Element) {
 
 // renderElement renders a single element and recurses to its children.
 func renderElement(buf *tui.Buffer, e *Element) {
+	// Call pre-render hook for custom update logic (polling, animations, etc.)
+	if e.onUpdate != nil {
+		e.onUpdate()
+	}
+
 	rect := e.Rect()
 
 	// Skip if outside buffer bounds
@@ -210,12 +215,8 @@ func renderTextContent(buf *tui.Buffer, e *Element) {
 
 // Render calculates layout (if needed) and renders the entire tree to the buffer.
 // This is the main entry point for rendering an Element tree.
+// Note: onUpdate hooks are called in renderElement for each element in the tree.
 func (e *Element) Render(buf *tui.Buffer, width, height int) {
-	// Call pre-render hook for custom update logic
-	if e.onUpdate != nil {
-		e.onUpdate()
-	}
-
 	if e.dirty {
 		layout.Calculate(e, width, height)
 	}

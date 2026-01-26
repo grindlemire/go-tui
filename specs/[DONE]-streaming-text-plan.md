@@ -36,9 +36,9 @@ Implementation phases for streaming text support. Each phase builds on the previ
 
 **Reference:** [streaming-text-design.md §4](./streaming-text-design.md#4-user-experience)
 
-**Completed in commit:** (pending)
+**Completed in commit:** (pending review)
 
-- [ ] Create `examples/streaming/main.go`
+- [x] Create `examples/streaming/main.go`
   - Define local `StreamBox` struct with:
     - `elem *element.Element` - the scrollable container
     - `textCh <-chan string` - channel for incoming text
@@ -68,7 +68,7 @@ Implementation phases for streaming text support. Each phase builds on the previ
     - Event loop handling ESC to exit, j/k for scroll, dispatch to focused element
   - See [streaming-text-design.md §3 - Example StreamBox Pattern](./streaming-text-design.md#example-streambox-pattern)
 
-**Tests:** (pending) - manual testing via running the example
+**Tests:** PASS - manual testing via running the example (`go run ./examples/streaming`)
 
 ---
 
@@ -77,7 +77,7 @@ Implementation phases for streaming text support. Each phase builds on the previ
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Add onUpdate hook to Element | Complete |
-| 2 | Create streaming example | Pending |
+| 2 | Create streaming example | Complete |
 
 ## Files to Modify
 
