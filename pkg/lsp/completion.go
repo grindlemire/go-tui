@@ -84,6 +84,16 @@ func (s *Server) handleCompletion(params json.RawMessage) (any, *Error) {
 		return CompletionList{Items: []CompletionItem{}}, nil
 	}
 
+	// Check if we're inside a class="" attribute - provide Tailwind completions
+	if inClass, prefix := s.isInClassAttribute(doc, p.Position); inClass {
+		log.Server("In class attribute with prefix: %q", prefix)
+		items := s.getTailwindCompletions(prefix)
+		return CompletionList{
+			IsIncomplete: false,
+			Items:        items,
+		}, nil
+	}
+
 	// Check if we're inside a Go expression - use gopls if available
 	if s.isInGoExpression(doc, p.Position) {
 		items, err := s.getGoplsCompletions(doc, p.Position)
@@ -576,4 +586,149 @@ func (s *Server) getGoplsCompletions(doc *Document, pos Position) ([]CompletionI
 	}
 
 	return items, nil
+}
+
+// isInClassAttribute checks if the cursor is inside a class="" attribute value.
+// Returns (isInClass, partialPrefix) where partialPrefix is what the user has typed
+// for the current class name (text after the last space before cursor).
+func (s *Server) isInClassAttribute(doc *Document, pos Position) (bool, string) {
+	offset := PositionToOffset(doc.Content, pos)
+	if offset <= 0 {
+		return false, ""
+	}
+
+	content := doc.Content
+
+	// Search backwards for class=" or class='
+	// We need to find the start of the class attribute value
+	classAttrStart := -1
+	quoteChar := byte(0)
+
+	for i := offset - 1; i >= 0; i-- {
+		// If we hit a newline, stop searching (class attribute should be on same line)
+		if content[i] == '\n' {
+			break
+		}
+
+		// Check if we're hitting a quote that starts the class value
+		if content[i] == '"' || content[i] == '\'' {
+			// Check if this is the opening quote of class="..."
+			// Look backwards for "class="
+			if i >= 6 {
+				before := string(content[i-6 : i+1])
+				if before == `class="` || before == `class='` {
+					classAttrStart = i + 1 // Position right after the quote
+					quoteChar = content[i]
+					break
+				}
+			}
+			// If we hit a quote that's not a class attribute opening, check if it's closing
+			// by looking for the matching opening class=" before it
+			// This handles the case where cursor is past the class attribute
+			break
+		}
+	}
+
+	if classAttrStart == -1 {
+		return false, ""
+	}
+
+	// Now check if we're still inside the attribute (before the closing quote)
+	for i := offset; i < len(content); i++ {
+		if content[i] == quoteChar {
+			// Found closing quote - we are inside the class attribute
+			break
+		}
+		if content[i] == '\n' {
+			// Newline before closing quote - malformed, but still inside
+			break
+		}
+	}
+
+	// Extract the partial prefix (text after last space before cursor)
+	valueContent := string(content[classAttrStart:offset])
+	prefix := ""
+
+	// Find the last space to get the current partial class name
+	lastSpace := strings.LastIndex(valueContent, " ")
+	if lastSpace == -1 {
+		prefix = valueContent
+	} else {
+		prefix = valueContent[lastSpace+1:]
+	}
+
+	return true, prefix
+}
+
+// getTailwindCompletions returns completion items for Tailwind classes.
+func (s *Server) getTailwindCompletions(prefix string) []CompletionItem {
+	allClasses := tuigen.AllTailwindClasses()
+
+	var items []CompletionItem
+	for _, classInfo := range allClasses {
+		// Filter by prefix if provided
+		if prefix != "" && !strings.HasPrefix(classInfo.Name, prefix) {
+			continue
+		}
+
+		// Build documentation with example
+		docValue := classInfo.Description
+		if classInfo.Example != "" {
+			docValue += "\n\n**Example:**\n```tui\n" + classInfo.Example + "\n```"
+		}
+
+		items = append(items, CompletionItem{
+			Label:      classInfo.Name,
+			Kind:       CompletionItemKindConstant,
+			Detail:     classInfo.Category,
+			InsertText: classInfo.Name,
+			FilterText: classInfo.Name,
+			Documentation: &MarkupContent{
+				Kind:  "markdown",
+				Value: docValue,
+			},
+		})
+	}
+
+	// Sort by category priority, then alphabetically within category
+	sortCompletionsByCategory(items)
+
+	return items
+}
+
+// sortCompletionsByCategory sorts completion items by category priority then name.
+func sortCompletionsByCategory(items []CompletionItem) {
+	categoryOrder := map[string]int{
+		"layout":     1,
+		"flex":       2,
+		"spacing":    3,
+		"typography": 4,
+		"visual":     5,
+	}
+
+	// Simple bubble sort to avoid importing sort package
+	for i := 0; i < len(items); i++ {
+		for j := i + 1; j < len(items); j++ {
+			orderI := categoryOrder[items[i].Detail]
+			orderJ := categoryOrder[items[j].Detail]
+			if orderI == 0 {
+				orderI = 100 // Unknown categories go last
+			}
+			if orderJ == 0 {
+				orderJ = 100
+			}
+
+			// Sort by category first, then by name within same category
+			swap := false
+			if orderI > orderJ {
+				swap = true
+			} else if orderI == orderJ && items[i].Label > items[j].Label {
+				swap = true
+			}
+
+			if swap {
+				items[i], items[j] = items[j], items[i]
+			}
+		}
+	}
 }

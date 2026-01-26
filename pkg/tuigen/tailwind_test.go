@@ -339,6 +339,7 @@ func TestParseTailwindClass_Colors(t *testing.T) {
 		input          string
 		wantOK         bool
 		wantTextMethod string
+		wantOption     string
 		wantImport     string
 	}
 
@@ -356,16 +357,16 @@ func TestParseTailwindClass_Colors(t *testing.T) {
 			wantImport:     "tui",
 		},
 		"bg-blue": {
-			input:          "bg-blue",
-			wantOK:         true,
-			wantTextMethod: "Background(tui.Blue)",
-			wantImport:     "tui",
+			input:      "bg-blue",
+			wantOK:     true,
+			wantOption: "element.WithBackground(tui.NewStyle().Background(tui.Blue))",
+			wantImport: "tui",
 		},
 		"bg-yellow": {
-			input:          "bg-yellow",
-			wantOK:         true,
-			wantTextMethod: "Background(tui.Yellow)",
-			wantImport:     "tui",
+			input:      "bg-yellow",
+			wantOK:     true,
+			wantOption: "element.WithBackground(tui.NewStyle().Background(tui.Yellow))",
+			wantImport: "tui",
 		},
 	}
 
@@ -378,6 +379,9 @@ func TestParseTailwindClass_Colors(t *testing.T) {
 			}
 			if mapping.TextMethod != tt.wantTextMethod {
 				t.Errorf("TextMethod = %q, want %q", mapping.TextMethod, tt.wantTextMethod)
+			}
+			if mapping.Option != tt.wantOption {
+				t.Errorf("Option = %q, want %q", mapping.Option, tt.wantOption)
 			}
 			if mapping.NeedsImport != tt.wantImport {
 				t.Errorf("NeedsImport = %q, want %q", mapping.NeedsImport, tt.wantImport)

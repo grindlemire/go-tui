@@ -86,14 +86,14 @@ var tailwindClasses = map[string]TailwindMapping{
 	"text-black":   {IsTextStyle: true, TextMethod: "Foreground(tui.Black)", NeedsImport: "tui"},
 
 	// Background colors
-	"bg-red":     {IsTextStyle: true, TextMethod: "Background(tui.Red)", NeedsImport: "tui"},
-	"bg-green":   {IsTextStyle: true, TextMethod: "Background(tui.Green)", NeedsImport: "tui"},
-	"bg-blue":    {IsTextStyle: true, TextMethod: "Background(tui.Blue)", NeedsImport: "tui"},
-	"bg-cyan":    {IsTextStyle: true, TextMethod: "Background(tui.Cyan)", NeedsImport: "tui"},
-	"bg-magenta": {IsTextStyle: true, TextMethod: "Background(tui.Magenta)", NeedsImport: "tui"},
-	"bg-yellow":  {IsTextStyle: true, TextMethod: "Background(tui.Yellow)", NeedsImport: "tui"},
-	"bg-white":   {IsTextStyle: true, TextMethod: "Background(tui.White)", NeedsImport: "tui"},
-	"bg-black":   {IsTextStyle: true, TextMethod: "Background(tui.Black)", NeedsImport: "tui"},
+	"bg-red":     {Option: "element.WithBackground(tui.NewStyle().Background(tui.Red))", NeedsImport: "tui"},
+	"bg-green":   {Option: "element.WithBackground(tui.NewStyle().Background(tui.Green))", NeedsImport: "tui"},
+	"bg-blue":    {Option: "element.WithBackground(tui.NewStyle().Background(tui.Blue))", NeedsImport: "tui"},
+	"bg-cyan":    {Option: "element.WithBackground(tui.NewStyle().Background(tui.Cyan))", NeedsImport: "tui"},
+	"bg-magenta": {Option: "element.WithBackground(tui.NewStyle().Background(tui.Magenta))", NeedsImport: "tui"},
+	"bg-yellow":  {Option: "element.WithBackground(tui.NewStyle().Background(tui.Yellow))", NeedsImport: "tui"},
+	"bg-white":   {Option: "element.WithBackground(tui.NewStyle().Background(tui.White))", NeedsImport: "tui"},
+	"bg-black":   {Option: "element.WithBackground(tui.NewStyle().Background(tui.Black))", NeedsImport: "tui"},
 
 	// Scroll
 	"overflow-scroll":   {Option: "element.WithScrollable(element.ScrollBoth)", NeedsImport: ""},
