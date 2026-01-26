@@ -87,6 +87,9 @@ type Element struct {
 
 	// HR properties
 	hr bool // true if this element is a horizontal rule
+
+	// Pre-render hook for custom update logic (polling, animations, etc.)
+	onUpdate func()
 }
 
 // Compile-time check that Element implements Layoutable
@@ -512,4 +515,12 @@ func (e *Element) WalkFocusables(fn func(tui.Focusable)) {
 	for _, child := range e.children {
 		child.WalkFocusables(fn)
 	}
+}
+
+// --- OnUpdate Hook API ---
+
+// SetOnUpdate sets a function called before each render.
+// Useful for polling channels, updating animations, etc.
+func (e *Element) SetOnUpdate(fn func()) {
+	e.onUpdate = fn
 }
