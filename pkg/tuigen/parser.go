@@ -762,18 +762,30 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 		switch p.current.Type {
 		case TokenLAngle:
 			// Nested element
-			child = p.parseElement()
+			// Check concrete type before assigning to interface to avoid typed nil
+			if elem := p.parseElement(); elem != nil {
+				child = elem
+			}
 		case TokenLBrace:
 			// Go expression or children slot
+			// Note: parseGoExprOrChildrenSlot returns Node interface, so no typed nil issue
 			child = p.parseGoExprOrChildrenSlot()
 		case TokenAtLet:
-			child = p.parseLet()
+			if let := p.parseLet(); let != nil {
+				child = let
+			}
 		case TokenAtFor:
-			child = p.parseFor()
+			if f := p.parseFor(); f != nil {
+				child = f
+			}
 		case TokenAtIf:
-			child = p.parseIf()
+			if i := p.parseIf(); i != nil {
+				child = i
+			}
 		case TokenAtCall:
-			child = p.parseComponentCall()
+			if call := p.parseComponentCall(); call != nil {
+				child = call
+			}
 		case TokenIdent:
 			// Coalesce consecutive text tokens into a single TextContent
 			var textParts []string

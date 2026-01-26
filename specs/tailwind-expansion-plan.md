@@ -178,20 +178,20 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 
 ---
 
-## Phase 4: Add Class Autocomplete to LSP
+## Phase 4: Add Class Autocomplete to LSP ✓
 
 **Reference:** [tailwind-expansion-design.md §4](./tailwind-expansion-design.md#4-user-experience)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Modify `pkg/lsp/completion.go` - Add class attribute detection
+- [x] Modify `pkg/lsp/completion.go` - Add class attribute detection
   - Add `isInClassAttribute(doc *Document, pos Position) (bool, string)` function
     - Search backwards from cursor for `class="`
     - If found and cursor is before closing quote, return true
     - Extract partial class prefix (text after last space before cursor)
     - Return (true, prefix) or (false, "")
 
-- [ ] Modify `pkg/lsp/completion.go` - Add class completions
+- [x] Modify `pkg/lsp/completion.go` - Add class completions
   - Add `getTailwindCompletions(prefix string) []CompletionItem` function
   - Call `tuigen.AllTailwindClasses()` to get all available classes
   - Filter by prefix if provided
@@ -203,19 +203,19 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
     - InsertText: class name (just the class, user adds space)
     - FilterText: class name for filtering
 
-- [ ] Modify `pkg/lsp/completion.go` - Update `handleCompletion()`
+- [x] Modify `pkg/lsp/completion.go` - Update `handleCompletion()`
   - Add check for class attribute context before other contextual completions
   - If `isInClassAttribute()` returns true:
     - Call `getTailwindCompletions(prefix)`
     - Return immediately with class completions
   - This should take priority over other completion types
 
-- [ ] Modify `pkg/lsp/completion.go` - Group completions by category
+- [x] Modify `pkg/lsp/completion.go` - Group completions by category
   - Sort completions: layout → flex → spacing → typography → visual
   - Or alphabetically within categories
   - Ensure consistent ordering for user experience
 
-- [ ] Add tests in `pkg/lsp/completion_test.go` (if exists, else create)
+- [x] Add tests in `pkg/lsp/features_test.go`
   - Test `isInClassAttribute()` detects class context
   - Test `isInClassAttribute()` extracts prefix correctly
   - Test `isInClassAttribute()` returns false outside class attribute
@@ -223,7 +223,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
   - Test `getTailwindCompletions("flex")` filters to flex-related classes
   - Test completion items have correct documentation
 
-- [ ] Manual testing checklist
+- [ ] Manual testing checklist (user can verify)
   - Open `.tui` file in VSCode with LSP running
   - Type `class="` and verify completions appear
   - Type `class="flex-` and verify filtered completions
@@ -231,7 +231,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
   - Type invalid class, verify red underline appears
   - Verify "did you mean" hint shows on hover/in problems panel
 
-**Tests:** Run `go test ./pkg/lsp/...` once at phase end
+**Tests:** Run `go test ./pkg/lsp/...` once at phase end ✓
 
 ---
 
@@ -242,7 +242,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 | 1 | Expand Tailwind class mappings with new patterns and accumulation | ✓ Complete |
 | 2 | Add validation, similarity matching, and class info registry | ✓ Complete |
 | 3 | Integrate validation into analyzer and LSP diagnostics | ✓ Complete |
-| 4 | Add class autocomplete to LSP completion handler | Pending |
+| 4 | Add class autocomplete to LSP completion handler | ✓ Complete |
 
 ## Files to Create
 
