@@ -2,25 +2,11 @@ package gopls
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
-
-// debugLog is a package-level logger for debugging
-var debugLog *os.File
-
-// SetDebugLog sets the debug log file for the generator
-func SetDebugLog(f *os.File) {
-	debugLog = f
-}
-
-func logDebug(format string, args ...any) {
-	if debugLog != nil {
-		fmt.Fprintf(debugLog, "[generate] "+format+"\n", args...)
-	}
-}
 
 // GenerateVirtualGo generates a valid Go source file from a .tui AST.
 // It returns the generated source and a SourceMap for position translation.
@@ -113,7 +99,7 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 				GoCol:   goParamStartCol,
 				Length:  len(p.Name),
 			}
-			logDebug("PARAM mapping: %s -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
+			log.Generate("PARAM mapping: %s -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
 				p.Name, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, p.Position.Line, p.Position.Column)
 			g.sourceMap.AddMapping(m)
 		}
@@ -206,7 +192,7 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 		GoCol:   goExprStartCol,
 		Length:  len(code),
 	}
-	logDebug("GOEXPR mapping: '%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
+	log.Generate("GOEXPR mapping: '%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
 		code, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, expr.Position.Line, expr.Position.Column)
 	g.sourceMap.AddMapping(m)
 
@@ -266,7 +252,7 @@ func (g *generator) generateForLoop(loop *tuigen.ForLoop, indent string) {
 		GoCol:   goExprStartCol,
 		Length:  len(loop.Iterable),
 	}
-	logDebug("FOR mapping: iterable='%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
+	log.Generate("FOR mapping: iterable='%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
 		loop.Iterable, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, loop.Position.Line, loop.Position.Column)
 	g.sourceMap.AddMapping(m)
 
@@ -297,7 +283,7 @@ func (g *generator) generateIfStmt(stmt *tuigen.IfStmt, indent string) {
 		GoCol:   goExprStartCol,
 		Length:  len(stmt.Condition),
 	}
-	logDebug("IF mapping: condition='%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d, indent='%s')",
+	log.Generate("IF mapping: condition='%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d, indent='%s')",
 		stmt.Condition, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, stmt.Position.Line, stmt.Position.Column, indent)
 	g.sourceMap.AddMapping(m)
 
@@ -319,6 +305,25 @@ func (g *generator) generateLetBinding(binding *tuigen.LetBinding, indent string
 	if binding == nil {
 		return
 	}
+
+	// Add mapping for the variable name
+	// In .tui: "@let varName = ..." - Position points to @, so varName is at Column + len("@let ")
+	// In .go: "var varName interface{}" - varName is at indent + len("var ")
+	tuiLine := binding.Position.Line - 1
+	tuiCol := binding.Position.Column - 1 + len("@let ")
+	goVarStartCol := len(indent) + len("var ")
+
+	m := Mapping{
+		TuiLine: tuiLine,
+		TuiCol:  tuiCol,
+		GoLine:  g.goLine,
+		GoCol:   goVarStartCol,
+		Length:  len(binding.Name),
+	}
+	log.Generate("LET mapping: '%s' -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
+		binding.Name, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, binding.Position.Line, binding.Position.Column)
+	g.sourceMap.AddMapping(m)
+
 	// Generate variable declaration
 	g.writeLine(fmt.Sprintf("%svar %s interface{}", indent, binding.Name))
 

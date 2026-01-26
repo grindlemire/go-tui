@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -26,7 +27,7 @@ func (s *Server) handleReferences(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("References request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
+	log.Server("References request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil {
@@ -39,7 +40,7 @@ func (s *Server) handleReferences(params json.RawMessage) (any, *Error) {
 		return []Location{}, nil
 	}
 
-	s.log("Finding references for: %s", word)
+	log.Server("Finding references for: %s", word)
 
 	var refs []Location
 
@@ -653,28 +654,28 @@ func (s *Server) searchWorkspaceForFunctionRefs(name string, refs *[]Location) {
 	s.workspaceASTsMu.RLock()
 	defer s.workspaceASTsMu.RUnlock()
 
-	s.log("searchWorkspaceForFunctionRefs: searching for '%s', workspace has %d cached ASTs", name, len(s.workspaceASTs))
+	log.Server("searchWorkspaceForFunctionRefs: searching for '%s', workspace has %d cached ASTs", name, len(s.workspaceASTs))
 
 	for uri, ast := range s.workspaceASTs {
-		s.log("  checking cached file: %s", uri)
+		log.Server("  checking cached file: %s", uri)
 		// Skip if file is already open (already searched in findFunctionReferences)
 		if s.docs.Get(uri) != nil {
-			s.log("    skipping (file is open in editor)")
+			log.Server("    skipping (file is open in editor)")
 			continue
 		}
 
 		if ast == nil {
-			s.log("    skipping (nil AST)")
+			log.Server("    skipping (nil AST)")
 			continue
 		}
 
-		s.log("    searching %d components", len(ast.Components))
+		log.Server("    searching %d components", len(ast.Components))
 		beforeCount := len(*refs)
 		// Search for function calls in this file
 		for _, comp := range ast.Components {
 			s.findFunctionCallsInNodes(comp.Body, name, uri, "", refs)
 		}
-		s.log("    found %d refs in this file", len(*refs)-beforeCount)
+		log.Server("    found %d refs in this file", len(*refs)-beforeCount)
 	}
 }
 

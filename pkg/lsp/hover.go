@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/grindlemire/go-tui/pkg/lsp/gopls"
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -34,7 +35,7 @@ func (s *Server) handleHover(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Hover request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
+	log.Server("Hover request at %s:%d:%d", p.TextDocument.URI, p.Position.Line, p.Position.Character)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil {
@@ -45,7 +46,7 @@ func (s *Server) handleHover(params json.RawMessage) (any, *Error) {
 	if s.isInGoExpression(doc, p.Position) {
 		hover, err := s.getGoplsHover(doc, p.Position)
 		if err != nil {
-			s.log("gopls hover error: %v", err)
+			log.Server("gopls hover error: %v", err)
 			// Fall through to TUI hover
 		} else if hover != nil {
 			return hover, nil
@@ -58,7 +59,7 @@ func (s *Server) handleHover(params json.RawMessage) (any, *Error) {
 		return nil, nil
 	}
 
-	s.log("Word at hover position: %s", word)
+	log.Server("Word at hover position: %s", word)
 
 	// Check for TUI keyword hover
 	if hover := hoverForKeyword(word); hover != nil {
@@ -855,11 +856,11 @@ func (s *Server) getGoplsHover(doc *Document, pos Position) (*Hover, error) {
 	// Translate position from .tui to .go
 	goLine, goCol, found := cached.SourceMap.TuiToGo(pos.Line, pos.Character)
 	if !found {
-		s.log("No mapping found for hover position %d:%d", pos.Line, pos.Character)
+		log.Server("No mapping found for hover position %d:%d", pos.Line, pos.Character)
 		return nil, nil
 	}
 
-	s.log("Translated hover position %d:%d -> %d:%d", pos.Line, pos.Character, goLine, goCol)
+	log.Server("Translated hover position %d:%d -> %d:%d", pos.Line, pos.Character, goLine, goCol)
 
 	// Call gopls for hover
 	goplsHover, err := s.goplsProxy.Hover(cached.GoURI, gopls.Position{
@@ -885,12 +886,12 @@ func (s *Server) getGoplsHover(doc *Document, pos Position) (*Hover, error) {
 	// Translate range back to .tui positions if present
 	// Only include range if we can successfully map both start and end positions
 	if goplsHover.Range != nil {
-		s.log("gopls hover range: (%d:%d)-(%d:%d)",
+		log.Server("gopls hover range: (%d:%d)-(%d:%d)",
 			goplsHover.Range.Start.Line, goplsHover.Range.Start.Character,
 			goplsHover.Range.End.Line, goplsHover.Range.End.Character)
 		tuiStartLine, tuiStartCol, startFound := cached.SourceMap.GoToTui(goplsHover.Range.Start.Line, goplsHover.Range.Start.Character)
 		tuiEndLine, tuiEndCol, endFound := cached.SourceMap.GoToTui(goplsHover.Range.End.Line, goplsHover.Range.End.Character)
-		s.log("GoToTui hover translation: start(%d:%d->%d:%d, found=%v) end(%d:%d->%d:%d, found=%v)",
+		log.Server("GoToTui hover translation: start(%d:%d->%d:%d, found=%v) end(%d:%d->%d:%d, found=%v)",
 			goplsHover.Range.Start.Line, goplsHover.Range.Start.Character, tuiStartLine, tuiStartCol, startFound,
 			goplsHover.Range.End.Line, goplsHover.Range.End.Character, tuiEndLine, tuiEndCol, endFound)
 		if startFound && endFound {
@@ -898,7 +899,7 @@ func (s *Server) getGoplsHover(doc *Document, pos Position) (*Hover, error) {
 				Start: Position{Line: tuiStartLine, Character: tuiStartCol},
 				End:   Position{Line: tuiEndLine, Character: tuiEndCol},
 			}
-			s.log("Final hover range: (%d:%d)-(%d:%d)", tuiStartLine, tuiStartCol, tuiEndLine, tuiEndCol)
+			log.Server("Final hover range: (%d:%d)-(%d:%d)", tuiStartLine, tuiStartCol, tuiEndLine, tuiEndCol)
 		}
 		// If mapping not found, omit range - the editor will determine it from position
 	}

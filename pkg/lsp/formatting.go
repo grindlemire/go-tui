@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grindlemire/go-tui/pkg/formatter"
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 )
 
 // DocumentFormattingParams represents textDocument/formatting parameters.
@@ -35,7 +36,7 @@ func (s *Server) handleFormatting(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Formatting request for %s", p.TextDocument.URI)
+	log.Server("Formatting request for %s", p.TextDocument.URI)
 
 	doc := s.docs.Get(p.TextDocument.URI)
 	if doc == nil {
@@ -53,7 +54,7 @@ func (s *Server) handleFormatting(params json.RawMessage) (any, *Error) {
 	// Format the document
 	formatted, err := f.Format(p.TextDocument.URI, doc.Content)
 	if err != nil {
-		s.log("Formatting error: %v", err)
+		log.Server("Formatting error: %v", err)
 		// Return empty edits on error - don't fail the request
 		return []TextEdit{}, nil
 	}

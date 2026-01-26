@@ -107,6 +107,15 @@ with newlines`}
 	</div>
 }
 
+@component AttributeTypes2(enabled bool, size int) {
+	<div width="100%"
+	     border={tui.BorderDouble}
+	     visible={enabled && size > 0}
+	     class="flex-col items-center">
+		<span>Content</span>
+	</div>
+}
+
 func helperFunction(s string) string {
 	return fmt.Sprintf("[%s]", strings.ToUpper(s))
 }

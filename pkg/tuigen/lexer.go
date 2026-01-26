@@ -760,9 +760,23 @@ func (l *Lexer) ReadBalancedBracesFrom(startPos int) (string, error) {
 	} else {
 		l.ch = 0
 	}
-	// Recalculate line/column by scanning from contentStart to pos
-	// This is approximate but should work for error reporting
-	for i := contentStart; i <= pos && i < len(l.source); i++ {
+
+	// Calculate correct line/column from the start of the source.
+	// We need to recalculate from scratch because the lexer may have peeked ahead
+	// and l.column could be in an inconsistent state.
+	lineStart := 0
+	lineNum := 1
+	for i := 0; i < startPos; i++ {
+		if l.source[i] == '\n' {
+			lineStart = i + 1
+			lineNum++
+		}
+	}
+
+	// Scan from lineStart to pos to get correct line and column
+	l.line = lineNum
+	l.column = 1
+	for i := lineStart; i < pos && i < len(l.source); i++ {
 		if l.source[i] == '\n' {
 			l.line++
 			l.column = 1
@@ -770,7 +784,8 @@ func (l *Lexer) ReadBalancedBracesFrom(startPos int) (string, error) {
 			l.column++
 		}
 	}
-	l.readChar() // advance past '}'
+
+	l.readChar() // advance past '}' and update column
 
 	return content, nil
 }

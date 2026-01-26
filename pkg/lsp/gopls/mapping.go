@@ -1,25 +1,11 @@
 package gopls
 
 import (
-	"fmt"
-	"os"
 	"sort"
 	"sync"
+
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 )
-
-// mappingDebugLog is a package-level logger for debugging
-var mappingDebugLog *os.File
-
-// SetMappingDebugLog sets the debug log file for mapping operations
-func SetMappingDebugLog(f *os.File) {
-	mappingDebugLog = f
-}
-
-func logMappingDebug(format string, args ...any) {
-	if mappingDebugLog != nil {
-		fmt.Fprintf(mappingDebugLog, "[mapping] "+format+"\n", args...)
-	}
-}
 
 // SourceMap tracks position mappings between .tui and generated .go files.
 type SourceMap struct {
@@ -63,7 +49,7 @@ func (sm *SourceMap) TuiToGo(tuiLine, tuiCol int) (goLine, goCol int, found bool
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	logMappingDebug("TuiToGo: looking for TuiLine=%d TuiCol=%d", tuiLine, tuiCol)
+	log.Mapping("TuiToGo: looking for TuiLine=%d TuiCol=%d", tuiLine, tuiCol)
 	for _, m := range sm.mappings {
 		// Check if position is within this mapping (inclusive of start, exclusive of end)
 		// OR if position is exactly at the exclusive end boundary (tuiCol == m.TuiCol+m.Length)
@@ -71,13 +57,13 @@ func (sm *SourceMap) TuiToGo(tuiLine, tuiCol int) (goLine, goCol int, found bool
 		if m.TuiLine == tuiLine && tuiCol >= m.TuiCol && tuiCol <= m.TuiCol+m.Length {
 			// Position is within this mapping or at its exclusive end
 			offset := tuiCol - m.TuiCol
-			logMappingDebug("TuiToGo: MATCH found! mapping TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d -> result GoLine=%d GoCol=%d (offset=%d)",
+			log.Mapping("TuiToGo: MATCH found! mapping TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d -> result GoLine=%d GoCol=%d (offset=%d)",
 				m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, m.GoLine, m.GoCol+offset, offset)
 			return m.GoLine, m.GoCol + offset, true
 		}
 	}
 
-	logMappingDebug("TuiToGo: NO MATCH found, returning original %d:%d", tuiLine, tuiCol)
+	log.Mapping("TuiToGo: NO MATCH found, returning original %d:%d", tuiLine, tuiCol)
 	return tuiLine, tuiCol, false
 }
 
@@ -88,7 +74,7 @@ func (sm *SourceMap) GoToTui(goLine, goCol int) (tuiLine, tuiCol int, found bool
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	logMappingDebug("GoToTui: looking for GoLine=%d GoCol=%d", goLine, goCol)
+	log.Mapping("GoToTui: looking for GoLine=%d GoCol=%d", goLine, goCol)
 	for _, m := range sm.mappings {
 		// Check if position is within this mapping (inclusive of start, exclusive of end)
 		// OR if position is exactly at the exclusive end boundary (goCol == m.GoCol+m.Length)
@@ -96,13 +82,13 @@ func (sm *SourceMap) GoToTui(goLine, goCol int) (tuiLine, tuiCol int, found bool
 		if m.GoLine == goLine && goCol >= m.GoCol && goCol <= m.GoCol+m.Length {
 			// Position is within this mapping or at its exclusive end
 			offset := goCol - m.GoCol
-			logMappingDebug("GoToTui: MATCH found! mapping GoLine=%d GoCol=%d TuiLine=%d TuiCol=%d Len=%d -> result TuiLine=%d TuiCol=%d (offset=%d)",
+			log.Mapping("GoToTui: MATCH found! mapping GoLine=%d GoCol=%d TuiLine=%d TuiCol=%d Len=%d -> result TuiLine=%d TuiCol=%d (offset=%d)",
 				m.GoLine, m.GoCol, m.TuiLine, m.TuiCol, m.Length, m.TuiLine, m.TuiCol+offset, offset)
 			return m.TuiLine, m.TuiCol + offset, true
 		}
 	}
 
-	logMappingDebug("GoToTui: NO MATCH found, returning original %d:%d", goLine, goCol)
+	log.Mapping("GoToTui: NO MATCH found, returning original %d:%d", goLine, goCol)
 	return goLine, goCol, false
 }
 

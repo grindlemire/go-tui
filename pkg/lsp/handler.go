@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/grindlemire/go-tui/pkg/lsp/log"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -52,7 +53,7 @@ func (s *Server) route(req Request) (any, *Error) {
 		return s.handleSemanticTokensFull(req.Params)
 
 	default:
-		s.log("Unknown method: %s", req.Method)
+		log.Server("Unknown method: %s", req.Method)
 		return nil, &Error{Code: CodeMethodNotFound, Message: "Method not found: " + req.Method}
 	}
 }
@@ -176,7 +177,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 	}
 
 	s.rootURI = p.RootURI
-	s.log("Initialize with root: %s", s.rootURI)
+	log.Server("Initialize with root: %s", s.rootURI)
 
 	result := InitializeResult{
 		Capabilities: ServerCapabilities{
@@ -211,6 +212,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 						"number",      // 9: numbers
 						"operator",    // 10: operators
 						"decorator",   // 11: @ prefix
+						"regexp",      // 12: format specifiers (often purple)
 					},
 					TokenModifiers: []string{
 						"declaration",  // 0: where defined
@@ -230,7 +232,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 // handleInitialized handles the initialized notification.
 func (s *Server) handleInitialized() (any, *Error) {
 	s.initialized = true
-	s.log("Server initialized")
+	log.Server("Server initialized")
 
 	// Index all .tui files in the workspace for cross-file references
 	go s.indexWorkspace()
@@ -243,7 +245,7 @@ func (s *Server) handleInitialized() (any, *Error) {
 
 // handleShutdown handles the shutdown request.
 func (s *Server) handleShutdown() (any, *Error) {
-	s.log("Shutdown requested")
+	log.Server("Shutdown requested")
 	s.shutdown = true
 
 	// Shutdown gopls proxy
@@ -254,7 +256,7 @@ func (s *Server) handleShutdown() (any, *Error) {
 
 // handleExit handles the exit notification.
 func (s *Server) handleExit() {
-	s.log("Exit requested")
+	log.Server("Exit requested")
 	// The server will exit after returning from the handler
 }
 
@@ -278,7 +280,7 @@ func (s *Server) handleDidOpen(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Document opened: %s", p.TextDocument.URI)
+	log.Server("Document opened: %s", p.TextDocument.URI)
 
 	doc := s.docs.Open(p.TextDocument.URI, p.TextDocument.Text, p.TextDocument.Version)
 
@@ -324,7 +326,7 @@ func (s *Server) handleDidChange(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Document changed: %s", p.TextDocument.URI)
+	log.Server("Document changed: %s", p.TextDocument.URI)
 
 	if len(p.ContentChanges) == 0 {
 		return nil, nil
@@ -365,7 +367,7 @@ func (s *Server) handleDidClose(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Document closed: %s", p.TextDocument.URI)
+	log.Server("Document closed: %s", p.TextDocument.URI)
 
 	// Get the AST before closing so we can cache it
 	doc := s.docs.Get(p.TextDocument.URI)
@@ -413,7 +415,7 @@ func (s *Server) handleDidSave(params json.RawMessage) (any, *Error) {
 		return nil, &Error{Code: CodeInvalidParams, Message: err.Error()}
 	}
 
-	s.log("Document saved: %s", p.TextDocument.URI)
+	log.Server("Document saved: %s", p.TextDocument.URI)
 
 	// If text is provided, update the document
 	if p.Text != nil {
@@ -432,15 +434,15 @@ func (s *Server) handleDidSave(params json.RawMessage) (any, *Error) {
 // This enables cross-file go-to-definition for components and functions.
 func (s *Server) indexWorkspace() {
 	if s.rootURI == "" {
-		s.log("Cannot index workspace: no rootURI")
+		log.Server("Cannot index workspace: no rootURI")
 		return
 	}
 
 	// Convert file:// URI to path
 	rootPath := strings.TrimPrefix(s.rootURI, "file://")
-	s.log("=== WORKSPACE INDEXING START ===")
-	s.log("rootURI: %s", s.rootURI)
-	s.log("rootPath: %s", rootPath)
+	log.Server("=== WORKSPACE INDEXING START ===")
+	log.Server("rootURI: %s", s.rootURI)
+	log.Server("rootPath: %s", rootPath)
 
 	count := 0
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
@@ -471,7 +473,7 @@ func (s *Server) indexWorkspace() {
 		// Read and parse the file
 		content, err := os.ReadFile(path)
 		if err != nil {
-			s.log("Failed to read %s: %v", path, err)
+			log.Server("Failed to read %s: %v", path, err)
 			return nil
 		}
 
@@ -480,7 +482,7 @@ func (s *Server) indexWorkspace() {
 		parser := tuigen.NewParser(lexer)
 		ast, err := parser.ParseFile()
 		if err != nil {
-			s.log("Parse error in %s: %v", path, err)
+			log.Server("Parse error in %s: %v", path, err)
 			// Still index what we can
 		}
 
@@ -491,7 +493,7 @@ func (s *Server) indexWorkspace() {
 			s.workspaceASTs[uri] = ast
 			s.workspaceASTsMu.Unlock()
 			count++
-			s.log("Indexed %s: %d components, %d functions",
+			log.Server("Indexed %s: %d components, %d functions",
 				path, len(ast.Components), len(ast.Funcs))
 		}
 
@@ -499,11 +501,11 @@ func (s *Server) indexWorkspace() {
 	})
 
 	if err != nil {
-		s.log("Error walking workspace: %v", err)
+		log.Server("Error walking workspace: %v", err)
 	}
 
-	s.log("Workspace indexing complete: %d files indexed", count)
-	s.log("All indexed functions: %v", s.index.AllFunctions())
-	s.log("All indexed components: %v", s.index.All())
-	s.log("=== WORKSPACE INDEXING END ===")
+	log.Server("Workspace indexing complete: %d files indexed", count)
+	log.Server("All indexed functions: %v", s.index.AllFunctions())
+	log.Server("All indexed components: %v", s.index.All())
+	log.Server("=== WORKSPACE INDEXING END ===")
 }

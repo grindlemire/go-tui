@@ -1,9 +1,42 @@
+# Build binaries
+/tui
+/dashboard
+/hello_layout
+/hello_rect
+/dsl-counter
+/focus
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# IDE/Editor
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+!editor/vscode/
+
+# Claude
+.claude/
+
+# Node (VSCode extension)
 node_modules/
 out/
-.claude/
-./dashboard
-./hello_layout
-./hello_rect
-./dsl-counter
-./focus
-./tui
+*.vsix
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/Coverage
+coverage.out
+coverage.html
+*.prof
