@@ -1093,3 +1093,117 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerator_HR(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"basic hr": {
+			input: `package x
+@component Divider() {
+	<div>
+		<hr/>
+	</div>
+}`,
+			wantContains: []string{
+				"element.WithHR()",
+			},
+		},
+		"hr with border-double class": {
+			input: `package x
+@component Divider() {
+	<div>
+		<hr class="border-double"/>
+	</div>
+}`,
+			wantContains: []string{
+				"element.WithHR()",
+				"element.WithBorder(tui.BorderDouble)",
+			},
+		},
+		"hr with text-cyan class": {
+			input: `package x
+@component Divider() {
+	<div>
+		<hr class="text-cyan"/>
+	</div>
+}`,
+			wantContains: []string{
+				"element.WithHR()",
+				"element.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan))",
+			},
+		},
+		"hr with border-thick and text color": {
+			input: `package x
+@component Divider() {
+	<div>
+		<hr class="border-thick text-red"/>
+	</div>
+}`,
+			wantContains: []string{
+				"element.WithHR()",
+				"element.WithBorder(tui.BorderThick)",
+				"element.WithTextStyle(tui.NewStyle().Foreground(tui.Red))",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := ParseAndGenerate("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerator_BR(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"basic br": {
+			input: `package x
+@component Lines() {
+	<div>
+		<span>Line 1</span>
+		<br/>
+		<span>Line 2</span>
+	</div>
+}`,
+			wantContains: []string{
+				"element.WithWidth(0)",
+				"element.WithHeight(1)",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := ParseAndGenerate("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}

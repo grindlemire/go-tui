@@ -84,6 +84,9 @@ type Element struct {
 	// Scrollbar styles
 	scrollbarStyle      tui.Style
 	scrollbarThumbStyle tui.Style
+
+	// HR properties
+	hr bool // true if this element is a horizontal rule
 }
 
 // Compile-time check that Element implements Layoutable
@@ -138,10 +141,22 @@ func (e *Element) SetDirty(dirty bool) {
 	e.dirty = dirty
 }
 
+// IsHR returns whether this element is a horizontal rule.
+func (e *Element) IsHR() bool {
+	return e.hr
+}
+
 // IntrinsicSize returns the natural content-based dimensions of this element.
 // For text elements, returns the text width and height (1 line).
 // For containers, returns the computed intrinsic size based on children.
 func (e *Element) IntrinsicSize() (width, height int) {
+	// HR has intrinsic height of 1, but 0 intrinsic width.
+	// The 0 width is intentional - HR relies on AlignSelf=Stretch (set by WithHR)
+	// to fill the container width, similar to how block elements work in CSS.
+	if e.hr {
+		return 0, 1
+	}
+
 	// Text content has explicit intrinsic size
 	if e.text != "" {
 		textWidth := stringWidth(e.text)

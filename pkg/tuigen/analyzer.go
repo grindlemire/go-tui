@@ -42,6 +42,15 @@ var knownTags = map[string]bool{
 	"input":    true,
 	"table":    true,
 	"progress": true,
+	"hr":       true,
+	"br":       true,
+}
+
+// voidElements lists elements that cannot have children.
+var voidElements = map[string]bool{
+	"hr":    true,
+	"br":    true,
+	"input": true,
 }
 
 // knownAttributes lists all supported element attributes.
@@ -327,6 +336,12 @@ func (a *Analyzer) analyzeElement(elem *Element) {
 	// Check if tag is known
 	if !knownTags[elem.Tag] {
 		a.errors.AddErrorf(elem.Position, "unknown element tag <%s>", elem.Tag)
+	}
+
+	// Check for children on void elements
+	if voidElements[elem.Tag] && len(elem.Children) > 0 {
+		a.errors.AddErrorf(elem.Position,
+			"<%s> is a void element and cannot have children", elem.Tag)
 	}
 
 	// Check attributes

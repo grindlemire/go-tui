@@ -217,6 +217,11 @@ func (g *Generator) buildElementOptions(elem *Element) []string {
 
 	// Handle tag-specific options
 	switch elem.Tag {
+	case "hr":
+		options = append(options, "element.WithHR()")
+	case "br":
+		options = append(options, "element.WithWidth(0)")
+		options = append(options, "element.WithHeight(1)")
 	case "span", "p":
 		// If text element has children that are text content, add WithText
 		textContent := g.extractTextContent(elem.Children)

@@ -29,25 +29,35 @@ func CounterUI(count int) *element.Element {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := element.New(
-		element.WithText("Count:"),
+		element.WithHR(),
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
 	)
 	__tui_1.AddChild(__tui_3)
 	__tui_4 := element.New(
+		element.WithText("Count:"),
+	)
+	__tui_1.AddChild(__tui_4)
+	__tui_5 := element.New(
 		element.WithText(fmt.Sprintf("%d", count)),
 		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
-	__tui_1.AddChild(__tui_4)
+	__tui_1.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_1)
-	__tui_5 := element.New(
+	__tui_6 := element.New(
+		element.WithWidth(0),
+		element.WithHeight(1),
+	)
+	__tui_0.AddChild(__tui_6)
+	__tui_7 := element.New(
 		element.WithDirection(layout.Row),
 		element.WithGap(1),
 		element.WithJustify(layout.JustifyCenter),
 	)
-	__tui_6 := element.New(
+	__tui_8 := element.New(
 		element.WithText("Press +/- to change, q to quit"),
 		element.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_5.AddChild(__tui_6)
-	__tui_0.AddChild(__tui_5)
+	__tui_7.AddChild(__tui_8)
+	__tui_0.AddChild(__tui_7)
 	return __tui_0
 }

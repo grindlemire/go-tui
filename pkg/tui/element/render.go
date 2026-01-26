@@ -27,6 +27,12 @@ func renderElement(buf *tui.Buffer, e *Element) {
 		return
 	}
 
+	// Handle HR specially - draws a horizontal line and returns (no children)
+	if e.hr {
+		renderHR(buf, e)
+		return
+	}
+
 	// 1. Fill background
 	if e.background != nil {
 		buf.Fill(rect, ' ', *e.background)
@@ -209,5 +215,27 @@ func (e *Element) Render(buf *tui.Buffer, width, height int) {
 		layout.Calculate(e, width, height)
 	}
 	RenderTree(buf, e)
+}
+
+// hrCharacter returns the horizontal rule character based on border style.
+func hrCharacter(border tui.BorderStyle) rune {
+	switch border {
+	case tui.BorderDouble:
+		return '═' // U+2550
+	case tui.BorderThick:
+		return '━' // U+2501
+	default:
+		return '─' // U+2500
+	}
+}
+
+// renderHR draws a horizontal rule across the element's width.
+func renderHR(buf *tui.Buffer, e *Element) {
+	rect := e.ContentRect()
+	char := hrCharacter(e.border)
+
+	for x := rect.X; x < rect.Right(); x++ {
+		buf.SetRune(x, rect.Y, char, e.textStyle)
+	}
 }
 

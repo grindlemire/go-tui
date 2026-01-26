@@ -539,6 +539,7 @@ func TestAnalyzer_AllKnownTags(t *testing.T) {
 	tags := []string{
 		"div", "span", "p", "ul", "li",
 		"button", "input", "table", "progress",
+		"hr", "br",
 	}
 
 	for _, tag := range tags {
@@ -595,5 +596,155 @@ func TestAnalyzer_ErrorHint(t *testing.T) {
 	// Should have hint about similar attribute
 	if !strings.Contains(errStr, "did you mean") {
 		t.Errorf("error should contain hint, got: %s", errStr)
+	}
+}
+
+func TestAnalyzer_HRValid(t *testing.T) {
+	type tc struct {
+		input     string
+		wantError bool
+	}
+
+	tests := map[string]tc{
+		"hr self-closing": {
+			input: `package x
+@component Test() {
+	<div>
+		<hr/>
+	</div>
+}`,
+			wantError: false,
+		},
+		"hr with class": {
+			input: `package x
+@component Test() {
+	<div>
+		<hr class="border-double"/>
+	</div>
+}`,
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.tui", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestAnalyzer_BRValid(t *testing.T) {
+	type tc struct {
+		input     string
+		wantError bool
+	}
+
+	tests := map[string]tc{
+		"br self-closing": {
+			input: `package x
+@component Test() {
+	<div>
+		<br/>
+	</div>
+}`,
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.tui", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestAnalyzer_VoidWithChildren(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+	}
+
+	tests := map[string]tc{
+		"hr with text child": {
+			input: `package x
+@component Test() {
+	<div>
+		<hr>text</hr>
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "<hr> is a void element and cannot have children",
+		},
+		"hr with element child": {
+			input: `package x
+@component Test() {
+	<div>
+		<hr><span>nested</span></hr>
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "<hr> is a void element and cannot have children",
+		},
+		"br with text child": {
+			input: `package x
+@component Test() {
+	<div>
+		<br>text</br>
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "<br> is a void element and cannot have children",
+		},
+		"input with child": {
+			input: `package x
+@component Test() {
+	<div>
+		<input>text</input>
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "<input> is a void element and cannot have children",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.tui", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
 	}
 }

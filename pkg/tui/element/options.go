@@ -261,3 +261,22 @@ func WithScrollbarThumbStyle(style tui.Style) Option {
 		e.scrollbarThumbStyle = style
 	}
 }
+
+// --- HR Options ---
+
+// WithHR configures an element as a horizontal rule.
+// The element renders a horizontal line character across its width.
+// Uses ─ (U+2500) by default, or other characters based on border style:
+//   - BorderDouble → ═ (U+2550)
+//   - BorderThick  → ━ (U+2501)
+//
+// Sets AlignSelf to Stretch so HR fills container width regardless
+// of parent's AlignItems setting.
+func WithHR() Option {
+	return func(e *Element) {
+		e.hr = true
+		e.style.Height = layout.Fixed(1)
+		stretch := layout.AlignStretch
+		e.style.AlignSelf = &stretch // Always stretch to fill width
+	}
+}

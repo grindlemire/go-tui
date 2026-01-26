@@ -313,6 +313,26 @@ func (s *Server) getElementCompletions() []CompletionItem {
 				Value: "A progress bar.\n\n```tui\n<progress value={50} max={100} />\n```",
 			},
 		},
+		{
+			Label:      "hr",
+			Kind:       CompletionItemKindClass,
+			Detail:     "Horizontal rule",
+			InsertText: "hr/>",
+			Documentation: &MarkupContent{
+				Kind:  "markdown",
+				Value: "A horizontal dividing line.\n\n```tui\n<hr/>\n<hr class=\"border-double text-cyan\"/>\n```",
+			},
+		},
+		{
+			Label:      "br",
+			Kind:       CompletionItemKindClass,
+			Detail:     "Line break",
+			InsertText: "br/>",
+			Documentation: &MarkupContent{
+				Kind:  "markdown",
+				Value: "An empty line break.\n\n```tui\n<span>Line 1</span>\n<br/>\n<span>Line 2</span>\n```",
+			},
+		},
 	}
 }
 
