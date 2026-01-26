@@ -160,6 +160,14 @@ func (e *Element) IntrinsicSize() (width, height int) {
 		return 0, 1
 	}
 
+	// Scrollable elements have 0 intrinsic size in their scroll direction.
+	// They rely on flexGrow or explicit sizing to get space, then scroll their content.
+	// This prevents content from pushing other elements out of the layout.
+	if e.scrollMode != ScrollNone {
+		// Return 0 for scrollable dimensions - the element will use available space
+		return 0, 0
+	}
+
 	// Text content has explicit intrinsic size
 	if e.text != "" {
 		textWidth := stringWidth(e.text)

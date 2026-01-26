@@ -5,6 +5,7 @@
 /hello_rect
 /dsl-counter
 /focus
+/streaming
 
 # Go
 *.exe
