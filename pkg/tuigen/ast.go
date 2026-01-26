@@ -119,9 +119,10 @@ func (e *Element) Pos() Position { return e.Position }
 
 // Attribute represents a tag attribute: name=value or name={expr}
 type Attribute struct {
-	Name     string
-	Value    Node // StringLit, IntLit, FloatLit, GoExpr, or BoolLit
-	Position Position
+	Name          string
+	Value         Node     // StringLit, IntLit, FloatLit, GoExpr, or BoolLit
+	Position      Position // Position of the attribute name
+	ValuePosition Position // Position of the attribute value (start of value, after '=')
 }
 
 func (a *Attribute) node()        {}

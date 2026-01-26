@@ -132,13 +132,13 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 
 ---
 
-## Phase 3: Integrate Validation into Analyzer and LSP Diagnostics
+## Phase 3: Integrate Validation into Analyzer and LSP Diagnostics ✓
 
 **Reference:** [tailwind-expansion-design.md §2](./tailwind-expansion-design.md#2-architecture)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Modify `pkg/tuigen/analyzer.go` - Add class validation
+- [x] Modify `pkg/tuigen/analyzer.go` - Add class validation
   - In `analyzeAttribute()` when `attr.Name == "class"`:
     - Call `ParseTailwindClassesWithPositions()` on the class value
     - For each invalid class, create an error with:
@@ -147,34 +147,34 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
       - Hint: `did you mean "Y"?` if suggestion exists
   - Track attribute position for error reporting
 
-- [ ] Modify `pkg/tuigen/ast.go` - Add position tracking to Attribute
+- [x] Modify `pkg/tuigen/ast.go` - Add position tracking to Attribute
   - Ensure `Attribute` struct has `ValuePosition Position` field for the start of the value
   - This is needed to calculate individual class positions within the value string
 
-- [ ] Modify `pkg/tuigen/parser.go` - Track attribute value positions
+- [x] Modify `pkg/tuigen/parser.go` - Track attribute value positions
   - When parsing string literal attribute values, record the position
   - Store in `Attribute.ValuePosition`
 
-- [ ] Modify `pkg/tuigen/error.go` - Extend error for class validation
-  - Ensure errors can have both `Position` and `EndPosition` for range-based highlighting
-  - Or use character length in existing error for LSP range calculation
+- [x] Modify `pkg/tuigen/errors.go` - Extend error for class validation
+  - Added `EndPos Position` field to Error struct for range-based highlighting
+  - Added `NewErrorWithRange()` and `NewErrorWithRangeAndHint()` helper functions
 
-- [ ] Modify `pkg/lsp/diagnostics.go` - Handle class validation errors
-  - Update `TuigenPosToRange()` to handle class-specific error ranges
-  - When error is for a specific class within an attribute, calculate precise range
-  - Use `StartCol` and `EndCol` from validation result
+- [x] Modify `pkg/lsp/diagnostics.go` - Handle class validation errors
+  - Added `TuigenPosToRangeWithEnd()` function for precise range calculation
+  - Updated `publishDiagnostics()` to use EndPos when available for range-based highlighting
 
-- [ ] Modify `pkg/lsp/document.go` - Ensure class errors propagate
-  - Class validation errors from analyzer should appear in `doc.Errors`
+- [x] Modify `pkg/lsp/document.go` - Ensure class errors propagate
+  - Added analyzer invocation in `parseDocument()` to collect semantic errors
+  - Class validation errors from analyzer now appear in `doc.Errors`
   - LSP publishes these via `publishDiagnostics()`
 
-- [ ] Add integration tests
+- [x] Add integration tests
   - Test that `.tui` file with `class="flex-columns"` produces error diagnostic
   - Test that error message includes "did you mean flex-col?"
-  - Test that error range covers only "flex-columns", not entire attribute
+  - Test that error range covers only the invalid class (EndPos is set)
   - Test that valid classes don't produce errors
 
-**Tests:** Run `go test ./pkg/tuigen/... ./pkg/lsp/...` once at phase end
+**Tests:** Run `go test ./pkg/tuigen/... ./pkg/lsp/...` once at phase end ✓
 
 ---
 
@@ -241,7 +241,7 @@ Implementation phases for Tailwind expansion. Each phase builds on the previous 
 |-------|-------------|--------|
 | 1 | Expand Tailwind class mappings with new patterns and accumulation | ✓ Complete |
 | 2 | Add validation, similarity matching, and class info registry | ✓ Complete |
-| 3 | Integrate validation into analyzer and LSP diagnostics | Pending |
+| 3 | Integrate validation into analyzer and LSP diagnostics | ✓ Complete |
 | 4 | Add class autocomplete to LSP completion handler | Pending |
 
 ## Files to Create
@@ -260,7 +260,7 @@ pkg/tui/element/
 | `pkg/tuigen/analyzer.go` | Class validation integration |
 | `pkg/tuigen/ast.go` | ValuePosition on Attribute |
 | `pkg/tuigen/parser.go` | Track attribute value positions |
-| `pkg/tuigen/error.go` | Range-based error support if needed |
+| `pkg/tuigen/errors.go` | Added EndPos field and range-based error functions |
 | `pkg/lsp/completion.go` | Class attribute detection, Tailwind completions |
 | `pkg/lsp/diagnostics.go` | Precise range calculation for class errors |
 | `pkg/lsp/document.go` | Ensure class errors propagate |

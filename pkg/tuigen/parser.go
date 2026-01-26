@@ -683,19 +683,27 @@ func (p *Parser) parseAttribute() *Attribute {
 	// Check for shorthand boolean attribute (no =)
 	if p.current.Type != TokenEquals {
 		return &Attribute{
-			Name:     name,
-			Value:    &BoolLit{Value: true, Position: pos},
-			Position: pos,
+			Name:          name,
+			Value:         &BoolLit{Value: true, Position: pos},
+			Position:      pos,
+			ValuePosition: pos,
 		}
 	}
 
 	p.advance() // consume =
+
+	// Record the position of the value (after the '=')
+	valuePos := p.position()
 
 	// Parse value
 	var value Node
 	switch p.current.Type {
 	case TokenString:
 		value = &StringLit{Value: p.current.Literal, Position: p.position()}
+		// For string literals, the value position should be inside the quotes
+		// The current position is at the opening quote, so add 1 for the quote
+		valuePos = p.position()
+		valuePos.Column++ // Move past the opening quote
 		p.advance()
 	case TokenInt:
 		v, _ := strconv.ParseInt(p.current.Literal, 10, 64)
@@ -726,9 +734,10 @@ func (p *Parser) parseAttribute() *Attribute {
 	}
 
 	return &Attribute{
-		Name:     name,
-		Value:    value,
-		Position: pos,
+		Name:          name,
+		Value:         value,
+		Position:      pos,
+		ValuePosition: valuePos,
 	}
 }
 

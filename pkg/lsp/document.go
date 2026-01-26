@@ -113,6 +113,18 @@ func (dm *DocumentManager) parseDocument(doc *Document) {
 			doc.Errors = []*tuigen.Error{tuiErr}
 		}
 	}
+
+	// Run analyzer to collect semantic errors (including Tailwind class validation)
+	if ast != nil {
+		analyzer := tuigen.NewAnalyzer()
+		if analyzerErr := analyzer.Analyze(ast); analyzerErr != nil {
+			if errList, ok := analyzerErr.(*tuigen.ErrorList); ok {
+				doc.Errors = append(doc.Errors, errList.Errors()...)
+			} else if tuiErr, ok := analyzerErr.(*tuigen.Error); ok {
+				doc.Errors = append(doc.Errors, tuiErr)
+			}
+		}
+	}
 }
 
 // uriToPath converts a file:// URI to a file path.
@@ -199,6 +211,20 @@ func TuigenPosToRange(pos tuigen.Position, length int) Range {
 	end := Position{
 		Line:      pos.Line - 1,
 		Character: pos.Column - 1 + length,
+	}
+	return Range{Start: start, End: end}
+}
+
+// TuigenPosToRangeWithEnd converts start and end tuigen.Positions to an LSP Range.
+// tuigen positions are 1-indexed, LSP positions are 0-indexed.
+func TuigenPosToRangeWithEnd(startPos, endPos tuigen.Position) Range {
+	start := Position{
+		Line:      startPos.Line - 1,
+		Character: startPos.Column - 1,
+	}
+	end := Position{
+		Line:      endPos.Line - 1,
+		Character: endPos.Column - 1,
 	}
 	return Range{Start: start, End: end}
 }
