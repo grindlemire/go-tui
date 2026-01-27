@@ -24,7 +24,9 @@ Provide a unified event handling system with a hybrid push/poll architecture. Th
 - **SetRoot takes view directly**: `app.SetRoot(view)` extracts Root and starts watchers automatically
 - **Regular Go functions**: Event handlers are normal Go functions, no special DSL syntax
 - **Batched rendering**: Multiple events are processed before a single render
-- **Cleanup handles**: Watchers stopped automatically when app stops
+- **Cleanup handles**: Watchers stopped automatically when app stops (via stopCh)
+- **App-level key bindings**: `SetGlobalKeyHandler` for quit and other app-level keys—components don't manage app lifecycle
+- **Graceful SIGINT handling**: Ctrl+C triggers automatic shutdown
 
 ### Non-Goals
 
@@ -67,7 +69,7 @@ Provide a unified event handling system with a hybrid push/poll architecture. Th
 |-----------|--------|
 | `pkg/tui/watcher.go` | NEW: Watcher interface, Watch(), OnTimer() functions |
 | `pkg/tui/dirty.go` | NEW: Dirty flag management and automatic tracking |
-| `pkg/tui/app.go` | Add Run(), Stop(), SetRoot() with Viewable interface |
+| `pkg/tui/app.go` | Add Run(), Stop(), SetRoot(), SetGlobalKeyHandler(), SIGINT handling |
 | `pkg/tui/element/element.go` | Add onKeyPress, onClick (no bool return); mutations mark dirty |
 | `pkg/tui/element/options.go` | Add WithOnKeyPress, WithOnClick (no bool return) |
 | `pkg/tuigen/generator.go` | Collect watchers from onChannel/onTimer attributes |
@@ -149,7 +151,6 @@ func (w *channelWatcher[T]) Start(app *App) {
                 if !ok {
                     return // Channel closed
                 }
-                val := val // capture
                 app.eventQueue <- func() {
                     w.handler(val)
                 }
@@ -200,10 +201,11 @@ func (w *timerWatcher) Start(app *App) {
 type App struct {
     // ... existing fields ...
 
-    root       *element.Element
-    eventQueue chan func()
-    stopCh     chan struct{}
-    stopped    bool
+    root             *element.Element
+    eventQueue       chan func()
+    stopCh           chan struct{}
+    stopped          bool
+    globalKeyHandler func(KeyEvent) bool  // Returns true if event consumed
 }
 
 func NewApp() (*App, error) {
@@ -217,6 +219,13 @@ func NewApp() (*App, error) {
     }
 
     return app, nil
+}
+
+// SetGlobalKeyHandler sets a handler that runs before dispatching to focused element.
+// If the handler returns true, the event is consumed and not dispatched further.
+// Use this for app-level key bindings like quit.
+func (a *App) SetGlobalKeyHandler(fn func(KeyEvent) bool) {
+    a.globalKeyHandler = fn
 }
 
 // Viewable is implemented by generated view structs.
@@ -242,9 +251,17 @@ func (a *App) SetRoot(v any) {
     }
 }
 
-// Run starts the main event loop. Blocks until Stop() is called.
+// Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
 // Rendering occurs only when the dirty flag is set (by mutations).
 func (a *App) Run() error {
+    // Handle Ctrl+C gracefully
+    sigCh := make(chan os.Signal, 1)
+    signal.Notify(sigCh, os.Interrupt)
+    go func() {
+        <-sigCh
+        a.Stop()
+    }()
+
     // Start input reader in background
     go a.readInputEvents()
 
@@ -278,19 +295,15 @@ func (a *App) Run() error {
 }
 
 // Stop signals the Run loop to exit gracefully and stops all watchers.
+// Watchers receive the stop signal via stopCh and exit their goroutines.
 func (a *App) Stop() {
+    if a.stopped {
+        return // Already stopped
+    }
     a.stopped = true
 
-    // Stop all registered watchers
-    for _, h := range a.watcherStops {
-        h.Stop()
-    }
-
-    // Send a no-op to unblock the queue if waiting
-    select {
-    case a.eventQueue <- func() {}:
-    default:
-    }
+    // Signal all watcher goroutines to stop
+    close(a.stopCh)
 }
 
 // QueueUpdate enqueues a function to run on the main loop.
@@ -306,16 +319,25 @@ func (a *App) QueueUpdate(fn func()) {
 
 // readInputEvents reads terminal input in a goroutine and queues events.
 func (a *App) readInputEvents() {
-    for !a.stopped {
+    for {
+        select {
+        case <-a.stopCh:
+            return
+        default:
+        }
+
         event, ok := a.reader.PollEvent(50 * time.Millisecond)
         if !ok {
             continue
         }
-        if a.stopped {
-            return
-        }
-        event := event // capture
+
         a.eventQueue <- func() {
+            // Global key handler runs first (for app-level bindings like quit)
+            if keyEvent, isKey := event.(KeyEvent); isKey {
+                if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
+                    return // Event consumed by global handler
+                }
+            }
             a.Dispatch(event)
         }
     }
@@ -462,6 +484,7 @@ func tick(elapsed *tui.State[int]) func() {
 }
 
 // No bool return needed - mutations mark dirty automatically
+// Note: App-level concerns like quit are handled via SetGlobalKeyHandler
 func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
     return func(e tui.KeyEvent) {
         switch e.Rune {
@@ -469,8 +492,6 @@ func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
             count.Set(count.Get() + 1)
         case '-':
             count.Set(count.Get() - 1)
-        case 'q':
-            tui.Stop()
         }
         // No return needed
     }
@@ -747,8 +768,11 @@ All handlers have unified signatures without bool returns. Mutations automatical
 ```
 Terminal → EventReader.PollEvent()
     → readInputEvents goroutine
-    → eventQueue <- func() { Dispatch(event) }
+    → eventQueue <- func() { ... }
     → Main loop drains queue
+    → Global key handler runs first (if set)
+        → If returns true: event consumed, stop here
+        → If returns false: continue to dispatch
     → FocusManager.Dispatch()
     → Element.HandleEvent()
     → element.onKeyPress(event)
@@ -756,6 +780,19 @@ Terminal → EventReader.PollEvent()
     → Mutation automatically calls MarkDirty()
     → After draining queue, check dirty flag
     → Render() if dirty, clear flag
+```
+
+### 7.1.1 SIGINT Flow
+
+```
+User presses Ctrl+C
+    → OS sends SIGINT
+    → signal.Notify receives on sigCh
+    → Goroutine calls app.Stop()
+    → stopCh is closed
+    → All watcher goroutines exit
+    → readInputEvents goroutine exits
+    → Run() returns
 ```
 
 ### 7.2 Channel Event Flow
@@ -832,7 +869,7 @@ import (
         </div>
 
         <div class="border-single" height={1}>
-            <span class="text-dim">{"j/k scroll, q quit"}</span>
+            <span class="text-dim">{"j/k scroll | q quit (app-level)"}</span>
         </div>
     </div>
 }
@@ -846,6 +883,7 @@ func handleData(lines *tui.State[[]string], count *tui.State[int]) func(string) 
 }
 
 // No bool return - ScrollBy() marks dirty automatically
+// Note: Quit is handled at app level via SetGlobalKeyHandler, not here
 func handleKeys(v StreamAppView) func(tui.KeyEvent) {
     return func(e tui.KeyEvent) {
         switch e.Rune {
@@ -853,8 +891,6 @@ func handleKeys(v StreamAppView) func(tui.KeyEvent) {
             v.Content.ScrollBy(0, 1)
         case 'k':
             v.Content.ScrollBy(0, -1)
-        case 'q':
-            tui.Stop()
         }
     }
 }
@@ -881,6 +917,16 @@ import (
 func main() {
     app, _ := tui.NewApp()
     defer app.Close()
+
+    // App-level key bindings (quit on 'q' or Ctrl+C)
+    // Ctrl+C is also handled automatically via SIGINT
+    app.SetGlobalKeyHandler(func(e tui.KeyEvent) bool {
+        if e.Rune == 'q' {
+            app.Stop()
+            return true // Event consumed
+        }
+        return false // Pass to focused element
+    })
 
     dataCh := make(chan string, 100)
     go produce(dataCh)
@@ -914,7 +960,10 @@ func produce(ch chan<- string) {
 8. **Deferred watcher startup** - watchers are collected during construction, started by SetRoot
 9. **SetRoot takes view directly** - implements Viewable interface to extract Root and watchers
 10. **Handler functions are regular Go** - no special DSL syntax for channel/timer watchers
-11. **App.Stop() stops all watchers** - automatic cleanup when app exits
+11. **App.Stop() stops all watchers** - closes stopCh, automatic cleanup when app exits
+12. **Global key handler for app-level bindings** - `SetGlobalKeyHandler` runs before dispatch to components
+13. **SIGINT handled automatically** - Ctrl+C triggers graceful shutdown via `app.Stop()`
+14. **Component handlers don't manage app lifecycle** - quit/stop is handled at app level, not in component handlers
 
 ---
 
@@ -939,14 +988,15 @@ func produce(ch chan<- string) {
    - Unit tests for dirty tracking
 
 2. **Phase 2: App.Run() & SetRoot** (Medium)
-   - Add eventQueue, stopped, stopCh to App struct
+   - Add eventQueue, stopped, stopCh, globalKeyHandler to App struct
    - Implement Viewable interface
    - Implement SetRoot() that extracts Root and starts watchers
-   - Implement Run() with dirty flag checking (not bool returns)
-   - Implement Stop() with automatic watcher cleanup
+   - Implement SetGlobalKeyHandler() for app-level key bindings
+   - Implement Run() with dirty flag checking, SIGINT handling
+   - Implement Stop() that closes stopCh for automatic watcher cleanup
    - Implement QueueUpdate() for background thread safety
-   - Add readInputEvents() goroutine
-   - Unit tests for event queue and cleanup
+   - Add readInputEvents() goroutine with global key handler support
+   - Unit tests for event queue, global handler, and cleanup
 
 3. **Phase 3: Element Handler Changes** (Small)
    - Add onKeyPress, onClick fields (no bool return)
@@ -966,7 +1016,7 @@ func produce(ch chan<- string) {
 
 ## 11. Success Criteria
 
-1. `app.Run()` blocks and processes events until `app.Stop()` is called
+1. `app.Run()` blocks and processes events until `app.Stop()` is called or SIGINT received
 2. Channel data triggers handler immediately (no polling delay)
 3. Timer fires at specified interval
 4. Input events are dispatched to focused element
@@ -977,9 +1027,12 @@ func produce(ch chan<- string) {
 9. `tui.OnTimer(duration, handler)` returns Watcher that is collected during construction
 10. `app.SetRoot(view)` extracts Root and starts all collected watchers
 11. View structs implement `Viewable` interface (GetRoot, GetWatchers)
-12. `app.Stop()` automatically stops all running watchers
-13. Example streaming app works with channel + timer + key handlers (no bool returns, no Context)
-14. Zero CPU usage when idle (no events, no rendering)
+12. `app.Stop()` closes stopCh and automatically stops all running watchers
+13. `app.SetGlobalKeyHandler()` allows app-level key bindings (e.g., quit on 'q')
+14. Global key handler runs before dispatch; returns true to consume event
+15. Ctrl+C (SIGINT) triggers graceful shutdown automatically
+16. Example streaming app works with channel + timer + key handlers (no bool returns, no Context)
+17. Zero CPU usage when idle (no events, no rendering)
 
 ---
 
