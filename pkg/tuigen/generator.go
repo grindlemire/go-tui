@@ -16,6 +16,12 @@ type Generator struct {
 
 	// Named refs tracking for current component
 	namedRefs []NamedRef
+
+	// Watcher expressions for current component (onChannel/onTimer)
+	watchers []string
+
+	// Component calls with watchers that need aggregation
+	componentVars []string
 }
 
 // NewGenerator creates a new code generator.
@@ -70,9 +76,10 @@ func (g *Generator) generatePackage(pkg string) {
 // generateImports writes the import block.
 func (g *Generator) generateImports(imports []Import) {
 	if len(imports) == 0 {
-		// Always include element import for generated code
+		// Always include element and tui imports for generated code
 		g.writeln("import (")
 		g.indent++
+		g.writeln(`"github.com/grindlemire/go-tui/pkg/tui"`)
 		g.writeln(`"github.com/grindlemire/go-tui/pkg/tui/element"`)
 		g.indent--
 		g.writeln(")")
@@ -80,12 +87,15 @@ func (g *Generator) generateImports(imports []Import) {
 		return
 	}
 
-	// Check if element is already imported
+	// Check if element and tui are already imported
 	hasElement := false
+	hasTui := false
 	for _, imp := range imports {
 		if imp.Path == "github.com/grindlemire/go-tui/pkg/tui/element" {
 			hasElement = true
-			break
+		}
+		if imp.Path == "github.com/grindlemire/go-tui/pkg/tui" {
+			hasTui = true
 		}
 	}
 
@@ -100,9 +110,15 @@ func (g *Generator) generateImports(imports []Import) {
 		}
 	}
 
-	// Add element import if not present
-	if !hasElement {
+	// Add required imports if not present
+	needsSeparator := !hasElement || !hasTui
+	if needsSeparator {
 		g.writeln("")
+	}
+	if !hasTui {
+		g.writeln(`"github.com/grindlemire/go-tui/pkg/tui"`)
+	}
+	if !hasElement {
 		g.writeln(`"github.com/grindlemire/go-tui/pkg/tui/element"`)
 	}
 
@@ -113,8 +129,10 @@ func (g *Generator) generateImports(imports []Import) {
 
 // generateComponent generates a Go function from a component.
 func (g *Generator) generateComponent(comp *Component) {
-	// Reset variable counter for each component
+	// Reset variable counter and watcher tracking for each component
 	g.varCounter = 0
+	g.watchers = nil
+	g.componentVars = nil
 
 	// Collect named refs from this component
 	analyzer := NewAnalyzer()
@@ -144,6 +162,7 @@ func (g *Generator) generateComponent(comp *Component) {
 
 	// Pre-declare view variable so closures can capture it
 	g.writef("var view %s\n", structName)
+	g.writeln("var watchers []tui.Watcher")
 	g.writeln("")
 
 	// Declare slice/map variables at function scope for loop refs
@@ -218,6 +237,19 @@ func (g *Generator) generateComponent(comp *Component) {
 		}
 	}
 
+	// Emit watcher collection statements (collected during element generation)
+	if len(g.watchers) > 0 || len(g.componentVars) > 0 {
+		g.writeln("")
+		// Append watchers from onChannel/onTimer attributes
+		for _, watcher := range g.watchers {
+			g.writef("watchers = append(watchers, %s)\n", watcher)
+		}
+		// Aggregate watchers from child component calls
+		for _, compVar := range g.componentVars {
+			g.writef("watchers = append(watchers, %s.GetWatchers()...)\n", compVar)
+		}
+	}
+
 	// Populate view struct before returning
 	g.writeln("")
 	g.writef("view = %s{\n", structName)
@@ -231,6 +263,7 @@ func (g *Generator) generateComponent(comp *Component) {
 	} else {
 		g.writeln("Root: nil,")
 	}
+	g.writeln("watchers: watchers,")
 	for _, ref := range g.namedRefs {
 		// If this ref is on the root element, point to rootVar
 		if ref.Name == rootRef {
@@ -255,7 +288,8 @@ func (g *Generator) generateViewStruct(compName string, refs []NamedRef) {
 
 	g.writef("type %s struct {\n", structName)
 	g.indent++
-	g.writeln("Root *element.Element")
+	g.writeln("Root     *element.Element")
+	g.writeln("watchers []tui.Watcher")
 
 	for _, ref := range refs {
 		if ref.InLoop {
@@ -275,6 +309,14 @@ func (g *Generator) generateViewStruct(compName string, refs []NamedRef) {
 
 	g.indent--
 	g.writeln("}")
+	g.writeln("")
+
+	// Generate GetRoot() method to implement tui.Viewable
+	g.writef("func (v %s) GetRoot() tui.Renderable { return v.Root }\n", structName)
+	g.writeln("")
+
+	// Generate GetWatchers() method to implement tui.Viewable
+	g.writef("func (v %s) GetWatchers() []tui.Watcher { return v.watchers }\n", structName)
 	g.writeln("")
 }
 
@@ -382,6 +424,15 @@ func (g *Generator) buildElementOptions(elem *Element) []string {
 			continue
 		}
 
+		// Handle onChannel and onTimer specially - they are watchers, not element options
+		if attr.Name == "onChannel" || attr.Name == "onTimer" {
+			watcherExpr := g.generateAttributeValue(attr.Value)
+			if watcherExpr != "" {
+				g.watchers = append(g.watchers, watcherExpr)
+			}
+			continue
+		}
+
 		opt := g.generateAttributeOption(attr)
 		if opt != "" {
 			options = append(options, opt)
@@ -469,9 +520,14 @@ var attributeToOption = map[string]string{
 	"textAlign": "element.WithTextAlign(%s)",
 
 	// Focus
-	"onFocus": "element.WithOnFocus(%s)",
-	"onBlur":  "element.WithOnBlur(%s)",
-	"onEvent": "element.WithOnEvent(%s)",
+	"onFocus":    "element.WithOnFocus(%s)",
+	"onBlur":     "element.WithOnBlur(%s)",
+	"onEvent":    "element.WithOnEvent(%s)",
+	"focusable":  "element.WithFocusable(%s)",
+
+	// Event handlers (no bool return)
+	"onKeyPress": "element.WithOnKeyPress(%s)",
+	"onClick":    "element.WithOnClick(%s)",
 
 	// Scroll
 	"scrollable": "element.WithScrollable(%s)",
@@ -807,6 +863,9 @@ func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar
 			g.writef("%s := %s(%s, %s)\n", varName, call.Name, call.Args, childrenVar)
 		}
 	}
+
+	// Track this component call for watcher aggregation
+	g.componentVars = append(g.componentVars, varName)
 
 	// Add to parent if specified - use .Root to get the element from the view struct
 	if parentVar != "" {

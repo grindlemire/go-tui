@@ -103,9 +103,18 @@ var knownAttributes = map[string]bool{
 	"textAlign": true,
 
 	// Focus
-	"onFocus": true,
-	"onBlur":  true,
-	"onEvent": true,
+	"onFocus":   true,
+	"onBlur":    true,
+	"onEvent":   true,
+	"focusable": true,
+
+	// Event handlers (no bool return)
+	"onKeyPress": true,
+	"onClick":    true,
+
+	// Watchers
+	"onChannel": true,
+	"onTimer":   true,
 
 	// Scroll
 	"scrollable":         true,

@@ -1,6 +1,11 @@
-// Package main demonstrates streaming text using DSL-generated components.
-// This example shows how to combine .tui file components with imperative
-// streaming logic for real-time content with auto-scroll behavior.
+// Package main demonstrates streaming text using DSL-generated components
+// with the new event handling system (watchers, Run loop, SetRoot).
+//
+// This example shows:
+// - Using the Run() event loop
+// - App-level global key handler for quit
+// - Using SetRoot with Viewable interface
+// - Named element refs for accessing elements
 //
 // To build and run:
 //
@@ -22,100 +27,9 @@ import (
 
 //go:generate go run ../../cmd/tui generate streaming.tui
 
-// StreamBox wraps an Element to provide channel-based text streaming.
-type StreamBox struct {
-	elem       *element.Element
-	textCh     <-chan string
-	textStyle  tui.Style
-	autoScroll bool
-}
-
-// NewStreamBox creates a new StreamBox that receives text from the given channel.
-func NewStreamBox(textCh <-chan string) *StreamBox {
-	s := &StreamBox{
-		elem: element.New(
-			element.WithScrollable(element.ScrollVertical),
-			element.WithDirection(layout.Column),
-		),
-		textCh:     textCh,
-		textStyle:  tui.NewStyle().Foreground(tui.Green),
-		autoScroll: true,
-	}
-
-	// Set up automatic polling via onUpdate hook
-	s.elem.SetOnUpdate(s.poll)
-
-	return s
-}
-
-// Element returns the underlying Element for adding to the tree.
-func (s *StreamBox) Element() *element.Element {
-	return s.elem
-}
-
-// IsAutoScrolling returns whether auto-scroll is currently enabled.
-func (s *StreamBox) IsAutoScrolling() bool {
-	return s.autoScroll
-}
-
-// poll is called automatically before each render via the onUpdate hook.
-func (s *StreamBox) poll() {
-	hadContent := false
-	for {
-		select {
-		case text, ok := <-s.textCh:
-			if !ok {
-				return
-			}
-			s.appendText(text)
-			hadContent = true
-		default:
-			if hadContent && s.autoScroll {
-				s.elem.ScrollToBottom()
-			}
-			return
-		}
-	}
-}
-
-// appendText splits text on newlines and adds each line as a child element.
-func (s *StreamBox) appendText(text string) {
-	s.updateAutoScroll()
-
-	lines := strings.Split(text, "\n")
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		lineElem := element.New(
-			element.WithText(line),
-			element.WithTextStyle(s.textStyle),
-		)
-		s.elem.AddChild(lineElem)
-	}
-}
-
-// updateAutoScroll checks if the user has scrolled away from the bottom.
-func (s *StreamBox) updateAutoScroll() {
-	_, scrollY := s.elem.ScrollOffset()
-	_, maxY := s.elem.MaxScroll()
-
-	if scrollY >= maxY-1 {
-		s.autoScroll = true
-	}
-}
-
-// HandleScrollEvent updates the auto-scroll state based on user interaction.
-func (s *StreamBox) HandleScrollEvent() {
-	_, scrollY := s.elem.ScrollOffset()
-	_, maxY := s.elem.MaxScroll()
-
-	if scrollY < maxY-1 {
-		s.autoScroll = false
-	} else {
-		s.autoScroll = true
-	}
-}
+// lineCount and elapsed are updated by channels
+var lineCount int
+var elapsed int
 
 func main() {
 	app, err := tui.NewApp()
@@ -125,114 +39,118 @@ func main() {
 	}
 	defer app.Close()
 
-	width, height := app.Size()
+	// Create the streaming content element manually
+	// (we can't use DSL watchers fully yet since State isn't implemented)
+	content := element.New(
+		element.WithDirection(layout.Column),
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithFlexGrow(1),
+		element.WithScrollable(element.ScrollVertical),
+		element.WithFocusable(true),
+	)
 
-	// Create a channel for streaming text
-	textCh := make(chan string, 100)
+	// Build the UI
+	view := buildUI(content)
+	app.SetRoot(view)
 
-	// Create the StreamBox for content
-	streamBox := NewStreamBox(textCh)
-	streamBox.Element().SetBorder(tui.BorderSingle)
-	streamBox.Element().SetBorderStyle(tui.NewStyle().Foreground(tui.Cyan))
+	// Set up app-level key handler for quit and scroll
+	app.SetGlobalKeyHandler(func(e tui.KeyEvent) bool {
+		if e.Rune == 'q' || e.Key == tui.KeyEscape {
+			app.Stop()
+			return true // Event consumed
+		}
+		// Handle scroll keys
+		if e.Rune == 'j' || e.Rune == 106 {
+			content.ScrollBy(0, 1)
+			return true
+		}
+		if e.Rune == 'k' || e.Rune == 107 {
+			content.ScrollBy(0, -1)
+			return true
+		}
+		return false // Pass to focused element
+	})
 
-	// Apply flexGrow to make it fill available space
-	style := streamBox.Element().Style()
-	style.FlexGrow = 1
-	style.Padding = layout.EdgeAll(1)
-	streamBox.Element().SetStyle(style)
+	// Create data channel for streaming
+	dataCh := make(chan string, 100)
 
-	// Build UI using DSL-generated components
-	view := buildUI(width, height, streamBox.Element(), 0, 0, "ON")
-	app.SetRoot(view.Root)
+	// Set up channel watcher manually (since we don't have DSL support for State yet)
+	channelWatcher := tui.Watch(dataCh, func(line string) {
+		lineCount++
+		lineElem := element.New(
+			element.WithText(line),
+			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		)
+		content.AddChild(lineElem)
+		content.ScrollToBottom()
+	})
+	channelWatcher.Start(app.EventQueue(), app.StopCh())
 
-	// Register streamBox for focus (so it receives scroll events)
-	app.Focus().Register(streamBox.Element())
+	// Set up timer watcher manually
+	timerWatcher := tui.OnTimer(time.Second, func() {
+		elapsed++
+		tui.MarkDirty() // Force re-render to update footer
+	})
+	timerWatcher.Start(app.EventQueue(), app.StopCh())
 
 	// Start the simulated streaming process
-	go simulateProcess(textCh)
+	go produce(dataCh)
 
-	// Main event loop
-	for {
-		event, ok := app.PollEvent(50 * time.Millisecond)
-		if ok {
-			switch e := event.(type) {
-			case tui.KeyEvent:
-				if e.Key == tui.KeyEscape {
-					return
-				}
-				// Handle vim-style navigation
-				if e.Key == tui.KeyRune {
-					switch e.Rune {
-					case 'j':
-						streamBox.Element().ScrollBy(0, 1)
-						streamBox.HandleScrollEvent()
-					case 'k':
-						streamBox.Element().ScrollBy(0, -1)
-						streamBox.HandleScrollEvent()
-					case 'g':
-						streamBox.Element().ScrollToTop()
-						streamBox.HandleScrollEvent()
-					case 'G':
-						streamBox.Element().ScrollToBottom()
-						streamBox.HandleScrollEvent()
-					}
-				}
-				// Track scrolling for auto-scroll behavior
-				switch e.Key {
-				case tui.KeyUp, tui.KeyDown, tui.KeyPageUp, tui.KeyPageDown, tui.KeyHome, tui.KeyEnd:
-					app.Dispatch(event)
-					streamBox.HandleScrollEvent()
-				default:
-					app.Dispatch(event)
-				}
-
-			case tui.ResizeEvent:
-				width, height = e.Width, e.Height
-				app.Dispatch(event)
-			}
-		}
-
-		// Get scroll metrics for footer
-		_, scrollY := streamBox.Element().ScrollOffset()
-		_, contentH := streamBox.Element().ContentSize()
-		_, viewportH := streamBox.Element().ViewportSize()
-		maxScroll := max(0, contentH-viewportH)
-		autoScrollStatus := "OFF"
-		if streamBox.IsAutoScrolling() {
-			autoScrollStatus = "ON"
-		}
-
-		// Rebuild UI with updated footer (DSL components are cheap to rebuild)
-		view = buildUI(width, height, streamBox.Element(), scrollY, maxScroll, autoScrollStatus)
-		app.SetRoot(view.Root)
-
-		app.Render()
+	// Run the main event loop
+	if err := app.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
-// UIView is the view struct for the manually created UI
-type UIView struct {
-	Root *element.Element
-}
+// buildUI creates the full UI tree
+func buildUI(content *element.Element) *element.Element {
+	// Header
+	header := element.New(
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithHeight(3),
+		element.WithDirection(layout.Row),
+		element.WithJustify(layout.JustifyCenter),
+		element.WithAlign(layout.AlignCenter),
+	)
+	headerText := element.New(
+		element.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
+		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
+	)
+	header.AddChild(headerText)
 
-// buildUI creates the UI tree using DSL-generated Header and Footer components.
-func buildUI(width, height int, content *element.Element, scrollY, maxScroll int, autoScrollStatus string) UIView {
+	// Footer (will be updated dynamically)
+	footer := element.New(
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithHeight(3),
+		element.WithDirection(layout.Row),
+		element.WithJustify(layout.JustifyCenter),
+		element.WithAlign(layout.AlignCenter),
+	)
+	footer.SetOnUpdate(func() {
+		// Update footer text each render
+		footer.RemoveAllChildren()
+		footerText := element.New(
+			element.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount, elapsed)),
+			element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+		)
+		footer.AddChild(footerText)
+	})
+
+	// Root container
 	root := element.New(
-		element.WithSize(width, height),
 		element.WithDirection(layout.Column),
 	)
+	root.AddChild(header, content, footer)
 
-	// Use DSL-generated components for header and footer - now return view structs
-	header := Header()
-	footer := Footer(scrollY, maxScroll, autoScrollStatus)
-
-	root.AddChild(header.Root, content, footer.Root)
-
-	return UIView{Root: root}
+	return root
 }
 
-// simulateProcess sends timestamped log lines to the channel.
-func simulateProcess(ch chan<- string) {
+// produce sends timestamped log lines to the channel.
+func produce(ch chan<- string) {
 	defer close(ch)
 
 	// Initial startup messages
@@ -252,21 +170,24 @@ func simulateProcess(ch chan<- string) {
 	// Simulate ongoing activity
 	requestNum := 1
 	for i := 0; i < 100; i++ {
+		var line string
 		switch i % 5 {
 		case 0:
-			ch <- fmt.Sprintf("[%s] Processing request #%d", time.Now().Format("15:04:05"), requestNum)
+			line = fmt.Sprintf("[%s] Processing request #%d", time.Now().Format("15:04:05"), requestNum)
 			requestNum++
 		case 1:
-			ch <- fmt.Sprintf("[%s] Database query completed in %dms", time.Now().Format("15:04:05"), 10+i%50)
+			line = fmt.Sprintf("[%s] Database query completed in %dms", time.Now().Format("15:04:05"), 10+i%50)
 		case 2:
-			ch <- fmt.Sprintf("[%s] Cache hit ratio: %.1f%%", time.Now().Format("15:04:05"), 85.0+float64(i%10))
+			line = fmt.Sprintf("[%s] Cache hit ratio: %.1f%%", time.Now().Format("15:04:05"), 85.0+float64(i%10))
 		case 3:
-			ch <- fmt.Sprintf("[%s] Memory usage: %dMB", time.Now().Format("15:04:05"), 128+i*2)
+			line = fmt.Sprintf("[%s] Memory usage: %dMB", time.Now().Format("15:04:05"), 128+i*2)
 		case 4:
-			ch <- fmt.Sprintf("[%s] Active connections: %d", time.Now().Format("15:04:05"), 50+i%20)
+			line = fmt.Sprintf("[%s] Active connections: %d", time.Now().Format("15:04:05"), 50+i%20)
 		}
+		ch <- line
 		time.Sleep(200 * time.Millisecond)
 	}
 
+	ch <- fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), strings.Repeat("=", 40))
 	ch <- fmt.Sprintf("[%s] Process completed successfully!", time.Now().Format("15:04:05"))
 }

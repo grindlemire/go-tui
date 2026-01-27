@@ -10,12 +10,23 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-type HeaderView struct {
-	Root *element.Element
+func handleScrollKeys(e tui.KeyEvent) {
+	// This is a simple handler - the actual scrolling is done in main.go
+	// because we need access to the Content element reference
 }
+
+type HeaderView struct {
+	Root     *element.Element
+	watchers []tui.Watcher
+}
+
+func (v HeaderView) GetRoot() tui.Renderable { return v.Root }
+
+func (v HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
 
 func Header() HeaderView {
 	var view HeaderView
+	var watchers []tui.Watcher
 
 	__tui_0 := element.New(
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
@@ -26,23 +37,30 @@ func Header() HeaderView {
 		element.WithAlign(layout.AlignCenter),
 	)
 	__tui_1 := element.New(
-		element.WithText("Streaming DSL Demo - Use j/k, PgUp/PgDn, Arrow Keys to scroll"),
+		element.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
 		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	__tui_0.AddChild(__tui_1)
 
 	view = HeaderView{
-		Root: __tui_0,
+		Root:     __tui_0,
+		watchers: watchers,
 	}
 	return view
 }
 
 type FooterView struct {
-	Root *element.Element
+	Root     *element.Element
+	watchers []tui.Watcher
 }
 
-func Footer(scrollY int, maxScroll int, autoScrollStatus string) FooterView {
+func (v FooterView) GetRoot() tui.Renderable { return v.Root }
+
+func (v FooterView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func Footer(lineCount int, elapsed int) FooterView {
 	var view FooterView
+	var watchers []tui.Watcher
 
 	__tui_0 := element.New(
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
@@ -53,13 +71,80 @@ func Footer(scrollY int, maxScroll int, autoScrollStatus string) FooterView {
 		element.WithAlign(layout.AlignCenter),
 	)
 	__tui_1 := element.New(
-		element.WithText(fmt.Sprintf("Scroll: %d/%d | Auto-scroll: %s | Press ESC to exit", scrollY, maxScroll, autoScrollStatus)),
+		element.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount, elapsed)),
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	__tui_0.AddChild(__tui_1)
 
 	view = FooterView{
-		Root: __tui_0,
+		Root:     __tui_0,
+		watchers: watchers,
+	}
+	return view
+}
+
+type StreamContentView struct {
+	Root     *element.Element
+	watchers []tui.Watcher
+	Content  *element.Element
+}
+
+func (v StreamContentView) GetRoot() tui.Renderable { return v.Root }
+
+func (v StreamContentView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func StreamContent() StreamContentView {
+	var view StreamContentView
+	var watchers []tui.Watcher
+
+	Content := element.New(
+		element.WithDirection(layout.Column),
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithFlexGrow(1),
+		element.WithScrollable(element.ScrollVertical),
+		element.WithFocusable(true),
+		element.WithOnKeyPress(handleScrollKeys),
+	)
+
+	view = StreamContentView{
+		Root:     Content,
+		watchers: watchers,
+		Content:  Content,
+	}
+	return view
+}
+
+type StreamAppView struct {
+	Root     *element.Element
+	watchers []tui.Watcher
+}
+
+func (v StreamAppView) GetRoot() tui.Renderable { return v.Root }
+
+func (v StreamAppView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func StreamApp(lineCount int, elapsed int) StreamAppView {
+	var view StreamAppView
+	var watchers []tui.Watcher
+
+	__tui_0 := element.New(
+		element.WithDirection(layout.Column),
+	)
+	__tui_1 := Header()
+	__tui_0.AddChild(__tui_1.Root)
+	__tui_2 := StreamContent()
+	__tui_0.AddChild(__tui_2.Root)
+	__tui_3 := Footer(lineCount, elapsed)
+	__tui_0.AddChild(__tui_3.Root)
+
+	watchers = append(watchers, __tui_1.GetWatchers()...)
+	watchers = append(watchers, __tui_2.GetWatchers()...)
+	watchers = append(watchers, __tui_3.GetWatchers()...)
+
+	view = StreamAppView{
+		Root:     __tui_0,
+		watchers: watchers,
 	}
 	return view
 }
