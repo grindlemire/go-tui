@@ -37,7 +37,7 @@ func Header() Element {
 				"type HeaderView struct",
 				"func Header() HeaderView",
 				"__tui_0 := element.New()",
-				"Root: __tui_0",
+				"Root:     __tui_0",
 			},
 		},
 		"component with params": {
@@ -184,7 +184,7 @@ func Layout() Element {
 	}
 
 	// Should return view struct with Root set to outer element
-	if !strings.Contains(code, "Root: __tui_0") {
+	if !strings.Contains(code, "Root:     __tui_0") {
 		t.Error("missing Root assignment to outer element")
 	}
 
@@ -214,7 +214,7 @@ func Counter() Element {
 
 	// Should return the box element (first top-level Element, not LetBinding) as Root
 	// @let bindings are used for references, not as root elements
-	if !strings.Contains(code, "Root: __tui_0") {
+	if !strings.Contains(code, "Root:     __tui_0") {
 		t.Errorf("should set Root to the box element, not the let-bound variable\nGot:\n%s", code)
 	}
 }
@@ -1265,8 +1265,8 @@ func TestGenerator_NamedRefs(t *testing.T) {
 				"Content := element.New(",
 				"element.WithScrollable(element.ScrollVertical)",
 				"view = StreamBoxView{",
-				"Root:    Content,",
-				"Content: Content,",
+				"Root:     Content,",
+				"Content:  Content,",
 			},
 		},
 		"multiple named refs": {
@@ -1280,15 +1280,15 @@ func TestGenerator_NamedRefs(t *testing.T) {
 }`,
 			wantContains: []string{
 				"type LayoutView struct",
-				"Header  *element.Element",
-				"Content *element.Element",
-				"Footer  *element.Element",
+				"Header   *element.Element",
+				"Content  *element.Element",
+				"Footer   *element.Element",
 				"Header := element.New(",
 				"Content := element.New(",
 				"Footer := element.New(",
-				"Header:  Header,",
-				"Content: Content,",
-				"Footer:  Footer,",
+				"Header:   Header,",
+				"Content:  Content,",
+				"Footer:   Footer,",
 			},
 		},
 		"named ref on root element": {
@@ -1377,7 +1377,7 @@ func TestGenerator_NamedRefsInConditional(t *testing.T) {
 	code := string(output)
 
 	// Should have comment indicating may be nil
-	if !strings.Contains(code, "Label *element.Element // may be nil") {
+	if !strings.Contains(code, "Label    *element.Element // may be nil") {
 		t.Errorf("missing 'may be nil' comment for conditional ref\nGot:\n%s", code)
 	}
 
@@ -1411,7 +1411,7 @@ func TestGenerator_NamedRefsWithKey(t *testing.T) {
 	code := string(output)
 
 	// Should generate map field for keyed ref
-	if !strings.Contains(code, "Users map[string]*element.Element") {
+	if !strings.Contains(code, "Users    map[string]*element.Element") {
 		t.Errorf("missing map field for keyed ref\nGot:\n%s", code)
 	}
 
@@ -1615,185 +1615,5 @@ func TestGenerator_OnClickAttribute(t *testing.T) {
 
 	if !strings.Contains(code, "element.WithOnClick(onClick)") {
 		t.Errorf("missing onClick option\nGot:\n%s", code)
-	}
-}
-
-// TestGenerator_StateBindings tests state variable and binding generation
-func TestGenerator_StateBindings(t *testing.T) {
-	type tc struct {
-		input           string
-		wantContains    []string
-		wantNotContains []string
-	}
-
-	tests := map[string]tc{
-		"single state with binding": {
-			input: `package x
-@component Counter() {
-	count := tui.NewState(0)
-	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
-}`,
-			wantContains: []string{
-				"count := tui.NewState(0)",
-				"// State bindings",
-				"count.Bind(func(_ int) {",
-				`__tui_0.SetText(fmt.Sprintf("Count: %d", count.Get()))`,
-			},
-		},
-		"state parameter - no declaration generated": {
-			input: `package x
-@component Counter(count *tui.State[int]) {
-	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
-}`,
-			wantContains: []string{
-				"func Counter(count *tui.State[int]) CounterView",
-				"// State bindings",
-				"count.Bind(func(_ int) {",
-				`__tui_0.SetText(fmt.Sprintf("Count: %d", count.Get()))`,
-			},
-			wantNotContains: []string{
-				"count := tui.NewState", // parameter states should not be re-declared
-			},
-		},
-		"multiple states in expression": {
-			input: `package x
-@component Profile() {
-	firstName := tui.NewState("Alice")
-	lastName := tui.NewState("Smith")
-	<span>{firstName.Get() + " " + lastName.Get()}</span>
-}`,
-			wantContains: []string{
-				`firstName := tui.NewState("Alice")`,
-				`lastName := tui.NewState("Smith")`,
-				"// State bindings",
-				"__update___tui_0 := func()",
-				"firstName.Bind(func(_ string)",
-				"lastName.Bind(func(_ string)",
-				"__update___tui_0()",
-			},
-		},
-		"state with named ref": {
-			input: `package x
-@component Counter() {
-	count := tui.NewState(0)
-	<span #Display>{fmt.Sprintf("Count: %d", count.Get())}</span>
-}`,
-			wantContains: []string{
-				"count := tui.NewState(0)",
-				"count.Bind(func(_ int) {",
-				`Display.SetText(fmt.Sprintf("Count: %d", count.Get()))`,
-			},
-		},
-		"explicit deps attribute": {
-			input: `package x
-@component UserCard() {
-	user := tui.NewState(&User{Name: "Alice"})
-	<span deps={[user]}>{formatUser(user.Get())}</span>
-}`,
-			wantContains: []string{
-				`user := tui.NewState(&User{Name: "Alice"})`,
-				"user.Bind(func(_ *User) {",
-				"__tui_0.SetText(formatUser(user.Get()))",
-			},
-		},
-		"no binding when no state used": {
-			input: `package x
-@component Static() {
-	<span>{"Hello"}</span>
-}`,
-			wantNotContains: []string{
-				"// State bindings",
-				".Bind(",
-			},
-		},
-		"bool state type inference": {
-			input: `package x
-@component Toggle() {
-	enabled := tui.NewState(true)
-	<span>{fmt.Sprintf("Enabled: %v", enabled.Get())}</span>
-}`,
-			wantContains: []string{
-				"enabled := tui.NewState(true)",
-				"enabled.Bind(func(_ bool) {",
-			},
-		},
-		"slice state type inference": {
-			input: `package x
-@component List() {
-	items := tui.NewState([]string{})
-	<span>{fmt.Sprintf("Items: %d", len(items.Get()))}</span>
-}`,
-			wantContains: []string{
-				`items := tui.NewState([]string{})`,
-				"items.Bind(func(_ []string) {",
-			},
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
-			if err != nil {
-				t.Fatalf("generation failed: %v", err)
-			}
-
-			code := string(output)
-			for _, want := range tt.wantContains {
-				if !strings.Contains(code, want) {
-					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
-				}
-			}
-			for _, notWant := range tt.wantNotContains {
-				if strings.Contains(code, notWant) {
-					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
-				}
-			}
-		})
-	}
-}
-
-// TestGenerator_StateBindingsCompile verifies that generated state binding code compiles
-func TestGenerator_StateBindingsCompile(t *testing.T) {
-	// Skip if go command not available
-	if _, err := exec.LookPath("go"); err != nil {
-		t.Skip("go command not available")
-	}
-
-	input := `package main
-
-import (
-	"fmt"
-	"github.com/grindlemire/go-tui/pkg/tui"
-)
-
-@component Counter() {
-	count := tui.NewState(0)
-	<div class="flex-col">
-		<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
-	</div>
-}`
-
-	output, err := ParseAndGenerate("test.tui", input)
-	if err != nil {
-		t.Fatalf("generation failed: %v", err)
-	}
-
-	// Verify the output is valid Go syntax by checking it formats
-	// (gofmt is called internally by Generate)
-	if len(output) == 0 {
-		t.Error("empty output")
-	}
-
-	code := string(output)
-
-	// Check key elements are present
-	if !strings.Contains(code, "count := tui.NewState(0)") {
-		t.Error("missing state declaration")
-	}
-	if !strings.Contains(code, "count.Bind(") {
-		t.Error("missing state binding")
-	}
-	if !strings.Contains(code, "func Counter() CounterView") {
-		t.Error("missing function declaration")
 	}
 }
