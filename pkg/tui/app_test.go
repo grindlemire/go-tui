@@ -2,6 +2,7 @@ package tui
 
 import (
 	"testing"
+	"time"
 )
 
 // mockRenderable is a mock implementation of Renderable for testing.
@@ -506,5 +507,450 @@ func TestApp_SetRoot_OnFocusableAddedCallback(t *testing.T) {
 	mf := focused.(*mockFocusable)
 	if mf.id != "newElem" {
 		t.Errorf("Focused element = %q, want 'newElem'", mf.id)
+	}
+}
+
+// --- Phase 2: Event Loop Tests ---
+
+// mockViewable implements Viewable interface for testing
+type mockViewable struct {
+	root     Renderable
+	watchers []Watcher
+}
+
+func newMockViewable(root Renderable, watchers ...Watcher) *mockViewable {
+	return &mockViewable{root: root, watchers: watchers}
+}
+
+func (m *mockViewable) GetRoot() Renderable {
+	return m.root
+}
+
+func (m *mockViewable) GetWatchers() []Watcher {
+	return m.watchers
+}
+
+// mockWatcher tracks whether Start was called
+type mockWatcher struct {
+	started     bool
+	eventQueue  chan<- func()
+	stopCh      <-chan struct{}
+	startCalled chan struct{} // signaled when Start is called
+}
+
+func newMockWatcher() *mockWatcher {
+	return &mockWatcher{
+		startCalled: make(chan struct{}),
+	}
+}
+
+func (m *mockWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
+	m.started = true
+	m.eventQueue = eventQueue
+	m.stopCh = stopCh
+	close(m.startCalled)
+}
+
+func TestApp_SetRoot_WithViewable(t *testing.T) {
+	type tc struct {
+		name         string
+		numWatchers  int
+		expectRoot   bool
+	}
+
+	tests := map[string]tc{
+		"viewable with no watchers": {
+			numWatchers: 0,
+			expectRoot:  true,
+		},
+		"viewable with one watcher": {
+			numWatchers: 1,
+			expectRoot:  true,
+		},
+		"viewable with multiple watchers": {
+			numWatchers: 3,
+			expectRoot:  true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			app := &App{
+				focus:      NewFocusManager(),
+				buffer:     NewBuffer(80, 24),
+				eventQueue: make(chan func(), 256),
+				stopCh:     make(chan struct{}),
+			}
+
+			root := newMockRenderable()
+			watchers := make([]Watcher, tt.numWatchers)
+			mockWatchers := make([]*mockWatcher, tt.numWatchers)
+			for i := 0; i < tt.numWatchers; i++ {
+				mw := newMockWatcher()
+				mockWatchers[i] = mw
+				watchers[i] = mw
+			}
+
+			view := newMockViewable(root, watchers...)
+			app.SetRoot(view)
+
+			// Verify root was set
+			if tt.expectRoot && app.Root() != root {
+				t.Error("Root() should return the root from Viewable")
+			}
+
+			// Verify all watchers were started
+			for i, mw := range mockWatchers {
+				if !mw.started {
+					t.Errorf("Watcher %d was not started", i)
+				}
+				if mw.eventQueue != app.eventQueue {
+					t.Errorf("Watcher %d received wrong eventQueue", i)
+				}
+			}
+		})
+	}
+}
+
+func TestApp_SetRoot_WithRawRenderable(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+	}
+
+	root := newMockRenderable()
+	app.SetRoot(root)
+
+	if app.Root() != root {
+		t.Error("Root() should return the Renderable passed to SetRoot()")
+	}
+}
+
+func TestApp_Run_EventLoopLogic(t *testing.T) {
+	// Test the core event loop logic without a real terminal.
+	// We simulate what Run() does: process events from eventQueue, check dirty, etc.
+
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+
+	// Queue an event
+	var eventProcessed bool
+	app.eventQueue <- func() {
+		eventProcessed = true
+	}
+
+	// Process one event manually (simulating the Run loop)
+	select {
+	case handler := <-app.eventQueue:
+		handler()
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Expected event in queue")
+	}
+
+	if !eventProcessed {
+		t.Error("Event was not processed")
+	}
+
+	// Test that Stop() closes stopCh
+	app.Stop()
+
+	select {
+	case <-app.stopCh:
+		// Expected - stopCh was closed
+	default:
+		t.Error("Stop() should close stopCh")
+	}
+}
+
+func TestApp_Stop_IsIdempotent(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+
+	// First call should work
+	app.Stop()
+
+	if !app.stopped {
+		t.Error("Stop() should set stopped to true")
+	}
+
+	// Second call should not panic
+	app.Stop()
+
+	// Still stopped
+	if !app.stopped {
+		t.Error("stopped should still be true after second Stop() call")
+	}
+}
+
+func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+
+	var executed bool
+	app.QueueUpdate(func() {
+		executed = true
+	})
+
+	// Read from queue and execute
+	select {
+	case fn := <-app.eventQueue:
+		fn()
+		if !executed {
+			t.Error("Queued function was not executed correctly")
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("QueueUpdate did not enqueue function")
+	}
+}
+
+func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+
+	var executed int
+	done := make(chan struct{})
+
+	// Queue from multiple goroutines
+	for i := 0; i < 10; i++ {
+		go func() {
+			app.QueueUpdate(func() {
+				executed++
+			})
+		}()
+	}
+
+	// Read all queued functions
+	go func() {
+		for i := 0; i < 10; i++ {
+			select {
+			case fn := <-app.eventQueue:
+				fn()
+			case <-time.After(100 * time.Millisecond):
+				return
+			}
+		}
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		if executed != 10 {
+			t.Errorf("Expected 10 executions, got %d", executed)
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Timed out waiting for goroutines to complete")
+	}
+}
+
+func TestApp_SetGlobalKeyHandler(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+
+	var handlerCalled bool
+	app.SetGlobalKeyHandler(func(e KeyEvent) bool {
+		handlerCalled = true
+		return true
+	})
+
+	if app.globalKeyHandler == nil {
+		t.Fatal("SetGlobalKeyHandler should set the handler")
+	}
+
+	// Call it
+	result := app.globalKeyHandler(KeyEvent{Key: KeyRune, Rune: 'q'})
+
+	if !handlerCalled {
+		t.Error("Global key handler was not called")
+	}
+	if !result {
+		t.Error("Global key handler should return true")
+	}
+}
+
+func TestApp_GlobalKeyHandler_ConsumesEvent(t *testing.T) {
+	mockReader := NewMockEventReader(KeyEvent{Key: KeyRune, Rune: 'q'})
+
+	focusable := newMockFocusable("elem", true)
+	focusable.handled = false
+
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		reader:     mockReader,
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+	app.focus.Register(focusable)
+
+	var globalHandlerCalled bool
+	app.SetGlobalKeyHandler(func(e KeyEvent) bool {
+		globalHandlerCalled = true
+		if e.Rune == 'q' {
+			return true // Consume event
+		}
+		return false
+	})
+
+	// Simulate the event dispatch logic from readInputEvents
+	event := KeyEvent{Key: KeyRune, Rune: 'q'}
+
+	// Global handler should consume the event
+	if app.globalKeyHandler != nil && app.globalKeyHandler(event) {
+		// Event consumed, don't dispatch further
+	} else {
+		app.Dispatch(event)
+	}
+
+	if !globalHandlerCalled {
+		t.Error("Global handler was not called")
+	}
+
+	if focusable.lastEvent != nil {
+		t.Error("Event should have been consumed by global handler")
+	}
+}
+
+func TestApp_GlobalKeyHandler_PassesEvent(t *testing.T) {
+	focusable := newMockFocusable("elem", true)
+	focusable.handled = true
+
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+	app.focus.Register(focusable)
+
+	var globalHandlerCalled bool
+	app.SetGlobalKeyHandler(func(e KeyEvent) bool {
+		globalHandlerCalled = true
+		// Don't consume - let it pass through
+		return false
+	})
+
+	// Simulate the event dispatch logic from readInputEvents
+	event := KeyEvent{Key: KeyRune, Rune: 'j'}
+
+	// Global handler should NOT consume the event
+	consumed := false
+	if app.globalKeyHandler != nil && app.globalKeyHandler(event) {
+		consumed = true
+	}
+	if !consumed {
+		app.Dispatch(event)
+	}
+
+	if !globalHandlerCalled {
+		t.Error("Global handler was not called")
+	}
+
+	if focusable.lastEvent == nil {
+		t.Error("Event should have been passed to focused element")
+	}
+}
+
+func TestApp_EventBatching(t *testing.T) {
+	// Reset dirty flag for clean test
+	resetDirty()
+
+	mockReader := NewMockEventReader()
+
+	var renderCount int
+	mockRenderable := &renderCountingMock{
+		mockRenderable: newMockRenderable(),
+		onRender: func() {
+			renderCount++
+		},
+	}
+
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		reader:     mockReader,
+		root:       mockRenderable,
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
+	}
+
+	// Queue multiple events that mark dirty
+	for i := 0; i < 5; i++ {
+		app.eventQueue <- func() {
+			MarkDirty()
+		}
+	}
+
+	// Process one batch manually (simulating the Run() loop logic)
+	// Block until at least one event arrives
+	select {
+	case handler := <-app.eventQueue:
+		handler()
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Expected event in queue")
+	}
+
+	// Drain additional queued events
+drain:
+	for {
+		select {
+		case handler := <-app.eventQueue:
+			handler()
+		default:
+			break drain
+		}
+	}
+
+	// Only check dirty once, clear it
+	if checkAndClearDirty() {
+		// Would call Render() here in the real loop
+		renderCount++ // Simulated render
+	}
+
+	// Should only have rendered once despite multiple events
+	if renderCount != 1 {
+		t.Errorf("Expected 1 render after batched events, got %d", renderCount)
+	}
+}
+
+// renderCountingMock wraps mockRenderable to count renders
+type renderCountingMock struct {
+	*mockRenderable
+	onRender func()
+}
+
+func (m *renderCountingMock) Render(buf *Buffer, width, height int) {
+	m.mockRenderable.Render(buf, width, height)
+	if m.onRender != nil {
+		m.onRender()
 	}
 }

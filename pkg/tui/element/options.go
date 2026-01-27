@@ -235,6 +235,35 @@ func WithOnEvent(fn func(tui.Event) bool) Option {
 	}
 }
 
+// WithFocusable sets whether this element can receive focus.
+func WithFocusable(focusable bool) Option {
+	return func(e *Element) {
+		e.focusable = focusable
+	}
+}
+
+// --- Event Handler Options ---
+
+// WithOnKeyPress sets the key press handler.
+// No return value needed - mutations mark dirty automatically via tui.MarkDirty().
+// Implicitly sets focusable = true.
+func WithOnKeyPress(fn func(tui.KeyEvent)) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.onKeyPress = fn
+	}
+}
+
+// WithOnClick sets the click handler.
+// No return value needed - mutations mark dirty automatically via tui.MarkDirty().
+// Implicitly sets focusable = true.
+func WithOnClick(fn func()) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.onClick = fn
+	}
+}
+
 // --- Scroll Options ---
 
 // WithScrollable enables scrolling in the specified mode.

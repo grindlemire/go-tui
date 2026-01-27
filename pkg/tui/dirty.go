@@ -24,3 +24,9 @@ func checkAndClearDirty() bool {
 func resetDirty() {
 	dirty.Store(false)
 }
+
+// TestCheckAndClearDirty is an exported version of checkAndClearDirty for testing.
+// Only use this in test code.
+func TestCheckAndClearDirty() bool {
+	return checkAndClearDirty()
+}
