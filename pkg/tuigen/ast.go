@@ -105,6 +105,8 @@ func (p *Param) Pos() Position { return p.Position }
 // Element represents an XML-like element: <tag attrs>children</tag> or <tag />
 type Element struct {
 	Tag        string
+	NamedRef   string  // Name for this element (e.g., "Content" from #Content)
+	RefKey     *GoExpr // Key expression for map-based refs (e.g., key={item.ID})
 	Attributes []*Attribute
 	Children   []Node // Elements, GoExpr, TextContent, ForLoop, IfStmt, LetBinding
 	SelfClose  bool

@@ -2,7 +2,19 @@ package tuigen
 
 import (
 	"strings"
+	"unicode"
 )
+
+// NamedRef tracks information about a named element reference.
+type NamedRef struct {
+	Name          string
+	Element       *Element
+	InLoop        bool   // true = generate slice or map type
+	InConditional bool   // true = may be nil at runtime
+	KeyExpr       string // if set, generate map[KeyType]*element.Element
+	KeyType       string // inferred type of key expression (e.g., "string", "int")
+	Position      Position
+}
 
 // Analyzer performs semantic analysis on parsed .tui ASTs.
 // It validates element tags, attributes, and ensures required imports are present.
@@ -151,7 +163,12 @@ func (a *Analyzer) Analyze(file *File) error {
 		comp.Body = a.transformElementRefs(comp.Body)
 	}
 
-	// Fourth pass: validate elements and attributes
+	// Fourth pass: validate named refs
+	for _, comp := range file.Components {
+		a.validateNamedRefs(comp)
+	}
+
+	// Fifth pass: validate elements and attributes
 	for _, comp := range file.Components {
 		a.analyzeComponent(comp)
 	}
@@ -169,6 +186,125 @@ func (a *Analyzer) Analyze(file *File) error {
 	a.addMissingImports()
 
 	return a.errors.Err()
+}
+
+// validateNamedRefs validates named element references in a component.
+// It checks for:
+// - Valid Go identifiers (PascalCase required)
+// - Reserved name 'Root'
+// - Unique names within the component
+// - key attribute only valid inside @for loops
+func (a *Analyzer) validateNamedRefs(comp *Component) []NamedRef {
+	names := make(map[string]Position)
+	var refs []NamedRef
+
+	var check func(nodes []Node, inLoop, inConditional bool)
+	check = func(nodes []Node, inLoop, inConditional bool) {
+		for _, node := range nodes {
+			switch n := node.(type) {
+			case *Element:
+				if n.NamedRef != "" {
+					// Must be valid Go identifier starting with uppercase
+					if !isValidRefName(n.NamedRef) {
+						a.errors.AddErrorf(n.Position,
+							"invalid ref name %q - must be valid Go identifier starting with uppercase letter",
+							n.NamedRef)
+					}
+					// Reserved name check
+					if n.NamedRef == "Root" {
+						a.errors.AddErrorf(n.Position, "ref name 'Root' is reserved")
+					}
+					// Must be unique
+					if prev, exists := names[n.NamedRef]; exists {
+						a.errors.AddErrorf(n.Position,
+							"duplicate ref name %q (first defined at %s)",
+							n.NamedRef, prev)
+					}
+					names[n.NamedRef] = n.Position
+
+					ref := NamedRef{
+						Name:          n.NamedRef,
+						Element:       n,
+						InLoop:        inLoop,
+						InConditional: inConditional,
+						Position:      n.Position,
+					}
+
+					// Check for key attribute (for map-based refs)
+					if n.RefKey != nil {
+						if !inLoop {
+							a.errors.AddErrorf(n.Position,
+								"key attribute on ref %q only valid inside @for loop",
+								n.NamedRef)
+						}
+						ref.KeyExpr = n.RefKey.Code
+						ref.KeyType = a.inferKeyType(n.RefKey.Code)
+					}
+
+					refs = append(refs, ref)
+				}
+				check(n.Children, inLoop, inConditional)
+
+			case *LetBinding:
+				check(n.Element.Children, inLoop, inConditional)
+
+			case *ForLoop:
+				// Refs inside loops get slice type
+				check(n.Body, true, inConditional)
+
+			case *IfStmt:
+				// Refs inside conditionals may be nil
+				check(n.Then, inLoop, true)
+				check(n.Else, inLoop, true)
+
+			case *ComponentCall:
+				check(n.Children, inLoop, inConditional)
+			}
+		}
+	}
+
+	check(comp.Body, false, false)
+	return refs
+}
+
+// isValidRefName checks if a name is a valid Go identifier starting with uppercase.
+func isValidRefName(name string) bool {
+	if len(name) == 0 {
+		return false
+	}
+	// First character must be uppercase letter
+	first := rune(name[0])
+	if !unicode.IsUpper(first) {
+		return false
+	}
+	// Rest must be letters, digits, or underscores
+	for _, ch := range name[1:] {
+		if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '_' {
+			return false
+		}
+	}
+	return true
+}
+
+// inferKeyType attempts to infer the type of a key expression.
+// For now, this returns a simple heuristic based on the expression.
+func (a *Analyzer) inferKeyType(expr string) string {
+	// Simple heuristics for common patterns
+	// In a real implementation, we'd need type information from the Go type checker
+	if strings.HasSuffix(expr, ".ID") || strings.HasSuffix(expr, ".Id") {
+		return "string" // Common pattern: item.ID
+	}
+	if strings.Contains(expr, "int") || strings.Contains(expr, "Int") {
+		return "int"
+	}
+	// Default to string which is the most flexible
+	return "string"
+}
+
+// CollectNamedRefs collects all named refs from a component.
+// This is used by the generator to determine struct fields.
+func (a *Analyzer) CollectNamedRefs(comp *Component) []NamedRef {
+	return a.validateNamedRefs(comp)
 }
 
 // collectLetBindings traverses nodes to collect all @let binding names.

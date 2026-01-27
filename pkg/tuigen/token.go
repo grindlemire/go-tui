@@ -62,6 +62,7 @@ const (
 	TokenMinus       // -
 	TokenBang        // !
 	TokenUnderscore  // _
+	TokenHash        // #
 
 	// Composite tokens
 	TokenGoExpr      // Go expression inside {}
@@ -120,6 +121,7 @@ var tokenNames = map[TokenType]string{
 	TokenMinus:       "-",
 	TokenBang:        "!",
 	TokenUnderscore:  "_",
+	TokenHash:        "#",
 	TokenGoExpr:       "GoExpr",
 	TokenSlashAngle:   "/>",
 	TokenLAngleSlash:  "</",

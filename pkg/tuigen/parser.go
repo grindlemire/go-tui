@@ -600,8 +600,31 @@ func (p *Parser) parseElement() *Element {
 	}
 	p.advance()
 
+	// Check for #Name (named ref)
+	if p.current.Type == TokenHash {
+		p.advance() // consume #
+		if p.current.Type != TokenIdent {
+			p.errors.AddError(p.position(), "expected identifier after '#' for named ref")
+			return nil
+		}
+		elem.NamedRef = p.current.Literal
+		p.advance()
+	}
+
 	// Parse attributes
 	elem.Attributes = p.parseAttributes()
+
+	// Check for key={expr} attribute and move it to RefKey
+	for i, attr := range elem.Attributes {
+		if attr.Name == "key" {
+			if expr, ok := attr.Value.(*GoExpr); ok {
+				elem.RefKey = expr
+				// Remove key from attributes
+				elem.Attributes = append(elem.Attributes[:i], elem.Attributes[i+1:]...)
+				break
+			}
+		}
+	}
 
 	// Check for self-closing or opening tag
 	if p.current.Type == TokenSlashAngle {

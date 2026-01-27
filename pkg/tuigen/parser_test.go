@@ -1554,3 +1554,167 @@ func TestParser_ComponentCallNestedInElement(t *testing.T) {
 		t.Errorf("children[1].Name = %q, want 'Footer'", call2.Name)
 	}
 }
+
+func TestParser_NamedRef(t *testing.T) {
+	type tc struct {
+		input     string
+		wantRef   string
+		wantTag   string
+		wantAttrs int
+	}
+
+	tests := map[string]tc{
+		"simple named ref": {
+			input: `package x
+@component Test() {
+	<div #Content></div>
+}`,
+			wantRef:   "Content",
+			wantTag:   "div",
+			wantAttrs: 0,
+		},
+		"named ref with attributes": {
+			input: `package x
+@component Test() {
+	<span #Title class="bold">hello</span>
+}`,
+			wantRef:   "Title",
+			wantTag:   "span",
+			wantAttrs: 1,
+		},
+		"named ref self-closing": {
+			input: `package x
+@component Test() {
+	<div #Spacer />
+}`,
+			wantRef:   "Spacer",
+			wantTag:   "div",
+			wantAttrs: 0,
+		},
+		"named ref with multiple attributes": {
+			input: `package x
+@component Test() {
+	<div #Content width=100 height=50></div>
+}`,
+			wantRef:   "Content",
+			wantTag:   "div",
+			wantAttrs: 2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.tui", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+
+			body := file.Components[0].Body
+			if len(body) != 1 {
+				t.Fatalf("expected 1 body node, got %d", len(body))
+			}
+
+			elem, ok := body[0].(*Element)
+			if !ok {
+				t.Fatalf("body[0]: expected *Element, got %T", body[0])
+			}
+
+			if elem.NamedRef != tt.wantRef {
+				t.Errorf("NamedRef = %q, want %q", elem.NamedRef, tt.wantRef)
+			}
+			if elem.Tag != tt.wantTag {
+				t.Errorf("Tag = %q, want %q", elem.Tag, tt.wantTag)
+			}
+			if len(elem.Attributes) != tt.wantAttrs {
+				t.Errorf("len(Attributes) = %d, want %d", len(elem.Attributes), tt.wantAttrs)
+			}
+		})
+	}
+}
+
+func TestParser_NamedRefWithKey(t *testing.T) {
+	input := `package x
+@component Test(items []Item) {
+	<ul>
+		@for _, item := range items {
+			<li #Items key={item.ID}>{item.Name}</li>
+		}
+	</ul>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	comp := file.Components[0]
+	ul := comp.Body[0].(*Element)
+	forLoop := ul.Children[0].(*ForLoop)
+	li := forLoop.Body[0].(*Element)
+
+	if li.NamedRef != "Items" {
+		t.Errorf("NamedRef = %q, want 'Items'", li.NamedRef)
+	}
+
+	if li.RefKey == nil {
+		t.Fatal("RefKey should not be nil")
+	}
+
+	if li.RefKey.Code != "item.ID" {
+		t.Errorf("RefKey.Code = %q, want 'item.ID'", li.RefKey.Code)
+	}
+
+	// key should be removed from attributes
+	for _, attr := range li.Attributes {
+		if attr.Name == "key" {
+			t.Error("key attribute should be moved to RefKey, not remain in Attributes")
+		}
+	}
+}
+
+func TestParser_MultipleNamedRefs(t *testing.T) {
+	input := `package x
+@component Test() {
+	<div>
+		<div #Header height=3></div>
+		<div #Content></div>
+		<div #Footer height=3></div>
+	</div>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	comp := file.Components[0]
+	container := comp.Body[0].(*Element)
+
+	if len(container.Children) != 3 {
+		t.Fatalf("expected 3 children, got %d", len(container.Children))
+	}
+
+	expectedRefs := []string{"Header", "Content", "Footer"}
+	for i, child := range container.Children {
+		elem, ok := child.(*Element)
+		if !ok {
+			t.Fatalf("child %d: expected *Element, got %T", i, child)
+		}
+		if elem.NamedRef != expectedRefs[i] {
+			t.Errorf("child %d: NamedRef = %q, want %q", i, elem.NamedRef, expectedRefs[i])
+		}
+	}
+}

@@ -4,33 +4,33 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
 
 ---
 
-## Phase 1: Lexer, AST, Parser, and Analyzer
+## Phase 1: Lexer, AST, Parser, and Analyzer ✅
 
 **Reference:** [named-element-refs-design.md §3](./named-element-refs-design.md#3-core-entities)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Modify `pkg/tuigen/token.go`
+- [x] Modify `pkg/tuigen/token.go`
   - Add `TokenHash` constant for `#` character
   - See [design §3.1](./named-element-refs-design.md#31-lexer-changes)
 
-- [ ] Modify `pkg/tuigen/lexer.go`
+- [x] Modify `pkg/tuigen/lexer.go`
   - Add case for `#` in `Next()` to emit `TokenHash`
   - Token should capture position (line, column) for error reporting
 
-- [ ] Modify `pkg/tuigen/ast.go`
+- [x] Modify `pkg/tuigen/ast.go`
   - Add `NamedRef string` field to `Element` struct
-  - Add `RefKey *Expression` field for keyed refs (map-based)
+  - Add `RefKey *GoExpr` field for keyed refs (map-based)
   - See [design §3.2](./named-element-refs-design.md#32-ast-changes)
 
-- [ ] Modify `pkg/tuigen/parser.go`
+- [x] Modify `pkg/tuigen/parser.go`
   - After parsing tag name, check for `TokenHash`
   - If found, consume `#` and expect `TokenIdent` for ref name
   - Store in `Element.NamedRef`
   - Parse `key={expr}` attribute into `Element.RefKey`
   - See [design §3.3](./named-element-refs-design.md#33-parser-changes)
 
-- [ ] Modify `pkg/tuigen/analyzer.go`
+- [x] Modify `pkg/tuigen/analyzer.go`
   - Add `NamedRef` struct to track ref metadata (name, element, InLoop, InConditional, KeyExpr, KeyType)
   - Add `validateNamedRefs()` function that walks AST
   - Track loop/conditional context during traversal
@@ -42,17 +42,17 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
   - Return collected refs with context flags for generator
   - See [design §3.4](./named-element-refs-design.md#34-analyzer-changes)
 
-- [ ] Add tests to `pkg/tuigen/lexer_test.go`
+- [x] Add tests to `pkg/tuigen/lexer_test.go`
   - Test `#` token is lexed correctly
   - Test `#Name` followed by attributes
 
-- [ ] Add tests to `pkg/tuigen/parser_test.go`
+- [x] Add tests to `pkg/tuigen/parser_test.go`
   - Test `<div #Content>` parses with NamedRef="Content"
   - Test `<span #Title class="bold">` parses ref and attributes
   - Test `<div #Items key={item.ID}>` parses ref and key
   - Test self-closing `<div #Spacer />`
 
-- [ ] Add tests to `pkg/tuigen/analyzer_test.go`
+- [x] Add tests to `pkg/tuigen/analyzer_test.go`
   - Test valid ref names pass validation
   - Test invalid ref name (lowercase, starts with number) produces error
   - Test `#Root` produces reserved name error
@@ -63,16 +63,16 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
   - Test `key={expr}` inside loop is valid
   - Test `key={expr}` outside loop produces error
 
-- [ ] Update `editor/tree-sitter-tui/grammar.js`
+- [x] Update `editor/tree-sitter-tui/grammar.js`
   - Add `#` token recognition in element rule
   - Parse identifier after `#` as named_ref
   - Update element rule: `<tag #Name ...>`
 
-- [ ] Update `editor/vscode/syntaxes/tui.tmLanguage.json`
+- [x] Update `editor/vscode/syntaxes/tui.tmLanguage.json`
   - Add pattern to highlight `#Name` (e.g., as entity.name.tag or variable)
   - Match pattern: `#[A-Z][a-zA-Z0-9]*`
 
-**Tests:** Run `go test ./pkg/tuigen/... -run "Lexer|Parser|Analyzer"` once at phase end
+**Tests:** All tests pass: `go test ./pkg/tuigen/... -run "Lexer|Parser|Analyzer"`
 
 ---
 
@@ -138,7 +138,7 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Lexer, AST, Parser, Analyzer for #Name syntax | Pending |
+| 1 | Lexer, AST, Parser, Analyzer for #Name syntax | ✅ Complete |
 | 2 | Generator struct returns and code generation | Pending |
 
 ## Files to Modify
