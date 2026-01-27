@@ -239,6 +239,18 @@ func (a *App) Terminal() Terminal {
 	return a.terminal
 }
 
+// EventQueue returns the event queue channel for manual watcher setup.
+// Use with caution - prefer using SetRoot with Viewable for automatic watcher management.
+func (a *App) EventQueue() chan<- func() {
+	return a.eventQueue
+}
+
+// StopCh returns the stop channel for manual watcher setup.
+// Use with caution - prefer using SetRoot with Viewable for automatic watcher management.
+func (a *App) StopCh() <-chan struct{} {
+	return a.stopCh
+}
+
 // Buffer returns the underlying buffer.
 // Use with caution for advanced use cases.
 func (a *App) Buffer() *Buffer {

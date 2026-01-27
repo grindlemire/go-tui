@@ -180,33 +180,33 @@ Implementation phases for the event handling system with push-based watchers, di
 
 **Reference:** [event-handling-design.md §5](./event-handling-design.md#5-generated-code)
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Modify `pkg/tuigen/generator.go` - Viewable interface
+- [x] Modify `pkg/tuigen/generator.go` - Viewable interface
   - View structs already have `GetRoot()` from named refs work
   - Add `GetWatchers() []tui.Watcher` method to generated view structs
   - Add `watchers []tui.Watcher` field to view structs
 
-- [ ] Modify `pkg/tuigen/generator.go` - watcher collection
+- [x] Modify `pkg/tuigen/generator.go` - watcher collection
   - Parse `onChannel={tui.Watch(...)}` attributes
   - Parse `onTimer={tui.OnTimer(...)}` attributes
   - Store watcher expressions for later emission
 
-- [ ] Modify `pkg/tuigen/generator.go` - watcher registration
+- [x] Modify `pkg/tuigen/generator.go` - watcher registration
   - Generate `watchers = append(watchers, ...)` for each watcher attribute
   - See [design §5.1](./event-handling-design.md#51-channel-watcher-registration)
 
-- [ ] Modify `pkg/tuigen/generator.go` - watcher aggregation
+- [x] Modify `pkg/tuigen/generator.go` - watcher aggregation
   - When component contains child components, aggregate their watchers
   - Generate `watchers = append(watchers, childView.GetWatchers()...)`
   - See [design §5.4](./event-handling-design.md#54-watcher-aggregation-from-nested-components)
 
-- [ ] Modify `pkg/tuigen/generator.go` - handler options
+- [x] Modify `pkg/tuigen/generator.go` - handler options
   - Generate `element.WithOnKeyPress(handler)` for `onKeyPress={handler}`
   - Generate `element.WithOnClick(handler)` for `onClick={handler}`
   - No bool return expected from handlers
 
-- [ ] Add tests to `pkg/tuigen/generator_test.go`
+- [x] Add tests to `pkg/tuigen/generator_test.go`
   - Test `onChannel` attribute generates watcher registration
   - Test `onTimer` attribute generates watcher registration
   - Test view struct has `GetWatchers()` method
@@ -215,7 +215,7 @@ Implementation phases for the event handling system with push-based watchers, di
   - Test `onClick` attribute generates option
   - Test generated code compiles
 
-- [ ] Update `examples/streaming-dsl/` to use event handling
+- [x] Update `examples/streaming-dsl/` to use event handling
   - Update `streaming.tui` with `onChannel`, `onTimer`, `onKeyPress`
   - Update `main.go` to use `SetRoot(view)` and `Run()`
   - Add `SetGlobalKeyHandler` for quit key
@@ -232,7 +232,7 @@ Implementation phases for the event handling system with push-based watchers, di
 | 1 | Dirty Tracking & Watcher Types | Complete |
 | 2 | App.Run() & SetRoot | Complete |
 | 3 | Element Handler Changes | Complete |
-| 4 | Generator Updates | Not Started |
+| 4 | Generator Updates | Complete |
 
 ## Files to Create
 

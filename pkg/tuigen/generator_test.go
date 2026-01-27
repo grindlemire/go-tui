@@ -20,9 +20,11 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 }`,
 			wantContains: []string{
 				"type EmptyView struct",
-				"Root *element.Element",
+				"Root     *element.Element",
+				"watchers []tui.Watcher",
 				"func Empty() EmptyView",
 				"var view EmptyView",
+				"var watchers []tui.Watcher",
 				"return view",
 			},
 		},
@@ -35,7 +37,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 				"type HeaderView struct",
 				"func Header() HeaderView",
 				"__tui_0 := element.New()",
-				"Root: __tui_0",
+				"Root:     __tui_0",
 			},
 		},
 		"component with params": {
@@ -182,7 +184,7 @@ func TestGenerator_NestedElements(t *testing.T) {
 	}
 
 	// Should return view struct with Root set to outer element
-	if !strings.Contains(code, "Root: __tui_0") {
+	if !strings.Contains(code, "Root:     __tui_0") {
 		t.Error("missing Root assignment to outer element")
 	}
 
@@ -212,7 +214,7 @@ func TestGenerator_LetBinding(t *testing.T) {
 
 	// Should return the box element (first top-level Element, not LetBinding) as Root
 	// @let bindings are used for references, not as root elements
-	if !strings.Contains(code, "Root: __tui_0") {
+	if !strings.Contains(code, "Root:     __tui_0") {
 		t.Errorf("should set Root to the box element, not the let-bound variable\nGot:\n%s", code)
 	}
 }
@@ -1255,13 +1257,14 @@ func TestGenerator_NamedRefs(t *testing.T) {
 }`,
 			wantContains: []string{
 				"type StreamBoxView struct",
-				"Root    *element.Element",
-				"Content *element.Element",
+				"Root     *element.Element",
+				"watchers []tui.Watcher",
+				"Content  *element.Element",
 				"Content := element.New(",
 				"element.WithScrollable(element.ScrollVertical)",
 				"view = StreamBoxView{",
-				"Root:    Content,",
-				"Content: Content,",
+				"Root:     Content,",
+				"Content:  Content,",
 			},
 		},
 		"multiple named refs": {
@@ -1275,15 +1278,15 @@ func TestGenerator_NamedRefs(t *testing.T) {
 }`,
 			wantContains: []string{
 				"type LayoutView struct",
-				"Header  *element.Element",
-				"Content *element.Element",
-				"Footer  *element.Element",
+				"Header   *element.Element",
+				"Content  *element.Element",
+				"Footer   *element.Element",
 				"Header := element.New(",
 				"Content := element.New(",
 				"Footer := element.New(",
-				"Header:  Header,",
-				"Content: Content,",
-				"Footer:  Footer,",
+				"Header:   Header,",
+				"Content:  Content,",
+				"Footer:   Footer,",
 			},
 		},
 		"named ref on root element": {
@@ -1372,7 +1375,7 @@ func TestGenerator_NamedRefsInConditional(t *testing.T) {
 	code := string(output)
 
 	// Should have comment indicating may be nil
-	if !strings.Contains(code, "Label *element.Element // may be nil") {
+	if !strings.Contains(code, "Label    *element.Element // may be nil") {
 		t.Errorf("missing 'may be nil' comment for conditional ref\nGot:\n%s", code)
 	}
 
@@ -1406,7 +1409,7 @@ func TestGenerator_NamedRefsWithKey(t *testing.T) {
 	code := string(output)
 
 	// Should generate map field for keyed ref
-	if !strings.Contains(code, "Users map[string]*element.Element") {
+	if !strings.Contains(code, "Users    map[string]*element.Element") {
 		t.Errorf("missing map field for keyed ref\nGot:\n%s", code)
 	}
 
@@ -1448,5 +1451,167 @@ func TestGenerator_ViewVariablePreDeclared(t *testing.T) {
 	// Should return view (not view.Root)
 	if !strings.Contains(code, "return view") {
 		t.Errorf("should return view struct\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_WatcherGeneration tests onChannel and onTimer watcher attributes
+func TestGenerator_WatcherGeneration(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"onChannel watcher": {
+			input: `package x
+@component StreamBox(dataCh chan string) {
+	<div onChannel={tui.Watch(dataCh, handleData(lines))}></div>
+}`,
+			wantContains: []string{
+				"watchers []tui.Watcher",
+				"var watchers []tui.Watcher",
+				"watchers = append(watchers, tui.Watch(dataCh, handleData(lines)))",
+				"watchers: watchers,",
+			},
+		},
+		"onTimer watcher": {
+			input: `package x
+@component Clock() {
+	<div onTimer={tui.OnTimer(time.Second, tick(elapsed))}></div>
+}`,
+			wantContains: []string{
+				"watchers []tui.Watcher",
+				"var watchers []tui.Watcher",
+				"watchers = append(watchers, tui.OnTimer(time.Second, tick(elapsed)))",
+				"watchers: watchers,",
+			},
+		},
+		"multiple watchers on same element": {
+			input: `package x
+@component Streaming(dataCh chan string) {
+	<div
+		onChannel={tui.Watch(dataCh, handleData)}
+		onTimer={tui.OnTimer(time.Second, tick)}
+	></div>
+}`,
+			wantContains: []string{
+				"watchers = append(watchers, tui.Watch(dataCh, handleData))",
+				"watchers = append(watchers, tui.OnTimer(time.Second, tick))",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := ParseAndGenerate("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}
+
+// TestGenerator_WatcherAggregation tests that nested component watchers are aggregated
+func TestGenerator_WatcherAggregation(t *testing.T) {
+	input := `package x
+@component StreamBox(dataCh chan string) {
+	<div onChannel={tui.Watch(dataCh, handleData)}></div>
+}
+
+@component Clock() {
+	<div onTimer={tui.OnTimer(time.Second, tick)}></div>
+}
+
+@component App(dataCh chan string) {
+	<div>
+		@StreamBox(dataCh)
+		@Clock()
+	</div>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	// App should aggregate watchers from child components
+	if !strings.Contains(code, ".GetWatchers()...") {
+		t.Errorf("missing watcher aggregation from child components\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_ViewableInterface tests GetRoot and GetWatchers methods are generated
+func TestGenerator_ViewableInterface(t *testing.T) {
+	input := `package x
+@component Test() {
+	<div></div>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	// Check GetRoot method
+	if !strings.Contains(code, "func (v TestView) GetRoot() tui.Renderable { return v.Root }") {
+		t.Errorf("missing GetRoot method\nGot:\n%s", code)
+	}
+
+	// Check GetWatchers method
+	if !strings.Contains(code, "func (v TestView) GetWatchers() []tui.Watcher { return v.watchers }") {
+		t.Errorf("missing GetWatchers method\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_OnKeyPressAttribute tests onKeyPress handler generation
+func TestGenerator_OnKeyPressAttribute(t *testing.T) {
+	input := `package x
+@component Counter() {
+	<div onKeyPress={handleKeys(count)} focusable={true}></div>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	if !strings.Contains(code, "element.WithOnKeyPress(handleKeys(count))") {
+		t.Errorf("missing onKeyPress option\nGot:\n%s", code)
+	}
+
+	if !strings.Contains(code, "element.WithFocusable(true)") {
+		t.Errorf("missing focusable option\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_OnClickAttribute tests onClick handler generation
+func TestGenerator_OnClickAttribute(t *testing.T) {
+	input := `package x
+@component Button(onClick func()) {
+	<div onClick={onClick}></div>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	if !strings.Contains(code, "element.WithOnClick(onClick)") {
+		t.Errorf("missing onClick option\nGot:\n%s", code)
 	}
 }
