@@ -2,6 +2,7 @@ package tui
 
 import (
 	"os"
+	"os/signal"
 	"time"
 )
 
@@ -28,6 +29,13 @@ type focusableTreeWalker interface {
 	WalkFocusables(fn func(Focusable))
 }
 
+// Viewable is implemented by generated view structs.
+// Allows SetRoot to extract the root element and start watchers.
+type Viewable interface {
+	GetRoot() Renderable
+	GetWatchers() []Watcher
+}
+
 // App manages the application lifecycle: terminal setup, event loop, and rendering.
 type App struct {
 	terminal        *ANSITerminal
@@ -36,6 +44,12 @@ type App struct {
 	focus           *FocusManager
 	root            Renderable
 	needsFullRedraw bool // Set after resize, cleared after RenderFull
+
+	// Event loop fields
+	eventQueue       chan func()
+	stopCh           chan struct{}
+	stopped          bool
+	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 }
 
 // NewApp creates a new application with the terminal set up for TUI usage.
@@ -76,10 +90,13 @@ func NewApp() (*App, error) {
 	focus := NewFocusManager()
 
 	return &App{
-		terminal: terminal,
-		buffer:   buffer,
-		reader:   reader,
-		focus:    focus,
+		terminal:   terminal,
+		buffer:     buffer,
+		reader:     reader,
+		focus:      focus,
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
 	}, nil
 }
 
@@ -111,10 +128,13 @@ func NewAppWithReader(reader EventReader) (*App, error) {
 	focus := NewFocusManager()
 
 	return &App{
-		terminal: terminal,
-		buffer:   buffer,
-		reader:   reader,
-		focus:    focus,
+		terminal:   terminal,
+		buffer:     buffer,
+		reader:     reader,
+		focus:      focus,
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		stopped:    false,
 	}, nil
 }
 
@@ -137,10 +157,28 @@ func (a *App) Close() error {
 	return a.reader.Close()
 }
 
-// SetRoot sets the root element tree for rendering.
-// The root must implement Renderable (element.Element satisfies this).
-// If root is an element.Element, focusable elements are auto-registered.
-func (a *App) SetRoot(root Renderable) {
+// SetRoot sets the root view for rendering. Accepts:
+//   - A view struct implementing Viewable (extracts Root, starts watchers)
+//   - A raw Renderable (element.Element)
+//
+// If the root supports focus discovery, focusable elements are auto-registered.
+func (a *App) SetRoot(v any) {
+	var root Renderable
+
+	switch view := v.(type) {
+	case Viewable:
+		root = view.GetRoot()
+		// Start all watchers collected during component construction
+		for _, w := range view.GetWatchers() {
+			w.Start(a.eventQueue, a.stopCh)
+		}
+	case Renderable:
+		root = view
+	default:
+		// Invalid type - ignore
+		return
+	}
+
 	a.root = root
 
 	// If root supports focus discovery, set up auto-registration
@@ -155,6 +193,13 @@ func (a *App) SetRoot(root Renderable) {
 			a.focus.Register(f)
 		})
 	}
+}
+
+// SetGlobalKeyHandler sets a handler that runs before dispatching to focused element.
+// If the handler returns true, the event is consumed and not dispatched further.
+// Use this for app-level key bindings like quit.
+func (a *App) SetGlobalKeyHandler(fn func(KeyEvent) bool) {
+	a.globalKeyHandler = fn
 }
 
 // Root returns the current root element.
@@ -281,4 +326,110 @@ func (a *App) RenderFull() {
 
 	// Full render to terminal
 	RenderFull(a.terminal, a.buffer)
+}
+
+// Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
+// Rendering occurs only when the dirty flag is set (by mutations).
+func (a *App) Run() error {
+	// Handle Ctrl+C gracefully
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	go func() {
+		select {
+		case <-sigCh:
+			a.Stop()
+		case <-a.stopCh:
+			// App already stopped, clean up signal handler
+		}
+		signal.Stop(sigCh)
+	}()
+
+	// Start input reader in background
+	go a.readInputEvents()
+
+	// Initial render
+	a.Render()
+
+	for !a.stopped {
+		// Block until at least one event arrives
+		select {
+		case handler := <-a.eventQueue:
+			handler()
+		case <-a.stopCh:
+			return nil
+		}
+
+		// Drain any additional queued events (batch processing)
+	drain:
+		for {
+			select {
+			case handler := <-a.eventQueue:
+				handler()
+			default:
+				break drain
+			}
+		}
+
+		// Only render if something changed (dirty flag set by mutations)
+		if checkAndClearDirty() {
+			a.Render()
+		}
+	}
+
+	return nil
+}
+
+// Stop signals the Run loop to exit gracefully and stops all watchers.
+// Watchers receive the stop signal via stopCh and exit their goroutines.
+// Stop is idempotent - multiple calls are safe.
+func (a *App) Stop() {
+	if a.stopped {
+		return // Already stopped
+	}
+	a.stopped = true
+
+	// Signal all watcher goroutines to stop
+	close(a.stopCh)
+}
+
+// QueueUpdate enqueues a function to run on the main loop.
+// Safe to call from any goroutine. Use this for background thread safety.
+func (a *App) QueueUpdate(fn func()) {
+	select {
+	case a.eventQueue <- fn:
+	case <-a.stopCh:
+		// App is stopping, ignore update
+	default:
+		// Queue full - this shouldn't happen with reasonable buffer size
+		// Could log a warning here
+	}
+}
+
+// readInputEvents reads terminal input in a goroutine and queues events.
+func (a *App) readInputEvents() {
+	for {
+		select {
+		case <-a.stopCh:
+			return
+		default:
+		}
+
+		event, ok := a.reader.PollEvent(50 * time.Millisecond)
+		if !ok {
+			continue
+		}
+
+		// Capture event for closure
+		ev := event
+
+		a.eventQueue <- func() {
+			// Global key handler runs first (for app-level bindings like quit)
+			if keyEvent, isKey := ev.(KeyEvent); isKey {
+				if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
+					return // Event consumed by global handler
+				}
+			}
+			a.Dispatch(ev)
+		}
+	}
 }

@@ -67,6 +67,10 @@ type Element struct {
 	onBlur    func()
 	onEvent   func(tui.Event) bool
 
+	// Event handlers (no bool return - mutations mark dirty automatically)
+	onKeyPress func(tui.KeyEvent)
+	onClick    func()
+
 	// Tree notification
 	onChildAdded     func(*Element)
 	onFocusableAdded func(tui.Focusable)
@@ -283,6 +287,16 @@ func (e *Element) RemoveChild(child *Element) bool {
 	return false
 }
 
+// RemoveAllChildren removes all children from this Element.
+// Automatically marks dirty.
+func (e *Element) RemoveAllChildren() {
+	for _, child := range e.children {
+		child.parent = nil
+	}
+	e.children = nil
+	e.MarkDirty()
+}
+
 // Children returns the child elements.
 func (e *Element) Children() []*Element {
 	return e.children
@@ -309,10 +323,13 @@ func (e *Element) ContentRect() layout.Rect {
 }
 
 // MarkDirty marks this Element and ancestors as needing recalculation.
+// Also marks the global dirty flag so the app knows to re-render.
 func (e *Element) MarkDirty() {
 	for elem := e; elem != nil && !elem.dirty; elem = elem.parent {
 		elem.dirty = true
 	}
+	// Signal to the app that UI needs re-rendering
+	tui.MarkDirty()
 }
 
 // SetStyle updates the layout style and marks the element dirty.
@@ -435,13 +452,41 @@ func (e *Element) Blur() {
 	}
 }
 
+// SetFocusable sets whether this element can receive focus.
+func (e *Element) SetFocusable(focusable bool) {
+	e.focusable = focusable
+}
+
+// --- Event Handler API ---
+
+// SetOnKeyPress sets a handler for key press events.
+// No return value needed - mutations mark dirty automatically via tui.MarkDirty().
+func (e *Element) SetOnKeyPress(fn func(tui.KeyEvent)) {
+	e.onKeyPress = fn
+}
+
+// SetOnClick sets a handler for click events.
+// No return value needed - mutations mark dirty automatically via tui.MarkDirty().
+func (e *Element) SetOnClick(fn func()) {
+	e.onClick = fn
+}
+
 // HandleEvent dispatches an event to this element's handler.
 // Returns true if the event was consumed.
 func (e *Element) HandleEvent(event tui.Event) bool {
-	// First, let user handler try to consume the event
+	// First, let user handler try to consume the event (legacy bool-returning handler)
 	if e.onEvent != nil {
 		if e.onEvent(event) {
 			return true
+		}
+	}
+
+	// Call the new-style handlers (no bool return - mutations mark dirty automatically)
+	if keyEvent, ok := event.(tui.KeyEvent); ok {
+		if e.onKeyPress != nil {
+			e.onKeyPress(keyEvent)
+			// Note: new-style handlers don't return bool, so we continue processing
+			// The handler will mark dirty via mutations if needed
 		}
 	}
 

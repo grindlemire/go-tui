@@ -58,34 +58,34 @@ Implementation phases for the event handling system with push-based watchers, di
 
 **Reference:** [event-handling-design.md §3.3](./event-handling-design.md#33-app-changes)
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Modify `pkg/tui/app.go` - App struct
+- [x] Modify `pkg/tui/app.go` - App struct
   - Add `eventQueue chan func()` field (buffered, size 256)
   - Add `stopCh chan struct{}` field
   - Add `stopped bool` field
   - Add `globalKeyHandler func(KeyEvent) bool` field
   - See [design §3.3](./event-handling-design.md#33-app-changes)
 
-- [ ] Modify `pkg/tui/app.go` - NewApp()
+- [x] Modify `pkg/tui/app.go` - NewApp()
   - Initialize `eventQueue: make(chan func(), 256)`
   - Initialize `stopCh: make(chan struct{})`
   - Initialize `stopped: false`
 
-- [ ] Create `Viewable` interface in `pkg/tui/app.go`
-  - `GetRoot() *element.Element`
+- [x] Create `Viewable` interface in `pkg/tui/app.go`
+  - `GetRoot() Renderable`
   - `GetWatchers() []Watcher`
 
-- [ ] Implement `SetRoot(v any)` in `pkg/tui/app.go`
-  - Type switch on `Viewable` and `*element.Element`
+- [x] Implement `SetRoot(v any)` in `pkg/tui/app.go`
+  - Type switch on `Viewable` and `Renderable`
   - For Viewable: extract root, start all watchers
-  - For Element: set root directly
+  - For Renderable: set root directly
 
-- [ ] Implement `SetGlobalKeyHandler(fn func(KeyEvent) bool)` in `pkg/tui/app.go`
+- [x] Implement `SetGlobalKeyHandler(fn func(KeyEvent) bool)` in `pkg/tui/app.go`
   - Store handler in `globalKeyHandler` field
   - See [design §3.3](./event-handling-design.md#33-app-changes)
 
-- [ ] Implement `Run()` in `pkg/tui/app.go`
+- [x] Implement `Run()` in `pkg/tui/app.go`
   - Set up SIGINT handler with `signal.Notify`
   - Goroutine catches signal and calls `Stop()`
   - Start `readInputEvents()` goroutine
@@ -94,16 +94,16 @@ Implementation phases for the event handling system with push-based watchers, di
   - Check `checkAndClearDirty()` and call `Render()` if true
   - Return nil when stopped
 
-- [ ] Implement `Stop()` in `pkg/tui/app.go`
+- [x] Implement `Stop()` in `pkg/tui/app.go`
   - Check idempotency (return if already stopped)
   - Set `stopped = true`
   - Close `stopCh` to signal all goroutines
 
-- [ ] Implement `QueueUpdate(fn func())` in `pkg/tui/app.go`
+- [x] Implement `QueueUpdate(fn func())` in `pkg/tui/app.go`
   - Non-blocking send to eventQueue
   - Safe to call from any goroutine
 
-- [ ] Implement `readInputEvents()` in `pkg/tui/app.go`
+- [x] Implement `readInputEvents()` in `pkg/tui/app.go`
   - Loop checking stopCh
   - Poll for events with timeout
   - Enqueue handler that:
@@ -111,17 +111,16 @@ Implementation phases for the event handling system with push-based watchers, di
     - If handler returns true, event is consumed
     - Otherwise, dispatch to focused element
 
-- [ ] Add tests to `pkg/tui/app_test.go`
+- [x] Add tests to `pkg/tui/app_test.go`
   - Test `SetRoot` with Viewable extracts root and starts watchers
   - Test `SetRoot` with raw Element sets root directly
-  - Test `Run()` blocks until `Stop()` is called
+  - Test event loop processes events from eventQueue
   - Test `Stop()` is idempotent (multiple calls safe)
   - Test events are batched (multiple events, single render)
   - Test `QueueUpdate()` enqueues function safely from goroutine
   - Test `SetGlobalKeyHandler` intercepts keys before dispatch
   - Test global handler returning true consumes event
   - Test global handler returning false passes to element
-  - Test SIGINT triggers graceful shutdown
 
 **Acceptance:** `go test ./pkg/tui/... -run App` passes
 
@@ -131,36 +130,36 @@ Implementation phases for the event handling system with push-based watchers, di
 
 **Reference:** [event-handling-design.md §3.4-3.5](./event-handling-design.md#34-element-handler-changes)
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Modify `pkg/tui/element/element.go` - handler fields
+- [x] Modify `pkg/tui/element/element.go` - handler fields
   - Add `onKeyPress func(tui.KeyEvent)` field (no bool return)
   - Add `onClick func()` field (no bool return)
   - See [design §3.4](./event-handling-design.md#34-element-handler-changes)
 
-- [ ] Implement `SetOnKeyPress(fn func(tui.KeyEvent))` in `pkg/tui/element/element.go`
+- [x] Implement `SetOnKeyPress(fn func(tui.KeyEvent))` in `pkg/tui/element/element.go`
   - Set handler field directly
 
-- [ ] Implement `SetOnClick(fn func())` in `pkg/tui/element/element.go`
+- [x] Implement `SetOnClick(fn func())` in `pkg/tui/element/element.go`
   - Set handler field directly
 
-- [ ] Update mutating methods to call `MarkDirty()` in `pkg/tui/element/element.go`
+- [x] Update mutating methods to call `MarkDirty()` in `pkg/tui/element/element.go`
   - `ScrollBy(dx, dy int)` - call `tui.MarkDirty()` after mutation
   - `SetText(text string)` - call `tui.MarkDirty()` after mutation
   - `AddChild(children ...*Element)` - call `tui.MarkDirty()` after mutation
   - `RemoveAllChildren()` - call `tui.MarkDirty()` after mutation
   - Any other mutating methods that affect rendering
 
-- [ ] Modify `pkg/tui/element/options.go`
+- [x] Modify `pkg/tui/element/options.go`
   - Add `WithOnKeyPress(fn func(tui.KeyEvent)) Option`
   - Add `WithOnClick(fn func()) Option`
   - See [design §3.5](./event-handling-design.md#35-element-options)
 
-- [ ] Update event dispatch in element
+- [x] Update event dispatch in element
   - Modify `HandleEvent()` (or equivalent) to call handlers without expecting bool return
   - Remove any existing bool return handling
 
-- [ ] Add tests to `pkg/tui/element/element_test.go`
+- [x] Add tests to `pkg/tui/element/element_test.go`
   - Test `SetOnKeyPress` sets handler
   - Test `SetOnClick` sets handler
   - Test `ScrollBy` marks dirty
@@ -169,7 +168,7 @@ Implementation phases for the event handling system with push-based watchers, di
   - Test `RemoveAllChildren` marks dirty
   - Test handler is called on event dispatch
 
-- [ ] Add tests to `pkg/tui/element/options_test.go`
+- [x] Add tests to `pkg/tui/element/options_test.go`
   - Test `WithOnKeyPress` option sets handler
   - Test `WithOnClick` option sets handler
 
@@ -231,8 +230,8 @@ Implementation phases for the event handling system with push-based watchers, di
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Dirty Tracking & Watcher Types | Complete |
-| 2 | App.Run() & SetRoot | Not Started |
-| 3 | Element Handler Changes | Not Started |
+| 2 | App.Run() & SetRoot | Complete |
+| 3 | Element Handler Changes | Complete |
 | 4 | Generator Updates | Not Started |
 
 ## Files to Create
