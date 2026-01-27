@@ -10,7 +10,13 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-func CounterUI(count int) *element.Element {
+type CounterUIView struct {
+	Root *element.Element
+}
+
+func CounterUI(count int) CounterUIView {
+	var view CounterUIView
+
 	__tui_0 := element.New(
 		element.WithDirection(layout.Column),
 		element.WithGap(1),
@@ -29,7 +35,7 @@ func CounterUI(count int) *element.Element {
 		element.WithHeight(1),
 	)
 	__tui_3 := element.New(
-		element.WithText("Counter Example"),
+		element.WithText("Counter Examples"),
 		element.WithTextAlign(element.TextAlignCenter),
 		element.WithWidthPercent(100.00),
 		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
@@ -68,5 +74,9 @@ func CounterUI(count int) *element.Element {
 	)
 	__tui_8.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_8)
-	return __tui_0
+
+	view = CounterUIView{
+		Root: __tui_0,
+	}
+	return view
 }

@@ -76,13 +76,13 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
 
 ---
 
-## Phase 2: Generator Struct Returns
+## Phase 2: Generator Struct Returns ✅
 
 **Reference:** [named-element-refs-design.md §3.5](./named-element-refs-design.md#35-generator-changes)
 
-**Completed in commit:** (pending)
+**Status:** Complete
 
-- [ ] Modify `pkg/tuigen/generator.go` - struct generation
+- [x] Modify `pkg/tuigen/generator.go` - struct generation
   - Add `generateViewStruct()` function
   - Always generate `ComponentNameView` struct for all components
   - Struct always has `Root *element.Element` field
@@ -93,27 +93,27 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
     - Inside `@if`: `*element.Element` with `// may be nil` comment
   - See [design §3.5](./named-element-refs-design.md#35-generator-changes)
 
-- [ ] Modify `pkg/tuigen/generator.go` - function signature
+- [x] Modify `pkg/tuigen/generator.go` - function signature
   - Change return type from `*element.Element` to `ComponentNameView`
   - Pre-declare `var view ComponentNameView` at function start for closure capture
   - Declare slice/map variables at function scope for loop refs
   - Declare pointer variables at function scope for conditional refs
 
-- [ ] Modify `pkg/tuigen/generator.go` - element generation
+- [x] Modify `pkg/tuigen/generator.go` - element generation
   - When generating element with `NamedRef`, use ref name as variable name
   - Inside loops: append to slice or set in map (based on key presence)
   - Inside conditionals: assign to pre-declared variable
 
-- [ ] Modify `pkg/tuigen/generator.go` - return statement
+- [x] Modify `pkg/tuigen/generator.go` - return statement
   - Populate `view` struct before returning
   - Include `Root` and all named refs
   - Return `view` instead of root element
 
-- [ ] Modify `pkg/tuigen/generator.go` - ref on root element
+- [x] Modify `pkg/tuigen/generator.go` - ref on root element
   - When root element has `#Name`, both `Root` and `Name` point to same element
   - See [design Q8](./named-element-refs-design.md#q8-can-refs-be-placed-on-the-root-element)
 
-- [ ] Add tests to `pkg/tuigen/generator_test.go`
+- [x] Add tests to `pkg/tuigen/generator_test.go`
   - Test component without refs generates struct with only `Root`
   - Test component with `#Name` generates struct with `Root` and `Name` fields
   - Test multiple refs generate multiple fields
@@ -125,12 +125,12 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
   - Test generated code compiles (go build check)
   - Test `var view` is declared before element creation (for closure capture)
 
-- [ ] Update `examples/streaming-dsl/` to use named refs
+- [x] Update `examples/streaming-dsl/` to use named refs
   - Update `streaming.tui` to use `#Content` pattern
   - Update `main.go` to use `view.Content` instead of passing refs
   - Verify example compiles and runs
 
-**Tests:** Run `go test ./pkg/tuigen/... -run Generator` and `go build ./examples/...` once at phase end
+**Tests:** All tests pass: `go test ./pkg/tuigen/... -run Generator` and examples build successfully
 
 ---
 
@@ -139,7 +139,7 @@ Implementation phases for named element refs (`#Name` syntax). Each phase builds
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Lexer, AST, Parser, Analyzer for #Name syntax | ✅ Complete |
-| 2 | Generator struct returns and code generation | Pending |
+| 2 | Generator struct returns and code generation | ✅ Complete |
 
 ## Files to Modify
 

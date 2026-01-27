@@ -10,7 +10,13 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-func Header() *element.Element {
+type HeaderView struct {
+	Root *element.Element
+}
+
+func Header() HeaderView {
+	var view HeaderView
+
 	__tui_0 := element.New(
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 		element.WithBorder(tui.BorderSingle),
@@ -24,10 +30,20 @@ func Header() *element.Element {
 		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	__tui_0.AddChild(__tui_1)
-	return __tui_0
+
+	view = HeaderView{
+		Root: __tui_0,
+	}
+	return view
 }
 
-func Footer(scrollY int, maxScroll int, autoScrollStatus string) *element.Element {
+type FooterView struct {
+	Root *element.Element
+}
+
+func Footer(scrollY int, maxScroll int, autoScrollStatus string) FooterView {
+	var view FooterView
+
 	__tui_0 := element.New(
 		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 		element.WithBorder(tui.BorderSingle),
@@ -41,5 +57,9 @@ func Footer(scrollY int, maxScroll int, autoScrollStatus string) *element.Elemen
 		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	__tui_0.AddChild(__tui_1)
-	return __tui_0
+
+	view = FooterView{
+		Root: __tui_0,
+	}
+	return view
 }

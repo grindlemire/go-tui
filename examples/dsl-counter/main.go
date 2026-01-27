@@ -77,9 +77,9 @@ func buildUI(app *tui.App, count int) *element.Element {
 		element.WithAlign(layout.AlignCenter),
 	)
 
-	// Add the generated counter UI
+	// Add the generated counter UI - now returns a view struct with .Root
 	counter := CounterUI(count)
-	root.AddChild(counter)
+	root.AddChild(counter.Root)
 
 	return root
 }

@@ -142,8 +142,8 @@ func main() {
 	streamBox.Element().SetStyle(style)
 
 	// Build UI using DSL-generated components
-	root := buildUI(width, height, streamBox.Element(), 0, 0, "ON")
-	app.SetRoot(root)
+	view := buildUI(width, height, streamBox.Element(), 0, 0, "ON")
+	app.SetRoot(view.Root)
 
 	// Register streamBox for focus (so it receives scroll events)
 	app.Focus().Register(streamBox.Element())
@@ -203,27 +203,32 @@ func main() {
 		}
 
 		// Rebuild UI with updated footer (DSL components are cheap to rebuild)
-		root = buildUI(width, height, streamBox.Element(), scrollY, maxScroll, autoScrollStatus)
-		app.SetRoot(root)
+		view = buildUI(width, height, streamBox.Element(), scrollY, maxScroll, autoScrollStatus)
+		app.SetRoot(view.Root)
 
 		app.Render()
 	}
 }
 
+// UIView is the view struct for the manually created UI
+type UIView struct {
+	Root *element.Element
+}
+
 // buildUI creates the UI tree using DSL-generated Header and Footer components.
-func buildUI(width, height int, content *element.Element, scrollY, maxScroll int, autoScrollStatus string) *element.Element {
+func buildUI(width, height int, content *element.Element, scrollY, maxScroll int, autoScrollStatus string) UIView {
 	root := element.New(
 		element.WithSize(width, height),
 		element.WithDirection(layout.Column),
 	)
 
-	// Use DSL-generated components for header and footer
+	// Use DSL-generated components for header and footer - now return view structs
 	header := Header()
 	footer := Footer(scrollY, maxScroll, autoScrollStatus)
 
-	root.AddChild(header, content, footer)
+	root.AddChild(header.Root, content, footer.Root)
 
-	return root
+	return UIView{Root: root}
 }
 
 // simulateProcess sends timestamped log lines to the channel.

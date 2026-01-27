@@ -33,7 +33,7 @@ vendor/
 # Node (VSCode extension)
 node_modules/
 out/
-*.vsix
+**/*.vsix
 
 # OS
 .DS_Store

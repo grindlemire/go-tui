@@ -13,6 +13,9 @@ type Generator struct {
 	indent     int
 	varCounter int
 	sourceFile string // original .tui filename for header comment
+
+	// Named refs tracking for current component
+	namedRefs []NamedRef
 }
 
 // NewGenerator creates a new code generator.
@@ -113,7 +116,15 @@ func (g *Generator) generateComponent(comp *Component) {
 	// Reset variable counter for each component
 	g.varCounter = 0
 
-	// Generate function signature
+	// Collect named refs from this component
+	analyzer := NewAnalyzer()
+	g.namedRefs = analyzer.CollectNamedRefs(comp)
+
+	// Generate view struct for this component (always generated)
+	structName := comp.Name + "View"
+	g.generateViewStruct(comp.Name, g.namedRefs)
+
+	// Generate function signature - always returns struct
 	g.writef("func %s(", comp.Name)
 	for i, param := range comp.Params {
 		if i > 0 {
@@ -128,48 +139,138 @@ func (g *Generator) generateComponent(comp *Component) {
 		}
 		g.write("children []*element.Element")
 	}
-	g.writef(") %s {\n", comp.ReturnType)
+	g.writef(") %s {\n", structName)
 	g.indent++
+
+	// Pre-declare view variable so closures can capture it
+	g.writef("var view %s\n", structName)
+	g.writeln("")
+
+	// Declare slice/map variables at function scope for loop refs
+	for _, ref := range g.namedRefs {
+		if ref.InLoop {
+			if ref.KeyExpr != "" {
+				g.writef("%s := make(map[%s]*element.Element)\n", ref.Name, ref.KeyType)
+			} else {
+				g.writef("var %s []*element.Element\n", ref.Name)
+			}
+		}
+	}
+
+	// Declare pointer variables at function scope for conditional refs (not in loops)
+	for _, ref := range g.namedRefs {
+		if ref.InConditional && !ref.InLoop {
+			g.writef("var %s *element.Element\n", ref.Name)
+		}
+	}
+
+	// Add blank line after declarations if we had any
+	hasLoopRefs := false
+	hasCondRefs := false
+	for _, ref := range g.namedRefs {
+		if ref.InLoop {
+			hasLoopRefs = true
+		}
+		if ref.InConditional && !ref.InLoop {
+			hasCondRefs = true
+		}
+	}
+	if hasLoopRefs || hasCondRefs {
+		g.writeln("")
+	}
 
 	// Track the root element variable name
 	// The root is the first top-level Element (not LetBinding, which is typically a child reference)
 	var rootVar string
+	var rootRef string         // Named ref on root element, if any
+	var rootIsComponent bool   // Whether root is a component call (needs .Root accessor)
 
 	// Generate body nodes
 	for _, node := range comp.Body {
 		switch n := node.(type) {
 		case *Element:
-			varName := g.generateElement(n, "")
+			varName := g.generateElementWithRefs(n, "", false, false)
 			if rootVar == "" {
 				rootVar = varName
+				if n.NamedRef != "" {
+					rootRef = n.NamedRef
+				}
 			}
 		case *LetBinding:
 			// @let bindings create elements that are typically used as children
 			// They are NOT the root element unless explicitly used
 			g.generateLetBinding(n, "")
 		case *ForLoop:
-			g.generateForLoop(n, "")
+			g.generateForLoopWithRefs(n, "", false)
 		case *IfStmt:
-			g.generateIfStmt(n, "")
+			g.generateIfStmtWithRefs(n, "", false)
 		case *GoCode:
 			g.generateGoCode(n)
 		case *GoExpr:
 			// A bare expression in component body - treat as statement
 			g.writef("%s\n", n.Code)
 		case *ComponentCall:
-			varName := g.generateComponentCall(n, "")
+			varName := g.generateComponentCallWithRefs(n, "")
 			if rootVar == "" {
 				rootVar = varName
+				rootIsComponent = true
 			}
 		}
 	}
 
-	// Return the root element
+	// Populate view struct before returning
+	g.writeln("")
+	g.writef("view = %s{\n", structName)
+	g.indent++
 	if rootVar != "" {
-		g.writef("return %s\n", rootVar)
+		if rootIsComponent {
+			g.writef("Root: %s.Root,\n", rootVar)
+		} else {
+			g.writef("Root: %s,\n", rootVar)
+		}
 	} else {
-		// No element found, return nil
-		g.writeln("return nil")
+		g.writeln("Root: nil,")
+	}
+	for _, ref := range g.namedRefs {
+		// If this ref is on the root element, point to rootVar
+		if ref.Name == rootRef {
+			g.writef("%s: %s,\n", ref.Name, rootVar)
+		} else {
+			g.writef("%s: %s,\n", ref.Name, ref.Name)
+		}
+	}
+	g.indent--
+	g.writeln("}")
+
+	g.writeln("return view")
+
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+}
+
+// generateViewStruct generates the ComponentNameView struct definition.
+func (g *Generator) generateViewStruct(compName string, refs []NamedRef) {
+	structName := compName + "View"
+
+	g.writef("type %s struct {\n", structName)
+	g.indent++
+	g.writeln("Root *element.Element")
+
+	for _, ref := range refs {
+		if ref.InLoop {
+			if ref.KeyExpr != "" {
+				// Map type for keyed refs
+				g.writef("%s map[%s]*element.Element\n", ref.Name, ref.KeyType)
+			} else {
+				// Slice type for unkeyed loop refs
+				g.writef("%s []*element.Element\n", ref.Name)
+			}
+		} else if ref.InConditional {
+			g.writef("%s *element.Element // may be nil\n", ref.Name)
+		} else {
+			g.writef("%s *element.Element\n", ref.Name)
+		}
 	}
 
 	g.indent--
@@ -180,7 +281,24 @@ func (g *Generator) generateComponent(comp *Component) {
 // generateElement generates code for an element and returns the variable name.
 // If parentVar is non-empty, adds this element as a child.
 func (g *Generator) generateElement(elem *Element, parentVar string) string {
-	varName := g.nextVar()
+	return g.generateElementWithRefs(elem, parentVar, false, false)
+}
+
+// generateElementWithRefs generates code for an element with named ref handling.
+// inLoop and inConditional track the context for proper variable handling.
+func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
+	// Determine variable name - use ref name if it's a named ref
+	var varName string
+	if elem.NamedRef != "" {
+		// For refs in loops or conditionals, the variable is already declared at function scope
+		if inLoop || inConditional {
+			varName = g.nextVar() // Use temp var, then assign/append to ref variable
+		} else {
+			varName = elem.NamedRef // Use ref name directly
+		}
+	} else {
+		varName = g.nextVar()
+	}
 
 	// Build options from attributes and tag
 	options := g.buildElementOptions(elem)
@@ -198,9 +316,25 @@ func (g *Generator) generateElement(elem *Element, parentVar string) string {
 		g.writeln(")")
 	}
 
+	// Handle named ref assignment in loops/conditionals
+	if elem.NamedRef != "" {
+		if inLoop {
+			if elem.RefKey != nil {
+				// Map-based ref: assign to map with key
+				g.writef("%s[%s] = %s\n", elem.NamedRef, elem.RefKey.Code, varName)
+			} else {
+				// Slice-based ref: append to slice
+				g.writef("%s = append(%s, %s)\n", elem.NamedRef, elem.NamedRef, varName)
+			}
+		} else if inConditional {
+			// Conditional ref: assign to pre-declared variable
+			g.writef("%s = %s\n", elem.NamedRef, varName)
+		}
+	}
+
 	// Generate children - skip if text element already has content in WithText
 	if !skipTextChildren(elem) {
-		g.generateChildren(varName, elem.Children)
+		g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional)
 	}
 
 	// Add to parent if specified
@@ -380,16 +514,21 @@ func (g *Generator) generateAttributeValue(value Node) string {
 
 // generateChildren generates code for element children.
 func (g *Generator) generateChildren(parentVar string, children []Node) {
+	g.generateChildrenWithRefs(parentVar, children, false, false)
+}
+
+// generateChildrenWithRefs generates code for element children with ref context tracking.
+func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, inLoop bool, inConditional bool) {
 	for _, child := range children {
 		switch c := child.(type) {
 		case *Element:
-			g.generateElement(c, parentVar)
+			g.generateElementWithRefs(c, parentVar, inLoop, inConditional)
 		case *LetBinding:
 			g.generateLetBinding(c, parentVar)
 		case *ForLoop:
-			g.generateForLoop(c, parentVar)
+			g.generateForLoopWithRefs(c, parentVar, inConditional)
 		case *IfStmt:
-			g.generateIfStmt(c, parentVar)
+			g.generateIfStmtWithRefs(c, parentVar, inLoop)
 		case *GoExpr:
 			// GoExpr as child - create text element with the expression
 			varName := g.nextVar()
@@ -404,7 +543,7 @@ func (g *Generator) generateChildren(parentVar string, children []Node) {
 			// RawGoExpr is a variable reference - add directly
 			g.writef("%s.AddChild(%s)\n", parentVar, c.Code)
 		case *ComponentCall:
-			g.generateComponentCall(c, parentVar)
+			g.generateComponentCallWithRefs(c, parentVar)
 		case *ChildrenSlot:
 			// Expand the children parameter
 			g.writeln("for _, __child := range children {")
@@ -446,6 +585,11 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string) {
 
 // generateForLoop generates code for a @for loop.
 func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
+	g.generateForLoopWithRefs(loop, parentVar, false)
+}
+
+// generateForLoopWithRefs generates code for a @for loop with ref context tracking.
+func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inConditional bool) {
 	// Build loop header
 	var loopVars string
 	if loop.Index != "" {
@@ -462,17 +606,17 @@ func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
 		g.writef("_ = %s\n", loop.Index)
 	}
 
-	// Generate loop body
+	// Generate loop body - now inside a loop context
 	for _, node := range loop.Body {
 		switch n := node.(type) {
 		case *Element:
-			g.generateElement(n, parentVar)
+			g.generateElementWithRefs(n, parentVar, true, inConditional)
 		case *LetBinding:
 			g.generateLetBinding(n, parentVar)
 		case *ForLoop:
-			g.generateForLoop(n, parentVar)
+			g.generateForLoopWithRefs(n, parentVar, inConditional)
 		case *IfStmt:
-			g.generateIfStmt(n, parentVar)
+			g.generateIfStmtWithRefs(n, parentVar, true) // now in loop context
 		case *GoCode:
 			g.generateGoCode(n)
 		case *GoExpr:
@@ -485,7 +629,7 @@ func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
 				g.writef("%s\n", n.Code)
 			}
 		case *ComponentCall:
-			g.generateComponentCall(n, parentVar)
+			g.generateComponentCallWithRefs(n, parentVar)
 		case *ChildrenSlot:
 			if parentVar != "" {
 				g.writeln("for _, __child := range children {")
@@ -503,12 +647,17 @@ func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
 
 // generateIfStmt generates code for an @if statement.
 func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
+	g.generateIfStmtWithRefs(stmt, parentVar, false)
+}
+
+// generateIfStmtWithRefs generates code for an @if statement with ref context tracking.
+func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoop bool) {
 	g.writef("if %s {\n", stmt.Condition)
 	g.indent++
 
-	// Generate then body
+	// Generate then body - now inside conditional context
 	for _, node := range stmt.Then {
-		g.generateBodyNode(node, parentVar)
+		g.generateBodyNodeWithRefs(node, parentVar, inLoop, true)
 	}
 
 	g.indent--
@@ -520,7 +669,7 @@ func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
 		// Check if else contains a single IfStmt (else-if chain)
 		if len(stmt.Else) == 1 {
 			if elseIf, ok := stmt.Else[0].(*IfStmt); ok {
-				g.generateIfStmt(elseIf, parentVar)
+				g.generateIfStmtWithRefs(elseIf, parentVar, inLoop)
 				return
 			}
 		}
@@ -528,7 +677,7 @@ func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
 		g.writeln("{")
 		g.indent++
 		for _, node := range stmt.Else {
-			g.generateBodyNode(node, parentVar)
+			g.generateBodyNodeWithRefs(node, parentVar, inLoop, true)
 		}
 		g.indent--
 		g.writeln("}")
@@ -539,15 +688,20 @@ func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
 
 // generateBodyNode generates code for a node in a component/control flow body.
 func (g *Generator) generateBodyNode(node Node, parentVar string) {
+	g.generateBodyNodeWithRefs(node, parentVar, false, false)
+}
+
+// generateBodyNodeWithRefs generates code for a node with ref context tracking.
+func (g *Generator) generateBodyNodeWithRefs(node Node, parentVar string, inLoop bool, inConditional bool) {
 	switch n := node.(type) {
 	case *Element:
-		g.generateElement(n, parentVar)
+		g.generateElementWithRefs(n, parentVar, inLoop, inConditional)
 	case *LetBinding:
 		g.generateLetBinding(n, parentVar)
 	case *ForLoop:
-		g.generateForLoop(n, parentVar)
+		g.generateForLoopWithRefs(n, parentVar, inConditional)
 	case *IfStmt:
-		g.generateIfStmt(n, parentVar)
+		g.generateIfStmtWithRefs(n, parentVar, inLoop)
 	case *GoCode:
 		g.generateGoCode(n)
 	case *GoExpr:
@@ -569,7 +723,7 @@ func (g *Generator) generateBodyNode(node Node, parentVar string) {
 			g.writef("%s.AddChild(%s)\n", parentVar, n.Code)
 		}
 	case *ComponentCall:
-		g.generateComponentCall(n, parentVar)
+		g.generateComponentCallWithRefs(n, parentVar)
 	case *ChildrenSlot:
 		if parentVar != "" {
 			g.writeln("for _, __child := range children {")
@@ -594,14 +748,20 @@ func (g *Generator) generateGoFunc(fn *GoFunc) {
 // generateComponentCall generates code for a component call.
 // Returns the variable name holding the result.
 func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string) string {
+	return g.generateComponentCallWithRefs(call, parentVar)
+}
+
+// generateComponentCallWithRefs generates code for a component call.
+// Returns the variable name holding the result.
+func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar string) string {
 	varName := g.nextVar()
 
 	if len(call.Children) == 0 {
-		// No children - simple call
+		// No children - simple call, returns view struct
 		if call.Args == "" {
-			g.writef("%s := %s(nil)\n", varName, call.Name)
+			g.writef("%s := %s()\n", varName, call.Name)
 		} else {
-			g.writef("%s := %s(%s, nil)\n", varName, call.Name, call.Args)
+			g.writef("%s := %s(%s)\n", varName, call.Name, call.Args)
 		}
 	} else {
 		// Has children - build children slice first
@@ -615,8 +775,8 @@ func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string)
 				elemVar := g.generateElement(c, "")
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
 			case *ComponentCall:
-				innerVar := g.generateComponentCall(c, "")
-				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, innerVar)
+				innerVar := g.generateComponentCallWithRefs(c, "")
+				g.writef("%s = append(%s, %s.Root)\n", childrenVar, childrenVar, innerVar)
 			case *LetBinding:
 				g.generateLetBinding(c, "")
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, c.Name)
@@ -648,9 +808,9 @@ func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string)
 		}
 	}
 
-	// Add to parent if specified
+	// Add to parent if specified - use .Root to get the element from the view struct
 	if parentVar != "" {
-		g.writef("%s.AddChild(%s)\n", parentVar, varName)
+		g.writef("%s.AddChild(%s.Root)\n", parentVar, varName)
 	}
 
 	return varName
@@ -678,8 +838,8 @@ func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 			elemVar := g.generateElement(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *ComponentCall:
-			callVar := g.generateComponentCall(n, "")
-			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
+			callVar := g.generateComponentCallWithRefs(n, "")
+			g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
@@ -711,8 +871,8 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 			elemVar := g.generateElement(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *ComponentCall:
-			callVar := g.generateComponentCall(n, "")
-			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
+			callVar := g.generateComponentCallWithRefs(n, "")
+			g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
@@ -749,8 +909,8 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 				elemVar := g.generateElement(n, "")
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 			case *ComponentCall:
-				callVar := g.generateComponentCall(n, "")
-				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
+				callVar := g.generateComponentCallWithRefs(n, "")
+				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
 			case *LetBinding:
 				g.generateLetBinding(n, "")
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)

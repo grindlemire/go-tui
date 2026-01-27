@@ -19,8 +19,11 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 @component Empty() {
 }`,
 			wantContains: []string{
-				"func Empty() *element.Element",
-				"return nil",
+				"type EmptyView struct",
+				"Root *element.Element",
+				"func Empty() EmptyView",
+				"var view EmptyView",
+				"return view",
 			},
 		},
 		"component with single element": {
@@ -29,9 +32,10 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 	<div></div>
 }`,
 			wantContains: []string{
-				"func Header() *element.Element",
+				"type HeaderView struct",
+				"func Header() HeaderView",
 				"__tui_0 := element.New()",
-				"return __tui_0",
+				"Root: __tui_0",
 			},
 		},
 		"component with params": {
@@ -40,7 +44,8 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 	<span>Hello</span>
 }`,
 			wantContains: []string{
-				"func Greeting(name string, count int) *element.Element",
+				"func Greeting(name string, count int) GreetingView",
+				"type GreetingView struct",
 			},
 		},
 	}
@@ -176,9 +181,13 @@ func TestGenerator_NestedElements(t *testing.T) {
 		t.Error("missing AddChild call")
 	}
 
-	// Should return the outer element
-	if !strings.Contains(code, "return __tui_0") {
-		t.Error("missing return statement for outer element")
+	// Should return view struct with Root set to outer element
+	if !strings.Contains(code, "Root: __tui_0") {
+		t.Error("missing Root assignment to outer element")
+	}
+
+	if !strings.Contains(code, "return view") {
+		t.Error("missing return view statement")
 	}
 }
 
@@ -201,10 +210,10 @@ func TestGenerator_LetBinding(t *testing.T) {
 		t.Errorf("missing let binding variable\nGot:\n%s", code)
 	}
 
-	// Should return the box element (first top-level Element, not LetBinding)
+	// Should return the box element (first top-level Element, not LetBinding) as Root
 	// @let bindings are used for references, not as root elements
-	if !strings.Contains(code, "return __tui_0") {
-		t.Errorf("should return the box element, not the let-bound variable\nGot:\n%s", code)
+	if !strings.Contains(code, "Root: __tui_0") {
+		t.Errorf("should set Root to the box element, not the let-bound variable\nGot:\n%s", code)
 	}
 }
 
@@ -667,9 +676,14 @@ func countDone(items []Item) int {
 		t.Error("missing helper function")
 	}
 
-	// Check component generated
-	if !strings.Contains(code, "func Dashboard(items []Item, selectedIndex int)") {
-		t.Error("missing Dashboard function")
+	// Check component generated with view struct return
+	if !strings.Contains(code, "func Dashboard(items []Item, selectedIndex int) DashboardView") {
+		t.Error("missing Dashboard function with view struct return")
+	}
+
+	// Check view struct generated
+	if !strings.Contains(code, "type DashboardView struct") {
+		t.Error("missing DashboardView struct")
 	}
 
 	// Check control flow
@@ -767,12 +781,20 @@ func TestGenerator_MultipleComponents(t *testing.T) {
 
 	code := string(output)
 
-	if !strings.Contains(code, "func Header()") {
-		t.Error("missing Header function")
+	if !strings.Contains(code, "func Header() HeaderView") {
+		t.Error("missing Header function with HeaderView return")
 	}
 
-	if !strings.Contains(code, "func Footer()") {
-		t.Error("missing Footer function")
+	if !strings.Contains(code, "func Footer() FooterView") {
+		t.Error("missing Footer function with FooterView return")
+	}
+
+	if !strings.Contains(code, "type HeaderView struct") {
+		t.Error("missing HeaderView struct")
+	}
+
+	if !strings.Contains(code, "type FooterView struct") {
+		t.Error("missing FooterView struct")
 	}
 }
 
@@ -875,6 +897,11 @@ func TestGenerator_ComponentWithChildren(t *testing.T) {
 
 	code := string(output)
 
+	// Check that view struct is generated
+	if !strings.Contains(code, "type CardView struct") {
+		t.Errorf("missing CardView struct\nGot:\n%s", code)
+	}
+
 	// Check that children parameter is present
 	if !strings.Contains(code, "children []*element.Element") {
 		t.Errorf("missing children parameter\nGot:\n%s", code)
@@ -918,9 +945,14 @@ func TestGenerator_ComponentCall(t *testing.T) {
 
 	code := string(output)
 
-	// Check that component call is generated
-	if !strings.Contains(code, `Header("Welcome"`) {
+	// Check that component call is generated - returns view struct
+	if !strings.Contains(code, `Header("Welcome")`) {
 		t.Errorf("missing component call\nGot:\n%s", code)
+	}
+
+	// Check that .Root is used to get element from component view
+	if !strings.Contains(code, ".Root,") {
+		t.Errorf("missing .Root accessor for component child\nGot:\n%s", code)
 	}
 }
 
@@ -962,9 +994,9 @@ func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 
 	code := string(output)
 
-	// Check that Card has children parameter
-	if !strings.Contains(code, "func Card(title string, children []*element.Element)") {
-		t.Errorf("Card should have children parameter\nGot:\n%s", code)
+	// Check that Card has children parameter and returns view struct
+	if !strings.Contains(code, "func Card(title string, children []*element.Element) CardView") {
+		t.Errorf("Card should have children parameter and return CardView\nGot:\n%s", code)
 	}
 
 	// Check that App creates children slice
@@ -1205,5 +1237,216 @@ func TestGenerator_BR(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestGenerator_NamedRefs tests named element references (#Name syntax)
+func TestGenerator_NamedRefs(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"simple named ref": {
+			input: `package x
+@component StreamBox() {
+	<div #Content scrollable={element.ScrollVertical}></div>
+}`,
+			wantContains: []string{
+				"type StreamBoxView struct",
+				"Root    *element.Element",
+				"Content *element.Element",
+				"Content := element.New(",
+				"element.WithScrollable(element.ScrollVertical)",
+				"view = StreamBoxView{",
+				"Root:    Content,",
+				"Content: Content,",
+			},
+		},
+		"multiple named refs": {
+			input: `package x
+@component Layout() {
+	<div>
+		<div #Header height={3}></div>
+		<div #Content flexGrow={1}></div>
+		<div #Footer height={3}></div>
+	</div>
+}`,
+			wantContains: []string{
+				"type LayoutView struct",
+				"Header  *element.Element",
+				"Content *element.Element",
+				"Footer  *element.Element",
+				"Header := element.New(",
+				"Content := element.New(",
+				"Footer := element.New(",
+				"Header:  Header,",
+				"Content: Content,",
+				"Footer:  Footer,",
+			},
+		},
+		"named ref on root element": {
+			input: `package x
+@component Sidebar() {
+	<nav #Navigation class="flex-col"></nav>
+}`,
+			wantContains: []string{
+				"type SidebarView struct",
+				"Root       *element.Element",
+				"Navigation *element.Element",
+				"Navigation := element.New(",
+				"Root:       Navigation,",
+				"Navigation: Navigation,",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := ParseAndGenerate("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}
+
+// TestGenerator_NamedRefsInLoop tests refs inside @for loops generate slice fields
+func TestGenerator_NamedRefsInLoop(t *testing.T) {
+	input := `package x
+@component ItemList(items []string) {
+	<ul>
+		@for _, item := range items {
+			<li #Items>{item}</li>
+		}
+	</ul>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	// Should generate slice field for loop ref
+	if !strings.Contains(code, "Items []*element.Element") {
+		t.Errorf("missing slice field for loop ref\nGot:\n%s", code)
+	}
+
+	// Should declare var at function scope
+	if !strings.Contains(code, "var Items []*element.Element") {
+		t.Errorf("missing var declaration for loop ref\nGot:\n%s", code)
+	}
+
+	// Should append to slice in loop
+	if !strings.Contains(code, "Items = append(Items,") {
+		t.Errorf("missing append to Items slice\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_NamedRefsInConditional tests refs inside @if generate may-be-nil fields
+func TestGenerator_NamedRefsInConditional(t *testing.T) {
+	input := `package x
+@component Foo(showLabel bool) {
+	<div>
+		@if showLabel {
+			<span #Label>{"Hi"}</span>
+		}
+	</div>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	// Should have comment indicating may be nil
+	if !strings.Contains(code, "Label *element.Element // may be nil") {
+		t.Errorf("missing 'may be nil' comment for conditional ref\nGot:\n%s", code)
+	}
+
+	// Should declare var at function scope (outside conditional)
+	if !strings.Contains(code, "var Label *element.Element") {
+		t.Errorf("missing var declaration for conditional ref\nGot:\n%s", code)
+	}
+
+	// Should assign inside conditional
+	if !strings.Contains(code, "Label = ") {
+		t.Errorf("missing assignment inside conditional\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_NamedRefsWithKey tests refs with key={expr} generate map fields
+func TestGenerator_NamedRefsWithKey(t *testing.T) {
+	input := `package x
+@component UserList(users []User) {
+	<ul>
+		@for _, user := range users {
+			<li #Users key={user.ID}>{user.Name}</li>
+		}
+	</ul>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	// Should generate map field for keyed ref
+	if !strings.Contains(code, "Users map[string]*element.Element") {
+		t.Errorf("missing map field for keyed ref\nGot:\n%s", code)
+	}
+
+	// Should make map at function scope
+	if !strings.Contains(code, "Users := make(map[string]*element.Element)") {
+		t.Errorf("missing make for keyed ref\nGot:\n%s", code)
+	}
+
+	// Should assign to map in loop
+	if !strings.Contains(code, "Users[user.ID] =") {
+		t.Errorf("missing map assignment for keyed ref\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_ViewVariablePreDeclared tests that view variable is pre-declared for closure capture
+func TestGenerator_ViewVariablePreDeclared(t *testing.T) {
+	input := `package x
+@component StreamApp() {
+	<div #Content></div>
+}`
+
+	output, err := ParseAndGenerate("test.tui", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+
+	// Should have var view declared at start of function
+	if !strings.Contains(code, "var view StreamAppView") {
+		t.Errorf("missing pre-declared view variable\nGot:\n%s", code)
+	}
+
+	// The view variable should be assigned before return
+	if !strings.Contains(code, "view = StreamAppView{") {
+		t.Errorf("missing view assignment\nGot:\n%s", code)
+	}
+
+	// Should return view (not view.Root)
+	if !strings.Contains(code, "return view") {
+		t.Errorf("should return view struct\nGot:\n%s", code)
 	}
 }
