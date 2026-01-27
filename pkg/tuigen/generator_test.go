@@ -37,7 +37,7 @@ func Header() Element {
 				"type HeaderView struct",
 				"func Header() HeaderView",
 				"__tui_0 := element.New()",
-				"Root:     __tui_0",
+				"Root: __tui_0",
 			},
 		},
 		"component with params": {
@@ -184,7 +184,7 @@ func Layout() Element {
 	}
 
 	// Should return view struct with Root set to outer element
-	if !strings.Contains(code, "Root:     __tui_0") {
+	if !strings.Contains(code, "Root: __tui_0") {
 		t.Error("missing Root assignment to outer element")
 	}
 
@@ -214,7 +214,7 @@ func Counter() Element {
 
 	// Should return the box element (first top-level Element, not LetBinding) as Root
 	// @let bindings are used for references, not as root elements
-	if !strings.Contains(code, "Root:     __tui_0") {
+	if !strings.Contains(code, "Root: __tui_0") {
 		t.Errorf("should set Root to the box element, not the let-bound variable\nGot:\n%s", code)
 	}
 }
@@ -1265,8 +1265,8 @@ func TestGenerator_NamedRefs(t *testing.T) {
 				"Content := element.New(",
 				"element.WithScrollable(element.ScrollVertical)",
 				"view = StreamBoxView{",
-				"Root:     Content,",
-				"Content:  Content,",
+				"Root:    Content,",
+				"Content: Content,",
 			},
 		},
 		"multiple named refs": {
@@ -1280,15 +1280,15 @@ func TestGenerator_NamedRefs(t *testing.T) {
 }`,
 			wantContains: []string{
 				"type LayoutView struct",
-				"Header   *element.Element",
-				"Content  *element.Element",
-				"Footer   *element.Element",
+				"Header  *element.Element",
+				"Content *element.Element",
+				"Footer  *element.Element",
 				"Header := element.New(",
 				"Content := element.New(",
 				"Footer := element.New(",
-				"Header:   Header,",
-				"Content:  Content,",
-				"Footer:   Footer,",
+				"Header:  Header,",
+				"Content: Content,",
+				"Footer:  Footer,",
 			},
 		},
 		"named ref on root element": {
@@ -1377,7 +1377,7 @@ func TestGenerator_NamedRefsInConditional(t *testing.T) {
 	code := string(output)
 
 	// Should have comment indicating may be nil
-	if !strings.Contains(code, "Label    *element.Element // may be nil") {
+	if !strings.Contains(code, "Label *element.Element // may be nil") {
 		t.Errorf("missing 'may be nil' comment for conditional ref\nGot:\n%s", code)
 	}
 
@@ -1411,7 +1411,7 @@ func TestGenerator_NamedRefsWithKey(t *testing.T) {
 	code := string(output)
 
 	// Should generate map field for keyed ref
-	if !strings.Contains(code, "Users    map[string]*element.Element") {
+	if !strings.Contains(code, "Users map[string]*element.Element") {
 		t.Errorf("missing map field for keyed ref\nGot:\n%s", code)
 	}
 
