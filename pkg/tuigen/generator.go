@@ -25,7 +25,7 @@ type Generator struct {
 	componentVars []string
 
 	// State tracking for current component (for reactive bindings)
-	stateVars    []StateVar
+	stateVars     []StateVar
 	stateBindings []StateBinding
 }
 
@@ -212,8 +212,8 @@ func (g *Generator) generateComponent(comp *Component) {
 	// Track the root element variable name
 	// The root is the first top-level Element (not LetBinding, which is typically a child reference)
 	var rootVar string
-	var rootRef string         // Named ref on root element, if any
-	var rootIsComponent bool   // Whether root is a component call (needs .Root accessor)
+	var rootRef string       // Named ref on root element, if any
+	var rootIsComponent bool // Whether root is a component call (needs .Root accessor)
 
 	// Generate body nodes
 	for _, node := range comp.Body {
@@ -534,10 +534,10 @@ var attributeToOption = map[string]string{
 	"textAlign": "element.WithTextAlign(%s)",
 
 	// Focus
-	"onFocus":    "element.WithOnFocus(%s)",
-	"onBlur":     "element.WithOnBlur(%s)",
-	"onEvent":    "element.WithOnEvent(%s)",
-	"focusable":  "element.WithFocusable(%s)",
+	"onFocus":   "element.WithOnFocus(%s)",
+	"onBlur":    "element.WithOnBlur(%s)",
+	"onEvent":   "element.WithOnEvent(%s)",
+	"focusable": "element.WithFocusable(%s)",
 
 	// Event handlers (no bool return)
 	"onKeyPress": "element.WithOnKeyPress(%s)",

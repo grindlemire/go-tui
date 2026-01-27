@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
