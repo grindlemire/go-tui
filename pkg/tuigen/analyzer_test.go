@@ -1119,6 +1119,7 @@ func TestAnalyzer_CollectNamedRefs(t *testing.T) {
 	}
 }
 
+
 // ===== State Detection Tests =====
 
 func TestAnalyzer_DetectStateVars_IntLiteral(t *testing.T) {

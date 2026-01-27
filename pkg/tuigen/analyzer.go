@@ -26,6 +26,7 @@ type StateBinding struct {
 	ExplicitDeps bool    // True if deps={...} was used
 }
 
+
 // NamedRef tracks information about a named element reference.
 type NamedRef struct {
 	Name          string
