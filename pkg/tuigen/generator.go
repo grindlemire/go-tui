@@ -3,6 +3,7 @@ package tuigen
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"strconv"
 
 	"golang.org/x/tools/imports"
@@ -27,6 +28,9 @@ type Generator struct {
 	// State tracking for current component (for reactive bindings)
 	stateVars     []StateVar
 	stateBindings []StateBinding
+
+	// SkipImports uses format.Source instead of imports.Process (faster for tests)
+	SkipImports bool
 }
 
 // NewGenerator creates a new code generator.
@@ -60,7 +64,12 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 		g.generateComponent(comp)
 	}
 
-	// Format and fix imports with goimports
+	// For tests: just format without import processing (much faster)
+	if g.SkipImports {
+		return format.Source(g.buf.Bytes())
+	}
+
+	// For production: format and fix imports with goimports
 	return imports.Process(g.sourceFile, g.buf.Bytes(), nil)
 }
 
@@ -1054,6 +1063,16 @@ func (g *Generator) GenerateString(file *File, sourceFile string) (string, error
 // ParseAndGenerate parses source code and generates Go code in one step.
 // This is a convenience function for simple use cases.
 func ParseAndGenerate(filename, source string) ([]byte, error) {
+	return parseAndGenerate(filename, source, false)
+}
+
+// parseAndGenerateSkipImports is like ParseAndGenerate but uses format.Source
+// instead of imports.Process. This is much faster for tests.
+func parseAndGenerateSkipImports(filename, source string) ([]byte, error) {
+	return parseAndGenerate(filename, source, true)
+}
+
+func parseAndGenerate(filename, source string, skipImports bool) ([]byte, error) {
 	lexer := NewLexer(filename, source)
 	parser := NewParser(lexer)
 
@@ -1063,6 +1082,7 @@ func ParseAndGenerate(filename, source string) ([]byte, error) {
 	}
 
 	gen := NewGenerator()
+	gen.SkipImports = skipImports
 	return gen.Generate(file, filename)
 }
 
