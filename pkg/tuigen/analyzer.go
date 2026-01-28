@@ -1,9 +1,30 @@
 package tuigen
 
 import (
+	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
+
+// StateVar tracks information about a state variable declaration.
+type StateVar struct {
+	Name        string   // Variable name (e.g., "count")
+	Type        string   // Go type (e.g., "int", "string", "[]Item")
+	InitExpr    string   // Initialization expression (empty for parameters)
+	IsParameter bool     // True if state is passed as component parameter
+	Position    Position // Position of the declaration
+}
+
+// StateBinding tracks a binding between state variables and an element.
+type StateBinding struct {
+	StateVars   []string // State variables referenced in expression
+	Element     *Element // Element that uses this expression
+	ElementName string   // Generated variable name for the element (e.g., "__tui_0")
+	Attribute   string   // Which attribute ("text", "class", etc.)
+	Expr        string   // The expression (e.g., "fmt.Sprintf(...)")
+	ExplicitDeps bool    // True if deps={...} was used
+}
 
 // NamedRef tracks information about a named element reference.
 type NamedRef struct {
@@ -127,7 +148,25 @@ var knownAttributes = map[string]bool{
 
 	// Tailwind-style class attribute
 	"class": true,
+
+	// State reactive bindings
+	"deps": true, // explicit dependencies for reactive bindings
 }
+
+// stateNewStateRegex matches tui.NewState(...) declarations.
+// It captures the variable name and the initializer expression.
+var stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewState\((.+)\)`)
+
+// stateGetRegex matches state.Get() calls to detect state usage in expressions.
+// This pattern handles:
+// - Simple: count.Get()
+// - Dereferenced pointer: (*count).Get()
+var stateGetRegex = regexp.MustCompile(`(?:\(\*(\w+)\)|(\w+))\.Get\(\)`)
+
+// stateParamRegex matches *tui.State[T] parameter types.
+// Uses greedy .+ but anchored to end of string with $, which works because
+// parameter type strings don't have trailing content after the closing bracket.
+var stateParamRegex = regexp.MustCompile(`\*tui\.State\[(.+)\]$`)
 
 // attributeSimilar maps common typos to correct attribute names.
 var attributeSimilar = map[string]string{
@@ -735,4 +774,302 @@ func SuggestAttribute(name string) string {
 		return similar
 	}
 	return ""
+}
+
+// DetectStateVars scans a component for tui.NewState declarations and state parameters.
+// It returns a list of all detected state variables.
+func (a *Analyzer) DetectStateVars(comp *Component) []StateVar {
+	var stateVars []StateVar
+
+	// First, detect state parameters in component signature
+	for _, param := range comp.Params {
+		matches := stateParamRegex.FindStringSubmatch(param.Type)
+		if matches != nil {
+			stateVars = append(stateVars, StateVar{
+				Name:        param.Name,
+				Type:        matches[1], // Type inside State[T]
+				IsParameter: true,
+				Position:    param.Position,
+			})
+		}
+	}
+
+	// Then, scan component body for tui.NewState declarations
+	// We need to look for GoCode nodes that contain state declarations
+	for _, node := range comp.Body {
+		if goCode, ok := node.(*GoCode); ok {
+			stateVars = append(stateVars, a.parseStateDeclarations(goCode)...)
+		}
+	}
+
+	return stateVars
+}
+
+// parseStateDeclarations extracts tui.NewState declarations from Go code.
+func (a *Analyzer) parseStateDeclarations(code *GoCode) []StateVar {
+	var stateVars []StateVar
+
+	// Find all matches in the code
+	matches := stateNewStateRegex.FindAllStringSubmatch(code.Code, -1)
+	for _, match := range matches {
+		if len(match) >= 3 {
+			varName := match[1]
+			initExpr := match[2]
+			stateType := inferTypeFromExpr(initExpr)
+
+			stateVars = append(stateVars, StateVar{
+				Name:     varName,
+				Type:     stateType,
+				InitExpr: initExpr,
+				Position: code.Position,
+			})
+		}
+	}
+
+	return stateVars
+}
+
+// inferTypeFromExpr attempts to infer the Go type from an expression.
+// This uses heuristics for common patterns.
+func inferTypeFromExpr(expr string) string {
+	expr = strings.TrimSpace(expr)
+
+	// Integer literal (positive or negative)
+	if regexp.MustCompile(`^-?\d+$`).MatchString(expr) {
+		return "int"
+	}
+
+	// Float literal (positive or negative)
+	if regexp.MustCompile(`^-?\d+\.\d+$`).MatchString(expr) {
+		return "float64"
+	}
+
+	// Boolean literal
+	if expr == "true" || expr == "false" {
+		return "bool"
+	}
+
+	// String literal
+	if (strings.HasPrefix(expr, `"`) && strings.HasSuffix(expr, `"`)) ||
+		(strings.HasPrefix(expr, "`") && strings.HasSuffix(expr, "`")) {
+		return "string"
+	}
+
+	// Nil pointer
+	if expr == "nil" {
+		return "any" // Can't infer specific type from nil
+	}
+
+	// Slice literal []Type{...}
+	if sliceMatch := regexp.MustCompile(`^\[\](\w+(?:\.\w+)?)\{`).FindStringSubmatch(expr); sliceMatch != nil {
+		return "[]" + sliceMatch[1]
+	}
+
+	// Map literal map[K]V{...}
+	if mapMatch := regexp.MustCompile(`^map\[(\w+)\](\w+(?:\.\w+)?)\{`).FindStringSubmatch(expr); mapMatch != nil {
+		return "map[" + mapMatch[1] + "]" + mapMatch[2]
+	}
+
+	// Pointer to struct &Type{...}
+	if ptrMatch := regexp.MustCompile(`^&(\w+(?:\.\w+)?)\{`).FindStringSubmatch(expr); ptrMatch != nil {
+		return "*" + ptrMatch[1]
+	}
+
+	// Struct literal Type{...}
+	if structMatch := regexp.MustCompile(`^(\w+(?:\.\w+)?)\{`).FindStringSubmatch(expr); structMatch != nil {
+		return structMatch[1]
+	}
+
+	// Default to any if we can't infer
+	return "any"
+}
+
+// DetectStateBindings scans elements for state usage and returns bindings.
+// This detects both explicit deps={...} attributes and auto-detected .Get() calls.
+//
+// The elementIndex counter assigns names like "__tui_0", "__tui_1", etc. to unnamed
+// elements. This must match the generator's naming scheme in generator.go. Named
+// refs (#Name) use their ref name instead.
+func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []StateBinding {
+	// Build a set of state variable names for quick lookup
+	stateNames := make(map[string]bool)
+	for _, sv := range stateVars {
+		stateNames[sv.Name] = true
+	}
+
+	var bindings []StateBinding
+	elementIndex := 0
+
+	var scan func(nodes []Node)
+	scan = func(nodes []Node) {
+		for _, node := range nodes {
+			switch n := node.(type) {
+			case *Element:
+				// Check for explicit deps attribute first
+				var explicitDeps []string
+				for _, attr := range n.Attributes {
+					if attr.Name == "deps" {
+						explicitDeps = a.parseExplicitDeps(attr, stateNames)
+						break
+					}
+				}
+
+				// Generate element name (same pattern as generator)
+				elementName := "__tui_" + strconv.Itoa(elementIndex)
+				if n.NamedRef != "" {
+					elementName = n.NamedRef
+				}
+
+				// Check text content in children for state usage
+				for _, child := range n.Children {
+					if goExpr, ok := child.(*GoExpr); ok {
+						var deps []string
+						isExplicit := false
+
+						if explicitDeps != nil {
+							deps = explicitDeps
+							isExplicit = true
+						} else {
+							deps = a.detectGetCalls(goExpr.Code, stateNames)
+						}
+
+						if len(deps) > 0 {
+							bindings = append(bindings, StateBinding{
+								StateVars:    deps,
+								Element:      n,
+								ElementName:  elementName,
+								Attribute:    "text",
+								Expr:         goExpr.Code,
+								ExplicitDeps: isExplicit,
+							})
+						}
+					}
+				}
+
+				// Check for dynamic class attribute
+				for _, attr := range n.Attributes {
+					if attr.Name == "class" {
+						if goExpr, ok := attr.Value.(*GoExpr); ok {
+							var deps []string
+							isExplicit := false
+
+							if explicitDeps != nil {
+								deps = explicitDeps
+								isExplicit = true
+							} else {
+								deps = a.detectGetCalls(goExpr.Code, stateNames)
+							}
+
+							if len(deps) > 0 {
+								bindings = append(bindings, StateBinding{
+									StateVars:    deps,
+									Element:      n,
+									ElementName:  elementName,
+									Attribute:    "class",
+									Expr:         goExpr.Code,
+									ExplicitDeps: isExplicit,
+								})
+							}
+						}
+					}
+				}
+
+				elementIndex++
+				scan(n.Children)
+
+			case *LetBinding:
+				// LetBindings wrap elements; recursively scan the wrapped element's children.
+				// The wrapped element itself is handled when we encounter the Element node.
+				scan(n.Element.Children)
+
+			case *ForLoop:
+				scan(n.Body)
+
+			case *IfStmt:
+				scan(n.Then)
+				scan(n.Else)
+
+			case *ComponentCall:
+				scan(n.Children)
+			}
+		}
+	}
+
+	scan(comp.Body)
+	return bindings
+}
+
+// parseExplicitDeps extracts state variable names from a deps={[state1, state2]} attribute.
+// It validates that each name exists in the known state variables.
+// Returns nil if the attribute is not a valid deps specification.
+func (a *Analyzer) parseExplicitDeps(attr *Attribute, stateNames map[string]bool) []string {
+	goExpr, ok := attr.Value.(*GoExpr)
+	if !ok {
+		// deps attribute must use Go expression syntax: deps={[state1, state2]}
+		// String literals like deps="..." are not valid
+		a.errors.AddErrorf(attr.Position, "deps attribute must use expression syntax: deps={[state1, state2]}")
+		return nil
+	}
+
+	code := strings.TrimSpace(goExpr.Code)
+
+	// Parse [state1, state2] format - must have brackets
+	if !strings.HasPrefix(code, "[") || !strings.HasSuffix(code, "]") {
+		a.errors.AddErrorf(attr.Position, "deps attribute must be an array literal: deps={[state1, state2]}")
+		return nil
+	}
+
+	// Extract the contents between [ and ]
+	inner := strings.TrimSpace(code[1 : len(code)-1])
+	if inner == "" {
+		// Empty deps like deps={[]} - warn but don't treat as error
+		a.errors.AddErrorf(attr.Position, "empty deps attribute has no effect")
+		return nil
+	}
+
+	// Split by comma and validate each name
+	var deps []string
+	for _, part := range strings.Split(inner, ",") {
+		name := strings.TrimSpace(part)
+		if name == "" {
+			continue
+		}
+		if !stateNames[name] {
+			a.errors.AddErrorf(attr.Position, "unknown state variable %q in deps", name)
+			continue
+		}
+		deps = append(deps, name)
+	}
+
+	return deps
+}
+
+// detectGetCalls finds all state.Get() calls in an expression and returns the state variable names.
+// It handles both simple calls (count.Get()) and dereferenced pointers ((*count).Get()).
+func (a *Analyzer) detectGetCalls(expr string, stateNames map[string]bool) []string {
+	matches := stateGetRegex.FindAllStringSubmatch(expr, -1)
+
+	// Use a map to deduplicate
+	seen := make(map[string]bool)
+	var deps []string
+
+	for _, match := range matches {
+		// The regex has two capture groups:
+		// - match[1] captures from (*name) pattern
+		// - match[2] captures from simple name pattern
+		// Only one will be non-empty for each match
+		var name string
+		if match[1] != "" {
+			name = match[1] // (*name).Get()
+		} else if len(match) > 2 && match[2] != "" {
+			name = match[2] // name.Get()
+		}
+
+		if name != "" && stateNames[name] && !seen[name] {
+			seen[name] = true
+			deps = append(deps, name)
+		}
+	}
+
+	return deps
 }

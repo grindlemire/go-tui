@@ -117,16 +117,16 @@ Implementation phases for the reactive state management system with `State[T]` t
 
 **Reference:** [reactive-bindings-design.md §3.4](./reactive-bindings-design.md#34-analyzer-changes)
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Add state tracking types to `pkg/tuigen/analyzer.go`
+- [x] Add state tracking types to `pkg/tuigen/analyzer.go`
   - Add `StateVar` struct with fields: Name, Type, InitExpr, Pos
   - Add `StateBinding` struct with fields: StateVars, Element, Attribute, Expr, ExplicitDeps
   - Add `StateVars []StateVar` field to `ComponentAnalysis` struct
   - Add `Bindings []StateBinding` field to `ComponentAnalysis` struct
   - See [design §3.4](./reactive-bindings-design.md#34-analyzer-changes)
 
-- [ ] Implement `detectStateVars()` method in `pkg/tuigen/analyzer.go`
+- [x] Implement `detectStateVars()` method in `pkg/tuigen/analyzer.go`
   - Walk component code section looking for assignment statements
   - Match pattern: `varName := tui.NewState(expr)`
   - Extract variable name
@@ -140,7 +140,7 @@ Implementation phases for the reactive state management system with `State[T]` t
   - Store initialization expression for code generation
   - Return list of StateVar
 
-- [ ] Implement `detectStateBindings()` method in `pkg/tuigen/analyzer.go`
+- [x] Implement `detectStateBindings()` method in `pkg/tuigen/analyzer.go`
   - Walk element tree
   - For each element with text expression or dynamic attribute:
     - Check for `deps={[...]}` attribute first
@@ -150,18 +150,18 @@ Implementation phases for the reactive state management system with `State[T]` t
     - Record binding with state vars, element, attribute, and expression
   - Return list of StateBinding
 
-- [ ] Implement `parseExplicitDeps()` method in `pkg/tuigen/analyzer.go`
+- [x] Implement `parseExplicitDeps()` method in `pkg/tuigen/analyzer.go`
   - Parse `deps={[state1, state2]}` attribute syntax
   - Extract list of state variable names
   - Validate each name exists in detected StateVars
   - Return error if unknown state variable referenced
 
-- [ ] Handle state as component parameters in `pkg/tuigen/analyzer.go`
+- [x] Handle state as component parameters in `pkg/tuigen/analyzer.go`
   - Detect `*tui.State[T]` types in component parameter list
   - Add these to StateVars with appropriate type info
   - Parameter states don't have InitExpr
 
-- [ ] Add tests to `pkg/tuigen/analyzer_test.go`
+- [x] Add tests to `pkg/tuigen/analyzer_test.go`
   - Test detection of `tui.NewState(0)` with int type inference
   - Test detection of `tui.NewState("hello")` with string type inference
   - Test detection of `tui.NewState(true)` with bool type inference
@@ -255,7 +255,7 @@ Implementation phases for the reactive state management system with `State[T]` t
 |-------|-------------|--------|
 | 1 | State[T] Core Type | Complete |
 | 2 | Batching | Complete |
-| 3 | Analyzer Detection | Not Started |
+| 3 | Analyzer Detection | Complete |
 | 4 | Generator Binding Code | Not Started |
 
 ## Files to Create
