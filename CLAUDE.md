@@ -11,6 +11,7 @@ ONLY EVER COMMIT USING THIS APPROACH
 ## Project Overview
 
 go-tui allows defining UIs in `.gsx` files that compile to type-safe Go code. The framework provides:
+
 - Declarative component syntax (similar to templ/JSX)
 - Pure Go flexbox layout engine (no CGO)
 - Minimal external dependencies
@@ -106,14 +107,14 @@ import (
 )
 
 // Component definition (returns Element)
-func Header(title string) Element {
+templ Header(title string) {
     <div class="border-single p-1">
         <span class="font-bold">{title}</span>
     </div>
 }
 
 // Conditionals
-func Conditional(show bool) Element {
+templ Conditional(show bool) {
     <div class="flex-col">
         @if show {
             <span>Visible</span>
@@ -124,7 +125,7 @@ func Conditional(show bool) Element {
 }
 
 // Loops
-func List(items []string) Element {
+templ List(items []string) {
     <div class="flex-col gap-1">
         @for i, item := range items {
             <span>{fmt.Sprintf("%d: %s", i, item)}</span>
@@ -133,7 +134,7 @@ func List(items []string) Element {
 }
 
 // Local bindings
-func Counter(count int) Element {
+templ Counter(count int) {
     @let label = fmt.Sprintf("Count: %d", count)
     <span>{label}</span>
 }
@@ -274,6 +275,7 @@ go build -o tui ./cmd/tui        # Build CLI
 ## Layout System
 
 The layout engine implements CSS flexbox with:
+
 - `Row` and `Column` directions
 - `JustifyContent`: Start, Center, End, SpaceBetween, SpaceAround
 - `AlignItems`: Start, Center, End, Stretch
@@ -306,17 +308,20 @@ layout.Column
 ### VSCode
 
 The `editor/vscode/` directory contains a VSCode extension providing:
+
 - Syntax highlighting
 - Basic language support
 
 ### Tree-sitter
 
 The `editor/tree-sitter-gsx/` directory contains a tree-sitter grammar for:
+
 - Accurate syntax parsing
 - Integration with editors supporting tree-sitter
 
 ### LSP
 
 The `tui lsp` command starts a Language Server providing:
+
 - Real-time diagnostics
 - Error reporting as you type

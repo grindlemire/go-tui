@@ -7,19 +7,19 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
-func Header(title string) Element {
+templ Header(title string) {
 	<div border={tui.BorderSingle} padding={1}>
 		<span>{title}</span>
 	</div>
 }
 
-func Footer() Element {
+templ Footer() {
 	<div padding={1}>
 		<span>Footer content</span>
 	</div>
 }
 
-func SimpleCard(title string, content string) Element {
+templ SimpleCard(title string, content string) {
 	<div border={tui.BorderRounded}>
 		<span class="font-bold">{title}</span>
 		<span>{content}</span>

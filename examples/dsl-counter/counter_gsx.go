@@ -5,17 +5,24 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
 type CounterUIView struct {
-	Root *element.Element
+	Root     *element.Element
+	watchers []tui.Watcher
 }
+
+func (v CounterUIView) GetRoot() tui.Renderable { return v.Root }
+
+func (v CounterUIView) GetWatchers() []tui.Watcher { return v.watchers }
 
 func CounterUI(count int) CounterUIView {
 	var view CounterUIView
+	var watchers []tui.Watcher
 
 	__tui_0 := element.New(
 		element.WithDirection(layout.Column),
@@ -76,7 +83,8 @@ func CounterUI(count int) CounterUIView {
 	__tui_0.AddChild(__tui_8)
 
 	view = CounterUIView{
-		Root: __tui_0,
+		Root:     __tui_0,
+		watchers: watchers,
 	}
 	return view
 }

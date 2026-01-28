@@ -7,47 +7,47 @@ import (
 
 func TestAnalyzer_UnknownElementTag(t *testing.T) {
 	type tc struct {
-		input       string
-		wantError   bool
+		input         string
+		wantError     bool
 		errorContains string
 	}
 
 	tests := map[string]tc{
 		"known tag div": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div></div>
 }`,
 			wantError: false,
 		},
 		"known tag span": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<span>hello</span>
 }`,
 			wantError: false,
 		},
 		"known tag ul": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<ul><li /></ul>
 }`,
 			wantError: false,
 		},
 		"unknown tag": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<unknownTag></unknownTag>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown element tag <unknownTag>",
 		},
 		"unknown tag foobar": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<foobar />
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown element tag <foobar>",
 		},
 	}
@@ -75,40 +75,40 @@ func Test() Element {
 
 func TestAnalyzer_UnknownAttribute(t *testing.T) {
 	type tc struct {
-		input       string
-		wantError   bool
+		input         string
+		wantError     bool
 		errorContains string
 	}
 
 	tests := map[string]tc{
 		"known attribute width": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div width=100></div>
 }`,
 			wantError: false,
 		},
 		"known attribute direction": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div direction={layout.Column}></div>
 }`,
 			wantError: false,
 		},
 		"unknown attribute": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div unknownAttr=123></div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown attribute unknownAttr",
 		},
 		"typo colour": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div colour="red"></div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown attribute colour",
 		},
 	}
@@ -136,14 +136,14 @@ func Test() Element {
 
 func TestAnalyzer_ImportInsertion(t *testing.T) {
 	type tc struct {
-		input        string
-		wantImports  []string
+		input       string
+		wantImports []string
 	}
 
 	tests := map[string]tc{
 		"adds element import": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div></div>
 }`,
 			wantImports: []string{
@@ -152,7 +152,7 @@ func Test() Element {
 		},
 		"adds layout import when used": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div direction={layout.Column}></div>
 }`,
 			wantImports: []string{
@@ -162,7 +162,7 @@ func Test() Element {
 		},
 		"adds tui import when used": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div border={tui.BorderSingle}></div>
 }`,
 			wantImports: []string{
@@ -173,7 +173,7 @@ func Test() Element {
 		"preserves existing imports": {
 			input: `package x
 import "fmt"
-func Test() Element {
+templ Test() {
 	<span>hello</span>
 }`,
 			wantImports: []string{
@@ -184,7 +184,7 @@ func Test() Element {
 		"does not duplicate existing element import": {
 			input: `package x
 import "github.com/grindlemire/go-tui/pkg/tui/element"
-func Test() Element {
+templ Test() {
 	<div></div>
 }`,
 			wantImports: []string{
@@ -228,8 +228,8 @@ func Test() Element {
 
 func TestAnalyzer_ValidateElement(t *testing.T) {
 	type tc struct {
-		tag    string
-		valid  bool
+		tag   string
+		valid bool
 	}
 
 	tests := map[string]tc{
@@ -259,8 +259,8 @@ func TestAnalyzer_ValidateElement(t *testing.T) {
 
 func TestAnalyzer_ValidateAttribute(t *testing.T) {
 	type tc struct {
-		attr   string
-		valid  bool
+		attr  string
+		valid bool
 	}
 
 	tests := map[string]tc{
@@ -338,7 +338,7 @@ func TestAnalyzer_SuggestAttribute(t *testing.T) {
 func TestAnalyzer_NestedElements(t *testing.T) {
 	// Test that nested elements are all validated
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<div>
 			<unknownTag />
@@ -359,15 +359,15 @@ func Test() Element {
 
 func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 	type tc struct {
-		input       string
-		wantError   bool
+		input         string
+		wantError     bool
 		errorContains string
 	}
 
 	tests := map[string]tc{
 		"valid for loop": {
 			input: `package x
-func Test(items []string) Element {
+templ Test(items []string) {
 	<div>
 		@for _, item := range items {
 			<span>{item}</span>
@@ -378,19 +378,19 @@ func Test(items []string) Element {
 		},
 		"invalid element in for loop": {
 			input: `package x
-func Test(items []string) Element {
+templ Test(items []string) {
 	<div>
 		@for _, item := range items {
 			<badTag />
 		}
 	</div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown element tag <badTag>",
 		},
 		"valid if statement": {
 			input: `package x
-func Test(show bool) Element {
+templ Test(show bool) {
 	<div>
 		@if show {
 			<span>visible</span>
@@ -401,19 +401,19 @@ func Test(show bool) Element {
 		},
 		"invalid element in if then": {
 			input: `package x
-func Test(show bool) Element {
+templ Test(show bool) {
 	<div>
 		@if show {
 			<badTag />
 		}
 	</div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown element tag <badTag>",
 		},
 		"invalid element in if else": {
 			input: `package x
-func Test(show bool) Element {
+templ Test(show bool) {
 	<div>
 		@if show {
 			<span>yes</span>
@@ -422,7 +422,7 @@ func Test(show bool) Element {
 		}
 	</div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown element tag <badTag>",
 		},
 	}
@@ -450,15 +450,15 @@ func Test(show bool) Element {
 
 func TestAnalyzer_LetBindingValidation(t *testing.T) {
 	type tc struct {
-		input       string
-		wantError   bool
+		input         string
+		wantError     bool
 		errorContains string
 	}
 
 	tests := map[string]tc{
 		"valid let binding": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@let myText = <span>hello</span>
 	<div></div>
 }`,
@@ -466,20 +466,20 @@ func Test() Element {
 		},
 		"let binding with invalid element": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@let myText = <badTag />
 	<div></div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown element tag <badTag>",
 		},
 		"let binding with invalid attribute": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@let myText = <span badAttr="value">hello</span>
 	<div></div>
 }`,
-			wantError:   true,
+			wantError:     true,
 			errorContains: "unknown attribute badAttr",
 		},
 	}
@@ -523,7 +523,7 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 	for _, attr := range attributes {
 		t.Run(attr, func(t *testing.T) {
 			input := `package x
-func Test() Element {
+templ Test() {
 	<div ` + attr + `=1></div>
 }`
 			_, err := AnalyzeFile("test.gsx", input)
@@ -545,7 +545,7 @@ func TestAnalyzer_AllKnownTags(t *testing.T) {
 	for _, tag := range tags {
 		t.Run(tag, func(t *testing.T) {
 			input := `package x
-func Test() Element {
+templ Test() {
 	<` + tag + ` />
 }`
 			_, err := AnalyzeFile("test.gsx", input)
@@ -559,7 +559,7 @@ func Test() Element {
 func TestAnalyzer_MultipleErrors(t *testing.T) {
 	// Test that multiple errors are collected
 	input := `package x
-func Test() Element {
+templ Test() {
 	<unknownTag1 />
 	<unknownTag2 />
 }`
@@ -582,7 +582,7 @@ func Test() Element {
 
 func TestAnalyzer_ErrorHint(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div colour="red"></div>
 }`
 
@@ -608,7 +608,7 @@ func TestAnalyzer_HRValid(t *testing.T) {
 	tests := map[string]tc{
 		"hr self-closing": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<hr/>
 	</div>
@@ -617,7 +617,7 @@ func Test() Element {
 		},
 		"hr with class": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<hr class="border-double"/>
 	</div>
@@ -652,7 +652,7 @@ func TestAnalyzer_BRValid(t *testing.T) {
 	tests := map[string]tc{
 		"br self-closing": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<br/>
 	</div>
@@ -688,7 +688,7 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 	tests := map[string]tc{
 		"hr with text child": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<hr>text</hr>
 	</div>
@@ -698,7 +698,7 @@ func Test() Element {
 		},
 		"hr with element child": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<hr><span>nested</span></hr>
 	</div>
@@ -708,7 +708,7 @@ func Test() Element {
 		},
 		"br with text child": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<br>text</br>
 	</div>
@@ -718,7 +718,7 @@ func Test() Element {
 		},
 		"input with child": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<input>text</input>
 	</div>
@@ -760,42 +760,42 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 	tests := map[string]tc{
 		"valid tailwind classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="flex-col gap-2 p-4"></div>
 }`,
 			wantError: false,
 		},
 		"valid width and height classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="w-full h-1/2"></div>
 }`,
 			wantError: false,
 		},
 		"valid individual padding classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="pt-2 pb-4 pl-1"></div>
 }`,
 			wantError: false,
 		},
 		"valid border color classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="border border-red"></div>
 }`,
 			wantError: false,
 		},
 		"valid text alignment classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="text-center"></div>
 }`,
 			wantError: false,
 		},
 		"unknown tailwind class": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="flex-columns"></div>
 }`,
 			wantError:     true,
@@ -804,7 +804,7 @@ func Test() Element {
 		},
 		"unknown tailwind class without suggestion": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="xyz-completely-invalid"></div>
 }`,
 			wantError:     true,
@@ -812,7 +812,7 @@ func Test() Element {
 		},
 		"multiple unknown classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="flex-columns badclass"></div>
 }`,
 			wantError:     true,
@@ -820,7 +820,7 @@ func Test() Element {
 		},
 		"mix of valid and invalid classes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div class="flex-col gap-2 badclass p-4"></div>
 }`,
 			wantError:     true,
@@ -855,7 +855,7 @@ func Test() Element {
 func TestAnalyzer_TailwindClassErrorPosition(t *testing.T) {
 	// Test that the error position correctly points to the invalid class
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div class="flex-col badclass p-2"></div>
 }`
 
@@ -898,28 +898,28 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 	tests := map[string]tc{
 		"valid ref name": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Content></div>
 }`,
 			wantError: false,
 		},
 		"valid ref name with digits": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Content2></div>
 }`,
 			wantError: false,
 		},
 		"valid ref name with underscore": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #My_Content></div>
 }`,
 			wantError: false,
 		},
 		"invalid ref name lowercase": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #content></div>
 }`,
 			wantError:     true,
@@ -927,7 +927,7 @@ func Test() Element {
 		},
 		"invalid ref name starts with digit": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #123invalid></div>
 }`,
 			wantError:     true,
@@ -935,7 +935,7 @@ func Test() Element {
 		},
 		"reserved name Root": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Root></div>
 }`,
 			wantError:     true,
@@ -943,7 +943,7 @@ func Test() Element {
 		},
 		"duplicate ref name": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Content></div>
 	<div #Content></div>
 }`,
@@ -952,7 +952,7 @@ func Test() Element {
 		},
 		"duplicate ref name across branches": {
 			input: `package x
-func Test(show bool) Element {
+templ Test(show bool) {
 	@if show {
 		<div #Content></div>
 	} @else {
@@ -995,7 +995,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 	tests := map[string]tc{
 		"ref in loop is valid": {
 			input: `package x
-func Test(items []string) Element {
+templ Test(items []string) {
 	<ul>
 		@for _, item := range items {
 			<li #Items>{item}</li>
@@ -1006,7 +1006,7 @@ func Test(items []string) Element {
 		},
 		"ref with key in loop is valid": {
 			input: `package x
-func Test(items []Item) Element {
+templ Test(items []Item) {
 	<ul>
 		@for _, item := range items {
 			<li #Items key={item.ID}>{item.Name}</li>
@@ -1017,7 +1017,7 @@ func Test(items []Item) Element {
 		},
 		"ref with key outside loop is invalid": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Content key={someKey}></div>
 }`,
 			wantError:     true,
@@ -1048,7 +1048,7 @@ func Test() Element {
 
 func TestAnalyzer_NamedRefInConditional(t *testing.T) {
 	input := `package x
-func Test(show bool) Element {
+templ Test(show bool) {
 	<div>
 		@if show {
 			<span #Label>hello</span>
@@ -1065,7 +1065,7 @@ func Test(show bool) Element {
 
 func TestAnalyzer_CollectNamedRefs(t *testing.T) {
 	input := `package x
-func Test(items []Item, show bool) Element {
+templ Test(items []Item, show bool) {
 	<div>
 		<div #Header></div>
 		@if show {
@@ -1119,7 +1119,6 @@ func Test(items []Item, show bool) Element {
 	}
 }
 
-
 // ===== State Detection Tests =====
 
 func TestAnalyzer_DetectStateVars_IntLiteral(t *testing.T) {
@@ -1162,7 +1161,7 @@ func TestAnalyzer_DetectStateVars_IntLiteral(t *testing.T) {
 
 func TestAnalyzer_DetectStateVars_Parameter(t *testing.T) {
 	input := `package x
-func Counter(count *tui.State[int]) Element {
+templ Counter(count *tui.State[int]) {
 	<span>{count.Get()}</span>
 }`
 
@@ -1197,7 +1196,7 @@ func Counter(count *tui.State[int]) Element {
 
 func TestAnalyzer_DetectStateVars_StringParameter(t *testing.T) {
 	input := `package x
-func Greeting(name *tui.State[string]) Element {
+templ Greeting(name *tui.State[string]) {
 	<span>{name.Get()}</span>
 }`
 
@@ -1226,7 +1225,7 @@ func Greeting(name *tui.State[string]) Element {
 
 func TestAnalyzer_DetectStateVars_SliceParameter(t *testing.T) {
 	input := `package x
-func TodoList(items *tui.State[[]string]) Element {
+templ TodoList(items *tui.State[[]string]) {
 	<div>{items.Get()}</div>
 }`
 
@@ -1252,7 +1251,7 @@ func TodoList(items *tui.State[[]string]) Element {
 
 func TestAnalyzer_DetectStateVars_PointerParameter(t *testing.T) {
 	input := `package x
-func UserProfile(user *tui.State[*User]) Element {
+templ UserProfile(user *tui.State[*User]) {
 	<div>{user.Get()}</div>
 }`
 
@@ -1279,7 +1278,7 @@ func UserProfile(user *tui.State[*User]) Element {
 func TestAnalyzer_DetectStateVars_GoCodeDeclaration(t *testing.T) {
 	// Test detection of tui.NewState in component body (GoCode block)
 	input := `package x
-func Counter() Element {
+templ Counter() {
 	count := tui.NewState(0)
 	<span>{count.Get()}</span>
 }`
@@ -1316,7 +1315,7 @@ func Counter() Element {
 func TestAnalyzer_DetectStateVars_GoCodeDeclarationString(t *testing.T) {
 	// Test detection of tui.NewState with string literal
 	input := `package x
-func Greeting() Element {
+templ Greeting() {
 	name := tui.NewState("Alice")
 	<span>{name.Get()}</span>
 }`
@@ -1350,7 +1349,7 @@ func Greeting() Element {
 func TestAnalyzer_DetectStateVars_GoCodeDeclarationSlice(t *testing.T) {
 	// Test detection of tui.NewState with slice literal (matching plan spec)
 	input := `package x
-func TodoList() Element {
+templ TodoList() {
 	items := tui.NewState([]string{})
 	<div>{items.Get()}</div>
 }`
@@ -1381,7 +1380,7 @@ func TodoList() Element {
 func TestAnalyzer_DetectStateVars_GoCodeDeclarationBool(t *testing.T) {
 	// Test detection of tui.NewState with boolean literal
 	input := `package x
-func Toggle() Element {
+templ Toggle() {
 	enabled := tui.NewState(true)
 	<span>{enabled.Get()}</span>
 }`
@@ -1412,7 +1411,7 @@ func Toggle() Element {
 func TestAnalyzer_DetectStateVars_MultipleDeclarations(t *testing.T) {
 	// Test detection of multiple tui.NewState declarations
 	input := `package x
-func Profile() Element {
+templ Profile() {
 	firstName := tui.NewState("Alice")
 	lastName := tui.NewState("Smith")
 	age := tui.NewState(30)
@@ -1453,7 +1452,7 @@ func Profile() Element {
 func TestAnalyzer_DetectStateVars_MixedParamsAndDeclarations(t *testing.T) {
 	// Test detection of both parameter states and GoCode declarations
 	input := `package x
-func Counter(initialCount *tui.State[int]) Element {
+templ Counter(initialCount *tui.State[int]) {
 	label := tui.NewState("Count: ")
 	<span>{label.Get()}</span>
 }`
@@ -1506,7 +1505,7 @@ func Counter(initialCount *tui.State[int]) Element {
 
 func TestAnalyzer_DetectStateBindings_SimpleGet(t *testing.T) {
 	input := `package x
-func Counter(count *tui.State[int]) Element {
+templ Counter(count *tui.State[int]) {
 	<span>{count.Get()}</span>
 }`
 
@@ -1539,7 +1538,7 @@ func Counter(count *tui.State[int]) Element {
 
 func TestAnalyzer_DetectStateBindings_FormatString(t *testing.T) {
 	input := `package x
-func Counter(count *tui.State[int]) Element {
+templ Counter(count *tui.State[int]) {
 	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
 }`
 
@@ -1569,7 +1568,7 @@ func Counter(count *tui.State[int]) Element {
 
 func TestAnalyzer_DetectStateBindings_MultipleStates(t *testing.T) {
 	input := `package x
-func Profile(firstName *tui.State[string], lastName *tui.State[string]) Element {
+templ Profile(firstName *tui.State[string], lastName *tui.State[string]) {
 	<span>{fmt.Sprintf("%s %s", firstName.Get(), lastName.Get())}</span>
 }`
 
@@ -1610,7 +1609,7 @@ func Profile(firstName *tui.State[string], lastName *tui.State[string]) Element 
 
 func TestAnalyzer_DetectStateBindings_ExplicitDeps(t *testing.T) {
 	input := `package x
-func UserCard(user *tui.State[*User]) Element {
+templ UserCard(user *tui.State[*User]) {
 	<span deps={[user]}>{formatUser(user.Get())}</span>
 }`
 
@@ -1640,7 +1639,7 @@ func UserCard(user *tui.State[*User]) Element {
 
 func TestAnalyzer_DetectStateBindings_ExplicitDepsMultiple(t *testing.T) {
 	input := `package x
-func Combined(count *tui.State[int], name *tui.State[string]) Element {
+templ Combined(count *tui.State[int], name *tui.State[string]) {
 	<span deps={[count, name]}>{compute(count, name)}</span>
 }`
 
@@ -1670,7 +1669,7 @@ func Combined(count *tui.State[int], name *tui.State[string]) Element {
 
 func TestAnalyzer_DetectStateBindings_UnknownStateInDeps(t *testing.T) {
 	input := `package x
-func Test(count *tui.State[int]) Element {
+templ Test(count *tui.State[int]) {
 	<span deps={[unknown]}>{count.Get()}</span>
 }`
 
@@ -1697,7 +1696,7 @@ func Test(count *tui.State[int]) Element {
 
 func TestAnalyzer_DetectStateBindings_DynamicClass(t *testing.T) {
 	input := `package x
-func Toggle(enabled *tui.State[bool]) Element {
+templ Toggle(enabled *tui.State[bool]) {
 	<span class={enabled.Get() ? "text-green" : "text-red"}>Status</span>
 }`
 
@@ -1727,7 +1726,7 @@ func Toggle(enabled *tui.State[bool]) Element {
 
 func TestAnalyzer_DetectStateBindings_NoStateUsage(t *testing.T) {
 	input := `package x
-func Static() Element {
+templ Static() {
 	<span>{"Hello, World!"}</span>
 }`
 
@@ -1749,7 +1748,7 @@ func Static() Element {
 
 func TestAnalyzer_DetectStateBindings_WithNamedRef(t *testing.T) {
 	input := `package x
-func Counter(count *tui.State[int]) Element {
+templ Counter(count *tui.State[int]) {
 	<span #Label>{count.Get()}</span>
 }`
 
@@ -1777,7 +1776,7 @@ func Counter(count *tui.State[int]) Element {
 func TestAnalyzer_DepsAttributeValid(t *testing.T) {
 	// Test that deps attribute is recognized as valid
 	input := `package x
-func Test(count *tui.State[int]) Element {
+templ Test(count *tui.State[int]) {
 	<span deps={[count]}>{count.Get()}</span>
 }`
 
@@ -1790,7 +1789,7 @@ func Test(count *tui.State[int]) Element {
 func TestAnalyzer_DetectStateBindings_DereferencedPointer(t *testing.T) {
 	// Test that (*count).Get() pattern is detected
 	input := `package x
-func Counter(count *tui.State[int]) Element {
+templ Counter(count *tui.State[int]) {
 	<span>{(*count).Get()}</span>
 }`
 
@@ -1818,7 +1817,7 @@ func Counter(count *tui.State[int]) Element {
 func TestAnalyzer_DepsStringLiteralError(t *testing.T) {
 	// Test that deps="string" produces an error
 	input := `package x
-func Test(count *tui.State[int]) Element {
+templ Test(count *tui.State[int]) {
 	<span deps="not-valid">{count.Get()}</span>
 }`
 
@@ -1845,7 +1844,7 @@ func Test(count *tui.State[int]) Element {
 func TestAnalyzer_DepsMissingBracketsError(t *testing.T) {
 	// Test that deps={count} (missing brackets) produces an error
 	input := `package x
-func Test(count *tui.State[int]) Element {
+templ Test(count *tui.State[int]) {
 	<span deps={count}>{count.Get()}</span>
 }`
 
@@ -1872,7 +1871,7 @@ func Test(count *tui.State[int]) Element {
 func TestAnalyzer_DepsEmptyArrayWarning(t *testing.T) {
 	// Test that deps={[]} (empty) produces a warning
 	input := `package x
-func Test(count *tui.State[int]) Element {
+templ Test(count *tui.State[int]) {
 	<span deps={[]}>{count.Get()}</span>
 }`
 

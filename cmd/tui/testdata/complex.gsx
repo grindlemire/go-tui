@@ -11,7 +11,7 @@ import (
 // For package comment
 
 // ItemList test
-func ItemList(items []string, selected int) Element {
+templ ItemList(items []string, selected int) {
 	<div direction={layout.Column} gap={1}>
 		// ItemList direction
 		@for i, item := range items {
@@ -29,11 +29,20 @@ func ItemList(items []string, selected int) Element {
 	</div>
 }
 
+// ItemList direction
+
+// ItemList for loop
+
+// ItemList border
+/* ItemList item */
+
+// ItemList else
+
 /*
 Counter
 tests block comment
 */
-func Counter(count int, label string) Element {
+templ Counter(count int, label string) {
 	@let countText = <span>{fmt.Sprintf("%d", count)}</span>
 	<div direction={layout.Column} gap={1} padding={1}>
 		<span class="font-bold">{label}</span>
@@ -41,7 +50,7 @@ func Counter(count int, label string) Element {
 	</div>
 }
 
-func ConditionalContent(showHeader bool, showFooter bool) Element {
+templ ConditionalContent(showHeader bool, showFooter bool) {
 	<div direction={layout.Column}>
 		@if showHeader {
 			<span>Header</span>
@@ -55,7 +64,7 @@ func ConditionalContent(showHeader bool, showFooter bool) Element {
 	</div>
 }
 
-func WithHelper(text string) Element {
+templ WithHelper(text string) {
 	shouldShowHeader := true
 	otherHelperFunction("test")
 	<div>

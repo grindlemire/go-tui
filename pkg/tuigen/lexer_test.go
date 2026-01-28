@@ -421,7 +421,7 @@ func TestLexer_LineTracking(t *testing.T) {
 
 import "fmt"
 
-func Foo() Element {
+templ Foo() {
     <span>Hello</span>
 }`
 
@@ -439,11 +439,10 @@ func Foo() Element {
 		{TokenString, 3}, // "fmt"
 		{TokenNewline, 3},
 		{TokenNewline, 4},
-		{TokenFunc, 5},
+		{TokenTempl, 5},
 		{TokenIdent, 5}, // Foo
 		{TokenLParen, 5},
 		{TokenRParen, 5},
-		{TokenIdent, 5}, // Element
 		{TokenLBrace, 5},
 		{TokenNewline, 5},
 		{TokenLAngle, 6},
@@ -579,7 +578,7 @@ func TestLexer_Underscore(t *testing.T) {
 }
 
 func TestLexer_CompleteComponent(t *testing.T) {
-	input := `func Counter(count int) Element {
+	input := `templ Counter(count int) {
     <div direction={layout.Column}>
         <span>{fmt.Sprintf("Count: %d", count)}</span>
     </div>
@@ -604,8 +603,8 @@ func TestLexer_CompleteComponent(t *testing.T) {
 	if len(tokens) < 5 {
 		t.Fatalf("expected at least 5 tokens, got %d", len(tokens))
 	}
-	if tokens[0].Type != TokenFunc {
-		t.Errorf("token 0: Type = %v, want TokenFunc", tokens[0].Type)
+	if tokens[0].Type != TokenTempl {
+		t.Errorf("token 0: Type = %v, want TokenTempl", tokens[0].Type)
 	}
 	if tokens[1].Type != TokenIdent || tokens[1].Literal != "Counter" {
 		t.Errorf("token 1: Type = %v, Literal = %q, want TokenIdent, Counter", tokens[1].Type, tokens[1].Literal)

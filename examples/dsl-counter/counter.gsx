@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func CounterUI(count int) Element {
+templ CounterUI(count int) {
 	<div class="flex-col gap-1 p-2">
 		<div class="border-rounded p-1 flex-col items-center justify-center">
 			<div class="bg-red w-full h-1">

@@ -128,7 +128,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 	tests := map[string]tc{
 		"no params": {
 			input: `package x
-func Header() Element {
+templ Header() {
 	<span>Hello</span>
 }`,
 			wantName:   "Header",
@@ -136,7 +136,7 @@ func Header() Element {
 		},
 		"one param": {
 			input: `package x
-func Greeting(name string) Element {
+templ Greeting(name string) {
 	<span>Hello</span>
 }`,
 			wantName:   "Greeting",
@@ -144,7 +144,7 @@ func Greeting(name string) Element {
 		},
 		"multiple params": {
 			input: `package x
-func Counter(count int, label string) Element {
+templ Counter(count int, label string) {
 	<span>Hello</span>
 }`,
 			wantName:   "Counter",
@@ -152,7 +152,7 @@ func Counter(count int, label string) Element {
 		},
 		"complex types": {
 			input: `package x
-func List(items []string, onClick func()) Element {
+templ List(items []string, onClick func()) {
 	<span>Hello</span>
 }`,
 			wantName:   "List",
@@ -160,7 +160,7 @@ func List(items []string, onClick func()) Element {
 		},
 		"pointer type": {
 			input: `package x
-func View(elem *element.Element) Element {
+templ View(elem *element.Element) {
 	<span>Hello</span>
 }`,
 			wantName:   "View",
@@ -202,7 +202,7 @@ func View(elem *element.Element) Element {
 
 func TestParser_ComponentParams(t *testing.T) {
 	input := `package x
-func Test(name string, count int, items []string, handler func()) Element {
+templ Test(name string, count int, items []string, handler func()) {
 	<span>Hello</span>
 }`
 
@@ -247,7 +247,7 @@ func Test(name string, count int, items []string, handler func()) Element {
 
 func TestParser_SelfClosingElement(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<input />
 }`
 
@@ -280,7 +280,7 @@ func Test() Element {
 
 func TestParser_ElementWithChildren(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<span>Hello</span>
 		<span>World</span>
@@ -334,42 +334,42 @@ func TestParser_ElementWithAttributes(t *testing.T) {
 	tests := map[string]tc{
 		"no attributes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div></div>
 }`,
 			wantAttrs: 0,
 		},
 		"string attribute": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<span textAlign="center"></span>
 }`,
 			wantAttrs: 1,
 		},
 		"int attribute": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div width=100></div>
 }`,
 			wantAttrs: 1,
 		},
 		"expression attribute": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div direction={layout.Column}></div>
 }`,
 			wantAttrs: 1,
 		},
 		"multiple attributes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div width=100 height=50 direction={layout.Row}></div>
 }`,
 			wantAttrs: 3,
 		},
 		"boolean shorthand": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<input disabled></input>
 }`,
 			wantAttrs: 1,
@@ -396,7 +396,7 @@ func Test() Element {
 
 func TestParser_AttributeValues(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div
 		strAttr="hello"
 		intAttr=42
@@ -480,7 +480,7 @@ func Test() Element {
 
 func TestParser_LetBinding(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	@let myText = <span>Hello</span>
 	<div></div>
 }`
@@ -527,7 +527,7 @@ func TestParser_ForLoop(t *testing.T) {
 	tests := map[string]tc{
 		"index and value": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@for i, item := range items {
 		<span>Hello</span>
 	}
@@ -538,7 +538,7 @@ func Test() Element {
 		},
 		"underscore index": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@for _, item := range items {
 		<span>Hello</span>
 	}
@@ -549,7 +549,7 @@ func Test() Element {
 		},
 		"value only": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@for item := range items {
 		<span>Hello</span>
 	}
@@ -601,7 +601,7 @@ func TestParser_IfStatement(t *testing.T) {
 	tests := map[string]tc{
 		"simple if": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@if showHeader {
 		<span>Header</span>
 	}
@@ -611,7 +611,7 @@ func Test() Element {
 		},
 		"if with else": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@if isLoading {
 		<span>Loading</span>
 	} @else {
@@ -623,7 +623,7 @@ func Test() Element {
 		},
 		"complex condition": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	@if err != nil {
 		<span>Error</span>
 	}
@@ -666,7 +666,7 @@ func Test() Element {
 
 func TestParser_IfElseIf(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	@if a {
 		<span>A</span>
 	} @else @if b {
@@ -715,7 +715,7 @@ func Test() Element {
 
 func TestParser_GoExpression(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<span>{fmt.Sprintf("Count: %d", count)}</span>
 }`
 
@@ -745,7 +745,7 @@ func Test() Element {
 
 func TestParser_NestedElements(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<div>
 			<span>Deep</span>
@@ -793,7 +793,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 )
 
-func Dashboard(items []string, selectedIndex int) Element {
+templ Dashboard(items []string, selectedIndex int) {
 	<div direction={layout.Column} padding=1>
 		<span>Dashboard</span>
 		@for i, item := range items {
@@ -863,14 +863,14 @@ func TestParser_ErrorRecovery(t *testing.T) {
 	tests := map[string]tc{
 		"missing component name": {
 			input: `package x
-func () Element {
+templ() {
 	<span>Hello</span>
 }`,
 			errorContains: "expected component name",
 		},
 		"unclosed element": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<span>Hello</span>
 }`,
@@ -878,7 +878,7 @@ func Test() Element {
 		},
 		"mismatched tags": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div>Hello</span>
 }`,
 			errorContains: "mismatched closing tag",
@@ -905,7 +905,7 @@ func Test() Element {
 func TestParser_Position(t *testing.T) {
 	input := `package x
 
-func Test() Element {
+templ Test() {
 	<span>Hello</span>
 }`
 
@@ -933,11 +933,11 @@ func Test() Element {
 func TestParser_MultipleComponents(t *testing.T) {
 	input := `package x
 
-func Header() Element {
+templ Header() {
 	<span>Header</span>
 }
 
-func Footer() Element {
+templ Footer() {
 	<span>Footer</span>
 }`
 
@@ -964,7 +964,7 @@ func Footer() Element {
 
 func TestParser_TextContent(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<span>Hello World</span>
 }`
 
@@ -989,7 +989,7 @@ func Test() Element {
 
 func TestParser_ControlFlowInChildren(t *testing.T) {
 	input := `package x
-func Test(items []string) Element {
+templ Test(items []string) {
 	<div>
 		@for _, item := range items {
 			<span>{item}</span>
@@ -1039,28 +1039,28 @@ func TestParser_ComplexTypeSignatures(t *testing.T) {
 	tests := map[string]tc{
 		"channel type": {
 			input: `package x
-func Test(ch chan int) Element {
+templ Test(ch chan int) {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"chan int"},
 		},
 		"receive channel": {
 			input: `package x
-func Test(ch <-chan string) Element {
+templ Test(ch <-chan string) {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"<-chan string"},
 		},
 		"complex map": {
 			input: `package x
-func Test(m map[string][]int) Element {
+templ Test(m map[string][]int) {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"map[string][]int"},
 		},
 		"function with return": {
 			input: `package x
-func Test(fn func(a, b int) (string, error)) Element {
+templ Test(fn func(a, b int) (string, error)) {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"func(a, b int) (string, error)"},
@@ -1097,7 +1097,7 @@ func Test(fn func(a, b int) (string, error)) Element {
 
 func TestParser_TextContentCoalescing(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<span>Hello World from component</span>
 }`
 
@@ -1135,11 +1135,11 @@ func TestParser_ErrorRecoveryMultipleComponents(t *testing.T) {
 	// and continue parsing subsequent components
 	input := `package x
 
-func Broken(
+templ Broken(
 	<span>Hello</span>
 }
 
-func Working() Element {
+templ Working() {
 	<span>World</span>
 }`
 
@@ -1165,7 +1165,7 @@ func Working() Element {
 func TestParser_RawSourcePreservation(t *testing.T) {
 	// Test that raw source is preserved correctly in conditions/iterables
 	input := `package x
-func Test() Element {
+templ Test() {
 	@if user.Name != "" && user.Age >= 18 {
 		<span>Adult</span>
 	}
@@ -1208,7 +1208,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 	tests := map[string]tc{
 		"simple assignment": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	x := 1
 	<span>{x}</span>
 }`,
@@ -1216,7 +1216,7 @@ func Test() Element {
 		},
 		"function call": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	fmt.Println("hello")
 	<span>world</span>
 }`,
@@ -1224,7 +1224,7 @@ func Test() Element {
 		},
 		"multi-line statement": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	result := compute(
 		arg1,
 		arg2,
@@ -1235,7 +1235,7 @@ func Test() Element {
 		},
 		"multiple statements": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	x := 1
 	y := 2
 	z := x + y
@@ -1245,7 +1245,7 @@ func Test() Element {
 		},
 		"inline if statement": {
 			input: `package x
-func Test(err error) Element {
+templ Test(err error) {
 	if err != nil { log.Error(err) }
 	<span>done</span>
 }`,
@@ -1253,7 +1253,7 @@ func Test(err error) Element {
 		},
 		"defer statement": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	defer cleanup()
 	<span>running</span>
 }`,
@@ -1261,7 +1261,7 @@ func Test() Element {
 		},
 		"go statement": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	go doWork()
 	<span>spawned</span>
 }`,
@@ -1269,7 +1269,7 @@ func Test() Element {
 		},
 		"for loop statement": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	for i := 0; i < 10; i++ { sum += i }
 	<span>{sum}</span>
 }`,
@@ -1277,7 +1277,7 @@ func Test() Element {
 		},
 		"switch statement": {
 			input: `package x
-func Test(x int) Element {
+templ Test(x int) {
 	switch x { case 1: y = "one"; case 2: y = "two" }
 	<span>{y}</span>
 }`,
@@ -1325,7 +1325,7 @@ func Test(x int) Element {
 func TestParser_RawGoStatementsWithElements(t *testing.T) {
 	// Test that Go statements and elements can be mixed in component body
 	input := `package x
-func Counter(count int) Element {
+templ Counter(count int) {
 	formattedCount := fmt.Sprintf("%d", count)
 	log.Printf("Rendering counter")
 	<div>
@@ -1384,7 +1384,7 @@ func TestParser_ComponentCall(t *testing.T) {
 	tests := map[string]tc{
 		"call without args or children": {
 			input: `package x
-func App() Element {
+templ App() {
 	@Header()
 }`,
 			wantName:     "Header",
@@ -1393,7 +1393,7 @@ func App() Element {
 		},
 		"call with args no children": {
 			input: `package x
-func App() Element {
+templ App() {
 	@Header("Welcome", true)
 }`,
 			wantName:     "Header",
@@ -1402,7 +1402,7 @@ func App() Element {
 		},
 		"call with children": {
 			input: `package x
-func App() Element {
+templ App() {
 	@Card("Title") {
 		<span>Child 1</span>
 		<span>Child 2</span>
@@ -1414,7 +1414,7 @@ func App() Element {
 		},
 		"call with empty args and children": {
 			input: `package x
-func App() Element {
+templ App() {
 	@Wrapper() {
 		<span>Content</span>
 	}
@@ -1464,7 +1464,7 @@ func App() Element {
 
 func TestParser_ChildrenSlot(t *testing.T) {
 	input := `package x
-func Card(title string) Element {
+templ Card(title string) {
 	<div>
 		<span>{title}</span>
 		{children...}
@@ -1509,7 +1509,7 @@ func Card(title string) Element {
 
 func TestParser_ComponentCallNestedInElement(t *testing.T) {
 	input := `package x
-func App() Element {
+templ App() {
 	<div>
 		@Header("Title")
 		@Footer()
@@ -1566,7 +1566,7 @@ func TestParser_NamedRef(t *testing.T) {
 	tests := map[string]tc{
 		"simple named ref": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Content></div>
 }`,
 			wantRef:   "Content",
@@ -1575,7 +1575,7 @@ func Test() Element {
 		},
 		"named ref with attributes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<span #Title class="bold">hello</span>
 }`,
 			wantRef:   "Title",
@@ -1584,7 +1584,7 @@ func Test() Element {
 		},
 		"named ref self-closing": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Spacer />
 }`,
 			wantRef:   "Spacer",
@@ -1593,7 +1593,7 @@ func Test() Element {
 		},
 		"named ref with multiple attributes": {
 			input: `package x
-func Test() Element {
+templ Test() {
 	<div #Content width=100 height=50></div>
 }`,
 			wantRef:   "Content",
@@ -1641,7 +1641,7 @@ func Test() Element {
 
 func TestParser_NamedRefWithKey(t *testing.T) {
 	input := `package x
-func Test(items []Item) Element {
+templ Test(items []Item) {
 	<ul>
 		@for _, item := range items {
 			<li #Items key={item.ID}>{item.Name}</li>
@@ -1684,7 +1684,7 @@ func Test(items []Item) Element {
 
 func TestParser_MultipleNamedRefs(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<div #Header height=3></div>
 		<div #Content></div>

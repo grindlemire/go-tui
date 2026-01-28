@@ -16,7 +16,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 	tests := map[string]tc{
 		"empty component": {
 			input: `package x
-func Empty() Element {
+templ Empty() {
 }`,
 			wantContains: []string{
 				"type EmptyView struct",
@@ -30,7 +30,7 @@ func Empty() Element {
 		},
 		"component with single element": {
 			input: `package x
-func Header() Element {
+templ Header() {
 	<div></div>
 }`,
 			wantContains: []string{
@@ -42,7 +42,7 @@ func Header() Element {
 		},
 		"component with params": {
 			input: `package x
-func Greeting(name string, count int) Element {
+templ Greeting(name string, count int) {
 	<span>Hello</span>
 }`,
 			wantContains: []string{
@@ -83,7 +83,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 	tests := map[string]tc{
 		"width attribute": {
 			input: `package x
-func Box() Element {
+templ Box() {
 	<div width=100></div>
 }`,
 			wantContains: []string{
@@ -92,7 +92,7 @@ func Box() Element {
 		},
 		"multiple attributes": {
 			input: `package x
-func Box() Element {
+templ Box() {
 	<div width=100 height=50 gap=2></div>
 }`,
 			wantContains: []string{
@@ -103,7 +103,7 @@ func Box() Element {
 		},
 		"string attribute": {
 			input: `package x
-func Text() Element {
+templ Text() {
 	<span text="hello"></span>
 }`,
 			wantContains: []string{
@@ -112,7 +112,7 @@ func Text() Element {
 		},
 		"expression attribute": {
 			input: `package x
-func Box() Element {
+templ Box() {
 	<div direction={layout.Column}></div>
 }`,
 			wantContains: []string{
@@ -121,7 +121,7 @@ func Box() Element {
 		},
 		"border attribute": {
 			input: `package x
-func Box() Element {
+templ Box() {
 	<div border={tui.BorderSingle}></div>
 }`,
 			wantContains: []string{
@@ -130,7 +130,7 @@ func Box() Element {
 		},
 		"onEvent attribute": {
 			input: `package x
-func Button() Element {
+templ Button() {
 	<div onEvent={handleClick}></div>
 }`,
 			wantContains: []string{
@@ -158,7 +158,7 @@ func Button() Element {
 
 func TestGenerator_NestedElements(t *testing.T) {
 	input := `package x
-func Layout() Element {
+templ Layout() {
 	<div>
 		<div>
 			<span>nested</span>
@@ -195,7 +195,7 @@ func Layout() Element {
 
 func TestGenerator_LetBinding(t *testing.T) {
 	input := `package x
-func Counter() Element {
+templ Counter() {
 	@let countText = <span>{"0"}</span>
 	<div></div>
 }`
@@ -228,7 +228,7 @@ func TestGenerator_ForLoop(t *testing.T) {
 	tests := map[string]tc{
 		"basic for loop": {
 			input: `package x
-func List(items []string) Element {
+templ List(items []string) {
 	<div>
 		@for i, item := range items {
 			<span>{item}</span>
@@ -242,7 +242,7 @@ func List(items []string) Element {
 		},
 		"for with underscore index": {
 			input: `package x
-func List(items []string) Element {
+templ List(items []string) {
 	<div>
 		@for _, item := range items {
 			<span>{item}</span>
@@ -255,7 +255,7 @@ func List(items []string) Element {
 		},
 		"for with value only": {
 			input: `package x
-func List(items []string) Element {
+templ List(items []string) {
 	<div>
 		@for item := range items {
 			<span>{item}</span>
@@ -294,7 +294,7 @@ func TestGenerator_IfStatement(t *testing.T) {
 	tests := map[string]tc{
 		"simple if": {
 			input: `package x
-func View(show bool) Element {
+templ View(show bool) {
 	<div>
 		@if show {
 			<span>visible</span>
@@ -307,7 +307,7 @@ func View(show bool) Element {
 		},
 		"if-else": {
 			input: `package x
-func View(loading bool) Element {
+templ View(loading bool) {
 	<div>
 		@if loading {
 			<span>loading</span>
@@ -323,7 +323,7 @@ func View(loading bool) Element {
 		},
 		"if-else-if": {
 			input: `package x
-func View(state int) Element {
+templ View(state int) {
 	<div>
 		@if state == 0 {
 			<span>zero</span>
@@ -342,7 +342,7 @@ func View(state int) Element {
 		},
 		"complex condition": {
 			input: `package x
-func View(err error) Element {
+templ View(err error) {
 	<div>
 		@if err != nil {
 			<span>error</span>
@@ -381,7 +381,7 @@ func TestGenerator_TextElement(t *testing.T) {
 	tests := map[string]tc{
 		"text with literal content": {
 			input: `package x
-func Text() Element {
+templ Text() {
 	<span>Hello World</span>
 }`,
 			wantContains: []string{
@@ -390,7 +390,7 @@ func Text() Element {
 		},
 		"text with expression content": {
 			input: `package x
-func Text(msg string) Element {
+templ Text(msg string) {
 	<span>{msg}</span>
 }`,
 			wantContains: []string{
@@ -399,7 +399,7 @@ func Text(msg string) Element {
 		},
 		"text with formatted expression": {
 			input: `package x
-func Text(count int) Element {
+templ Text(count int) {
 	<span>{fmt.Sprintf("Count: %d", count)}</span>
 }`,
 			wantContains: []string{
@@ -434,7 +434,7 @@ func TestGenerator_RawGoStatements(t *testing.T) {
 	tests := map[string]tc{
 		"variable assignment": {
 			input: `package x
-func Counter() Element {
+templ Counter() {
 	count := 0
 	<span>hello</span>
 }`,
@@ -445,7 +445,7 @@ func Counter() Element {
 		"function call": {
 			input: `package x
 import "fmt"
-func Debug() Element {
+templ Debug() {
 	fmt.Println("debug")
 	<span>hello</span>
 }`,
@@ -455,7 +455,7 @@ func Debug() Element {
 		},
 		"multiple statements": {
 			input: `package x
-func Complex() Element {
+templ Complex() {
 	x := 1
 	y := 2
 	z := x + y
@@ -493,7 +493,7 @@ func helper(x int) int {
 	return x * 2
 }
 
-func Test() Element {
+templ Test() {
 	<span>hello</span>
 }`
 
@@ -520,7 +520,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 )
 
-func Test() Element {
+templ Test() {
 	<div direction={layout.Column}>
 		<span>{fmt.Sprintf("hello")}</span>
 	</div>
@@ -550,7 +550,7 @@ func Test() Element {
 
 func TestGenerator_Header(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<span>hello</span>
 }`
 
@@ -582,7 +582,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 )
 
-func Dashboard(items []string) Element {
+templ Dashboard(items []string) {
 	<div direction={layout.Column} padding=1>
 		<span>Header</span>
 		@for i, item := range items {
@@ -635,7 +635,7 @@ func countDone(items []Item) int {
 	return count
 }
 
-func Dashboard(items []Item, selectedIndex int) Element {
+templ Dashboard(items []Item, selectedIndex int) {
 	<div direction={layout.Column} padding=1>
 		<div
 			border={tui.BorderRounded}
@@ -702,7 +702,7 @@ func Dashboard(items []Item, selectedIndex int) Element {
 
 func TestGenerator_ScrollableAttribute(t *testing.T) {
 	input := `package x
-func ScrollView() Element {
+templ ScrollView() {
 	<div scrollable={element.ScrollVertical}>
 		<span>content</span>
 	</div>
@@ -722,7 +722,7 @@ func ScrollView() Element {
 
 func TestGenerator_SelfClosingElement(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div>
 		<input />
 	</div>
@@ -743,7 +743,7 @@ func Test() Element {
 
 func TestGenerator_LetBindingAsChild(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div>
 		@let item = <span>hello</span>
 	</div>
@@ -770,11 +770,11 @@ func Test() Element {
 func TestGenerator_MultipleComponents(t *testing.T) {
 	input := `package x
 
-func Header() Element {
+templ Header() {
 	<span>Header</span>
 }
 
-func Footer() Element {
+templ Footer() {
 	<span>Footer</span>
 }`
 
@@ -804,7 +804,7 @@ func Footer() Element {
 
 func TestGenerator_ExpressionInLoopBody(t *testing.T) {
 	input := `package x
-func List(items []string) Element {
+templ List(items []string) {
 	<div>
 		@for _, item := range items {
 			{item}
@@ -827,7 +827,7 @@ func List(items []string) Element {
 
 func TestGenerator_BooleanAttributes(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div scrollable={element.ScrollVertical}></div>
 }`
 
@@ -845,7 +845,7 @@ func Test() Element {
 
 func TestGenerator_FlexAttributes(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div flexGrow=1 flexShrink=0></div>
 }`
 
@@ -867,7 +867,7 @@ func Test() Element {
 
 func TestGenerator_ComponentWithChildren(t *testing.T) {
 	input := `package x
-func Card(title string) Element {
+templ Card(title string) {
 	<div>
 		<span>{title}</span>
 		{children...}
@@ -919,11 +919,11 @@ func Card(title string) Element {
 
 func TestGenerator_ComponentCall(t *testing.T) {
 	input := `package x
-func Header(title string) Element {
+templ Header(title string) {
 	<span>{title}</span>
 }
 
-func App() Element {
+templ App() {
 	@Header("Welcome")
 }`
 
@@ -962,14 +962,14 @@ func App() Element {
 
 func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 	input := `package x
-func Card(title string) Element {
+templ Card(title string) {
 	<div>
 		<span>{title}</span>
 		{children...}
 	</div>
 }
 
-func App() Element {
+templ App() {
 	@Card("My Card") {
 		<span>Line 1</span>
 		<span>Line 2</span>
@@ -1028,7 +1028,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 	tests := map[string]tc{
 		"layout classes": {
 			input: `package x
-func Box() Element {
+templ Box() {
 	<div class="flex flex-col gap-2 p-4"></div>
 }`,
 			wantContains: []string{
@@ -1040,7 +1040,7 @@ func Box() Element {
 		},
 		"border class": {
 			input: `package x
-func Box() Element {
+templ Box() {
 	<div class="border-rounded"></div>
 }`,
 			wantContains: []string{
@@ -1049,7 +1049,7 @@ func Box() Element {
 		},
 		"text style classes": {
 			input: `package x
-func Text() Element {
+templ Text() {
 	<span class="font-bold text-cyan">hello</span>
 }`,
 			wantContains: []string{
@@ -1058,7 +1058,7 @@ func Text() Element {
 		},
 		"combined text and layout classes": {
 			input: `package x
-func Card() Element {
+templ Card() {
 	<div class="flex-col p-2 border">
 		<span class="font-bold italic">Title</span>
 	</div>
@@ -1072,7 +1072,7 @@ func Card() Element {
 		},
 		"alignment classes": {
 			input: `package x
-func Center() Element {
+templ Center() {
 	<div class="flex items-center justify-center"></div>
 }`,
 			wantContains: []string{
@@ -1082,7 +1082,7 @@ func Center() Element {
 		},
 		"sizing classes": {
 			input: `package x
-func Sized() Element {
+templ Sized() {
 	<div class="w-50 h-20 min-w-10 max-w-100"></div>
 }`,
 			wantContains: []string{
@@ -1094,7 +1094,7 @@ func Sized() Element {
 		},
 		"scroll classes": {
 			input: `package x
-func Scrollable() Element {
+templ Scrollable() {
 	<div class="overflow-y-scroll"></div>
 }`,
 			wantContains: []string{
@@ -1103,7 +1103,7 @@ func Scrollable() Element {
 		},
 		"class with explicit attribute": {
 			input: `package x
-func Mixed() Element {
+templ Mixed() {
 	<div class="flex-col" gap=5></div>
 }`,
 			wantContains: []string{
@@ -1139,7 +1139,7 @@ func TestGenerator_HR(t *testing.T) {
 	tests := map[string]tc{
 		"basic hr": {
 			input: `package x
-func Divider() Element {
+templ Divider() {
 	<div>
 		<hr/>
 	</div>
@@ -1150,7 +1150,7 @@ func Divider() Element {
 		},
 		"hr with border-double class": {
 			input: `package x
-func Divider() Element {
+templ Divider() {
 	<div>
 		<hr class="border-double"/>
 	</div>
@@ -1162,7 +1162,7 @@ func Divider() Element {
 		},
 		"hr with text-cyan class": {
 			input: `package x
-func Divider() Element {
+templ Divider() {
 	<div>
 		<hr class="text-cyan"/>
 	</div>
@@ -1174,7 +1174,7 @@ func Divider() Element {
 		},
 		"hr with border-thick and text color": {
 			input: `package x
-func Divider() Element {
+templ Divider() {
 	<div>
 		<hr class="border-thick text-red"/>
 	</div>
@@ -1213,7 +1213,7 @@ func TestGenerator_BR(t *testing.T) {
 	tests := map[string]tc{
 		"basic br": {
 			input: `package x
-func Lines() Element {
+templ Lines() {
 	<div>
 		<span>Line 1</span>
 		<br/>
@@ -1254,7 +1254,7 @@ func TestGenerator_NamedRefs(t *testing.T) {
 	tests := map[string]tc{
 		"simple named ref": {
 			input: `package x
-func StreamBox() Element {
+templ StreamBox() {
 	<div #Content scrollable={element.ScrollVertical}></div>
 }`,
 			wantContains: []string{
@@ -1271,7 +1271,7 @@ func StreamBox() Element {
 		},
 		"multiple named refs": {
 			input: `package x
-func Layout() Element {
+templ Layout() {
 	<div>
 		<div #Header height={3}></div>
 		<div #Content flexGrow={1}></div>
@@ -1293,7 +1293,7 @@ func Layout() Element {
 		},
 		"named ref on root element": {
 			input: `package x
-func Sidebar() Element {
+templ Sidebar() {
 	<nav #Navigation class="flex-col"></nav>
 }`,
 			wantContains: []string{
@@ -1327,7 +1327,7 @@ func Sidebar() Element {
 // TestGenerator_NamedRefsInLoop tests refs inside @for loops generate slice fields
 func TestGenerator_NamedRefsInLoop(t *testing.T) {
 	input := `package x
-func ItemList(items []string) Element {
+templ ItemList(items []string) {
 	<ul>
 		@for _, item := range items {
 			<li #Items>{item}</li>
@@ -1361,7 +1361,7 @@ func ItemList(items []string) Element {
 // TestGenerator_NamedRefsInConditional tests refs inside @if generate may-be-nil fields
 func TestGenerator_NamedRefsInConditional(t *testing.T) {
 	input := `package x
-func Foo(showLabel bool) Element {
+templ Foo(showLabel bool) {
 	<div>
 		@if showLabel {
 			<span #Label>{"Hi"}</span>
@@ -1395,7 +1395,7 @@ func Foo(showLabel bool) Element {
 // TestGenerator_NamedRefsWithKey tests refs with key={expr} generate map fields
 func TestGenerator_NamedRefsWithKey(t *testing.T) {
 	input := `package x
-func UserList(users []User) Element {
+templ UserList(users []User) {
 	<ul>
 		@for _, user := range users {
 			<li #Users key={user.ID}>{user.Name}</li>
@@ -1429,7 +1429,7 @@ func UserList(users []User) Element {
 // TestGenerator_ViewVariablePreDeclared tests that view variable is pre-declared for closure capture
 func TestGenerator_ViewVariablePreDeclared(t *testing.T) {
 	input := `package x
-func StreamApp() Element {
+templ StreamApp() {
 	<div #Content></div>
 }`
 
@@ -1466,7 +1466,7 @@ func TestGenerator_WatcherGeneration(t *testing.T) {
 	tests := map[string]tc{
 		"onChannel watcher": {
 			input: `package x
-func StreamBox(dataCh chan string) Element {
+templ StreamBox(dataCh chan string) {
 	<div onChannel={tui.Watch(dataCh, handleData(lines))}></div>
 }`,
 			wantContains: []string{
@@ -1478,7 +1478,7 @@ func StreamBox(dataCh chan string) Element {
 		},
 		"onTimer watcher": {
 			input: `package x
-func Clock() Element {
+templ Clock() {
 	<div onTimer={tui.OnTimer(time.Second, tick(elapsed))}></div>
 }`,
 			wantContains: []string{
@@ -1490,7 +1490,7 @@ func Clock() Element {
 		},
 		"multiple watchers on same element": {
 			input: `package x
-func Streaming(dataCh chan string) Element {
+templ Streaming(dataCh chan string) {
 	<div
 		onChannel={tui.Watch(dataCh, handleData)}
 		onTimer={tui.OnTimer(time.Second, tick)}
@@ -1523,15 +1523,15 @@ func Streaming(dataCh chan string) Element {
 // TestGenerator_WatcherAggregation tests that nested component watchers are aggregated
 func TestGenerator_WatcherAggregation(t *testing.T) {
 	input := `package x
-func StreamBox(dataCh chan string) Element {
+templ StreamBox(dataCh chan string) {
 	<div onChannel={tui.Watch(dataCh, handleData)}></div>
 }
 
-func Clock() Element {
+templ Clock() {
 	<div onTimer={tui.OnTimer(time.Second, tick)}></div>
 }
 
-func App(dataCh chan string) Element {
+templ App(dataCh chan string) {
 	<div>
 		@StreamBox(dataCh)
 		@Clock()
@@ -1554,7 +1554,7 @@ func App(dataCh chan string) Element {
 // TestGenerator_ViewableInterface tests GetRoot and GetWatchers methods are generated
 func TestGenerator_ViewableInterface(t *testing.T) {
 	input := `package x
-func Test() Element {
+templ Test() {
 	<div></div>
 }`
 
@@ -1579,7 +1579,7 @@ func Test() Element {
 // TestGenerator_OnKeyPressAttribute tests onKeyPress handler generation
 func TestGenerator_OnKeyPressAttribute(t *testing.T) {
 	input := `package x
-func Counter() Element {
+templ Counter() {
 	<div onKeyPress={handleKeys(count)} focusable={true}></div>
 }`
 
@@ -1602,7 +1602,7 @@ func Counter() Element {
 // TestGenerator_OnClickAttribute tests onClick handler generation
 func TestGenerator_OnClickAttribute(t *testing.T) {
 	input := `package x
-func Button(onClick func()) Element {
+templ Button(onClick func()) {
 	<div onClick={onClick}></div>
 }`
 
@@ -1629,7 +1629,7 @@ func TestGenerator_StateBindings(t *testing.T) {
 	tests := map[string]tc{
 		"single state with binding": {
 			input: `package x
-func Counter() Element {
+templ Counter() {
 	count := tui.NewState(0)
 	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
 }`,
@@ -1642,7 +1642,7 @@ func Counter() Element {
 		},
 		"state parameter - no declaration generated": {
 			input: `package x
-func Counter(count *tui.State[int]) Element {
+templ Counter(count *tui.State[int]) {
 	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
 }`,
 			wantContains: []string{
@@ -1657,7 +1657,7 @@ func Counter(count *tui.State[int]) Element {
 		},
 		"multiple states in expression": {
 			input: `package x
-func Profile() Element {
+templ Profile() {
 	firstName := tui.NewState("Alice")
 	lastName := tui.NewState("Smith")
 	<span>{firstName.Get() + " " + lastName.Get()}</span>
@@ -1674,7 +1674,7 @@ func Profile() Element {
 		},
 		"state with named ref": {
 			input: `package x
-func Counter() Element {
+templ Counter() {
 	count := tui.NewState(0)
 	<span #Display>{fmt.Sprintf("Count: %d", count.Get())}</span>
 }`,
@@ -1686,7 +1686,7 @@ func Counter() Element {
 		},
 		"explicit deps attribute": {
 			input: `package x
-func UserCard() Element {
+templ UserCard() {
 	user := tui.NewState(&User{Name: "Alice"})
 	<span deps={[user]}>{formatUser(user.Get())}</span>
 }`,
@@ -1698,7 +1698,7 @@ func UserCard() Element {
 		},
 		"no binding when no state used": {
 			input: `package x
-func Static() Element {
+templ Static() {
 	<span>{"Hello"}</span>
 }`,
 			wantNotContains: []string{
@@ -1708,7 +1708,7 @@ func Static() Element {
 		},
 		"bool state type inference": {
 			input: `package x
-func Toggle() Element {
+templ Toggle() {
 	enabled := tui.NewState(true)
 	<span>{fmt.Sprintf("Enabled: %v", enabled.Get())}</span>
 }`,
@@ -1719,7 +1719,7 @@ func Toggle() Element {
 		},
 		"slice state type inference": {
 			input: `package x
-func List() Element {
+templ List() {
 	items := tui.NewState([]string{})
 	<span>{fmt.Sprintf("Items: %d", len(items.Get()))}</span>
 }`,
@@ -1766,7 +1766,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
-func Counter() Element {
+templ Counter() {
 	count := tui.NewState(0)
 	<div class="flex-col">
 		<span>{fmt.Sprintf("Count: %d", count.Get())}</span>

@@ -16,14 +16,14 @@ func TestFormatCommentLeading(t *testing.T) {
 			input: `package main
 
 // This is a doc comment
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
 // This is a doc comment
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -31,14 +31,14 @@ func Hello() Element {
 		"leading comment before element": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	// Comment before element
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	// Comment before element
 	<span>Hello</span>
 }
@@ -47,7 +47,7 @@ func Hello() Element {
 		"leading comment before if": {
 			input: `package main
 
-func Hello(show bool) Element {
+templ Hello(show bool) {
 	// Comment before if
 	@if show {
 		<span>Hello</span>
@@ -56,7 +56,7 @@ func Hello(show bool) Element {
 `,
 			want: `package main
 
-func Hello(show bool) Element {
+templ Hello(show bool) {
 	// Comment before if
 	@if show {
 		<span>Hello</span>
@@ -67,7 +67,7 @@ func Hello(show bool) Element {
 		"leading comment before for": {
 			input: `package main
 
-func Hello(items []string) Element {
+templ Hello(items []string) {
 	// Comment before for
 	@for _, item := range items {
 		<span>{item}</span>
@@ -76,7 +76,7 @@ func Hello(items []string) Element {
 `,
 			want: `package main
 
-func Hello(items []string) Element {
+templ Hello(items []string) {
 	// Comment before for
 	@for _, item := range items {
 		<span>{item}</span>
@@ -89,7 +89,7 @@ func Hello(items []string) Element {
 
 /* Block comment
    spanning multiple lines */
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -99,7 +99,7 @@ func Hello() Element {
 Block comment
 spanning multiple lines
 */
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -108,14 +108,14 @@ func Hello() Element {
 			input: `// File-level comment
 package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
 			want: `// File-level comment
 package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -147,13 +147,13 @@ func TestFormatCommentTrailing(t *testing.T) {
 		"trailing comment on element": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>  // trailing
 }
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>  // trailing
 }
 `,
@@ -161,13 +161,13 @@ func Hello() Element {
 		"trailing comment on self-closing element": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<hr />  // divider
 }
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	<hr />  // divider
 }
 `,
@@ -202,14 +202,14 @@ func TestFormatCommentOrphan(t *testing.T) {
 		"orphan comment in component body": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	// orphan comment in body
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	// orphan comment in body
 	<span>Hello</span>
 }
@@ -243,7 +243,7 @@ func TestFormatCommentRoundTrip(t *testing.T) {
 package main
 
 // Doc comment
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -251,7 +251,7 @@ func Hello() Element {
 		"file with trailing comments": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>  // inline
 }
 `,
@@ -263,7 +263,7 @@ package main
 import "fmt"
 
 // Header component
-func Header(title string) Element {
+templ Header(title string) {
 	// Container
 	<div class="header">
 		<span>{title}</span>  // title text
@@ -311,7 +311,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 // For package comment
 
 // ItemList test
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -321,7 +321,7 @@ func Hello() Element {
 // For package comment
 
 // ItemList test
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -329,7 +329,7 @@ func Hello() Element {
 		"preserve blank line inside component": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	// First comment
 
 	// Second comment
@@ -338,7 +338,7 @@ func Hello() Element {
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	// First comment
 
 	// Second comment
@@ -351,7 +351,7 @@ func Hello() Element {
 
 // First comment
 // Second comment
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -359,7 +359,7 @@ func Hello() Element {
 
 // First comment
 // Second comment
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -392,14 +392,14 @@ func TestFormatLineCommentSpacing(t *testing.T) {
 			input: `package main
 
 //comment without space
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
 // comment without space
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -408,14 +408,14 @@ func Hello() Element {
 			input: `package main
 
 // comment with space
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
 // comment with space
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -423,13 +423,13 @@ func Hello() Element {
 		"trailing comment missing space": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>  //trailing
 }
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>  // trailing
 }
 `,
@@ -463,7 +463,7 @@ func TestFormatInlineBlockComment(t *testing.T) {
 
 import "fmt"
 
-func Hello(item string) Element {
+templ Hello(item string) {
 	<span>{fmt.Sprintf("> %s", /* ItemList item*/ item)}</span>
 }
 `,
@@ -471,7 +471,7 @@ func Hello(item string) Element {
 
 import "fmt"
 
-func Hello(item string) Element {
+templ Hello(item string) {
 	<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
 }
 `,
@@ -479,13 +479,13 @@ func Hello(item string) Element {
 		"missing space after opening": {
 			input: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/*test*/ x}</span>
 }
 `,
 			want: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/* test */ x}</span>
 }
 `,
@@ -493,13 +493,13 @@ func Hello(x int) Element {
 		"missing both spaces": {
 			input: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/*test comment*/ x}</span>
 }
 `,
 			want: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/* test comment */ x}</span>
 }
 `,
@@ -507,13 +507,13 @@ func Hello(x int) Element {
 		"already properly formatted": {
 			input: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/* test */ x}</span>
 }
 `,
 			want: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/* test */ x}</span>
 }
 `,
@@ -521,13 +521,13 @@ func Hello(x int) Element {
 		"empty block comment": {
 			input: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/**/ x}</span>
 }
 `,
 			want: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/* */ x}</span>
 }
 `,
@@ -566,7 +566,7 @@ import "fmt"
 
 // Main component documentation
 // Multiple lines
-func Main(items []string, selected int) Element {
+templ Main(items []string, selected int) {
 	// Container div
 	<div class="main">
 		// Loop through items
@@ -593,7 +593,7 @@ import "fmt"
 
 // Main component documentation
 // Multiple lines
-func Main(items []string, selected int) Element {
+templ Main(items []string, selected int) {
 	// Container div
 	<div class="main">
 		// Loop through items

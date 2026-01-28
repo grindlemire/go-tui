@@ -71,12 +71,11 @@
     },
     "component-declaration": {
       "name": "meta.component.gsx",
-      "begin": "^\\s*(func)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s+(Element)\\s*\\{",
+      "begin": "^\\s*(templ)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{",
       "end": "\\}",
       "beginCaptures": {
         "1": { "name": "keyword.function.gsx" },
-        "2": { "name": "entity.name.function.component.gsx" },
-        "4": { "name": "entity.name.type.gsx" }
+        "2": { "name": "entity.name.function.component.gsx" }
       },
       "patterns": [
         { "include": "#body-contents" }

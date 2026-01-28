@@ -37,12 +37,11 @@ module.exports = grammar({
       field('path', $.string),
     ),
 
-    // Component declaration: func Name(params) Element { body }
+    // Component declaration: templ Name(params) { body }
     component_declaration: $ => seq(
-      'func',
+      'templ',
       field('name', $.identifier),
       field('parameters', $.parameter_list),
-      'Element',
       field('body', $.component_body),
     ),
 

@@ -5,7 +5,7 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
 ## Features
 
 - **Syntax Highlighting**: Full highlighting support for the GSX DSL
-  - Component declarations: `func Name(params) Element { ... }`
+  - Component declarations: `templ Name(params) {... }`
   - Keywords: `@for`, `@if`, `@else`, `@let`
   - Element tags: `<box>`, `<text>`, `<div>`, `<span>`, etc.
   - Attributes with string, number, and expression values
@@ -23,11 +23,13 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
 ### From Source
 
 1. Clone the go-tui repository:
+
    ```bash
    git clone https://github.com/grindlemire/go-tui.git
    ```
 
 2. Copy the extension to your VS Code extensions folder:
+
    ```bash
    cp -r go-tui/editor/vscode ~/.vscode/extensions/gsx-language
    ```
@@ -37,6 +39,7 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
 ### From VSIX (Package)
 
 1. Build the extension:
+
    ```bash
    cd go-tui/editor/vscode
    npm install
@@ -62,7 +65,7 @@ import (
     "fmt"
 )
 
-func Counter(count int) Element {
+templ Counter(count int) {
     <box border={tui.BorderSingle} padding={1}>
         <text>{fmt.Sprintf("Count: %d", count)}</text>
     </box>
@@ -79,7 +82,7 @@ func Counter(count int) Element {
 
 | Construct | Example |
 |-----------|---------|
-| Component | `func Name(params) Element { ... }` |
+| Component | `templ Name(params) { ... }` |
 | For loop | `@for i, v := range items { ... }` |
 | If/Else | `@if condition { ... } @else { ... }` |
 | Let binding | `@let x = <element>` |

@@ -190,7 +190,7 @@ func TestDocumentLifecycle(t *testing.T) {
 		"valid document": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -206,7 +206,7 @@ func Hello() Element {
 			wantErrors: 2, // Parser generates multiple errors for this malformed input
 		},
 		"missing package": {
-			content: `func Hello() Element {
+			content: `templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -285,7 +285,7 @@ func TestDocumentUpdate(t *testing.T) {
 `,
 			updated: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -295,7 +295,7 @@ func Hello() Element {
 		"introduce error": {
 			initial: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -382,7 +382,7 @@ func TestDocumentClose(t *testing.T) {
 	uri := "file:///test.gsx"
 	content := `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `
