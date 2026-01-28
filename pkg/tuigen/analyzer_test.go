@@ -1118,3 +1118,779 @@ func TestAnalyzer_CollectNamedRefs(t *testing.T) {
 		t.Error("Items should be in loop")
 	}
 }
+
+// ===== State Detection Tests =====
+
+func TestAnalyzer_DetectStateVars_IntLiteral(t *testing.T) {
+	// Since GoCode blocks are handled specially, we need to test with
+	// the actual parsing. For now, test the type inference separately.
+	type tc struct {
+		expr     string
+		wantType string
+	}
+
+	tests := map[string]tc{
+		"integer 0":       {expr: "0", wantType: "int"},
+		"integer 42":      {expr: "42", wantType: "int"},
+		"negative int":    {expr: "-5", wantType: "int"},
+		"float":           {expr: "3.14", wantType: "float64"},
+		"negative float":  {expr: "-2.5", wantType: "float64"},
+		"bool true":       {expr: "true", wantType: "bool"},
+		"bool false":      {expr: "false", wantType: "bool"},
+		"string double":   {expr: `"hello"`, wantType: "string"},
+		"string backtick": {expr: "`raw`", wantType: "string"},
+		"slice literal":   {expr: "[]string{}", wantType: "[]string"},
+		"slice with pkg":  {expr: "[]pkg.Type{}", wantType: "[]pkg.Type"},
+		"map literal":     {expr: "map[string]int{}", wantType: "map[string]int"},
+		"pointer struct":  {expr: "&User{}", wantType: "*User"},
+		"pointer pkg":     {expr: "&pkg.User{}", wantType: "*pkg.User"},
+		"struct literal":  {expr: "User{}", wantType: "User"},
+		"nil":             {expr: "nil", wantType: "any"},
+		"function call":   {expr: "someFunc()", wantType: "any"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := inferTypeFromExpr(tt.expr)
+			if result != tt.wantType {
+				t.Errorf("inferTypeFromExpr(%q) = %q, want %q", tt.expr, result, tt.wantType)
+			}
+		})
+	}
+}
+
+func TestAnalyzer_DetectStateVars_Parameter(t *testing.T) {
+	input := `package x
+@component Counter(count *tui.State[int]) {
+	<span>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Name != "count" {
+		t.Errorf("Name = %q, want 'count'", sv.Name)
+	}
+	if sv.Type != "int" {
+		t.Errorf("Type = %q, want 'int'", sv.Type)
+	}
+	if !sv.IsParameter {
+		t.Error("expected IsParameter to be true")
+	}
+	if sv.InitExpr != "" {
+		t.Errorf("InitExpr = %q, want empty for parameter", sv.InitExpr)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_StringParameter(t *testing.T) {
+	input := `package x
+@component Greeting(name *tui.State[string]) {
+	<span>{name.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Name != "name" {
+		t.Errorf("Name = %q, want 'name'", sv.Name)
+	}
+	if sv.Type != "string" {
+		t.Errorf("Type = %q, want 'string'", sv.Type)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_SliceParameter(t *testing.T) {
+	input := `package x
+@component TodoList(items *tui.State[[]string]) {
+	<div>{items.Get()}</div>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Type != "[]string" {
+		t.Errorf("Type = %q, want '[]string'", sv.Type)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_PointerParameter(t *testing.T) {
+	input := `package x
+@component UserProfile(user *tui.State[*User]) {
+	<div>{user.Get()}</div>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Type != "*User" {
+		t.Errorf("Type = %q, want '*User'", sv.Type)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_GoCodeDeclaration(t *testing.T) {
+	// Test detection of tui.NewState in component body (GoCode block)
+	input := `package x
+@component Counter() {
+	count := tui.NewState(0)
+	<span>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Name != "count" {
+		t.Errorf("Name = %q, want 'count'", sv.Name)
+	}
+	if sv.Type != "int" {
+		t.Errorf("Type = %q, want 'int'", sv.Type)
+	}
+	if sv.IsParameter {
+		t.Error("expected IsParameter to be false for GoCode declaration")
+	}
+	if sv.InitExpr != "0" {
+		t.Errorf("InitExpr = %q, want '0'", sv.InitExpr)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_GoCodeDeclarationString(t *testing.T) {
+	// Test detection of tui.NewState with string literal
+	input := `package x
+@component Greeting() {
+	name := tui.NewState("Alice")
+	<span>{name.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Name != "name" {
+		t.Errorf("Name = %q, want 'name'", sv.Name)
+	}
+	if sv.Type != "string" {
+		t.Errorf("Type = %q, want 'string'", sv.Type)
+	}
+	if sv.InitExpr != `"Alice"` {
+		t.Errorf("InitExpr = %q, want '\"Alice\"'", sv.InitExpr)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_GoCodeDeclarationSlice(t *testing.T) {
+	// Test detection of tui.NewState with slice literal (matching plan spec)
+	input := `package x
+@component TodoList() {
+	items := tui.NewState([]string{})
+	<div>{items.Get()}</div>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Name != "items" {
+		t.Errorf("Name = %q, want 'items'", sv.Name)
+	}
+	if sv.Type != "[]string" {
+		t.Errorf("Type = %q, want '[]string'", sv.Type)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_GoCodeDeclarationBool(t *testing.T) {
+	// Test detection of tui.NewState with boolean literal
+	input := `package x
+@component Toggle() {
+	enabled := tui.NewState(true)
+	<span>{enabled.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 1 {
+		t.Fatalf("expected 1 state var, got %d", len(stateVars))
+	}
+
+	sv := stateVars[0]
+	if sv.Type != "bool" {
+		t.Errorf("Type = %q, want 'bool'", sv.Type)
+	}
+	if sv.InitExpr != "true" {
+		t.Errorf("InitExpr = %q, want 'true'", sv.InitExpr)
+	}
+}
+
+func TestAnalyzer_DetectStateVars_MultipleDeclarations(t *testing.T) {
+	// Test detection of multiple tui.NewState declarations
+	input := `package x
+@component Profile() {
+	firstName := tui.NewState("Alice")
+	lastName := tui.NewState("Smith")
+	age := tui.NewState(30)
+	<span>{firstName.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 3 {
+		t.Fatalf("expected 3 state vars, got %d", len(stateVars))
+	}
+
+	// Check that all are detected
+	names := make(map[string]string)
+	for _, sv := range stateVars {
+		names[sv.Name] = sv.Type
+	}
+
+	if names["firstName"] != "string" {
+		t.Errorf("firstName type = %q, want 'string'", names["firstName"])
+	}
+	if names["lastName"] != "string" {
+		t.Errorf("lastName type = %q, want 'string'", names["lastName"])
+	}
+	if names["age"] != "int" {
+		t.Errorf("age type = %q, want 'int'", names["age"])
+	}
+}
+
+func TestAnalyzer_DetectStateVars_MixedParamsAndDeclarations(t *testing.T) {
+	// Test detection of both parameter states and GoCode declarations
+	input := `package x
+@component Counter(initialCount *tui.State[int]) {
+	label := tui.NewState("Count: ")
+	<span>{label.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+
+	if len(stateVars) != 2 {
+		t.Fatalf("expected 2 state vars, got %d", len(stateVars))
+	}
+
+	// Find each by name
+	var param, decl *StateVar
+	for i := range stateVars {
+		if stateVars[i].Name == "initialCount" {
+			param = &stateVars[i]
+		}
+		if stateVars[i].Name == "label" {
+			decl = &stateVars[i]
+		}
+	}
+
+	if param == nil {
+		t.Fatal("parameter state 'initialCount' not found")
+	}
+	if !param.IsParameter {
+		t.Error("initialCount should be marked as parameter")
+	}
+	if param.Type != "int" {
+		t.Errorf("initialCount type = %q, want 'int'", param.Type)
+	}
+
+	if decl == nil {
+		t.Fatal("declared state 'label' not found")
+	}
+	if decl.IsParameter {
+		t.Error("label should not be marked as parameter")
+	}
+	if decl.Type != "string" {
+		t.Errorf("label type = %q, want 'string'", decl.Type)
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_SimpleGet(t *testing.T) {
+	input := `package x
+@component Counter(count *tui.State[int]) {
+	<span>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if len(b.StateVars) != 1 || b.StateVars[0] != "count" {
+		t.Errorf("StateVars = %v, want [count]", b.StateVars)
+	}
+	if b.Attribute != "text" {
+		t.Errorf("Attribute = %q, want 'text'", b.Attribute)
+	}
+	if b.ExplicitDeps {
+		t.Error("expected ExplicitDeps to be false")
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_FormatString(t *testing.T) {
+	input := `package x
+@component Counter(count *tui.State[int]) {
+	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if len(b.StateVars) != 1 || b.StateVars[0] != "count" {
+		t.Errorf("StateVars = %v, want [count]", b.StateVars)
+	}
+	if !strings.Contains(b.Expr, "fmt.Sprintf") {
+		t.Errorf("Expr = %q, should contain 'fmt.Sprintf'", b.Expr)
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_MultipleStates(t *testing.T) {
+	input := `package x
+@component Profile(firstName *tui.State[string], lastName *tui.State[string]) {
+	<span>{fmt.Sprintf("%s %s", firstName.Get(), lastName.Get())}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if len(b.StateVars) != 2 {
+		t.Fatalf("expected 2 state vars, got %d: %v", len(b.StateVars), b.StateVars)
+	}
+	// Check both states are detected (order may vary)
+	hasFirst := false
+	hasLast := false
+	for _, sv := range b.StateVars {
+		if sv == "firstName" {
+			hasFirst = true
+		}
+		if sv == "lastName" {
+			hasLast = true
+		}
+	}
+	if !hasFirst || !hasLast {
+		t.Errorf("StateVars = %v, want [firstName, lastName]", b.StateVars)
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_ExplicitDeps(t *testing.T) {
+	input := `package x
+@component UserCard(user *tui.State[*User]) {
+	<span deps={[user]}>{formatUser(user.Get())}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if len(b.StateVars) != 1 || b.StateVars[0] != "user" {
+		t.Errorf("StateVars = %v, want [user]", b.StateVars)
+	}
+	if !b.ExplicitDeps {
+		t.Error("expected ExplicitDeps to be true")
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_ExplicitDepsMultiple(t *testing.T) {
+	input := `package x
+@component Combined(count *tui.State[int], name *tui.State[string]) {
+	<span deps={[count, name]}>{compute(count, name)}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if len(b.StateVars) != 2 {
+		t.Fatalf("expected 2 state vars, got %d: %v", len(b.StateVars), b.StateVars)
+	}
+	if !b.ExplicitDeps {
+		t.Error("expected ExplicitDeps to be true")
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_UnknownStateInDeps(t *testing.T) {
+	input := `package x
+@component Test(count *tui.State[int]) {
+	<span deps={[unknown]}>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	_ = analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	// Check that an error was recorded
+	errors := analyzer.Errors().Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(errors))
+	}
+	if !strings.Contains(errors[0].Message, "unknown state variable") {
+		t.Errorf("error message = %q, want to contain 'unknown state variable'", errors[0].Message)
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_DynamicClass(t *testing.T) {
+	input := `package x
+@component Toggle(enabled *tui.State[bool]) {
+	<span class={enabled.Get() ? "text-green" : "text-red"}>Status</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if b.Attribute != "class" {
+		t.Errorf("Attribute = %q, want 'class'", b.Attribute)
+	}
+	if len(b.StateVars) != 1 || b.StateVars[0] != "enabled" {
+		t.Errorf("StateVars = %v, want [enabled]", b.StateVars)
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_NoStateUsage(t *testing.T) {
+	input := `package x
+@component Static() {
+	<span>{"Hello, World!"}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 0 {
+		t.Errorf("expected 0 bindings, got %d", len(bindings))
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_WithNamedRef(t *testing.T) {
+	input := `package x
+@component Counter(count *tui.State[int]) {
+	<span #Label>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if b.ElementName != "Label" {
+		t.Errorf("ElementName = %q, want 'Label'", b.ElementName)
+	}
+}
+
+func TestAnalyzer_DepsAttributeValid(t *testing.T) {
+	// Test that deps attribute is recognized as valid
+	input := `package x
+@component Test(count *tui.State[int]) {
+	<span deps={[count]}>{count.Get()}</span>
+}`
+
+	_, err := AnalyzeFile("test.tui", input)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_DereferencedPointer(t *testing.T) {
+	// Test that (*count).Get() pattern is detected
+	input := `package x
+@component Counter(count *tui.State[int]) {
+	<span>{(*count).Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if len(b.StateVars) != 1 || b.StateVars[0] != "count" {
+		t.Errorf("StateVars = %v, want [count]", b.StateVars)
+	}
+}
+
+func TestAnalyzer_DepsStringLiteralError(t *testing.T) {
+	// Test that deps="string" produces an error
+	input := `package x
+@component Test(count *tui.State[int]) {
+	<span deps="not-valid">{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	_ = analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	errors := analyzer.Errors().Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(errors))
+	}
+	if !strings.Contains(errors[0].Message, "must use expression syntax") {
+		t.Errorf("error message = %q, want to contain 'must use expression syntax'", errors[0].Message)
+	}
+}
+
+func TestAnalyzer_DepsMissingBracketsError(t *testing.T) {
+	// Test that deps={count} (missing brackets) produces an error
+	input := `package x
+@component Test(count *tui.State[int]) {
+	<span deps={count}>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	_ = analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	errors := analyzer.Errors().Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(errors))
+	}
+	if !strings.Contains(errors[0].Message, "must be an array literal") {
+		t.Errorf("error message = %q, want to contain 'must be an array literal'", errors[0].Message)
+	}
+}
+
+func TestAnalyzer_DepsEmptyArrayWarning(t *testing.T) {
+	// Test that deps={[]} (empty) produces a warning
+	input := `package x
+@component Test(count *tui.State[int]) {
+	<span deps={[]}>{count.Get()}</span>
+}`
+
+	l := NewLexer("test.tui", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	_ = analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	errors := analyzer.Errors().Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d", len(errors))
+	}
+	if !strings.Contains(errors[0].Message, "empty deps attribute") {
+		t.Errorf("error message = %q, want to contain 'empty deps attribute'", errors[0].Message)
+	}
+}
