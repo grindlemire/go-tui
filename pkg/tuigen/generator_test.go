@@ -1,7 +1,6 @@
 package tuigen
 
 import (
-	"os/exec"
 	"strings"
 	"testing"
 )
@@ -54,7 +53,7 @@ templ Greeting(name string, count int) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -141,7 +140,7 @@ templ Button() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -166,7 +165,7 @@ templ Layout() {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -200,7 +199,7 @@ templ Counter() {
 	<div></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -270,7 +269,7 @@ templ List(items []string) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -357,7 +356,7 @@ templ View(err error) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -410,7 +409,7 @@ templ Text(count int) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -471,7 +470,7 @@ templ Complex() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -497,7 +496,7 @@ templ Test() {
 	<span>hello</span>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -526,7 +525,7 @@ templ Test() {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -554,7 +553,7 @@ templ Test() {
 	<span>hello</span>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -571,11 +570,6 @@ templ Test() {
 }
 
 func TestGenerator_OutputCompiles(t *testing.T) {
-	// Skip if go command not available
-	if _, err := exec.LookPath("go"); err != nil {
-		t.Skip("go command not available")
-	}
-
 	input := `package main
 
 import (
@@ -595,7 +589,7 @@ templ Dashboard(items []string) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -658,7 +652,7 @@ templ Dashboard(items []Item, selectedIndex int) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("components.gsx", input)
+	output, err := parseAndGenerateSkipImports("components.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -708,7 +702,7 @@ templ ScrollView() {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -728,7 +722,7 @@ templ Test() {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -749,7 +743,7 @@ templ Test() {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -778,7 +772,7 @@ templ Footer() {
 	<span>Footer</span>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -812,7 +806,7 @@ templ List(items []string) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -831,7 +825,7 @@ templ Test() {
 	<div scrollable={element.ScrollVertical}></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -849,7 +843,7 @@ templ Test() {
 	<div flexGrow=1 flexShrink=0></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1115,7 +1109,7 @@ templ Mixed() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1189,7 +1183,7 @@ templ Divider() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1229,7 +1223,7 @@ templ Lines() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1309,7 +1303,7 @@ templ Sidebar() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1335,7 +1329,7 @@ templ ItemList(items []string) {
 	</ul>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1369,7 +1363,7 @@ templ Foo(showLabel bool) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1403,7 +1397,7 @@ templ UserList(users []User) {
 	</ul>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1433,7 +1427,7 @@ templ StreamApp() {
 	<div #Content></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1505,7 +1499,7 @@ templ Streaming(dataCh chan string) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1538,7 +1532,7 @@ templ App(dataCh chan string) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1558,7 +1552,7 @@ templ Test() {
 	<div></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1583,7 +1577,7 @@ templ Counter() {
 	<div onKeyPress={handleKeys(count)} focusable={true}></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1606,7 +1600,7 @@ templ Button(onClick func()) {
 	<div onClick={onClick}></div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1732,7 +1726,7 @@ templ List() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.gsx", tt.input)
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1754,11 +1748,6 @@ templ List() {
 
 // TestGenerator_StateBindingsCompile verifies that generated state binding code compiles
 func TestGenerator_StateBindingsCompile(t *testing.T) {
-	// Skip if go command not available
-	if _, err := exec.LookPath("go"); err != nil {
-		t.Skip("go command not available")
-	}
-
 	input := `package main
 
 import (
@@ -1773,7 +1762,7 @@ templ Counter() {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.gsx", input)
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
