@@ -562,3 +562,1131 @@
 [06:15:14.214] State.Set: deferred 1 bindings (batching)
 [06:15:14.218] State.Set: setting value to 2
 [06:15:14.222] State.Set: deferred 1 bindings (batching)
+[06:42:00.327] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:42:00.347] FocusManager.Dispatch: no focused element, returning false
+[06:42:00.351] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:42:00.356] FocusManager.Dispatch: no focused element, returning false
+[06:42:00.367] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:42:00.371] FocusManager.Dispatch: no focused element, returning false
+[06:42:00.376] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.379] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.384] FocusManager.Register: total elements=1, current=0
+[06:42:00.388] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:00.392] FocusManager.Dispatch: HandleEvent returned true
+[06:42:00.396] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.400] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.404] FocusManager.Register: total elements=1, current=0
+[06:42:00.408] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:00.412] FocusManager.Dispatch: HandleEvent returned false
+[06:42:00.416] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:42:00.420] FocusManager.Dispatch: no focused element, returning false
+[06:42:00.424] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.429] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.433] FocusManager.Register: total elements=1, current=0
+[06:42:00.437] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.441] FocusManager.Register: total elements=2, current=0
+[06:42:00.445] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.449] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.453] FocusManager.Register: total elements=1, current=0
+[06:42:00.457] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.461] FocusManager.Register: total elements=2, current=0
+[06:42:00.465] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.469] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.473] FocusManager.Register: total elements=1, current=0
+[06:42:00.477] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.481] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.485] FocusManager.Register: total elements=1, current=0
+[06:42:00.489] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.494] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.499] FocusManager.Register: total elements=1, current=0
+[06:42:00.504] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.513] FocusManager.Register: total elements=2, current=0
+[06:42:00.518] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.523] FocusManager.Register: total elements=3, current=0
+[06:42:00.528] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:00.533] FocusManager.Register: total elements=1, current=-1
+[06:42:00.537] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.541] FocusManager.Register: auto-focusing first element (index=1)
+[06:42:00.545] FocusManager.Register: total elements=2, current=1
+[06:42:00.550] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.554] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.558] FocusManager.Register: total elements=1, current=0
+[06:42:00.562] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.567] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.571] FocusManager.Register: total elements=1, current=0
+[06:42:00.575] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.580] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.584] FocusManager.Register: total elements=1, current=0
+[06:42:00.588] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:00.592] FocusManager.Dispatch: HandleEvent returned true
+[06:42:00.604] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.608] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.612] FocusManager.Register: total elements=1, current=0
+[06:42:00.616] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.621] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.625] FocusManager.Register: total elements=1, current=0
+[06:42:00.629] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.636] FocusManager.Register: total elements=2, current=0
+[06:42:00.644] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.652] FocusManager.Register: total elements=3, current=0
+[06:42:00.660] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:00.668] FocusManager.Register: total elements=1, current=-1
+[06:42:00.678] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.686] FocusManager.Register: auto-focusing first element (index=1)
+[06:42:00.694] FocusManager.Register: total elements=2, current=1
+[06:42:00.704] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:00.712] FocusManager.Register: total elements=1, current=-1
+[06:42:00.724] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:00.732] FocusManager.Register: total elements=2, current=-1
+[06:42:00.742] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.750] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.758] FocusManager.Register: total elements=1, current=0
+[06:42:00.768] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.776] FocusManager.Register: total elements=2, current=0
+[06:42:00.784] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.794] FocusManager.Register: total elements=3, current=0
+[06:42:00.806] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.814] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.822] FocusManager.Register: total elements=1, current=0
+[06:42:00.830] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.838] FocusManager.Register: total elements=2, current=0
+[06:42:00.846] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.854] FocusManager.Register: total elements=3, current=0
+[06:42:00.862] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.870] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.878] FocusManager.Register: total elements=1, current=0
+[06:42:00.886] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.895] FocusManager.Register: total elements=2, current=0
+[06:42:00.903] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.914] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.923] FocusManager.Register: total elements=1, current=0
+[06:42:00.932] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:00.940] FocusManager.Register: total elements=2, current=0
+[06:42:00.948] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.956] FocusManager.Register: total elements=3, current=0
+[06:42:00.964] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:00.972] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:00.981] FocusManager.Register: total elements=1, current=0
+[06:42:00.991] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.000] FocusManager.Register: total elements=2, current=0
+[06:42:01.009] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.017] FocusManager.Register: total elements=3, current=0
+[06:42:01.025] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.034] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.042] FocusManager.Register: total elements=1, current=0
+[06:42:01.050] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:01.058] FocusManager.Register: total elements=2, current=0
+[06:42:01.067] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.076] FocusManager.Register: total elements=3, current=0
+[06:42:01.084] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.092] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.100] FocusManager.Register: total elements=1, current=0
+[06:42:01.110] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.120] FocusManager.Register: total elements=2, current=0
+[06:42:01.129] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.138] FocusManager.Register: total elements=3, current=0
+[06:42:01.146] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.154] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.159] FocusManager.Register: total elements=1, current=0
+[06:42:01.164] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.169] FocusManager.Register: total elements=2, current=0
+[06:42:01.174] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.179] FocusManager.Register: total elements=3, current=0
+[06:42:01.183] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.187] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.191] FocusManager.Register: total elements=1, current=0
+[06:42:01.195] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.200] FocusManager.Register: total elements=2, current=0
+[06:42:01.205] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.210] FocusManager.Register: total elements=3, current=0
+[06:42:01.215] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.220] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.225] FocusManager.Register: total elements=1, current=0
+[06:42:01.229] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.234] FocusManager.Register: total elements=2, current=0
+[06:42:01.239] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.243] FocusManager.Register: total elements=3, current=0
+[06:42:01.248] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.252] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.256] FocusManager.Register: total elements=1, current=0
+[06:42:01.260] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:01.265] FocusManager.Register: total elements=2, current=0
+[06:42:01.269] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.274] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.278] FocusManager.Register: total elements=1, current=0
+[06:42:01.282] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.287] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.292] FocusManager.Register: total elements=1, current=0
+[06:42:01.297] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.301] FocusManager.Register: total elements=2, current=0
+[06:42:01.305] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:01.309] FocusManager.Register: total elements=1, current=-1
+[06:42:01.314] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.322] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.327] FocusManager.Register: total elements=1, current=0
+[06:42:01.333] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.337] FocusManager.Register: total elements=2, current=0
+[06:42:01.342] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.347] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.352] FocusManager.Register: total elements=1, current=0
+[06:42:01.357] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.361] FocusManager.Register: total elements=2, current=0
+[06:42:01.365] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.369] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.374] FocusManager.Register: total elements=1, current=0
+[06:42:01.379] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.383] FocusManager.Register: total elements=2, current=0
+[06:42:01.388] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.392] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.396] FocusManager.Register: total elements=1, current=0
+[06:42:01.400] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.405] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.409] FocusManager.Register: total elements=1, current=0
+[06:42:01.415] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.420] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.425] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.429] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.434] FocusManager.Register: total elements=1, current=0
+[06:42:01.440] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.444] FocusManager.Dispatch: HandleEvent returned false
+[06:42:01.448] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:42:01.452] FocusManager.Dispatch: no focused element, returning false
+[06:42:01.456] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.460] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.464] FocusManager.Register: total elements=1, current=0
+[06:42:01.468] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.472] FocusManager.Register: total elements=2, current=0
+[06:42:01.477] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.481] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.486] FocusManager.Register: total elements=1, current=0
+[06:42:01.491] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:01.496] FocusManager.Register: total elements=2, current=0
+[06:42:01.501] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.506] FocusManager.Register: total elements=3, current=0
+[06:42:01.510] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.515] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.519] FocusManager.Register: total elements=1, current=0
+[06:42:01.523] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.528] FocusManager.Register: total elements=2, current=0
+[06:42:01.536] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:42:01.542] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.547] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.552] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.557] FocusManager.Register: total elements=1, current=0
+[06:42:01.562] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.567] FocusManager.Register: total elements=2, current=0
+[06:42:01.571] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:42:01.576] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.581] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:42:01.585] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.590] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:42:01.595] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.599] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.604] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.608] FocusManager.Register: total elements=1, current=0
+[06:42:01.613] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.618] FocusManager.Register: total elements=2, current=0
+[06:42:01.623] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=1, total=2)
+[06:42:01.627] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.632] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.637] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.641] FocusManager.Register: total elements=1, current=0
+[06:42:01.645] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.649] FocusManager.Register: total elements=2, current=0
+[06:42:01.653] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.657] FocusManager.Register: total elements=3, current=0
+[06:42:01.662] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=3)
+[06:42:01.666] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.671] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=1, total=3)
+[06:42:01.676] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.681] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.686] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.690] FocusManager.Register: total elements=1, current=0
+[06:42:01.694] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:01.698] FocusManager.Register: total elements=2, current=0
+[06:42:01.702] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.706] FocusManager.Register: total elements=3, current=0
+[06:42:01.711] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:42:01.716] FocusManager.Register: total elements=4, current=0
+[06:42:01.721] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.725] FocusManager.Register: total elements=5, current=0
+[06:42:01.730] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.735] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.743] FocusManager.Register: total elements=1, current=0
+[06:42:01.749] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.757] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.763] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.768] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.773] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.778] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.783] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.788] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.793] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.797] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.802] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.807] FocusManager.Dispatch: HandleEvent returned true
+[06:42:01.812] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:42:01.817] FocusManager.Register: auto-focusing first element (index=0)
+[06:42:01.822] FocusManager.Register: total elements=1, current=0
+[06:42:01.826] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:42:01.831] FocusManager.Dispatch: HandleEvent returned false
+[06:42:02.019] State.Set: setting value to 42
+[06:42:02.025] State.Set: executing 0 bindings immediately
+[06:42:02.029] State.Set: setting value to 1
+[06:42:02.035] State.Set: executing 0 bindings immediately
+[06:42:02.040] State.Set: setting value to 42
+[06:42:02.045] State.Set: executing 1 bindings immediately
+[06:42:02.049] State.Set: setting value to 15
+[06:42:02.053] State.Set: executing 0 bindings immediately
+[06:42:02.057] State.Set: setting value to 100
+[06:42:02.061] State.Set: executing 1 bindings immediately
+[06:42:02.066] State.Set: setting value to 1
+[06:42:02.071] State.Set: executing 1 bindings immediately
+[06:42:02.075] State.Set: setting value to 2
+[06:42:02.080] State.Set: executing 1 bindings immediately
+[06:42:02.084] State.Set: setting value to first
+[06:42:02.088] State.Set: executing 1 bindings immediately
+[06:42:02.092] State.Set: setting value to second
+[06:42:02.096] State.Set: executing 1 bindings immediately
+[06:42:02.100] State.Set: setting value to third
+[06:42:02.104] State.Set: executing 1 bindings immediately
+[06:42:02.108] State.Set: setting value to 1
+[06:42:02.113] State.Set: executing 1 bindings immediately
+[06:42:02.117] State.Set: setting value to 2
+[06:42:02.122] State.Set: executing 0 bindings immediately
+[06:42:02.126] State.Set: setting value to 3
+[06:42:02.130] State.Set: executing 0 bindings immediately
+[06:42:02.135] State.Set: setting value to 4
+[06:42:02.140] State.Set: executing 0 bindings immediately
+[06:42:02.145] State.Set: setting value to 42
+[06:42:02.150] State.Set: executing 3 bindings immediately
+[06:42:02.156] State.Set: setting value to 1
+[06:42:02.161] State.Set: executing 3 bindings immediately
+[06:42:02.165] State.Set: setting value to 2
+[06:42:02.169] State.Set: executing 2 bindings immediately
+[06:42:02.173] State.Set: setting value to 1
+[06:42:02.177] State.Set: executing 0 bindings immediately
+[06:42:02.182] State.Set: setting value to 2
+[06:42:02.186] State.Set: executing 0 bindings immediately
+[06:42:02.190] State.Set: setting value to 3
+[06:42:02.194] State.Set: executing 0 bindings immediately
+[06:42:02.198] State.Set: setting value to 4
+[06:42:02.203] State.Set: executing 0 bindings immediately
+[06:42:02.208] State.Set: setting value to 5
+[06:42:02.213] State.Set: executing 0 bindings immediately
+[06:42:02.218] State.Set: setting value to 6
+[06:42:02.222] State.Set: executing 0 bindings immediately
+[06:42:02.227] State.Set: setting value to 7
+[06:42:02.232] State.Set: executing 0 bindings immediately
+[06:42:02.236] State.Set: setting value to 8
+[06:42:02.240] State.Set: executing 0 bindings immediately
+[06:42:02.244] State.Set: setting value to 9
+[06:42:02.248] State.Set: executing 0 bindings immediately
+[06:42:02.252] State.Set: setting value to 10
+[06:42:02.256] State.Set: executing 0 bindings immediately
+[06:42:02.260] State.Set: setting value to 11
+[06:42:02.264] State.Set: executing 0 bindings immediately
+[06:42:02.268] State.Set: setting value to 12
+[06:42:02.272] State.Set: executing 0 bindings immediately
+[06:42:02.277] State.Set: setting value to 13
+[06:42:02.281] State.Set: executing 0 bindings immediately
+[06:42:02.286] State.Set: setting value to 14
+[06:42:02.290] State.Set: executing 0 bindings immediately
+[06:42:02.295] State.Set: setting value to 15
+[06:42:02.299] State.Set: executing 0 bindings immediately
+[06:42:02.304] State.Set: setting value to 16
+[06:42:02.309] State.Set: executing 0 bindings immediately
+[06:42:02.314] State.Set: setting value to 17
+[06:42:02.318] State.Set: executing 0 bindings immediately
+[06:42:02.322] State.Set: setting value to 18
+[06:42:02.326] State.Set: executing 0 bindings immediately
+[06:42:02.330] State.Set: setting value to 19
+[06:42:02.335] State.Set: executing 0 bindings immediately
+[06:42:02.340] State.Set: setting value to 20
+[06:42:02.345] State.Set: executing 0 bindings immediately
+[06:42:02.349] State.Set: setting value to 21
+[06:42:02.353] State.Set: executing 0 bindings immediately
+[06:42:02.360] State.Set: setting value to 22
+[06:42:02.366] State.Set: executing 0 bindings immediately
+[06:42:02.371] State.Set: setting value to 23
+[06:42:02.376] State.Set: executing 0 bindings immediately
+[06:42:02.380] State.Set: setting value to 24
+[06:42:02.384] State.Set: executing 0 bindings immediately
+[06:42:02.389] State.Set: setting value to 25
+[06:42:02.394] State.Set: executing 0 bindings immediately
+[06:42:02.399] State.Set: setting value to 26
+[06:42:02.403] State.Set: executing 0 bindings immediately
+[06:42:02.407] State.Set: setting value to 27
+[06:42:02.412] State.Set: executing 0 bindings immediately
+[06:42:02.417] State.Set: setting value to 28
+[06:42:02.422] State.Set: executing 0 bindings immediately
+[06:42:02.427] State.Set: setting value to 29
+[06:42:02.432] State.Set: executing 0 bindings immediately
+[06:42:02.437] State.Set: setting value to 30
+[06:42:02.442] State.Set: executing 0 bindings immediately
+[06:42:02.446] State.Set: setting value to 31
+[06:42:02.450] State.Set: executing 0 bindings immediately
+[06:42:02.454] State.Set: setting value to 32
+[06:42:02.458] State.Set: executing 0 bindings immediately
+[06:42:02.462] State.Set: setting value to 33
+[06:42:02.466] State.Set: executing 0 bindings immediately
+[06:42:02.470] State.Set: setting value to 34
+[06:42:02.474] State.Set: executing 0 bindings immediately
+[06:42:02.478] State.Set: setting value to 35
+[06:42:02.483] State.Set: executing 0 bindings immediately
+[06:42:02.487] State.Set: setting value to 36
+[06:42:02.491] State.Set: executing 0 bindings immediately
+[06:42:02.495] State.Set: setting value to 37
+[06:42:02.499] State.Set: executing 0 bindings immediately
+[06:42:02.503] State.Set: setting value to 38
+[06:42:02.507] State.Set: executing 0 bindings immediately
+[06:42:02.511] State.Set: setting value to 39
+[06:42:02.516] State.Set: executing 0 bindings immediately
+[06:42:02.520] State.Set: setting value to 40
+[06:42:02.524] State.Set: executing 0 bindings immediately
+[06:42:02.528] State.Set: setting value to 41
+[06:42:02.532] State.Set: executing 0 bindings immediately
+[06:42:02.536] State.Set: setting value to 42
+[06:42:02.540] State.Set: executing 0 bindings immediately
+[06:42:02.544] State.Set: setting value to 43
+[06:42:02.548] State.Set: executing 0 bindings immediately
+[06:42:02.552] State.Set: setting value to 44
+[06:42:02.560] State.Set: executing 0 bindings immediately
+[06:42:02.565] State.Set: setting value to 45
+[06:42:02.570] State.Set: executing 0 bindings immediately
+[06:42:02.575] State.Set: setting value to 46
+[06:42:02.580] State.Set: executing 0 bindings immediately
+[06:42:02.585] State.Set: setting value to 47
+[06:42:02.590] State.Set: executing 0 bindings immediately
+[06:42:02.595] State.Set: setting value to 48
+[06:42:02.600] State.Set: executing 0 bindings immediately
+[06:42:02.605] State.Set: setting value to 49
+[06:42:02.610] State.Set: executing 0 bindings immediately
+[06:42:02.615] State.Set: setting value to 50
+[06:42:02.620] State.Set: executing 0 bindings immediately
+[06:42:02.625] State.Set: setting value to 51
+[06:42:02.630] State.Set: executing 0 bindings immediately
+[06:42:02.635] State.Set: setting value to 52
+[06:42:02.640] State.Set: executing 0 bindings immediately
+[06:42:02.645] State.Set: setting value to 53
+[06:42:02.650] State.Set: executing 0 bindings immediately
+[06:42:02.654] State.Set: setting value to 54
+[06:42:02.659] State.Set: executing 0 bindings immediately
+[06:42:02.664] State.Set: setting value to 55
+[06:42:02.669] State.Set: executing 0 bindings immediately
+[06:42:02.674] State.Set: setting value to 56
+[06:42:02.679] State.Set: executing 0 bindings immediately
+[06:42:02.684] State.Set: setting value to 57
+[06:42:02.689] State.Set: executing 0 bindings immediately
+[06:42:02.694] State.Set: setting value to 58
+[06:42:02.699] State.Set: executing 0 bindings immediately
+[06:42:02.704] State.Set: setting value to 59
+[06:42:02.709] State.Set: executing 0 bindings immediately
+[06:42:02.714] State.Set: setting value to 60
+[06:42:02.719] State.Set: executing 0 bindings immediately
+[06:42:02.724] State.Set: setting value to 61
+[06:42:02.729] State.Set: executing 0 bindings immediately
+[06:42:02.734] State.Set: setting value to 62
+[06:42:02.739] State.Set: executing 0 bindings immediately
+[06:42:02.744] State.Set: setting value to 63
+[06:42:02.749] State.Set: executing 0 bindings immediately
+[06:42:02.754] State.Set: setting value to 64
+[06:42:02.759] State.Set: executing 0 bindings immediately
+[06:42:02.764] State.Set: setting value to 65
+[06:42:02.768] State.Set: executing 0 bindings immediately
+[06:42:02.772] State.Set: setting value to 66
+[06:42:02.776] State.Set: executing 0 bindings immediately
+[06:42:02.781] State.Set: setting value to 67
+[06:42:02.788] State.Set: executing 0 bindings immediately
+[06:42:02.792] State.Set: setting value to 68
+[06:42:02.796] State.Set: executing 0 bindings immediately
+[06:42:02.801] State.Set: setting value to 69
+[06:42:02.806] State.Set: executing 0 bindings immediately
+[06:42:02.810] State.Set: setting value to 70
+[06:42:02.815] State.Set: executing 0 bindings immediately
+[06:42:02.820] State.Set: setting value to 71
+[06:42:02.824] State.Set: executing 0 bindings immediately
+[06:42:02.828] State.Set: setting value to 72
+[06:42:02.833] State.Set: executing 0 bindings immediately
+[06:42:02.838] State.Set: setting value to 73
+[06:42:02.842] State.Set: executing 0 bindings immediately
+[06:42:02.847] State.Set: setting value to 74
+[06:42:02.852] State.Set: executing 0 bindings immediately
+[06:42:02.856] State.Set: setting value to 75
+[06:42:02.861] State.Set: executing 0 bindings immediately
+[06:42:02.866] State.Set: setting value to 76
+[06:42:02.870] State.Set: executing 0 bindings immediately
+[06:42:02.874] State.Set: setting value to 77
+[06:42:02.879] State.Set: executing 0 bindings immediately
+[06:42:02.884] State.Set: setting value to 78
+[06:42:02.889] State.Set: executing 0 bindings immediately
+[06:42:02.894] State.Set: setting value to 79
+[06:42:02.899] State.Set: executing 0 bindings immediately
+[06:42:02.903] State.Set: setting value to 80
+[06:42:02.908] State.Set: executing 0 bindings immediately
+[06:42:02.913] State.Set: setting value to 81
+[06:42:02.917] State.Set: executing 0 bindings immediately
+[06:42:02.922] State.Set: setting value to 82
+[06:42:02.927] State.Set: executing 0 bindings immediately
+[06:42:02.932] State.Set: setting value to 83
+[06:42:02.937] State.Set: executing 0 bindings immediately
+[06:42:02.942] State.Set: setting value to 84
+[06:42:02.947] State.Set: executing 0 bindings immediately
+[06:42:02.951] State.Set: setting value to 85
+[06:42:02.956] State.Set: executing 0 bindings immediately
+[06:42:02.961] State.Set: setting value to 86
+[06:42:02.966] State.Set: executing 0 bindings immediately
+[06:42:02.971] State.Set: setting value to 87
+[06:42:02.976] State.Set: executing 0 bindings immediately
+[06:42:02.981] State.Set: setting value to 88
+[06:42:02.987] State.Set: executing 0 bindings immediately
+[06:42:02.992] State.Set: setting value to 89
+[06:42:02.997] State.Set: executing 0 bindings immediately
+[06:42:03.002] State.Set: setting value to 90
+[06:42:03.009] State.Set: executing 0 bindings immediately
+[06:42:03.014] State.Set: setting value to 91
+[06:42:03.019] State.Set: executing 0 bindings immediately
+[06:42:03.025] State.Set: setting value to 92
+[06:42:03.030] State.Set: executing 0 bindings immediately
+[06:42:03.035] State.Set: setting value to 93
+[06:42:03.040] State.Set: executing 0 bindings immediately
+[06:42:03.045] State.Set: setting value to 94
+[06:42:03.050] State.Set: executing 0 bindings immediately
+[06:42:03.055] State.Set: setting value to 95
+[06:42:03.060] State.Set: executing 0 bindings immediately
+[06:42:03.065] State.Set: setting value to 96
+[06:42:03.070] State.Set: executing 0 bindings immediately
+[06:42:03.075] State.Set: setting value to 97
+[06:42:03.080] State.Set: executing 0 bindings immediately
+[06:42:03.085] State.Set: setting value to 98
+[06:42:03.090] State.Set: executing 0 bindings immediately
+[06:42:03.095] State.Set: setting value to 99
+[06:42:03.100] State.Set: executing 0 bindings immediately
+[06:42:03.105] State.Set: setting value to 100
+[06:42:03.110] State.Set: executing 0 bindings immediately
+[06:42:03.115] State.Set: setting value to 42
+[06:42:03.120] State.Set: executing 1 bindings immediately
+[06:42:03.125] State.Set: setting value to 42
+[06:42:03.130] State.Set: executing 0 bindings immediately
+[06:42:03.135] State.Set: setting value to 1
+[06:42:03.140] State.Set: executing 0 bindings immediately
+[06:42:03.145] State.Set: setting value to 42
+[06:42:03.150] State.Set: executing 1 bindings immediately
+[06:42:03.155] State.Set: setting value to 43
+[06:42:03.160] State.Set: executing 0 bindings immediately
+[06:42:03.165] State.Set: setting value to 42
+[06:42:03.170] State.Set: deferred 1 bindings (batching)
+[06:42:03.174] State.Set: setting value to 1
+[06:42:03.179] State.Set: deferred 1 bindings (batching)
+[06:42:03.184] State.Set: setting value to 2
+[06:42:03.188] State.Set: deferred 1 bindings (batching)
+[06:42:03.193] State.Set: setting value to 3
+[06:42:03.198] State.Set: deferred 1 bindings (batching)
+[06:42:03.202] State.Set: setting value to first
+[06:42:03.208] State.Set: deferred 1 bindings (batching)
+[06:42:03.213] State.Set: setting value to second
+[06:42:03.218] State.Set: deferred 1 bindings (batching)
+[06:42:03.224] State.Set: setting value to final
+[06:42:03.230] State.Set: deferred 1 bindings (batching)
+[06:42:03.235] State.Set: setting value to 42
+[06:42:03.249] State.Set: deferred 1 bindings (batching)
+[06:42:03.255] State.Set: setting value to hello
+[06:42:03.260] State.Set: deferred 1 bindings (batching)
+[06:42:03.266] State.Set: setting value to 1
+[06:42:03.271] State.Set: deferred 1 bindings (batching)
+[06:42:03.276] State.Set: setting value to 2
+[06:42:03.281] State.Set: deferred 1 bindings (batching)
+[06:42:03.286] State.Set: setting value to 3
+[06:42:03.291] State.Set: deferred 1 bindings (batching)
+[06:42:03.296] State.Set: setting value to 1
+[06:42:03.301] State.Set: deferred 2 bindings (batching)
+[06:42:03.306] State.Set: setting value to 2
+[06:42:03.311] State.Set: deferred 2 bindings (batching)
+[06:42:03.316] State.Set: setting value to 3
+[06:42:03.321] State.Set: deferred 2 bindings (batching)
+[06:42:03.326] State.Set: setting value to 1
+[06:42:03.331] State.Set: deferred 1 bindings (batching)
+[06:42:03.336] State.Set: setting value to 2
+[06:42:03.341] State.Set: deferred 1 bindings (batching)
+[06:42:03.346] State.Set: setting value to 1
+[06:42:03.351] State.Set: executing 1 bindings immediately
+[06:42:03.356] State.Set: setting value to 2
+[06:42:03.361] State.Set: deferred 1 bindings (batching)
+[06:42:03.365] State.Set: setting value to 3
+[06:42:03.370] State.Set: executing 1 bindings immediately
+[06:42:03.375] State.Set: setting value to 1
+[06:42:03.380] State.Set: deferred 0 bindings (batching)
+[06:42:03.385] State.Set: setting value to 10
+[06:42:03.390] State.Set: deferred 3 bindings (batching)
+[06:42:03.395] State.Set: setting value to 20
+[06:42:03.400] State.Set: deferred 3 bindings (batching)
+[06:42:03.405] State.Set: setting value to 30
+[06:42:03.410] State.Set: deferred 3 bindings (batching)
+[06:42:03.415] State.Set: setting value to 1
+[06:42:03.420] State.Set: deferred 1 bindings (batching)
+[06:42:03.425] State.Set: setting value to 2
+[06:42:03.430] State.Set: deferred 1 bindings (batching)
+[06:50:01.566] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:50:01.583] FocusManager.Dispatch: no focused element, returning false
+[06:50:01.588] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:50:01.593] FocusManager.Dispatch: no focused element, returning false
+[06:50:01.602] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:50:01.607] FocusManager.Dispatch: no focused element, returning false
+[06:50:01.611] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.616] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.620] FocusManager.Register: total elements=1, current=0
+[06:50:01.624] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:01.628] FocusManager.Dispatch: HandleEvent returned false
+[06:50:01.632] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:50:01.636] FocusManager.Dispatch: no focused element, returning false
+[06:50:01.640] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.644] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.648] FocusManager.Register: total elements=1, current=0
+[06:50:01.653] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:01.660] FocusManager.Dispatch: HandleEvent returned true
+[06:50:01.664] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.669] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.673] FocusManager.Register: total elements=1, current=0
+[06:50:01.677] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.681] FocusManager.Register: total elements=2, current=0
+[06:50:01.685] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.689] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.693] FocusManager.Register: total elements=1, current=0
+[06:50:01.697] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.701] FocusManager.Register: total elements=2, current=0
+[06:50:01.705] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.709] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.717] FocusManager.Register: total elements=1, current=0
+[06:50:01.721] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.726] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.730] FocusManager.Register: total elements=1, current=0
+[06:50:01.734] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.738] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.746] FocusManager.Register: total elements=1, current=0
+[06:50:01.754] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.762] FocusManager.Register: total elements=2, current=0
+[06:50:01.774] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.782] FocusManager.Register: total elements=3, current=0
+[06:50:01.792] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:01.804] FocusManager.Register: total elements=1, current=-1
+[06:50:01.813] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.822] FocusManager.Register: auto-focusing first element (index=1)
+[06:50:01.832] FocusManager.Register: total elements=2, current=1
+[06:50:01.842] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.850] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.862] FocusManager.Register: total elements=1, current=0
+[06:50:01.873] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.880] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.884] FocusManager.Register: total elements=1, current=0
+[06:50:01.894] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.907] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.915] FocusManager.Register: total elements=1, current=0
+[06:50:01.923] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:01.931] FocusManager.Dispatch: HandleEvent returned true
+[06:50:01.944] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.952] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.960] FocusManager.Register: total elements=1, current=0
+[06:50:01.968] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:01.976] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:01.984] FocusManager.Register: total elements=1, current=0
+[06:50:01.993] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.002] FocusManager.Register: total elements=2, current=0
+[06:50:02.010] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.015] FocusManager.Register: total elements=3, current=0
+[06:50:02.025] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.034] FocusManager.Register: total elements=1, current=-1
+[06:50:02.043] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.052] FocusManager.Register: auto-focusing first element (index=1)
+[06:50:02.064] FocusManager.Register: total elements=2, current=1
+[06:50:02.073] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.081] FocusManager.Register: total elements=1, current=-1
+[06:50:02.089] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.097] FocusManager.Register: total elements=2, current=-1
+[06:50:02.105] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.113] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.121] FocusManager.Register: total elements=1, current=0
+[06:50:02.129] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.137] FocusManager.Register: total elements=2, current=0
+[06:50:02.145] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.153] FocusManager.Register: total elements=3, current=0
+[06:50:02.161] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.170] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.179] FocusManager.Register: total elements=1, current=0
+[06:50:02.189] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.197] FocusManager.Register: total elements=2, current=0
+[06:50:02.206] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.216] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.226] FocusManager.Register: total elements=1, current=0
+[06:50:02.234] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.242] FocusManager.Register: total elements=2, current=0
+[06:50:02.253] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.262] FocusManager.Register: total elements=3, current=0
+[06:50:02.266] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.271] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.276] FocusManager.Register: total elements=1, current=0
+[06:50:02.281] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.286] FocusManager.Register: total elements=2, current=0
+[06:50:02.291] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.295] FocusManager.Register: total elements=3, current=0
+[06:50:02.299] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.303] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.307] FocusManager.Register: total elements=1, current=0
+[06:50:02.311] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.315] FocusManager.Register: total elements=2, current=0
+[06:50:02.319] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.323] FocusManager.Register: total elements=3, current=0
+[06:50:02.327] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.331] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.335] FocusManager.Register: total elements=1, current=0
+[06:50:02.339] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.343] FocusManager.Register: total elements=2, current=0
+[06:50:02.347] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.351] FocusManager.Register: total elements=3, current=0
+[06:50:02.355] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.359] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.363] FocusManager.Register: total elements=1, current=0
+[06:50:02.367] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.371] FocusManager.Register: total elements=2, current=0
+[06:50:02.375] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.379] FocusManager.Register: total elements=3, current=0
+[06:50:02.383] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.387] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.391] FocusManager.Register: total elements=1, current=0
+[06:50:02.395] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.400] FocusManager.Register: total elements=2, current=0
+[06:50:02.404] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.408] FocusManager.Register: total elements=3, current=0
+[06:50:02.412] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.416] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.421] FocusManager.Register: total elements=1, current=0
+[06:50:02.425] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.429] FocusManager.Register: total elements=2, current=0
+[06:50:02.433] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.437] FocusManager.Register: total elements=3, current=0
+[06:50:02.441] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.449] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.453] FocusManager.Register: total elements=1, current=0
+[06:50:02.457] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.462] FocusManager.Register: total elements=2, current=0
+[06:50:02.467] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.473] FocusManager.Register: total elements=3, current=0
+[06:50:02.478] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.483] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.488] FocusManager.Register: total elements=1, current=0
+[06:50:02.493] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.498] FocusManager.Register: total elements=2, current=0
+[06:50:02.503] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.508] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.512] FocusManager.Register: total elements=1, current=0
+[06:50:02.517] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.522] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.527] FocusManager.Register: total elements=1, current=0
+[06:50:02.532] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.537] FocusManager.Register: total elements=2, current=0
+[06:50:02.543] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.548] FocusManager.Register: total elements=1, current=-1
+[06:50:02.553] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.558] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.563] FocusManager.Register: total elements=1, current=0
+[06:50:02.568] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.573] FocusManager.Register: total elements=2, current=0
+[06:50:02.578] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.583] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.588] FocusManager.Register: total elements=1, current=0
+[06:50:02.593] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.597] FocusManager.Register: total elements=2, current=0
+[06:50:02.601] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.606] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.610] FocusManager.Register: total elements=1, current=0
+[06:50:02.615] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.619] FocusManager.Register: total elements=2, current=0
+[06:50:02.624] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.629] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.633] FocusManager.Register: total elements=1, current=0
+[06:50:02.638] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.642] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.646] FocusManager.Register: total elements=1, current=0
+[06:50:02.650] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:02.654] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.658] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.664] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.669] FocusManager.Register: total elements=1, current=0
+[06:50:02.673] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:02.678] FocusManager.Dispatch: HandleEvent returned false
+[06:50:02.683] FocusManager.Dispatch: event=tui.KeyEvent focused=false (current=-1, total=0)
+[06:50:02.688] FocusManager.Dispatch: no focused element, returning false
+[06:50:02.693] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.698] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.703] FocusManager.Register: total elements=1, current=0
+[06:50:02.708] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.713] FocusManager.Register: total elements=2, current=0
+[06:50:02.717] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.722] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.727] FocusManager.Register: total elements=1, current=0
+[06:50:02.731] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.735] FocusManager.Register: total elements=2, current=0
+[06:50:02.739] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.743] FocusManager.Register: total elements=3, current=0
+[06:50:02.748] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.753] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.757] FocusManager.Register: total elements=1, current=0
+[06:50:02.761] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.766] FocusManager.Register: total elements=2, current=0
+[06:50:02.771] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:50:02.776] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.780] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.784] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.788] FocusManager.Register: total elements=1, current=0
+[06:50:02.793] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.798] FocusManager.Register: total elements=2, current=0
+[06:50:02.802] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:50:02.806] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.810] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:50:02.814] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.818] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=2)
+[06:50:02.823] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.827] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.832] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.836] FocusManager.Register: total elements=1, current=0
+[06:50:02.841] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.846] FocusManager.Register: total elements=2, current=0
+[06:50:02.851] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=1, total=2)
+[06:50:02.856] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.861] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.865] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.870] FocusManager.Register: total elements=1, current=0
+[06:50:02.875] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.884] FocusManager.Register: total elements=2, current=0
+[06:50:02.889] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.894] FocusManager.Register: total elements=3, current=0
+[06:50:02.899] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=3)
+[06:50:02.904] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.909] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=1, total=3)
+[06:50:02.914] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.918] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.922] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.927] FocusManager.Register: total elements=1, current=0
+[06:50:02.931] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.936] FocusManager.Register: total elements=2, current=0
+[06:50:02.941] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.946] FocusManager.Register: total elements=3, current=0
+[06:50:02.951] FocusManager.Register: adding element *tui.mockFocusable (focusable=false)
+[06:50:02.956] FocusManager.Register: total elements=4, current=0
+[06:50:02.960] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.964] FocusManager.Register: total elements=5, current=0
+[06:50:02.968] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:02.973] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:02.977] FocusManager.Register: total elements=1, current=0
+[06:50:02.981] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:02.985] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.990] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:02.994] FocusManager.Dispatch: HandleEvent returned true
+[06:50:02.998] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:03.002] FocusManager.Dispatch: HandleEvent returned true
+[06:50:03.006] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:03.011] FocusManager.Dispatch: HandleEvent returned true
+[06:50:03.015] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:03.020] FocusManager.Dispatch: HandleEvent returned true
+[06:50:03.025] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:03.030] FocusManager.Dispatch: HandleEvent returned true
+[06:50:03.035] FocusManager.Register: adding element *tui.mockFocusable (focusable=true)
+[06:50:03.040] FocusManager.Register: auto-focusing first element (index=0)
+[06:50:03.045] FocusManager.Register: total elements=1, current=0
+[06:50:03.049] FocusManager.Dispatch: event=tui.KeyEvent focused=true (current=0, total=1)
+[06:50:03.053] FocusManager.Dispatch: HandleEvent returned false
+[06:50:03.245] State.Set: setting value to 42
+[06:50:03.249] State.Set: executing 0 bindings immediately
+[06:50:03.254] State.Set: setting value to 1
+[06:50:03.259] State.Set: executing 0 bindings immediately
+[06:50:03.263] State.Set: setting value to 42
+[06:50:03.267] State.Set: executing 1 bindings immediately
+[06:50:03.271] State.Set: setting value to 15
+[06:50:03.275] State.Set: executing 0 bindings immediately
+[06:50:03.283] State.Set: setting value to 100
+[06:50:03.288] State.Set: executing 1 bindings immediately
+[06:50:03.292] State.Set: setting value to 1
+[06:50:03.296] State.Set: executing 1 bindings immediately
+[06:50:03.300] State.Set: setting value to 2
+[06:50:03.304] State.Set: executing 1 bindings immediately
+[06:50:03.308] State.Set: setting value to first
+[06:50:03.312] State.Set: executing 1 bindings immediately
+[06:50:03.317] State.Set: setting value to second
+[06:50:03.321] State.Set: executing 1 bindings immediately
+[06:50:03.325] State.Set: setting value to third
+[06:50:03.329] State.Set: executing 1 bindings immediately
+[06:50:03.333] State.Set: setting value to 1
+[06:50:03.337] State.Set: executing 1 bindings immediately
+[06:50:03.341] State.Set: setting value to 2
+[06:50:03.345] State.Set: executing 0 bindings immediately
+[06:50:03.350] State.Set: setting value to 3
+[06:50:03.354] State.Set: executing 0 bindings immediately
+[06:50:03.358] State.Set: setting value to 4
+[06:50:03.362] State.Set: executing 0 bindings immediately
+[06:50:03.366] State.Set: setting value to 42
+[06:50:03.370] State.Set: executing 3 bindings immediately
+[06:50:03.374] State.Set: setting value to 1
+[06:50:03.378] State.Set: executing 3 bindings immediately
+[06:50:03.382] State.Set: setting value to 2
+[06:50:03.386] State.Set: executing 2 bindings immediately
+[06:50:03.390] State.Set: setting value to 1
+[06:50:03.394] State.Set: executing 0 bindings immediately
+[06:50:03.399] State.Set: setting value to 2
+[06:50:03.403] State.Set: executing 0 bindings immediately
+[06:50:03.407] State.Set: setting value to 3
+[06:50:03.411] State.Set: executing 0 bindings immediately
+[06:50:03.415] State.Set: setting value to 4
+[06:50:03.419] State.Set: executing 0 bindings immediately
+[06:50:03.423] State.Set: setting value to 5
+[06:50:03.427] State.Set: executing 0 bindings immediately
+[06:50:03.431] State.Set: setting value to 6
+[06:50:03.435] State.Set: executing 0 bindings immediately
+[06:50:03.439] State.Set: setting value to 7
+[06:50:03.443] State.Set: executing 0 bindings immediately
+[06:50:03.447] State.Set: setting value to 8
+[06:50:03.452] State.Set: executing 0 bindings immediately
+[06:50:03.456] State.Set: setting value to 9
+[06:50:03.460] State.Set: executing 0 bindings immediately
+[06:50:03.464] State.Set: setting value to 10
+[06:50:03.468] State.Set: executing 0 bindings immediately
+[06:50:03.476] State.Set: setting value to 11
+[06:50:03.480] State.Set: executing 0 bindings immediately
+[06:50:03.484] State.Set: setting value to 12
+[06:50:03.489] State.Set: executing 0 bindings immediately
+[06:50:03.493] State.Set: setting value to 13
+[06:50:03.497] State.Set: executing 0 bindings immediately
+[06:50:03.502] State.Set: setting value to 14
+[06:50:03.507] State.Set: executing 0 bindings immediately
+[06:50:03.512] State.Set: setting value to 15
+[06:50:03.516] State.Set: executing 0 bindings immediately
+[06:50:03.521] State.Set: setting value to 16
+[06:50:03.525] State.Set: executing 0 bindings immediately
+[06:50:03.530] State.Set: setting value to 17
+[06:50:03.535] State.Set: executing 0 bindings immediately
+[06:50:03.539] State.Set: setting value to 18
+[06:50:03.543] State.Set: executing 0 bindings immediately
+[06:50:03.548] State.Set: setting value to 19
+[06:50:03.553] State.Set: executing 0 bindings immediately
+[06:50:03.557] State.Set: setting value to 20
+[06:50:03.561] State.Set: executing 0 bindings immediately
+[06:50:03.566] State.Set: setting value to 21
+[06:50:03.571] State.Set: executing 0 bindings immediately
+[06:50:03.576] State.Set: setting value to 22
+[06:50:03.581] State.Set: executing 0 bindings immediately
+[06:50:03.586] State.Set: setting value to 23
+[06:50:03.591] State.Set: executing 0 bindings immediately
+[06:50:03.596] State.Set: setting value to 24
+[06:50:03.601] State.Set: executing 0 bindings immediately
+[06:50:03.606] State.Set: setting value to 25
+[06:50:03.611] State.Set: executing 0 bindings immediately
+[06:50:03.616] State.Set: setting value to 26
+[06:50:03.624] State.Set: executing 0 bindings immediately
+[06:50:03.629] State.Set: setting value to 27
+[06:50:03.634] State.Set: executing 0 bindings immediately
+[06:50:03.639] State.Set: setting value to 28
+[06:50:03.644] State.Set: executing 0 bindings immediately
+[06:50:03.649] State.Set: setting value to 29
+[06:50:03.654] State.Set: executing 0 bindings immediately
+[06:50:03.659] State.Set: setting value to 30
+[06:50:03.663] State.Set: executing 0 bindings immediately
+[06:50:03.667] State.Set: setting value to 31
+[06:50:03.671] State.Set: executing 0 bindings immediately
+[06:50:03.676] State.Set: setting value to 32
+[06:50:03.681] State.Set: executing 0 bindings immediately
+[06:50:03.685] State.Set: setting value to 33
+[06:50:03.690] State.Set: executing 0 bindings immediately
+[06:50:03.695] State.Set: setting value to 34
+[06:50:03.699] State.Set: executing 0 bindings immediately
+[06:50:03.703] State.Set: setting value to 35
+[06:50:03.708] State.Set: executing 0 bindings immediately
+[06:50:03.713] State.Set: setting value to 36
+[06:50:03.717] State.Set: executing 0 bindings immediately
+[06:50:03.721] State.Set: setting value to 37
+[06:50:03.725] State.Set: executing 0 bindings immediately
+[06:50:03.729] State.Set: setting value to 38
+[06:50:03.733] State.Set: executing 0 bindings immediately
+[06:50:03.737] State.Set: setting value to 39
+[06:50:03.742] State.Set: executing 0 bindings immediately
+[06:50:03.746] State.Set: setting value to 40
+[06:50:03.752] State.Set: executing 0 bindings immediately
+[06:50:03.757] State.Set: setting value to 41
+[06:50:03.761] State.Set: executing 0 bindings immediately
+[06:50:03.766] State.Set: setting value to 42
+[06:50:03.771] State.Set: executing 0 bindings immediately
+[06:50:03.776] State.Set: setting value to 43
+[06:50:03.780] State.Set: executing 0 bindings immediately
+[06:50:03.784] State.Set: setting value to 44
+[06:50:03.789] State.Set: executing 0 bindings immediately
+[06:50:03.794] State.Set: setting value to 45
+[06:50:03.799] State.Set: executing 0 bindings immediately
+[06:50:03.804] State.Set: setting value to 46
+[06:50:03.808] State.Set: executing 0 bindings immediately
+[06:50:03.813] State.Set: setting value to 47
+[06:50:03.817] State.Set: executing 0 bindings immediately
+[06:50:03.821] State.Set: setting value to 48
+[06:50:03.825] State.Set: executing 0 bindings immediately
+[06:50:03.829] State.Set: setting value to 49
+[06:50:03.833] State.Set: executing 0 bindings immediately
+[06:50:03.838] State.Set: setting value to 50
+[06:50:03.844] State.Set: executing 0 bindings immediately
+[06:50:03.849] State.Set: setting value to 51
+[06:50:03.854] State.Set: executing 0 bindings immediately
+[06:50:03.859] State.Set: setting value to 52
+[06:50:03.863] State.Set: executing 0 bindings immediately
+[06:50:03.868] State.Set: setting value to 53
+[06:50:03.873] State.Set: executing 0 bindings immediately
+[06:50:03.878] State.Set: setting value to 54
+[06:50:03.883] State.Set: executing 0 bindings immediately
+[06:50:03.888] State.Set: setting value to 55
+[06:50:03.893] State.Set: executing 0 bindings immediately
+[06:50:03.898] State.Set: setting value to 56
+[06:50:03.903] State.Set: executing 0 bindings immediately
+[06:50:03.911] State.Set: setting value to 57
+[06:50:03.916] State.Set: executing 0 bindings immediately
+[06:50:03.920] State.Set: setting value to 58
+[06:50:03.925] State.Set: executing 0 bindings immediately
+[06:50:03.930] State.Set: setting value to 59
+[06:50:03.935] State.Set: executing 0 bindings immediately
+[06:50:03.940] State.Set: setting value to 60
+[06:50:03.945] State.Set: executing 0 bindings immediately
+[06:50:03.950] State.Set: setting value to 61
+[06:50:03.955] State.Set: executing 0 bindings immediately
+[06:50:03.960] State.Set: setting value to 62
+[06:50:03.965] State.Set: executing 0 bindings immediately
+[06:50:03.970] State.Set: setting value to 63
+[06:50:03.974] State.Set: executing 0 bindings immediately
+[06:50:03.978] State.Set: setting value to 64
+[06:50:03.982] State.Set: executing 0 bindings immediately
+[06:50:03.986] State.Set: setting value to 65
+[06:50:03.990] State.Set: executing 0 bindings immediately
+[06:50:03.995] State.Set: setting value to 66
+[06:50:04.000] State.Set: executing 0 bindings immediately
+[06:50:04.004] State.Set: setting value to 67
+[06:50:04.008] State.Set: executing 0 bindings immediately
+[06:50:04.013] State.Set: setting value to 68
+[06:50:04.017] State.Set: executing 0 bindings immediately
+[06:50:04.021] State.Set: setting value to 69
+[06:50:04.025] State.Set: executing 0 bindings immediately
+[06:50:04.029] State.Set: setting value to 70
+[06:50:04.033] State.Set: executing 0 bindings immediately
+[06:50:04.038] State.Set: setting value to 71
+[06:50:04.042] State.Set: executing 0 bindings immediately
+[06:50:04.046] State.Set: setting value to 72
+[06:50:04.050] State.Set: executing 0 bindings immediately
+[06:50:04.058] State.Set: setting value to 73
+[06:50:04.062] State.Set: executing 0 bindings immediately
+[06:50:04.067] State.Set: setting value to 74
+[06:50:04.072] State.Set: executing 0 bindings immediately
+[06:50:04.076] State.Set: setting value to 75
+[06:50:04.080] State.Set: executing 0 bindings immediately
+[06:50:04.085] State.Set: setting value to 76
+[06:50:04.089] State.Set: executing 0 bindings immediately
+[06:50:04.093] State.Set: setting value to 77
+[06:50:04.097] State.Set: executing 0 bindings immediately
+[06:50:04.101] State.Set: setting value to 78
+[06:50:04.106] State.Set: executing 0 bindings immediately
+[06:50:04.110] State.Set: setting value to 79
+[06:50:04.114] State.Set: executing 0 bindings immediately
+[06:50:04.122] State.Set: setting value to 80
+[06:50:04.127] State.Set: executing 0 bindings immediately
+[06:50:04.132] State.Set: setting value to 81
+[06:50:04.136] State.Set: executing 0 bindings immediately
+[06:50:04.140] State.Set: setting value to 82
+[06:50:04.144] State.Set: executing 0 bindings immediately
+[06:50:04.149] State.Set: setting value to 83
+[06:50:04.154] State.Set: executing 0 bindings immediately
+[06:50:04.158] State.Set: setting value to 84
+[06:50:04.162] State.Set: executing 0 bindings immediately
+[06:50:04.166] State.Set: setting value to 85
+[06:50:04.170] State.Set: executing 0 bindings immediately
+[06:50:04.175] State.Set: setting value to 86
+[06:50:04.180] State.Set: executing 0 bindings immediately
+[06:50:04.185] State.Set: setting value to 87
+[06:50:04.189] State.Set: executing 0 bindings immediately
+[06:50:04.193] State.Set: setting value to 88
+[06:50:04.197] State.Set: executing 0 bindings immediately
+[06:50:04.202] State.Set: setting value to 89
+[06:50:04.206] State.Set: executing 0 bindings immediately
+[06:50:04.210] State.Set: setting value to 90
+[06:50:04.214] State.Set: executing 0 bindings immediately
+[06:50:04.219] State.Set: setting value to 91
+[06:50:04.224] State.Set: executing 0 bindings immediately
+[06:50:04.228] State.Set: setting value to 92
+[06:50:04.233] State.Set: executing 0 bindings immediately
+[06:50:04.237] State.Set: setting value to 93
+[06:50:04.241] State.Set: executing 0 bindings immediately
+[06:50:04.246] State.Set: setting value to 94
+[06:50:04.251] State.Set: executing 0 bindings immediately
+[06:50:04.256] State.Set: setting value to 95
+[06:50:04.260] State.Set: executing 0 bindings immediately
+[06:50:04.264] State.Set: setting value to 96
+[06:50:04.268] State.Set: executing 0 bindings immediately
+[06:50:04.272] State.Set: setting value to 97
+[06:50:04.277] State.Set: executing 0 bindings immediately
+[06:50:04.282] State.Set: setting value to 98
+[06:50:04.287] State.Set: executing 0 bindings immediately
+[06:50:04.291] State.Set: setting value to 99
+[06:50:04.296] State.Set: executing 0 bindings immediately
+[06:50:04.301] State.Set: setting value to 100
+[06:50:04.306] State.Set: executing 0 bindings immediately
+[06:50:04.311] State.Set: setting value to 42
+[06:50:04.316] State.Set: executing 1 bindings immediately
+[06:50:04.321] State.Set: setting value to 42
+[06:50:04.326] State.Set: executing 0 bindings immediately
+[06:50:04.331] State.Set: setting value to 1
+[06:50:04.336] State.Set: executing 0 bindings immediately
+[06:50:04.340] State.Set: setting value to 42
+[06:50:04.344] State.Set: executing 1 bindings immediately
+[06:50:04.348] State.Set: setting value to 43
+[06:50:04.352] State.Set: executing 0 bindings immediately
+[06:50:04.357] State.Set: setting value to 42
+[06:50:04.361] State.Set: deferred 1 bindings (batching)
+[06:50:04.365] State.Set: setting value to 1
+[06:50:04.369] State.Set: deferred 1 bindings (batching)
+[06:50:04.374] State.Set: setting value to 2
+[06:50:04.379] State.Set: deferred 1 bindings (batching)
+[06:50:04.383] State.Set: setting value to 3
+[06:50:04.387] State.Set: deferred 1 bindings (batching)
+[06:50:04.391] State.Set: setting value to first
+[06:50:04.396] State.Set: deferred 1 bindings (batching)
+[06:50:04.400] State.Set: setting value to second
+[06:50:04.404] State.Set: deferred 1 bindings (batching)
+[06:50:04.408] State.Set: setting value to final
+[06:50:04.412] State.Set: deferred 1 bindings (batching)
+[06:50:04.416] State.Set: setting value to 42
+[06:50:04.421] State.Set: deferred 1 bindings (batching)
+[06:50:04.425] State.Set: setting value to hello
+[06:50:04.429] State.Set: deferred 1 bindings (batching)
+[06:50:04.433] State.Set: setting value to 1
+[06:50:04.445] State.Set: deferred 1 bindings (batching)
+[06:50:04.450] State.Set: setting value to 2
+[06:50:04.455] State.Set: deferred 1 bindings (batching)
+[06:50:04.460] State.Set: setting value to 3
+[06:50:04.465] State.Set: deferred 1 bindings (batching)
+[06:50:04.470] State.Set: setting value to 1
+[06:50:04.475] State.Set: deferred 2 bindings (batching)
+[06:50:04.480] State.Set: setting value to 2
+[06:50:04.485] State.Set: deferred 2 bindings (batching)
+[06:50:04.490] State.Set: setting value to 3
+[06:50:04.495] State.Set: deferred 2 bindings (batching)
+[06:50:04.500] State.Set: setting value to 1
+[06:50:04.505] State.Set: deferred 1 bindings (batching)
+[06:50:04.510] State.Set: setting value to 2
+[06:50:04.515] State.Set: deferred 1 bindings (batching)
+[06:50:04.520] State.Set: setting value to 1
+[06:50:04.525] State.Set: executing 1 bindings immediately
+[06:50:04.530] State.Set: setting value to 2
+[06:50:04.534] State.Set: deferred 1 bindings (batching)
+[06:50:04.538] State.Set: setting value to 3
+[06:50:04.542] State.Set: executing 1 bindings immediately
+[06:50:04.551] State.Set: setting value to 1
+[06:50:04.555] State.Set: deferred 0 bindings (batching)
+[06:50:04.559] State.Set: setting value to 10
+[06:50:04.563] State.Set: deferred 3 bindings (batching)
+[06:50:04.568] State.Set: setting value to 20
+[06:50:04.573] State.Set: deferred 3 bindings (batching)
+[06:50:04.578] State.Set: setting value to 30
+[06:50:04.583] State.Set: deferred 3 bindings (batching)
+[06:50:04.593] State.Set: setting value to 1
+[06:50:04.597] State.Set: deferred 1 bindings (batching)
+[06:50:04.601] State.Set: setting value to 2
+[06:50:04.605] State.Set: deferred 1 bindings (batching)

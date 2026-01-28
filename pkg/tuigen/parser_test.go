@@ -1566,7 +1566,7 @@ func TestParser_NamedRef(t *testing.T) {
 	tests := map[string]tc{
 		"simple named ref": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Content></div>
 }`,
 			wantRef:   "Content",
@@ -1575,7 +1575,7 @@ func TestParser_NamedRef(t *testing.T) {
 		},
 		"named ref with attributes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<span #Title class="bold">hello</span>
 }`,
 			wantRef:   "Title",
@@ -1584,7 +1584,7 @@ func TestParser_NamedRef(t *testing.T) {
 		},
 		"named ref self-closing": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Spacer />
 }`,
 			wantRef:   "Spacer",
@@ -1593,7 +1593,7 @@ func TestParser_NamedRef(t *testing.T) {
 		},
 		"named ref with multiple attributes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Content width=100 height=50></div>
 }`,
 			wantRef:   "Content",
@@ -1604,7 +1604,7 @@ func TestParser_NamedRef(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -1641,7 +1641,7 @@ func TestParser_NamedRef(t *testing.T) {
 
 func TestParser_NamedRefWithKey(t *testing.T) {
 	input := `package x
-@component Test(items []Item) {
+func Test(items []Item) Element {
 	<ul>
 		@for _, item := range items {
 			<li #Items key={item.ID}>{item.Name}</li>
@@ -1649,7 +1649,7 @@ func TestParser_NamedRefWithKey(t *testing.T) {
 	</ul>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1684,7 +1684,7 @@ func TestParser_NamedRefWithKey(t *testing.T) {
 
 func TestParser_MultipleNamedRefs(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<div #Header height=3></div>
 		<div #Content></div>
@@ -1692,7 +1692,7 @@ func TestParser_MultipleNamedRefs(t *testing.T) {
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 

@@ -898,28 +898,28 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 	tests := map[string]tc{
 		"valid ref name": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Content></div>
 }`,
 			wantError: false,
 		},
 		"valid ref name with digits": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Content2></div>
 }`,
 			wantError: false,
 		},
 		"valid ref name with underscore": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #My_Content></div>
 }`,
 			wantError: false,
 		},
 		"invalid ref name lowercase": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #content></div>
 }`,
 			wantError:     true,
@@ -927,7 +927,7 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 		},
 		"invalid ref name starts with digit": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #123invalid></div>
 }`,
 			wantError:     true,
@@ -935,7 +935,7 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 		},
 		"reserved name Root": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Root></div>
 }`,
 			wantError:     true,
@@ -943,7 +943,7 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 		},
 		"duplicate ref name": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Content></div>
 	<div #Content></div>
 }`,
@@ -952,7 +952,7 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 		},
 		"duplicate ref name across branches": {
 			input: `package x
-@component Test(show bool) {
+func Test(show bool) Element {
 	@if show {
 		<div #Content></div>
 	} @else {
@@ -966,7 +966,7 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -995,7 +995,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 	tests := map[string]tc{
 		"ref in loop is valid": {
 			input: `package x
-@component Test(items []string) {
+func Test(items []string) Element {
 	<ul>
 		@for _, item := range items {
 			<li #Items>{item}</li>
@@ -1006,7 +1006,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 		},
 		"ref with key in loop is valid": {
 			input: `package x
-@component Test(items []Item) {
+func Test(items []Item) Element {
 	<ul>
 		@for _, item := range items {
 			<li #Items key={item.ID}>{item.Name}</li>
@@ -1017,7 +1017,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 		},
 		"ref with key outside loop is invalid": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div #Content key={someKey}></div>
 }`,
 			wantError:     true,
@@ -1027,7 +1027,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -1048,7 +1048,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 
 func TestAnalyzer_NamedRefInConditional(t *testing.T) {
 	input := `package x
-@component Test(show bool) {
+func Test(show bool) Element {
 	<div>
 		@if show {
 			<span #Label>hello</span>
@@ -1056,7 +1056,7 @@ func TestAnalyzer_NamedRefInConditional(t *testing.T) {
 	</div>
 }`
 
-	_, err := AnalyzeFile("test.tui", input)
+	_, err := AnalyzeFile("test.gsx", input)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -1065,7 +1065,7 @@ func TestAnalyzer_NamedRefInConditional(t *testing.T) {
 
 func TestAnalyzer_CollectNamedRefs(t *testing.T) {
 	input := `package x
-@component Test(items []Item, show bool) {
+func Test(items []Item, show bool) Element {
 	<div>
 		<div #Header></div>
 		@if show {
@@ -1077,7 +1077,7 @@ func TestAnalyzer_CollectNamedRefs(t *testing.T) {
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1162,11 +1162,11 @@ func TestAnalyzer_DetectStateVars_IntLiteral(t *testing.T) {
 
 func TestAnalyzer_DetectStateVars_Parameter(t *testing.T) {
 	input := `package x
-@component Counter(count *tui.State[int]) {
+func Counter(count *tui.State[int]) Element {
 	<span>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1197,11 +1197,11 @@ func TestAnalyzer_DetectStateVars_Parameter(t *testing.T) {
 
 func TestAnalyzer_DetectStateVars_StringParameter(t *testing.T) {
 	input := `package x
-@component Greeting(name *tui.State[string]) {
+func Greeting(name *tui.State[string]) Element {
 	<span>{name.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1226,11 +1226,11 @@ func TestAnalyzer_DetectStateVars_StringParameter(t *testing.T) {
 
 func TestAnalyzer_DetectStateVars_SliceParameter(t *testing.T) {
 	input := `package x
-@component TodoList(items *tui.State[[]string]) {
+func TodoList(items *tui.State[[]string]) Element {
 	<div>{items.Get()}</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1252,11 +1252,11 @@ func TestAnalyzer_DetectStateVars_SliceParameter(t *testing.T) {
 
 func TestAnalyzer_DetectStateVars_PointerParameter(t *testing.T) {
 	input := `package x
-@component UserProfile(user *tui.State[*User]) {
+func UserProfile(user *tui.State[*User]) Element {
 	<div>{user.Get()}</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1279,12 +1279,12 @@ func TestAnalyzer_DetectStateVars_PointerParameter(t *testing.T) {
 func TestAnalyzer_DetectStateVars_GoCodeDeclaration(t *testing.T) {
 	// Test detection of tui.NewState in component body (GoCode block)
 	input := `package x
-@component Counter() {
+func Counter() Element {
 	count := tui.NewState(0)
 	<span>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1316,12 +1316,12 @@ func TestAnalyzer_DetectStateVars_GoCodeDeclaration(t *testing.T) {
 func TestAnalyzer_DetectStateVars_GoCodeDeclarationString(t *testing.T) {
 	// Test detection of tui.NewState with string literal
 	input := `package x
-@component Greeting() {
+func Greeting() Element {
 	name := tui.NewState("Alice")
 	<span>{name.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1350,12 +1350,12 @@ func TestAnalyzer_DetectStateVars_GoCodeDeclarationString(t *testing.T) {
 func TestAnalyzer_DetectStateVars_GoCodeDeclarationSlice(t *testing.T) {
 	// Test detection of tui.NewState with slice literal (matching plan spec)
 	input := `package x
-@component TodoList() {
+func TodoList() Element {
 	items := tui.NewState([]string{})
 	<div>{items.Get()}</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1381,12 +1381,12 @@ func TestAnalyzer_DetectStateVars_GoCodeDeclarationSlice(t *testing.T) {
 func TestAnalyzer_DetectStateVars_GoCodeDeclarationBool(t *testing.T) {
 	// Test detection of tui.NewState with boolean literal
 	input := `package x
-@component Toggle() {
+func Toggle() Element {
 	enabled := tui.NewState(true)
 	<span>{enabled.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1412,14 +1412,14 @@ func TestAnalyzer_DetectStateVars_GoCodeDeclarationBool(t *testing.T) {
 func TestAnalyzer_DetectStateVars_MultipleDeclarations(t *testing.T) {
 	// Test detection of multiple tui.NewState declarations
 	input := `package x
-@component Profile() {
+func Profile() Element {
 	firstName := tui.NewState("Alice")
 	lastName := tui.NewState("Smith")
 	age := tui.NewState(30)
 	<span>{firstName.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1453,12 +1453,12 @@ func TestAnalyzer_DetectStateVars_MultipleDeclarations(t *testing.T) {
 func TestAnalyzer_DetectStateVars_MixedParamsAndDeclarations(t *testing.T) {
 	// Test detection of both parameter states and GoCode declarations
 	input := `package x
-@component Counter(initialCount *tui.State[int]) {
+func Counter(initialCount *tui.State[int]) Element {
 	label := tui.NewState("Count: ")
 	<span>{label.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1506,11 +1506,11 @@ func TestAnalyzer_DetectStateVars_MixedParamsAndDeclarations(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_SimpleGet(t *testing.T) {
 	input := `package x
-@component Counter(count *tui.State[int]) {
+func Counter(count *tui.State[int]) Element {
 	<span>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1539,11 +1539,11 @@ func TestAnalyzer_DetectStateBindings_SimpleGet(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_FormatString(t *testing.T) {
 	input := `package x
-@component Counter(count *tui.State[int]) {
+func Counter(count *tui.State[int]) Element {
 	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1569,11 +1569,11 @@ func TestAnalyzer_DetectStateBindings_FormatString(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_MultipleStates(t *testing.T) {
 	input := `package x
-@component Profile(firstName *tui.State[string], lastName *tui.State[string]) {
+func Profile(firstName *tui.State[string], lastName *tui.State[string]) Element {
 	<span>{fmt.Sprintf("%s %s", firstName.Get(), lastName.Get())}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1610,11 +1610,11 @@ func TestAnalyzer_DetectStateBindings_MultipleStates(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_ExplicitDeps(t *testing.T) {
 	input := `package x
-@component UserCard(user *tui.State[*User]) {
+func UserCard(user *tui.State[*User]) Element {
 	<span deps={[user]}>{formatUser(user.Get())}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1640,11 +1640,11 @@ func TestAnalyzer_DetectStateBindings_ExplicitDeps(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_ExplicitDepsMultiple(t *testing.T) {
 	input := `package x
-@component Combined(count *tui.State[int], name *tui.State[string]) {
+func Combined(count *tui.State[int], name *tui.State[string]) Element {
 	<span deps={[count, name]}>{compute(count, name)}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1670,11 +1670,11 @@ func TestAnalyzer_DetectStateBindings_ExplicitDepsMultiple(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_UnknownStateInDeps(t *testing.T) {
 	input := `package x
-@component Test(count *tui.State[int]) {
+func Test(count *tui.State[int]) Element {
 	<span deps={[unknown]}>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1697,11 +1697,11 @@ func TestAnalyzer_DetectStateBindings_UnknownStateInDeps(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_DynamicClass(t *testing.T) {
 	input := `package x
-@component Toggle(enabled *tui.State[bool]) {
+func Toggle(enabled *tui.State[bool]) Element {
 	<span class={enabled.Get() ? "text-green" : "text-red"}>Status</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1727,11 +1727,11 @@ func TestAnalyzer_DetectStateBindings_DynamicClass(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_NoStateUsage(t *testing.T) {
 	input := `package x
-@component Static() {
+func Static() Element {
 	<span>{"Hello, World!"}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1749,11 +1749,11 @@ func TestAnalyzer_DetectStateBindings_NoStateUsage(t *testing.T) {
 
 func TestAnalyzer_DetectStateBindings_WithNamedRef(t *testing.T) {
 	input := `package x
-@component Counter(count *tui.State[int]) {
+func Counter(count *tui.State[int]) Element {
 	<span #Label>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1777,11 +1777,11 @@ func TestAnalyzer_DetectStateBindings_WithNamedRef(t *testing.T) {
 func TestAnalyzer_DepsAttributeValid(t *testing.T) {
 	// Test that deps attribute is recognized as valid
 	input := `package x
-@component Test(count *tui.State[int]) {
+func Test(count *tui.State[int]) Element {
 	<span deps={[count]}>{count.Get()}</span>
 }`
 
-	_, err := AnalyzeFile("test.tui", input)
+	_, err := AnalyzeFile("test.gsx", input)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -1790,11 +1790,11 @@ func TestAnalyzer_DepsAttributeValid(t *testing.T) {
 func TestAnalyzer_DetectStateBindings_DereferencedPointer(t *testing.T) {
 	// Test that (*count).Get() pattern is detected
 	input := `package x
-@component Counter(count *tui.State[int]) {
+func Counter(count *tui.State[int]) Element {
 	<span>{(*count).Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1818,11 +1818,11 @@ func TestAnalyzer_DetectStateBindings_DereferencedPointer(t *testing.T) {
 func TestAnalyzer_DepsStringLiteralError(t *testing.T) {
 	// Test that deps="string" produces an error
 	input := `package x
-@component Test(count *tui.State[int]) {
+func Test(count *tui.State[int]) Element {
 	<span deps="not-valid">{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1845,11 +1845,11 @@ func TestAnalyzer_DepsStringLiteralError(t *testing.T) {
 func TestAnalyzer_DepsMissingBracketsError(t *testing.T) {
 	// Test that deps={count} (missing brackets) produces an error
 	input := `package x
-@component Test(count *tui.State[int]) {
+func Test(count *tui.State[int]) Element {
 	<span deps={count}>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {
@@ -1872,11 +1872,11 @@ func TestAnalyzer_DepsMissingBracketsError(t *testing.T) {
 func TestAnalyzer_DepsEmptyArrayWarning(t *testing.T) {
 	// Test that deps={[]} (empty) produces a warning
 	input := `package x
-@component Test(count *tui.State[int]) {
+func Test(count *tui.State[int]) Element {
 	<span deps={[]}>{count.Get()}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 	if err != nil {

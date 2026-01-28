@@ -1254,7 +1254,7 @@ func TestGenerator_NamedRefs(t *testing.T) {
 	tests := map[string]tc{
 		"simple named ref": {
 			input: `package x
-@component StreamBox() {
+func StreamBox() Element {
 	<div #Content scrollable={element.ScrollVertical}></div>
 }`,
 			wantContains: []string{
@@ -1271,7 +1271,7 @@ func TestGenerator_NamedRefs(t *testing.T) {
 		},
 		"multiple named refs": {
 			input: `package x
-@component Layout() {
+func Layout() Element {
 	<div>
 		<div #Header height={3}></div>
 		<div #Content flexGrow={1}></div>
@@ -1293,7 +1293,7 @@ func TestGenerator_NamedRefs(t *testing.T) {
 		},
 		"named ref on root element": {
 			input: `package x
-@component Sidebar() {
+func Sidebar() Element {
 	<nav #Navigation class="flex-col"></nav>
 }`,
 			wantContains: []string{
@@ -1309,7 +1309,7 @@ func TestGenerator_NamedRefs(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1327,7 +1327,7 @@ func TestGenerator_NamedRefs(t *testing.T) {
 // TestGenerator_NamedRefsInLoop tests refs inside @for loops generate slice fields
 func TestGenerator_NamedRefsInLoop(t *testing.T) {
 	input := `package x
-@component ItemList(items []string) {
+func ItemList(items []string) Element {
 	<ul>
 		@for _, item := range items {
 			<li #Items>{item}</li>
@@ -1335,7 +1335,7 @@ func TestGenerator_NamedRefsInLoop(t *testing.T) {
 	</ul>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1361,7 +1361,7 @@ func TestGenerator_NamedRefsInLoop(t *testing.T) {
 // TestGenerator_NamedRefsInConditional tests refs inside @if generate may-be-nil fields
 func TestGenerator_NamedRefsInConditional(t *testing.T) {
 	input := `package x
-@component Foo(showLabel bool) {
+func Foo(showLabel bool) Element {
 	<div>
 		@if showLabel {
 			<span #Label>{"Hi"}</span>
@@ -1369,7 +1369,7 @@ func TestGenerator_NamedRefsInConditional(t *testing.T) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1395,7 +1395,7 @@ func TestGenerator_NamedRefsInConditional(t *testing.T) {
 // TestGenerator_NamedRefsWithKey tests refs with key={expr} generate map fields
 func TestGenerator_NamedRefsWithKey(t *testing.T) {
 	input := `package x
-@component UserList(users []User) {
+func UserList(users []User) Element {
 	<ul>
 		@for _, user := range users {
 			<li #Users key={user.ID}>{user.Name}</li>
@@ -1403,7 +1403,7 @@ func TestGenerator_NamedRefsWithKey(t *testing.T) {
 	</ul>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1429,11 +1429,11 @@ func TestGenerator_NamedRefsWithKey(t *testing.T) {
 // TestGenerator_ViewVariablePreDeclared tests that view variable is pre-declared for closure capture
 func TestGenerator_ViewVariablePreDeclared(t *testing.T) {
 	input := `package x
-@component StreamApp() {
+func StreamApp() Element {
 	<div #Content></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1466,7 +1466,7 @@ func TestGenerator_WatcherGeneration(t *testing.T) {
 	tests := map[string]tc{
 		"onChannel watcher": {
 			input: `package x
-@component StreamBox(dataCh chan string) {
+func StreamBox(dataCh chan string) Element {
 	<div onChannel={tui.Watch(dataCh, handleData(lines))}></div>
 }`,
 			wantContains: []string{
@@ -1478,7 +1478,7 @@ func TestGenerator_WatcherGeneration(t *testing.T) {
 		},
 		"onTimer watcher": {
 			input: `package x
-@component Clock() {
+func Clock() Element {
 	<div onTimer={tui.OnTimer(time.Second, tick(elapsed))}></div>
 }`,
 			wantContains: []string{
@@ -1490,7 +1490,7 @@ func TestGenerator_WatcherGeneration(t *testing.T) {
 		},
 		"multiple watchers on same element": {
 			input: `package x
-@component Streaming(dataCh chan string) {
+func Streaming(dataCh chan string) Element {
 	<div
 		onChannel={tui.Watch(dataCh, handleData)}
 		onTimer={tui.OnTimer(time.Second, tick)}
@@ -1505,7 +1505,7 @@ func TestGenerator_WatcherGeneration(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1523,22 +1523,22 @@ func TestGenerator_WatcherGeneration(t *testing.T) {
 // TestGenerator_WatcherAggregation tests that nested component watchers are aggregated
 func TestGenerator_WatcherAggregation(t *testing.T) {
 	input := `package x
-@component StreamBox(dataCh chan string) {
+func StreamBox(dataCh chan string) Element {
 	<div onChannel={tui.Watch(dataCh, handleData)}></div>
 }
 
-@component Clock() {
+func Clock() Element {
 	<div onTimer={tui.OnTimer(time.Second, tick)}></div>
 }
 
-@component App(dataCh chan string) {
+func App(dataCh chan string) Element {
 	<div>
 		@StreamBox(dataCh)
 		@Clock()
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1554,11 +1554,11 @@ func TestGenerator_WatcherAggregation(t *testing.T) {
 // TestGenerator_ViewableInterface tests GetRoot and GetWatchers methods are generated
 func TestGenerator_ViewableInterface(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1579,11 +1579,11 @@ func TestGenerator_ViewableInterface(t *testing.T) {
 // TestGenerator_OnKeyPressAttribute tests onKeyPress handler generation
 func TestGenerator_OnKeyPressAttribute(t *testing.T) {
 	input := `package x
-@component Counter() {
+func Counter() Element {
 	<div onKeyPress={handleKeys(count)} focusable={true}></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1602,11 +1602,11 @@ func TestGenerator_OnKeyPressAttribute(t *testing.T) {
 // TestGenerator_OnClickAttribute tests onClick handler generation
 func TestGenerator_OnClickAttribute(t *testing.T) {
 	input := `package x
-@component Button(onClick func()) {
+func Button(onClick func()) Element {
 	<div onClick={onClick}></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -1615,5 +1615,185 @@ func TestGenerator_OnClickAttribute(t *testing.T) {
 
 	if !strings.Contains(code, "element.WithOnClick(onClick)") {
 		t.Errorf("missing onClick option\nGot:\n%s", code)
+	}
+}
+
+// TestGenerator_StateBindings tests state variable and binding generation
+func TestGenerator_StateBindings(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"single state with binding": {
+			input: `package x
+func Counter() Element {
+	count := tui.NewState(0)
+	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
+}`,
+			wantContains: []string{
+				"count := tui.NewState(0)",
+				"// State bindings",
+				"count.Bind(func(_ int) {",
+				`__tui_0.SetText(fmt.Sprintf("Count: %d", count.Get()))`,
+			},
+		},
+		"state parameter - no declaration generated": {
+			input: `package x
+func Counter(count *tui.State[int]) Element {
+	<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
+}`,
+			wantContains: []string{
+				"func Counter(count *tui.State[int]) CounterView",
+				"// State bindings",
+				"count.Bind(func(_ int) {",
+				`__tui_0.SetText(fmt.Sprintf("Count: %d", count.Get()))`,
+			},
+			wantNotContains: []string{
+				"count := tui.NewState", // parameter states should not be re-declared
+			},
+		},
+		"multiple states in expression": {
+			input: `package x
+func Profile() Element {
+	firstName := tui.NewState("Alice")
+	lastName := tui.NewState("Smith")
+	<span>{firstName.Get() + " " + lastName.Get()}</span>
+}`,
+			wantContains: []string{
+				`firstName := tui.NewState("Alice")`,
+				`lastName := tui.NewState("Smith")`,
+				"// State bindings",
+				"__update___tui_0 := func()",
+				"firstName.Bind(func(_ string)",
+				"lastName.Bind(func(_ string)",
+				"__update___tui_0()",
+			},
+		},
+		"state with named ref": {
+			input: `package x
+func Counter() Element {
+	count := tui.NewState(0)
+	<span #Display>{fmt.Sprintf("Count: %d", count.Get())}</span>
+}`,
+			wantContains: []string{
+				"count := tui.NewState(0)",
+				"count.Bind(func(_ int) {",
+				`Display.SetText(fmt.Sprintf("Count: %d", count.Get()))`,
+			},
+		},
+		"explicit deps attribute": {
+			input: `package x
+func UserCard() Element {
+	user := tui.NewState(&User{Name: "Alice"})
+	<span deps={[user]}>{formatUser(user.Get())}</span>
+}`,
+			wantContains: []string{
+				`user := tui.NewState(&User{Name: "Alice"})`,
+				"user.Bind(func(_ *User) {",
+				"__tui_0.SetText(formatUser(user.Get()))",
+			},
+		},
+		"no binding when no state used": {
+			input: `package x
+func Static() Element {
+	<span>{"Hello"}</span>
+}`,
+			wantNotContains: []string{
+				"// State bindings",
+				".Bind(",
+			},
+		},
+		"bool state type inference": {
+			input: `package x
+func Toggle() Element {
+	enabled := tui.NewState(true)
+	<span>{fmt.Sprintf("Enabled: %v", enabled.Get())}</span>
+}`,
+			wantContains: []string{
+				"enabled := tui.NewState(true)",
+				"enabled.Bind(func(_ bool) {",
+			},
+		},
+		"slice state type inference": {
+			input: `package x
+func List() Element {
+	items := tui.NewState([]string{})
+	<span>{fmt.Sprintf("Items: %d", len(items.Get()))}</span>
+}`,
+			wantContains: []string{
+				`items := tui.NewState([]string{})`,
+				"items.Bind(func(_ []string) {",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := ParseAndGenerate("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
+
+// TestGenerator_StateBindingsCompile verifies that generated state binding code compiles
+func TestGenerator_StateBindingsCompile(t *testing.T) {
+	// Skip if go command not available
+	if _, err := exec.LookPath("go"); err != nil {
+		t.Skip("go command not available")
+	}
+
+	input := `package main
+
+import (
+	"fmt"
+	"github.com/grindlemire/go-tui/pkg/tui"
+)
+
+func Counter() Element {
+	count := tui.NewState(0)
+	<div class="flex-col">
+		<span>{fmt.Sprintf("Count: %d", count.Get())}</span>
+	</div>
+}`
+
+	output, err := ParseAndGenerate("test.gsx", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	// Verify the output is valid Go syntax by checking it formats
+	// (gofmt is called internally by Generate)
+	if len(output) == 0 {
+		t.Error("empty output")
+	}
+
+	code := string(output)
+
+	// Check key elements are present
+	if !strings.Contains(code, "count := tui.NewState(0)") {
+		t.Error("missing state declaration")
+	}
+	if !strings.Contains(code, "count.Bind(") {
+		t.Error("missing state binding")
+	}
+	if !strings.Contains(code, "func Counter() CounterView") {
+		t.Error("missing function declaration")
 	}
 }

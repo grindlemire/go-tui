@@ -542,7 +542,7 @@ func TestFormatAutoImports(t *testing.T) {
 		"adds tui and element imports": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -554,7 +554,7 @@ func TestFormatAutoImports(t *testing.T) {
 		"adds fmt import when used": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>{fmt.Sprintf("hello")}</span>
 }
 `,
@@ -569,7 +569,7 @@ func TestFormatAutoImports(t *testing.T) {
 
 import "fmt"
 
-@component Hello() {
+func Hello() Element {
 	<span>{fmt.Sprintf("hello")}</span>
 }
 `,
@@ -582,7 +582,7 @@ import "fmt"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New() // Use default formatter with FixImports=true
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
