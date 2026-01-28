@@ -28,7 +28,7 @@ vendor/
 !editor/vscode/
 
 # Worktrees
-./worktrees/
+.worktrees/
 
 # Claude
 .claude/
