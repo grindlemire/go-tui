@@ -211,6 +211,7 @@ None - this is a refactoring change.
 ## Files to Modify
 
 ### Phase 1
+
 | File | Changes |
 |------|---------|
 | `pkg/tuigen/token.go` | Remove `TokenAtComponent` |
@@ -225,6 +226,7 @@ None - this is a refactoring change.
 | `pkg/tuigen/*_test.go` | Update test cases |
 
 ### Phase 2
+
 | File | Changes |
 |------|---------|
 | `pkg/lsp/*.go` | `.tui` → `.gsx` references |
@@ -235,6 +237,7 @@ None - this is a refactoring change.
 | `editor/vscode/syntaxes/*.json` | Rename, update scopes and patterns |
 
 ### Phase 3
+
 | File | Changes |
 |------|---------|
 | `CLAUDE.md` | All `.tui` → `.gsx`, syntax examples |

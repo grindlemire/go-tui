@@ -27,8 +27,16 @@ func main() {
 	dataCh := make(chan string, 100)
 	go produceData(dataCh)
 
-	// SetRoot takes the view directly - extracts Root and starts watchers
-	app.SetRoot(StreamingCounter(dataCh))
+	counter := StreamingCounter(dataCh)
+
+	// Set the root component and set the global key listener
+	app.SetRoot(counter)
+	app.OnKeyEvent(func(e tui.KeyEvent) {
+		if e.Rune == 'q' {
+			app.Stop()
+			return
+		}
+	})
 
 	// Run blocks until tui.Stop() is called
 	if err := app.Run(); err != nil {

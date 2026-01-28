@@ -19,6 +19,7 @@ Rename `.tui` files to `.gsx` (Go Syntax eXtension) and replace the `@component`
 - **Return type differentiation**: `Element` return type = component, any other return type = Go function
 - **Cleaner mental model**: "A component is just a function that returns an Element"
 - **JSX similarity**: More familiar to developers coming from React/JSX
+
 ### Non-Goals
 
 - Changing the internal element tree structure
@@ -478,6 +479,7 @@ func Header() MyElement {
 ### 6.3 Capitalization Convention
 
 Following Go conventions:
+
 - **Uppercase** function names = exported components
 - **Lowercase** function names = unexported (package-private) components
 

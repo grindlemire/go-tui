@@ -19,11 +19,11 @@ import (
     lines := tui.NewState([]string{})
     elapsed := tui.NewState(0)
 
-    <div class="flex-col gap-1 p-1 border-single">
+    <div class="flex-col gap-1 p-1 border">
         // Header with reactive count and elapsed time
         <div class="flex justify-between">
             <span class="font-bold">{"Streaming Counter"}</span>
-            <span class="text-dim">
+            <span class="text-red">
                 {fmt.Sprintf("Count: %d | Time: %ds", count.Get(), elapsed.Get())}
             </span>
         </div>
@@ -44,7 +44,7 @@ import (
              scrollable={element.ScrollVertical}
              onChannel={tui.Watch(dataCh, handleData(lines))}
              onTimer={tui.OnTimer(time.Second, tick(elapsed))}
-             onKeyPress={handleKeys(view)}
+             onKeyPress={handleScrollKeys(view)}
              focusable={true}
              flexGrow={1}>
             @for _, line := range lines.Get() {
@@ -61,7 +61,6 @@ import (
     </div>
 }
 
-// Click handlers - no bool return needed, Set() marks dirty automatically
 func increment(count *tui.State[int]) func() {
     return func() {
         count.Set(count.Get() + 1)
@@ -87,8 +86,8 @@ func handleData(lines *tui.State[[]string]) func(string) {
     }
 }
 
-// Key handler - uses ref for scroll operations
-func handleKeys(v StreamingCounterView) func(tui.KeyEvent) {
+// Scroll Key handler - uses ref for scroll operations
+func handleScrollKeys(v StreamingCounterView) func(tui.KeyEvent) {
     return func(e tui.KeyEvent) {
         switch e.Rune {
         case 'j':
@@ -100,7 +99,9 @@ func handleKeys(v StreamingCounterView) func(tui.KeyEvent) {
         case 'g':
             v.Content.ScrollTo(0, 0)
         case 'q':
-            tui.Stop()
+            // this will conflict with a higher call to q and will be ignored
+            // This example shows that this will be ignored and the higher call to q will be used
+            v.Content.ScrollToTop()
         }
     }
 }
