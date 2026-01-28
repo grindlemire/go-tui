@@ -52,6 +52,18 @@ type App struct {
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 }
 
+// currentApp holds a reference to the currently running app for package-level Stop().
+var currentApp *App
+
+// Stop stops the currently running app. This is a package-level convenience function
+// that allows stopping the app from event handlers without needing a direct reference.
+// It is safe to call even if no app is running.
+func Stop() {
+	if currentApp != nil {
+		currentApp.Stop()
+	}
+}
+
 // NewApp creates a new application with the terminal set up for TUI usage.
 // The terminal is put into raw mode and alternate screen mode.
 func NewApp() (*App, error) {
@@ -343,6 +355,10 @@ func (a *App) RenderFull() {
 // Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
 // Rendering occurs only when the dirty flag is set (by mutations).
 func (a *App) Run() error {
+	// Set current app for package-level Stop()
+	currentApp = a
+	defer func() { currentApp = nil }()
+
 	// Handle Ctrl+C gracefully
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)

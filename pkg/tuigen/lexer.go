@@ -252,6 +252,9 @@ func (l *Lexer) Next() Token {
 	case '"':
 		return l.readString()
 
+	case '\'':
+		return l.readRune()
+
 	case '`':
 		return l.readRawString()
 
@@ -476,6 +479,48 @@ func (l *Lexer) readString() Token {
 
 	l.readChar() // consume closing "
 	return l.makeToken(TokenString, string(result))
+}
+
+// readRune reads a single-quoted rune literal with escape sequences.
+func (l *Lexer) readRune() Token {
+	l.readChar() // consume opening '
+
+	var r rune
+	if l.ch == '\\' {
+		l.readChar() // consume backslash
+		switch l.ch {
+		case 'n':
+			r = '\n'
+		case 't':
+			r = '\t'
+		case 'r':
+			r = '\r'
+		case '\\':
+			r = '\\'
+		case '\'':
+			r = '\''
+		case '0':
+			r = '\000'
+		default:
+			// For other escapes, keep the character as-is
+			r = l.ch
+		}
+		l.readChar()
+	} else if l.ch == '\'' || l.ch == 0 {
+		l.errors.AddError(l.position(), "empty rune literal")
+		return l.makeToken(TokenError, "")
+	} else {
+		r = l.ch
+		l.readChar()
+	}
+
+	if l.ch != '\'' {
+		l.errors.AddError(l.position(), "unterminated rune literal")
+		return l.makeToken(TokenError, string(r))
+	}
+
+	l.readChar() // consume closing '
+	return l.makeToken(TokenRune, string(r))
 }
 
 // readRawString reads a backtick-quoted raw string.
