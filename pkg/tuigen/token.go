@@ -38,6 +38,7 @@ const (
 	TokenFloat     // float literal: 1.23
 	TokenString    // string literal: "..."
 	TokenRawString // raw string literal: `...`
+	TokenRune      // rune literal: 'x'
 
 	// Operators and Punctuation
 	TokenLParen      // (
@@ -99,6 +100,7 @@ var tokenNames = map[TokenType]string{
 	TokenFloat:       "Float",
 	TokenString:      "String",
 	TokenRawString:   "RawString",
+	TokenRune:        "Rune",
 	TokenLParen:      "(",
 	TokenRParen:      ")",
 	TokenLBrace:      "{",

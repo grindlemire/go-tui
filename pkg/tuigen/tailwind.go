@@ -52,6 +52,7 @@ var tailwindClasses = map[string]TailwindMapping{
 
 	// Borders
 	"border":         {Option: "element.WithBorder(tui.BorderSingle)", NeedsImport: "tui"},
+	"border-single":  {Option: "element.WithBorder(tui.BorderSingle)", NeedsImport: "tui"},
 	"border-rounded": {Option: "element.WithBorder(tui.BorderRounded)", NeedsImport: "tui"},
 	"border-double":  {Option: "element.WithBorder(tui.BorderDouble)", NeedsImport: "tui"},
 	"border-thick":   {Option: "element.WithBorder(tui.BorderThick)", NeedsImport: "tui"},
@@ -69,6 +70,7 @@ var tailwindClasses = map[string]TailwindMapping{
 	// Text styles
 	"font-bold":  {IsTextStyle: true, TextMethod: "Bold()"},
 	"font-dim":   {IsTextStyle: true, TextMethod: "Dim()"},
+	"text-dim":   {IsTextStyle: true, TextMethod: "Dim()"},
 	"italic":     {IsTextStyle: true, TextMethod: "Italic()"},
 	"underline":  {IsTextStyle: true, TextMethod: "Underline()"},
 	"blink":      {IsTextStyle: true, TextMethod: "Blink()"},
@@ -539,7 +541,6 @@ var similarClasses = map[string]string{
 	"bold":           "font-bold",
 	"italic":         "italic",
 	"dim":            "font-dim",
-	"border-single":  "border",
 	"width":          "w-1",
 	"height":         "h-1",
 	"center":         "text-center",

@@ -22,6 +22,10 @@ type Generator struct {
 
 	// Component calls with watchers that need aggregation
 	componentVars []string
+
+	// State tracking for current component (for reactive bindings)
+	stateVars    []StateVar
+	stateBindings []StateBinding
 }
 
 // NewGenerator creates a new code generator.
@@ -133,10 +137,16 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.varCounter = 0
 	g.watchers = nil
 	g.componentVars = nil
+	g.stateVars = nil
+	g.stateBindings = nil
 
 	// Collect named refs from this component
 	analyzer := NewAnalyzer()
 	g.namedRefs = analyzer.CollectNamedRefs(comp)
+
+	// Detect state variables and bindings
+	g.stateVars = analyzer.DetectStateVars(comp)
+	g.stateBindings = analyzer.DetectStateBindings(comp, g.stateVars)
 
 	// Generate view struct for this component (always generated)
 	structName := comp.Name + "View"
@@ -249,6 +259,9 @@ func (g *Generator) generateComponent(comp *Component) {
 			g.writef("watchers = append(watchers, %s.GetWatchers()...)\n", compVar)
 		}
 	}
+
+	// Generate state bindings (reactive updates)
+	g.generateStateBindings()
 
 	// Populate view struct before returning
 	g.writeln("")
@@ -1094,4 +1107,72 @@ func (g *Generator) GenerateToBuffer(buf *bytes.Buffer, file *File, sourceFile s
 	}
 	buf.Write(data)
 	return nil
+}
+
+// generateStateBindings generates Bind() calls for reactive state bindings.
+// This is called after all elements are created so the element variables exist.
+func (g *Generator) generateStateBindings() {
+	if len(g.stateBindings) == 0 {
+		return
+	}
+
+	g.writeln("")
+	g.writeln("// State bindings")
+
+	// Build a map of state variable names to their types
+	stateTypes := make(map[string]string)
+	for _, sv := range g.stateVars {
+		stateTypes[sv.Name] = sv.Type
+	}
+
+	for _, binding := range g.stateBindings {
+		g.generateBinding(binding, stateTypes)
+	}
+}
+
+// generateBinding generates a Bind() call for a single state binding.
+func (g *Generator) generateBinding(b StateBinding, stateTypes map[string]string) {
+	if len(b.StateVars) == 0 {
+		return
+	}
+
+	// Determine the setter method based on attribute
+	setter := g.getSetterForAttribute(b.Attribute)
+	if setter == "" {
+		return
+	}
+
+	if len(b.StateVars) == 1 {
+		// Single state variable - direct binding
+		stateName := b.StateVars[0]
+		stateType := stateTypes[stateName]
+		g.writef("%s.Bind(func(_ %s) {\n", stateName, stateType)
+		g.indent++
+		g.writef("%s.%s(%s)\n", b.ElementName, setter, b.Expr)
+		g.indent--
+		g.writeln("})")
+	} else {
+		// Multiple state variables - shared update function
+		updateFn := fmt.Sprintf("__update_%s", b.ElementName)
+		g.writef("%s := func() { %s.%s(%s) }\n", updateFn, b.ElementName, setter, b.Expr)
+		for _, stateName := range b.StateVars {
+			stateType := stateTypes[stateName]
+			g.writef("%s.Bind(func(_ %s) { %s() })\n", stateName, stateType, updateFn)
+		}
+	}
+}
+
+// getSetterForAttribute returns the element setter method for a given attribute.
+func (g *Generator) getSetterForAttribute(attr string) string {
+	switch attr {
+	case "text":
+		return "SetText"
+	case "class":
+		// Note: class attribute bindings would need SetClass or similar
+		// For now, we don't support dynamic class bindings since element
+		// doesn't have a SetClass method. This is a future enhancement.
+		return ""
+	default:
+		return ""
+	}
 }

@@ -890,6 +890,9 @@ func inferTypeFromExpr(expr string) string {
 // The elementIndex counter assigns names like "__tui_0", "__tui_1", etc. to unnamed
 // elements. This must match the generator's naming scheme in generator.go. Named
 // refs (#Name) use their ref name instead.
+//
+// Note: Elements inside @for loops are skipped for binding generation because their
+// generated variable names are scoped to the loop and cannot be referenced from outside.
 func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []StateBinding {
 	// Build a set of state variable names for quick lookup
 	stateNames := make(map[string]bool)
@@ -900,8 +903,8 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 	var bindings []StateBinding
 	elementIndex := 0
 
-	var scan func(nodes []Node)
-	scan = func(nodes []Node) {
+	var scan func(nodes []Node, inLoop bool)
+	scan = func(nodes []Node, inLoop bool) {
 		for _, node := range nodes {
 			switch n := node.(type) {
 			case *Element:
@@ -915,41 +918,21 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 				}
 
 				// Generate element name (same pattern as generator)
+				// Named refs outside loops use the ref name directly without incrementing the counter.
+				// Named refs inside loops or conditionals still use the counter (generator creates temp var).
 				elementName := "__tui_" + strconv.Itoa(elementIndex)
-				if n.NamedRef != "" {
+				usesCounter := true
+				if n.NamedRef != "" && !inLoop {
 					elementName = n.NamedRef
+					usesCounter = false
 				}
 
-				// Check text content in children for state usage
-				for _, child := range n.Children {
-					if goExpr, ok := child.(*GoExpr); ok {
-						var deps []string
-						isExplicit := false
-
-						if explicitDeps != nil {
-							deps = explicitDeps
-							isExplicit = true
-						} else {
-							deps = a.detectGetCalls(goExpr.Code, stateNames)
-						}
-
-						if len(deps) > 0 {
-							bindings = append(bindings, StateBinding{
-								StateVars:    deps,
-								Element:      n,
-								ElementName:  elementName,
-								Attribute:    "text",
-								Expr:         goExpr.Code,
-								ExplicitDeps: isExplicit,
-							})
-						}
-					}
-				}
-
-				// Check for dynamic class attribute
-				for _, attr := range n.Attributes {
-					if attr.Name == "class" {
-						if goExpr, ok := attr.Value.(*GoExpr); ok {
+				// Skip creating bindings for elements inside for loops - their variable
+				// names are scoped to the loop and can't be referenced from the binding code
+				if !inLoop {
+					// Check text content in children for state usage
+					for _, child := range n.Children {
+						if goExpr, ok := child.(*GoExpr); ok {
 							var deps []string
 							isExplicit := false
 
@@ -965,37 +948,83 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 									StateVars:    deps,
 									Element:      n,
 									ElementName:  elementName,
-									Attribute:    "class",
+									Attribute:    "text",
 									Expr:         goExpr.Code,
 									ExplicitDeps: isExplicit,
 								})
 							}
 						}
 					}
+
+					// Check for dynamic class attribute
+					for _, attr := range n.Attributes {
+						if attr.Name == "class" {
+							if goExpr, ok := attr.Value.(*GoExpr); ok {
+								var deps []string
+								isExplicit := false
+
+								if explicitDeps != nil {
+									deps = explicitDeps
+									isExplicit = true
+								} else {
+									deps = a.detectGetCalls(goExpr.Code, stateNames)
+								}
+
+								if len(deps) > 0 {
+									bindings = append(bindings, StateBinding{
+										StateVars:    deps,
+										Element:      n,
+										ElementName:  elementName,
+										Attribute:    "class",
+										Expr:         goExpr.Code,
+										ExplicitDeps: isExplicit,
+									})
+								}
+							}
+						}
+					}
 				}
 
-				elementIndex++
-				scan(n.Children)
+				// Only increment counter if the element uses it (matches generator behavior)
+				if usesCounter {
+					elementIndex++
+				}
+
+				// Count GoExpr and TextContent children that become separate text elements.
+				// This matches the generator's behavior where it creates new elements for these.
+				// Exception: span/p elements with a single text child put it in WithText, not as child element.
+				skipChildren := (n.Tag == "span" || n.Tag == "p") && len(n.Children) == 1
+				if !skipChildren {
+					for _, child := range n.Children {
+						switch child.(type) {
+						case *GoExpr, *TextContent:
+							elementIndex++
+						}
+					}
+				}
+
+				scan(n.Children, inLoop)
 
 			case *LetBinding:
 				// LetBindings wrap elements; recursively scan the wrapped element's children.
 				// The wrapped element itself is handled when we encounter the Element node.
-				scan(n.Element.Children)
+				scan(n.Element.Children, inLoop)
 
 			case *ForLoop:
-				scan(n.Body)
+				// Elements inside for loops have loop-scoped variable names
+				scan(n.Body, true)
 
 			case *IfStmt:
-				scan(n.Then)
-				scan(n.Else)
+				scan(n.Then, inLoop)
+				scan(n.Else, inLoop)
 
 			case *ComponentCall:
-				scan(n.Children)
+				scan(n.Children, inLoop)
 			}
 		}
 	}
 
-	scan(comp.Body)
+	scan(comp.Body, false)
 	return bindings
 }
 
