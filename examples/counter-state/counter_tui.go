@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/grindlemire/go-tui/pkg/debug"
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
@@ -12,6 +14,7 @@ import (
 
 func increment(count *tui.State[int]) func() {
 	return func() {
+		debug.Log("increment callback called")
 		count.Set(count.Get() + 1)
 	}
 }
@@ -19,6 +22,18 @@ func increment(count *tui.State[int]) func() {
 func decrement(count *tui.State[int]) func() {
 	return func() {
 		count.Set(count.Get() - 1)
+	}
+}
+
+func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
+	return func(e tui.KeyEvent) {
+		debug.Log("[CounterUI] handleKeys called: %+v", e)
+		switch e.Rune {
+		case '+':
+			count.Set(count.Get() + 1)
+		case '-':
+			count.Set(count.Get() - 1)
+		}
 	}
 }
 
@@ -40,6 +55,7 @@ func CounterUI() CounterUIView {
 		element.WithDirection(layout.Column),
 		element.WithGap(1),
 		element.WithPadding(2),
+		element.WithOnKeyPress(handleKeys(count)),
 	)
 	__tui_1 := element.New(
 		element.WithBorder(tui.BorderRounded),

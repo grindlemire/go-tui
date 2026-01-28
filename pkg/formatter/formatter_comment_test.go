@@ -124,7 +124,7 @@ package main
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -179,7 +179,7 @@ func TestFormatCommentTrailing(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -219,7 +219,7 @@ func TestFormatCommentOrphan(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -275,7 +275,7 @@ import "fmt"
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 
 			// First format
 			first, err := fmtr.Format("test.tui", tt.input)
@@ -368,7 +368,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -438,7 +438,7 @@ func TestFormatLineCommentSpacing(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -536,7 +536,7 @@ import "fmt"
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -618,7 +618,7 @@ func helper(s string) string {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)

@@ -5,6 +5,7 @@
 package element
 
 import (
+	"github.com/grindlemire/go-tui/pkg/debug"
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
@@ -431,6 +432,7 @@ func (e *Element) IsFocused() bool {
 // Focus marks this element and all children as focused.
 // Calls onFocus callback if set, then cascades to children.
 func (e *Element) Focus() {
+	debug.Log("Element.Focus: text=%q", e.text)
 	e.focused = true
 	if e.onFocus != nil {
 		e.onFocus()
@@ -474,19 +476,32 @@ func (e *Element) SetOnClick(fn func()) {
 // HandleEvent dispatches an event to this element's handler.
 // Returns true if the event was consumed.
 func (e *Element) HandleEvent(event tui.Event) bool {
+	debug.Log("Element.HandleEvent: event=%T text=%q focusable=%v onClick=%v", event, e.text, e.focusable, e.onClick != nil)
+
 	// First, let user handler try to consume the event (legacy bool-returning handler)
 	if e.onEvent != nil {
+		debug.Log("Element.HandleEvent: calling onEvent handler")
 		if e.onEvent(event) {
+			debug.Log("Element.HandleEvent: onEvent consumed event")
 			return true
 		}
 	}
 
 	// Call the new-style handlers (no bool return - mutations mark dirty automatically)
 	if keyEvent, ok := event.(tui.KeyEvent); ok {
+		debug.Log("Element.HandleEvent: KeyEvent key=%d rune=%c", keyEvent.Key, keyEvent.Rune)
 		if e.onKeyPress != nil {
+			debug.Log("Element.HandleEvent: calling onKeyPress handler")
 			e.onKeyPress(keyEvent)
 			// Note: new-style handlers don't return bool, so we continue processing
 			// The handler will mark dirty via mutations if needed
+		}
+
+		// Trigger onClick on Enter or Space when focused
+		if e.onClick != nil && (keyEvent.Key == tui.KeyEnter || keyEvent.Rune == ' ') {
+			debug.Log("Element.HandleEvent: triggering onClick via Enter/Space")
+			e.onClick()
+			return true
 		}
 	}
 
@@ -497,6 +512,7 @@ func (e *Element) HandleEvent(event tui.Event) bool {
 		}
 	}
 
+	debug.Log("Element.HandleEvent: event not consumed")
 	return false
 }
 

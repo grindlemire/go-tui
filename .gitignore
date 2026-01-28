@@ -8,6 +8,9 @@
 /streaming
 /streaming-dsl
 /scrollabe
+/counter-state
+
+debug.log
 
 # Go
 *.exe

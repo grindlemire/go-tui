@@ -521,7 +521,9 @@ import (
 )
 
 @component Test() {
-	<div direction={layout.Column}></div>
+	<div direction={layout.Column}>
+		<span>{fmt.Sprintf("hello")}</span>
+	</div>
 }`
 
 	output, err := ParseAndGenerate("test.tui", input)

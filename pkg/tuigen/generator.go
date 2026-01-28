@@ -3,8 +3,9 @@ package tuigen
 import (
 	"bytes"
 	"fmt"
-	"go/format"
 	"strconv"
+
+	"golang.org/x/tools/imports"
 )
 
 // Generator transforms a validated AST into Go source code.
@@ -59,8 +60,8 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 		g.generateComponent(comp)
 	}
 
-	// Format the output with gofmt
-	return format.Source(g.buf.Bytes())
+	// Format and fix imports with goimports
+	return imports.Process(g.sourceFile, g.buf.Bytes(), nil)
 }
 
 // generateHeader writes the "DO NOT EDIT" comment.

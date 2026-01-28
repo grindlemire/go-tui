@@ -1,11 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/grindlemire/go-tui/pkg/debug"
+	"github.com/grindlemire/go-tui/pkg/layout"
+	"github.com/grindlemire/go-tui/pkg/tui"
+	"github.com/grindlemire/go-tui/pkg/tui/element"
+)
 
 @component CounterUI() {
 	count := tui.NewState(0)
-
-	<div class="flex-col gap-1 p-2">
+	<div class="flex-col gap-1 p-2" onKeyPress={handleKeys(count)}>
 		<div class="border-rounded p-1 flex-col items-center justify-center">
 			<span class="font-bold text-cyan">Reactive Counter</span>
 			<hr class="border" />
@@ -25,6 +30,7 @@ import "fmt"
 
 func increment(count *tui.State[int]) func() {
 	return func() {
+		debug.Log("increment callback called")
 		count.Set(count.Get() + 1)
 	}
 }
@@ -32,5 +38,17 @@ func increment(count *tui.State[int]) func() {
 func decrement(count *tui.State[int]) func() {
 	return func() {
 		count.Set(count.Get() - 1)
+	}
+}
+
+func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
+	return func(e tui.KeyEvent) {
+		debug.Log("[CounterUI] handleKeys called: %+v", e)
+		switch e.Rune {
+		case '+':
+			count.Set(count.Get() + 1)
+		case '-':
+			count.Set(count.Get() - 1)
+		}
 	}
 }

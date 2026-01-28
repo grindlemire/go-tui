@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+// newTestFormatter creates a formatter with import fixing disabled for tests
+// that don't specifically test import behavior.
+func newTestFormatter() *Formatter {
+	f := New()
+	f.FixImports = false
+	return f
+}
+
 // TestFormat tests basic formatting scenarios.
 func TestFormat(t *testing.T) {
 	type tc struct {
@@ -308,7 +316,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			got, err := fmtr.Format("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
@@ -359,7 +367,7 @@ import (
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 
 			// First format
 			first, err := fmtr.Format("test.tui", tt.input)
@@ -410,7 +418,7 @@ func TestFormatWithResult(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			res, err := fmtr.FormatWithResult("test.tui", tt.input)
 			if err != nil {
 				t.Fatalf("FormatWithResult() error = %v", err)
@@ -447,7 +455,7 @@ func TestFormatParseError(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fmtr := New()
+			fmtr := newTestFormatter()
 			_, err := fmtr.Format("test.tui", tt.input)
 			if err == nil {
 				t.Error("Format() expected error, got nil")
@@ -510,7 +518,7 @@ import "fmt"
 	<span>{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}</span>
 }
 `
-	fmtr := New()
+	fmtr := newTestFormatter()
 	got, err := fmtr.Format("test.tui", input)
 	if err != nil {
 		t.Fatalf("Format() error = %v", err)
@@ -519,5 +527,71 @@ import "fmt"
 	// Check that the Go expression is preserved
 	if !strings.Contains(got, `{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}`) {
 		t.Errorf("Go expression not preserved in output:\n%s", got)
+	}
+}
+
+// TestFormatAutoImports tests that missing imports are automatically added.
+func TestFormatAutoImports(t *testing.T) {
+	type tc struct {
+		name  string
+		input string
+		want  []string // import paths that should be present
+	}
+
+	tests := map[string]tc{
+		"adds tui and element imports": {
+			input: `package main
+
+@component Hello() {
+	<span>Hello</span>
+}
+`,
+			want: []string{
+				"github.com/grindlemire/go-tui/pkg/tui",
+				"github.com/grindlemire/go-tui/pkg/tui/element",
+			},
+		},
+		"adds fmt import when used": {
+			input: `package main
+
+@component Hello() {
+	<span>{fmt.Sprintf("hello")}</span>
+}
+`,
+			want: []string{
+				"fmt",
+				"github.com/grindlemire/go-tui/pkg/tui",
+				"github.com/grindlemire/go-tui/pkg/tui/element",
+			},
+		},
+		"preserves existing imports": {
+			input: `package main
+
+import "fmt"
+
+@component Hello() {
+	<span>{fmt.Sprintf("hello")}</span>
+}
+`,
+			want: []string{
+				"fmt",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := New() // Use default formatter with FixImports=true
+			got, err := fmtr.Format("test.tui", tt.input)
+			if err != nil {
+				t.Fatalf("Format() error = %v", err)
+			}
+
+			for _, imp := range tt.want {
+				if !strings.Contains(got, `"`+imp+`"`) {
+					t.Errorf("missing import %q in output:\n%s", imp, got)
+				}
+			}
+		})
 	}
 }

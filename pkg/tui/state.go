@@ -30,6 +30,8 @@ package tui
 import (
 	"sync"
 	"sync/atomic"
+
+	"github.com/grindlemire/go-tui/pkg/debug"
 )
 
 // batchContext tracks batch state for deferring binding execution.
@@ -96,6 +98,7 @@ func (s *State[T]) Get() T {
 // If called within a Batch(), binding execution is deferred until the
 // batch completes.
 func (s *State[T]) Set(v T) {
+	debug.Log("State.Set: setting value to %v", v)
 	s.mu.Lock()
 	s.value = v
 	// Copy active bindings while holding lock and remove inactive ones
@@ -135,9 +138,12 @@ func (s *State[T]) Set(v T) {
 
 	// Execute bindings immediately if not batching
 	if !isBatching {
+		debug.Log("State.Set: executing %d bindings immediately", len(activeBindings))
 		for _, b := range activeBindings {
 			b.fn(v)
 		}
+	} else {
+		debug.Log("State.Set: deferred %d bindings (batching)", len(activeBindings))
 	}
 }
 

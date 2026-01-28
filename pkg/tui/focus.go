@@ -1,5 +1,7 @@
 package tui
 
+import "github.com/grindlemire/go-tui/pkg/debug"
+
 // Focusable is implemented by elements that can receive keyboard focus.
 // Elements implementing Focusable should embed *element.Element and
 // add input handling logic.
@@ -43,13 +45,16 @@ func NewFocusManager() *FocusManager {
 
 // Register adds a focusable element to the manager.
 func (f *FocusManager) Register(elem Focusable) {
+	debug.Log("FocusManager.Register: adding element %T (focusable=%v)", elem, elem.IsFocusable())
 	f.elements = append(f.elements, elem)
 
 	// If this is the first element and nothing is focused, focus it
 	if f.current == -1 && elem.IsFocusable() {
+		debug.Log("FocusManager.Register: auto-focusing first element (index=%d)", len(f.elements)-1)
 		f.current = len(f.elements) - 1
 		elem.Focus()
 	}
+	debug.Log("FocusManager.Register: total elements=%d, current=%d", len(f.elements), f.current)
 }
 
 // Unregister removes a focusable element from the manager.
@@ -197,10 +202,14 @@ func (f *FocusManager) Prev() {
 // Returns true if the event was handled.
 func (f *FocusManager) Dispatch(event Event) bool {
 	focused := f.Focused()
+	debug.Log("FocusManager.Dispatch: event=%T focused=%v (current=%d, total=%d)", event, focused != nil, f.current, len(f.elements))
 	if focused == nil {
+		debug.Log("FocusManager.Dispatch: no focused element, returning false")
 		return false
 	}
-	return focused.HandleEvent(event)
+	result := focused.HandleEvent(event)
+	debug.Log("FocusManager.Dispatch: HandleEvent returned %v", result)
+	return result
 }
 
 // focusNextFrom finds the next focusable element starting from idx.
