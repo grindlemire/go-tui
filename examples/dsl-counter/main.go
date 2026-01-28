@@ -1,10 +1,10 @@
 // Package main demonstrates using DSL-generated components.
-// Run `go generate` to regenerate counter_tui.go from counter.tui.
+// Run `go generate` to regenerate counter_gsx.go from counter.gsx.
 //
 // To build and run:
 //
 //	cd examples/dsl-counter
-//	go run ../../cmd/tui generate counter.tui
+//	go run ../../cmd/tui generate counter.gsx
 //	go run .
 package main
 
@@ -18,7 +18,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-//go:generate go run ../../cmd/tui generate counter.tui
+//go:generate go run ../../cmd/tui generate counter.gsx
 
 func main() {
 	// Create the application

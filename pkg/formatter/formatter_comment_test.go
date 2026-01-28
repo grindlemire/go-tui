@@ -16,14 +16,14 @@ func TestFormatCommentLeading(t *testing.T) {
 			input: `package main
 
 // This is a doc comment
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
 // This is a doc comment
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -31,14 +31,14 @@ func TestFormatCommentLeading(t *testing.T) {
 		"leading comment before element": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	// Comment before element
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	// Comment before element
 	<span>Hello</span>
 }
@@ -47,7 +47,7 @@ func TestFormatCommentLeading(t *testing.T) {
 		"leading comment before if": {
 			input: `package main
 
-@component Hello(show bool) {
+func Hello(show bool) Element {
 	// Comment before if
 	@if show {
 		<span>Hello</span>
@@ -56,7 +56,7 @@ func TestFormatCommentLeading(t *testing.T) {
 `,
 			want: `package main
 
-@component Hello(show bool) {
+func Hello(show bool) Element {
 	// Comment before if
 	@if show {
 		<span>Hello</span>
@@ -67,7 +67,7 @@ func TestFormatCommentLeading(t *testing.T) {
 		"leading comment before for": {
 			input: `package main
 
-@component Hello(items []string) {
+func Hello(items []string) Element {
 	// Comment before for
 	@for _, item := range items {
 		<span>{item}</span>
@@ -76,7 +76,7 @@ func TestFormatCommentLeading(t *testing.T) {
 `,
 			want: `package main
 
-@component Hello(items []string) {
+func Hello(items []string) Element {
 	// Comment before for
 	@for _, item := range items {
 		<span>{item}</span>
@@ -89,7 +89,7 @@ func TestFormatCommentLeading(t *testing.T) {
 
 /* Block comment
    spanning multiple lines */
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -99,7 +99,7 @@ func TestFormatCommentLeading(t *testing.T) {
 Block comment
 spanning multiple lines
 */
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -108,14 +108,14 @@ spanning multiple lines
 			input: `// File-level comment
 package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
 			want: `// File-level comment
 package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -125,7 +125,7 @@ package main
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -147,13 +147,13 @@ func TestFormatCommentTrailing(t *testing.T) {
 		"trailing comment on element": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>  // trailing
 }
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>  // trailing
 }
 `,
@@ -161,13 +161,13 @@ func TestFormatCommentTrailing(t *testing.T) {
 		"trailing comment on self-closing element": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<hr />  // divider
 }
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	<hr />  // divider
 }
 `,
@@ -180,7 +180,7 @@ func TestFormatCommentTrailing(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -202,14 +202,14 @@ func TestFormatCommentOrphan(t *testing.T) {
 		"orphan comment in component body": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	// orphan comment in body
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	// orphan comment in body
 	<span>Hello</span>
 }
@@ -220,7 +220,7 @@ func TestFormatCommentOrphan(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -243,7 +243,7 @@ func TestFormatCommentRoundTrip(t *testing.T) {
 package main
 
 // Doc comment
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -251,7 +251,7 @@ package main
 		"file with trailing comments": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>  // inline
 }
 `,
@@ -263,7 +263,7 @@ package main
 import "fmt"
 
 // Header component
-@component Header(title string) {
+func Header(title string) Element {
 	// Container
 	<div class="header">
 		<span>{title}</span>  // title text
@@ -278,13 +278,13 @@ import "fmt"
 			fmtr := New()
 
 			// First format
-			first, err := fmtr.Format("test.tui", tt.input)
+			first, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("First Format() error = %v", err)
 			}
 
 			// Second format (should be identical)
-			second, err := fmtr.Format("test.tui", first)
+			second, err := fmtr.Format("test.gsx", first)
 			if err != nil {
 				t.Fatalf("Second Format() error = %v", err)
 			}
@@ -311,7 +311,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 // For package comment
 
 // ItemList test
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -321,7 +321,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 // For package comment
 
 // ItemList test
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -329,7 +329,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 		"preserve blank line inside component": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	// First comment
 
 	// Second comment
@@ -338,7 +338,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	// First comment
 
 	// Second comment
@@ -351,7 +351,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 
 // First comment
 // Second comment
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -359,7 +359,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 
 // First comment
 // Second comment
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -369,7 +369,7 @@ func TestFormatCommentGroupSeparation(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -392,14 +392,14 @@ func TestFormatLineCommentSpacing(t *testing.T) {
 			input: `package main
 
 //comment without space
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
 // comment without space
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -408,14 +408,14 @@ func TestFormatLineCommentSpacing(t *testing.T) {
 			input: `package main
 
 // comment with space
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
 			want: `package main
 
 // comment with space
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -423,13 +423,13 @@ func TestFormatLineCommentSpacing(t *testing.T) {
 		"trailing comment missing space": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>  //trailing
 }
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>  // trailing
 }
 `,
@@ -439,7 +439,7 @@ func TestFormatLineCommentSpacing(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -463,7 +463,7 @@ func TestFormatInlineBlockComment(t *testing.T) {
 
 import "fmt"
 
-@component Hello(item string) {
+func Hello(item string) Element {
 	<span>{fmt.Sprintf("> %s", /* ItemList item*/ item)}</span>
 }
 `,
@@ -471,7 +471,7 @@ import "fmt"
 
 import "fmt"
 
-@component Hello(item string) {
+func Hello(item string) Element {
 	<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
 }
 `,
@@ -479,13 +479,13 @@ import "fmt"
 		"missing space after opening": {
 			input: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/*test*/ x}</span>
 }
 `,
 			want: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/* test */ x}</span>
 }
 `,
@@ -493,13 +493,13 @@ import "fmt"
 		"missing both spaces": {
 			input: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/*test comment*/ x}</span>
 }
 `,
 			want: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/* test comment */ x}</span>
 }
 `,
@@ -507,13 +507,13 @@ import "fmt"
 		"already properly formatted": {
 			input: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/* test */ x}</span>
 }
 `,
 			want: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/* test */ x}</span>
 }
 `,
@@ -521,13 +521,13 @@ import "fmt"
 		"empty block comment": {
 			input: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/**/ x}</span>
 }
 `,
 			want: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/* */ x}</span>
 }
 `,
@@ -537,7 +537,7 @@ import "fmt"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -566,7 +566,7 @@ import "fmt"
 
 // Main component documentation
 // Multiple lines
-@component Main(items []string, selected int) {
+func Main(items []string, selected int) Element {
 	// Container div
 	<div class="main">
 		// Loop through items
@@ -593,7 +593,7 @@ import "fmt"
 
 // Main component documentation
 // Multiple lines
-@component Main(items []string, selected int) {
+func Main(items []string, selected int) Element {
 	// Container div
 	<div class="main">
 		// Loop through items
@@ -619,7 +619,7 @@ func helper(s string) string {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}

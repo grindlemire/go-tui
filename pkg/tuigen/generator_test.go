@@ -16,7 +16,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 	tests := map[string]tc{
 		"empty component": {
 			input: `package x
-@component Empty() {
+func Empty() Element {
 }`,
 			wantContains: []string{
 				"func Empty() *element.Element",
@@ -25,7 +25,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 		},
 		"component with single element": {
 			input: `package x
-@component Header() {
+func Header() Element {
 	<div></div>
 }`,
 			wantContains: []string{
@@ -36,7 +36,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 		},
 		"component with params": {
 			input: `package x
-@component Greeting(name string, count int) {
+func Greeting(name string, count int) Element {
 	<span>Hello</span>
 }`,
 			wantContains: []string{
@@ -47,7 +47,7 @@ func TestGenerator_SimpleComponent(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -76,7 +76,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 	tests := map[string]tc{
 		"width attribute": {
 			input: `package x
-@component Box() {
+func Box() Element {
 	<div width=100></div>
 }`,
 			wantContains: []string{
@@ -85,7 +85,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		},
 		"multiple attributes": {
 			input: `package x
-@component Box() {
+func Box() Element {
 	<div width=100 height=50 gap=2></div>
 }`,
 			wantContains: []string{
@@ -96,7 +96,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		},
 		"string attribute": {
 			input: `package x
-@component Text() {
+func Text() Element {
 	<span text="hello"></span>
 }`,
 			wantContains: []string{
@@ -105,7 +105,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		},
 		"expression attribute": {
 			input: `package x
-@component Box() {
+func Box() Element {
 	<div direction={layout.Column}></div>
 }`,
 			wantContains: []string{
@@ -114,7 +114,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		},
 		"border attribute": {
 			input: `package x
-@component Box() {
+func Box() Element {
 	<div border={tui.BorderSingle}></div>
 }`,
 			wantContains: []string{
@@ -123,7 +123,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 		},
 		"onEvent attribute": {
 			input: `package x
-@component Button() {
+func Button() Element {
 	<div onEvent={handleClick}></div>
 }`,
 			wantContains: []string{
@@ -134,7 +134,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -151,7 +151,7 @@ func TestGenerator_ElementWithAttributes(t *testing.T) {
 
 func TestGenerator_NestedElements(t *testing.T) {
 	input := `package x
-@component Layout() {
+func Layout() Element {
 	<div>
 		<div>
 			<span>nested</span>
@@ -159,7 +159,7 @@ func TestGenerator_NestedElements(t *testing.T) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -184,12 +184,12 @@ func TestGenerator_NestedElements(t *testing.T) {
 
 func TestGenerator_LetBinding(t *testing.T) {
 	input := `package x
-@component Counter() {
+func Counter() Element {
 	@let countText = <span>{"0"}</span>
 	<div></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -217,7 +217,7 @@ func TestGenerator_ForLoop(t *testing.T) {
 	tests := map[string]tc{
 		"basic for loop": {
 			input: `package x
-@component List(items []string) {
+func List(items []string) Element {
 	<div>
 		@for i, item := range items {
 			<span>{item}</span>
@@ -231,7 +231,7 @@ func TestGenerator_ForLoop(t *testing.T) {
 		},
 		"for with underscore index": {
 			input: `package x
-@component List(items []string) {
+func List(items []string) Element {
 	<div>
 		@for _, item := range items {
 			<span>{item}</span>
@@ -244,7 +244,7 @@ func TestGenerator_ForLoop(t *testing.T) {
 		},
 		"for with value only": {
 			input: `package x
-@component List(items []string) {
+func List(items []string) Element {
 	<div>
 		@for item := range items {
 			<span>{item}</span>
@@ -259,7 +259,7 @@ func TestGenerator_ForLoop(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -283,7 +283,7 @@ func TestGenerator_IfStatement(t *testing.T) {
 	tests := map[string]tc{
 		"simple if": {
 			input: `package x
-@component View(show bool) {
+func View(show bool) Element {
 	<div>
 		@if show {
 			<span>visible</span>
@@ -296,7 +296,7 @@ func TestGenerator_IfStatement(t *testing.T) {
 		},
 		"if-else": {
 			input: `package x
-@component View(loading bool) {
+func View(loading bool) Element {
 	<div>
 		@if loading {
 			<span>loading</span>
@@ -312,7 +312,7 @@ func TestGenerator_IfStatement(t *testing.T) {
 		},
 		"if-else-if": {
 			input: `package x
-@component View(state int) {
+func View(state int) Element {
 	<div>
 		@if state == 0 {
 			<span>zero</span>
@@ -331,7 +331,7 @@ func TestGenerator_IfStatement(t *testing.T) {
 		},
 		"complex condition": {
 			input: `package x
-@component View(err error) {
+func View(err error) Element {
 	<div>
 		@if err != nil {
 			<span>error</span>
@@ -346,7 +346,7 @@ func TestGenerator_IfStatement(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -370,7 +370,7 @@ func TestGenerator_TextElement(t *testing.T) {
 	tests := map[string]tc{
 		"text with literal content": {
 			input: `package x
-@component Text() {
+func Text() Element {
 	<span>Hello World</span>
 }`,
 			wantContains: []string{
@@ -379,7 +379,7 @@ func TestGenerator_TextElement(t *testing.T) {
 		},
 		"text with expression content": {
 			input: `package x
-@component Text(msg string) {
+func Text(msg string) Element {
 	<span>{msg}</span>
 }`,
 			wantContains: []string{
@@ -388,7 +388,7 @@ func TestGenerator_TextElement(t *testing.T) {
 		},
 		"text with formatted expression": {
 			input: `package x
-@component Text(count int) {
+func Text(count int) Element {
 	<span>{fmt.Sprintf("Count: %d", count)}</span>
 }`,
 			wantContains: []string{
@@ -399,7 +399,7 @@ func TestGenerator_TextElement(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -423,7 +423,7 @@ func TestGenerator_RawGoStatements(t *testing.T) {
 	tests := map[string]tc{
 		"variable assignment": {
 			input: `package x
-@component Counter() {
+func Counter() Element {
 	count := 0
 	<span>hello</span>
 }`,
@@ -434,7 +434,7 @@ func TestGenerator_RawGoStatements(t *testing.T) {
 		"function call": {
 			input: `package x
 import "fmt"
-@component Debug() {
+func Debug() Element {
 	fmt.Println("debug")
 	<span>hello</span>
 }`,
@@ -444,7 +444,7 @@ import "fmt"
 		},
 		"multiple statements": {
 			input: `package x
-@component Complex() {
+func Complex() Element {
 	x := 1
 	y := 2
 	z := x + y
@@ -460,7 +460,7 @@ import "fmt"
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -482,11 +482,11 @@ func helper(x int) int {
 	return x * 2
 }
 
-@component Test() {
+func Test() Element {
 	<span>hello</span>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -509,11 +509,11 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 )
 
-@component Test() {
+func Test() Element {
 	<div direction={layout.Column}></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -537,11 +537,11 @@ import (
 
 func TestGenerator_Header(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<span>hello</span>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -552,7 +552,7 @@ func TestGenerator_Header(t *testing.T) {
 		t.Error("missing DO NOT EDIT header")
 	}
 
-	if !strings.Contains(code, "Source: test.tui") {
+	if !strings.Contains(code, "Source: test.gsx") {
 		t.Error("missing source file comment")
 	}
 }
@@ -569,7 +569,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 )
 
-@component Dashboard(items []string) {
+func Dashboard(items []string) Element {
 	<div direction={layout.Column} padding=1>
 		<span>Header</span>
 		@for i, item := range items {
@@ -582,7 +582,7 @@ import (
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -622,7 +622,7 @@ func countDone(items []Item) int {
 	return count
 }
 
-@component Dashboard(items []Item, selectedIndex int) {
+func Dashboard(items []Item, selectedIndex int) Element {
 	<div direction={layout.Column} padding=1>
 		<div
 			border={tui.BorderRounded}
@@ -645,7 +645,7 @@ func countDone(items []Item) int {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("components.tui", input)
+	output, err := ParseAndGenerate("components.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -684,13 +684,13 @@ func countDone(items []Item) int {
 
 func TestGenerator_ScrollableAttribute(t *testing.T) {
 	input := `package x
-@component ScrollView() {
+func ScrollView() Element {
 	<div scrollable={element.ScrollVertical}>
 		<span>content</span>
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -704,13 +704,13 @@ func TestGenerator_ScrollableAttribute(t *testing.T) {
 
 func TestGenerator_SelfClosingElement(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<input />
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -725,13 +725,13 @@ func TestGenerator_SelfClosingElement(t *testing.T) {
 
 func TestGenerator_LetBindingAsChild(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div>
 		@let item = <span>hello</span>
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -752,15 +752,15 @@ func TestGenerator_LetBindingAsChild(t *testing.T) {
 func TestGenerator_MultipleComponents(t *testing.T) {
 	input := `package x
 
-@component Header() {
+func Header() Element {
 	<span>Header</span>
 }
 
-@component Footer() {
+func Footer() Element {
 	<span>Footer</span>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -778,7 +778,7 @@ func TestGenerator_MultipleComponents(t *testing.T) {
 
 func TestGenerator_ExpressionInLoopBody(t *testing.T) {
 	input := `package x
-@component List(items []string) {
+func List(items []string) Element {
 	<div>
 		@for _, item := range items {
 			{item}
@@ -786,7 +786,7 @@ func TestGenerator_ExpressionInLoopBody(t *testing.T) {
 	</div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -801,11 +801,11 @@ func TestGenerator_ExpressionInLoopBody(t *testing.T) {
 
 func TestGenerator_BooleanAttributes(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div scrollable={element.ScrollVertical}></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -819,11 +819,11 @@ func TestGenerator_BooleanAttributes(t *testing.T) {
 
 func TestGenerator_FlexAttributes(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div flexGrow=1 flexShrink=0></div>
 }`
 
-	output, err := ParseAndGenerate("test.tui", input)
+	output, err := ParseAndGenerate("test.gsx", input)
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -841,7 +841,7 @@ func TestGenerator_FlexAttributes(t *testing.T) {
 
 func TestGenerator_ComponentWithChildren(t *testing.T) {
 	input := `package x
-@component Card(title string) {
+func Card(title string) Element {
 	<div>
 		<span>{title}</span>
 		{children...}
@@ -849,7 +849,7 @@ func TestGenerator_ComponentWithChildren(t *testing.T) {
 }`
 
 	// First parse and analyze
-	lexer := NewLexer("test.tui", input)
+	lexer := NewLexer("test.gsx", input)
 	parser := NewParser(lexer)
 	file, err := parser.ParseFile()
 	if err != nil {
@@ -868,7 +868,7 @@ func TestGenerator_ComponentWithChildren(t *testing.T) {
 
 	// Generate
 	gen := NewGenerator()
-	output, err := gen.Generate(file, "test.tui")
+	output, err := gen.Generate(file, "test.gsx")
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -888,16 +888,16 @@ func TestGenerator_ComponentWithChildren(t *testing.T) {
 
 func TestGenerator_ComponentCall(t *testing.T) {
 	input := `package x
-@component Header(title string) {
+func Header(title string) Element {
 	<span>{title}</span>
 }
 
-@component App() {
+func App() Element {
 	@Header("Welcome")
 }`
 
 	// Parse and analyze
-	lexer := NewLexer("test.tui", input)
+	lexer := NewLexer("test.gsx", input)
 	parser := NewParser(lexer)
 	file, err := parser.ParseFile()
 	if err != nil {
@@ -911,7 +911,7 @@ func TestGenerator_ComponentCall(t *testing.T) {
 
 	// Generate
 	gen := NewGenerator()
-	output, err := gen.Generate(file, "test.tui")
+	output, err := gen.Generate(file, "test.gsx")
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -926,14 +926,14 @@ func TestGenerator_ComponentCall(t *testing.T) {
 
 func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 	input := `package x
-@component Card(title string) {
+func Card(title string) Element {
 	<div>
 		<span>{title}</span>
 		{children...}
 	</div>
 }
 
-@component App() {
+func App() Element {
 	@Card("My Card") {
 		<span>Line 1</span>
 		<span>Line 2</span>
@@ -941,7 +941,7 @@ func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 }`
 
 	// Parse and analyze
-	lexer := NewLexer("test.tui", input)
+	lexer := NewLexer("test.gsx", input)
 	parser := NewParser(lexer)
 	file, err := parser.ParseFile()
 	if err != nil {
@@ -955,7 +955,7 @@ func TestGenerator_ComponentCallWithChildren(t *testing.T) {
 
 	// Generate
 	gen := NewGenerator()
-	output, err := gen.Generate(file, "test.tui")
+	output, err := gen.Generate(file, "test.gsx")
 	if err != nil {
 		t.Fatalf("generation failed: %v", err)
 	}
@@ -992,7 +992,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 	tests := map[string]tc{
 		"layout classes": {
 			input: `package x
-@component Box() {
+func Box() Element {
 	<div class="flex flex-col gap-2 p-4"></div>
 }`,
 			wantContains: []string{
@@ -1004,7 +1004,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"border class": {
 			input: `package x
-@component Box() {
+func Box() Element {
 	<div class="border-rounded"></div>
 }`,
 			wantContains: []string{
@@ -1013,7 +1013,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"text style classes": {
 			input: `package x
-@component Text() {
+func Text() Element {
 	<span class="font-bold text-cyan">hello</span>
 }`,
 			wantContains: []string{
@@ -1022,7 +1022,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"combined text and layout classes": {
 			input: `package x
-@component Card() {
+func Card() Element {
 	<div class="flex-col p-2 border">
 		<span class="font-bold italic">Title</span>
 	</div>
@@ -1036,7 +1036,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"alignment classes": {
 			input: `package x
-@component Center() {
+func Center() Element {
 	<div class="flex items-center justify-center"></div>
 }`,
 			wantContains: []string{
@@ -1046,7 +1046,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"sizing classes": {
 			input: `package x
-@component Sized() {
+func Sized() Element {
 	<div class="w-50 h-20 min-w-10 max-w-100"></div>
 }`,
 			wantContains: []string{
@@ -1058,7 +1058,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"scroll classes": {
 			input: `package x
-@component Scrollable() {
+func Scrollable() Element {
 	<div class="overflow-y-scroll"></div>
 }`,
 			wantContains: []string{
@@ -1067,7 +1067,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 		},
 		"class with explicit attribute": {
 			input: `package x
-@component Mixed() {
+func Mixed() Element {
 	<div class="flex-col" gap=5></div>
 }`,
 			wantContains: []string{
@@ -1079,7 +1079,7 @@ func TestGenerator_TailwindClassAttribute(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1103,7 +1103,7 @@ func TestGenerator_HR(t *testing.T) {
 	tests := map[string]tc{
 		"basic hr": {
 			input: `package x
-@component Divider() {
+func Divider() Element {
 	<div>
 		<hr/>
 	</div>
@@ -1114,7 +1114,7 @@ func TestGenerator_HR(t *testing.T) {
 		},
 		"hr with border-double class": {
 			input: `package x
-@component Divider() {
+func Divider() Element {
 	<div>
 		<hr class="border-double"/>
 	</div>
@@ -1126,7 +1126,7 @@ func TestGenerator_HR(t *testing.T) {
 		},
 		"hr with text-cyan class": {
 			input: `package x
-@component Divider() {
+func Divider() Element {
 	<div>
 		<hr class="text-cyan"/>
 	</div>
@@ -1138,7 +1138,7 @@ func TestGenerator_HR(t *testing.T) {
 		},
 		"hr with border-thick and text color": {
 			input: `package x
-@component Divider() {
+func Divider() Element {
 	<div>
 		<hr class="border-thick text-red"/>
 	</div>
@@ -1153,7 +1153,7 @@ func TestGenerator_HR(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}
@@ -1177,7 +1177,7 @@ func TestGenerator_BR(t *testing.T) {
 	tests := map[string]tc{
 		"basic br": {
 			input: `package x
-@component Lines() {
+func Lines() Element {
 	<div>
 		<span>Line 1</span>
 		<br/>
@@ -1193,7 +1193,7 @@ func TestGenerator_BR(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			output, err := ParseAndGenerate("test.tui", tt.input)
+			output, err := ParseAndGenerate("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("generation failed: %v", err)
 			}

@@ -225,22 +225,22 @@ func TestVirtualFileCache(t *testing.T) {
 	tests := map[string]tc{
 		"put and get": {
 			operations: func(c *VirtualFileCache) {
-				c.Put("file:///test.tui", "file:///test_tui_generated.go", "content", NewSourceMap(), 1)
+				c.Put("file:///test.gsx", "file:///test_gsx_generated.go", "content", NewSourceMap(), 1)
 			},
-			tuiURI:    "file:///test.tui",
+			tuiURI:    "file:///test.gsx",
 			wantFound: true,
 		},
 		"get nonexistent": {
 			operations: func(c *VirtualFileCache) {},
-			tuiURI:     "file:///nonexistent.tui",
+			tuiURI:     "file:///nonexistent.gsx",
 			wantFound:  false,
 		},
 		"put and remove": {
 			operations: func(c *VirtualFileCache) {
-				c.Put("file:///test.tui", "file:///test_tui_generated.go", "content", NewSourceMap(), 1)
-				c.Remove("file:///test.tui")
+				c.Put("file:///test.gsx", "file:///test_gsx_generated.go", "content", NewSourceMap(), 1)
+				c.Remove("file:///test.gsx")
 			},
-			tuiURI:    "file:///test.tui",
+			tuiURI:    "file:///test.gsx",
 			wantFound: false,
 		},
 	}
@@ -265,20 +265,20 @@ func TestVirtualFileCacheGetByGoURI(t *testing.T) {
 	cache := NewVirtualFileCache()
 	sm := NewSourceMap()
 
-	cache.Put("file:///a.tui", "file:///a_tui_generated.go", "content a", sm, 1)
-	cache.Put("file:///b.tui", "file:///b_tui_generated.go", "content b", sm, 1)
+	cache.Put("file:///a.gsx", "file:///a_gsx_generated.go", "content a", sm, 1)
+	cache.Put("file:///b.gsx", "file:///b_gsx_generated.go", "content b", sm, 1)
 
 	// Find by Go URI
-	got := cache.GetByGoURI("file:///a_tui_generated.go")
+	got := cache.GetByGoURI("file:///a_gsx_generated.go")
 	if got == nil {
 		t.Fatal("expected to find cached file by Go URI")
 	}
-	if got.TuiURI != "file:///a.tui" {
-		t.Errorf("got TuiURI %s, want file:///a.tui", got.TuiURI)
+	if got.TuiURI != "file:///a.gsx" {
+		t.Errorf("got TuiURI %s, want file:///a.gsx", got.TuiURI)
 	}
 
 	// Find nonexistent
-	got = cache.GetByGoURI("file:///nonexistent_tui_generated.go")
+	got = cache.GetByGoURI("file:///nonexistent_gsx_generated.go")
 	if got != nil {
 		t.Error("expected nil for nonexistent Go URI")
 	}
@@ -291,9 +291,9 @@ func TestTuiURIToGoURI(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"tui extension": {
-			tuiURI:  "file:///path/to/file.tui",
-			wantURI: "file:///path/to/file_tui_generated.go",
+		"gsx extension": {
+			tuiURI:  "file:///path/to/file.gsx",
+			wantURI: "file:///path/to/file_gsx_generated.go",
 		},
 		"no extension": {
 			tuiURI:  "file:///path/to/file",
@@ -319,8 +319,8 @@ func TestGoURIToTuiURI(t *testing.T) {
 
 	tests := map[string]tc{
 		"generated suffix": {
-			goURI:   "file:///path/to/file_tui_generated.go",
-			wantURI: "file:///path/to/file.tui",
+			goURI:   "file:///path/to/file_gsx_generated.go",
+			wantURI: "file:///path/to/file.gsx",
 		},
 		"no suffix": {
 			goURI:   "file:///path/to/regular.go",
@@ -345,9 +345,9 @@ func TestIsVirtualGoFile(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"virtual file":  {uri: "file:///test_tui_generated.go", want: true},
+		"virtual file":  {uri: "file:///test_gsx_generated.go", want: true},
 		"regular go":    {uri: "file:///test.go", want: false},
-		"tui file":      {uri: "file:///test.tui", want: false},
+		"gsx file":      {uri: "file:///test.gsx", want: false},
 		"almost suffix": {uri: "file:///test_generated.go", want: false},
 	}
 

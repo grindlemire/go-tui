@@ -548,7 +548,7 @@ func (s *Server) getGoplsCompletions(doc *Document, pos Position) ([]CompletionI
 		return nil, nil
 	}
 
-	// Translate position from .tui to .go
+	// Translate position from .gsx to .go
 	goLine, goCol, found := cached.SourceMap.TuiToGo(pos.Line, pos.Character)
 	if !found {
 		log.Server("No mapping found for position %d:%d", pos.Line, pos.Character)

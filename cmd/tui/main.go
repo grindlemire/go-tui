@@ -1,17 +1,17 @@
-// Package main provides the CLI tool for the .tui DSL compiler.
+// Package main provides the CLI tool for the .gsx DSL compiler.
 //
 // Usage:
 //
-//	tui generate [path...]    Generate Go code from .tui files
-//	tui check [path...]       Check .tui files without generating
+//	tui generate [path...]    Generate Go code from .gsx files
+//	tui check [path...]       Check .gsx files without generating
 //	tui help                  Show help
 //
 // Examples:
 //
-//	tui generate ./...        Recursively find and compile all .tui files
+//	tui generate ./...        Recursively find and compile all .gsx files
 //	tui generate ./components Process a specific directory
-//	tui generate header.tui   Process a specific file
-//	tui check header.tui      Check syntax without generating
+//	tui generate header.gsx   Process a specific file
+//	tui check header.gsx      Check syntax without generating
 package main
 
 import (
@@ -27,9 +27,9 @@ Usage:
   tui <command> [options] [path...]
 
 Commands:
-  generate    Generate Go code from .tui files
-  check       Check .tui files without generating code
-  fmt         Format .tui files
+  generate    Generate Go code from .gsx files
+  check       Check .gsx files without generating code
+  fmt         Format .gsx files
   lsp         Start the language server (for editor integration)
   version     Print version information
   help        Show this help message
@@ -38,14 +38,14 @@ Options:
   -v          Verbose output
 
 Examples:
-  tui generate ./...              Recursively process all .tui files
+  tui generate ./...              Recursively process all .gsx files
   tui generate ./components       Process files in a directory
-  tui generate header.tui         Process a specific file
+  tui generate header.gsx         Process a specific file
   tui generate -v ./...           Verbose output during generation
-  tui check header.tui            Check syntax without generating
-  tui fmt ./...                   Format all .tui files recursively
+  tui check header.gsx            Check syntax without generating
+  tui fmt ./...                   Format all .gsx files recursively
   tui fmt --check ./...           Check formatting without modifying
-  tui fmt --stdout file.tui       Print formatted output to stdout
+  tui fmt --stdout file.gsx       Print formatted output to stdout
   tui lsp                         Start LSP server on stdio
   tui lsp --log /tmp/tui-lsp.log  Start with debug logging
 

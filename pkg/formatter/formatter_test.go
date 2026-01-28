@@ -17,13 +17,13 @@ func TestFormat(t *testing.T) {
 		"simple package and component": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 <span>Hello</span>
 }
 `,
 			want: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -33,7 +33,7 @@ func TestFormat(t *testing.T) {
 
 import "fmt"
 
-@component Hello() {
+func Hello() Element {
 <span>{fmt.Sprintf("hi")}</span>
 }
 `,
@@ -41,7 +41,7 @@ import "fmt"
 
 import "fmt"
 
-@component Hello() {
+func Hello() Element {
 	<span>{fmt.Sprintf("hi")}</span>
 }
 `,
@@ -54,7 +54,7 @@ import (
 "strings"
 )
 
-@component Hello() {
+func Hello() Element {
 <span>{strings.ToUpper(fmt.Sprintf("hi"))}</span>
 }
 `,
@@ -65,7 +65,7 @@ import (
 	"strings"
 )
 
-@component Hello() {
+func Hello() Element {
 	<span>{strings.ToUpper(fmt.Sprintf("hi"))}</span>
 }
 `,
@@ -77,7 +77,7 @@ import (
 tui "github.com/grindlemire/go-tui/pkg/tui"
 )
 
-@component Hello() {
+func Hello() Element {
 <div border={tui.BorderSingle}></div>
 }
 `,
@@ -85,7 +85,7 @@ tui "github.com/grindlemire/go-tui/pkg/tui"
 
 import tui "github.com/grindlemire/go-tui/pkg/tui"
 
-@component Hello() {
+func Hello() Element {
 	<div border={tui.BorderSingle}></div>
 }
 `,
@@ -93,13 +93,13 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"component with parameters": {
 			input: `package main
 
-@component Card(title string, count int) {
+func Card(title string, count int) Element {
 <span>{title}</span>
 }
 `,
 			want: `package main
 
-@component Card(title string, count int) {
+func Card(title string, count int) Element {
 	<span>{title}</span>
 }
 `,
@@ -107,7 +107,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"nested elements": {
 			input: `package main
 
-@component Layout() {
+func Layout() Element {
 <div>
 <div>
 <span>Hello</span>
@@ -117,7 +117,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component Layout() {
+func Layout() Element {
 	<div>
 		<div>
 			<span>Hello</span>
@@ -129,13 +129,13 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"self-closing element": {
 			input: `package main
 
-@component Divider() {
+func Divider() Element {
 <hr />
 }
 `,
 			want: `package main
 
-@component Divider() {
+func Divider() Element {
 	<hr />
 }
 `,
@@ -143,7 +143,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"for loop": {
 			input: `package main
 
-@component List(items []string) {
+func List(items []string) Element {
 @for i, item := range items {
 <span>{item}</span>
 }
@@ -151,7 +151,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component List(items []string) {
+func List(items []string) Element {
 	@for i, item := range items {
 		<span>{item}</span>
 	}
@@ -161,7 +161,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"if statement": {
 			input: `package main
 
-@component Cond(show bool) {
+func Cond(show bool) Element {
 @if show {
 <span>Visible</span>
 }
@@ -169,7 +169,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component Cond(show bool) {
+func Cond(show bool) Element {
 	@if show {
 		<span>Visible</span>
 	}
@@ -179,7 +179,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"if-else statement": {
 			input: `package main
 
-@component Cond(show bool) {
+func Cond(show bool) Element {
 @if show {
 <span>Yes</span>
 } @else {
@@ -189,7 +189,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component Cond(show bool) {
+func Cond(show bool) Element {
 	@if show {
 		<span>Yes</span>
 	} @else {
@@ -201,14 +201,14 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"let binding": {
 			input: `package main
 
-@component WithLet() {
+func WithLet() Element {
 @let x = <span>Hello</span>
 {x}
 }
 `,
 			want: `package main
 
-@component WithLet() {
+func WithLet() Element {
 	@let x = <span>Hello</span>
 	{x}
 }
@@ -217,21 +217,21 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"component call": {
 			input: `package main
 
-@component Parent() {
+func Parent() Element {
 @Child("arg1", "arg2")
 }
 
-@component Child(a string, b string) {
+func Child(a string, b string) Element {
 <span>{a}</span>
 }
 `,
 			want: `package main
 
-@component Parent() {
+func Parent() Element {
 	@Child("arg1", "arg2")
 }
 
-@component Child(a string, b string) {
+func Child(a string, b string) Element {
 	<span>{a}</span>
 }
 `,
@@ -239,13 +239,13 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"component call with children": {
 			input: `package main
 
-@component Parent() {
+func Parent() Element {
 @Card("Title") {
 <span>Content</span>
 }
 }
 
-@component Card(title string) {
+func Card(title string) Element {
 <div>
 <span>{title}</span>
 {children...}
@@ -254,13 +254,13 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component Parent() {
+func Parent() Element {
 	@Card("Title") {
 		<span>Content</span>
 	}
 }
 
-@component Card(title string) {
+func Card(title string) Element {
 	<div>
 		<span>{title}</span>
 		{children...}
@@ -271,7 +271,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"multiple attributes": {
 			input: `package main
 
-@component Box() {
+func Box() Element {
 <div border={1} padding={2} margin={1}>
 <span>Content</span>
 </div>
@@ -279,7 +279,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component Box() {
+func Box() Element {
 	<div border={1} padding={2} margin={1}>
 		<span>Content</span>
 	</div>
@@ -289,7 +289,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 		"string attribute": {
 			input: `package main
 
-@component Styled() {
+func Styled() Element {
 <div class="flex-col gap-1">
 <span>Content</span>
 </div>
@@ -297,7 +297,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 `,
 			want: `package main
 
-@component Styled() {
+func Styled() Element {
 	<div class="flex-col gap-1">
 		<span>Content</span>
 	</div>
@@ -309,7 +309,7 @@ import tui "github.com/grindlemire/go-tui/pkg/tui"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			got, err := fmtr.Format("test.tui", tt.input)
+			got, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("Format() error = %v", err)
 			}
@@ -330,7 +330,7 @@ func TestFormatRoundTrip(t *testing.T) {
 		"simple component": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -342,7 +342,7 @@ import (
 	"fmt"
 )
 
-@component Complex(items []string, selected int) {
+func Complex(items []string, selected int) Element {
 	<div border={1}>
 		@for i, item := range items {
 			@if i == selected {
@@ -362,13 +362,13 @@ import (
 			fmtr := New()
 
 			// First format
-			first, err := fmtr.Format("test.tui", tt.input)
+			first, err := fmtr.Format("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("First Format() error = %v", err)
 			}
 
 			// Second format (should be identical)
-			second, err := fmtr.Format("test.tui", first)
+			second, err := fmtr.Format("test.gsx", first)
 			if err != nil {
 				t.Fatalf("Second Format() error = %v", err)
 			}
@@ -391,7 +391,7 @@ func TestFormatWithResult(t *testing.T) {
 		"already formatted": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -400,7 +400,7 @@ func TestFormatWithResult(t *testing.T) {
 		"needs formatting": {
 			input: `package main
 
-@component Hello() {
+func Hello() Element {
 <span>Hello</span>
 }
 `,
@@ -411,7 +411,7 @@ func TestFormatWithResult(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			res, err := fmtr.FormatWithResult("test.tui", tt.input)
+			res, err := fmtr.FormatWithResult("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("FormatWithResult() error = %v", err)
 			}
@@ -430,7 +430,7 @@ func TestFormatParseError(t *testing.T) {
 
 	tests := map[string]tc{
 		"missing package": {
-			input: `@component Hello() {
+			input: `func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -448,7 +448,7 @@ func TestFormatParseError(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			fmtr := New()
-			_, err := fmtr.Format("test.tui", tt.input)
+			_, err := fmtr.Format("test.gsx", tt.input)
 			if err == nil {
 				t.Error("Format() expected error, got nil")
 			}
@@ -506,12 +506,12 @@ func TestFormatPreservesGoExpressions(t *testing.T) {
 
 import "fmt"
 
-@component Complex() {
+func Complex() Element {
 	<span>{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}</span>
 }
 `
 	fmtr := New()
-	got, err := fmtr.Format("test.tui", input)
+	got, err := fmtr.Format("test.gsx", input)
 	if err != nil {
 		t.Fatalf("Format() error = %v", err)
 	}

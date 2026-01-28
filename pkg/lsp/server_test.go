@@ -190,7 +190,7 @@ func TestDocumentLifecycle(t *testing.T) {
 		"valid document": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -206,7 +206,7 @@ func TestDocumentLifecycle(t *testing.T) {
 			wantErrors: 2, // Parser generates multiple errors for this malformed input
 		},
 		"missing package": {
-			content: `@component Hello() {
+			content: `func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -217,7 +217,7 @@ func TestDocumentLifecycle(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			mock := newMockReadWriter()
-			uri := "file:///test.tui"
+			uri := "file:///test.gsx"
 
 			// Initialize
 			if err := mock.writeRequest(1, "initialize", InitializeParams{RootURI: "file:///"}); err != nil {
@@ -285,7 +285,7 @@ func TestDocumentUpdate(t *testing.T) {
 `,
 			updated: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -295,7 +295,7 @@ func TestDocumentUpdate(t *testing.T) {
 		"introduce error": {
 			initial: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -313,7 +313,7 @@ func TestDocumentUpdate(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			mock := newMockReadWriter()
-			uri := "file:///test.tui"
+			uri := "file:///test.gsx"
 
 			// Initialize
 			if err := mock.writeRequest(1, "initialize", InitializeParams{RootURI: "file:///"}); err != nil {
@@ -379,10 +379,10 @@ func TestDocumentUpdate(t *testing.T) {
 
 func TestDocumentClose(t *testing.T) {
 	mock := newMockReadWriter()
-	uri := "file:///test.tui"
+	uri := "file:///test.gsx"
 	content := `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `
@@ -442,7 +442,7 @@ func TestDocumentManager(t *testing.T) {
 		"open single": {
 			operations: []func(dm *DocumentManager){
 				func(dm *DocumentManager) {
-					dm.Open("file:///a.tui", "package main", 1)
+					dm.Open("file:///a.gsx", "package main", 1)
 				},
 			},
 			wantDocs: 1,
@@ -450,10 +450,10 @@ func TestDocumentManager(t *testing.T) {
 		"open multiple": {
 			operations: []func(dm *DocumentManager){
 				func(dm *DocumentManager) {
-					dm.Open("file:///a.tui", "package main", 1)
+					dm.Open("file:///a.gsx", "package main", 1)
 				},
 				func(dm *DocumentManager) {
-					dm.Open("file:///b.tui", "package main", 1)
+					dm.Open("file:///b.gsx", "package main", 1)
 				},
 			},
 			wantDocs: 2,
@@ -461,10 +461,10 @@ func TestDocumentManager(t *testing.T) {
 		"open and close": {
 			operations: []func(dm *DocumentManager){
 				func(dm *DocumentManager) {
-					dm.Open("file:///a.tui", "package main", 1)
+					dm.Open("file:///a.gsx", "package main", 1)
 				},
 				func(dm *DocumentManager) {
-					dm.Close("file:///a.tui")
+					dm.Close("file:///a.gsx")
 				},
 			},
 			wantDocs: 0,
@@ -472,10 +472,10 @@ func TestDocumentManager(t *testing.T) {
 		"update": {
 			operations: []func(dm *DocumentManager){
 				func(dm *DocumentManager) {
-					dm.Open("file:///a.tui", "package main", 1)
+					dm.Open("file:///a.gsx", "package main", 1)
 				},
 				func(dm *DocumentManager) {
-					dm.Update("file:///a.tui", "package updated", 2)
+					dm.Update("file:///a.gsx", "package updated", 2)
 				},
 			},
 			wantDocs: 1,

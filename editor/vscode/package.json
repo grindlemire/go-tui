@@ -1,7 +1,7 @@
 {
-  "name": "tui-language",
-  "displayName": "TUI Language Support",
-  "description": "Syntax highlighting and LSP support for .tui files (go-tui DSL)",
+  "name": "gsx-language",
+  "displayName": "GSX Language Support",
+  "description": "Syntax highlighting and LSP support for .gsx files (go-tui DSL)",
   "version": "0.1.0",
   "publisher": "grindlemire",
   "license": "MIT",
@@ -16,35 +16,35 @@
     "Programming Languages"
   ],
   "keywords": [
-    "tui",
+    "gsx",
     "go-tui",
     "terminal",
     "ui",
     "dsl"
   ],
   "activationEvents": [
-    "onLanguage:tui"
+    "onLanguage:gsx"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
-        "id": "tui",
+        "id": "gsx",
         "aliases": [
-          "TUI",
-          "tui"
+          "GSX",
+          "gsx"
         ],
         "extensions": [
-          ".tui"
+          ".gsx"
         ],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "tui",
-        "scopeName": "source.tui",
-        "path": "./syntaxes/tui.tmLanguage.json",
+        "language": "gsx",
+        "scopeName": "source.gsx",
+        "path": "./syntaxes/gsx.tmLanguage.json",
         "embeddedLanguages": {
           "meta.embedded.block.go": "go"
         }
@@ -52,22 +52,22 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "TUI Language Server",
+      "title": "GSX Language Server",
       "properties": {
-        "tui.lsp.path": {
+        "gsx.lsp.path": {
           "type": "string",
           "default": "tui",
           "description": "Path to the tui CLI binary (must be in PATH or an absolute path)"
         },
-        "tui.lsp.enabled": {
+        "gsx.lsp.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable the TUI language server"
+          "description": "Enable the GSX language server"
         },
-        "tui.lsp.logPath": {
+        "gsx.lsp.logPath": {
           "type": "string",
           "default": "",
-          "description": "Path to LSP log file for debugging (e.g., /tmp/tui-lsp.log)"
+          "description": "Path to LSP log file for debugging (e.g., /tmp/gsx-lsp.log)"
         }
       }
     }

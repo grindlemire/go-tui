@@ -1,11 +1,11 @@
 // Package main demonstrates streaming text using DSL-generated components.
-// This example shows how to combine .tui file components with imperative
+// This example shows how to combine .gsx file components with imperative
 // streaming logic for real-time content with auto-scroll behavior.
 //
 // To build and run:
 //
 //	cd examples/streaming-dsl
-//	go run ../../cmd/tui generate streaming.tui
+//	go run ../../cmd/tui generate streaming.gsx
 //	go run .
 package main
 
@@ -20,7 +20,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-//go:generate go run ../../cmd/tui generate streaming.tui
+//go:generate go run ../../cmd/tui generate streaming.gsx
 
 // StreamBox wraps an Element to provide channel-based text streaming.
 type StreamBox struct {

@@ -10,11 +10,11 @@ import (
 )
 
 // runFmt implements the fmt subcommand.
-// It formats .tui files in place or checks formatting.
+// It formats .gsx files in place or checks formatting.
 func runFmt(args []string) error {
 	var (
-		stdout bool   // print to stdout instead of modifying file
-		check  bool   // check mode (exit 1 if not formatted)
+		stdout bool // print to stdout instead of modifying file
+		check  bool // check mode (exit 1 if not formatted)
 		paths  []string
 	)
 
@@ -35,14 +35,14 @@ func runFmt(args []string) error {
 		paths = []string{"."}
 	}
 
-	// Collect all .tui files
-	files, err := collectTuiFiles(paths)
+	// Collect all .gsx files
+	files, err := collectGsxFiles(paths)
 	if err != nil {
 		return err
 	}
 
 	if len(files) == 0 {
-		return fmt.Errorf("no .tui files found")
+		return fmt.Errorf("no .gsx files found")
 	}
 
 	// Process files

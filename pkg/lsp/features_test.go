@@ -17,7 +17,7 @@ func TestComponentIndex(t *testing.T) {
 		"single component": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -28,11 +28,11 @@ func TestComponentIndex(t *testing.T) {
 		"multiple components": {
 			content: `package main
 
-@component Header() {
+func Header() Element {
 	<span>Header</span>
 }
 
-@component Footer() {
+func Footer() Element {
 	<span>Footer</span>
 }
 `,
@@ -43,7 +43,7 @@ func TestComponentIndex(t *testing.T) {
 		"lookup nonexistent": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -58,7 +58,7 @@ func TestComponentIndex(t *testing.T) {
 			dm := NewDocumentManager()
 			idx := NewComponentIndex()
 
-			uri := "file:///test.tui"
+			uri := "file:///test.gsx"
 			doc := dm.Open(uri, tt.content, 1)
 
 			idx.IndexDocument(uri, doc.AST)
@@ -83,10 +83,10 @@ func TestComponentIndexRemove(t *testing.T) {
 	dm := NewDocumentManager()
 	idx := NewComponentIndex()
 
-	uri := "file:///test.tui"
+	uri := "file:///test.gsx"
 	content := `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `
@@ -112,7 +112,7 @@ func testServer(t *testing.T, requests func(m *mockReadWriter, uri string) int) 
 	t.Helper()
 
 	mock := newMockReadWriter()
-	uri := "file:///test.tui"
+	uri := "file:///test.gsx"
 
 	// Send requests
 	maxID := requests(mock, uri)
@@ -155,11 +155,11 @@ func TestDefinitionDirect(t *testing.T) {
 		"component definition from call": {
 			content: `package main
 
-@component Header() {
+func Header() Element {
 	<span>Header</span>
 }
 
-@component Main() {
+func Main() Element {
 	@Header()
 }
 `,
@@ -174,11 +174,11 @@ func TestDefinitionDirect(t *testing.T) {
 			// Create a server and test directly via handlers
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			params, _ := json.Marshal(DefinitionParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///test.tui"},
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 				Position:     Position{Line: tt.line, Character: tt.character},
 			})
 
@@ -209,11 +209,11 @@ func TestHoverDirect(t *testing.T) {
 		"hover on component call": {
 			content: `package main
 
-@component Header(title string) {
+func Header(title string) Element {
 	<span>{title}</span>
 }
 
-@component Main() {
+func Main() Element {
 	@Header("test")
 }
 `,
@@ -224,7 +224,7 @@ func TestHoverDirect(t *testing.T) {
 		"hover on element tag": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div padding={1}>
 		<span>Hello</span>
 	</div>
@@ -240,11 +240,11 @@ func TestHoverDirect(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			params, _ := json.Marshal(HoverParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///test.tui"},
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 				Position:     Position{Line: tt.line, Character: tt.character},
 			})
 
@@ -276,11 +276,11 @@ func TestCompletionDirect(t *testing.T) {
 		"after @": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 
-@component Main() {
+func Main() Element {
 	@
 }
 `,
@@ -292,7 +292,7 @@ func TestCompletionDirect(t *testing.T) {
 		"after <": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<
 }
 `,
@@ -307,11 +307,11 @@ func TestCompletionDirect(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			completionParams := CompletionParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///test.tui"},
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 				Position:     Position{Line: tt.line, Character: tt.character},
 			}
 			if tt.trigger != "" {
@@ -351,7 +351,7 @@ func TestDocumentSymbolDirect(t *testing.T) {
 		"single component": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -360,15 +360,15 @@ func TestDocumentSymbolDirect(t *testing.T) {
 		"multiple components": {
 			content: `package main
 
-@component Header() {
+func Header() Element {
 	<span>Header</span>
 }
 
-@component Footer() {
+func Footer() Element {
 	<span>Footer</span>
 }
 
-@component Main() {
+func Main() Element {
 	@Header()
 	@Footer()
 }
@@ -378,7 +378,7 @@ func TestDocumentSymbolDirect(t *testing.T) {
 		"component with go func": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 
@@ -394,11 +394,11 @@ func helper() string {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			params, _ := json.Marshal(DocumentSymbolParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///test.tui"},
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 			})
 
 			result, rpcErr := server.handleDocumentSymbol(params)
@@ -429,15 +429,15 @@ func TestWorkspaceSymbolDirect(t *testing.T) {
 	tests := map[string]tc{
 		"empty query returns all": {
 			contents: map[string]string{
-				"file:///a.tui": `package main
+				"file:///a.gsx": `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
-				"file:///b.tui": `package main
+				"file:///b.gsx": `package main
 
-@component World() {
+func World() Element {
 	<span>World</span>
 }
 `,
@@ -447,15 +447,15 @@ func TestWorkspaceSymbolDirect(t *testing.T) {
 		},
 		"filter by query": {
 			contents: map[string]string{
-				"file:///a.tui": `package main
+				"file:///a.gsx": `package main
 
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
-				"file:///b.tui": `package main
+				"file:///b.gsx": `package main
 
-@component World() {
+func World() Element {
 	<span>World</span>
 }
 `,
@@ -465,9 +465,9 @@ func TestWorkspaceSymbolDirect(t *testing.T) {
 		},
 		"case insensitive query": {
 			contents: map[string]string{
-				"file:///a.tui": `package main
+				"file:///a.gsx": `package main
 
-@component HelloWorld() {
+func HelloWorld() Element {
 	<span>Hello</span>
 }
 `,
@@ -593,7 +593,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"inside class attribute empty": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="">
 	</div>
 }
@@ -606,7 +606,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"inside class attribute with prefix": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="flex">
 	</div>
 }
@@ -619,7 +619,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"inside class attribute partial class after space": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="flex-col gap">
 	</div>
 }
@@ -632,7 +632,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"inside class attribute at space": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="flex-col ">
 	</div>
 }
@@ -645,7 +645,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"not in class attribute - in id": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div id="test">
 	</div>
 }
@@ -658,7 +658,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"not in class attribute - outside quotes": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="flex">
 	</div>
 }
@@ -671,7 +671,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"not in class attribute - different line": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="flex">
 		<span>Hello</span>
 	</div>
@@ -687,8 +687,8 @@ func TestIsInClassAttribute(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
-			server.docs.Open("file:///test.tui", tt.content, 1)
-			doc := server.docs.Get("file:///test.tui")
+			server.docs.Open("file:///test.gsx", tt.content, 1)
+			doc := server.docs.Get("file:///test.gsx")
 
 			gotInAttr, gotPrefix := server.isInClassAttribute(doc, Position{Line: tt.line, Character: tt.character})
 
@@ -780,7 +780,7 @@ func TestTailwindCompletionInCompletion(t *testing.T) {
 		"inside class attribute": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div class="flex">
 	</div>
 }
@@ -792,7 +792,7 @@ func TestTailwindCompletionInCompletion(t *testing.T) {
 		"not inside class attribute": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	<div id="test">
 	</div>
 }
@@ -807,11 +807,11 @@ func TestTailwindCompletionInCompletion(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			completionParams := CompletionParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///test.tui"},
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 				Position:     Position{Line: tt.line, Character: tt.character},
 			}
 

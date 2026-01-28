@@ -44,7 +44,7 @@ type GoplsProxy struct {
 	cancel context.CancelFunc
 }
 
-// VirtualFile represents a generated .go file from a .tui file.
+// VirtualFile represents a generated .go file from a .gsx file.
 type VirtualFile struct {
 	URI       string
 	Content   string
@@ -529,34 +529,34 @@ func (p *GoplsProxy) readMessage() ([]byte, error) {
 	return content, nil
 }
 
-// TuiURIToGoURI converts a .tui file URI to a virtual .go file URI.
+// TuiURIToGoURI converts a .gsx file URI to a virtual .go file URI.
 func TuiURIToGoURI(tuiURI string) string {
-	// Replace .tui extension with _tui_generated.go
-	if strings.HasSuffix(tuiURI, ".tui") {
-		return strings.TrimSuffix(tuiURI, ".tui") + "_tui_generated.go"
+	// Replace .gsx extension with _gsx_generated.go
+	if strings.HasSuffix(tuiURI, ".gsx") {
+		return strings.TrimSuffix(tuiURI, ".gsx") + "_gsx_generated.go"
 	}
 	return tuiURI + "_generated.go"
 }
 
-// GoURIToTuiURI converts a virtual .go file URI back to the .tui file URI.
+// GoURIToTuiURI converts a virtual .go file URI back to the .gsx file URI.
 func GoURIToTuiURI(goURI string) string {
-	if strings.HasSuffix(goURI, "_tui_generated.go") {
-		return strings.TrimSuffix(goURI, "_tui_generated.go") + ".tui"
+	if strings.HasSuffix(goURI, "_gsx_generated.go") {
+		return strings.TrimSuffix(goURI, "_gsx_generated.go") + ".gsx"
 	}
 	return goURI
 }
 
 // IsVirtualGoFile returns true if the URI is a virtual .go file.
 func IsVirtualGoFile(uri string) bool {
-	return strings.HasSuffix(uri, "_tui_generated.go")
+	return strings.HasSuffix(uri, "_gsx_generated.go")
 }
 
 // GetVirtualFilePath returns the path where a virtual .go file would be created.
-func GetVirtualFilePath(tuiPath string) string {
-	dir := filepath.Dir(tuiPath)
-	base := filepath.Base(tuiPath)
-	if strings.HasSuffix(base, ".tui") {
-		base = strings.TrimSuffix(base, ".tui") + "_tui_generated.go"
+func GetVirtualFilePath(gsxPath string) string {
+	dir := filepath.Dir(gsxPath)
+	base := filepath.Base(gsxPath)
+	if strings.HasSuffix(base, ".gsx") {
+		base = strings.TrimSuffix(base, ".gsx") + "_gsx_generated.go"
 	} else {
 		base = base + "_generated.go"
 	}

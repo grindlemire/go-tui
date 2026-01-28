@@ -1,0 +1,17 @@
+package main
+
+import "fmt"
+
+// Header displays the title bar with instructions
+func Header() Element {
+	<div class="border-blue" border={tui.BorderSingle} height={3} direction={layout.Row} justify={layout.JustifyCenter} align={layout.AlignCenter}>
+		<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k, PgUp/PgDn, Arrow Keys to scroll"}</span>
+	</div>
+}
+
+// Footer displays the scroll status and exit instructions
+func Footer(scrollY int, maxScroll int, autoScrollStatus string) Element {
+	<div class="border-blue" border={tui.BorderSingle} height={3} direction={layout.Row} justify={layout.JustifyCenter} align={layout.AlignCenter}>
+		<span class="text-white">{fmt.Sprintf("Scroll: %d/%d | Auto-scroll: %s | Press ESC to exit", scrollY, maxScroll, autoScrollStatus)}</span>
+	</div>
+}

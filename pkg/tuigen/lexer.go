@@ -5,7 +5,7 @@ import (
 	"unicode/utf8"
 )
 
-// Lexer tokenizes .tui source files.
+// Lexer tokenizes .gsx source files.
 type Lexer struct {
 	filename string
 	source   string
@@ -407,8 +407,6 @@ func (l *Lexer) readAtKeyword() Token {
 	keyword := l.source[startPos:l.pos]
 
 	switch keyword {
-	case "component":
-		return l.makeToken(TokenAtComponent, "@component")
 	case "let":
 		return l.makeToken(TokenAtLet, "@let")
 	case "for":

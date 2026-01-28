@@ -15,28 +15,28 @@ func TestAnalyzer_UnknownElementTag(t *testing.T) {
 	tests := map[string]tc{
 		"known tag div": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div></div>
 }`,
 			wantError: false,
 		},
 		"known tag span": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<span>hello</span>
 }`,
 			wantError: false,
 		},
 		"known tag ul": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<ul><li /></ul>
 }`,
 			wantError: false,
 		},
 		"unknown tag": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<unknownTag></unknownTag>
 }`,
 			wantError:   true,
@@ -44,7 +44,7 @@ func TestAnalyzer_UnknownElementTag(t *testing.T) {
 		},
 		"unknown tag foobar": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<foobar />
 }`,
 			wantError:   true,
@@ -54,7 +54,7 @@ func TestAnalyzer_UnknownElementTag(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -83,21 +83,21 @@ func TestAnalyzer_UnknownAttribute(t *testing.T) {
 	tests := map[string]tc{
 		"known attribute width": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div width=100></div>
 }`,
 			wantError: false,
 		},
 		"known attribute direction": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div direction={layout.Column}></div>
 }`,
 			wantError: false,
 		},
 		"unknown attribute": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div unknownAttr=123></div>
 }`,
 			wantError:   true,
@@ -105,7 +105,7 @@ func TestAnalyzer_UnknownAttribute(t *testing.T) {
 		},
 		"typo colour": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div colour="red"></div>
 }`,
 			wantError:   true,
@@ -115,7 +115,7 @@ func TestAnalyzer_UnknownAttribute(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -143,7 +143,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 	tests := map[string]tc{
 		"adds element import": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div></div>
 }`,
 			wantImports: []string{
@@ -152,7 +152,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 		},
 		"adds layout import when used": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div direction={layout.Column}></div>
 }`,
 			wantImports: []string{
@@ -162,7 +162,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 		},
 		"adds tui import when used": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div border={tui.BorderSingle}></div>
 }`,
 			wantImports: []string{
@@ -173,7 +173,7 @@ func TestAnalyzer_ImportInsertion(t *testing.T) {
 		"preserves existing imports": {
 			input: `package x
 import "fmt"
-@component Test() {
+func Test() Element {
 	<span>hello</span>
 }`,
 			wantImports: []string{
@@ -184,7 +184,7 @@ import "fmt"
 		"does not duplicate existing element import": {
 			input: `package x
 import "github.com/grindlemire/go-tui/pkg/tui/element"
-@component Test() {
+func Test() Element {
 	<div></div>
 }`,
 			wantImports: []string{
@@ -195,7 +195,7 @@ import "github.com/grindlemire/go-tui/pkg/tui/element"
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			file, err := AnalyzeFile("test.tui", tt.input)
+			file, err := AnalyzeFile("test.gsx", tt.input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -338,7 +338,7 @@ func TestAnalyzer_SuggestAttribute(t *testing.T) {
 func TestAnalyzer_NestedElements(t *testing.T) {
 	// Test that nested elements are all validated
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<div>
 			<unknownTag />
@@ -346,7 +346,7 @@ func TestAnalyzer_NestedElements(t *testing.T) {
 	</div>
 }`
 
-	_, err := AnalyzeFile("test.tui", input)
+	_, err := AnalyzeFile("test.gsx", input)
 	if err == nil {
 		t.Error("expected error for nested unknown tag")
 		return
@@ -367,7 +367,7 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 	tests := map[string]tc{
 		"valid for loop": {
 			input: `package x
-@component Test(items []string) {
+func Test(items []string) Element {
 	<div>
 		@for _, item := range items {
 			<span>{item}</span>
@@ -378,7 +378,7 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		},
 		"invalid element in for loop": {
 			input: `package x
-@component Test(items []string) {
+func Test(items []string) Element {
 	<div>
 		@for _, item := range items {
 			<badTag />
@@ -390,7 +390,7 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		},
 		"valid if statement": {
 			input: `package x
-@component Test(show bool) {
+func Test(show bool) Element {
 	<div>
 		@if show {
 			<span>visible</span>
@@ -401,7 +401,7 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		},
 		"invalid element in if then": {
 			input: `package x
-@component Test(show bool) {
+func Test(show bool) Element {
 	<div>
 		@if show {
 			<badTag />
@@ -413,7 +413,7 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 		},
 		"invalid element in if else": {
 			input: `package x
-@component Test(show bool) {
+func Test(show bool) Element {
 	<div>
 		@if show {
 			<span>yes</span>
@@ -429,7 +429,7 @@ func TestAnalyzer_ControlFlowValidation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -458,7 +458,7 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 	tests := map[string]tc{
 		"valid let binding": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@let myText = <span>hello</span>
 	<div></div>
 }`,
@@ -466,7 +466,7 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 		},
 		"let binding with invalid element": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@let myText = <badTag />
 	<div></div>
 }`,
@@ -475,7 +475,7 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 		},
 		"let binding with invalid attribute": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@let myText = <span badAttr="value">hello</span>
 	<div></div>
 }`,
@@ -486,7 +486,7 @@ func TestAnalyzer_LetBindingValidation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -523,10 +523,10 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 	for _, attr := range attributes {
 		t.Run(attr, func(t *testing.T) {
 			input := `package x
-@component Test() {
+func Test() Element {
 	<div ` + attr + `=1></div>
 }`
-			_, err := AnalyzeFile("test.tui", input)
+			_, err := AnalyzeFile("test.gsx", input)
 			if err != nil {
 				t.Errorf("attribute %q should be valid, got error: %v", attr, err)
 			}
@@ -545,10 +545,10 @@ func TestAnalyzer_AllKnownTags(t *testing.T) {
 	for _, tag := range tags {
 		t.Run(tag, func(t *testing.T) {
 			input := `package x
-@component Test() {
+func Test() Element {
 	<` + tag + ` />
 }`
-			_, err := AnalyzeFile("test.tui", input)
+			_, err := AnalyzeFile("test.gsx", input)
 			if err != nil {
 				t.Errorf("tag %q should be valid, got error: %v", tag, err)
 			}
@@ -559,12 +559,12 @@ func TestAnalyzer_AllKnownTags(t *testing.T) {
 func TestAnalyzer_MultipleErrors(t *testing.T) {
 	// Test that multiple errors are collected
 	input := `package x
-@component Test() {
+func Test() Element {
 	<unknownTag1 />
 	<unknownTag2 />
 }`
 
-	_, err := AnalyzeFile("test.tui", input)
+	_, err := AnalyzeFile("test.gsx", input)
 	if err == nil {
 		t.Fatal("expected errors, got nil")
 	}
@@ -582,11 +582,11 @@ func TestAnalyzer_MultipleErrors(t *testing.T) {
 
 func TestAnalyzer_ErrorHint(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div colour="red"></div>
 }`
 
-	_, err := AnalyzeFile("test.tui", input)
+	_, err := AnalyzeFile("test.gsx", input)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -608,7 +608,7 @@ func TestAnalyzer_HRValid(t *testing.T) {
 	tests := map[string]tc{
 		"hr self-closing": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<hr/>
 	</div>
@@ -617,7 +617,7 @@ func TestAnalyzer_HRValid(t *testing.T) {
 		},
 		"hr with class": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<hr class="border-double"/>
 	</div>
@@ -628,7 +628,7 @@ func TestAnalyzer_HRValid(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -652,7 +652,7 @@ func TestAnalyzer_BRValid(t *testing.T) {
 	tests := map[string]tc{
 		"br self-closing": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<br/>
 	</div>
@@ -663,7 +663,7 @@ func TestAnalyzer_BRValid(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -688,7 +688,7 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 	tests := map[string]tc{
 		"hr with text child": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<hr>text</hr>
 	</div>
@@ -698,7 +698,7 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 		},
 		"hr with element child": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<hr><span>nested</span></hr>
 	</div>
@@ -708,7 +708,7 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 		},
 		"br with text child": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<br>text</br>
 	</div>
@@ -718,7 +718,7 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 		},
 		"input with child": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<input>text</input>
 	</div>
@@ -730,7 +730,7 @@ func TestAnalyzer_VoidWithChildren(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -760,42 +760,42 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 	tests := map[string]tc{
 		"valid tailwind classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="flex-col gap-2 p-4"></div>
 }`,
 			wantError: false,
 		},
 		"valid width and height classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="w-full h-1/2"></div>
 }`,
 			wantError: false,
 		},
 		"valid individual padding classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="pt-2 pb-4 pl-1"></div>
 }`,
 			wantError: false,
 		},
 		"valid border color classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="border border-red"></div>
 }`,
 			wantError: false,
 		},
 		"valid text alignment classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="text-center"></div>
 }`,
 			wantError: false,
 		},
 		"unknown tailwind class": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="flex-columns"></div>
 }`,
 			wantError:     true,
@@ -804,7 +804,7 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 		},
 		"unknown tailwind class without suggestion": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="xyz-completely-invalid"></div>
 }`,
 			wantError:     true,
@@ -812,7 +812,7 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 		},
 		"multiple unknown classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="flex-columns badclass"></div>
 }`,
 			wantError:     true,
@@ -820,7 +820,7 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 		},
 		"mix of valid and invalid classes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div class="flex-col gap-2 badclass p-4"></div>
 }`,
 			wantError:     true,
@@ -830,7 +830,7 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := AnalyzeFile("test.tui", tt.input)
+			_, err := AnalyzeFile("test.gsx", tt.input)
 
 			if tt.wantError {
 				if err == nil {
@@ -855,11 +855,11 @@ func TestAnalyzer_TailwindClassValidation(t *testing.T) {
 func TestAnalyzer_TailwindClassErrorPosition(t *testing.T) {
 	// Test that the error position correctly points to the invalid class
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div class="flex-col badclass p-2"></div>
 }`
 
-	_, err := AnalyzeFile("test.tui", input)
+	_, err := AnalyzeFile("test.gsx", input)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

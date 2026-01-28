@@ -1,7 +1,7 @@
 // main.go - Minimal bootstrap for the streaming counter example
 //
 // With Refs, State, and Event Handling, main.go is just setup and app.Run().
-// All behavior is declared in the .tui file.
+// All behavior is declared in the .gsx file.
 
 package main
 
@@ -13,7 +13,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
-//go:generate go run ../../cmd/tui generate state.tui
+//go:generate go run ../../cmd/tui generate state.gsx
 
 func main() {
 	app, err := tui.NewApp()

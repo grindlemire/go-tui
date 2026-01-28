@@ -10,7 +10,7 @@ ONLY EVER COMMIT USING THIS APPROACH
 
 ## Project Overview
 
-go-tui allows defining UIs in `.tui` files that compile to type-safe Go code. The framework provides:
+go-tui allows defining UIs in `.gsx` files that compile to type-safe Go code. The framework provides:
 - Declarative component syntax (similar to templ/JSX)
 - Pure Go flexbox layout engine (no CGO)
 - Minimal external dependencies
@@ -19,10 +19,10 @@ go-tui allows defining UIs in `.tui` files that compile to type-safe Go code. Th
 ## Architecture
 
 ```
-.tui files (declarative syntax)
+.gsx files (declarative syntax)
         │ tui generate
         ▼
-Generated Go code (*_tui.go)
+Generated Go code (*_gsx.go)
         │
         ▼
 Widget Tree + Layout Engine
@@ -81,7 +81,7 @@ go-tui/
 │       ├── diagnostics.go# Error reporting
 │       └── index.go      # Symbol indexing
 ├── editor/
-│   ├── tree-sitter-tui/  # Tree-sitter grammar
+│   ├── tree-sitter-gsx/  # Tree-sitter grammar
 │   └── vscode/           # VSCode extension
 └── examples/             # Example applications
 ```
@@ -89,31 +89,31 @@ go-tui/
 ## CLI Commands
 
 ```bash
-tui generate ./...       # Generate Go code from .tui files
-tui check ./...          # Check .tui files without generating
-tui fmt ./...            # Format .tui files
+tui generate ./...       # Generate Go code from .gsx files
+tui check ./...          # Check .gsx files without generating
+tui fmt ./...            # Format .gsx files
 tui fmt --check ./...    # Check formatting without modifying
 tui lsp                  # Start language server (stdio)
 ```
 
-## .tui File Syntax
+## .gsx File Syntax
 
-```tui
+```gsx
 package mypackage
 
 import (
     "fmt"
 )
 
-// Component definition
-@component Header(title string) {
+// Component definition (returns Element)
+func Header(title string) Element {
     <div class="border-single p-1">
         <span class="font-bold">{title}</span>
     </div>
 }
 
 // Conditionals
-@component Conditional(show bool) {
+func Conditional(show bool) Element {
     <div class="flex-col">
         @if show {
             <span>Visible</span>
@@ -124,7 +124,7 @@ import (
 }
 
 // Loops
-@component List(items []string) {
+func List(items []string) Element {
     <div class="flex-col gap-1">
         @for i, item := range items {
             <span>{fmt.Sprintf("%d: %s", i, item)}</span>
@@ -133,12 +133,12 @@ import (
 }
 
 // Local bindings
-@component Counter(count int) {
+func Counter(count int) Element {
     @let label = fmt.Sprintf("Count: %d", count)
     <span>{label}</span>
 }
 
-// Helper functions (regular Go)
+// Helper functions (regular Go - no Element return type)
 func helper(s string) string {
     return fmt.Sprintf("[%s]", s)
 }
@@ -202,7 +202,7 @@ func helper(s string) string {
 
 Use the `class` attribute for styling:
 
-```tui
+```gsx
 <div class="flex-col gap-2 p-2 border-rounded">
     <span class="font-bold text-cyan">Title</span>
     <span class="font-dim">Subtitle</span>
@@ -311,7 +311,7 @@ The `editor/vscode/` directory contains a VSCode extension providing:
 
 ### Tree-sitter
 
-The `editor/tree-sitter-tui/` directory contains a tree-sitter grammar for:
+The `editor/tree-sitter-gsx/` directory contains a tree-sitter grammar for:
 - Accurate syntax parsing
 - Integration with editors supporting tree-sitter
 
