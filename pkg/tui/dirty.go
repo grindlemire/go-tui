@@ -30,3 +30,9 @@ func resetDirty() {
 func TestCheckAndClearDirty() bool {
 	return checkAndClearDirty()
 }
+
+// TestResetDirty is an exported version of resetDirty for testing.
+// Only use this in test code.
+func TestResetDirty() {
+	resetDirty()
+}
