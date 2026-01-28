@@ -7,7 +7,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
-func ItemList(items []string, selected int) Element {
+templ ItemList(items []string, selected int) {
 	<div direction={layout.Column} gap={1}>
 		@for i, item := range items {
 			@if i == selected {
@@ -21,7 +21,7 @@ func ItemList(items []string, selected int) Element {
 	</div>
 }
 
-func Counter(count int, label string) Element {
+templ Counter(count int, label string) {
 	@let countText = <span class="font-bold">{fmt.Sprintf("%d", count)}</span>
 	<div direction={layout.Column} gap={1} padding={1}>
 		<span>{label}</span>
@@ -29,7 +29,7 @@ func Counter(count int, label string) Element {
 	</div>
 }
 
-func ConditionalContent(showHeader bool, showFooter bool) Element {
+templ ConditionalContent(showHeader bool, showFooter bool) {
 	<div direction={layout.Column}>
 		@if showHeader {
 			<span>Header</span>
@@ -43,13 +43,13 @@ func ConditionalContent(showHeader bool, showFooter bool) Element {
 	</div>
 }
 
-func WithHelper(text string) Element {
+templ WithHelper(text string) {
 	<div>
 		<span>{helperFunction(text)}</span>
 	</div>
 }
 
-func Dashboard(user string, items []string, count int) Element {
+templ Dashboard(user string, items []string, count int) {
 	<div class="flex-col gap-2 p-2">
 		@Header(fmt.Sprintf("Welcome, %s!", user))
 		<div class="flex gap-1">
@@ -60,7 +60,7 @@ func Dashboard(user string, items []string, count int) Element {
 	</div>
 }
 
-func NumericValues() Element {
+templ NumericValues() {
 	<div>
 		<span padding={10}>
 			Integer
@@ -76,7 +76,7 @@ func NumericValues() Element {
 	</div>
 }
 
-func StringValues() Element {
+templ StringValues() {
 	<div>
 		<span>{"Hello, World!"}</span>
 		<span>
@@ -87,7 +87,7 @@ with newlines`}
 	</div>
 }
 
-func SelfClosing() Element {
+templ SelfClosing() {
 	<div>
 		<hr />
 		<br />
@@ -95,7 +95,7 @@ func SelfClosing() Element {
 	</div>
 }
 
-func AttributeTypes(enabled bool, size int) Element {
+templ AttributeTypes(enabled bool, size int) {
 	<div border={tui.BorderDouble}
 	     padding={2}
 	     margin={1}
@@ -107,7 +107,7 @@ func AttributeTypes(enabled bool, size int) Element {
 	</div>
 }
 
-func AttributeTypes2(enabled bool, size int) Element {
+templ AttributeTypes2(enabled bool, size int) {
 	<div width="100%"
 	     border={tui.BorderDouble}
 	     visible={enabled && size > 0}

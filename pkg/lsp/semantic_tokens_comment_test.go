@@ -17,7 +17,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 			content: `package main
 
 // This is a comment
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -27,7 +27,7 @@ func Hello() Element {
 		"trailing comment on component": {
 			content: `package main
 
-func Hello() Element {  // trailing comment
+templ Hello() {  // trailing comment
 	<span>Hello</span>
 }
 `,
@@ -38,7 +38,7 @@ func Hello() Element {  // trailing comment
 			content: `package main
 
 /* Block comment */
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -48,7 +48,7 @@ func Hello() Element {
 		"comment inside element": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	// comment inside body
 	<span>Hello</span>
 }
@@ -61,7 +61,7 @@ func Hello() Element {
 
 // Comment 1
 // Comment 2
-func Hello() Element {
+templ Hello() {
 	// Comment 3
 	<span>Hello</span>  // Comment 4
 }
@@ -72,7 +72,7 @@ func Hello() Element {
 		"comment in if statement": {
 			content: `package main
 
-func Hello(show bool) Element {
+templ Hello(show bool) {
 	// comment before if
 	@if show {
 		<span>Hello</span>
@@ -85,7 +85,7 @@ func Hello(show bool) Element {
 		"comment in for loop": {
 			content: `package main
 
-func List(items []string) Element {
+templ List(items []string) {
 	// comment before for
 	@for _, item := range items {
 		<span>{item}</span>
@@ -98,7 +98,7 @@ func List(items []string) Element {
 		"orphan comment in component body": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	// orphan comment with no following node
 }
 `,
@@ -157,7 +157,7 @@ func TestCommentTokenPositions(t *testing.T) {
 			content: `package main
 
 // Hello
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -168,7 +168,7 @@ func Hello() Element {
 		"indented comment position": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	// indented comment
 	<span>Hello</span>
 }
@@ -227,7 +227,7 @@ func TestBlockCommentTokens(t *testing.T) {
 			content: `package main
 
 /* single line */
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -239,7 +239,7 @@ func Hello() Element {
 /* line 1
    line 2
    line 3 */
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -283,7 +283,7 @@ func TestInlineBlockCommentInGoExpr(t *testing.T) {
 
 import "fmt"
 
-func Hello(item string) Element {
+templ Hello(item string) {
 	<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
 }
 `,
@@ -291,7 +291,7 @@ func Hello(item string) Element {
 		"inline block comment in simple expression": {
 			content: `package main
 
-func Hello(x int) Element {
+templ Hello(x int) {
 	<span>{/* test */ x}</span>
 }
 `,
@@ -334,7 +334,7 @@ func TestCommentsInVariousPositions(t *testing.T) {
 // File leading comment
 
 // Component doc comment
-func Hello(name string) Element {  // Component trailing
+templ Hello(name string) {  // Component trailing
 	// Element leading
 	<div>  // Element trailing
 		// Nested comment

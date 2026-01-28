@@ -18,6 +18,7 @@ const (
 	TokenPackage // package
 	TokenImport  // import
 	TokenFunc    // func
+	TokenTempl   // templ
 	TokenReturn  // return
 	TokenIf      // if
 	TokenElse    // else
@@ -83,6 +84,7 @@ var tokenNames = map[TokenType]string{
 	TokenPackage:     "package",
 	TokenImport:      "import",
 	TokenFunc:        "func",
+	TokenTempl:       "templ",
 	TokenReturn:      "return",
 	TokenIf:          "if",
 	TokenElse:        "else",
@@ -179,6 +181,7 @@ var keywords = map[string]TokenType{
 	"package": TokenPackage,
 	"import":  TokenImport,
 	"func":    TokenFunc,
+	"templ":   TokenTempl,
 	"return":  TokenReturn,
 	"if":      TokenIf,
 	"else":    TokenElse,

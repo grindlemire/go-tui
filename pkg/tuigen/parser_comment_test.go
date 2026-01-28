@@ -9,7 +9,7 @@ func TestParser_CommentAttachment_LeadingCommentOnComponent(t *testing.T) {
 
 // This is a doc comment for Header
 // It spans multiple lines
-func Header() Element {
+templ Header() {
 	<span>Hello</span>
 }`
 
@@ -45,7 +45,7 @@ func Header() Element {
 func TestParser_CommentAttachment_TrailingCommentOnComponent(t *testing.T) {
 	input := `package x
 
-func Header() Element { // trailing comment on brace
+templ Header() { // trailing comment on brace
 	<span>Hello</span>
 }`
 
@@ -74,7 +74,7 @@ func Header() Element { // trailing comment on brace
 func TestParser_CommentAttachment_OrphanCommentInComponentBody(t *testing.T) {
 	input := `package x
 
-func Header() Element {
+templ Header() {
 	// orphan comment in body
 	<span>Hello</span>
 }`
@@ -115,7 +115,7 @@ func Header() Element {
 func TestParser_CommentAttachment_OrphanCommentWithNoFollowingNode(t *testing.T) {
 	input := `package x
 
-func Header() Element {
+templ Header() {
 	<span>Hello</span>
 	// trailing orphan comment
 }`
@@ -147,7 +147,7 @@ func Header() Element {
 func TestParser_CommentAttachment_OrphanCommentInFile(t *testing.T) {
 	input := `package x
 
-func Header() Element {
+templ Header() {
 	<span>Hello</span>
 }
 
@@ -175,7 +175,7 @@ func TestParser_CommentAttachment_LeadingCommentBeforePackage(t *testing.T) {
 // License info
 package x
 
-func Header() Element {
+templ Header() {
 	<span>Hello</span>
 }`
 
@@ -247,7 +247,7 @@ func TestParser_CommentGrouping_BlankLineSeparation(t *testing.T) {
 func TestParser_CommentAttachment_InForLoop(t *testing.T) {
 	input := `package x
 
-func List(items []string) Element {
+templ List(items []string) {
 	@for _, item := range items { // loop comment
 		// comment before span
 		<span>{item}</span>
@@ -299,7 +299,7 @@ func List(items []string) Element {
 func TestParser_CommentAttachment_InIfStmt(t *testing.T) {
 	input := `package x
 
-func Cond(show bool) Element {
+templ Cond(show bool) {
 	@if show { // if comment
 		// comment before visible
 		<span>Visible</span>
@@ -347,7 +347,7 @@ func Cond(show bool) Element {
 func TestParser_CommentAttachment_EmptyForLoopBody(t *testing.T) {
 	input := `package x
 
-func Empty() Element {
+templ Empty() {
 	@for _, item := range items {
 		// only a comment, no elements
 	}
@@ -380,7 +380,7 @@ func Empty() Element {
 func TestParser_CommentAttachment_TrailingOnElement(t *testing.T) {
 	input := `package x
 
-func Test() Element {
+templ Test() {
 	<span>Hello</span>  // trailing on span
 }`
 
@@ -410,7 +410,7 @@ func Test() Element {
 func TestParser_CommentAttachment_SelfClosingElement(t *testing.T) {
 	input := `package x
 
-func Test() Element {
+templ Test() {
 	<input />  // trailing on self-closing
 }`
 
@@ -476,7 +476,7 @@ func TestParser_CommentAttachment_BlockComment(t *testing.T) {
 
 /* Block comment
    spanning multiple lines */
-func Header() Element {
+templ Header() {
 	<span>Hello</span>
 }`
 
@@ -506,7 +506,7 @@ func Header() Element {
 func TestParser_CommentAttachment_NestedElements(t *testing.T) {
 	input := `package x
 
-func Nested() Element {
+templ Nested() {
 	<div>
 		// comment before inner span
 		<span>Hello</span>

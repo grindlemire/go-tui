@@ -110,12 +110,12 @@ func (p *printer) printImports(imports []tuigen.Import) {
 }
 
 // printComponent outputs a component declaration.
-// Components are functions with Element return type: func Name(params) Element { ... }
+// Components are templ functions with no return type: templ Name(params) { ... }
 func (p *printer) printComponent(comp *tuigen.Component) {
 	// Leading comments (doc comments)
 	p.printLeadingComments(comp.LeadingComments)
 
-	p.write("func ")
+	p.write("templ ")
 	p.write(comp.Name)
 	p.write("(")
 
@@ -129,7 +129,7 @@ func (p *printer) printComponent(comp *tuigen.Component) {
 		p.write(param.Type)
 	}
 
-	p.write(") Element {")
+	p.write(") {")
 	p.printTrailingComment(comp.TrailingComments)
 	p.newline()
 

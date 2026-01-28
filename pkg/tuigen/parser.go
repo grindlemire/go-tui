@@ -80,12 +80,12 @@ func (p *Parser) expectSkipNewlines(typ TokenType) bool {
 }
 
 // synchronize skips tokens until a synchronization point is found.
-// Synchronization points are top-level declarations: func.
+// Synchronization points are top-level declarations: func, templ.
 // This allows the parser to recover from errors and continue parsing.
 func (p *Parser) synchronize() {
 	for p.current.Type != TokenEOF {
 		// Sync points: top-level declarations
-		if p.current.Type == TokenFunc {
+		if p.current.Type == TokenFunc || p.current.Type == TokenTempl {
 			return
 		}
 		p.advance()
@@ -204,7 +204,7 @@ func (p *Parser) ParseFile() (*File, error) {
 	p.skipNewlines()
 
 	// Parse components and top-level functions
-	// Components are functions with `Element` return type: func Name(params) Element { ... }
+	// Components are defined with `templ`: templ Name(params) { ... }
 	// Helper functions are all other func declarations
 	for p.current.Type != TokenEOF {
 		p.skipNewlines()
@@ -216,6 +216,16 @@ func (p *Parser) ParseFile() (*File, error) {
 		leadingComments := p.getLeadingCommentGroup()
 
 		switch p.current.Type {
+		case TokenTempl:
+			// Parse templ - always a component, no return type
+			comp := p.parseTempl()
+			if comp != nil {
+				comp.LeadingComments = leadingComments
+				file.Components = append(file.Components, comp)
+			} else {
+				// Error recovery: skip to next top-level declaration
+				p.synchronize()
+			}
 		case TokenFunc:
 			// Parse func - could be either a component (returns Element) or helper function
 			result := p.parseFuncOrComponent()
@@ -233,7 +243,7 @@ func (p *Parser) ParseFile() (*File, error) {
 				p.synchronize()
 			}
 		default:
-			p.errors.AddErrorf(p.position(), "unexpected token %s, expected func", p.current.Type)
+			p.errors.AddErrorf(p.position(), "unexpected token %s, expected func or templ", p.current.Type)
 			// Error recovery: skip to next top-level declaration
 			p.synchronize()
 		}
@@ -443,6 +453,63 @@ func (p *Parser) parseFuncOrComponent() Node {
 		Code:     code,
 		Position: pos,
 	}
+}
+
+// parseTempl parses a templ definition which is always a component.
+// Syntax: templ Name(params) { body }
+// No return type is specified - it's always generated as *element.Element.
+func (p *Parser) parseTempl() *Component {
+	pos := p.position()
+
+	if !p.expect(TokenTempl) {
+		return nil
+	}
+
+	if p.current.Type != TokenIdent {
+		p.errors.AddError(p.position(), "expected component name")
+		return nil
+	}
+
+	name := p.current.Literal
+	p.advance()
+
+	// Parse parameters
+	if !p.expect(TokenLParen) {
+		return nil
+	}
+
+	params := p.parseParams()
+
+	if !p.expect(TokenRParen) {
+		return nil
+	}
+
+	p.skipNewlines()
+
+	comp := &Component{
+		Name:       name,
+		Params:     params,
+		ReturnType: "*element.Element",
+		Position:   pos,
+	}
+
+	// Parse body as DSL
+	openBraceLine := p.current.Line
+	if !p.expect(TokenLBrace) {
+		return nil
+	}
+
+	// Check for trailing comment on the same line as opening brace
+	comp.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
+
+	p.skipNewlines()
+	comp.Body, comp.OrphanComments = p.parseComponentBodyWithOrphans()
+
+	if !p.expectSkipNewlines(TokenRBrace) {
+		return nil
+	}
+
+	return comp
 }
 
 // parseParams parses function parameters.
@@ -1167,7 +1234,6 @@ func (p *Parser) parseIf() *IfStmt {
 	return stmt
 }
 
-
 // parseComponentCall parses @ComponentName(args) or @ComponentName(args) { children }
 func (p *Parser) parseComponentCall() *ComponentCall {
 	pos := p.position()
@@ -1258,4 +1324,3 @@ func (p *Parser) parseGoExprOrChildrenSlot() Node {
 		Position: pos,
 	}
 }
-

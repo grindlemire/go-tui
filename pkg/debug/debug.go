@@ -62,8 +62,10 @@ func Log(format string, args ...any) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if logFile == nil {
+	if logFile == nil && os.Getenv("DEBUG") != "" {
 		initLocked("")
+	} else if logFile == nil {
+		return
 	}
 
 	timestamp := time.Now().Format("15:04:05.000")

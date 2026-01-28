@@ -25,13 +25,13 @@ func TestFormat(t *testing.T) {
 		"simple package and component": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 <span>Hello</span>
 }
 `,
 			want: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -41,7 +41,7 @@ func Hello() Element {
 
 import "fmt"
 
-func Hello() Element {
+templ Hello() {
 <span>{fmt.Sprintf("hi")}</span>
 }
 `,
@@ -49,7 +49,7 @@ func Hello() Element {
 
 import "fmt"
 
-func Hello() Element {
+templ Hello() {
 	<span>{fmt.Sprintf("hi")}</span>
 }
 `,
@@ -62,7 +62,7 @@ import (
 "strings"
 )
 
-func Hello() Element {
+templ Hello() {
 <span>{strings.ToUpper(fmt.Sprintf("hi"))}</span>
 }
 `,
@@ -73,7 +73,7 @@ import (
 	"strings"
 )
 
-func Hello() Element {
+templ Hello() {
 	<span>{strings.ToUpper(fmt.Sprintf("hi"))}</span>
 }
 `,
@@ -85,7 +85,7 @@ import (
 tui "github.com/grindlemire/go-tui/pkg/tui"
 )
 
-func Hello() Element {
+templ Hello() {
 <div border={tui.BorderSingle}></div>
 }
 `,
@@ -93,7 +93,7 @@ func Hello() Element {
 
 import tui "github.com/grindlemire/go-tui/pkg/tui"
 
-func Hello() Element {
+templ Hello() {
 	<div border={tui.BorderSingle}></div>
 }
 `,
@@ -101,13 +101,13 @@ func Hello() Element {
 		"component with parameters": {
 			input: `package main
 
-func Card(title string, count int) Element {
+templ Card(title string, count int) {
 <span>{title}</span>
 }
 `,
 			want: `package main
 
-func Card(title string, count int) Element {
+templ Card(title string, count int) {
 	<span>{title}</span>
 }
 `,
@@ -115,7 +115,7 @@ func Card(title string, count int) Element {
 		"nested elements": {
 			input: `package main
 
-func Layout() Element {
+templ Layout() {
 <div>
 <div>
 <span>Hello</span>
@@ -125,7 +125,7 @@ func Layout() Element {
 `,
 			want: `package main
 
-func Layout() Element {
+templ Layout() {
 	<div>
 		<div>
 			<span>Hello</span>
@@ -137,13 +137,13 @@ func Layout() Element {
 		"self-closing element": {
 			input: `package main
 
-func Divider() Element {
+templ Divider() {
 <hr />
 }
 `,
 			want: `package main
 
-func Divider() Element {
+templ Divider() {
 	<hr />
 }
 `,
@@ -151,7 +151,7 @@ func Divider() Element {
 		"for loop": {
 			input: `package main
 
-func List(items []string) Element {
+templ List(items []string) {
 @for i, item := range items {
 <span>{item}</span>
 }
@@ -159,7 +159,7 @@ func List(items []string) Element {
 `,
 			want: `package main
 
-func List(items []string) Element {
+templ List(items []string) {
 	@for i, item := range items {
 		<span>{item}</span>
 	}
@@ -169,7 +169,7 @@ func List(items []string) Element {
 		"if statement": {
 			input: `package main
 
-func Cond(show bool) Element {
+templ Cond(show bool) {
 @if show {
 <span>Visible</span>
 }
@@ -177,7 +177,7 @@ func Cond(show bool) Element {
 `,
 			want: `package main
 
-func Cond(show bool) Element {
+templ Cond(show bool) {
 	@if show {
 		<span>Visible</span>
 	}
@@ -187,7 +187,7 @@ func Cond(show bool) Element {
 		"if-else statement": {
 			input: `package main
 
-func Cond(show bool) Element {
+templ Cond(show bool) {
 @if show {
 <span>Yes</span>
 } @else {
@@ -197,7 +197,7 @@ func Cond(show bool) Element {
 `,
 			want: `package main
 
-func Cond(show bool) Element {
+templ Cond(show bool) {
 	@if show {
 		<span>Yes</span>
 	} @else {
@@ -209,14 +209,14 @@ func Cond(show bool) Element {
 		"let binding": {
 			input: `package main
 
-func WithLet() Element {
+templ WithLet() {
 @let x = <span>Hello</span>
 {x}
 }
 `,
 			want: `package main
 
-func WithLet() Element {
+templ WithLet() {
 	@let x = <span>Hello</span>
 	{x}
 }
@@ -225,21 +225,21 @@ func WithLet() Element {
 		"component call": {
 			input: `package main
 
-func Parent() Element {
+templ Parent() {
 @Child("arg1", "arg2")
 }
 
-func Child(a string, b string) Element {
+templ Child(a string, b string) {
 <span>{a}</span>
 }
 `,
 			want: `package main
 
-func Parent() Element {
+templ Parent() {
 	@Child("arg1", "arg2")
 }
 
-func Child(a string, b string) Element {
+templ Child(a string, b string) {
 	<span>{a}</span>
 }
 `,
@@ -247,13 +247,13 @@ func Child(a string, b string) Element {
 		"component call with children": {
 			input: `package main
 
-func Parent() Element {
+templ Parent() {
 @Card("Title") {
 <span>Content</span>
 }
 }
 
-func Card(title string) Element {
+templ Card(title string) {
 <div>
 <span>{title}</span>
 {children...}
@@ -262,13 +262,13 @@ func Card(title string) Element {
 `,
 			want: `package main
 
-func Parent() Element {
+templ Parent() {
 	@Card("Title") {
 		<span>Content</span>
 	}
 }
 
-func Card(title string) Element {
+templ Card(title string) {
 	<div>
 		<span>{title}</span>
 		{children...}
@@ -279,7 +279,7 @@ func Card(title string) Element {
 		"multiple attributes": {
 			input: `package main
 
-func Box() Element {
+templ Box() {
 <div border={1} padding={2} margin={1}>
 <span>Content</span>
 </div>
@@ -287,7 +287,7 @@ func Box() Element {
 `,
 			want: `package main
 
-func Box() Element {
+templ Box() {
 	<div border={1} padding={2} margin={1}>
 		<span>Content</span>
 	</div>
@@ -297,7 +297,7 @@ func Box() Element {
 		"string attribute": {
 			input: `package main
 
-func Styled() Element {
+templ Styled() {
 <div class="flex-col gap-1">
 <span>Content</span>
 </div>
@@ -305,7 +305,7 @@ func Styled() Element {
 `,
 			want: `package main
 
-func Styled() Element {
+templ Styled() {
 	<div class="flex-col gap-1">
 		<span>Content</span>
 	</div>
@@ -338,7 +338,7 @@ func TestFormatRoundTrip(t *testing.T) {
 		"simple component": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -350,7 +350,7 @@ import (
 	"fmt"
 )
 
-func Complex(items []string, selected int) Element {
+templ Complex(items []string, selected int) {
 	<div border={1}>
 		@for i, item := range items {
 			@if i == selected {
@@ -399,7 +399,7 @@ func TestFormatWithResult(t *testing.T) {
 		"already formatted": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -408,7 +408,7 @@ func Hello() Element {
 		"needs formatting": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 <span>Hello</span>
 }
 `,
@@ -438,7 +438,7 @@ func TestFormatParseError(t *testing.T) {
 
 	tests := map[string]tc{
 		"missing package": {
-			input: `func Hello() Element {
+			input: `templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -514,7 +514,7 @@ func TestFormatPreservesGoExpressions(t *testing.T) {
 
 import "fmt"
 
-func Complex() Element {
+templ Complex() {
 	<span>{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}</span>
 }
 `
@@ -542,7 +542,7 @@ func TestFormatAutoImports(t *testing.T) {
 		"adds tui and element imports": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -554,7 +554,7 @@ func Hello() Element {
 		"adds fmt import when used": {
 			input: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>{fmt.Sprintf("hello")}</span>
 }
 `,
@@ -569,7 +569,7 @@ func Hello() Element {
 
 import "fmt"
 
-func Hello() Element {
+templ Hello() {
 	<span>{fmt.Sprintf("hello")}</span>
 }
 `,

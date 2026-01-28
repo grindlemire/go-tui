@@ -8,7 +8,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-@component CounterUI() {
+templ CounterUI() {
 	count := tui.NewState(0)
 	<div class="flex-col gap-1 p-2" onKeyPress={handleKeys(count)}>
 		<div class="border-rounded p-1 flex-col items-center justify-center">

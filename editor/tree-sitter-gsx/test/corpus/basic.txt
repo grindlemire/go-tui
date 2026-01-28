@@ -32,7 +32,7 @@ import "fmt"
 Simple component
 ================================================================================
 
-@component Header(title string) {
+templ Header(title string) {
 	<div><span>{title}</span></div>
 }
 
@@ -62,7 +62,7 @@ Simple component
 Component with no parameters
 ================================================================================
 
-@component Footer() {
+templ Footer() {
 	<div></div>
 }
 
@@ -82,7 +82,7 @@ Component with no parameters
 Self-closing element
 ================================================================================
 
-@component Spacer() {
+templ Spacer() {
 	<hr />
 }
 
@@ -101,7 +101,7 @@ Self-closing element
 Component call
 ================================================================================
 
-@component App() {
+templ App() {
 	@Header("Title")
 }
 
@@ -121,7 +121,7 @@ Component call
 For loop
 ================================================================================
 
-@component List(items []string) {
+templ List(items []string) {
 	@for i, item := range items {
 		<span>{item}</span>
 	}
@@ -157,7 +157,7 @@ For loop
 If statement
 ================================================================================
 
-@component Conditional(show bool) {
+templ Conditional(show bool) {
 	@if show {
 		<span>Visible</span>
 	}
@@ -187,7 +187,7 @@ If statement
 Let binding
 ================================================================================
 
-@component WithLet() {
+templ WithLet() {
 	@let header = <span>Title</span>
 	<div>{header}</div>
 }
@@ -220,7 +220,7 @@ Comments
 // Single line comment
 package main
 
-@component Test() {
+templ Test() {
 	<span>Hello</span>
 }
 
@@ -268,7 +268,7 @@ import (
 If-else statement
 ================================================================================
 
-@component Conditional(show bool) {
+templ ConditionalElse(show bool) {
 	@if show {
 		<span>Yes</span>
 	} @else {
@@ -306,7 +306,7 @@ If-else statement
 Qualified type parameter
 ================================================================================
 
-@component WithLayout(dir layout.Direction) {
+templ WithLayout(dir layout.Direction) {
 	<div></div>
 }
 
@@ -332,7 +332,7 @@ Qualified type parameter
 Element with attributes
 ================================================================================
 
-@component Box() {
+templ Box() {
 	<div border={true} padding={2}>
 		<span>Content</span>
 	</div>

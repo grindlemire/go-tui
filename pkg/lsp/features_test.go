@@ -17,7 +17,7 @@ func TestComponentIndex(t *testing.T) {
 		"single component": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -28,11 +28,11 @@ func Hello() Element {
 		"multiple components": {
 			content: `package main
 
-func Header() Element {
+templ Header() {
 	<span>Header</span>
 }
 
-func Footer() Element {
+templ Footer() {
 	<span>Footer</span>
 }
 `,
@@ -43,7 +43,7 @@ func Footer() Element {
 		"lookup nonexistent": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -86,7 +86,7 @@ func TestComponentIndexRemove(t *testing.T) {
 	uri := "file:///test.gsx"
 	content := `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `
@@ -155,11 +155,11 @@ func TestDefinitionDirect(t *testing.T) {
 		"component definition from call": {
 			content: `package main
 
-func Header() Element {
+templ Header() {
 	<span>Header</span>
 }
 
-func Main() Element {
+templ Main() {
 	@Header()
 }
 `,
@@ -209,11 +209,11 @@ func TestHoverDirect(t *testing.T) {
 		"hover on component call": {
 			content: `package main
 
-func Header(title string) Element {
+templ Header(title string) {
 	<span>{title}</span>
 }
 
-func Main() Element {
+templ Main() {
 	@Header("test")
 }
 `,
@@ -224,7 +224,7 @@ func Main() Element {
 		"hover on element tag": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div padding={1}>
 		<span>Hello</span>
 	</div>
@@ -276,11 +276,11 @@ func TestCompletionDirect(t *testing.T) {
 		"after @": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 
-func Main() Element {
+templ Main() {
 	@
 }
 `,
@@ -292,7 +292,7 @@ func Main() Element {
 		"after <": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<
 }
 `,
@@ -351,7 +351,7 @@ func TestDocumentSymbolDirect(t *testing.T) {
 		"single component": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
@@ -360,15 +360,15 @@ func Hello() Element {
 		"multiple components": {
 			content: `package main
 
-func Header() Element {
+templ Header() {
 	<span>Header</span>
 }
 
-func Footer() Element {
+templ Footer() {
 	<span>Footer</span>
 }
 
-func Main() Element {
+templ Main() {
 	@Header()
 	@Footer()
 }
@@ -378,7 +378,7 @@ func Main() Element {
 		"component with go func": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 
@@ -431,13 +431,13 @@ func TestWorkspaceSymbolDirect(t *testing.T) {
 			contents: map[string]string{
 				"file:///a.gsx": `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
 				"file:///b.gsx": `package main
 
-func World() Element {
+templ World() {
 	<span>World</span>
 }
 `,
@@ -449,13 +449,13 @@ func World() Element {
 			contents: map[string]string{
 				"file:///a.gsx": `package main
 
-func Hello() Element {
+templ Hello() {
 	<span>Hello</span>
 }
 `,
 				"file:///b.gsx": `package main
 
-func World() Element {
+templ World() {
 	<span>World</span>
 }
 `,
@@ -467,7 +467,7 @@ func World() Element {
 			contents: map[string]string{
 				"file:///a.gsx": `package main
 
-func HelloWorld() Element {
+templ HelloWorld() {
 	<span>Hello</span>
 }
 `,
@@ -593,7 +593,7 @@ func TestIsInClassAttribute(t *testing.T) {
 		"inside class attribute empty": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="">
 	</div>
 }
@@ -606,7 +606,7 @@ func Hello() Element {
 		"inside class attribute with prefix": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="flex">
 	</div>
 }
@@ -619,7 +619,7 @@ func Hello() Element {
 		"inside class attribute partial class after space": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="flex-col gap">
 	</div>
 }
@@ -632,7 +632,7 @@ func Hello() Element {
 		"inside class attribute at space": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="flex-col ">
 	</div>
 }
@@ -645,7 +645,7 @@ func Hello() Element {
 		"not in class attribute - in id": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div id="test">
 	</div>
 }
@@ -658,7 +658,7 @@ func Hello() Element {
 		"not in class attribute - outside quotes": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="flex">
 	</div>
 }
@@ -671,7 +671,7 @@ func Hello() Element {
 		"not in class attribute - different line": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="flex">
 		<span>Hello</span>
 	</div>
@@ -705,7 +705,7 @@ func Hello() Element {
 func TestGetTailwindCompletions(t *testing.T) {
 	type tc struct {
 		prefix    string
-		wantCount int  // -1 means we just check > 0
+		wantCount int // -1 means we just check > 0
 		wantFirst string
 		checkAll  bool // if true, check that all returned items have the prefix
 	}
@@ -780,7 +780,7 @@ func TestTailwindCompletionInCompletion(t *testing.T) {
 		"inside class attribute": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div class="flex">
 	</div>
 }
@@ -792,7 +792,7 @@ func Hello() Element {
 		"not inside class attribute": {
 			content: `package main
 
-func Hello() Element {
+templ Hello() {
 	<div id="test">
 	</div>
 }
