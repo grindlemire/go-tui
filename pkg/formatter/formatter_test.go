@@ -16,9 +16,9 @@ func newTestFormatter() *Formatter {
 // TestFormat tests basic formatting scenarios.
 func TestFormat(t *testing.T) {
 	type tc struct {
-		name   string
-		input  string
-		want   string
+		name  string
+		input string
+		want  string
 	}
 
 	tests := map[string]tc{
