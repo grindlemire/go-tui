@@ -8,7 +8,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
-// GenerateVirtualGo generates a valid Go source file from a .tui AST.
+// GenerateVirtualGo generates a valid Go source file from a .gsx AST.
 // It returns the generated source and a SourceMap for position translation.
 func GenerateVirtualGo(file *tuigen.File) (string, *SourceMap) {
 	g := &generator{
@@ -25,7 +25,7 @@ type generator struct {
 	goCol     int // current column in generated Go (0-indexed)
 }
 
-// generate produces Go source from a .tui AST.
+// generate produces Go source from a .gsx AST.
 func (g *generator) generate(file *tuigen.File) string {
 	// Package declaration
 	g.writeLine(fmt.Sprintf("package %s", file.Package))
@@ -91,7 +91,7 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Add mappings for each parameter
 	for _, p := range comp.Params {
 		if p.Position.Line > 0 && p.Position.Column > 0 {
-			// Map the parameter name from .tui to .go
+			// Map the parameter name from .gsx to .go
 			m := Mapping{
 				TuiLine: p.Position.Line - 1,
 				TuiCol:  p.Position.Column - 1,
@@ -307,7 +307,7 @@ func (g *generator) generateLetBinding(binding *tuigen.LetBinding, indent string
 	}
 
 	// Add mapping for the variable name
-	// In .tui: "@let varName = ..." - Position points to @, so varName is at Column + len("@let ")
+	// In .gsx: "@let varName = ..." - Position points to @, so varName is at Column + len("@let ")
 	// In .go: "var varName interface{}" - varName is at indent + len("var ")
 	tuiLine := binding.Position.Line - 1
 	tuiCol := binding.Position.Column - 1 + len("@let ")
@@ -372,7 +372,7 @@ func (g *generator) generateFunc(fn *tuigen.GoFunc) {
 
 	for i, line := range lines {
 		// Add mapping for each line of the function
-		// This maps the entire line from .tui to .go
+		// This maps the entire line from .gsx to .go
 		g.sourceMap.AddMapping(Mapping{
 			TuiLine: tuiStartLine + i,
 			TuiCol:  tuiStartCol,

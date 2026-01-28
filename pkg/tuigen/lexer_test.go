@@ -102,7 +102,7 @@ func TestLexer_BasicTokens(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			for i, expected := range tt.expected {
 				tok := l.Next()
 				if tok.Type != expected.Type {
@@ -141,7 +141,7 @@ func TestLexer_Keywords(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != tt.expectedType {
 				t.Errorf("Type = %v, want %v", tok.Type, tt.expectedType)
@@ -161,16 +161,15 @@ func TestLexer_DSLKeywords(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"@component": {input: "@component", expectedType: TokenAtComponent, literal: "@component"},
-		"@let":       {input: "@let", expectedType: TokenAtLet, literal: "@let"},
-		"@for":       {input: "@for", expectedType: TokenAtFor, literal: "@for"},
-		"@if":        {input: "@if", expectedType: TokenAtIf, literal: "@if"},
-		"@else":      {input: "@else", expectedType: TokenAtElse, literal: "@else"},
+		"@let":  {input: "@let", expectedType: TokenAtLet, literal: "@let"},
+		"@for":  {input: "@for", expectedType: TokenAtFor, literal: "@for"},
+		"@if":   {input: "@if", expectedType: TokenAtIf, literal: "@if"},
+		"@else": {input: "@else", expectedType: TokenAtElse, literal: "@else"},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != tt.expectedType {
 				t.Errorf("Type = %v, want %v", tok.Type, tt.expectedType)
@@ -199,7 +198,7 @@ func TestLexer_Identifiers(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != TokenIdent {
 				t.Errorf("Type = %v, want TokenIdent", tok.Type)
@@ -232,7 +231,7 @@ func TestLexer_Numbers(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != tt.expectedType {
 				t.Errorf("Type = %v, want %v", tok.Type, tt.expectedType)
@@ -263,7 +262,7 @@ func TestLexer_Strings(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != TokenString {
 				t.Errorf("Type = %v, want TokenString", tok.Type)
@@ -291,7 +290,7 @@ func TestLexer_RawStrings(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != TokenRawString {
 				t.Errorf("Type = %v, want TokenRawString", tok.Type)
@@ -323,7 +322,7 @@ func TestLexer_GoExpressions(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			// First, consume the opening brace via Next()
 			// ReadGoExpr expects to be called after { was tokenized
 			brace := l.Next()
@@ -368,7 +367,7 @@ func TestLexer_Whitespace(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			for i, expectedType := range tt.expected {
 				tok := l.Next()
 				if tok.Type != expectedType {
@@ -406,7 +405,7 @@ func TestLexer_Comments(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			for i, expectedType := range tt.expected {
 				tok := l.Next()
 				if tok.Type != expectedType {
@@ -422,7 +421,7 @@ func TestLexer_LineTracking(t *testing.T) {
 
 import "fmt"
 
-@component Foo() {
+func Foo() Element {
     <span>Hello</span>
 }`
 
@@ -440,10 +439,11 @@ import "fmt"
 		{TokenString, 3}, // "fmt"
 		{TokenNewline, 3},
 		{TokenNewline, 4},
-		{TokenAtComponent, 5},
+		{TokenFunc, 5},
 		{TokenIdent, 5}, // Foo
 		{TokenLParen, 5},
 		{TokenRParen, 5},
+		{TokenIdent, 5}, // Element
 		{TokenLBrace, 5},
 		{TokenNewline, 5},
 		{TokenLAngle, 6},
@@ -458,7 +458,7 @@ import "fmt"
 		{TokenEOF, 7},
 	}
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	for i, tt := range expected {
 		tok := l.Next()
 		if tok.Type != tt.expectedType {
@@ -491,7 +491,7 @@ func TestLexer_XMLLikeTokens(t *testing.T) {
 		// Parser would call ReadGoExpr here
 	}
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	for i, tt := range expected {
 		tok := l.Next()
 		if tok.Type != tt.expectedType {
@@ -535,7 +535,7 @@ func TestLexer_ErrorCases(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			// Consume all tokens
 			for {
 				tok := l.Next()
@@ -566,7 +566,7 @@ func TestLexer_Underscore(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 			if tok.Type != tt.expectedType {
 				t.Errorf("Type = %v, want %v", tok.Type, tt.expectedType)
@@ -579,13 +579,13 @@ func TestLexer_Underscore(t *testing.T) {
 }
 
 func TestLexer_CompleteComponent(t *testing.T) {
-	input := `@component Counter(count int) {
+	input := `func Counter(count int) Element {
     <div direction={layout.Column}>
         <span>{fmt.Sprintf("Count: %d", count)}</span>
     </div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	tokens := []Token{}
 	for {
 		tok := l.Next()
@@ -604,8 +604,8 @@ func TestLexer_CompleteComponent(t *testing.T) {
 	if len(tokens) < 5 {
 		t.Fatalf("expected at least 5 tokens, got %d", len(tokens))
 	}
-	if tokens[0].Type != TokenAtComponent {
-		t.Errorf("token 0: Type = %v, want TokenAtComponent", tokens[0].Type)
+	if tokens[0].Type != TokenFunc {
+		t.Errorf("token 0: Type = %v, want TokenFunc", tokens[0].Type)
 	}
 	if tokens[1].Type != TokenIdent || tokens[1].Literal != "Counter" {
 		t.Errorf("token 1: Type = %v, Literal = %q, want TokenIdent, Counter", tokens[1].Type, tokens[1].Literal)
@@ -852,11 +852,6 @@ func TestLexer_ComponentCall(t *testing.T) {
 			wantType:    TokenAtCall,
 			wantLiteral: "Header",
 		},
-		"component keyword": {
-			input:       "@component",
-			wantType:    TokenAtComponent,
-			wantLiteral: "@component",
-		},
 		"lowercase still keyword error": {
 			input:    "@unknown",
 			wantType: TokenError,
@@ -865,7 +860,7 @@ func TestLexer_ComponentCall(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			tok := l.Next()
 
 			if tok.Type != tt.wantType {

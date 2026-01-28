@@ -235,7 +235,7 @@ func (s *Server) handleInitialized() (any, *Error) {
 	s.initialized = true
 	log.Server("Server initialized")
 
-	// Index all .tui files in the workspace for cross-file references
+	// Index all .gsx files in the workspace for cross-file references
 	go s.indexWorkspace()
 
 	// Start gopls proxy in the background
@@ -431,7 +431,7 @@ func (s *Server) handleDidSave(params json.RawMessage) (any, *Error) {
 	return nil, nil
 }
 
-// indexWorkspace scans the workspace for .tui files and indexes them.
+// indexWorkspace scans the workspace for .gsx files and indexes them.
 // This enables cross-file go-to-definition for components and functions.
 func (s *Server) indexWorkspace() {
 	if s.rootURI == "" {
@@ -460,8 +460,8 @@ func (s *Server) indexWorkspace() {
 			return nil
 		}
 
-		// Only process .tui files
-		if !strings.HasSuffix(path, ".tui") {
+		// Only process .gsx files
+		if !strings.HasSuffix(path, ".gsx") {
 			return nil
 		}
 

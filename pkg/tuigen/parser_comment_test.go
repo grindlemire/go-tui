@@ -9,11 +9,11 @@ func TestParser_CommentAttachment_LeadingCommentOnComponent(t *testing.T) {
 
 // This is a doc comment for Header
 // It spans multiple lines
-@component Header() {
+func Header() Element {
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -45,11 +45,11 @@ func TestParser_CommentAttachment_LeadingCommentOnComponent(t *testing.T) {
 func TestParser_CommentAttachment_TrailingCommentOnComponent(t *testing.T) {
 	input := `package x
 
-@component Header() { // trailing comment on brace
+func Header() Element { // trailing comment on brace
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -74,12 +74,12 @@ func TestParser_CommentAttachment_TrailingCommentOnComponent(t *testing.T) {
 func TestParser_CommentAttachment_OrphanCommentInComponentBody(t *testing.T) {
 	input := `package x
 
-@component Header() {
+func Header() Element {
 	// orphan comment in body
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -115,12 +115,12 @@ func TestParser_CommentAttachment_OrphanCommentInComponentBody(t *testing.T) {
 func TestParser_CommentAttachment_OrphanCommentWithNoFollowingNode(t *testing.T) {
 	input := `package x
 
-@component Header() {
+func Header() Element {
 	<span>Hello</span>
 	// trailing orphan comment
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -147,13 +147,13 @@ func TestParser_CommentAttachment_OrphanCommentWithNoFollowingNode(t *testing.T)
 func TestParser_CommentAttachment_OrphanCommentInFile(t *testing.T) {
 	input := `package x
 
-@component Header() {
+func Header() Element {
 	<span>Hello</span>
 }
 
 // orphan comment at end of file`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -175,11 +175,11 @@ func TestParser_CommentAttachment_LeadingCommentBeforePackage(t *testing.T) {
 // License info
 package x
 
-@component Header() {
+func Header() Element {
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -247,14 +247,14 @@ func TestParser_CommentGrouping_BlankLineSeparation(t *testing.T) {
 func TestParser_CommentAttachment_InForLoop(t *testing.T) {
 	input := `package x
 
-@component List(items []string) {
+func List(items []string) Element {
 	@for _, item := range items { // loop comment
 		// comment before span
 		<span>{item}</span>
 	}
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -299,14 +299,14 @@ func TestParser_CommentAttachment_InForLoop(t *testing.T) {
 func TestParser_CommentAttachment_InIfStmt(t *testing.T) {
 	input := `package x
 
-@component Cond(show bool) {
+func Cond(show bool) Element {
 	@if show { // if comment
 		// comment before visible
 		<span>Visible</span>
 	}
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -347,13 +347,13 @@ func TestParser_CommentAttachment_InIfStmt(t *testing.T) {
 func TestParser_CommentAttachment_EmptyForLoopBody(t *testing.T) {
 	input := `package x
 
-@component Empty() {
+func Empty() Element {
 	@for _, item := range items {
 		// only a comment, no elements
 	}
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -380,11 +380,11 @@ func TestParser_CommentAttachment_EmptyForLoopBody(t *testing.T) {
 func TestParser_CommentAttachment_TrailingOnElement(t *testing.T) {
 	input := `package x
 
-@component Test() {
+func Test() Element {
 	<span>Hello</span>  // trailing on span
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -410,11 +410,11 @@ func TestParser_CommentAttachment_TrailingOnElement(t *testing.T) {
 func TestParser_CommentAttachment_SelfClosingElement(t *testing.T) {
 	input := `package x
 
-@component Test() {
+func Test() Element {
 	<input />  // trailing on self-closing
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -449,7 +449,7 @@ func helper() string {
 	return "hello"
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -476,11 +476,11 @@ func TestParser_CommentAttachment_BlockComment(t *testing.T) {
 
 /* Block comment
    spanning multiple lines */
-@component Header() {
+func Header() Element {
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -506,14 +506,14 @@ func TestParser_CommentAttachment_BlockComment(t *testing.T) {
 func TestParser_CommentAttachment_NestedElements(t *testing.T) {
 	input := `package x
 
-@component Nested() {
+func Nested() Element {
 	<div>
 		// comment before inner span
 		<span>Hello</span>
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 

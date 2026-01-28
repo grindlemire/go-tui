@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Parser parses .tui source files into an AST.
+// Parser parses .gsx source files into an AST.
 type Parser struct {
 	lexer           *Lexer
 	current         Token
@@ -80,12 +80,12 @@ func (p *Parser) expectSkipNewlines(typ TokenType) bool {
 }
 
 // synchronize skips tokens until a synchronization point is found.
-// Synchronization points are top-level declarations: @component or func.
+// Synchronization points are top-level declarations: func.
 // This allows the parser to recover from errors and continue parsing.
 func (p *Parser) synchronize() {
 	for p.current.Type != TokenEOF {
 		// Sync points: top-level declarations
-		if p.current.Type == TokenAtComponent || p.current.Type == TokenFunc {
+		if p.current.Type == TokenFunc {
 			return
 		}
 		p.advance()
@@ -179,7 +179,7 @@ func (p *Parser) getTrailingCommentOnLine(line int) *CommentGroup {
 	return nil
 }
 
-// ParseFile parses a complete .tui file into a File AST node.
+// ParseFile parses a complete .gsx file into a File AST node.
 func (p *Parser) ParseFile() (*File, error) {
 	file := &File{
 		Position: p.position(),
@@ -204,6 +204,8 @@ func (p *Parser) ParseFile() (*File, error) {
 	p.skipNewlines()
 
 	// Parse components and top-level functions
+	// Components are functions with `Element` return type: func Name(params) Element { ... }
+	// Helper functions are all other func declarations
 	for p.current.Type != TokenEOF {
 		p.skipNewlines()
 		if p.current.Type == TokenEOF {
@@ -214,26 +216,24 @@ func (p *Parser) ParseFile() (*File, error) {
 		leadingComments := p.getLeadingCommentGroup()
 
 		switch p.current.Type {
-		case TokenAtComponent:
-			comp := p.parseComponent()
-			if comp != nil {
-				comp.LeadingComments = leadingComments
-				file.Components = append(file.Components, comp)
-			} else {
-				// Error recovery: skip to next top-level declaration
-				p.synchronize()
-			}
 		case TokenFunc:
-			fn := p.parseGoFunc()
-			if fn != nil {
-				fn.LeadingComments = leadingComments
-				file.Funcs = append(file.Funcs, fn)
+			// Parse func - could be either a component (returns Element) or helper function
+			result := p.parseFuncOrComponent()
+			if result != nil {
+				switch r := result.(type) {
+				case *Component:
+					r.LeadingComments = leadingComments
+					file.Components = append(file.Components, r)
+				case *GoFunc:
+					r.LeadingComments = leadingComments
+					file.Funcs = append(file.Funcs, r)
+				}
 			} else {
 				// Error recovery: skip to next top-level declaration
 				p.synchronize()
 			}
 		default:
-			p.errors.AddErrorf(p.position(), "unexpected token %s, expected @component or func", p.current.Type)
+			p.errors.AddErrorf(p.position(), "unexpected token %s, expected func", p.current.Type)
 			// Error recovery: skip to next top-level declaration
 			p.synchronize()
 		}
@@ -337,24 +337,23 @@ func (p *Parser) parseSingleImport() *Import {
 	}
 }
 
-// parseComponent parses a @component definition.
-func (p *Parser) parseComponent() *Component {
+// parseFuncOrComponent parses a func definition and determines if it's a component or helper function.
+// If the return type is exactly "Element", it's parsed as a component with DSL body.
+// Otherwise, it's captured as raw Go code.
+func (p *Parser) parseFuncOrComponent() Node {
 	pos := p.position()
+	startPos := p.current.StartPos
 
-	if !p.expect(TokenAtComponent) {
+	if !p.expect(TokenFunc) {
 		return nil
 	}
 
 	if p.current.Type != TokenIdent {
-		p.errors.AddError(p.position(), "expected component name")
+		p.errors.AddError(p.position(), "expected function name")
 		return nil
 	}
 
-	comp := &Component{
-		Name:       p.current.Literal,
-		ReturnType: "*element.Element",
-		Position:   pos,
-	}
+	name := p.current.Literal
 	p.advance()
 
 	// Parse parameters
@@ -362,31 +361,88 @@ func (p *Parser) parseComponent() *Component {
 		return nil
 	}
 
-	comp.Params = p.parseParams()
+	params := p.parseParams()
 
 	if !p.expect(TokenRParen) {
 		return nil
 	}
 
+	// Check for return type
+	// Skip newlines but preserve position tracking
 	p.skipNewlines()
 
-	// Parse body
-	openBraceLine := p.current.Line
-	if !p.expect(TokenLBrace) {
-		return nil
+	returnType := ""
+	if p.current.Type == TokenIdent {
+		returnType = p.current.Literal
+		p.advance()
 	}
-
-	// Check for trailing comment on the same line as opening brace
-	comp.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
 
 	p.skipNewlines()
-	comp.Body, comp.OrphanComments = p.parseComponentBodyWithOrphans()
 
-	if !p.expectSkipNewlines(TokenRBrace) {
-		return nil
+	// Decision: if return type is exactly "Element", parse as component with DSL body
+	if returnType == "Element" {
+		comp := &Component{
+			Name:       name,
+			Params:     params,
+			ReturnType: "*element.Element", // Internal representation stays the same
+			Position:   pos,
+		}
+
+		// Parse body as DSL
+		openBraceLine := p.current.Line
+		if !p.expect(TokenLBrace) {
+			return nil
+		}
+
+		// Check for trailing comment on the same line as opening brace
+		comp.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
+
+		p.skipNewlines()
+		comp.Body, comp.OrphanComments = p.parseComponentBodyWithOrphans()
+
+		if !p.expectSkipNewlines(TokenRBrace) {
+			return nil
+		}
+
+		return comp
 	}
 
-	return comp
+	// Not a component - capture as raw Go function
+	// We need to continue from where we left off to capture the full function
+	// Skip to matching closing brace
+	braceDepth := 0
+	started := false
+
+	for p.current.Type != TokenEOF {
+		if p.current.Type == TokenLBrace {
+			braceDepth++
+			started = true
+		} else if p.current.Type == TokenRBrace {
+			braceDepth--
+			if started && braceDepth == 0 {
+				// Capture raw source from func to after closing brace
+				endPos := p.current.StartPos + 1 // +1 to include the '}'
+				code := p.lexer.SourceRange(startPos, endPos)
+				p.advance() // move past '}'
+				p.skipNewlines()
+				return &GoFunc{
+					Code:     code,
+					Position: pos,
+				}
+			}
+		}
+		p.advance()
+	}
+
+	// If we reach here, function was not properly closed
+	p.errors.AddError(pos, "unterminated function definition")
+	code := p.lexer.SourceRange(startPos, p.lexer.SourcePos())
+	p.skipNewlines()
+
+	return &GoFunc{
+		Code:     code,
+		Position: pos,
+	}
 }
 
 // parseParams parses function parameters.
@@ -1111,49 +1167,6 @@ func (p *Parser) parseIf() *IfStmt {
 	return stmt
 }
 
-// parseGoFunc parses a top-level Go function.
-func (p *Parser) parseGoFunc() *GoFunc {
-	pos := p.position()
-
-	// Record the start position of the func keyword
-	startPos := p.current.StartPos
-	p.advance() // move past 'func'
-
-	// Skip to matching closing brace
-	braceDepth := 0
-	started := false
-
-	for p.current.Type != TokenEOF {
-		if p.current.Type == TokenLBrace {
-			braceDepth++
-			started = true
-		} else if p.current.Type == TokenRBrace {
-			braceDepth--
-			if started && braceDepth == 0 {
-				// Capture raw source from func to after closing brace
-				endPos := p.current.StartPos + 1 // +1 to include the '}'
-				code := p.lexer.SourceRange(startPos, endPos)
-				p.advance() // move past '}'
-				p.skipNewlines()
-				return &GoFunc{
-					Code:     code,
-					Position: pos,
-				}
-			}
-		}
-		p.advance()
-	}
-
-	// If we reach here, function was not properly closed
-	p.errors.AddError(pos, "unterminated function definition")
-	code := p.lexer.SourceRange(startPos, p.lexer.SourcePos())
-	p.skipNewlines()
-
-	return &GoFunc{
-		Code:     code,
-		Position: pos,
-	}
-}
 
 // parseComponentCall parses @ComponentName(args) or @ComponentName(args) { children }
 func (p *Parser) parseComponentCall() *ComponentCall {

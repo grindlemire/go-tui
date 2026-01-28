@@ -17,7 +17,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 			content: `package main
 
 // This is a comment
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -27,7 +27,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 		"trailing comment on component": {
 			content: `package main
 
-@component Hello() {  // trailing comment
+func Hello() Element {  // trailing comment
 	<span>Hello</span>
 }
 `,
@@ -38,7 +38,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 			content: `package main
 
 /* Block comment */
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -48,7 +48,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 		"comment inside element": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	// comment inside body
 	<span>Hello</span>
 }
@@ -61,7 +61,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 
 // Comment 1
 // Comment 2
-@component Hello() {
+func Hello() Element {
 	// Comment 3
 	<span>Hello</span>  // Comment 4
 }
@@ -72,7 +72,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 		"comment in if statement": {
 			content: `package main
 
-@component Hello(show bool) {
+func Hello(show bool) Element {
 	// comment before if
 	@if show {
 		<span>Hello</span>
@@ -85,7 +85,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 		"comment in for loop": {
 			content: `package main
 
-@component List(items []string) {
+func List(items []string) Element {
 	// comment before for
 	@for _, item := range items {
 		<span>{item}</span>
@@ -98,7 +98,7 @@ func TestCommentSemanticTokens(t *testing.T) {
 		"orphan comment in component body": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	// orphan comment with no following node
 }
 `,
@@ -111,11 +111,11 @@ func TestCommentSemanticTokens(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			params, _ := json.Marshal(SemanticTokensParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///test.tui"},
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 			})
 
 			result, rpcErr := server.handleSemanticTokensFull(params)
@@ -157,7 +157,7 @@ func TestCommentTokenPositions(t *testing.T) {
 			content: `package main
 
 // Hello
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -168,7 +168,7 @@ func TestCommentTokenPositions(t *testing.T) {
 		"indented comment position": {
 			content: `package main
 
-@component Hello() {
+func Hello() Element {
 	// indented comment
 	<span>Hello</span>
 }
@@ -183,8 +183,8 @@ func TestCommentTokenPositions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			tokens := server.collectSemanticTokens(doc)
 
@@ -227,7 +227,7 @@ func TestBlockCommentTokens(t *testing.T) {
 			content: `package main
 
 /* single line */
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -239,7 +239,7 @@ func TestBlockCommentTokens(t *testing.T) {
 /* line 1
    line 2
    line 3 */
-@component Hello() {
+func Hello() Element {
 	<span>Hello</span>
 }
 `,
@@ -251,8 +251,8 @@ func TestBlockCommentTokens(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			tokens := server.collectSemanticTokens(doc)
 
@@ -283,7 +283,7 @@ func TestInlineBlockCommentInGoExpr(t *testing.T) {
 
 import "fmt"
 
-@component Hello(item string) {
+func Hello(item string) Element {
 	<span>{fmt.Sprintf("> %s", /* ItemList item */ item)}</span>
 }
 `,
@@ -291,7 +291,7 @@ import "fmt"
 		"inline block comment in simple expression": {
 			content: `package main
 
-@component Hello(x int) {
+func Hello(x int) Element {
 	<span>{/* test */ x}</span>
 }
 `,
@@ -302,8 +302,8 @@ import "fmt"
 		t.Run(name, func(t *testing.T) {
 			server := NewServer(nil, nil)
 
-			doc := server.docs.Open("file:///test.tui", tt.content, 1)
-			server.index.IndexDocument("file:///test.tui", doc.AST)
+			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
+			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 			tokens := server.collectSemanticTokens(doc)
 
@@ -334,7 +334,7 @@ func TestCommentsInVariousPositions(t *testing.T) {
 // File leading comment
 
 // Component doc comment
-@component Hello(name string) {  // Component trailing
+func Hello(name string) Element {  // Component trailing
 	// Element leading
 	<div>  // Element trailing
 		// Nested comment
@@ -349,8 +349,8 @@ func helper() string {
 `
 	server := NewServer(nil, nil)
 
-	doc := server.docs.Open("file:///test.tui", content, 1)
-	server.index.IndexDocument("file:///test.tui", doc.AST)
+	doc := server.docs.Open("file:///test.gsx", content, 1)
+	server.index.IndexDocument("file:///test.gsx", doc.AST)
 
 	tokens := server.collectSemanticTokens(doc)
 

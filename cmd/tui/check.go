@@ -9,7 +9,7 @@ import (
 )
 
 // runCheck implements the check subcommand.
-// It parses and analyzes .tui files without generating code.
+// It parses and analyzes .gsx files without generating code.
 // Useful for syntax checking and IDE integration.
 func runCheck(args []string) error {
 	verbose := false
@@ -29,18 +29,18 @@ func runCheck(args []string) error {
 		paths = []string{"."}
 	}
 
-	// Collect all .tui files
-	files, err := collectTuiFiles(paths)
+	// Collect all .gsx files
+	files, err := collectGsxFiles(paths)
 	if err != nil {
 		return err
 	}
 
 	if len(files) == 0 {
-		return fmt.Errorf("no .tui files found")
+		return fmt.Errorf("no .gsx files found")
 	}
 
 	if verbose {
-		fmt.Printf("Checking %d .tui file(s)\n", len(files))
+		fmt.Printf("Checking %d .gsx file(s)\n", len(files))
 	}
 
 	// Check each file
@@ -68,7 +68,7 @@ func runCheck(args []string) error {
 	return nil
 }
 
-// checkFile parses and analyzes a single .tui file.
+// checkFile parses and analyzes a single .gsx file.
 func checkFile(inputPath string) error {
 	// Read source file
 	source, err := os.ReadFile(inputPath)

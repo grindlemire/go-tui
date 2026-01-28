@@ -25,7 +25,7 @@ async function installBinary(): Promise<boolean> {
         vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: 'Installing TUI language server...',
+                title: 'Installing GSX language server...',
                 cancellable: false,
             },
             async () => {
@@ -38,7 +38,7 @@ async function installBinary(): Promise<boolean> {
                             resolve(false);
                         } else {
                             vscode.window.showInformationMessage(
-                                'TUI language server installed successfully. Reload window to activate.'
+                                'GSX language server installed successfully. Reload window to activate.'
                             );
                             resolve(true);
                         }
@@ -52,7 +52,7 @@ async function installBinary(): Promise<boolean> {
 
 async function promptInstall(): Promise<boolean> {
     const selection = await vscode.window.showWarningMessage(
-        'TUI language server not found.',
+        'GSX language server not found.',
         'Install',
         'Disable LSP'
     );
@@ -60,10 +60,10 @@ async function promptInstall(): Promise<boolean> {
     if (selection === 'Install') {
         return installBinary();
     } else if (selection === 'Disable LSP') {
-        const config = vscode.workspace.getConfiguration('tui.lsp');
+        const config = vscode.workspace.getConfiguration('gsx.lsp');
         await config.update('enabled', false, vscode.ConfigurationTarget.Global);
         vscode.window.showInformationMessage(
-            'TUI LSP disabled. Re-enable in settings with tui.lsp.enabled'
+            'GSX LSP disabled. Re-enable in settings with gsx.lsp.enabled'
         );
     }
 
@@ -71,7 +71,7 @@ async function promptInstall(): Promise<boolean> {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-    const config = vscode.workspace.getConfiguration('tui.lsp');
+    const config = vscode.workspace.getConfiguration('gsx.lsp');
     const enabled = config.get<boolean>('enabled', true);
 
     if (!enabled) {
@@ -99,15 +99,15 @@ export async function activate(context: vscode.ExtensionContext) {
     };
 
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'tui' }],
+        documentSelector: [{ scheme: 'file', language: 'gsx' }],
         synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.tui'),
+            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.gsx'),
         },
     };
 
     client = new LanguageClient(
-        'tuiLanguageServer',
-        'TUI Language Server',
+        'gsxLanguageServer',
+        'GSX Language Server',
         serverOptions,
         clientOptions
     );

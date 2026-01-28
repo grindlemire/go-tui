@@ -1,0 +1,16 @@
+{
+  "grammars": [
+    {
+      "name": "gsx",
+      "path": ".",
+      "scope": "source.gsx",
+      "file-types": ["gsx"],
+      "highlights": "queries/highlights.scm",
+      "injections": "queries/injections.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT"
+  }
+}

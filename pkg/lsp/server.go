@@ -1,4 +1,4 @@
-// Package lsp provides a Language Server Protocol implementation for .tui files.
+// Package lsp provides a Language Server Protocol implementation for .gsx files.
 package lsp
 
 import (
@@ -111,7 +111,7 @@ func (s *Server) ShutdownGopls() {
 	}
 }
 
-// UpdateVirtualFile updates the virtual .go file for a .tui document.
+// UpdateVirtualFile updates the virtual .go file for a .gsx document.
 func (s *Server) UpdateVirtualFile(doc *Document) {
 	if s.goplsProxy == nil || doc.AST == nil {
 		return
@@ -151,7 +151,7 @@ func (s *Server) UpdateVirtualFile(doc *Document) {
 	s.virtualFiles.Put(doc.URI, goURI, goContent, sourceMap, doc.Version)
 }
 
-// CloseVirtualFile closes the virtual .go file for a .tui document.
+// CloseVirtualFile closes the virtual .go file for a .gsx document.
 func (s *Server) CloseVirtualFile(uri string) {
 	if s.goplsProxy == nil {
 		return

@@ -1,11 +1,12 @@
-# TUI Language Support for VS Code
+# GSX Language Support for VS Code
 
-Syntax highlighting and language support for `.tui` files used with the [go-tui](https://github.com/grindlemire/go-tui) framework.
+Syntax highlighting and language support for `.gsx` files used with the [go-tui](https://github.com/grindlemire/go-tui) framework.
 
 ## Features
 
-- **Syntax Highlighting**: Full highlighting support for the TUI DSL
-  - Keywords: `@component`, `@for`, `@if`, `@else`, `@let`
+- **Syntax Highlighting**: Full highlighting support for the GSX DSL
+  - Component declarations: `func Name(params) Element { ... }`
+  - Keywords: `@for`, `@if`, `@else`, `@let`
   - Element tags: `<box>`, `<text>`, `<div>`, `<span>`, etc.
   - Attributes with string, number, and expression values
   - Go expressions inside `{}`
@@ -28,7 +29,7 @@ Syntax highlighting and language support for `.tui` files used with the [go-tui]
 
 2. Copy the extension to your VS Code extensions folder:
    ```bash
-   cp -r go-tui/editor/vscode ~/.vscode/extensions/tui-language
+   cp -r go-tui/editor/vscode ~/.vscode/extensions/gsx-language
    ```
 
 3. Reload VS Code
@@ -50,18 +51,18 @@ Syntax highlighting and language support for `.tui` files used with the [go-tui]
 
 ## Usage
 
-Simply open any `.tui` file and the syntax highlighting will be applied automatically.
+Simply open any `.gsx` file and the syntax highlighting will be applied automatically.
 
 ### Example
 
-```tui
+```gsx
 package main
 
 import (
     "fmt"
 )
 
-@component Counter(count int) {
+func Counter(count int) Element {
     <box border={tui.BorderSingle} padding={1}>
         <text>{fmt.Sprintf("Count: %d", count)}</text>
     </box>
@@ -78,7 +79,7 @@ import (
 
 | Construct | Example |
 |-----------|---------|
-| Component | `@component Name(params) { ... }` |
+| Component | `func Name(params) Element { ... }` |
 | For loop | `@for i, v := range items { ... }` |
 | If/Else | `@if condition { ... } @else { ... }` |
 | Let binding | `@let x = <element>` |
@@ -88,7 +89,7 @@ import (
 
 ## LSP Support
 
-For advanced features like go-to-definition, hover, and auto-completion, run the TUI language server:
+For advanced features like go-to-definition, hover, and auto-completion, run the GSX language server:
 
 ```bash
 tui lsp

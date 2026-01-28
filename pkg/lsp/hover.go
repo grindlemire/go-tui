@@ -853,7 +853,7 @@ func (s *Server) getGoplsHover(doc *Document, pos Position) (*Hover, error) {
 		return nil, nil
 	}
 
-	// Translate position from .tui to .go
+	// Translate position from .gsx to .go
 	goLine, goCol, found := cached.SourceMap.TuiToGo(pos.Line, pos.Character)
 	if !found {
 		log.Server("No mapping found for hover position %d:%d", pos.Line, pos.Character)
@@ -883,7 +883,7 @@ func (s *Server) getGoplsHover(doc *Document, pos Position) (*Hover, error) {
 		},
 	}
 
-	// Translate range back to .tui positions if present
+	// Translate range back to .gsx positions if present
 	// Only include range if we can successfully map both start and end positions
 	if goplsHover.Range != nil {
 		log.Server("gopls hover range: (%d:%d)-(%d:%d)",

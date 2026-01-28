@@ -1,4 +1,4 @@
-// Package tuigen provides a DSL compiler that transforms .tui files into Go source code.
+// Package tuigen provides a DSL compiler that transforms .gsx files into Go source code.
 // The DSL provides a templ-inspired syntax for building go-tui element trees.
 package tuigen
 
@@ -25,12 +25,11 @@ const (
 	TokenRange   // range
 
 	// DSL keywords (@ prefixed)
-	TokenAtComponent // @component
-	TokenAtLet       // @let
-	TokenAtFor       // @for
-	TokenAtIf        // @if
-	TokenAtElse      // @else
-	TokenAtCall      // @ComponentName (uppercase, component call)
+	TokenAtLet  // @let
+	TokenAtFor  // @for
+	TokenAtIf   // @if
+	TokenAtElse // @else
+	TokenAtCall // @ComponentName (uppercase, component call)
 
 	// Literals
 	TokenIdent     // identifier
@@ -89,8 +88,7 @@ var tokenNames = map[TokenType]string{
 	TokenElse:        "else",
 	TokenFor:         "for",
 	TokenRange:       "range",
-	TokenAtComponent: "@component",
-	TokenAtLet:       "@let",
+	TokenAtLet: "@let",
 	TokenAtFor:       "@for",
 	TokenAtIf:        "@if",
 	TokenAtElse:      "@else",

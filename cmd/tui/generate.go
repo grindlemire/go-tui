@@ -11,7 +11,7 @@ import (
 )
 
 // runGenerate implements the generate subcommand.
-// It processes .tui files and generates corresponding Go source files.
+// It processes .gsx files and generates corresponding Go source files.
 func runGenerate(args []string) error {
 	verbose := false
 	var paths []string
@@ -30,18 +30,18 @@ func runGenerate(args []string) error {
 		paths = []string{"."}
 	}
 
-	// Collect all .tui files
-	files, err := collectTuiFiles(paths)
+	// Collect all .gsx files
+	files, err := collectGsxFiles(paths)
 	if err != nil {
 		return err
 	}
 
 	if len(files) == 0 {
-		return fmt.Errorf("no .tui files found")
+		return fmt.Errorf("no .gsx files found")
 	}
 
 	if verbose {
-		fmt.Printf("Found %d .tui file(s)\n", len(files))
+		fmt.Printf("Found %d .gsx file(s)\n", len(files))
 	}
 
 	// Process each file
@@ -71,12 +71,12 @@ func runGenerate(args []string) error {
 	return nil
 }
 
-// collectTuiFiles finds all .tui files from the given paths.
+// collectGsxFiles finds all .gsx files from the given paths.
 // Supports:
-//   - Direct file paths: "header.tui"
+//   - Direct file paths: "header.gsx"
 //   - Directory paths: "./components"
 //   - Recursive pattern: "./..."
-func collectTuiFiles(paths []string) ([]string, error) {
+func collectGsxFiles(paths []string) ([]string, error) {
 	var files []string
 
 	for _, path := range paths {
@@ -91,7 +91,7 @@ func collectTuiFiles(paths []string) ([]string, error) {
 				if err != nil {
 					return err
 				}
-				if !d.IsDir() && strings.HasSuffix(p, ".tui") {
+				if !d.IsDir() && strings.HasSuffix(p, ".gsx") {
 					files = append(files, p)
 				}
 				return nil
@@ -109,17 +109,17 @@ func collectTuiFiles(paths []string) ([]string, error) {
 		}
 
 		if info.IsDir() {
-			// Collect all .tui files in directory (non-recursive)
+			// Collect all .gsx files in directory (non-recursive)
 			entries, err := os.ReadDir(path)
 			if err != nil {
 				return nil, fmt.Errorf("reading directory %s: %w", path, err)
 			}
 			for _, entry := range entries {
-				if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".tui") {
+				if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".gsx") {
 					files = append(files, filepath.Join(path, entry.Name()))
 				}
 			}
-		} else if strings.HasSuffix(path, ".tui") {
+		} else if strings.HasSuffix(path, ".gsx") {
 			files = append(files, path)
 		}
 	}
@@ -127,29 +127,29 @@ func collectTuiFiles(paths []string) ([]string, error) {
 	return files, nil
 }
 
-// outputFileName converts a .tui filename to its output .go filename.
+// outputFileName converts a .gsx filename to its output .go filename.
 // Examples:
 //
-//	header.tui     -> header_tui.go
-//	my-app.tui     -> my_app_tui.go
-//	components.tui -> components_tui.go
+//	header.gsx     -> header_gsx.go
+//	my-app.gsx     -> my_app_gsx.go
+//	components.gsx -> components_gsx.go
 func outputFileName(inputPath string) string {
 	dir := filepath.Dir(inputPath)
 	base := filepath.Base(inputPath)
 
-	// Remove .tui extension
-	name := strings.TrimSuffix(base, ".tui")
+	// Remove .gsx extension
+	name := strings.TrimSuffix(base, ".gsx")
 
 	// Replace hyphens with underscores (Go doesn't like hyphens in filenames)
 	name = strings.ReplaceAll(name, "-", "_")
 
-	// Add _tui.go suffix
-	output := name + "_tui.go"
+	// Add _gsx.go suffix
+	output := name + "_gsx.go"
 
 	return filepath.Join(dir, output)
 }
 
-// generateFile parses a .tui file and generates the corresponding Go file.
+// generateFile parses a .gsx file and generates the corresponding Go file.
 func generateFile(inputPath, outputPath string) error {
 	// Read source file
 	source, err := os.ReadFile(inputPath)

@@ -46,7 +46,7 @@ import (
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -94,7 +94,7 @@ func TestParser_ImportDetails(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -128,7 +128,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 	tests := map[string]tc{
 		"no params": {
 			input: `package x
-@component Header() {
+func Header() Element {
 	<span>Hello</span>
 }`,
 			wantName:   "Header",
@@ -136,7 +136,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		},
 		"one param": {
 			input: `package x
-@component Greeting(name string) {
+func Greeting(name string) Element {
 	<span>Hello</span>
 }`,
 			wantName:   "Greeting",
@@ -144,7 +144,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		},
 		"multiple params": {
 			input: `package x
-@component Counter(count int, label string) {
+func Counter(count int, label string) Element {
 	<span>Hello</span>
 }`,
 			wantName:   "Counter",
@@ -152,7 +152,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		},
 		"complex types": {
 			input: `package x
-@component List(items []string, onClick func()) {
+func List(items []string, onClick func()) Element {
 	<span>Hello</span>
 }`,
 			wantName:   "List",
@@ -160,7 +160,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 		},
 		"pointer type": {
 			input: `package x
-@component View(elem *element.Element) {
+func View(elem *element.Element) Element {
 	<span>Hello</span>
 }`,
 			wantName:   "View",
@@ -170,7 +170,7 @@ func TestParser_SimpleComponent(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -202,11 +202,11 @@ func TestParser_SimpleComponent(t *testing.T) {
 
 func TestParser_ComponentParams(t *testing.T) {
 	input := `package x
-@component Test(name string, count int, items []string, handler func()) {
+func Test(name string, count int, items []string, handler func()) Element {
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -247,11 +247,11 @@ func TestParser_ComponentParams(t *testing.T) {
 
 func TestParser_SelfClosingElement(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<input />
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -280,14 +280,14 @@ func TestParser_SelfClosingElement(t *testing.T) {
 
 func TestParser_ElementWithChildren(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<span>Hello</span>
 		<span>World</span>
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -334,42 +334,42 @@ func TestParser_ElementWithAttributes(t *testing.T) {
 	tests := map[string]tc{
 		"no attributes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div></div>
 }`,
 			wantAttrs: 0,
 		},
 		"string attribute": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<span textAlign="center"></span>
 }`,
 			wantAttrs: 1,
 		},
 		"int attribute": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div width=100></div>
 }`,
 			wantAttrs: 1,
 		},
 		"expression attribute": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div direction={layout.Column}></div>
 }`,
 			wantAttrs: 1,
 		},
 		"multiple attributes": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div width=100 height=50 direction={layout.Row}></div>
 }`,
 			wantAttrs: 3,
 		},
 		"boolean shorthand": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<input disabled></input>
 }`,
 			wantAttrs: 1,
@@ -378,7 +378,7 @@ func TestParser_ElementWithAttributes(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -396,7 +396,7 @@ func TestParser_ElementWithAttributes(t *testing.T) {
 
 func TestParser_AttributeValues(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div
 		strAttr="hello"
 		intAttr=42
@@ -407,7 +407,7 @@ func TestParser_AttributeValues(t *testing.T) {
 	></div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -480,12 +480,12 @@ func TestParser_AttributeValues(t *testing.T) {
 
 func TestParser_LetBinding(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	@let myText = <span>Hello</span>
 	<div></div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -527,7 +527,7 @@ func TestParser_ForLoop(t *testing.T) {
 	tests := map[string]tc{
 		"index and value": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@for i, item := range items {
 		<span>Hello</span>
 	}
@@ -538,7 +538,7 @@ func TestParser_ForLoop(t *testing.T) {
 		},
 		"underscore index": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@for _, item := range items {
 		<span>Hello</span>
 	}
@@ -549,7 +549,7 @@ func TestParser_ForLoop(t *testing.T) {
 		},
 		"value only": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@for item := range items {
 		<span>Hello</span>
 	}
@@ -562,7 +562,7 @@ func TestParser_ForLoop(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -601,7 +601,7 @@ func TestParser_IfStatement(t *testing.T) {
 	tests := map[string]tc{
 		"simple if": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@if showHeader {
 		<span>Header</span>
 	}
@@ -611,7 +611,7 @@ func TestParser_IfStatement(t *testing.T) {
 		},
 		"if with else": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@if isLoading {
 		<span>Loading</span>
 	} @else {
@@ -623,7 +623,7 @@ func TestParser_IfStatement(t *testing.T) {
 		},
 		"complex condition": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	@if err != nil {
 		<span>Error</span>
 	}
@@ -635,7 +635,7 @@ func TestParser_IfStatement(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -666,7 +666,7 @@ func TestParser_IfStatement(t *testing.T) {
 
 func TestParser_IfElseIf(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	@if a {
 		<span>A</span>
 	} @else @if b {
@@ -676,7 +676,7 @@ func TestParser_IfElseIf(t *testing.T) {
 	}
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -715,11 +715,11 @@ func TestParser_IfElseIf(t *testing.T) {
 
 func TestParser_GoExpression(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<span>{fmt.Sprintf("Count: %d", count)}</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -745,7 +745,7 @@ func TestParser_GoExpression(t *testing.T) {
 
 func TestParser_NestedElements(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<div>
 			<span>Deep</span>
@@ -753,7 +753,7 @@ func TestParser_NestedElements(t *testing.T) {
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -793,7 +793,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/layout"
 )
 
-@component Dashboard(items []string, selectedIndex int) {
+func Dashboard(items []string, selectedIndex int) Element {
 	<div direction={layout.Column} padding=1>
 		<span>Dashboard</span>
 		@for i, item := range items {
@@ -806,7 +806,7 @@ import (
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -863,14 +863,14 @@ func TestParser_ErrorRecovery(t *testing.T) {
 	tests := map[string]tc{
 		"missing component name": {
 			input: `package x
-@component () {
+func () Element {
 	<span>Hello</span>
 }`,
 			errorContains: "expected component name",
 		},
 		"unclosed element": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>
 		<span>Hello</span>
 }`,
@@ -878,7 +878,7 @@ func TestParser_ErrorRecovery(t *testing.T) {
 		},
 		"mismatched tags": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	<div>Hello</span>
 }`,
 			errorContains: "mismatched closing tag",
@@ -887,7 +887,7 @@ func TestParser_ErrorRecovery(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			_, err := p.ParseFile()
 
@@ -905,11 +905,11 @@ func TestParser_ErrorRecovery(t *testing.T) {
 func TestParser_Position(t *testing.T) {
 	input := `package x
 
-@component Test() {
+func Test() Element {
 	<span>Hello</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -933,15 +933,15 @@ func TestParser_Position(t *testing.T) {
 func TestParser_MultipleComponents(t *testing.T) {
 	input := `package x
 
-@component Header() {
+func Header() Element {
 	<span>Header</span>
 }
 
-@component Footer() {
+func Footer() Element {
 	<span>Footer</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -964,11 +964,11 @@ func TestParser_MultipleComponents(t *testing.T) {
 
 func TestParser_TextContent(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<span>Hello World</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -989,7 +989,7 @@ func TestParser_TextContent(t *testing.T) {
 
 func TestParser_ControlFlowInChildren(t *testing.T) {
 	input := `package x
-@component Test(items []string) {
+func Test(items []string) Element {
 	<div>
 		@for _, item := range items {
 			<span>{item}</span>
@@ -1000,7 +1000,7 @@ func TestParser_ControlFlowInChildren(t *testing.T) {
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1039,28 +1039,28 @@ func TestParser_ComplexTypeSignatures(t *testing.T) {
 	tests := map[string]tc{
 		"channel type": {
 			input: `package x
-@component Test(ch chan int) {
+func Test(ch chan int) Element {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"chan int"},
 		},
 		"receive channel": {
 			input: `package x
-@component Test(ch <-chan string) {
+func Test(ch <-chan string) Element {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"<-chan string"},
 		},
 		"complex map": {
 			input: `package x
-@component Test(m map[string][]int) {
+func Test(m map[string][]int) Element {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"map[string][]int"},
 		},
 		"function with return": {
 			input: `package x
-@component Test(fn func(a, b int) (string, error)) {
+func Test(fn func(a, b int) (string, error)) Element {
 	<span>Hello</span>
 }`,
 			wantTypes: []string{"func(a, b int) (string, error)"},
@@ -1069,7 +1069,7 @@ func TestParser_ComplexTypeSignatures(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -1097,11 +1097,11 @@ func TestParser_ComplexTypeSignatures(t *testing.T) {
 
 func TestParser_TextContentCoalescing(t *testing.T) {
 	input := `package x
-@component Test() {
+func Test() Element {
 	<span>Hello World from component</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1135,15 +1135,15 @@ func TestParser_ErrorRecoveryMultipleComponents(t *testing.T) {
 	// and continue parsing subsequent components
 	input := `package x
 
-@component Broken(
+func Broken(
 	<span>Hello</span>
 }
 
-@component Working() {
+func Working() Element {
 	<span>World</span>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1165,7 +1165,7 @@ func TestParser_ErrorRecoveryMultipleComponents(t *testing.T) {
 func TestParser_RawSourcePreservation(t *testing.T) {
 	// Test that raw source is preserved correctly in conditions/iterables
 	input := `package x
-@component Test() {
+func Test() Element {
 	@if user.Name != "" && user.Age >= 18 {
 		<span>Adult</span>
 	}
@@ -1174,7 +1174,7 @@ func TestParser_RawSourcePreservation(t *testing.T) {
 	}
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1208,7 +1208,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 	tests := map[string]tc{
 		"simple assignment": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	x := 1
 	<span>{x}</span>
 }`,
@@ -1216,7 +1216,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"function call": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	fmt.Println("hello")
 	<span>world</span>
 }`,
@@ -1224,7 +1224,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"multi-line statement": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	result := compute(
 		arg1,
 		arg2,
@@ -1235,7 +1235,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"multiple statements": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	x := 1
 	y := 2
 	z := x + y
@@ -1245,7 +1245,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"inline if statement": {
 			input: `package x
-@component Test(err error) {
+func Test(err error) Element {
 	if err != nil { log.Error(err) }
 	<span>done</span>
 }`,
@@ -1253,7 +1253,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"defer statement": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	defer cleanup()
 	<span>running</span>
 }`,
@@ -1261,7 +1261,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"go statement": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	go doWork()
 	<span>spawned</span>
 }`,
@@ -1269,7 +1269,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"for loop statement": {
 			input: `package x
-@component Test() {
+func Test() Element {
 	for i := 0; i < 10; i++ { sum += i }
 	<span>{sum}</span>
 }`,
@@ -1277,7 +1277,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 		},
 		"switch statement": {
 			input: `package x
-@component Test(x int) {
+func Test(x int) Element {
 	switch x { case 1: y = "one"; case 2: y = "two" }
 	<span>{y}</span>
 }`,
@@ -1287,7 +1287,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -1325,7 +1325,7 @@ func TestParser_RawGoStatements(t *testing.T) {
 func TestParser_RawGoStatementsWithElements(t *testing.T) {
 	// Test that Go statements and elements can be mixed in component body
 	input := `package x
-@component Counter(count int) {
+func Counter(count int) Element {
 	formattedCount := fmt.Sprintf("%d", count)
 	log.Printf("Rendering counter")
 	<div>
@@ -1333,7 +1333,7 @@ func TestParser_RawGoStatementsWithElements(t *testing.T) {
 	</div>
 }`
 
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1384,7 +1384,7 @@ func TestParser_ComponentCall(t *testing.T) {
 	tests := map[string]tc{
 		"call without args or children": {
 			input: `package x
-@component App() {
+func App() Element {
 	@Header()
 }`,
 			wantName:     "Header",
@@ -1393,7 +1393,7 @@ func TestParser_ComponentCall(t *testing.T) {
 		},
 		"call with args no children": {
 			input: `package x
-@component App() {
+func App() Element {
 	@Header("Welcome", true)
 }`,
 			wantName:     "Header",
@@ -1402,7 +1402,7 @@ func TestParser_ComponentCall(t *testing.T) {
 		},
 		"call with children": {
 			input: `package x
-@component App() {
+func App() Element {
 	@Card("Title") {
 		<span>Child 1</span>
 		<span>Child 2</span>
@@ -1414,7 +1414,7 @@ func TestParser_ComponentCall(t *testing.T) {
 		},
 		"call with empty args and children": {
 			input: `package x
-@component App() {
+func App() Element {
 	@Wrapper() {
 		<span>Content</span>
 	}
@@ -1427,7 +1427,7 @@ func TestParser_ComponentCall(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewLexer("test.tui", tt.input)
+			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
 
@@ -1464,13 +1464,13 @@ func TestParser_ComponentCall(t *testing.T) {
 
 func TestParser_ChildrenSlot(t *testing.T) {
 	input := `package x
-@component Card(title string) {
+func Card(title string) Element {
 	<div>
 		<span>{title}</span>
 		{children...}
 	</div>
 }`
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 
@@ -1509,13 +1509,13 @@ func TestParser_ChildrenSlot(t *testing.T) {
 
 func TestParser_ComponentCallNestedInElement(t *testing.T) {
 	input := `package x
-@component App() {
+func App() Element {
 	<div>
 		@Header("Title")
 		@Footer()
 	</div>
 }`
-	l := NewLexer("test.tui", input)
+	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
 

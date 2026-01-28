@@ -1,0 +1,440 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "GSX",
+  "scopeName": "source.gsx",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#package-clause" },
+    { "include": "#import-declaration" },
+    { "include": "#component-declaration" },
+    { "include": "#function-declaration" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.gsx",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.gsx",
+          "begin": "/\\*",
+          "end": "\\*/",
+          "captures": {
+            "0": { "name": "punctuation.definition.comment.gsx" }
+          }
+        }
+      ]
+    },
+    "package-clause": {
+      "name": "meta.package.gsx",
+      "match": "^\\s*(package)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "captures": {
+        "1": { "name": "keyword.other.package.gsx" },
+        "2": { "name": "entity.name.package.gsx" }
+      }
+    },
+    "import-declaration": {
+      "patterns": [
+        {
+          "name": "meta.import.gsx",
+          "begin": "^\\s*(import)\\s*\\(",
+          "end": "\\)",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.import.gsx" }
+          },
+          "patterns": [
+            { "include": "#comments" },
+            { "include": "#import-spec" }
+          ]
+        },
+        {
+          "name": "meta.import.gsx",
+          "match": "^\\s*(import)\\s+(\"[^\"]*\")",
+          "captures": {
+            "1": { "name": "keyword.other.import.gsx" },
+            "2": { "name": "string.quoted.double.gsx" }
+          }
+        }
+      ]
+    },
+    "import-spec": {
+      "patterns": [
+        {
+          "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)?\\s*(\"[^\"]*\")",
+          "captures": {
+            "1": { "name": "entity.name.import.gsx" },
+            "2": { "name": "string.quoted.double.gsx" }
+          }
+        }
+      ]
+    },
+    "component-declaration": {
+      "name": "meta.component.gsx",
+      "begin": "^\\s*(func)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s+(Element)\\s*\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "1": { "name": "keyword.function.gsx" },
+        "2": { "name": "entity.name.function.component.gsx" },
+        "4": { "name": "entity.name.type.gsx" }
+      },
+      "patterns": [
+        { "include": "#body-contents" }
+      ]
+    },
+    "parameter-list": {
+      "begin": "(?<=\\()",
+      "end": "\\)",
+      "patterns": [
+        { "include": "#comments" },
+        {
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s+([\\[\\]\\*a-zA-Z0-9_.]+)",
+          "captures": {
+            "1": { "name": "variable.parameter.gsx" },
+            "2": { "name": "entity.name.type.gsx" }
+          }
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.comma.gsx"
+        }
+      ]
+    },
+    "component-body": {
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.block.begin.gsx" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.block.end.gsx" }
+      },
+      "patterns": [
+        { "include": "#body-contents" }
+      ]
+    },
+    "body-contents": {
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#go-expression-block" },
+        { "include": "#control-keywords" },
+        { "include": "#component-call" },
+        { "include": "#element" }
+      ]
+    },
+    "control-keywords": {
+      "patterns": [
+        {
+          "name": "meta.control.for.gsx",
+          "begin": "(@for)\\s+",
+          "end": "(?=\\{)",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.for.gsx" }
+          },
+          "patterns": [
+            { "include": "#go-expression-inline" }
+          ]
+        },
+        {
+          "name": "meta.control.if.gsx",
+          "begin": "(@if)\\s+",
+          "end": "(?=\\{)",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.if.gsx" }
+          },
+          "patterns": [
+            { "include": "#go-expression-inline" }
+          ]
+        },
+        {
+          "match": "@else",
+          "name": "keyword.control.else.gsx"
+        },
+        {
+          "name": "meta.control.let.gsx",
+          "begin": "(@let)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*=",
+          "end": "(?=<|\\{|$)",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.let.gsx" },
+            "2": { "name": "variable.other.gsx" }
+          }
+        },
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.block.begin.gsx" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.block.end.gsx" }
+          },
+          "patterns": [
+            { "include": "#body-contents" }
+          ]
+        }
+      ]
+    },
+    "component-call": {
+      "name": "meta.component-call.gsx",
+      "match": "(@)([A-Z][a-zA-Z0-9_]*)\\s*\\(",
+      "captures": {
+        "1": { "name": "punctuation.definition.component-call.gsx" },
+        "2": { "name": "entity.name.function.component-call.gsx" }
+      }
+    },
+    "element": {
+      "patterns": [
+        { "include": "#element-open-tag" },
+        { "include": "#element-close-tag" }
+      ]
+    },
+    "element-open-tag": {
+      "name": "meta.element.open-tag.gsx",
+      "begin": "(<)([a-zA-Z][a-zA-Z0-9-]*)",
+      "end": "(/?>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.gsx" },
+        "2": { "name": "entity.name.tag.gsx" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.gsx" }
+      },
+      "patterns": [
+        { "include": "#named-ref" },
+        { "include": "#attributes" }
+      ]
+    },
+    "named-ref": {
+      "name": "meta.named-ref.tui",
+      "match": "(#)([A-Z][a-zA-Z0-9_]*)",
+      "captures": {
+        "1": { "name": "punctuation.definition.named-ref.tui" },
+        "2": { "name": "entity.name.tag.named-ref.tui" }
+      }
+    },
+    "element-close-tag": {
+      "name": "meta.element.close-tag.gsx",
+      "match": "(</)([a-zA-Z][a-zA-Z0-9-]*)(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.begin.gsx" },
+        "2": { "name": "entity.name.tag.gsx" },
+        "3": { "name": "punctuation.definition.tag.end.gsx" }
+      }
+    },
+    "attributes": {
+      "patterns": [
+        {
+          "name": "meta.attribute.gsx",
+          "begin": "([a-zA-Z_][a-zA-Z0-9_-]*)\\s*(=)\\s*(\\{)",
+          "end": "(\\})",
+          "beginCaptures": {
+            "1": { "name": "entity.other.attribute-name.gsx" },
+            "2": { "name": "punctuation.separator.key-value.gsx" },
+            "3": { "name": "punctuation.definition.expression.begin.gsx" }
+          },
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.expression.end.gsx" }
+          },
+          "contentName": "meta.embedded.block.go",
+          "patterns": [
+            { "include": "#go-expression-content" }
+          ]
+        },
+        {
+          "name": "meta.attribute.gsx",
+          "match": "([a-zA-Z_][a-zA-Z0-9_-]*)\\s*(=)\\s*(\"[^\"]*\")",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.gsx" },
+            "2": { "name": "punctuation.separator.key-value.gsx" },
+            "3": { "name": "string.quoted.double.gsx" }
+          }
+        },
+        {
+          "name": "meta.attribute.gsx",
+          "match": "([a-zA-Z_][a-zA-Z0-9_-]*)\\s*(=)\\s*([0-9]+)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.gsx" },
+            "2": { "name": "punctuation.separator.key-value.gsx" },
+            "3": { "name": "constant.numeric.gsx" }
+          }
+        }
+      ]
+    },
+    "go-expression-block": {
+      "name": "meta.expression.go.gsx",
+      "begin": "(\\{)(?!\\s*$)",
+      "end": "(\\})",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.expression.begin.gsx" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.expression.end.gsx" }
+      },
+      "contentName": "meta.embedded.block.go",
+      "patterns": [
+        { "include": "#go-expression-content" }
+      ]
+    },
+    "go-expression-inline": {
+      "patterns": [
+        { "include": "#go-keywords" },
+        { "include": "#go-constants" },
+        { "include": "#go-operators" },
+        { "include": "#go-identifiers" },
+        { "include": "#strings" },
+        { "include": "#numbers" }
+      ]
+    },
+    "go-expression-content": {
+      "patterns": [
+        { "include": "#go-keywords" },
+        { "include": "#go-constants" },
+        { "include": "#go-builtin-functions" },
+        { "include": "#go-operators" },
+        { "include": "#strings" },
+        { "include": "#numbers" },
+        { "include": "#go-function-call" },
+        { "include": "#go-identifiers" }
+      ]
+    },
+    "go-keywords": {
+      "match": "\\b(range|nil|const|var|type|struct|interface|map|chan|func|return|if|else|for|switch|case|default|break|continue|go|defer|select|fallthrough)\\b",
+      "name": "keyword.control.go.gsx"
+    },
+    "go-constants": {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.language.go.gsx"
+    },
+    "go-builtin-functions": {
+      "match": "\\b(append|cap|close|complex|copy|delete|imag|len|make|new|panic|print|println|real|recover)\\b",
+      "name": "support.function.builtin.go.gsx"
+    },
+    "go-operators": {
+      "match": "(:=|&&|\\|\\||<-|\\+\\+|--|==|!=|<=|>=|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=|&\\^=|&\\^|<<|>>|[+\\-*/%&|^!<>=])",
+      "name": "keyword.operator.go.gsx"
+    },
+    "go-function-call": {
+      "patterns": [
+        {
+          "comment": "Qualified function call: pkg.Func() - only Func is green",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)(\\.([a-zA-Z_][a-zA-Z0-9_]*))\\s*(?=\\()",
+          "captures": {
+            "3": { "name": "entity.name.function.go.gsx" }
+          }
+        },
+        {
+          "comment": "Unqualified function call: Func() - Func is green",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.go.gsx" }
+          }
+        }
+      ]
+    },
+    "go-identifiers": {
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+      "name": "variable.other.go.gsx"
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.gsx",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.gsx",
+              "match": "\\\\."
+            },
+            {
+              "comment": "Go format specifiers like %s, %d, %v, %.2f, %#x, etc.",
+              "name": "constant.other.placeholder.gsx",
+              "match": "%[-+# 0]*(\\*|\\d+)?(\\.\\*|\\.\\d+)?[vTtbcdoqxXUeEfFgGsp%]"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.gsx",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.gsx",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.raw.gsx",
+          "begin": "`",
+          "end": "`",
+          "patterns": [
+            {
+              "comment": "Go format specifiers in raw strings too",
+              "name": "constant.other.placeholder.gsx",
+              "match": "%[-+# 0]*(\\*|\\d+)?(\\.\\*|\\.\\d+)?[vTtbcdoqxXUeEfFgGsp%]"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.gsx",
+          "match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.hex.gsx",
+          "match": "\\b0[xX][0-9a-fA-F]+\\b"
+        },
+        {
+          "name": "constant.numeric.octal.gsx",
+          "match": "\\b0[oO]?[0-7]+\\b"
+        },
+        {
+          "name": "constant.numeric.binary.gsx",
+          "match": "\\b0[bB][01]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.gsx",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "function-declaration": {
+      "name": "meta.function.gsx",
+      "begin": "^\\s*(func)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+      "end": "(?<=\\})",
+      "beginCaptures": {
+        "1": { "name": "keyword.function.gsx" },
+        "2": { "name": "entity.name.function.gsx" }
+      },
+      "patterns": [
+        { "include": "#parameter-list" },
+        { "include": "#function-return-type" },
+        { "include": "#function-body" }
+      ]
+    },
+    "function-return-type": {
+      "match": "\\)\\s*([\\[\\]\\*a-zA-Z0-9_.]+)\\s*(?=\\{)",
+      "captures": {
+        "1": { "name": "entity.name.type.gsx" }
+      }
+    },
+    "function-body": {
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.block.begin.gsx" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.block.end.gsx" }
+      },
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#go-expression-content" }
+      ]
+    }
+  }
+}

@@ -10,7 +10,7 @@
 // To build and run:
 //
 //	cd examples/streaming-dsl
-//	go run ../../cmd/tui generate streaming.tui
+//	go run ../../cmd/tui generate streaming.gsx
 //	go run .
 package main
 
@@ -25,11 +25,13 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-//go:generate go run ../../cmd/tui generate streaming.tui
+//go:generate go run ../../cmd/tui generate streaming.gsx
 
 // lineCount and elapsed are updated by channels
-var lineCount int
-var elapsed int
+var (
+	lineCount int
+	elapsed   int
+)
 
 func main() {
 	app, err := tui.NewApp()

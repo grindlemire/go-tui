@@ -7,7 +7,7 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
-// printer generates formatted .tui source code from an AST.
+// printer generates formatted .gsx source code from an AST.
 type printer struct {
 	indent       string
 	maxLineWidth int
@@ -23,7 +23,7 @@ func newPrinter(indent string, maxLineWidth int) *printer {
 	}
 }
 
-// PrintFile formats an entire .tui file.
+// PrintFile formats an entire .gsx file.
 func (p *printer) PrintFile(file *tuigen.File) string {
 	p.buf.Reset()
 
@@ -110,11 +110,12 @@ func (p *printer) printImports(imports []tuigen.Import) {
 }
 
 // printComponent outputs a component declaration.
+// Components are functions with Element return type: func Name(params) Element { ... }
 func (p *printer) printComponent(comp *tuigen.Component) {
 	// Leading comments (doc comments)
 	p.printLeadingComments(comp.LeadingComments)
 
-	p.write("@component ")
+	p.write("func ")
 	p.write(comp.Name)
 	p.write("(")
 
@@ -128,7 +129,7 @@ func (p *printer) printComponent(comp *tuigen.Component) {
 		p.write(param.Type)
 	}
 
-	p.write(") {")
+	p.write(") Element {")
 	p.printTrailingComment(comp.TrailingComments)
 	p.newline()
 

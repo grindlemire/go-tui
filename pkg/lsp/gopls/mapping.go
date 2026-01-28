@@ -7,16 +7,16 @@ import (
 	"github.com/grindlemire/go-tui/pkg/lsp/log"
 )
 
-// SourceMap tracks position mappings between .tui and generated .go files.
+// SourceMap tracks position mappings between .gsx and generated .go files.
 type SourceMap struct {
 	mu       sync.RWMutex
 	mappings []Mapping
 }
 
-// Mapping represents a position mapping between .tui and .go coordinates.
+// Mapping represents a position mapping between .gsx and .go coordinates.
 // All line and column values are 0-indexed.
 type Mapping struct {
-	// Position in .tui file
+	// Position in .gsx file
 	TuiLine int
 	TuiCol  int
 
@@ -42,7 +42,7 @@ func (sm *SourceMap) AddMapping(m Mapping) {
 	sm.mappings = append(sm.mappings, m)
 }
 
-// TuiToGo converts a .tui position to a .go position.
+// TuiToGo converts a .gsx position to a .go position.
 // Returns the translated position and true if a mapping was found,
 // or the original position and false if no mapping covers this position.
 func (sm *SourceMap) TuiToGo(tuiLine, tuiCol int) (goLine, goCol int, found bool) {
@@ -67,7 +67,7 @@ func (sm *SourceMap) TuiToGo(tuiLine, tuiCol int) (goLine, goCol int, found bool
 	return tuiLine, tuiCol, false
 }
 
-// GoToTui converts a .go position to a .tui position.
+// GoToTui converts a .go position to a .gsx position.
 // Returns the translated position and true if a mapping was found,
 // or the original position and false if no mapping covers this position.
 func (sm *SourceMap) GoToTui(goLine, goCol int) (tuiLine, tuiCol int, found bool) {
@@ -92,7 +92,7 @@ func (sm *SourceMap) GoToTui(goLine, goCol int) (tuiLine, tuiCol int, found bool
 	return goLine, goCol, false
 }
 
-// FindMappingForTuiPosition finds the mapping that contains the given .tui position.
+// FindMappingForTuiPosition finds the mapping that contains the given .gsx position.
 // Returns nil if no mapping contains the position.
 func (sm *SourceMap) FindMappingForTuiPosition(tuiLine, tuiCol int) *Mapping {
 	sm.mu.RLock()
@@ -126,12 +126,12 @@ func (sm *SourceMap) FindMappingForGoPosition(goLine, goCol int) *Mapping {
 	return nil
 }
 
-// IsInGoExpression returns true if the given .tui position is within a Go expression.
+// IsInGoExpression returns true if the given .gsx position is within a Go expression.
 func (sm *SourceMap) IsInGoExpression(tuiLine, tuiCol int) bool {
 	return sm.FindMappingForTuiPosition(tuiLine, tuiCol) != nil
 }
 
-// AllMappings returns all mappings sorted by .tui position.
+// AllMappings returns all mappings sorted by .gsx position.
 func (sm *SourceMap) AllMappings() []Mapping {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
@@ -185,7 +185,7 @@ func NewVirtualFileCache() *VirtualFileCache {
 	}
 }
 
-// Get retrieves a cached virtual file by .tui URI.
+// Get retrieves a cached virtual file by .gsx URI.
 func (c *VirtualFileCache) Get(tuiURI string) *CachedVirtualFile {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

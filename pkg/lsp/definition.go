@@ -30,18 +30,18 @@ func (s *Server) handleDefinition(params json.RawMessage) (any, *Error) {
 	}
 
 	// First, check if the word at cursor is a locally-defined function.
-	// This prevents gopls from returning the generated .go file instead of .tui.
+	// This prevents gopls from returning the generated .go file instead of .gsx.
 	if word := s.getWordAtPosition(doc, p.Position); word != "" {
 		log.Server("Looking up function '%s' in index (all functions: %v)", word, s.index.AllFunctions())
-		// Check if this is a helper function defined in a .tui file
+		// Check if this is a helper function defined in a .gsx file
 		if funcInfo, ok := s.index.LookupFunc(word); ok {
 			log.Server("Found local function %s at %s (before gopls)", word, funcInfo.Location.URI)
 			return funcInfo.Location, nil
 		}
 		log.Server("Function '%s' not found in index", word)
 
-		// Check if this is a for loop variable (defined in .tui DSL, not Go)
-		// Must check BEFORE gopls since gopls doesn't understand .tui for loop syntax
+		// Check if this is a for loop variable (defined in .gsx DSL, not Go)
+		// Must check BEFORE gopls since gopls doesn't understand .gsx for loop syntax
 		if componentCtx := s.findComponentAtPosition(doc, p.Position); componentCtx != "" {
 			if loc := s.findLoopVariableDefinition(doc, componentCtx, word, p.Position); loc != nil {
 				log.Server("Found loop variable %s in %s (before gopls)", word, componentCtx)
