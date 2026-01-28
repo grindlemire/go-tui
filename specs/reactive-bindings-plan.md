@@ -80,19 +80,19 @@ Implementation phases for the reactive state management system with `State[T]` t
 
 **Reference:** [reactive-bindings-design.md §3.2](./reactive-bindings-design.md#32-batching)
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Add batch context to `pkg/tui/state.go`
+- [x] Add batch context to `pkg/tui/state.go`
   - Define `batchContext` struct with `depth int` and `pending map[uint64]func()` fields
   - Create package-level `batchCtx` variable initialized with empty map
   - See [design §3.2](./reactive-bindings-design.md#32-batching)
 
-- [ ] Modify `Set()` method in `pkg/tui/state.go`
+- [x] Modify `Set()` method in `pkg/tui/state.go`
   - Check `batchCtx.depth == 0` for immediate execution
   - If batching (depth > 0), store binding closures in `batchCtx.pending` keyed by binding ID
   - Keying by ID ensures deduplication (later Set overwrites earlier)
 
-- [ ] Implement `Batch(fn func())` function in `pkg/tui/state.go`
+- [x] Implement `Batch(fn func())` function in `pkg/tui/state.go`
   - Increment `batchCtx.depth`
   - Call `fn()`
   - Decrement `batchCtx.depth`
@@ -100,7 +100,7 @@ Implementation phases for the reactive state management system with `State[T]` t
     - Execute all pending binding callbacks
     - Reset pending map to empty
 
-- [ ] Add tests to `pkg/tui/state_test.go`
+- [x] Add tests to `pkg/tui/state_test.go`
   - Test `Batch` defers binding execution until fn returns
   - Test multiple Sets to same state in batch calls binding once
   - Test binding receives final value (not intermediate values)
@@ -254,7 +254,7 @@ Implementation phases for the reactive state management system with `State[T]` t
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | State[T] Core Type | Complete |
-| 2 | Batching | Not Started |
+| 2 | Batching | Complete |
 | 3 | Analyzer Detection | Not Started |
 | 4 | Generator Binding Code | Not Started |
 
