@@ -30,6 +30,9 @@ vendor/
 # Claude
 .claude/
 
+# Worktrees
+.worktrees/
+
 # Node (VSCode extension)
 node_modules/
 out/
