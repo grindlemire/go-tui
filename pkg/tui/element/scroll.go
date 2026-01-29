@@ -71,9 +71,22 @@ func (e *Element) ScrollToTop() {
 }
 
 // ScrollToBottom scrolls to the bottom of the content.
+// It scrolls immediately using the current maxY, and also sets a pending
+// flag to re-scroll after the next layout. This ensures it works correctly
+// both for keyboard navigation (immediate) and when following new content
+// (deferred until layout computes the new maxY).
 func (e *Element) ScrollToBottom() {
 	_, maxY := e.MaxScroll()
-	e.ScrollTo(e.scrollX, maxY)
+	e.scrollY = maxY
+	e.scrollToBottomPending = true
+	e.MarkDirty()
+}
+
+// IsAtBottom returns true if the element is scrolled to the bottom.
+// Useful for implementing "sticky scroll" behavior.
+func (e *Element) IsAtBottom() bool {
+	_, maxY := e.MaxScroll()
+	return e.scrollY >= maxY
 }
 
 // ScrollIntoView scrolls minimally to make the child element fully visible.
@@ -212,6 +225,13 @@ func (e *Element) measureContentBounds() {
 // clampScrollOffset ensures scroll offset is within valid range.
 func (e *Element) clampScrollOffset() {
 	maxX, maxY := e.MaxScroll()
+
+	// Handle deferred scroll-to-bottom
+	if e.scrollToBottomPending {
+		e.scrollY = maxY
+		e.scrollToBottomPending = false
+	}
+
 	e.scrollX = clamp(e.scrollX, 0, maxX)
 	e.scrollY = clamp(e.scrollY, 0, maxY)
 }

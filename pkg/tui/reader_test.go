@@ -430,6 +430,37 @@ func TestParseInputWithRemainder(t *testing.T) {
 			expectedEvents: 0,
 			expectedRemain: 2,
 		},
+		// Escape sequence buffering tests
+		"lone ESC not buffered": {
+			input:          []byte{0x1b}, // Just ESC - should emit as KeyEscape
+			expectedEvents: 1,
+			expectedRemain: 0,
+		},
+		"ESC after other chars buffered": {
+			input:          []byte{'a', 'b', 0x1b}, // "ab" then ESC - ESC should be buffered
+			expectedEvents: 2,
+			expectedRemain: 1,
+		},
+		"incomplete CSI after chars buffered": {
+			input:          []byte{'a', 0x1b, '['}, // "a" then "ESC[" - incomplete CSI buffered
+			expectedEvents: 1,
+			expectedRemain: 2,
+		},
+		"incomplete SGR mouse after chars buffered": {
+			input:          []byte{'a', 0x1b, '[', '<', '6', '5'}, // "a" then partial mouse seq
+			expectedEvents: 1,
+			expectedRemain: 5,
+		},
+		"complete SGR mouse not buffered": {
+			input:          []byte{0x1b, '[', '<', '6', '5', ';', '1', ';', '1', 'M'}, // Complete mouse event
+			expectedEvents: 1,
+			expectedRemain: 0,
+		},
+		"chars then complete mouse not buffered": {
+			input:          []byte{'a', 0x1b, '[', '<', '6', '5', ';', '1', ';', '1', 'M'}, // "a" + complete mouse
+			expectedEvents: 2,
+			expectedRemain: 0,
+		},
 	}
 
 	for name, tt := range tests {

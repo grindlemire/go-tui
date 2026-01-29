@@ -14,6 +14,7 @@ type MockTerminal struct {
 	cursorHidden  bool
 	inRawMode     bool
 	inAltScreen   bool
+	mouseEnabled  bool
 	caps          Capabilities
 }
 
@@ -69,6 +70,16 @@ func (m *MockTerminal) Clear() {
 	m.cursorY = 0
 }
 
+// ClearToEnd clears from cursor position to end of screen.
+func (m *MockTerminal) ClearToEnd() {
+	defaultCell := NewCell(' ', NewStyle())
+	// Start from current cursor position
+	startIdx := m.cursorY*m.width + m.cursorX
+	for i := startIdx; i < len(m.cells); i++ {
+		m.cells[i] = defaultCell
+	}
+}
+
 // SetCursor moves the cursor to the specified position.
 func (m *MockTerminal) SetCursor(x, y int) {
 	m.cursorX = x
@@ -105,6 +116,16 @@ func (m *MockTerminal) EnterAltScreen() {
 // ExitAltScreen simulates exiting the alternate screen buffer.
 func (m *MockTerminal) ExitAltScreen() {
 	m.inAltScreen = false
+}
+
+// EnableMouse simulates enabling mouse event reporting.
+func (m *MockTerminal) EnableMouse() {
+	m.mouseEnabled = true
+}
+
+// DisableMouse simulates disabling mouse event reporting.
+func (m *MockTerminal) DisableMouse() {
+	m.mouseEnabled = false
 }
 
 // Caps returns the terminal's capabilities.
@@ -195,12 +216,18 @@ func (m *MockTerminal) IsInAltScreen() bool {
 	return m.inAltScreen
 }
 
+// IsMouseEnabled returns whether mouse event reporting is enabled.
+func (m *MockTerminal) IsMouseEnabled() bool {
+	return m.mouseEnabled
+}
+
 // Reset resets the mock terminal to its initial state.
 func (m *MockTerminal) Reset() {
 	m.Clear()
 	m.cursorHidden = false
 	m.inRawMode = false
 	m.inAltScreen = false
+	m.mouseEnabled = false
 }
 
 // Resize changes the terminal dimensions, preserving content where possible.

@@ -1,6 +1,10 @@
 package tui
 
-import "time"
+import (
+	"time"
+
+	"github.com/grindlemire/go-tui/pkg/debug"
+)
 
 // Watcher represents a deferred event source that starts when the app runs.
 // Watchers are collected during component construction and started by SetRoot.
@@ -70,6 +74,7 @@ func OnTimer(interval time.Duration, handler func()) Watcher {
 
 func (w *timerWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 	go func() {
+		debug.Log("timerWatcher started")
 		ticker := time.NewTicker(w.interval)
 		defer ticker.Stop()
 
@@ -78,6 +83,7 @@ func (w *timerWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 			case <-stopCh:
 				return
 			case <-ticker.C:
+				debug.Log("timerWatcher ticked")
 				select {
 				case eventQueue <- w.handler:
 				case <-stopCh:

@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/grindlemire/go-tui/pkg/debug"
 	"github.com/grindlemire/go-tui/pkg/layout"
@@ -37,6 +38,13 @@ func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
 	}
 }
 
+func tick(count *tui.State[int]) func() {
+	return func() {
+		debug.Log("tick callback called")
+		count.Set(count.Get() + 1)
+	}
+}
+
 type CounterUIView struct {
 	Root     *element.Element
 	watchers []tui.Watcher
@@ -57,6 +65,7 @@ func CounterUI() CounterUIView {
 		element.WithPadding(2),
 		element.WithOnKeyPress(handleKeys(count)),
 	)
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(count)))
 	__tui_1 := element.New(
 		element.WithBorder(tui.BorderRounded),
 		element.WithPadding(1),

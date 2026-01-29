@@ -312,6 +312,38 @@ templ Styled() {
 }
 `,
 		},
+		"named ref": {
+			input: `package main
+
+templ App() {
+<div #Content class="flex-col"></div>
+}
+`,
+			want: `package main
+
+templ App() {
+	<div #Content class="flex-col"></div>
+}
+`,
+		},
+		"named ref with children": {
+			input: `package main
+
+templ App() {
+<div #Wrapper>
+<span #Title>Hello</span>
+</div>
+}
+`,
+			want: `package main
+
+templ App() {
+	<div #Wrapper>
+		<span #Title>Hello</span>
+	</div>
+}
+`,
+		},
 	}
 
 	for name, tt := range tests {

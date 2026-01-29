@@ -10,8 +10,10 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
-var _ tui.Renderable = (*Element)(nil)
-var _ tui.Focusable = (*Element)(nil)
+var (
+	_ tui.Renderable = (*Element)(nil)
+	_ tui.Focusable  = (*Element)(nil)
+)
 
 // TextAlign specifies how text is aligned within its content area.
 type TextAlign int
@@ -80,11 +82,12 @@ type Element struct {
 	onRender func(*Element, *tui.Buffer)
 
 	// Scroll properties
-	scrollMode    ScrollMode
-	scrollX       int // Current horizontal scroll offset
-	scrollY       int // Current vertical scroll offset
-	contentWidth  int // Computed content width (may exceed viewport)
-	contentHeight int // Computed content height (may exceed viewport)
+	scrollMode            ScrollMode
+	scrollX               int  // Current horizontal scroll offset
+	scrollY               int  // Current vertical scroll offset
+	contentWidth          int  // Computed content width (may exceed viewport)
+	contentHeight         int  // Computed content height (may exceed viewport)
+	scrollToBottomPending bool // Scroll to bottom after next layout
 
 	// Scrollbar styles
 	scrollbarStyle      tui.Style
@@ -95,6 +98,9 @@ type Element struct {
 
 	// Pre-render hook for custom update logic (polling, animations, etc.)
 	onUpdate func()
+
+	// Watchers attached to this element (timers, channel watchers, etc.)
+	watchers []tui.Watcher
 }
 
 // Compile-time check that Element implements Layoutable
@@ -116,8 +122,18 @@ func New(opts ...Option) *Element {
 // --- Implement layout.Layoutable interface ---
 
 // LayoutStyle returns the layout style properties for this element.
+// If the element has a border, padding is increased to account for border width.
 func (e *Element) LayoutStyle() layout.Style {
-	return e.style
+	style := e.style
+	// Add padding for border (HR uses border field for line style, not actual border)
+	if e.border != tui.BorderNone && !e.hr {
+		// Border takes 1 character on each side
+		style.Padding.Top += 1
+		style.Padding.Right += 1
+		style.Padding.Bottom += 1
+		style.Padding.Left += 1
+	}
+	return style
 }
 
 // LayoutChildren returns the children to be laid out.
@@ -473,6 +489,27 @@ func (e *Element) SetOnClick(fn func()) {
 	e.onClick = fn
 }
 
+// SetOnEvent sets the event handler for this element.
+// Implicitly sets focusable = true.
+func (e *Element) SetOnEvent(fn func(tui.Event) bool) {
+	e.focusable = true
+	e.onEvent = fn
+}
+
+// SetOnFocus sets a handler that's called when this element gains focus.
+// Implicitly sets focusable = true.
+func (e *Element) SetOnFocus(fn func()) {
+	e.focusable = true
+	e.onFocus = fn
+}
+
+// SetOnBlur sets a handler that's called when this element loses focus.
+// Implicitly sets focusable = true.
+func (e *Element) SetOnBlur(fn func()) {
+	e.focusable = true
+	e.onBlur = fn
+}
+
 // HandleEvent dispatches an event to this element's handler.
 // Returns true if the event was consumed.
 func (e *Element) HandleEvent(event tui.Event) bool {
@@ -503,6 +540,26 @@ func (e *Element) HandleEvent(event tui.Event) bool {
 			e.onClick()
 			return true
 		}
+	}
+
+	// Handle MouseEvent - trigger onClick for left click press
+	// Bubbles up to parent elements if this element doesn't handle it
+	if mouseEvent, ok := event.(tui.MouseEvent); ok {
+		debug.Log("Element.HandleEvent: MouseEvent button=%d action=%d x=%d y=%d", mouseEvent.Button, mouseEvent.Action, mouseEvent.X, mouseEvent.Y)
+		if mouseEvent.Button == tui.MouseLeft && mouseEvent.Action == tui.MousePress {
+			if e.onClick != nil {
+				debug.Log("Element.HandleEvent: triggering onClick via mouse click")
+				e.onClick()
+				return true
+			}
+			// Bubble up to parent if we didn't handle it
+			if e.parent != nil {
+				debug.Log("Element.HandleEvent: bubbling mouse event to parent")
+				return e.parent.HandleEvent(event)
+			}
+		}
+		// Mouse events not consumed by onClick are not propagated
+		return false
 	}
 
 	// Handle scroll events for scrollable elements
@@ -592,4 +649,61 @@ func (e *Element) WalkFocusables(fn func(tui.Focusable)) {
 // Useful for polling channels, updating animations, etc.
 func (e *Element) SetOnUpdate(fn func()) {
 	e.onUpdate = fn
+}
+
+// --- Watcher API ---
+
+// AddWatcher attaches a watcher (timer, channel watcher) to this element.
+// Watchers are started automatically when the element tree is set as app root.
+func (e *Element) AddWatcher(w tui.Watcher) {
+	e.watchers = append(e.watchers, w)
+}
+
+// Watchers returns the watchers attached to this element.
+func (e *Element) Watchers() []tui.Watcher {
+	return e.watchers
+}
+
+// WalkWatchers calls fn for each watcher in the element tree.
+// This is used by App.SetRoot to discover and start all watchers.
+func (e *Element) WalkWatchers(fn func(tui.Watcher)) {
+	for _, w := range e.watchers {
+		fn(w)
+	}
+	for _, child := range e.children {
+		child.WalkWatchers(fn)
+	}
+}
+
+// --- Hit Testing API ---
+
+// ElementAt finds the deepest element containing the point (x, y).
+// Returns nil if no element contains the point.
+// Children are checked in reverse order since last child renders on top.
+func (e *Element) ElementAt(x, y int) *Element {
+	bounds := e.Rect()
+	if !bounds.Contains(x, y) {
+		return nil
+	}
+
+	// Check children in reverse order (last child renders on top)
+	for i := len(e.children) - 1; i >= 0; i-- {
+		if hit := e.children[i].ElementAt(x, y); hit != nil {
+			return hit
+		}
+	}
+
+	// No child hit, this element is the target
+	return e
+}
+
+// ElementAtPoint finds the deepest element containing the point (x, y).
+// Returns nil if no element contains the point.
+// This method returns tui.Focusable to satisfy the mouseHitTester interface.
+func (e *Element) ElementAtPoint(x, y int) tui.Focusable {
+	elem := e.ElementAt(x, y)
+	if elem == nil {
+		return nil
+	}
+	return elem
 }

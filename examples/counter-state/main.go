@@ -14,9 +14,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/grindlemire/go-tui/pkg/debug"
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
@@ -38,34 +36,18 @@ func main() {
 	root := buildUI(app)
 	app.SetRoot(root)
 
-	// Main event loop
-	debug.Log("Starting main event loop")
-	for {
-		event, ok := app.PollEvent(50 * time.Millisecond)
-		if ok {
-			debug.Log("Received event: %T %+v", event, event)
-			switch e := event.(type) {
-			case tui.KeyEvent:
-				debug.Log("KeyEvent: Key=%d Rune=%c", e.Key, e.Rune)
-				switch {
-				case e.Key == tui.KeyEscape || e.Rune == 'q':
-					debug.Log("Quit requested")
-					return
-				default:
-					// Dispatch other key events to focused element
-					debug.Log("Dispatching key event to focused element")
-					consumed := app.Dispatch(event)
-					debug.Log("Event consumed: %v", consumed)
-				}
-			case tui.ResizeEvent:
-				debug.Log("ResizeEvent: %dx%d", e.Width, e.Height)
-				// Rebuild on resize to get new dimensions
-				root = buildUI(app)
-				app.SetRoot(root)
-			}
+	app.SetGlobalKeyHandler(func(e tui.KeyEvent) bool {
+		if e.Rune == 'q' || e.Key == tui.KeyEscape {
+			app.Stop()
+			return true // Event consumed
 		}
+		return false // Pass to focused element
+	})
 
-		app.Render()
+	err = app.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+		os.Exit(1)
 	}
 }
 

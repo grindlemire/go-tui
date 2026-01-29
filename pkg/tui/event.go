@@ -59,3 +59,49 @@ type ResizeEvent struct {
 }
 
 func (ResizeEvent) isEvent() {}
+
+// MouseButton represents which mouse button was involved in an event.
+type MouseButton int
+
+const (
+	// MouseLeft is the left (primary) mouse button.
+	MouseLeft MouseButton = iota
+	// MouseMiddle is the middle mouse button (scroll wheel click).
+	MouseMiddle
+	// MouseRight is the right (secondary) mouse button.
+	MouseRight
+	// MouseWheelUp is a scroll wheel up event.
+	MouseWheelUp
+	// MouseWheelDown is a scroll wheel down event.
+	MouseWheelDown
+	// MouseNone indicates no button (used for motion events).
+	MouseNone
+)
+
+// MouseAction represents the type of mouse action.
+type MouseAction int
+
+const (
+	// MousePress indicates a button was pressed.
+	MousePress MouseAction = iota
+	// MouseRelease indicates a button was released.
+	MouseRelease
+	// MouseDrag indicates motion while a button is held.
+	MouseDrag
+)
+
+// MouseEvent represents a mouse input event.
+type MouseEvent struct {
+	// Button is which mouse button was involved.
+	Button MouseButton
+	// Action is the type of mouse action (press, release, drag).
+	Action MouseAction
+	// X is the column position (0-indexed).
+	X int
+	// Y is the row position (0-indexed).
+	Y int
+	// Mod contains modifier flags (Ctrl, Alt, Shift).
+	Mod Modifier
+}
+
+func (MouseEvent) isEvent() {}

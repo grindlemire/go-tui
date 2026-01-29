@@ -114,6 +114,12 @@ func (e *escBuilder) ClearScrollback() {
 	e.buf = append(e.buf, '3', 'J')
 }
 
+// ClearToEndOfScreen clears from cursor to end of screen (ESC[J or ESC[0J).
+func (e *escBuilder) ClearToEndOfScreen() {
+	e.writeCSI()
+	e.buf = append(e.buf, 'J')
+}
+
 // ClearLine clears the entire current line.
 func (e *escBuilder) ClearLine() {
 	e.writeCSI()
@@ -159,6 +165,29 @@ func (e *escBuilder) BeginSyncUpdate() {
 func (e *escBuilder) EndSyncUpdate() {
 	e.writeCSI()
 	e.buf = append(e.buf, '?', '2', '0', '2', '6', 'l')
+}
+
+// EnableMouse enables mouse reporting using SGR-1006 extended mode.
+// This enables button events (press/release) with SGR encoding for better
+// coordinate support (works beyond column 223).
+// Supported by most modern terminals: iTerm2, Terminal.app, kitty, alacritty, etc.
+func (e *escBuilder) EnableMouse() {
+	// Enable X10 mouse button tracking (basic click events)
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '0', 'h')
+	// Enable SGR extended mouse mode (better coordinate encoding)
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '6', 'h')
+}
+
+// DisableMouse disables mouse reporting.
+func (e *escBuilder) DisableMouse() {
+	// Disable SGR extended mouse mode
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '6', 'l')
+	// Disable X10 mouse button tracking
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '0', 'l')
 }
 
 // ResetStyle resets all text attributes to default.

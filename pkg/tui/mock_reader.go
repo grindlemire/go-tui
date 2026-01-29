@@ -8,8 +8,9 @@ type MockEventReader struct {
 	index  int
 }
 
-// Ensure MockEventReader implements EventReader.
+// Ensure MockEventReader implements EventReader and InterruptibleReader.
 var _ EventReader = (*MockEventReader)(nil)
+var _ InterruptibleReader = (*MockEventReader)(nil)
 
 // NewMockEventReader creates a MockEventReader with the given events.
 // Events are returned in order by successive calls to PollEvent.
@@ -49,4 +50,14 @@ func (m *MockEventReader) AddEvents(events ...Event) {
 // Remaining returns the number of events yet to be returned.
 func (m *MockEventReader) Remaining() int {
 	return len(m.events) - m.index
+}
+
+// EnableInterrupt is a no-op for the mock reader.
+func (m *MockEventReader) EnableInterrupt() error {
+	return nil
+}
+
+// Interrupt is a no-op for the mock reader.
+func (m *MockEventReader) Interrupt() error {
+	return nil
 }

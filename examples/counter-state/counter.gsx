@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 	"github.com/grindlemire/go-tui/pkg/debug"
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
@@ -10,7 +11,9 @@ import (
 
 templ CounterUI() {
 	count := tui.NewState(0)
-	<div class="flex-col gap-1 p-2" onKeyPress={handleKeys(count)}>
+	<div class="flex-col gap-1 p-2"
+	     onKeyPress={handleKeys(count)}
+	     onTimer={tui.OnTimer(time.Second, tick(count))}>
 		<div class="border-rounded p-1 flex-col items-center justify-center">
 			<span class="font-bold text-cyan">Reactive Counter</span>
 			<hr class="border" />
@@ -50,5 +53,12 @@ func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
 		case '-':
 			count.Set(count.Get() - 1)
 		}
+	}
+}
+
+func tick(count *tui.State[int]) func() {
+	return func() {
+		debug.Log("tick callback called")
+		count.Set(count.Get() + 1)
 	}
 }

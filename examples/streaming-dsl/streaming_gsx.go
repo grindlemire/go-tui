@@ -5,147 +5,142 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-func handleScrollKeys(e tui.KeyEvent) {
-	// This is a simple handler - the actual scrolling is done in main.go
-	// because we need access to the Content element reference
-}
-
-type HeaderView struct {
-	Root     *element.Element
-	watchers []tui.Watcher
-}
-
-func (v HeaderView) GetRoot() tui.Renderable { return v.Root }
-
-func (v HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Header() HeaderView {
-	var view HeaderView
-	var watchers []tui.Watcher
-
-	__tui_0 := element.New(
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
-		element.WithBorder(tui.BorderSingle),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-	)
-	__tui_1 := element.New(
-		element.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
-	)
-	__tui_0.AddChild(__tui_1)
-
-	view = HeaderView{
-		Root:     __tui_0,
-		watchers: watchers,
+func tickElapsed(elapsed *tui.State[int]) func() {
+	return func() {
+		elapsed.Set(elapsed.Get() + 1)
 	}
-	return view
 }
 
-type FooterView struct {
-	Root     *element.Element
-	watchers []tui.Watcher
-}
+func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
+	return func(line string) {
+		lineCount.Set(lineCount.Get() + 1)
 
-func (v FooterView) GetRoot() tui.Renderable { return v.Root }
+		stayAtBottom := content.IsAtBottom()
 
-func (v FooterView) GetWatchers() []tui.Watcher { return v.watchers }
+		lineElem := element.New(
+			element.WithText(line),
+			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		)
+		content.AddChild(lineElem)
 
-func Footer(lineCount int, elapsed int) FooterView {
-	var view FooterView
-	var watchers []tui.Watcher
-
-	__tui_0 := element.New(
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
-		element.WithBorder(tui.BorderSingle),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-	)
-	__tui_1 := element.New(
-		element.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount, elapsed)),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
-	)
-	__tui_0.AddChild(__tui_1)
-
-	view = FooterView{
-		Root:     __tui_0,
-		watchers: watchers,
+		if stayAtBottom {
+			content.ScrollToBottom()
+		}
 	}
-	return view
 }
 
-type StreamContentView struct {
-	Root     *element.Element
-	watchers []tui.Watcher
-	Content  *element.Element
-}
-
-func (v StreamContentView) GetRoot() tui.Renderable { return v.Root }
-
-func (v StreamContentView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func StreamContent() StreamContentView {
-	var view StreamContentView
-	var watchers []tui.Watcher
-
-	Content := element.New(
-		element.WithDirection(layout.Column),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		element.WithBorder(tui.BorderSingle),
-		element.WithFlexGrow(1),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithFocusable(true),
-		element.WithOnKeyPress(handleScrollKeys),
-	)
-
-	view = StreamContentView{
-		Root:     Content,
-		watchers: watchers,
-		Content:  Content,
+func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+	return func(e tui.KeyEvent) {
+		switch e.Rune {
+		case 'j':
+			content.ScrollBy(0, 1)
+		case 'k':
+			content.ScrollBy(0, -1)
+		}
 	}
-	return view
+}
+
+func handleEvent(content *element.Element) func(tui.Event) bool {
+	return func(e tui.Event) bool {
+		if mouse, ok := e.(tui.MouseEvent); ok {
+			switch mouse.Button {
+			case tui.MouseWheelUp:
+				content.ScrollBy(0, -1)
+				return true
+			case tui.MouseWheelDown:
+				content.ScrollBy(0, 1)
+				return true
+			}
+		}
+		return false
+	}
 }
 
 type StreamAppView struct {
 	Root     *element.Element
 	watchers []tui.Watcher
+	Content  *element.Element
 }
 
 func (v StreamAppView) GetRoot() tui.Renderable { return v.Root }
 
 func (v StreamAppView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func StreamApp(lineCount int, elapsed int) StreamAppView {
+func StreamApp(dataCh <-chan string) StreamAppView {
 	var view StreamAppView
 	var watchers []tui.Watcher
 
+	var Content *element.Element
+
+	lineCount := tui.NewState(0)
+	elapsed := tui.NewState(0)
 	__tui_0 := element.New(
 		element.WithDirection(layout.Column),
 	)
-	__tui_1 := Header()
-	__tui_0.AddChild(__tui_1.Root)
-	__tui_2 := StreamContent()
-	__tui_0.AddChild(__tui_2.Root)
-	__tui_3 := Footer(lineCount, elapsed)
-	__tui_0.AddChild(__tui_3.Root)
+	__tui_1 := element.New(
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithHeight(3),
+		element.WithDirection(layout.Row),
+		element.WithJustify(layout.JustifyCenter),
+		element.WithAlign(layout.AlignCenter),
+	)
+	__tui_2 := element.New(
+		element.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
+		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
+	)
+	__tui_1.AddChild(__tui_2)
+	__tui_0.AddChild(__tui_1)
+	Content = element.New(
+		element.WithDirection(layout.Column),
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithFlexGrow(1),
+		element.WithScrollable(element.ScrollVertical),
+		element.WithFocusable(true),
+	)
+	__tui_0.AddChild(Content)
+	__tui_3 := element.New(
+		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+		element.WithBorder(tui.BorderSingle),
+		element.WithHeight(3),
+		element.WithDirection(layout.Row),
+		element.WithJustify(layout.JustifyCenter),
+		element.WithAlign(layout.AlignCenter),
+	)
+	__tui_4 := element.New(
+		element.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())),
+		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_3.AddChild(__tui_4)
+	__tui_0.AddChild(__tui_3)
 
-	watchers = append(watchers, __tui_1.GetWatchers()...)
-	watchers = append(watchers, __tui_2.GetWatchers()...)
-	watchers = append(watchers, __tui_3.GetWatchers()...)
+	// Attach handlers (deferred until refs are assigned)
+	Content.SetOnKeyPress(handleScrollKeys(Content))
+	Content.SetOnEvent(handleEvent(Content))
+
+	// Attach watchers (deferred until refs are assigned)
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, tickElapsed(elapsed)))
+	__tui_0.AddWatcher(tui.Watch(dataCh, addLine(lineCount, Content)))
+
+	// State bindings
+	__update___tui_4 := func() {
+		__tui_4.SetText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get()))
+	}
+	lineCount.Bind(func(_ int) { __update___tui_4() })
+	elapsed.Bind(func(_ int) { __update___tui_4() })
 
 	view = StreamAppView{
 		Root:     __tui_0,
 		watchers: watchers,
+		Content:  Content,
 	}
 	return view
 }

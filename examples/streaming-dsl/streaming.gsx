@@ -2,61 +2,98 @@ package main
 
 import (
 	"fmt"
+	"time"
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-// Header displays the title bar with instructions
-templ Header() {
-	<div class="border-blue"
-	     border={tui.BorderSingle}
-	     height={3}
-	     direction={layout.Row}
-	     justify={layout.JustifyCenter}
-	     align={layout.AlignCenter}>
-		<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k to scroll, q to quit"}</span>
+// StreamApp - fully declarative with onChannel and onTimer in DSL
+// Content ref is forward-declared, so handlers can reference it
+templ StreamApp(dataCh <-chan string) {
+	lineCount := tui.NewState(0)
+	elapsed := tui.NewState(0)
+	<div class="flex-col"
+	     onTimer={tui.OnTimer(time.Second, tickElapsed(elapsed))}
+	     onChannel={tui.Watch(dataCh, addLine(lineCount, Content))}>
+		// Header
+		<div class="border-blue"
+		     border={tui.BorderSingle}
+		     height={3}
+		     direction={layout.Row}
+		     justify={layout.JustifyCenter}
+		     align={layout.AlignCenter}>
+			<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k to scroll, q to quit"}</span>
+		</div>
+		// Content area with named ref
+		<div #Content class="flex-col border-cyan"
+		     border={tui.BorderSingle}
+		     flexGrow={1}
+		     scrollable={element.ScrollVertical}
+		     focusable={true}
+		     onKeyPress={handleScrollKeys(Content)}
+		     onEvent={handleEvent(Content)}></div>
+		// Footer with reactive state (auto-updates when lineCount/elapsed change)
+		<div class="border-blue"
+		     border={tui.BorderSingle}
+		     height={3}
+		     direction={layout.Row}
+		     justify={layout.JustifyCenter}
+		     align={layout.AlignCenter}>
+			<span class="text-white">
+				{fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())}
+			</span>
+		</div>
 	</div>
 }
 
-// Footer displays status information
-templ Footer(lineCount int, elapsed int) {
-	<div class="border-blue"
-	     border={tui.BorderSingle}
-	     height={3}
-	     direction={layout.Row}
-	     justify={layout.JustifyCenter}
-	     align={layout.AlignCenter}>
-		<span class="text-white">
-			{fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount, elapsed)}
-		</span>
-	</div>
+func tickElapsed(elapsed *tui.State[int]) func() {
+	return func() {
+		elapsed.Set(elapsed.Get() + 1)
+	}
 }
 
-// StreamContent displays the streaming content area
-templ StreamContent() {
-	<div class="flex-col border-cyan"
-	     border={tui.BorderSingle}
-	     flexGrow={1}
-	     scrollable={element.ScrollVertical}
-	     focusable={true}
-	     onKeyPress={handleScrollKeys}></div>
+func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
+	return func(line string) {
+		lineCount.Set(lineCount.Get() + 1)
+
+		stayAtBottom := content.IsAtBottom()
+
+		lineElem := element.New(
+			element.WithText(line),
+			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		)
+		content.AddChild(lineElem)
+
+		if stayAtBottom {
+			content.ScrollToBottom()
+		}
+	}
 }
 
-// StreamApp is the main application component
-templ StreamApp(lineCount int, elapsed int) {
-	<div class="flex-col">
-		@Header()
-		@StreamContent()
-		@Footer(lineCount, elapsed)
-	</div>
+func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+	return func(e tui.KeyEvent) {
+		switch e.Rune {
+		case 'j':
+			content.ScrollBy(0, 1)
+		case 'k':
+			content.ScrollBy(0, -1)
+		}
+	}
 }
 
-// handleScrollKeys handles keyboard navigation for scrolling
-// Note: App-level keys like quit are handled via SetGlobalKeyHandler
-func handleScrollKeys(e tui.KeyEvent) {
-	// This is a simple handler - the actual scrolling is done in main.go
-	// because we need access to the Content element reference
+func handleEvent(content *element.Element) func(tui.Event) bool {
+	return func(e tui.Event) bool {
+		if mouse, ok := e.(tui.MouseEvent); ok {
+			switch mouse.Button {
+			case tui.MouseWheelUp:
+				content.ScrollBy(0, -1)
+				return true
+			case tui.MouseWheelDown:
+				content.ScrollBy(0, 1)
+				return true
+			}
+		}
+		return false
+	}
 }
-// This is a simple handler - the actual scrolling is done in main.go
-// because we need access to the Content element reference

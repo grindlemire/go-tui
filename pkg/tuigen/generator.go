@@ -9,6 +9,19 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// deferredWatcher tracks a watcher to be attached after all elements are created.
+type deferredWatcher struct {
+	elementVar  string // The element variable to attach the watcher to
+	watcherExpr string // The watcher expression (e.g., "tui.Watch(dataCh, handler)")
+}
+
+// deferredHandler tracks a handler to be set after all elements are created.
+type deferredHandler struct {
+	elementVar string // The element variable to set the handler on
+	setter     string // The setter method (e.g., "SetOnKeyPress")
+	handlerExp string // The handler expression
+}
+
 // Generator transforms a validated AST into Go source code.
 type Generator struct {
 	buf        bytes.Buffer
@@ -21,6 +34,13 @@ type Generator struct {
 
 	// Watcher expressions for current component (onChannel/onTimer)
 	watchers []string
+
+	// Deferred watcher attachments (element var -> watcher expr)
+	// These are emitted after all elements are created so refs are valid
+	deferredWatchers []deferredWatcher
+
+	// Deferred handler attachments (for onKeyPress, onClick that reference refs)
+	deferredHandlers []deferredHandler
 
 	// Component calls with watchers that need aggregation
 	componentVars []string
@@ -146,6 +166,8 @@ func (g *Generator) generateComponent(comp *Component) {
 	// Reset variable counter and watcher tracking for each component
 	g.varCounter = 0
 	g.watchers = nil
+	g.deferredWatchers = nil
+	g.deferredHandlers = nil
 	g.componentVars = nil
 	g.stateVars = nil
 	g.stateBindings = nil
@@ -185,7 +207,8 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.writeln("var watchers []tui.Watcher")
 	g.writeln("")
 
-	// Declare slice/map variables at function scope for loop refs
+	// Forward-declare ALL named refs at function scope
+	// This allows handlers to reference refs that appear later in the tree
 	for _, ref := range g.namedRefs {
 		if ref.InLoop {
 			if ref.KeyExpr != "" {
@@ -193,28 +216,14 @@ func (g *Generator) generateComponent(comp *Component) {
 			} else {
 				g.writef("var %s []*element.Element\n", ref.Name)
 			}
-		}
-	}
-
-	// Declare pointer variables at function scope for conditional refs (not in loops)
-	for _, ref := range g.namedRefs {
-		if ref.InConditional && !ref.InLoop {
+		} else {
+			// ALL non-loop refs are forward-declared as pointers
 			g.writef("var %s *element.Element\n", ref.Name)
 		}
 	}
 
 	// Add blank line after declarations if we had any
-	hasLoopRefs := false
-	hasCondRefs := false
-	for _, ref := range g.namedRefs {
-		if ref.InLoop {
-			hasLoopRefs = true
-		}
-		if ref.InConditional && !ref.InLoop {
-			hasCondRefs = true
-		}
-	}
-	if hasLoopRefs || hasCondRefs {
+	if len(g.namedRefs) > 0 {
 		g.writeln("")
 	}
 
@@ -267,6 +276,24 @@ func (g *Generator) generateComponent(comp *Component) {
 		// Aggregate watchers from child component calls
 		for _, compVar := range g.componentVars {
 			g.writef("watchers = append(watchers, %s.GetWatchers()...)\n", compVar)
+		}
+	}
+
+	// Emit deferred handler attachments (after all elements/refs are created)
+	if len(g.deferredHandlers) > 0 {
+		g.writeln("")
+		g.writeln("// Attach handlers (deferred until refs are assigned)")
+		for _, dh := range g.deferredHandlers {
+			g.writef("%s.%s(%s)\n", dh.elementVar, dh.setter, dh.handlerExp)
+		}
+	}
+
+	// Emit deferred watcher attachments (after all elements/refs are created)
+	if len(g.deferredWatchers) > 0 {
+		g.writeln("")
+		g.writeln("// Attach watchers (deferred until refs are assigned)")
+		for _, dw := range g.deferredWatchers {
+			g.writef("%s.AddWatcher(%s)\n", dw.elementVar, dw.watcherExpr)
 		}
 	}
 
@@ -352,48 +379,70 @@ func (g *Generator) generateElement(elem *Element, parentVar string) string {
 // generateElementWithRefs generates code for an element with named ref handling.
 // inLoop and inConditional track the context for proper variable handling.
 func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
-	// Determine variable name - use ref name if it's a named ref
+	// Determine variable name and whether we need := or =
 	var varName string
+	useAssignment := false // true means use "=", false means use ":="
+
 	if elem.NamedRef != "" {
-		// For refs in loops or conditionals, the variable is already declared at function scope
-		if inLoop || inConditional {
-			varName = g.nextVar() // Use temp var, then assign/append to ref variable
+		if inLoop {
+			// In loops, use temp var then append/assign to the ref slice/map
+			varName = g.nextVar()
 		} else {
-			varName = elem.NamedRef // Use ref name directly
+			// Outside loops, the ref is forward-declared, use assignment
+			varName = elem.NamedRef
+			useAssignment = true
 		}
 	} else {
 		varName = g.nextVar()
 	}
 
 	// Build options from attributes and tag
-	options := g.buildElementOptions(elem)
+	elemOpts := g.buildElementOptions(elem)
 
-	// Generate element creation
-	if len(options) == 0 {
-		g.writef("%s := element.New()\n", varName)
+	// Generate element creation - use = for forward-declared refs, := otherwise
+	assignOp := ":="
+	if useAssignment {
+		assignOp = "="
+	}
+
+	if len(elemOpts.options) == 0 {
+		g.writef("%s %s element.New()\n", varName, assignOp)
 	} else {
-		g.writef("%s := element.New(\n", varName)
+		g.writef("%s %s element.New(\n", varName, assignOp)
 		g.indent++
-		for _, opt := range options {
+		for _, opt := range elemOpts.options {
 			g.writef("%s,\n", opt)
 		}
 		g.indent--
 		g.writeln(")")
 	}
 
-	// Handle named ref assignment in loops/conditionals
-	if elem.NamedRef != "" {
-		if inLoop {
-			if elem.RefKey != nil {
-				// Map-based ref: assign to map with key
-				g.writef("%s[%s] = %s\n", elem.NamedRef, elem.RefKey.Code, varName)
-			} else {
-				// Slice-based ref: append to slice
-				g.writef("%s = append(%s, %s)\n", elem.NamedRef, elem.NamedRef, varName)
-			}
-		} else if inConditional {
-			// Conditional ref: assign to pre-declared variable
-			g.writef("%s = %s\n", elem.NamedRef, varName)
+	// Defer watcher attachment until after all elements are created
+	// This ensures forward-declared refs are assigned before handlers reference them
+	for _, watcher := range elemOpts.watchers {
+		g.deferredWatchers = append(g.deferredWatchers, deferredWatcher{
+			elementVar:  varName,
+			watcherExpr: watcher,
+		})
+	}
+
+	// Defer handler attachment (onKeyPress, onClick) for the same reason
+	for _, h := range elemOpts.handlers {
+		g.deferredHandlers = append(g.deferredHandlers, deferredHandler{
+			elementVar: varName,
+			setter:     h.setter,
+			handlerExp: h.expr,
+		})
+	}
+
+	// Handle named ref assignment in loops (append to slice or assign to map)
+	if elem.NamedRef != "" && inLoop {
+		if elem.RefKey != nil {
+			// Map-based ref: assign to map with key
+			g.writef("%s[%s] = %s\n", elem.NamedRef, elem.RefKey.Code, varName)
+		} else {
+			// Slice-based ref: append to slice
+			g.writef("%s = append(%s, %s)\n", elem.NamedRef, elem.NamedRef, varName)
 		}
 	}
 
@@ -410,22 +459,33 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 	return varName
 }
 
+// elementOptions holds options, watchers, and deferred handlers for an element.
+type elementOptions struct {
+	options  []string
+	watchers []string
+	handlers []struct { // Handlers to defer (onKeyPress, onClick)
+		setter string // e.g., "SetOnKeyPress"
+		expr   string // the handler expression
+	}
+}
+
 // buildElementOptions generates option expressions for an element.
-func (g *Generator) buildElementOptions(elem *Element) []string {
-	var options []string
+// Returns both element options and any watcher expressions found.
+func (g *Generator) buildElementOptions(elem *Element) elementOptions {
+	var result elementOptions
 
 	// Handle tag-specific options
 	switch elem.Tag {
 	case "hr":
-		options = append(options, "element.WithHR()")
+		result.options = append(result.options, "element.WithHR()")
 	case "br":
-		options = append(options, "element.WithWidth(0)")
-		options = append(options, "element.WithHeight(1)")
+		result.options = append(result.options, "element.WithWidth(0)")
+		result.options = append(result.options, "element.WithHeight(1)")
 	case "span", "p":
 		// If text element has children that are text content, add WithText
 		textContent := g.extractTextContent(elem.Children)
 		if textContent != "" {
-			options = append(options, fmt.Sprintf("element.WithText(%s)", textContent))
+			result.options = append(result.options, fmt.Sprintf("element.WithText(%s)", textContent))
 		}
 	}
 
@@ -438,27 +498,39 @@ func (g *Generator) buildElementOptions(elem *Element) []string {
 		if attr.Name == "class" {
 			classValue := g.getClassAttributeValue(attr)
 			if classValue != "" {
-				result := ParseTailwindClasses(classValue)
+				twResult := ParseTailwindClasses(classValue)
 				// Add direct options
-				options = append(options, result.Options...)
+				result.options = append(result.options, twResult.Options...)
 				// Collect text style methods for combining later
-				classTextMethods = append(classTextMethods, result.TextMethods...)
+				classTextMethods = append(classTextMethods, twResult.TextMethods...)
 			}
 			continue
 		}
 
-		// Handle onChannel and onTimer specially - they are watchers, not element options
-		if attr.Name == "onChannel" || attr.Name == "onTimer" {
+		// Handle watcher attributes (onChannel, onTimer) - they create watchers, not element options
+		if watcherAttributes[attr.Name] {
 			watcherExpr := g.generateAttributeValue(attr.Value)
 			if watcherExpr != "" {
-				g.watchers = append(g.watchers, watcherExpr)
+				result.watchers = append(result.watchers, watcherExpr)
+			}
+			continue
+		}
+
+		// Handle handler attributes - defer them so forward-declared refs are assigned first
+		if setter, isHandler := handlerAttributes[attr.Name]; isHandler {
+			handlerExpr := g.generateAttributeValue(attr.Value)
+			if handlerExpr != "" {
+				result.handlers = append(result.handlers, struct {
+					setter string
+					expr   string
+				}{setter: setter, expr: handlerExpr})
 			}
 			continue
 		}
 
 		opt := g.generateAttributeOption(attr)
 		if opt != "" {
-			options = append(options, opt)
+			result.options = append(result.options, opt)
 		}
 	}
 
@@ -466,11 +538,11 @@ func (g *Generator) buildElementOptions(elem *Element) []string {
 	if len(classTextMethods) > 0 {
 		textStyleOpt := BuildTextStyleOption(classTextMethods)
 		if textStyleOpt != "" {
-			options = append(options, textStyleOpt)
+			result.options = append(result.options, textStyleOpt)
 		}
 	}
 
-	return options
+	return result
 }
 
 // getClassAttributeValue extracts the string value from a class attribute.
@@ -505,7 +577,28 @@ func (g *Generator) extractTextContent(children []Node) string {
 	return ""
 }
 
+// handlerAttributes maps handler/callback attribute names to their setter methods.
+// These attributes take function values that might capture forward-declared refs,
+// so they are always deferred until after all elements are created.
+// When adding a new handler attribute, add it here AND add the Set* method to element.go.
+var handlerAttributes = map[string]string{
+	"onKeyPress": "SetOnKeyPress",
+	"onClick":    "SetOnClick",
+	"onEvent":    "SetOnEvent",
+	"onFocus":    "SetOnFocus",
+	"onBlur":     "SetOnBlur",
+}
+
+// watcherAttributes are special attributes that create watchers, not element options.
+// They are deferred and attached via AddWatcher after all elements are created.
+var watcherAttributes = map[string]bool{
+	"onChannel": true,
+	"onTimer":   true,
+}
+
 // attributeToOption maps DSL attribute names to element.With* functions.
+// NOTE: Handler attributes (onKeyPress, onClick, etc.) are NOT in this map -
+// they are in handlerAttributes and are deferred so refs are assigned first.
 var attributeToOption = map[string]string{
 	// Dimensions
 	"width":         "element.WithWidth(%s)",
@@ -542,15 +635,8 @@ var attributeToOption = map[string]string{
 	"textStyle": "element.WithTextStyle(%s)",
 	"textAlign": "element.WithTextAlign(%s)",
 
-	// Focus
-	"onFocus":   "element.WithOnFocus(%s)",
-	"onBlur":    "element.WithOnBlur(%s)",
-	"onEvent":   "element.WithOnEvent(%s)",
+	// Focus (non-handler attributes only)
 	"focusable": "element.WithFocusable(%s)",
-
-	// Event handlers (no bool return)
-	"onKeyPress": "element.WithOnKeyPress(%s)",
-	"onClick":    "element.WithOnClick(%s)",
 
 	// Scroll
 	"scrollable": "element.WithScrollable(%s)",
@@ -637,18 +723,35 @@ func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, 
 // generateLetBinding generates code for a @let binding.
 func (g *Generator) generateLetBinding(let *LetBinding, parentVar string) {
 	// Generate the element with a specific variable name
-	options := g.buildElementOptions(let.Element)
+	elemOpts := g.buildElementOptions(let.Element)
 
-	if len(options) == 0 {
+	if len(elemOpts.options) == 0 {
 		g.writef("%s := element.New()\n", let.Name)
 	} else {
 		g.writef("%s := element.New(\n", let.Name)
 		g.indent++
-		for _, opt := range options {
+		for _, opt := range elemOpts.options {
 			g.writef("%s,\n", opt)
 		}
 		g.indent--
 		g.writeln(")")
+	}
+
+	// Defer watcher attachment until after all elements are created
+	for _, watcher := range elemOpts.watchers {
+		g.deferredWatchers = append(g.deferredWatchers, deferredWatcher{
+			elementVar:  let.Name,
+			watcherExpr: watcher,
+		})
+	}
+
+	// Defer handler attachment (onKeyPress, onClick)
+	for _, h := range elemOpts.handlers {
+		g.deferredHandlers = append(g.deferredHandlers, deferredHandler{
+			elementVar: let.Name,
+			setter:     h.setter,
+			handlerExp: h.expr,
+		})
 	}
 
 	// Generate children for the let-bound element - skip if text element already has content in WithText

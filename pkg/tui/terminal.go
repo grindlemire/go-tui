@@ -39,6 +39,9 @@ type Terminal interface {
 	// Clear clears the entire terminal screen.
 	Clear()
 
+	// ClearToEnd clears from the cursor position to the end of the screen.
+	ClearToEnd()
+
 	// SetCursor moves the cursor to the specified position (0-indexed).
 	SetCursor(x, y int)
 
@@ -63,6 +66,14 @@ type Terminal interface {
 	// ExitAltScreen switches back to the main screen buffer.
 	// This restores the original terminal content.
 	ExitAltScreen()
+
+	// EnableMouse enables mouse event reporting.
+	// After calling this, mouse clicks will be reported as events.
+	EnableMouse()
+
+	// DisableMouse disables mouse event reporting.
+	// Call this before exiting to restore normal terminal behavior.
+	DisableMouse()
 
 	// Caps returns the terminal's capabilities.
 	Caps() Capabilities

@@ -224,37 +224,32 @@ func TestRenderTree_TextRightAlignment(t *testing.T) {
 func TestRenderTree_TextWithBorderAndPadding(t *testing.T) {
 	buf := tui.NewBuffer(30, 10)
 
-	// Note: Border is a visual property that draws on the element's rect.
-	// Padding creates space inside the border box for content.
-	// If you want space between border and content, use padding >= 1.
+	// Border takes 1 cell on each side, padding adds additional space inside.
+	// With border + padding=1, content starts at position 2 (1 for border + 1 for padding).
 	elem := New(
 		WithText("Test"),
 		WithSize(20, 5),
 		WithBorder(tui.BorderSingle),
-		WithPadding(1), // 1 cell padding on all sides
+		WithPadding(1), // 1 cell padding inside the border
 	)
 	elem.Calculate(30, 10)
 
 	RenderTree(buf, elem)
 
-	// Border should be drawn
+	// Border should be drawn at edge
 	corner := buf.Cell(0, 0)
 	if corner.Rune != '┌' {
 		t.Errorf("border corner = %q, want '┌'", corner.Rune)
 	}
 
-	// Content rect is border box inset by padding
-	// With padding of 1, content starts at (1, 1)
+	// Content rect accounts for border (1) + padding (1) = 2
 	contentRect := elem.ContentRect()
-	if contentRect.X != 1 || contentRect.Y != 1 {
-		t.Errorf("content rect starts at (%d,%d), want (1,1)", contentRect.X, contentRect.Y)
+	if contentRect.X != 2 || contentRect.Y != 2 {
+		t.Errorf("content rect starts at (%d,%d), want (2,2)", contentRect.X, contentRect.Y)
 	}
 
-	// Text "Test" should be at content rect position (1, 1)
-	// Note: The text will overlap with the border because padding=1
-	// means content starts where the border is drawn.
-	// For proper spacing, use padding >= 2 when using a border.
-	checkString(t, buf, 1, 1, "Test")
+	// Text "Test" should be at content rect position (2, 2)
+	checkString(t, buf, 2, 2, "Test")
 }
 
 func TestElement_Render_CalculatesIfDirty(t *testing.T) {

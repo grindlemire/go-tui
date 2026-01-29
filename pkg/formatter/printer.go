@@ -199,6 +199,12 @@ func (p *printer) printElement(elem *tuigen.Element) {
 	p.write("<")
 	p.write(elem.Tag)
 
+	// Named ref (e.g., #Content)
+	if elem.NamedRef != "" {
+		p.write(" #")
+		p.write(elem.NamedRef)
+	}
+
 	// Attributes
 	if len(elem.Attributes) > 0 {
 		// Calculate approximate line length with all attrs inline
@@ -505,6 +511,12 @@ func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 	// Print element inline or multi-line based on complexity
 	p.buf.WriteString("<")
 	p.buf.WriteString(let.Element.Tag)
+
+	// Named ref (e.g., #Content)
+	if let.Element.NamedRef != "" {
+		p.buf.WriteString(" #")
+		p.buf.WriteString(let.Element.NamedRef)
+	}
 
 	for _, attr := range let.Element.Attributes {
 		p.buf.WriteString(" ")

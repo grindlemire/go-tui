@@ -133,7 +133,8 @@ templ Button() {
 	<div onEvent={handleClick}></div>
 }`,
 			wantContains: []string{
-				"element.WithOnEvent(handleClick)",
+				// onEvent is deferred so forward-declared refs are assigned first
+				"SetOnEvent(handleClick)",
 			},
 		},
 	}
@@ -1256,7 +1257,8 @@ templ StreamBox() {
 				"Root     *element.Element",
 				"watchers []tui.Watcher",
 				"Content  *element.Element",
-				"Content := element.New(",
+				"var Content *element.Element",  // Forward-declared
+				"Content = element.New(",        // Assignment, not declaration
 				"element.WithScrollable(element.ScrollVertical)",
 				"view = StreamBoxView{",
 				"Root:     Content,",
@@ -1277,9 +1279,12 @@ templ Layout() {
 				"Header   *element.Element",
 				"Content  *element.Element",
 				"Footer   *element.Element",
-				"Header := element.New(",
-				"Content := element.New(",
-				"Footer := element.New(",
+				"var Header *element.Element",  // Forward-declared
+				"var Content *element.Element", // Forward-declared
+				"var Footer *element.Element",  // Forward-declared
+				"Header = element.New(",        // Assignment
+				"Content = element.New(",       // Assignment
+				"Footer = element.New(",        // Assignment
 				"Header:   Header,",
 				"Content:  Content,",
 				"Footer:   Footer,",
@@ -1294,7 +1299,8 @@ templ Sidebar() {
 				"type SidebarView struct",
 				"Root       *element.Element",
 				"Navigation *element.Element",
-				"Navigation := element.New(",
+				"var Navigation *element.Element", // Forward-declared
+				"Navigation = element.New(",       // Assignment
 				"Root:       Navigation,",
 				"Navigation: Navigation,",
 			},
@@ -1465,9 +1471,7 @@ templ StreamBox(dataCh chan string) {
 }`,
 			wantContains: []string{
 				"watchers []tui.Watcher",
-				"var watchers []tui.Watcher",
-				"watchers = append(watchers, tui.Watch(dataCh, handleData(lines)))",
-				"watchers: watchers,",
+				".AddWatcher(tui.Watch(dataCh, handleData(lines)))",
 			},
 		},
 		"onTimer watcher": {
@@ -1477,9 +1481,7 @@ templ Clock() {
 }`,
 			wantContains: []string{
 				"watchers []tui.Watcher",
-				"var watchers []tui.Watcher",
-				"watchers = append(watchers, tui.OnTimer(time.Second, tick(elapsed)))",
-				"watchers: watchers,",
+				".AddWatcher(tui.OnTimer(time.Second, tick(elapsed)))",
 			},
 		},
 		"multiple watchers on same element": {
@@ -1491,8 +1493,8 @@ templ Streaming(dataCh chan string) {
 	></div>
 }`,
 			wantContains: []string{
-				"watchers = append(watchers, tui.Watch(dataCh, handleData))",
-				"watchers = append(watchers, tui.OnTimer(time.Second, tick))",
+				".AddWatcher(tui.Watch(dataCh, handleData))",
+				".AddWatcher(tui.OnTimer(time.Second, tick))",
 			},
 		},
 	}
@@ -1571,6 +1573,7 @@ templ Test() {
 }
 
 // TestGenerator_OnKeyPressAttribute tests onKeyPress handler generation
+// Handlers are deferred to ensure refs are assigned before handlers reference them
 func TestGenerator_OnKeyPressAttribute(t *testing.T) {
 	input := `package x
 templ Counter() {
@@ -1584,8 +1587,9 @@ templ Counter() {
 
 	code := string(output)
 
-	if !strings.Contains(code, "element.WithOnKeyPress(handleKeys(count))") {
-		t.Errorf("missing onKeyPress option\nGot:\n%s", code)
+	// Handler is deferred - uses SetOnKeyPress instead of WithOnKeyPress
+	if !strings.Contains(code, ".SetOnKeyPress(handleKeys(count))") {
+		t.Errorf("missing deferred onKeyPress setter\nGot:\n%s", code)
 	}
 
 	if !strings.Contains(code, "element.WithFocusable(true)") {
@@ -1594,6 +1598,7 @@ templ Counter() {
 }
 
 // TestGenerator_OnClickAttribute tests onClick handler generation
+// Handlers are deferred to ensure refs are assigned before handlers reference them
 func TestGenerator_OnClickAttribute(t *testing.T) {
 	input := `package x
 templ Button(onClick func()) {
@@ -1607,8 +1612,9 @@ templ Button(onClick func()) {
 
 	code := string(output)
 
-	if !strings.Contains(code, "element.WithOnClick(onClick)") {
-		t.Errorf("missing onClick option\nGot:\n%s", code)
+	// Handler is deferred - uses SetOnClick instead of WithOnClick
+	if !strings.Contains(code, ".SetOnClick(onClick)") {
+		t.Errorf("missing deferred onClick setter\nGot:\n%s", code)
 	}
 }
 

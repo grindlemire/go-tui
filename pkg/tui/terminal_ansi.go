@@ -150,6 +150,13 @@ func (t *ANSITerminal) Clear() {
 	t.lastStyle = NewStyle()
 }
 
+// ClearToEnd clears from cursor position to end of screen.
+func (t *ANSITerminal) ClearToEnd() {
+	t.esc.Reset()
+	t.esc.ClearToEndOfScreen()
+	t.out.Write(t.esc.Bytes())
+}
+
 // SetCursor moves the cursor to the specified position (0-indexed).
 func (t *ANSITerminal) SetCursor(x, y int) {
 	t.esc.Reset()
@@ -204,6 +211,20 @@ func (t *ANSITerminal) EnterAltScreen() {
 func (t *ANSITerminal) ExitAltScreen() {
 	t.esc.Reset()
 	t.esc.ExitAltScreen()
+	t.out.Write(t.esc.Bytes())
+}
+
+// EnableMouse enables mouse event reporting.
+func (t *ANSITerminal) EnableMouse() {
+	t.esc.Reset()
+	t.esc.EnableMouse()
+	t.out.Write(t.esc.Bytes())
+}
+
+// DisableMouse disables mouse event reporting.
+func (t *ANSITerminal) DisableMouse() {
+	t.esc.Reset()
+	t.esc.DisableMouse()
 	t.out.Write(t.esc.Bytes())
 }
 

@@ -40,6 +40,15 @@ func parseInput(data []byte) []Event {
 			next := data[i+1]
 			switch next {
 			case '[':
+				// Check for SGR mouse sequence (ESC [ <)
+				if i+2 < len(data) && data[i+2] == '<' {
+					mouseEvent, consumed := parseMouseSGR(data[i:])
+					if consumed > 0 {
+						events = append(events, mouseEvent)
+						i += consumed
+						continue
+					}
+				}
 				// CSI sequence
 				key, mod, consumed := parseCSISequence(data[i:])
 				if consumed > 0 {
@@ -356,4 +365,121 @@ func decodeModifier(param int) Modifier {
 		mod |= ModCtrl
 	}
 	return mod
+}
+
+// parseMouseSGR parses an SGR-1006 mouse sequence.
+// Format: ESC [ < button ; x ; y M (press) or ESC [ < button ; x ; y m (release)
+// The button field encodes: button number + modifier bits
+//
+//	bits 0-1: button (0=left, 1=middle, 2=right, 3=release/none)
+//	bit 2: shift
+//	bit 3: meta/alt
+//	bit 4: ctrl
+//	bit 5: motion (drag)
+//	bit 6: wheel (64=up, 65=down)
+//
+// Returns (MouseEvent, bytes consumed). Returns (MouseEvent{}, 0) on failure.
+func parseMouseSGR(data []byte) (MouseEvent, int) {
+	// Minimum: ESC [ < b ; x ; y M = 10 bytes for single digits
+	if len(data) < 9 || data[0] != 0x1b || data[1] != '[' || data[2] != '<' {
+		return MouseEvent{}, 0
+	}
+
+	// Parse: button ; x ; y
+	i := 3
+	button := 0
+	x := 0
+	y := 0
+	stage := 0 // 0=button, 1=x, 2=y
+
+	for i < len(data) {
+		b := data[i]
+
+		if b >= '0' && b <= '9' {
+			switch stage {
+			case 0:
+				button = button*10 + int(b-'0')
+			case 1:
+				x = x*10 + int(b-'0')
+			case 2:
+				y = y*10 + int(b-'0')
+			}
+			i++
+			continue
+		}
+
+		if b == ';' {
+			stage++
+			if stage > 2 {
+				// Too many semicolons
+				return MouseEvent{}, 0
+			}
+			i++
+			continue
+		}
+
+		// Final byte: 'M' for press, 'm' for release
+		if b == 'M' || b == 'm' {
+			if stage != 2 {
+				// Didn't get all three parameters
+				return MouseEvent{}, 0
+			}
+
+			event := MouseEvent{
+				X: x - 1, // Convert from 1-indexed to 0-indexed
+				Y: y - 1,
+			}
+
+			// Decode button and modifiers
+			if button&4 != 0 {
+				event.Mod |= ModShift
+			}
+			if button&8 != 0 {
+				event.Mod |= ModAlt
+			}
+			if button&16 != 0 {
+				event.Mod |= ModCtrl
+			}
+
+			// Check for wheel events (bit 6 set)
+			if button&64 != 0 {
+				if button&1 != 0 {
+					event.Button = MouseWheelDown
+				} else {
+					event.Button = MouseWheelUp
+				}
+				event.Action = MousePress // Wheel events are instantaneous
+			} else {
+				// Regular button event
+				buttonNum := button & 3
+				switch buttonNum {
+				case 0:
+					event.Button = MouseLeft
+				case 1:
+					event.Button = MouseMiddle
+				case 2:
+					event.Button = MouseRight
+				case 3:
+					event.Button = MouseNone // Release (legacy encoding)
+				}
+
+				// Determine action from final byte and motion bit
+				if button&32 != 0 {
+					event.Action = MouseDrag
+				} else if b == 'M' {
+					event.Action = MousePress
+				} else {
+					event.Action = MouseRelease
+				}
+			}
+
+			return event, i + 1
+		}
+
+		// Unexpected character
+		return MouseEvent{}, 0
+	}
+
+	// Incomplete sequence
+	return MouseEvent{}, 0
 }
