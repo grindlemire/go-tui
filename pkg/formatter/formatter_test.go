@@ -395,6 +395,43 @@ templ Complex(items []string, selected int) {
 }
 `,
 		},
+		"multi-line attrs": {
+			input: `package main
+
+templ Test() {
+	<div
+		class="a"
+		id="b">
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"closing bracket on own line": {
+			input: `package main
+
+templ Test() {
+	<div
+		class="a"
+		id="b"
+	>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"blank lines between siblings": {
+			input: `package main
+
+templ Test() {
+	<div>
+		<span>First</span>
+
+		<span>Second</span>
+	</div>
+}
+`,
+		},
 	}
 
 	for name, tt := range tests {
@@ -559,6 +596,270 @@ templ Complex() {
 	// Check that the Go expression is preserved
 	if !strings.Contains(got, `{fmt.Sprintf("%d + %d = %d", 1, 2, 1+2)}`) {
 		t.Errorf("Go expression not preserved in output:\n%s", got)
+	}
+}
+
+// TestFormatLayoutPreservation tests that the formatter preserves user layout choices
+// for HTML template elements while normalizing indentation and alignment.
+func TestFormatLayoutPreservation(t *testing.T) {
+	type tc struct {
+		input string
+		want  string
+	}
+
+	tests := map[string]tc{
+		"single-line attrs stay single-line even if long": {
+			input: `package main
+
+templ Test() {
+<div class="very-long-class-name-that-exceeds-100-chars" id="also-very-long-identifier">
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div class="very-long-class-name-that-exceeds-100-chars" id="also-very-long-identifier">
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"multi-line attrs indented one tab deeper": {
+			input: `package main
+
+templ Test() {
+<div class="a"
+id="b">
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div
+		class="a"
+		id="b">
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"closing bracket on own line preserved": {
+			input: `package main
+
+templ Test() {
+<div class="a"
+id="b"
+>
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div
+		class="a"
+		id="b"
+	>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"closing bracket after last attr preserved": {
+			input: `package main
+
+templ Test() {
+<div class="a"
+id="b">
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div
+		class="a"
+		id="b">
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"inline children preserved": {
+			input: `package main
+
+templ Test() {
+<span>hello world</span>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<span>hello world</span>
+}
+`,
+		},
+		"multi-line children preserved even if short": {
+			input: `package main
+
+templ Test() {
+<span>
+hello
+</span>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<span>
+		hello
+	</span>
+}
+`,
+		},
+		"self-closing with closing bracket on own line": {
+			input: `package main
+
+templ Test() {
+<input class="text"
+value="hello"
+/>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<input
+		class="text"
+		value="hello"
+	/>
+}
+`,
+		},
+		"self-closing with closing bracket on same line": {
+			input: `package main
+
+templ Test() {
+<input class="text"
+value="hello" />
+}
+`,
+			want: `package main
+
+templ Test() {
+	<input
+		class="text"
+		value="hello" />
+}
+`,
+		},
+		"empty element stays inline": {
+			input: `package main
+
+templ Test() {
+<div></div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div></div>
+}
+`,
+		},
+		"blank lines between siblings preserved": {
+			input: `package main
+
+templ Test() {
+<div>
+<span>First</span>
+
+<span>Second</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div>
+		<span>First</span>
+
+		<span>Second</span>
+	</div>
+}
+`,
+		},
+		"named ref in multi-line mode": {
+			input: `package main
+
+templ Test() {
+<div
+#Content
+class="flex-col">
+<span>Hello</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div
+		#Content
+		class="flex-col">
+		<span>Hello</span>
+	</div>
+}
+`,
+		},
+		"closing bracket on own line forces multi-line": {
+			input: `package main
+
+templ Test() {
+<div class="a"
+>
+<span>Content</span>
+</div>
+}
+`,
+			want: `package main
+
+templ Test() {
+	<div
+		class="a"
+	>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fmtr := newTestFormatter()
+			got, err := fmtr.Format("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("Format() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Format() mismatch:\ngot:\n%s\nwant:\n%s", got, tt.want)
+			}
+
+			// Verify idempotency: format(format(x)) == format(x)
+			second, err := fmtr.Format("test.gsx", got)
+			if err != nil {
+				t.Fatalf("Second Format() error = %v", err)
+			}
+			if got != second {
+				t.Errorf("Idempotency failed:\nfirst:\n%s\nsecond:\n%s", got, second)
+			}
+		})
 	}
 }
 

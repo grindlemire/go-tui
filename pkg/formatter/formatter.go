@@ -9,8 +9,6 @@ import (
 type Formatter struct {
 	// IndentString is the string used for indentation (default: tab).
 	IndentString string
-	// MaxLineWidth is the target maximum line width (default: 100).
-	MaxLineWidth int
 	// FixImports enables auto-import resolution (default: true).
 	FixImports bool
 }
@@ -19,7 +17,6 @@ type Formatter struct {
 func New() *Formatter {
 	return &Formatter{
 		IndentString: "\t",
-		MaxLineWidth: 100,
 		FixImports:   true,
 	}
 }
@@ -33,16 +30,19 @@ func (f *Formatter) Format(filename, source string) (string, error) {
 
 	file, err := parser.ParseFile()
 	if err != nil {
-		return "", err
+		return source, err
 	}
 
 	// Fix imports using goimports
 	if f.FixImports {
-		_ = fixImports(file, filename)
+		err = fixImports(file, filename)
+		if err != nil {
+			return source, err
+		}
 	}
 
 	// Generate formatted output
-	printer := newPrinter(f.IndentString, f.MaxLineWidth)
+	printer := newPrinter(f.IndentString)
 	return printer.PrintFile(file), nil
 }
 

@@ -112,6 +112,11 @@ type Element struct {
 	Children   []Node // Elements, GoExpr, TextContent, ForLoop, IfStmt, LetBinding
 	SelfClose  bool
 	Position   Position
+	// Layout hints (detected from source positions during parsing)
+	MultiLineAttrs        bool // attrs span multiple source lines
+	ClosingBracketNewLine bool // > or /> is on its own line (after last attr)
+	InlineChildren        bool // children are on same line as opening/closing tags
+	BlankLineBefore        bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup // Comments immediately before this element
 	TrailingComments *CommentGroup // Comments on same line after this element
@@ -133,8 +138,9 @@ func (a *Attribute) Pos() Position { return a.Position }
 
 // GoExpr represents a Go expression embedded in {braces}.
 type GoExpr struct {
-	Code     string
-	Position Position
+	Code            string
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup // Comments immediately before this expression
 	TrailingComments *CommentGroup // Comments on same line after this expression
@@ -181,8 +187,9 @@ func (b *BoolLit) Pos() Position { return b.Position }
 
 // TextContent represents literal text content inside an element.
 type TextContent struct {
-	Text     string
-	Position Position
+	Text            string
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 }
 
 func (t *TextContent) node()        {}
@@ -190,9 +197,10 @@ func (t *TextContent) Pos() Position { return t.Position }
 
 // LetBinding represents @let name = <element>.
 type LetBinding struct {
-	Name     string
-	Element  *Element
-	Position Position
+	Name            string
+	Element         *Element
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup // Comments immediately before @let
 	TrailingComments *CommentGroup // Comments on same line after element
@@ -203,11 +211,12 @@ func (l *LetBinding) Pos() Position { return l.Position }
 
 // ForLoop represents @for i, v := range items { ... }
 type ForLoop struct {
-	Index    string // loop index variable (may be "_" or empty)
-	Value    string // loop value variable
-	Iterable string // Go expression for the iterable
-	Body     []Node // Elements and other nodes
-	Position Position
+	Index           string // loop index variable (may be "_" or empty)
+	Value           string // loop value variable
+	Iterable        string // Go expression for the iterable
+	Body            []Node // Elements and other nodes
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup   // Comments immediately before @for
 	TrailingComments *CommentGroup   // Comments on same line after opening {
@@ -219,10 +228,11 @@ func (f *ForLoop) Pos() Position { return f.Position }
 
 // IfStmt represents @if condition { ... } @else { ... }
 type IfStmt struct {
-	Condition string // Go expression for the condition
-	Then      []Node
-	Else      []Node // optional else branch
-	Position  Position
+	Condition       string // Go expression for the condition
+	Then            []Node
+	Else            []Node // optional else branch
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup   // Comments immediately before @if
 	TrailingComments *CommentGroup   // Comments on same line after opening {
@@ -281,10 +291,11 @@ func (r *RawGoExpr) Pos() Position { return r.Position }
 
 // ComponentCall represents @ComponentName(args) { children }
 type ComponentCall struct {
-	Name     string // component name (e.g., "Card", "Header")
-	Args     string // raw Go expression for arguments
-	Children []Node // child elements (may be empty if no children block)
-	Position Position
+	Name            string // component name (e.g., "Card", "Header")
+	Args            string // raw Go expression for arguments
+	Children        []Node // child elements (may be empty if no children block)
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup // Comments immediately before @ComponentName
 	TrailingComments *CommentGroup // Comments on same line after )
@@ -295,7 +306,8 @@ func (c *ComponentCall) Pos() Position { return c.Position }
 
 // ChildrenSlot represents {children...} placeholder in a component body
 type ChildrenSlot struct {
-	Position Position
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup // Comments immediately before {children...}
 	TrailingComments *CommentGroup // Comments on same line after {children...}

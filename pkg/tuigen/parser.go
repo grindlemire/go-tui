@@ -107,6 +107,14 @@ func (p *Parser) consumePendingComments() []*Comment {
 	return comments
 }
 
+// clearPendingComments discards all pending comments from both the lexer and parser.
+// This is used after capturing raw Go code (functions, declarations) where
+// comments inside the code are already part of the captured source string.
+func (p *Parser) clearPendingComments() {
+	p.lexer.ConsumeComments()
+	p.pendingComments = nil
+}
+
 // groupComments groups comments into CommentGroups based on blank lines.
 // Adjacent comments (no blank line between) form a group.
 // A blank line (2+ newlines) starts a new group.
@@ -450,6 +458,7 @@ func (p *Parser) parseFuncOrComponent() Node {
 				// Capture raw source from func to after closing brace
 				endPos := p.current.StartPos + 1 // +1 to include the '}'
 				code := p.lexer.SourceRange(startPos, endPos)
+				p.clearPendingComments()
 				p.advance() // move past '}'
 				p.skipNewlines()
 				return &GoFunc{
@@ -493,6 +502,7 @@ func (p *Parser) parseGoDecl() *GoDecl {
 				// End of braced declaration (type struct{}, const/var block)
 				endPos := p.current.StartPos + 1
 				code := p.lexer.SourceRange(startPos, endPos)
+				p.clearPendingComments()
 				p.advance()
 				p.skipNewlines()
 				return &GoDecl{Kind: kind, Code: code, Position: pos}
@@ -505,6 +515,7 @@ func (p *Parser) parseGoDecl() *GoDecl {
 				// End of grouped declaration: const (...) or var (...)
 				endPos := p.current.StartPos + 1
 				code := p.lexer.SourceRange(startPos, endPos)
+				p.clearPendingComments()
 				p.advance()
 				p.skipNewlines()
 				return &GoDecl{Kind: kind, Code: code, Position: pos}
@@ -541,6 +552,7 @@ func (p *Parser) captureRawGoFunc(startPos int, pos Position) *GoFunc {
 			if started && braceDepth == 0 {
 				endPos := p.current.StartPos + 1
 				code := p.lexer.SourceRange(startPos, endPos)
+				p.clearPendingComments()
 				p.advance()
 				p.skipNewlines()
 				return &GoFunc{Code: code, Position: pos}
@@ -822,19 +834,31 @@ func (p *Parser) parseElement() *Element {
 	}
 	p.advance()
 
-	// Check for #Name (named ref)
+	// Check for #Name (named ref) — track position for multi-line detection
+	// Skip newlines to support #Name on its own line in multi-line mode
+	namedRefLine := pos.Line
+	p.skipNewlines()
 	if p.current.Type == TokenHash {
 		p.advance() // consume #
 		if p.current.Type != TokenIdent {
 			p.errors.AddError(p.position(), "expected identifier after '#' for named ref")
 			return nil
 		}
+		namedRefLine = p.current.Line
 		elem.NamedRef = p.current.Literal
 		p.advance()
 	}
 
 	// Parse attributes
 	elem.Attributes = p.parseAttributes()
+
+	// Detect multi-line attributes from source positions
+	if len(elem.Attributes) > 0 {
+		lastAttr := elem.Attributes[len(elem.Attributes)-1]
+		elem.MultiLineAttrs = lastAttr.Position.Line != pos.Line
+	} else if elem.NamedRef != "" {
+		elem.MultiLineAttrs = namedRefLine != pos.Line
+	}
 
 	// Check for key={expr} attribute and move it to RefKey
 	for i, attr := range elem.Attributes {
@@ -848,10 +872,19 @@ func (p *Parser) parseElement() *Element {
 		}
 	}
 
+	// Determine the line of the last thing before the closing bracket
+	lastLineBeforeBracket := pos.Line
+	if len(elem.Attributes) > 0 {
+		lastLineBeforeBracket = elem.Attributes[len(elem.Attributes)-1].Position.Line
+	} else if elem.NamedRef != "" {
+		lastLineBeforeBracket = namedRefLine
+	}
+
 	// Check for self-closing or opening tag
 	if p.current.Type == TokenSlashAngle {
 		// Self-closing: <tag />
 		elem.SelfClose = true
+		elem.ClosingBracketNewLine = p.current.Line > lastLineBeforeBracket
 		closeLine := p.current.Line
 		p.advanceSkipNewlines()
 		// Check for trailing comment on same line as />
@@ -859,12 +892,25 @@ func (p *Parser) parseElement() *Element {
 		return elem
 	}
 
+	// Detect closing bracket on new line for regular elements
+	elem.ClosingBracketNewLine = p.current.Line > lastLineBeforeBracket
+	openTagEndLine := p.current.Line // line of >
+
 	if !p.expect(TokenRAngle) {
 		return nil
 	}
 
 	// Parse children
 	elem.Children = p.parseChildren(elem.Tag)
+
+	// Detect inline children from source positions
+	if len(elem.Children) > 0 {
+		firstChild := elem.Children[0]
+		elem.InlineChildren = firstChild.Pos().Line == openTagEndLine
+	} else {
+		// Empty elements are always inline: <div></div>
+		elem.InlineChildren = true
+	}
 
 	// Expect closing tag </tag>
 	if p.current.Type != TokenLAngleSlash {
@@ -888,7 +934,6 @@ func (p *Parser) parseElement() *Element {
 	// Check for trailing comment on same line as closing >
 	elem.TrailingComments = p.getTrailingCommentOnLine(closeLine)
 
-	p.skipNewlines()
 	return elem
 }
 
@@ -991,8 +1036,13 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 	var children []Node
 
 	for {
-		// Skip whitespace-only newlines
-		p.skipNewlines()
+		// Count newlines to detect blank lines between siblings
+		nlCount := 0
+		for p.current.Type == TokenNewline {
+			nlCount++
+			p.advance()
+		}
+		hadBlankLine := nlCount >= 2
 
 		// Check for closing tag
 		if p.current.Type == TokenLAngleSlash || p.current.Type == TokenEOF {
@@ -1068,6 +1118,10 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 
 		// Attach leading comments to the child if one was parsed
 		if child != nil {
+			// Mark blank line before non-first children
+			if hadBlankLine && len(children) > 0 {
+				setBlankLineBefore(child, true)
+			}
 			p.attachLeadingComments(child, leadingComments)
 			children = append(children, child)
 		}
@@ -1076,6 +1130,28 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 	}
 
 	return children
+}
+
+// setBlankLineBefore sets the BlankLineBefore field on a node.
+func setBlankLineBefore(node Node, v bool) {
+	switch n := node.(type) {
+	case *Element:
+		n.BlankLineBefore = v
+	case *GoExpr:
+		n.BlankLineBefore = v
+	case *TextContent:
+		n.BlankLineBefore = v
+	case *LetBinding:
+		n.BlankLineBefore = v
+	case *ForLoop:
+		n.BlankLineBefore = v
+	case *IfStmt:
+		n.BlankLineBefore = v
+	case *ComponentCall:
+		n.BlankLineBefore = v
+	case *ChildrenSlot:
+		n.BlankLineBefore = v
+	}
 }
 
 // parseGoExprNode parses a Go expression {expr} as a node.
@@ -1273,7 +1349,7 @@ func (p *Parser) parseFor() *ForLoop {
 	p.skipNewlines()
 	loop.Body, loop.OrphanComments = p.parseComponentBodyWithOrphans()
 
-	if !p.expectSkipNewlines(TokenRBrace) {
+	if !p.expect(TokenRBrace) {
 		return nil
 	}
 
@@ -1311,9 +1387,12 @@ func (p *Parser) parseIf() *IfStmt {
 	p.skipNewlines()
 	stmt.Then, stmt.OrphanComments = p.parseComponentBodyWithOrphans()
 
-	if !p.expectSkipNewlines(TokenRBrace) {
+	if !p.expect(TokenRBrace) {
 		return nil
 	}
+
+	// Skip newlines before checking for @else
+	p.skipNewlines()
 
 	// Check for @else
 	if p.current.Type == TokenAtElse {
@@ -1337,7 +1416,7 @@ func (p *Parser) parseIf() *IfStmt {
 			// This is a simplification - full support would require a separate field
 			stmt.Else = p.parseComponentBody()
 
-			if !p.expectSkipNewlines(TokenRBrace) {
+			if !p.expect(TokenRBrace) {
 				return stmt
 			}
 		}
@@ -1395,7 +1474,7 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 		p.advance()
 		p.skipNewlines()
 		call.Children = p.parseComponentBody()
-		if !p.expectSkipNewlines(TokenRBrace) {
+		if !p.expect(TokenRBrace) {
 			return nil
 		}
 	}
