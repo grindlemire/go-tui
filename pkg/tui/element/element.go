@@ -479,13 +479,17 @@ func (e *Element) SetFocusable(focusable bool) {
 
 // SetOnKeyPress sets a handler for key press events.
 // No return value needed - mutations mark dirty automatically via tui.MarkDirty().
+// Implicitly sets focusable = true so the element can receive keyboard events.
 func (e *Element) SetOnKeyPress(fn func(tui.KeyEvent)) {
+	e.focusable = true
 	e.onKeyPress = fn
 }
 
 // SetOnClick sets a handler for click events.
 // No return value needed - mutations mark dirty automatically via tui.MarkDirty().
+// Implicitly sets focusable = true so the element can receive mouse and keyboard events.
 func (e *Element) SetOnClick(fn func()) {
+	e.focusable = true
 	e.onClick = fn
 }
 

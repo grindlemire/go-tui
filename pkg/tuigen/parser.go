@@ -80,12 +80,13 @@ func (p *Parser) expectSkipNewlines(typ TokenType) bool {
 }
 
 // synchronize skips tokens until a synchronization point is found.
-// Synchronization points are top-level declarations: func, templ.
+// Synchronization points are top-level declarations: func, templ, type, const, var.
 // This allows the parser to recover from errors and continue parsing.
 func (p *Parser) synchronize() {
 	for p.current.Type != TokenEOF {
 		// Sync points: top-level declarations
-		if p.current.Type == TokenFunc || p.current.Type == TokenTempl {
+		switch p.current.Type {
+		case TokenFunc, TokenTempl, TokenTypeKw, TokenConst, TokenVar:
 			return
 		}
 		p.advance()
@@ -242,8 +243,18 @@ func (p *Parser) ParseFile() (*File, error) {
 				// Error recovery: skip to next top-level declaration
 				p.synchronize()
 			}
+		case TokenTypeKw, TokenConst, TokenVar:
+			// Parse type, const, or var declaration
+			decl := p.parseGoDecl()
+			if decl != nil {
+				decl.LeadingComments = leadingComments
+				file.Decls = append(file.Decls, decl)
+			} else {
+				// Error recovery: skip to next top-level declaration
+				p.synchronize()
+			}
 		default:
-			p.errors.AddErrorf(p.position(), "unexpected token %s, expected func or templ", p.current.Type)
+			p.errors.AddErrorf(p.position(), "unexpected token %s, expected func, templ, type, const, or var", p.current.Type)
 			// Error recovery: skip to next top-level declaration
 			p.synchronize()
 		}
@@ -358,6 +369,12 @@ func (p *Parser) parseFuncOrComponent() Node {
 		return nil
 	}
 
+	// Check for method receiver: func (receiver Type) Name()
+	// If we see '(' after 'func', this is a method - capture as raw Go
+	if p.current.Type == TokenLParen {
+		return p.captureRawGoFunc(startPos, pos)
+	}
+
 	if p.current.Type != TokenIdent {
 		p.errors.AddError(p.position(), "expected function name")
 		return nil
@@ -453,6 +470,88 @@ func (p *Parser) parseFuncOrComponent() Node {
 		Code:     code,
 		Position: pos,
 	}
+}
+
+// parseGoDecl parses a top-level Go declaration (type, const, or var).
+// These are captured as raw Go code and passed through unchanged.
+func (p *Parser) parseGoDecl() *GoDecl {
+	pos := p.position()
+	startPos := p.current.StartPos
+	kind := p.current.Literal // "type", "const", or "var"
+
+	// Track brace/paren depth to find end of declaration
+	braceDepth := 0
+	parenDepth := 0
+
+	for p.current.Type != TokenEOF {
+		switch p.current.Type {
+		case TokenLBrace:
+			braceDepth++
+		case TokenRBrace:
+			braceDepth--
+			if braceDepth == 0 && parenDepth == 0 {
+				// End of braced declaration (type struct{}, const/var block)
+				endPos := p.current.StartPos + 1
+				code := p.lexer.SourceRange(startPos, endPos)
+				p.advance()
+				p.skipNewlines()
+				return &GoDecl{Kind: kind, Code: code, Position: pos}
+			}
+		case TokenLParen:
+			parenDepth++
+		case TokenRParen:
+			parenDepth--
+			if braceDepth == 0 && parenDepth == 0 {
+				// End of grouped declaration: const (...) or var (...)
+				endPos := p.current.StartPos + 1
+				code := p.lexer.SourceRange(startPos, endPos)
+				p.advance()
+				p.skipNewlines()
+				return &GoDecl{Kind: kind, Code: code, Position: pos}
+			}
+		case TokenNewline:
+			// Simple declaration ends at newline (if not inside braces/parens)
+			if braceDepth == 0 && parenDepth == 0 {
+				endPos := p.current.StartPos
+				code := p.lexer.SourceRange(startPos, endPos)
+				p.skipNewlines()
+				return &GoDecl{Kind: kind, Code: code, Position: pos}
+			}
+		}
+		p.advance()
+	}
+
+	// Handle EOF
+	code := p.lexer.SourceRange(startPos, p.lexer.SourcePos())
+	return &GoDecl{Kind: kind, Code: code, Position: pos}
+}
+
+// captureRawGoFunc captures a function definition as raw Go code.
+// Used for methods with receivers and helper functions.
+func (p *Parser) captureRawGoFunc(startPos int, pos Position) *GoFunc {
+	braceDepth := 0
+	started := false
+
+	for p.current.Type != TokenEOF {
+		if p.current.Type == TokenLBrace {
+			braceDepth++
+			started = true
+		} else if p.current.Type == TokenRBrace {
+			braceDepth--
+			if started && braceDepth == 0 {
+				endPos := p.current.StartPos + 1
+				code := p.lexer.SourceRange(startPos, endPos)
+				p.advance()
+				p.skipNewlines()
+				return &GoFunc{Code: code, Position: pos}
+			}
+		}
+		p.advance()
+	}
+
+	p.errors.AddError(pos, "unterminated function definition")
+	code := p.lexer.SourceRange(startPos, p.lexer.SourcePos())
+	return &GoFunc{Code: code, Position: pos}
 }
 
 // parseTempl parses a templ definition which is always a component.
@@ -932,21 +1031,34 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 			if call := p.parseComponentCall(); call != nil {
 				child = call
 			}
-		case TokenIdent:
-			// Coalesce consecutive text tokens into a single TextContent
-			var textParts []string
-			textPos := p.position()
-			for p.current.Type == TokenIdent {
-				textParts = append(textParts, p.current.Literal)
-				p.advance()
-			}
-			child = &TextContent{
-				Text:     strings.Join(textParts, " "),
-				Position: textPos,
-			}
 		default:
-			// Try to collect text content
-			if p.current.Type != TokenEOF && p.current.Type != TokenLAngleSlash {
+			// Coalesce consecutive text tokens into a single TextContent.
+			// In element content, we treat identifiers and various punctuation as text
+			// until we hit a special delimiter ({, <, @, newline, EOF, or closing tag).
+			if isTextToken(p.current.Type) {
+				var text strings.Builder
+				textPos := p.position()
+				prevWasWord := false
+				prevWasSpaceAfterPunct := false
+				for isTextToken(p.current.Type) {
+					currIsWord := isWordToken(p.current.Type)
+					// Add space between:
+					// - consecutive word tokens (e.g., "Hello World")
+					// - punctuation that should have trailing space followed by word (e.g., ", q")
+					if text.Len() > 0 && currIsWord && (prevWasWord || prevWasSpaceAfterPunct) {
+						text.WriteByte(' ')
+					}
+					text.WriteString(p.current.Literal)
+					prevWasWord = currIsWord
+					// Comma should have a space after it before the next word
+					prevWasSpaceAfterPunct = p.current.Type == TokenComma || p.current.Type == TokenColon || p.current.Type == TokenSemicolon
+					p.advance()
+				}
+				child = &TextContent{
+					Text:     text.String(),
+					Position: textPos,
+				}
+			} else if p.current.Type != TokenEOF && p.current.Type != TokenLAngleSlash {
 				// Skip unknown tokens in children context
 				p.advance()
 			} else {
@@ -1322,5 +1434,39 @@ func (p *Parser) parseGoExprOrChildrenSlot() Node {
 	return &GoExpr{
 		Code:     trimmed,
 		Position: pos,
+	}
+}
+
+// isTextToken returns true if the token type is part of text content inside elements.
+// Text content can include identifiers and various punctuation that might appear in
+// user-facing text like "Use j/k to scroll, q to quit".
+func isTextToken(typ TokenType) bool {
+	switch typ {
+	case TokenIdent, TokenInt, TokenFloat:
+		return true
+	// Punctuation commonly found in text
+	case TokenComma, TokenSlash, TokenDot, TokenColon, TokenSemicolon:
+		return true
+	case TokenBang, TokenMinus, TokenPlus, TokenStar:
+		return true
+	case TokenPipe, TokenAmpersand, TokenEquals:
+		return true
+	case TokenLParen, TokenRParen, TokenLBracket, TokenRBracket:
+		return true
+	case TokenUnderscore, TokenHash:
+		return true
+	default:
+		return false
+	}
+}
+
+// isWordToken returns true if the token is a "word" that should have spaces between
+// consecutive instances. Identifiers and numbers are words; punctuation is not.
+func isWordToken(typ TokenType) bool {
+	switch typ {
+	case TokenIdent, TokenInt, TokenFloat:
+		return true
+	default:
+		return false
 	}
 }

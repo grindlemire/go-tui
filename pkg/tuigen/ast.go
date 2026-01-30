@@ -52,6 +52,7 @@ func (g *CommentGroup) Text() string {
 type File struct {
 	Package    string
 	Imports    []Import
+	Decls      []*GoDecl    // top-level Go declarations (type, const, var)
 	Components []*Component
 	Funcs      []*GoFunc // top-level Go functions
 	Position   Position
@@ -254,6 +255,19 @@ type GoFunc struct {
 
 func (g *GoFunc) node()        {}
 func (g *GoFunc) Pos() Position { return g.Position }
+
+// GoDecl represents a top-level Go declaration (type, const, var) in a .gsx file.
+type GoDecl struct {
+	Kind     string // "type", "const", or "var"
+	Code     string // the entire declaration
+	Position Position
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before declaration
+	TrailingComments *CommentGroup // Comments on same line after declaration
+}
+
+func (g *GoDecl) node()        {}
+func (g *GoDecl) Pos() Position { return g.Position }
 
 // RawGoExpr represents a raw Go expression that should be emitted as-is
 // (used for element references captured via @let)

@@ -63,9 +63,7 @@ func CounterUI() CounterUIView {
 		element.WithDirection(layout.Column),
 		element.WithGap(1),
 		element.WithPadding(2),
-		element.WithOnKeyPress(handleKeys(count)),
 	)
-	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(count)))
 	__tui_1 := element.New(
 		element.WithBorder(tui.BorderRounded),
 		element.WithPadding(1),
@@ -103,15 +101,11 @@ func CounterUI() CounterUIView {
 		element.WithGap(1),
 		element.WithJustify(layout.JustifyCenter),
 	)
-	__tui_8 := element.New(
-		element.WithOnClick(increment(count)),
-	)
+	__tui_8 := element.New()
 	__tui_9 := element.New(element.WithText(" + "))
 	__tui_8.AddChild(__tui_9)
 	__tui_7.AddChild(__tui_8)
-	__tui_10 := element.New(
-		element.WithOnClick(decrement(count)),
-	)
+	__tui_10 := element.New()
 	__tui_11 := element.New(element.WithText(" - "))
 	__tui_10.AddChild(__tui_11)
 	__tui_7.AddChild(__tui_10)
@@ -126,6 +120,14 @@ func CounterUI() CounterUIView {
 	)
 	__tui_12.AddChild(__tui_13)
 	__tui_0.AddChild(__tui_12)
+
+	// Attach handlers (deferred until refs are assigned)
+	__tui_0.SetOnKeyPress(handleKeys(count))
+	__tui_8.SetOnClick(increment(count))
+	__tui_10.SetOnClick(decrement(count))
+
+	// Attach watchers (deferred until refs are assigned)
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(count)))
 
 	// State bindings
 	count.Bind(func(_ int) {

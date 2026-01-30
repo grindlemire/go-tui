@@ -1,8 +1,6 @@
-// Package main demonstrates a Claude Code-like chat interface using GSX.
-// Type messages in the input box, press Enter to send to Claude CLI.
-// Response streams above the widget. Press Escape to quit.
-//
-// Run `go generate` to regenerate chat_gsx.go from chat.gsx.
+// Package main demonstrates InlineHeight mode with a simple input box.
+// Text streams above the widget while you can type in the input box.
+// Press Enter to add your input to the stream. Press Escape to quit.
 //
 // To build and run:
 //
@@ -14,27 +12,21 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
 //go:generate go run ../../cmd/tui generate chat.gsx
 
+const inlineHeight = 5
+
 func main() {
-	buf := NewTextBuffer()
-	var app *tui.App
+	var input string
 
-	// Update view callback - called when buffer changes
-	updateView := func() {
-		width, _ := app.Size()
-		lines := buf.GetDisplayLines(width)
-		view := ChatInput(lines)
-		app.SetRoot(view.Root)
-	}
-
-	var err error
-	app, err = tui.NewApp(
-		tui.WithInlineHeight(5),
+	// Create app with inline height (widget at bottom of terminal)
+	app, err := tui.NewApp(
+		tui.WithInlineHeight(inlineHeight),
 		tui.WithCursor(),
 	)
 	if err != nil {
@@ -43,15 +35,65 @@ func main() {
 	}
 	defer app.Close()
 
-	// Set key handler with access to app and updateView
-	app.SetGlobalKeyHandler(CreateKeyHandler(buf, app, updateView))
+	// Start streaming random text above the widget
+	textCh := make(chan string, 100)
+	go generateText(textCh)
+	go func() {
+		for text := range textCh {
+			app.PrintAboveln("%s", text)
+		}
+	}()
 
-	// Set initial view
-	updateView()
+	// Render function updates the UI
+	render := func() {
+		view := InputBox(input, inlineHeight)
+		app.SetRoot(view.Root)
+	}
 
-	err = app.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+	// Handle keyboard input
+	app.SetGlobalKeyHandler(func(e tui.KeyEvent) bool {
+		switch e.Key {
+		case tui.KeyRune:
+			input += string(e.Rune)
+		case tui.KeyBackspace:
+			if len(input) > 0 {
+				input = input[:len(input)-1]
+			}
+		case tui.KeyEnter:
+			if input != "" {
+				app.PrintAboveln("You: %s", input)
+				input = ""
+			}
+		case tui.KeyEscape:
+			app.Stop()
+			return true
+		default:
+			return false
+		}
+		render()
+		tui.MarkDirty()
+		return true
+	})
+
+	render()
+	if err := app.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
+	}
+}
+
+// generateText sends timestamped messages to the channel.
+// Replace this with any text source (API responses, logs, etc).
+func generateText(ch chan<- string) {
+	words := []string{"alpha", "beta", "gamma", "delta", "epsilon"}
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	count := 1
+	for range ticker.C {
+		word := words[count%len(words)]
+		ch <- fmt.Sprintf("[%s] Message #%d: %s",
+			time.Now().Format("15:04:05"), count, word)
+		count++
 	}
 }

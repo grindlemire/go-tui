@@ -931,7 +931,19 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 				// Skip creating bindings for elements inside for loops - their variable
 				// names are scoped to the loop and can't be referenced from the binding code
 				if !inLoop {
-					// Check text content in children for state usage
+					// Check text content in children for state usage.
+					// We need to calculate the correct child element index for the binding.
+					// Exception: span/p with single text/expr child puts it in WithText, not as child element.
+					skipChildElements := (n.Tag == "span" || n.Tag == "p") && len(n.Children) == 1
+
+					// Calculate starting index for child elements.
+					// If parent uses counter, children start at elementIndex + 1.
+					// If parent is a named ref, children start at elementIndex (counter wasn't incremented for parent).
+					childElementIndex := elementIndex
+					if usesCounter {
+						childElementIndex++ // Parent element uses one slot
+					}
+
 					for _, child := range n.Children {
 						if goExpr, ok := child.(*GoExpr); ok {
 							var deps []string
@@ -945,14 +957,30 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 							}
 
 							if len(deps) > 0 {
+								// Determine which element the binding should target.
+								// If children become separate elements, use the child's index.
+								// If the parent element has the text (single child span/p), use parent.
+								bindingElementName := elementName
+								if !skipChildElements {
+									bindingElementName = "__tui_" + strconv.Itoa(childElementIndex)
+								}
+
 								bindings = append(bindings, StateBinding{
 									StateVars:    deps,
 									Element:      n,
-									ElementName:  elementName,
+									ElementName:  bindingElementName,
 									Attribute:    "text",
 									Expr:         goExpr.Code,
 									ExplicitDeps: isExplicit,
 								})
+							}
+						}
+
+						// Increment child element index for each child that creates an element
+						if !skipChildElements {
+							switch child.(type) {
+							case *GoExpr, *TextContent:
+								childElementIndex++
 							}
 						}
 					}

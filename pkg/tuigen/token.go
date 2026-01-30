@@ -24,6 +24,9 @@ const (
 	TokenElse    // else
 	TokenFor     // for
 	TokenRange   // range
+	TokenTypeKw  // type
+	TokenConst   // const
+	TokenVar     // var
 
 	// DSL keywords (@ prefixed)
 	TokenAtLet  // @let
@@ -90,6 +93,9 @@ var tokenNames = map[TokenType]string{
 	TokenElse:        "else",
 	TokenFor:         "for",
 	TokenRange:       "range",
+	TokenTypeKw:      "type",
+	TokenConst:       "const",
+	TokenVar:         "var",
 	TokenAtLet: "@let",
 	TokenAtFor:       "@for",
 	TokenAtIf:        "@if",
@@ -187,6 +193,9 @@ var keywords = map[string]TokenType{
 	"else":    TokenElse,
 	"for":     TokenFor,
 	"range":   TokenRange,
+	"type":    TokenTypeKw,
+	"const":   TokenConst,
+	"var":     TokenVar,
 }
 
 // LookupIdent returns the token type for an identifier,

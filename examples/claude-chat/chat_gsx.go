@@ -4,149 +4,40 @@
 package main
 
 import (
-	"bufio"
-	"os/exec"
-	"strings"
-
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-func WrapText(text string, width int) []string {
-	if width <= 0 || len(text) == 0 {
-		return []string{text}
-	}
-
-	var lines []string
-	var current strings.Builder
-	currentWidth := 0
-
-	for _, r := range text {
-		runeWidth := tui.RuneWidth(r)
-		if currentWidth+runeWidth > width && currentWidth > 0 {
-			lines = append(lines, current.String())
-			current.Reset()
-			currentWidth = 0
-		}
-		current.WriteRune(r)
-		currentWidth += runeWidth
-	}
-	if current.Len() > 0 {
-		lines = append(lines, current.String())
-	}
-	return lines
-}
-
-func SendToClaudeAndStream(app *tui.App, query string) {
-	// Print user query
-	app.PrintAboveln("You: %s", query)
-	app.PrintAboveln("")
-
-	// Call claude CLI with print mode
-	cmd := exec.Command("claude", "-p", query)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		app.PrintAboveln("Error: %v", err)
-		return
-	}
-	stderr, _ := cmd.StderrPipe()
-
-	if err := cmd.Start(); err != nil {
-		app.PrintAboveln("Error starting claude: %v", err)
-		return
-	}
-
-	// Stream response line by line
-	scanner := bufio.NewScanner(stdout)
-	firstLine := true
-	for scanner.Scan() {
-		line := scanner.Text()
-		if firstLine {
-			app.PrintAboveln("Claude: %s", line)
-			firstLine = false
-		} else {
-			app.PrintAboveln("        %s", line)
-		}
-	}
-
-	// Check for errors
-	errScanner := bufio.NewScanner(stderr)
-	for errScanner.Scan() {
-		app.PrintAboveln("Error: %s", errScanner.Text())
-	}
-
-	cmd.Wait()
-	app.PrintAboveln("")
-}
-
-func CreateKeyHandler(buf *TextBuffer, app *tui.App, updateView func()) func(tui.KeyEvent) bool {
-	return func(e tui.KeyEvent) bool {
-		switch e.Key {
-		case tui.KeyRune:
-			buf.Insert(e.Rune)
-		case tui.KeyBackspace:
-			buf.Backspace()
-		case tui.KeyDelete:
-			buf.Delete()
-		case tui.KeyLeft:
-			buf.Left()
-		case tui.KeyRight:
-			buf.Right()
-		case tui.KeyHome:
-			buf.Home()
-		case tui.KeyEnd:
-			buf.End()
-		case tui.KeyEnter:
-			query := strings.TrimSpace(buf.String())
-			if query != "" {
-				buf.Clear()
-				go SendToClaudeAndStream(app, query)
-			}
-		case tui.KeyEscape:
-			app.Stop()
-			return true
-		default:
-			return false
-		}
-		updateView()
-		tui.MarkDirty()
-		return true
-	}
-}
-
-type ChatInputView struct {
+type InputBoxView struct {
 	Root     *element.Element
 	watchers []tui.Watcher
 }
 
-func (v ChatInputView) GetRoot() tui.Renderable { return v.Root }
+func (v InputBoxView) GetRoot() tui.Renderable { return v.Root }
 
-func (v ChatInputView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v InputBoxView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func ChatInput(lines []string) ChatInputView {
-	var view ChatInputView
+func InputBox(text string, height int) InputBoxView {
+	var view InputBoxView
 	var watchers []tui.Watcher
 
 	__tui_0 := element.New(
+		element.WithDirection(layout.Column),
+		element.WithJustify(layout.JustifyEnd),
+		element.WithHeight(height),
+	)
+	__tui_1 := element.New(
 		element.WithBorder(tui.BorderRounded),
 		element.WithPadding(1),
-		element.WithDirection(layout.Column),
 	)
-	for _, line := range lines {
-		__tui_1 := element.New(
-			element.WithText(line),
-		)
-		__tui_0.AddChild(__tui_1)
-	}
-	if len(lines) == 0 {
-		__tui_2 := element.New(
-			element.WithText("> \u2588"),
-		)
-		__tui_0.AddChild(__tui_2)
-	}
+	__tui_2 := element.New(
+		element.WithText("> " + text + "\u2588"),
+	)
+	__tui_1.AddChild(__tui_2)
+	__tui_0.AddChild(__tui_1)
 
-	view = ChatInputView{
+	view = InputBoxView{
 		Root:     __tui_0,
 		watchers: watchers,
 	}

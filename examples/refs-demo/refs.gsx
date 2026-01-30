@@ -6,7 +6,7 @@ import "fmt"
 // - Simple refs: direct element access (#Header, #Content, #StatusBar)
 // - Loop refs: slice of elements (#Items)
 // - Conditional refs: may be nil (#Warning)
-@component RefsDemo(items []string, showWarning bool, selectedIdx int) {
+templ RefsDemo(items []string, showWarning bool, selectedIdx int) {
 	<div class="flex-col" height={24} width={80}>
 		<div class="border p-1"
 		     height={3}

@@ -464,38 +464,64 @@ func (a *App) Close() error {
 // PrintAbove prints content that scrolls up above the inline widget.
 // Does not add a trailing newline. Use PrintAboveln for auto-newline.
 // Only works in inline mode (WithInlineHeight). In full-screen mode, this is a no-op.
+// Safe to call from any goroutine.
 func (a *App) PrintAbove(format string, args ...any) {
 	if a.inlineHeight == 0 {
 		return
 	}
-	a.printAboveRaw(fmt.Sprintf(format, args...))
+	content := fmt.Sprintf(format, args...)
+	a.QueueUpdate(func() {
+		a.printAboveRaw(content)
+	})
 }
 
 // PrintAboveln prints content with a trailing newline that scrolls up above the inline widget.
 // Only works in inline mode (WithInlineHeight). In full-screen mode, this is a no-op.
+// Safe to call from any goroutine.
 func (a *App) PrintAboveln(format string, args ...any) {
 	if a.inlineHeight == 0 {
 		return
 	}
-	a.printAboveRaw(fmt.Sprintf(format, args...) + "\n")
+	content := fmt.Sprintf(format, args...) + "\n"
+	a.QueueUpdate(func() {
+		a.printAboveRaw(content)
+	})
 }
 
 // printAboveRaw handles the actual printing and scrolling for inline mode.
+// Prints content that scrolls into terminal scrollback buffer, allowing
+// the user to scroll back through history with their terminal's scroll feature.
+// Must be called from the main event loop (via QueueUpdate).
 func (a *App) printAboveRaw(content string) {
-	// Save cursor position
-	fmt.Print("\033[s")
-	// Move to the line just above our widget region
-	fmt.Printf("\033[%d;1H", a.inlineStartRow)
-	// Scroll the region above widget up by 1 line (makes room at bottom of scrollable area)
-	fmt.Print("\033[S")
-	// Move to the new blank line (one above the widget)
-	fmt.Printf("\033[%d;1H", a.inlineStartRow)
-	// Print the content
-	fmt.Print(content)
-	// Restore cursor position
-	fmt.Print("\033[u")
+	if a.inlineStartRow < 1 {
+		return // No room above widget
+	}
 
-	// Mark dirty to ensure widget redraws after we've scrolled
+	text := strings.TrimSuffix(content, "\n")
+
+	// To get content into terminal scrollback:
+	// 1. Use reverse index (ESC M) at top of screen to scroll down, creating
+	//    space at top - but this doesn't help us.
+	// 2. Actually, we need to scroll UP to push content into scrollback.
+	//
+	// The approach: position at the line just above widget and use
+	// scroll up (ESC[S) which scrolls the whole screen up, pushing
+	// the top line into scrollback. Then print our text.
+	//
+	// inlineStartRow is 0-indexed. Widget starts at ANSI row inlineStartRow+1.
+
+	var seq strings.Builder
+	// Scroll entire screen up by 1 line (top line goes to scrollback)
+	seq.WriteString("\033[1S")
+	// Move to the row just above widget (which is now blank after scroll)
+	seq.WriteString(fmt.Sprintf("\033[%d;1H", a.inlineStartRow))
+	// Print text
+	seq.WriteString(text)
+
+	a.terminal.WriteDirect([]byte(seq.String()))
+
+	// Force widget redraw (scroll affected it)
+	a.needsFullRedraw = true
 	MarkDirty()
 }
 
@@ -692,11 +718,6 @@ func (a *App) Render() {
 		a.needsFullRedraw = true
 	}
 
-	// In inline mode, position cursor at start of managed region
-	if a.inlineHeight > 0 {
-		a.terminal.SetCursor(0, a.inlineStartRow)
-	}
-
 	// Clear buffer
 	a.buffer.Clear()
 
@@ -705,13 +726,49 @@ func (a *App) Render() {
 		a.root.Render(a.buffer, width, renderHeight)
 	}
 
-	// Use full redraw after resize to clear artifacts, otherwise use diff-based render
-	if a.needsFullRedraw {
+	// Flush to terminal (inline mode offsets Y coordinates)
+	if a.inlineHeight > 0 {
+		a.renderInline()
+	} else if a.needsFullRedraw {
 		RenderFull(a.terminal, a.buffer)
 		a.needsFullRedraw = false
 	} else {
 		Render(a.terminal, a.buffer)
 	}
+}
+
+// renderInline handles rendering for inline mode by offsetting Y coordinates.
+func (a *App) renderInline() {
+	var changes []CellChange
+
+	if a.needsFullRedraw {
+		// Build all cells as changes
+		width := a.buffer.Width()
+		height := a.buffer.Height()
+		changes = make([]CellChange, 0, width*height)
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				cell := a.buffer.Cell(x, y)
+				changes = append(changes, CellChange{X: x, Y: y + a.inlineStartRow, Cell: cell})
+			}
+		}
+		// Clear only the inline region, not the whole screen
+		a.terminal.SetCursor(0, a.inlineStartRow)
+		a.terminal.ClearToEnd()
+		a.needsFullRedraw = false
+	} else {
+		// Get diff and offset Y coordinates
+		diff := a.buffer.Diff()
+		changes = make([]CellChange, len(diff))
+		for i, ch := range diff {
+			changes[i] = CellChange{X: ch.X, Y: ch.Y + a.inlineStartRow, Cell: ch.Cell}
+		}
+	}
+
+	if len(changes) > 0 {
+		a.terminal.Flush(changes)
+	}
+	a.buffer.Swap()
 }
 
 // RenderFull forces a complete redraw of the buffer to the terminal.

@@ -74,6 +74,11 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	// Generate imports
 	g.generateImports(file.Imports)
 
+	// Generate top-level Go declarations (type, const, var)
+	for _, decl := range file.Decls {
+		g.generateGoDecl(decl)
+	}
+
 	// Generate top-level Go functions
 	for _, fn := range file.Funcs {
 		g.generateGoFunc(fn)
@@ -925,6 +930,11 @@ func (g *Generator) generateGoCode(gc *GoCode) {
 // generateGoFunc generates a top-level Go function.
 func (g *Generator) generateGoFunc(fn *GoFunc) {
 	g.writef("%s\n\n", fn.Code)
+}
+
+// generateGoDecl generates a top-level Go declaration (type, const, var).
+func (g *Generator) generateGoDecl(decl *GoDecl) {
+	g.writef("%s\n\n", decl.Code)
 }
 
 // generateComponentCall generates code for a component call.
