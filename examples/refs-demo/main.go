@@ -1,31 +1,30 @@
-// Package main demonstrates using named element refs (#Name) in .tui files.
+// Package main demonstrates using named element refs (#Name) in .gsx files.
 //
 // This example shows how to use the named refs feature to access elements
 // imperatively from Go code:
 //
 //   - Simple refs (#Header, #Content, #StatusBar): Direct element access
 //   - Loop refs (#Items): Slice of elements for items created in @for loops
-//   - Keyed loop refs (#Users key={user.ID}): Map access by key for stable correlation
+//   - Keyed loop refs (#Users): Slice of elements in the keyed demo
 //   - Conditional refs (#Warning): May be nil if the @if condition is false
 //
 // To build and run:
 //
 //	cd examples/refs-demo
-//	go run ../../cmd/tui generate refs.tui
+//	go run ../../cmd/tui generate refs.gsx
 //	go run .
 package main
 
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/grindlemire/go-tui/pkg/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 	"github.com/grindlemire/go-tui/pkg/tui/element"
 )
 
-//go:generate go run ../../cmd/tui generate refs.tui
+//go:generate go run ../../cmd/tui generate refs.gsx
 
 // User represents a user for the keyed refs demo.
 type User struct {
@@ -57,117 +56,136 @@ func main() {
 	activeDemo := 0
 
 	// Build initial UI
-	var refsView RefsDemoView
-	var keyedView KeyedRefsDemoView
+	refsView := buildRefsDemo(app, items, showWarning, selectedIdx)
+	keyedView := buildKeyedDemo(app, users)
 
-	refsView = buildRefsDemo(app, items, showWarning, selectedIdx)
-	keyedView = buildKeyedDemo(app, users)
+	app.SetRoot(refsView.root)
 
-	app.SetRoot(refsView.Root)
-	app.Focus().Register(refsView.Content)
+	app.SetGlobalKeyHandler(func(e tui.KeyEvent) bool {
+		switch {
+		case e.Key == tui.KeyEscape || e.Rune == 'q':
+			app.Stop()
+			return true
 
-	// Main event loop
-	for {
-		event, ok := app.PollEvent(50 * time.Millisecond)
-		if ok {
-			switch e := event.(type) {
-			case tui.KeyEvent:
-				switch {
-				case e.Key == tui.KeyEscape || e.Rune == 'q':
-					return
-
-				// Switch between demos
-				case e.Rune == 'd':
-					activeDemo = (activeDemo + 1) % 2
-					if activeDemo == 0 {
-						app.SetRoot(refsView.Root)
-						app.Focus().Register(refsView.Content)
-					} else {
-						app.SetRoot(keyedView.Root)
-					}
-
-				default:
-					if activeDemo == 0 {
-						// RefsDemo controls
-						switch {
-						// Scroll the Content ref
-						case e.Rune == 'j':
-							refsView.Content.ScrollBy(0, 1)
-						case e.Rune == 'k':
-							refsView.Content.ScrollBy(0, -1)
-						case e.Rune == 'g':
-							refsView.Content.ScrollToTop()
-						case e.Rune == 'G':
-							refsView.Content.ScrollToBottom()
-
-						// Change selection - demonstrates accessing Items slice ref
-						case e.Rune == '+' || e.Rune == '=':
-							if selectedIdx < len(items)-1 {
-								selectedIdx++
-								highlightSelected(refsView.Items, selectedIdx)
-							}
-						case e.Rune == '-' || e.Rune == '_':
-							if selectedIdx > 0 {
-								selectedIdx--
-								highlightSelected(refsView.Items, selectedIdx)
-							}
-
-						// Toggle warning - demonstrates conditional ref
-						case e.Key == tui.KeyTab:
-							showWarning = !showWarning
-							refsView = buildRefsDemo(app, items, showWarning, selectedIdx)
-							app.SetRoot(refsView.Root)
-							app.Focus().Register(refsView.Content)
-
-							// Demonstrate checking if conditional ref is nil
-							if refsView.Warning != nil {
-								refsView.Warning.SetBorderStyle(tui.NewStyle().Foreground(tui.Red))
-							}
-
-						// Demonstrate modifying the Header ref
-						case e.Rune == 'h':
-							refsView.Header.SetBorderStyle(tui.NewStyle().Foreground(tui.Green))
-
-						// Demonstrate modifying the StatusBar ref
-						case e.Rune == 's':
-							refsView.StatusBar.SetBorderStyle(tui.NewStyle().Foreground(tui.Magenta))
-
-						default:
-							app.Dispatch(event)
-						}
-					} else {
-						// KeyedRefsDemo controls - access users by key
-						switch e.Rune {
-						case '1':
-							highlightUserByID(keyedView.Users, "1", users)
-						case '2':
-							highlightUserByID(keyedView.Users, "2", users)
-						case '3':
-							highlightUserByID(keyedView.Users, "3", users)
-						default:
-							app.Dispatch(event)
-						}
-					}
-				}
-
-			case tui.ResizeEvent:
-				refsView = buildRefsDemo(app, items, showWarning, selectedIdx)
-				keyedView = buildKeyedDemo(app, users)
-				if activeDemo == 0 {
-					app.SetRoot(refsView.Root)
-					app.Focus().Register(refsView.Content)
-				} else {
-					app.SetRoot(keyedView.Root)
-				}
+		// Switch between demos
+		case e.Rune == 'd':
+			activeDemo = (activeDemo + 1) % 2
+			if activeDemo == 0 {
+				app.SetRoot(refsView.root)
+			} else {
+				app.SetRoot(keyedView.root)
 			}
-		}
+			return true
 
-		app.Render()
+		default:
+			if activeDemo == 0 {
+				return handleRefsDemoKey(app, e, &refsView, &keyedView, items, &showWarning, &selectedIdx, users, &activeDemo)
+			}
+			return handleKeyedDemoKey(app, e, keyedView, users)
+		}
+	})
+
+	err = app.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
+type refsDemoState struct {
+	root *element.Element
+	view RefsDemoView
+}
+
+type keyedDemoState struct {
+	root *element.Element
+	view KeyedRefsDemoView
+}
+
+func handleRefsDemoKey(
+	app *tui.App,
+	e tui.KeyEvent,
+	refsView *refsDemoState,
+	keyedView *keyedDemoState,
+	items []string,
+	showWarning *bool,
+	selectedIdx *int,
+	users []User,
+	activeDemo *int,
+) bool {
+	switch {
+	// Scroll the Content ref
+	case e.Rune == 'j':
+		refsView.view.Content.ScrollBy(0, 1)
+		return true
+	case e.Rune == 'k':
+		refsView.view.Content.ScrollBy(0, -1)
+		return true
+	case e.Rune == 'g':
+		refsView.view.Content.ScrollToTop()
+		return true
+	case e.Rune == 'G':
+		refsView.view.Content.ScrollToBottom()
+		return true
+
+	// Change selection - demonstrates accessing Items slice ref
+	case e.Rune == '+' || e.Rune == '=':
+		if *selectedIdx < len(items)-1 {
+			*selectedIdx++
+			highlightSelected(refsView.view.Items, *selectedIdx)
+		}
+		return true
+	case e.Rune == '-' || e.Rune == '_':
+		if *selectedIdx > 0 {
+			*selectedIdx--
+			highlightSelected(refsView.view.Items, *selectedIdx)
+		}
+		return true
+
+	// Toggle warning - demonstrates conditional ref
+	case e.Key == tui.KeyTab:
+		*showWarning = !*showWarning
+		*refsView = buildRefsDemo(app, items, *showWarning, *selectedIdx)
+		*keyedView = buildKeyedDemo(app, users)
+		app.SetRoot(refsView.root)
+
+		// Demonstrate checking if conditional ref is nil
+		if refsView.view.Warning != nil {
+			refsView.view.Warning.SetBorderStyle(tui.NewStyle().Foreground(tui.Red))
+		}
+		return true
+
+	// Demonstrate modifying the Header ref
+	case e.Rune == 'h':
+		refsView.view.Header.SetBorderStyle(tui.NewStyle().Foreground(tui.Green))
+		return true
+
+	// Demonstrate modifying the StatusBar ref
+	case e.Rune == 's':
+		refsView.view.StatusBar.SetBorderStyle(tui.NewStyle().Foreground(tui.Magenta))
+		return true
+	}
+
+	return false
+}
+
+func handleKeyedDemoKey(app *tui.App, e tui.KeyEvent, keyedView keyedDemoState, users []User) bool {
+	switch e.Rune {
+	case '1':
+		highlightUserByIdx(keyedView.view.Users, 0, users)
+		return true
+	case '2':
+		highlightUserByIdx(keyedView.view.Users, 1, users)
+		return true
+	case '3':
+		highlightUserByIdx(keyedView.view.Users, 2, users)
+		return true
+	}
+	return false
+}
+
 // buildRefsDemo creates the RefsDemo UI.
-func buildRefsDemo(app *tui.App, items []string, showWarning bool, selectedIdx int) RefsDemoView {
+func buildRefsDemo(app *tui.App, items []string, showWarning bool, selectedIdx int) refsDemoState {
 	width, height := app.Size()
 
 	root := element.New(
@@ -178,18 +196,14 @@ func buildRefsDemo(app *tui.App, items []string, showWarning bool, selectedIdx i
 	view := RefsDemo(items, showWarning, selectedIdx)
 	root.AddChild(view.Root)
 
-	return RefsDemoView{
-		Root:      root,
-		Header:    view.Header,
-		Content:   view.Content,
-		Items:     view.Items,
-		Warning:   view.Warning,
-		StatusBar: view.StatusBar,
+	return refsDemoState{
+		root: root,
+		view: view,
 	}
 }
 
 // buildKeyedDemo creates the KeyedRefsDemo UI.
-func buildKeyedDemo(app *tui.App, users []User) KeyedRefsDemoView {
+func buildKeyedDemo(app *tui.App, users []User) keyedDemoState {
 	width, height := app.Size()
 
 	root := element.New(
@@ -202,9 +216,9 @@ func buildKeyedDemo(app *tui.App, users []User) KeyedRefsDemoView {
 	view := KeyedRefsDemo(users)
 	root.AddChild(view.Root)
 
-	return KeyedRefsDemoView{
-		Root:  root,
-		Users: view.Users,
+	return keyedDemoState{
+		root: root,
+		view: view,
 	}
 }
 
@@ -220,19 +234,15 @@ func highlightSelected(items []*element.Element, selectedIdx int) {
 	}
 }
 
-// highlightUserByID demonstrates using keyed refs (map access) to
-// highlight a specific user element by their ID.
-func highlightUserByID(users map[string]*element.Element, highlightID string, allUsers []User) {
-	// Reset all users to normal style
-	for _, user := range allUsers {
-		if elem, ok := users[user.ID]; ok {
+// highlightUserByIdx demonstrates using loop refs (slice access) to
+// highlight a specific user element by index.
+func highlightUserByIdx(users []*element.Element, highlightIdx int, allUsers []User) {
+	for i, elem := range users {
+		if i == highlightIdx {
+			elem.SetTextStyle(tui.NewStyle().Bold().Foreground(tui.Green))
+		} else {
 			elem.SetTextStyle(tui.NewStyle().Foreground(tui.White))
 		}
-	}
-
-	// Highlight the selected user by key
-	if elem, ok := users[highlightID]; ok {
-		elem.SetTextStyle(tui.NewStyle().Bold().Foreground(tui.Green))
 	}
 }
 

@@ -9,17 +9,15 @@ import (
 
 // printer generates formatted .gsx source code from an AST.
 type printer struct {
-	indent       string
-	maxLineWidth int
-	depth        int
-	buf          strings.Builder
+	indent string
+	depth  int
+	buf    strings.Builder
 }
 
 // newPrinter creates a new printer with the given settings.
-func newPrinter(indent string, maxLineWidth int) *printer {
+func newPrinter(indent string) *printer {
 	return &printer{
-		indent:       indent,
-		maxLineWidth: maxLineWidth,
+		indent: indent,
 	}
 }
 
@@ -143,10 +141,37 @@ func (p *printer) printComponent(comp *tuigen.Component) {
 	p.newline()
 }
 
-// printBody outputs a list of body nodes.
+// printBody outputs a list of body nodes, preserving blank lines between them.
 func (p *printer) printBody(nodes []tuigen.Node) {
 	for _, node := range nodes {
+		if hasBlankLineBefore(node) {
+			p.newline()
+		}
 		p.printNode(node)
+	}
+}
+
+// hasBlankLineBefore returns true if the node had a blank line before it in the source.
+func hasBlankLineBefore(node tuigen.Node) bool {
+	switch n := node.(type) {
+	case *tuigen.Element:
+		return n.BlankLineBefore
+	case *tuigen.GoExpr:
+		return n.BlankLineBefore
+	case *tuigen.TextContent:
+		return n.BlankLineBefore
+	case *tuigen.LetBinding:
+		return n.BlankLineBefore
+	case *tuigen.ForLoop:
+		return n.BlankLineBefore
+	case *tuigen.IfStmt:
+		return n.BlankLineBefore
+	case *tuigen.ComponentCall:
+		return n.BlankLineBefore
+	case *tuigen.ChildrenSlot:
+		return n.BlankLineBefore
+	default:
+		return false
 	}
 }
 
@@ -199,53 +224,59 @@ func (p *printer) printElement(elem *tuigen.Element) {
 	p.write("<")
 	p.write(elem.Tag)
 
-	// Named ref (e.g., #Content)
-	if elem.NamedRef != "" {
-		p.write(" #")
-		p.write(elem.NamedRef)
-	}
+	// Determine multi-line: either user had attrs on separate lines, or > was on its own line
+	multiLine := elem.MultiLineAttrs || elem.ClosingBracketNewLine
 
-	// Attributes
-	if len(elem.Attributes) > 0 {
-		// Calculate approximate line length with all attrs inline
-		inlineLen := p.currentIndentLen() + 1 + len(elem.Tag)
+	if multiLine {
+		// Multi-line: each attr/ref on its own line, indented one tab deeper than element
+		p.depth++
+		if elem.NamedRef != "" {
+			p.newline()
+			p.writeIndent()
+			p.write("#")
+			p.write(elem.NamedRef)
+		}
 		for _, attr := range elem.Attributes {
-			inlineLen += 1 + len(attr.Name) + 1 + p.attrValueLen(attr.Value)
+			p.newline()
+			p.writeIndent()
+			p.printAttribute(attr)
 		}
-
-		// If closing > or /> adds to length
-		if elem.SelfClose {
-			inlineLen += 3 // " />"
-		} else {
-			inlineLen += 1 // ">"
+		p.depth--
+	} else {
+		// Single-line: all attrs/ref on same line
+		if elem.NamedRef != "" {
+			p.write(" #")
+			p.write(elem.NamedRef)
 		}
-
-		// Decide whether to break attributes across lines
-		multiLine := inlineLen > p.maxLineWidth && len(elem.Attributes) > 1
-
-		for i, attr := range elem.Attributes {
-			if multiLine && i > 0 {
-				p.newline()
-				p.writeIndent()
-				// Align with first attribute
-				p.write(strings.Repeat(" ", len(elem.Tag)+1))
-			}
+		for _, attr := range elem.Attributes {
 			p.write(" ")
 			p.printAttribute(attr)
 		}
 	}
 
 	if elem.SelfClose {
-		p.write(" />")
+		if elem.ClosingBracketNewLine {
+			p.newline()
+			p.writeIndent()
+			p.write("/>")
+		} else {
+			p.write(" />")
+		}
 		p.printTrailingComment(elem.TrailingComments)
 		p.newline()
 		return
 	}
 
-	p.write(">")
+	if elem.ClosingBracketNewLine {
+		p.newline()
+		p.writeIndent()
+		p.write(">")
+	} else {
+		p.write(">")
+	}
 
-	// Check if we can render children inline (single simple child)
-	if p.canInlineChildren(elem.Children) {
+	// Check if children should be rendered inline (preserving user's source layout)
+	if elem.InlineChildren && p.canStructurallyInline(elem.Children) {
 		p.printChildrenInline(elem.Children)
 		p.write("</")
 		p.write(elem.Tag)
@@ -306,43 +337,29 @@ func (p *printer) printAttrValue(val tuigen.Node) {
 	}
 }
 
-// attrValueLen returns the approximate rendered length of an attribute value.
-func (p *printer) attrValueLen(val tuigen.Node) int {
-	switch v := val.(type) {
-	case *tuigen.StringLit:
-		return len(v.Value) + 2 // quotes
-	case *tuigen.IntLit:
-		return len(fmt.Sprintf("{%d}", v.Value))
-	case *tuigen.FloatLit:
-		return len(fmt.Sprintf("{%g}", v.Value))
-	case *tuigen.BoolLit:
-		return len(fmt.Sprintf("{%t}", v.Value))
-	case *tuigen.GoExpr:
-		return len(v.Code) + 2 // braces
-	}
-	return 0
-}
-
-// canInlineChildren returns true if children can be rendered on one line.
-func (p *printer) canInlineChildren(children []tuigen.Node) bool {
-	// Empty children can be inlined (e.g., <box></box>)
+// canStructurallyInline returns true if the children types support inline rendering.
+// This checks structural compatibility (types and content), not user layout preference.
+func (p *printer) canStructurallyInline(children []tuigen.Node) bool {
 	if len(children) == 0 {
 		return true
 	}
 
-	if len(children) != 1 {
-		return false
+	for _, child := range children {
+		switch c := child.(type) {
+		case *tuigen.GoExpr:
+			if strings.Contains(c.Code, "\n") {
+				return false
+			}
+		case *tuigen.TextContent:
+			if strings.Contains(c.Text, "\n") {
+				return false
+			}
+		default:
+			return false
+		}
 	}
 
-	switch c := children[0].(type) {
-	case *tuigen.GoExpr:
-		// Inline simple expressions
-		return !strings.Contains(c.Code, "\n") && len(c.Code) < 60
-	case *tuigen.TextContent:
-		return !strings.Contains(c.Text, "\n") && len(c.Text) < 60
-	}
-
-	return false
+	return true
 }
 
 // printChildrenInline prints children on the same line (no newline).
@@ -532,8 +549,8 @@ func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 
 	p.buf.WriteString(">")
 
-	// Check if children can be inline
-	if p.canInlineChildren(let.Element.Children) {
+	// Check if children should be rendered inline (preserving user's source layout)
+	if let.Element.InlineChildren && p.canStructurallyInline(let.Element.Children) {
 		p.printChildrenInline(let.Element.Children)
 		p.buf.WriteString("</")
 		p.buf.WriteString(let.Element.Tag)
@@ -611,9 +628,6 @@ func (p *printer) writeIndent() {
 	}
 }
 
-func (p *printer) currentIndentLen() int {
-	return p.depth * len(p.indent)
-}
 
 // escapeString escapes special characters in a string for output.
 func escapeString(s string) string {
