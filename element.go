@@ -1,8 +1,10 @@
 package tui
 
+// Compile-time check that Element implements the required interfaces.
 var (
 	_ Renderable = (*Element)(nil)
 	_ Focusable  = (*Element)(nil)
+	_ Layoutable = (*Element)(nil)
 )
 
 // TextAlign specifies how text is aligned within its content area.
@@ -92,9 +94,6 @@ type Element struct {
 	// Watchers attached to this element (timers, channel watchers, etc.)
 	watchers []Watcher
 }
-
-// Compile-time check that Element implements Layoutable
-var _ Layoutable = (*Element)(nil)
 
 // New creates a new Element with the given options.
 // By default, an Element has Auto width/height (flexes to fill available space).

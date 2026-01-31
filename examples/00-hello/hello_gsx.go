@@ -4,7 +4,6 @@
 package main
 
 import (
-
 	tui "github.com/grindlemire/go-tui"
 )
 

@@ -21,12 +21,12 @@ go-tui allows defining UIs in `.gsx` files that compile to type-safe Go code. Th
 
 ```
 .gsx files (declarative syntax)
-        │ tui generate
+        │ tui generate (internal/tuigen)
         ▼
 Generated Go code (*_gsx.go)
-        │
+        │ imports tui "github.com/grindlemire/go-tui"
         ▼
-Widget Tree + Layout Engine
+Widget Tree + Layout Engine (internal/layout)
         │
         ▼
 Character Buffer (2D grid)
@@ -35,56 +35,85 @@ Character Buffer (2D grid)
 Terminal (ANSI escape sequences)
 ```
 
+All public API types live in the root `tui` package. Internal packages (`internal/layout`,
+`internal/tuigen`, `internal/formatter`, `internal/lsp`, `internal/debug`) are not importable
+by external consumers.
+
 ## Directory Structure
 
 ```
-go-tui/
-├── cmd/tui/              # CLI tool
-│   ├── main.go           # Entry point
-│   ├── generate.go       # tui generate command
-│   ├── check.go          # tui check command
-│   ├── fmt.go            # tui fmt command
-│   └── lsp.go            # tui lsp command
-├── pkg/
-│   ├── tui/              # Core TUI package
-│   │   ├── app.go        # Application loop
-│   │   ├── buffer.go     # Character buffer
-│   │   ├── cell.go       # Cell type
-│   │   ├── border.go     # Border styles
-│   │   ├── event.go      # Event types
-│   │   ├── key.go        # Key parsing
-│   │   ├── reader.go     # Event reading
-│   │   ├── focus.go      # Focus management
-│   │   ├── rect.go       # Rectangle type
-│   │   ├── render.go     # Tree rendering
-│   │   ├── style.go      # Styling
-│   │   ├── terminal.go   # Terminal interface
-│   │   └── element/      # Widget elements
-│   ├── layout/           # Layout engine
-│   │   ├── calculate.go  # Layout algorithm
-│   │   ├── layoutable.go # Layoutable interface
-│   │   ├── style.go      # Layout style types
-│   │   ├── value.go      # Dimension values
-│   │   └── flex.go       # Flexbox implementation
-│   ├── tuigen/           # DSL compiler
-│   │   ├── lexer.go      # Tokenizer
-│   │   ├── parser.go     # Parser
-│   │   ├── ast.go        # AST types
-│   │   ├── analyzer.go   # Semantic analysis
-│   │   ├── generator.go  # Go code generator
-│   │   └── tailwind.go   # Tailwind-style classes
-│   ├── formatter/        # Code formatter
-│   │   ├── formatter.go  # Formatting logic
-│   │   └── printer.go    # Pretty printer
-│   └── lsp/              # Language server
-│       ├── server.go     # LSP server
-│       ├── document.go   # Document management
-│       ├── diagnostics.go# Error reporting
-│       └── index.go      # Symbol indexing
+go-tui/                          # Root package "tui" — single public API
+├── doc.go                       # Package documentation
+├── layout.go                    # Re-exports from internal/layout
+├── app.go                       # Application loop
+├── app_options.go               # App option functions
+├── app_lifecycle.go             # Close, PrintAbove
+├── app_events.go                # Dispatch, event handling
+├── app_render.go                # Render methods
+├── app_loop.go                  # Run, Stop, QueueUpdate
+├── element.go                   # Element struct, New()
+├── element_options.go           # Element option functions
+├── element_layout.go            # Layoutable interface impl
+├── element_tree.go              # Child management
+├── element_accessors.go         # Getters/setters
+├── element_focus.go             # Focus handling
+├── element_render.go            # Element rendering
+├── element_scroll.go            # Scroll support
+├── buffer.go                    # Character buffer
+├── border.go                    # Border styles
+├── cell.go                      # Cell type
+├── color.go                     # Color definitions
+├── escape.go                    # ANSI escape sequences
+├── event.go                     # Event types
+├── focus.go                     # Focus management
+├── key.go                       # Key parsing
+├── parse.go                     # Input parsing
+├── reader.go                    # Event reading
+├── render.go                    # Tree rendering
+├── state.go                     # Reactive state
+├── style.go                     # Styling
+├── terminal.go                  # Terminal interface
+├── watcher.go                   # State watchers
+├── generate.go                  # go:generate directive
+│
+├── cmd/tui/                     # CLI tool
+│   ├── main.go                  # Entry point
+│   ├── generate.go              # tui generate command
+│   ├── check.go                 # tui check command
+│   ├── fmt.go                   # tui fmt command
+│   └── lsp.go                   # tui lsp command
+│
+├── internal/
+│   ├── layout/                  # Flexbox layout engine
+│   │   ├── calculate.go         # Layout algorithm
+│   │   ├── layoutable.go        # Layoutable interface
+│   │   ├── style.go             # Layout style types
+│   │   ├── value.go             # Dimension values
+│   │   └── flex.go              # Flexbox implementation
+│   ├── tuigen/                  # DSL compiler (.gsx → Go)
+│   │   ├── lexer.go             # Tokenizer
+│   │   ├── parser.go            # Parser
+│   │   ├── ast.go               # AST types
+│   │   ├── analyzer.go          # Semantic analysis
+│   │   ├── generator.go         # Go code generator
+│   │   └── tailwind.go          # Tailwind-style classes
+│   ├── formatter/               # Code formatter
+│   │   ├── formatter.go         # Formatting logic
+│   │   └── printer.go           # Pretty printer
+│   ├── lsp/                     # Language server
+│   │   ├── server.go            # LSP server
+│   │   ├── document.go          # Document management
+│   │   ├── context.go           # Cursor context
+│   │   ├── index.go             # Symbol indexing
+│   │   ├── provider/            # LSP feature providers
+│   │   ├── gopls/               # gopls integration
+│   │   └── schema/              # Element/attribute schema
+│   └── debug/                   # Debug logging
+│
 ├── editor/
-│   ├── tree-sitter-gsx/  # Tree-sitter grammar
-│   └── vscode/           # VSCode extension
-└── examples/             # Example applications
+│   ├── tree-sitter-gsx/         # Tree-sitter grammar
+│   └── vscode/                  # VSCode extension
+└── examples/                    # Example applications
 ```
 
 ## CLI Commands
@@ -179,9 +208,9 @@ func helper(s string) string {
 | `minHeight` | `int` | Minimum height |
 | `maxWidth` | `int` | Maximum width |
 | `maxHeight` | `int` | Maximum height |
-| `direction` | `layout.Direction` | Flex direction |
-| `justify` | `layout.Justify` | Main axis alignment |
-| `align` | `layout.Align` | Cross axis alignment |
+| `direction` | `tui.Direction` | Flex direction |
+| `justify` | `tui.Justify` | Main axis alignment |
+| `align` | `tui.Align` | Cross axis alignment |
 | `gap` | `int` | Gap between children |
 | `flexGrow` | `float64` | Flex grow factor |
 | `flexShrink` | `float64` | Flex shrink factor |
@@ -260,9 +289,10 @@ Always define the `tc` struct separately before the test map.
 ## Running Tests
 
 ```bash
-go test ./...                    # Run all tests
-go test ./pkg/tuigen/...         # Run tuigen tests
-go test -run TestParser ./...    # Run specific test
+go test ./...                        # Run all tests
+go test ./internal/tuigen/...        # Run tuigen tests
+go test ./internal/lsp/...           # Run LSP tests
+go test -run TestParser ./...        # Run specific test
 ```
 
 ## Building
@@ -286,21 +316,21 @@ The layout engine implements CSS flexbox with:
 ## Key Types
 
 ```go
-// layout.Value - dimension specification
-layout.Fixed(10)      // 10 characters
-layout.Percent(50)    // 50% of available space
-layout.Auto()         // Size to content
+// tui.Value - dimension specification
+tui.Fixed(10)        // 10 characters
+tui.Percent(50)      // 50% of available space
+tui.Auto()           // Size to content
 
 // tui.BorderStyle
 tui.BorderNone
-tui.BorderSingle      // ┌─┐│└─┘
-tui.BorderDouble      // ╔═╗║╚═╝
-tui.BorderRounded     // ╭─╮│╰─╯
-tui.BorderThick       // ┏━┓┃┗━┛
+tui.BorderSingle     // ┌─┐│└─┘
+tui.BorderDouble     // ╔═╗║╚═╝
+tui.BorderRounded    // ╭─╮│╰─╯
+tui.BorderThick      // ┏━┓┃┗━┛
 
-// layout.Direction
-layout.Row
-layout.Column
+// tui.Direction
+tui.Row
+tui.Column
 ```
 
 ## Editor Support

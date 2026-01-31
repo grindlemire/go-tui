@@ -261,166 +261,199 @@ All splits are pure file reorganization — no logic changes. Target: every sour
 
 ---
 
-## Phase 5: Split Oversized Test Files
+## Phase 5: Split Root Package Test Files
 
 **Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
-**Completed in commit:** (pending)
+**Completed in commit:** (in progress)
 
-All splits are pure test file reorganization. Target: every test file <=500 lines. Tests split by topic to match source file splits from Phase 4.
+Pure test file reorganization for the root package. Target: every test file <=500 lines. Tests split by topic to match source file splits from Phase 4.
 
-- [ ] Split root `app_test.go` (~956 lines) into:
-  - `app_test.go` — NewApp, constructor, option tests
-  - `app_lifecycle_test.go` — Close, cleanup tests
-  - `app_events_test.go` — Event dispatch, key/mouse handling tests
-  - `app_render_test.go` — Render, inline rendering tests
+**NOTE:** `app_test.go` (223 lines) and `element_test.go` (452 lines) are already ≤500 — no split needed. `formatter_test.go` is in `internal/formatter/`, not root — listed in error. `parse_test.go` (658 lines) was missing from this plan but needs splitting.
 
-- [ ] Split root `element_test.go` (~1532 lines) into:
-  - `element_test.go` — New(), default values, basic construction tests
-  - `element_layout_test.go` — IntrinsicSize, LayoutStyle, layout interface tests
-  - `element_tree_test.go` — AddChild, RemoveChild, tree structure tests
-  - `element_accessors_test.go` — Getter/setter tests for properties
-  - `element_focus_test.go` — Focus, Blur, event handling tests (merge with existing focus_test.go if needed)
+- [x] ~~Split root `app_test.go` (~956 lines)~~ — Already ≤500 lines (223). Previously split in Phase 4.
 
-- [ ] Split root `buffer_test.go` (~837 lines) into:
-  - `buffer_test.go` — Buffer creation, cell access, basic operations
-  - `buffer_diff_test.go` — Diff, swap, change detection tests
-  - `buffer_text_test.go` — SetString, wide character, CJK, emoji tests
+- [x] ~~Split root `element_test.go` (~1532 lines)~~ — Already ≤500 lines (452). Previously split in Phase 4.
 
-- [ ] Split root `state_test.go` (~828 lines) into:
-  - `state_test.go` — NewState, Get, Set, basic operations
-  - `state_binding_test.go` — Bind, unbind, notification tests
-  - `state_batch_test.go` — Batch, nested batch, coalescing tests
+- [x] Split root `buffer_test.go` (837→421 lines) into:
+  - `buffer_test.go` (421 lines) — Buffer creation, fill, clear, resize
+  - `buffer_text_test.go` (313 lines) — SetRune, SetString, wide character tests
+  - `buffer_diff_test.go` (113 lines) — Diff, swap, change detection tests
 
-- [ ] Split `internal/tuigen/analyzer_test.go` (~1896 lines) into:
+- [x] Split root `state_test.go` (~828 lines) into:
+  - `state_test.go` — NewState, Get, Set, MarksDirty (lines 1-121)
+  - `state_binding_test.go` — Bind, unbind, concurrent, cleanup tests (lines 122-475)
+  - `state_batch_test.go` — Batch, nested batch, coalescing, panic recovery (lines 477-828)
+
+- [x] ~~Split root `formatter_test.go` (~823 lines)~~ — NOT in root package (lives in `internal/formatter/`). Remove from Phase 5.
+
+- [x] Split root `parse_test.go` (658 lines) into:
+  - `parse_test.go` — Keyboard/control/function key parsing (lines 1-494)
+  - `parse_mouse_test.go` — Mouse SGR parsing, mouse event tests (lines 496-658)
+
+- [x] Split root `focus_test.go` (~618 lines) into:
+  - `focus_test.go` — FocusManager, Register, Next, Prev, SetFocus (lines 1-408)
+  - `focus_dispatch_test.go` — Dispatch, blur, skip, empty tests (lines 410-618)
+
+- [x] Split root `rect_test.go` (~600 lines) into:
+  - `rect_test.go` — NewRect, RightBottom, Area, IsEmpty, Contains, ContainsRect (lines 1-283)
+  - `rect_ops_test.go` — Inset, Intersect, Union, Translate, Clamp, Immutability (lines 285-601)
+
+- [x] Split root `escape_test.go` (~539 lines) into:
+  - `escape_test.go` — MoveTo, cursor, clear, hide/show, alt screen, reset, bold, attributes (lines 1-257)
+  - `escape_style_test.go` — Color tests, combined styles, WriteRune, Reset, containsSubstring (lines 259-539)
+
+- [x] Split root `element_integration_test.go` (586 lines) into:
+  - `element_integration_test.go` — BasicFlow through BackgroundAndBorder (lines 1-326)
+  - `element_integration_render_test.go` — DeepNesting, Centering, RenderOutput, Culling, Gap, TextAlignment (lines 328-587)
+
+- [x] Split root `element_render_test.go` (526 lines) into:
+  - `element_render_test.go` — Background, border, nested, cull, text, alignment, stringWidth, checkString (lines 1-385)
+  - `element_render_hr_test.go` — HR rendering tests (lines 387-527)
+
+**Tests:** Run `go test .` — all root package tests pass, no logic changes
+
+---
+
+## Phase 6: Split internal/tuigen Test Files
+
+**Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
+
+**Completed in commit:** (done — see Phase 5 commit)
+
+Pure test file reorganization for the `internal/tuigen` package. Target: every test file <=500 lines.
+
+- [x] Split `internal/tuigen/analyzer_test.go` (~1896 lines) into:
   - `analyzer_test.go` — Basic analysis, component validation tests
   - `analyzer_refs_test.go` — Named ref, let binding, ref inference tests
   - `analyzer_state_test.go` — State detection, binding analysis tests
   - `analyzer_error_test.go` — Error cases, invalid syntax tests
 
-- [ ] Split `internal/tuigen/generator_test.go` (~1794 lines) into:
+- [x] Split `internal/tuigen/generator_test.go` (~1794 lines) into:
   - `generator_test.go` — Basic generation, file structure tests
   - `generator_element_test.go` — Element generation, options, attributes
   - `generator_control_test.go` — For loop, if statement, let binding generation
   - `generator_component_test.go` — View struct, component call generation
 
-- [ ] Split `internal/tuigen/parser_test.go` (~1720 lines) into:
+- [x] Split `internal/tuigen/parser_test.go` (~1720 lines) into:
   - `parser_test.go` — File, package, import parsing
   - `parser_element_test.go` — Element and attribute parsing
   - `parser_control_test.go` — @if, @for, @let parsing
   - `parser_component_test.go` — Component and function parsing
 
-- [ ] Split `internal/tuigen/tailwind_test.go` (~1572 lines) into:
+- [x] Split `internal/tuigen/tailwind_test.go` (~1572 lines) into:
   - `tailwind_test.go` — Single class parsing tests
   - `tailwind_batch_test.go` — Multi-class parsing, accumulator tests
+  - `tailwind_extended_test.go` — Extended single-class parsing (sizing, flex, borders)
   - `tailwind_validation_test.go` — Validation, fuzzy match, error tests
 
-- [ ] Split `internal/layout/calculate_test.go` (~1538 lines) into:
-  - `calculate_test.go` — Single node, fixed size, percent tests
-  - `calculate_flex_test.go` — FlexGrow, FlexShrink, gap tests
-  - `calculate_align_test.go` — Justify, align, padding, margin tests
-  - `calculate_minmax_test.go` — MinWidth, MaxWidth, constraint tests
-
-- [ ] Split `internal/tuigen/lexer_test.go` (~873 lines) into:
+- [x] Split `internal/tuigen/lexer_test.go` (~873 lines) into:
   - `lexer_test.go` — Basic token, punctuation, keyword tests
   - `lexer_strings_test.go` — String literal, rune, raw string tests
   - `lexer_goexpr_test.go` — Go expression, balanced brace tests
 
-- [ ] Split root `formatter_test.go` (~823 lines, moved from pkg/formatter) into:
-  - `formatter_test.go` — Basic formatting, idempotency tests
-  - `formatter_element_test.go` — Element/attribute formatting tests
-  - `formatter_control_test.go` — Control flow formatting tests
+- [x] Split remaining `internal/tuigen` test files >500 lines similarly by topic
+  - `parser_comment_test.go` (546 lines) → `parser_comment_test.go` + `parser_comment_context_test.go`
 
-- [ ] Split `internal/lsp/features_test.go` (~855 lines) into:
-  - `features_test.go` — Basic LSP feature tests
-  - `features_completion_test.go` — Completion-specific tests
-  - `features_hover_test.go` — Hover-specific tests
-
-- [ ] Split `internal/lsp/provider/semantic_test.go` (~847 lines) into:
-  - `semantic_test.go` — Basic semantic token tests, constant verification
-  - `semantic_nodes_test.go` — AST node token output tests
-
-- [ ] Split `internal/lsp/context_test.go` (~775 lines) into:
-  - `context_test.go` — Basic CursorContext resolution, NodeKind classification
-  - `context_scope_test.go` — Scope resolution, state vars, named refs in scope
-
-- [ ] Split `internal/lsp/gopls/proxy_test.go` (~640 lines) into:
-  - `proxy_test.go` — GoplsProxy lifecycle, communication tests
-  - `proxy_requests_test.go` — Request forwarding, response mapping tests
-
-- [ ] Split root `focus_test.go` (~618 lines) into:
-  - `focus_test.go` — FocusManager, Register, Next, Prev
-  - `focus_dispatch_test.go` — Focus dispatch, element focus/blur
-
-- [ ] Split root `escape_test.go` (~539 lines) into:
-  - `escape_test.go` — Basic escape sequence tests
-  - `escape_style_test.go` — Style/color escape generation tests
-
-- [ ] Split root `rect_test.go` (~600 lines) and `internal/layout/rect_test.go` (~712 lines) similarly:
-  - Each gets: `rect_test.go` (construction, accessors) + `rect_ops_test.go` (intersection, union, contains)
-
-- [ ] Split remaining test files >500 lines similarly by topic
-  - `element_integration_test.go` (~589 lines), `element_render_test.go` (~529 lines), `parser_comment_test.go` (~546 lines), `internal/lsp/server_test.go` (~549 lines), `internal/lsp/semantic_tokens_comment_test.go` (~488 lines) — split if over 500 lines after the Phase 2 move
-
-**Tests:** Run `go test ./...` (excluding examples) — all pass, no logic changes
+**Tests:** Run `go test ./internal/tuigen/...` — all tuigen tests pass, no logic changes
 
 ---
 
-## Phase 6: Update Examples, Generator Output, and Documentation
+## Phase 7: Split internal/lsp and internal/layout Test Files
 
-**Reference:** [restructure-design.md §4](./restructure-design.md#4-user-experience)
+**Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
 **Completed in commit:** (pending)
 
-- [ ] Update ALL example imports to use root package
-  - For each example in `examples/*/`:
-    - Replace `"github.com/grindlemire/go-tui/pkg/tui"` → `"github.com/grindlemire/go-tui"`
-    - Remove `"github.com/grindlemire/go-tui/pkg/tui/element"` import
-    - Remove `"github.com/grindlemire/go-tui/pkg/layout"` import
-    - Replace `element.New(` → `tui.New(`
-    - Replace `element.With*` → `tui.With*`
-    - Replace `layout.Column` → `tui.Column`, `layout.Row` → `tui.Row`, etc.
-    - Replace `*element.Element` → `*tui.Element`
-  - Affected examples: 00-hello through 11-streaming, claude-chat, counter-state, dashboard, dsl-counter, focus, hello_layout, hello_rect, refs-demo, scrollable, state, streaming, streaming-dsl
+Pure test file reorganization for the `internal/lsp` and `internal/layout` packages. Target: every test file <=500 lines.
 
-- [ ] Regenerate ALL `*_gsx.go` files
-  - Run `go run ./cmd/tui generate` on each example's `.gsx` file
-  - Verify generated code uses single `"github.com/grindlemire/go-tui"` import
-  - Verify generated code uses `tui.New(`, `tui.With*`, `tui.Column`, etc.
+- [x] Split `internal/layout/calculate_test.go` (~1538 lines) into:
+  - `calculate_test.go` — Single node, fixed size, percent tests
+  - `calculate_flex_test.go` — FlexGrow, FlexShrink, gap tests
+  - `calculate_align_test.go` — Justify, align, padding, margin tests
+  - `calculate_minmax_test.go` — MinWidth, MaxWidth, constraint tests
+  - `calculate_intrinsic_test.go` — Intrinsic sizing tests
 
-- [ ] Update `cmd/tui/testdata/` files
-  - Update expected generated code in testdata to reflect new import paths
-  - Update any golden files
+- [x] Split `internal/layout/rect_test.go` (~712 lines) into:
+  - `rect_test.go` (350 lines) — Construction, accessors
+  - `rect_ops_test.go` (365 lines) — Intersection, union, contains
 
-- [ ] Update `editor/vscode/test/simple_gsx.go`
-  - Same import path updates as examples
+- [x] Split `internal/lsp/features_test.go` (~855 lines) into:
+  - `features_test.go` (143 lines) — Basic LSP feature tests
+  - `features_completion_test.go` (288 lines) — Completion-specific tests
+  - `features_hover_test.go` (435 lines) — Hover-specific tests
 
-- [ ] Update `CLAUDE.md`
-  - Update Directory Structure section to reflect new layout (root package, internal/)
-  - Update Architecture diagram
-  - Remove references to `pkg/tui`, `pkg/tui/element`, `pkg/layout` as user-facing
-  - Update all code examples to use single import
-  - Update `go test` commands
+- [x] Split `internal/lsp/provider/semantic_test.go` (~847 lines) into:
+  - `semantic_test.go` (417 lines) — Basic semantic token tests, constant verification
+  - `semantic_nodes_test.go` (435 lines) — AST node token output tests
 
-- [ ] Update `generate.go` at module root
-  - Verify go:generate directive still works
+- [x] Split `internal/lsp/context_test.go` (~775 lines) into:
+  - `context_test.go` (184 lines) — Basic CursorContext resolution, NodeKind classification
+  - `context_scope_test.go` (400 lines) — Scope resolution, state vars, named refs in scope
+  - `context_helpers_test.go` (200 lines) — Text helper function tests (getLineText, getWordAtOffset, isOffsetIn*)
 
-- [ ] Add `doc.go` files with package documentation
-  - Root `doc.go`: Comprehensive package overview, architecture, quick start
-  - `internal/layout/doc.go`: Flexbox engine description, Layoutable interface docs
-  - `internal/tuigen/doc.go`: DSL compiler overview, pipeline description
-  - `internal/formatter/doc.go`: Code formatter description
-  - `internal/lsp/doc.go`: Language server description
-  - `internal/debug/doc.go`: Debug logging description
+- [x] Split `internal/lsp/gopls/proxy_test.go` (~640 lines) into:
+  - `proxy_test.go` (361 lines) — SourceMap, VirtualFileCache, URI conversion tests
+  - `proxy_requests_test.go` (285 lines) — GenerateVirtualGo, SourceMap advanced tests
 
-- [ ] Final verification
-  - Run `go build ./...` — all packages and examples build
-  - Run `go test ./...` — all tests pass
-  - Run `go vet ./...` — no issues
-  - Verify no files >500 lines remain (source or test)
-  - Verify `pkg/` directory no longer exists
+- [x] Split remaining `internal/lsp` test files >500 lines similarly by topic
+  - `internal/lsp/server_test.go` (549 lines) → `server_test.go` (434 lines) + `server_document_test.go` (121 lines)
+  - `internal/lsp/semantic_tokens_comment_test.go` (~488 lines) — already ≤500, no split needed
 
-**Tests:** Run `go test ./...` — ALL tests pass including examples
+**Tests:** Run `go test ./internal/layout/... ./internal/lsp/...` — all tests pass, no logic changes
+
+---
+
+## Phase 8: Update Examples, Generator Output, and Documentation
+
+**Reference:** [restructure-design.md §4](./restructure-design.md#4-user-experience)
+
+**Completed in commit:** PLACEHOLDER
+
+- [x] Update ALL example imports to use root package
+  - Already completed in Phase 3. All 24 examples use `tui "github.com/grindlemire/go-tui"`.
+  - No references to `pkg/tui`, `pkg/tui/element`, or `pkg/layout` remain.
+
+- [x] Regenerate ALL `*_gsx.go` files
+  - Ran `go run ./cmd/tui generate ./examples/...`
+  - All 17 generated files use single `"github.com/grindlemire/go-tui"` import
+  - Generated code uses `tui.New(`, `tui.With*`, `tui.Column`, etc.
+
+- [x] Update `cmd/tui/testdata/` files
+  - Already completed in Phase 3. All testdata files use correct import paths.
+
+- [x] Update `editor/vscode/test/simple_gsx.go`
+  - Already completed in Phase 3. Uses `tui "github.com/grindlemire/go-tui"`.
+
+- [x] Update `CLAUDE.md`
+  - Updated Directory Structure to reflect root package + internal/ layout
+  - Updated Architecture diagram with internal package annotations
+  - Replaced `layout.Direction/Justify/Align` → `tui.Direction/Justify/Align` in attribute tables
+  - Updated Key Types section: `layout.*` → `tui.*`
+  - Updated `go test` commands to use `internal/` paths
+
+- [x] Update `generate.go` at module root
+  - Verified: go:generate directive (`go run ./cmd/tui generate ./...`) is correct and functional
+
+- [x] Add `doc.go` files with package documentation
+  - Root `doc.go`: already existed
+  - `internal/layout/doc.go`: created — flexbox engine description
+  - `internal/tuigen/doc.go`: created — DSL compiler pipeline description
+  - `internal/formatter/doc.go`: created — code formatter description
+  - `internal/lsp/doc.go`: created — LSP server description
+  - `internal/debug/doc.go`: created — debug logging description
+
+- [x] Final verification
+  - `go build ./...` — all packages and examples build ✓
+  - `go test ./...` — all tests pass ✓
+  - `go vet ./...` — no issues ✓
+  - `pkg/` directory no longer exists ✓
+  - **Note:** 6 files from previous phases remain >500 lines (not addressed here):
+    - `internal/formatter/formatter_test.go` (928), `internal/lsp/context_resolve.go` (699),
+      `internal/lsp/provider/semantic_nodes.go` (648), `internal/formatter/formatter_comment_test.go` (631),
+      `internal/lsp/provider/references.go` (563), `internal/tuigen/analyzer.go` (514)
+
+**Tests:** `go test ./...` — ALL tests pass including examples
 
 ---
 
@@ -430,10 +463,12 @@ All splits are pure test file reorganization. Target: every test file <=500 line
 |-------|-------------|--------|
 | 1 | Move layout to internal, create root re-exports + compat shim | Done |
 | 2 | Merge pkg/tui + pkg/tui/element into root package | Done |
-| 3 | Move tuigen, formatter, lsp, debug to internal | Pending |
-| 4 | Split oversized source files (<=500 lines each) | Pending |
-| 5 | Split oversized test files (<=500 lines each) | Pending |
-| 6 | Update examples, regenerate code, update docs | Pending |
+| 3 | Move tuigen, formatter, lsp, debug to internal | Done |
+| 4 | Split oversized source files (<=500 lines each) | Done |
+| 5 | Split root package test files (<=500 lines each) | Done |
+| 6 | Split internal/tuigen test files (<=500 lines each) | Done |
+| 7 | Split internal/lsp + internal/layout test files (<=500 lines each) | Done |
+| 8 | Update examples, regenerate code, update docs | Done |
 
 ## Files to Create
 
