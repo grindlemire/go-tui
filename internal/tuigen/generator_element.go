@@ -311,3 +311,36 @@ func (g *Generator) generateAttributeValue(value Node) string {
 		return ""
 	}
 }
+
+// textElementWithOptions checks if this is a text element that needs options
+// extracted from its children for WithText.
+func textElementWithOptions(elem *Element) bool {
+	if elem.Tag != "span" && elem.Tag != "p" {
+		return false
+	}
+	// Has text content that should go into WithText
+	for _, child := range elem.Children {
+		switch child.(type) {
+		case *TextContent, *GoExpr:
+			return true
+		}
+	}
+	return false
+}
+
+// skipTextChildren returns true if text element children should not be
+// processed as AddChild calls (they're already in WithText).
+func skipTextChildren(elem *Element) bool {
+	if elem.Tag != "span" && elem.Tag != "p" {
+		return false
+	}
+	// Only skip if there's a single text/expr child that was used for WithText
+	if len(elem.Children) != 1 {
+		return false
+	}
+	switch elem.Children[0].(type) {
+	case *TextContent, *GoExpr:
+		return true
+	}
+	return false
+}
