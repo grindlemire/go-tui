@@ -167,7 +167,7 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
 
 **Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
-**Completed in commit:** (will fill after commit)
+**Completed in commit:** 31f7619
 
 All splits are pure file reorganization — no logic changes. Target: every source file <=500 lines.
 
