@@ -4,7 +4,7 @@
 package testdata
 
 import (
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func otherHelperFunction(s string) string {

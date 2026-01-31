@@ -4,13 +4,11 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type StylingView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -22,155 +20,155 @@ func Styling() StylingView {
 	var view StylingView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(2),
-		element.WithBorder(tui.BorderRounded),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(2),
+		tui.WithBorder(tui.BorderRounded),
 	)
-	__tui_1 := element.New(
-		element.WithText("Text Styles"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText("Text Styles"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
 	)
-	__tui_4 := element.New(
-		element.WithText("Bold text"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_4 := tui.New(
+		tui.WithText("Bold text"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_3.AddChild(__tui_4)
-	__tui_5 := element.New(
-		element.WithText("Dim text"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_5 := tui.New(
+		tui.WithText("Dim text"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_3.AddChild(__tui_5)
-	__tui_6 := element.New(
-		element.WithText("Italic text"),
-		element.WithTextStyle(tui.NewStyle().Italic()),
+	__tui_6 := tui.New(
+		tui.WithText("Italic text"),
+		tui.WithTextStyle(tui.NewStyle().Italic()),
 	)
 	__tui_3.AddChild(__tui_6)
-	__tui_7 := element.New(
-		element.WithText("Underlined text"),
-		element.WithTextStyle(tui.NewStyle().Underline()),
+	__tui_7 := tui.New(
+		tui.WithText("Underlined text"),
+		tui.WithTextStyle(tui.NewStyle().Underline()),
 	)
 	__tui_3.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_3)
-	__tui_8 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_8 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_8)
-	__tui_9 := element.New(
-		element.WithText("Text Colors"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_9 := tui.New(
+		tui.WithText("Text Colors"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_9)
-	__tui_10 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_10 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_10)
-	__tui_11 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_11 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	__tui_12 := element.New(
-		element.WithText("Red"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
+	__tui_12 := tui.New(
+		tui.WithText("Red"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
 	)
 	__tui_11.AddChild(__tui_12)
-	__tui_13 := element.New(
-		element.WithText("Green"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	__tui_13 := tui.New(
+		tui.WithText("Green"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
 	__tui_11.AddChild(__tui_13)
-	__tui_14 := element.New(
-		element.WithText("Blue"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Blue)),
+	__tui_14 := tui.New(
+		tui.WithText("Blue"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
 	__tui_11.AddChild(__tui_14)
-	__tui_15 := element.New(
-		element.WithText("Cyan"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
+	__tui_15 := tui.New(
+		tui.WithText("Cyan"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_11.AddChild(__tui_15)
-	__tui_16 := element.New(
-		element.WithText("Magenta"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta)),
+	__tui_16 := tui.New(
+		tui.WithText("Magenta"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta)),
 	)
 	__tui_11.AddChild(__tui_16)
-	__tui_17 := element.New(
-		element.WithText("Yellow"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
+	__tui_17 := tui.New(
+		tui.WithText("Yellow"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 	)
 	__tui_11.AddChild(__tui_17)
 	__tui_0.AddChild(__tui_11)
-	__tui_18 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_18 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_18)
-	__tui_19 := element.New(
-		element.WithText("Background Colors"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_19 := tui.New(
+		tui.WithText("Background Colors"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_19)
-	__tui_20 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_20 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_20)
-	__tui_21 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_21 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	__tui_22 := element.New(
-		element.WithText("Red"),
-		element.WithBackground(tui.NewStyle().Background(tui.Red)),
+	__tui_22 := tui.New(
+		tui.WithText("Red"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Red)),
 	)
 	__tui_21.AddChild(__tui_22)
-	__tui_23 := element.New(
-		element.WithText("Green"),
-		element.WithBackground(tui.NewStyle().Background(tui.Green)),
+	__tui_23 := tui.New(
+		tui.WithText("Green"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Green)),
 	)
 	__tui_21.AddChild(__tui_23)
-	__tui_24 := element.New(
-		element.WithText("Blue"),
-		element.WithBackground(tui.NewStyle().Background(tui.Blue)),
+	__tui_24 := tui.New(
+		tui.WithText("Blue"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
 	)
 	__tui_21.AddChild(__tui_24)
-	__tui_25 := element.New(
-		element.WithText("Cyan"),
-		element.WithBackground(tui.NewStyle().Background(tui.Cyan)),
+	__tui_25 := tui.New(
+		tui.WithText("Cyan"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Cyan)),
 	)
 	__tui_21.AddChild(__tui_25)
-	__tui_26 := element.New(
-		element.WithText("Magenta"),
-		element.WithBackground(tui.NewStyle().Background(tui.Magenta)),
+	__tui_26 := tui.New(
+		tui.WithText("Magenta"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Magenta)),
 	)
 	__tui_21.AddChild(__tui_26)
-	__tui_27 := element.New(
-		element.WithText("Yellow"),
-		element.WithBackground(tui.NewStyle().Background(tui.Yellow)),
+	__tui_27 := tui.New(
+		tui.WithText("Yellow"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Yellow)),
 	)
 	__tui_21.AddChild(__tui_27)
 	__tui_0.AddChild(__tui_21)
-	__tui_28 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_28 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_28)
-	__tui_29 := element.New(
-		element.WithText("Press q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_29 := tui.New(
+		tui.WithText("Press q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_29)
 

@@ -5,9 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func main() {
@@ -22,94 +20,94 @@ func main() {
 	width, height := app.Size()
 
 	// Root container - full screen
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
 	)
 
 	// Top container (header) - fixed height
-	header := element.New(
-		element.WithHeight(3),
-		element.WithFlexGrow(0),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	header := tui.New(
+		tui.WithHeight(3),
+		tui.WithFlexGrow(0),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
 
-	headerTitle := element.New(
-		element.WithText("Dashboard"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
+	headerTitle := tui.New(
+		tui.WithText("Dashboard"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
 	header.AddChild(headerTitle)
 
 	// Main content area - row with sidebar and main
-	mainArea := element.New(
-		element.WithFlexGrow(1),
-		element.WithDirection(layout.Row),
+	mainArea := tui.New(
+		tui.WithFlexGrow(1),
+		tui.WithDirection(tui.Row),
 	)
 
 	// Side container (sidebar) - fixed width
-	sidebar := element.New(
-		element.WithWidth(20),
-		element.WithFlexGrow(0),
-		element.WithDirection(layout.Column),
-		element.WithPadding(1),
-		element.WithGap(1),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
+	sidebar := tui.New(
+		tui.WithWidth(20),
+		tui.WithFlexGrow(0),
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(1),
+		tui.WithGap(1),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
 	)
 
-	sidebarTitle := element.New(
-		element.WithText("Menu"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta).Bold()),
+	sidebarTitle := tui.New(
+		tui.WithText("Menu"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta).Bold()),
 	)
-	menuItem1 := element.New(
-		element.WithText("> Overview"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	menuItem1 := tui.New(
+		tui.WithText("> Overview"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	menuItem2 := element.New(
-		element.WithText("  Settings"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	menuItem2 := tui.New(
+		tui.WithText("  Settings"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
-	menuItem3 := element.New(
-		element.WithText("  Help"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	menuItem3 := tui.New(
+		tui.WithText("  Help"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	sidebar.AddChild(sidebarTitle, menuItem1, menuItem2, menuItem3)
 
 	// Main content - fills remaining space with centered floating card
-	content := element.New(
-		element.WithFlexGrow(1),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	content := tui.New(
+		tui.WithFlexGrow(1),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
 
 	// Floating card that will animate
-	card := element.New(
-		element.WithSize(30, 8),
-		element.WithBorder(tui.BorderRounded),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		element.WithDirection(layout.Column),
-		element.WithPadding(1),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithGap(1),
+	card := tui.New(
+		tui.WithSize(30, 8),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(1),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithGap(1),
 	)
 
-	cardTitle := element.New(
-		element.WithText("Status Card"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	cardTitle := tui.New(
+		tui.WithText("Status Card"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	cardStatus := element.New(
-		element.WithText("Systems Online"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	cardStatus := tui.New(
+		tui.WithText("Systems Online"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	cardHint := element.New(
-		element.WithText("Press ESC to exit"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	cardHint := tui.New(
+		tui.WithText("Press ESC to exit"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
 	card.AddChild(cardTitle, cardStatus, cardHint)
@@ -147,8 +145,8 @@ func main() {
 				// Handle resize: update root size and re-render
 				width, height = e.Width, e.Height
 				style := root.Style()
-				style.Width = layout.Fixed(width)
-				style.Height = layout.Fixed(height)
+				style.Width = tui.Fixed(width)
+				style.Height = tui.Fixed(height)
 				root.SetStyle(style)
 				app.Dispatch(event)
 			}
@@ -171,8 +169,8 @@ func main() {
 
 		// Update card style
 		cardStyle := card.Style()
-		cardStyle.Width = layout.Fixed(cardWidth)
-		cardStyle.Height = layout.Fixed(cardHeight)
+		cardStyle.Width = tui.Fixed(cardWidth)
+		cardStyle.Height = tui.Fixed(cardHeight)
 		card.SetStyle(cardStyle)
 
 		// Render using App

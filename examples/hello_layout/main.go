@@ -5,9 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func main() {
@@ -32,35 +30,35 @@ func main() {
 	width, height := term.Size()
 
 	// Build layout tree once - we'll mutate it for animation
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
 
 	// Centered panel with rounded border
-	panel := element.New(
-		element.WithSize(30, 10),
-		element.WithBorder(tui.BorderRounded),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		element.WithDirection(layout.Column),
-		element.WithPadding(1),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithGap(2),
+	panel := tui.New(
+		tui.WithSize(30, 10),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(1),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithGap(2),
 	)
 
 	// Title text - intrinsic width, centered by panel's AlignCenter
-	title := element.New(
-		element.WithText("Layout Engine Demo"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+	title := tui.New(
+		tui.WithText("Layout Engine Demo"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
 
 	// Hint text - intrinsic width, centered by panel's AlignCenter
-	hint := element.New(
-		element.WithText("Press any key to exit"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	hint := tui.New(
+		tui.WithText("Press any key to exit"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
 	// Build the tree
@@ -107,7 +105,7 @@ func main() {
 
 			// Mutate the panel's style instead of rebuilding the tree
 			style := panel.Style()
-			style.Width = layout.Fixed(panelWidth)
+			style.Width = tui.Fixed(panelWidth)
 			panel.SetStyle(style)
 
 			// Clear buffer and re-render

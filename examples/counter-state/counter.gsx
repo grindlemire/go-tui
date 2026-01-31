@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"time"
-	"github.com/grindlemire/go-tui/pkg/debug"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	"github.com/grindlemire/go-tui/internal/debug"
+	tui "github.com/grindlemire/go-tui"
 )
 
 templ CounterUI() {

@@ -1,6 +1,6 @@
 package testdata
 
-import "github.com/grindlemire/go-tui/pkg/tui"
+import tui "github.com/grindlemire/go-tui"
 
 templ Header(title string) {
 	<div border={tui.BorderSingle} padding={1}>

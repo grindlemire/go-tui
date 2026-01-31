@@ -4,13 +4,11 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type InputBoxView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -22,17 +20,17 @@ func InputBox(text string, height int) InputBoxView {
 	var view InputBoxView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyEnd),
-		element.WithHeight(height),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyEnd),
+		tui.WithHeight(height),
 	)
-	__tui_1 := element.New(
-		element.WithBorder(tui.BorderRounded),
-		element.WithPadding(1),
+	__tui_1 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
 	)
-	__tui_2 := element.New(
-		element.WithText("> " + text + "\u2588"),
+	__tui_2 := tui.New(
+		tui.WithText("> " + text + "\u2588"),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)

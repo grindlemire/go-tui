@@ -4,44 +4,43 @@
 package example
 
 import (
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
-func Header(title string) *element.Element {
-	__tui_0 := element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+func Header(title string) *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText(title),
-	)
-	__tui_0.AddChild(__tui_1)
-	return __tui_0
-}
-
-func Footer() *element.Element {
-	__tui_0 := element.New(
-		element.WithPadding(1),
-	)
-	__tui_1 := element.New(
-		element.WithText("Footer content"),
+	__tui_1 := tui.New(
+		tui.WithText(title),
 	)
 	__tui_0.AddChild(__tui_1)
 	return __tui_0
 }
 
-func SimpleCard(title string, content string) *element.Element {
-	__tui_0 := element.New(
-		element.WithBorder(tui.BorderRounded),
+func Footer() *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText(title),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText("Footer content"),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithText(content),
+	return __tui_0
+}
+
+func SimpleCard(title string, content string) *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+	)
+	__tui_1 := tui.New(
+		tui.WithText(title),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_0.AddChild(__tui_1)
+	__tui_2 := tui.New(
+		tui.WithText(content),
 	)
 	__tui_0.AddChild(__tui_2)
 	return __tui_0

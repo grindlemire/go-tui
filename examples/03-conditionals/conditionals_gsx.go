@@ -4,13 +4,11 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type ConditionalsView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -22,64 +20,64 @@ func Conditionals(enabled bool) ConditionalsView {
 	var view ConditionalsView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(2),
-		element.WithBorder(tui.BorderRounded),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(2),
+		tui.WithBorder(tui.BorderRounded),
 	)
-	__tui_1 := element.New(
-		element.WithText("Conditional Rendering"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText("Conditional Rendering"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_4 := element.New(
-		element.WithText("Status:"),
+	__tui_4 := tui.New(
+		tui.WithText("Status:"),
 	)
 	__tui_3.AddChild(__tui_4)
 	if enabled {
-		__tui_5 := element.New(
-			element.WithText("Enabled"),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		__tui_5 := tui.New(
+			tui.WithText("Enabled"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
 		__tui_3.AddChild(__tui_5)
 	} else {
-		__tui_6 := element.New(
-			element.WithText("Disabled"),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		__tui_6 := tui.New(
+			tui.WithText("Disabled"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
 		__tui_3.AddChild(__tui_6)
 	}
 	__tui_0.AddChild(__tui_3)
 	if enabled {
-		__tui_7 := element.New(
-			element.WithBorder(tui.BorderSingle),
-			element.WithPadding(1),
-			element.WithBackground(tui.NewStyle().Background(tui.Green)),
+		__tui_7 := tui.New(
+			tui.WithBorder(tui.BorderSingle),
+			tui.WithPadding(1),
+			tui.WithBackground(tui.NewStyle().Background(tui.Green)),
 		)
-		__tui_8 := element.New(
-			element.WithText("This content only shows when enabled!"),
+		__tui_8 := tui.New(
+			tui.WithText("This content only shows when enabled!"),
 		)
 		__tui_7.AddChild(__tui_8)
 		__tui_0.AddChild(__tui_7)
 	}
-	__tui_9 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_9 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_9)
-	__tui_10 := element.New(
-		element.WithText("Press t to toggle, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_10 := tui.New(
+		tui.WithText("Press t to toggle, q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_10)
 

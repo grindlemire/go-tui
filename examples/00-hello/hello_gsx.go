@@ -4,14 +4,12 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
 
-	"github.com/grindlemire/go-tui/pkg/tui"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type HelloView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -23,19 +21,19 @@ func Hello() HelloView {
 	var view HelloView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithAlign(layout.AlignCenter),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithHeightPercent(100.00),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithHeightPercent(100.00),
 	)
-	__tui_1 := element.New(
-		element.WithText("Hello, TUI!"),
+	__tui_1 := tui.New(
+		tui.WithText("Hello, TUI!"),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithText("Press q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_2 := tui.New(
+		tui.WithText("Press q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_2)
 

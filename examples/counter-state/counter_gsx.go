@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/debug"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	"github.com/grindlemire/go-tui/internal/debug"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func increment(count *tui.State[int]) func() {
@@ -46,7 +44,7 @@ func tick(count *tui.State[int]) func() {
 }
 
 type CounterUIView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -59,64 +57,64 @@ func CounterUI() CounterUIView {
 	var watchers []tui.Watcher
 
 	count := tui.NewState(0)
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(2),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(2),
 	)
-	__tui_1 := element.New(
-		element.WithBorder(tui.BorderRounded),
-		element.WithPadding(1),
-		element.WithDirection(layout.Column),
-		element.WithAlign(layout.AlignCenter),
-		element.WithJustify(layout.JustifyCenter),
+	__tui_1 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_2 := element.New(
-		element.WithText("Reactive Counter"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_2 := tui.New(
+		tui.WithText("Reactive Counter"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_1.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_3 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_1.AddChild(__tui_3)
-	__tui_4 := element.New(
-		element.WithText("Count:"),
+	__tui_4 := tui.New(
+		tui.WithText("Count:"),
 	)
 	__tui_1.AddChild(__tui_4)
-	__tui_5 := element.New(
-		element.WithText(fmt.Sprintf("%d", count.Get())),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
+	__tui_5 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", count.Get())),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
 	__tui_1.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_1)
-	__tui_6 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_6 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_6)
-	__tui_7 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
-		element.WithJustify(layout.JustifyCenter),
+	__tui_7 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_8 := element.New()
-	__tui_9 := element.New(element.WithText(" + "))
+	__tui_8 := tui.New()
+	__tui_9 := tui.New(tui.WithText(" + "))
 	__tui_8.AddChild(__tui_9)
 	__tui_7.AddChild(__tui_8)
-	__tui_10 := element.New()
-	__tui_11 := element.New(element.WithText(" - "))
+	__tui_10 := tui.New()
+	__tui_11 := tui.New(tui.WithText(" - "))
 	__tui_10.AddChild(__tui_11)
 	__tui_7.AddChild(__tui_10)
 	__tui_0.AddChild(__tui_7)
-	__tui_12 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
+	__tui_12 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_13 := element.New(
-		element.WithText("Press q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_13 := tui.New(
+		tui.WithText("Press q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_12.AddChild(__tui_13)
 	__tui_0.AddChild(__tui_12)

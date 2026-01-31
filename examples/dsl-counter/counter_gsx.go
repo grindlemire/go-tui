@@ -6,13 +6,11 @@ package main
 import (
 	"fmt"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type CounterUIView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -24,60 +22,60 @@ func CounterUI(count int) CounterUIView {
 	var view CounterUIView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(2),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(2),
 	)
-	__tui_1 := element.New(
-		element.WithBorder(tui.BorderRounded),
-		element.WithPadding(1),
-		element.WithDirection(layout.Column),
-		element.WithAlign(layout.AlignCenter),
-		element.WithJustify(layout.JustifyCenter),
+	__tui_1 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_2 := element.New(
-		element.WithBackground(tui.NewStyle().Background(tui.Red)),
-		element.WithWidthPercent(100.00),
-		element.WithHeight(1),
+	__tui_2 := tui.New(
+		tui.WithBackground(tui.NewStyle().Background(tui.Red)),
+		tui.WithWidthPercent(100.00),
+		tui.WithHeight(1),
 	)
-	__tui_3 := element.New(
-		element.WithText("Counter Examples"),
-		element.WithTextAlign(element.TextAlignCenter),
-		element.WithWidthPercent(100.00),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_3 := tui.New(
+		tui.WithText("Counter Examples"),
+		tui.WithTextAlign(tui.TextAlignCenter),
+		tui.WithWidthPercent(100.00),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_2.AddChild(__tui_3)
 	__tui_1.AddChild(__tui_2)
-	__tui_4 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Red)),
+	__tui_4 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Red)),
 	)
 	__tui_1.AddChild(__tui_4)
-	__tui_5 := element.New(
-		element.WithText("Count:"),
+	__tui_5 := tui.New(
+		tui.WithText("Count:"),
 	)
 	__tui_1.AddChild(__tui_5)
-	__tui_6 := element.New(
-		element.WithText(fmt.Sprintf("%d", count)),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
+	__tui_6 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", count)),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
 	__tui_1.AddChild(__tui_6)
 	__tui_0.AddChild(__tui_1)
-	__tui_7 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_7 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_7)
-	__tui_8 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
-		element.WithJustify(layout.JustifyCenter),
+	__tui_8 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_9 := element.New(
-		element.WithText("Press +/- to change, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_9 := tui.New(
+		tui.WithText("Press +/- to change, q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_8.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_8)

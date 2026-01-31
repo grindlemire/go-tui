@@ -11,9 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 //go:generate go run ../../cmd/tui generate conditionals.gsx
@@ -52,14 +50,14 @@ func main() {
 	}
 }
 
-func buildUI(app *tui.App, enabled bool) *element.Element {
+func buildUI(app *tui.App, enabled bool) *tui.Element {
 	width, height := app.Size()
 
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
 
 	conditionals := Conditionals(enabled)

@@ -11,9 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 //go:generate go run ../../cmd/tui generate layout.gsx
@@ -46,12 +44,12 @@ func main() {
 	}
 }
 
-func buildUI(app *tui.App) *element.Element {
+func buildUI(app *tui.App) *tui.Element {
 	width, height := app.Size()
 
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
 	)
 
 	layout := Layout()

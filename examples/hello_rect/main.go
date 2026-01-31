@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/grindlemire/go-tui/pkg/tui"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func main() {

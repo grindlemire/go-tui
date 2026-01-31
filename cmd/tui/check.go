@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/grindlemire/go-tui/pkg/tuigen"
+	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
 // runCheck implements the check subcommand.

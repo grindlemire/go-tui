@@ -4,13 +4,11 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type LayoutView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -22,170 +20,170 @@ func Layout() LayoutView {
 	var view LayoutView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(1),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText("Flexbox Layout Demo"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText("Flexbox Layout Demo"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
 	)
-	__tui_4 := element.New(
-		element.WithText("Row layout(flex):"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_4 := tui.New(
+		tui.WithText("Row layout(flex):"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_3.AddChild(__tui_4)
-	__tui_5 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
+	__tui_5 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_6 := element.New(
-		element.WithText("One"),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+	__tui_6 := tui.New(
+		tui.WithText("One"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
 	__tui_5.AddChild(__tui_6)
-	__tui_7 := element.New(
-		element.WithText("Two"),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+	__tui_7 := tui.New(
+		tui.WithText("Two"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
 	__tui_5.AddChild(__tui_7)
-	__tui_8 := element.New(
-		element.WithText("Three"),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+	__tui_8 := tui.New(
+		tui.WithText("Three"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
 	__tui_5.AddChild(__tui_8)
 	__tui_3.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_3)
-	__tui_9 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
+	__tui_9 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
 	)
-	__tui_10 := element.New(
-		element.WithText("Column layout(flex-col):"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_10 := tui.New(
+		tui.WithText("Column layout(flex-col):"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_9.AddChild(__tui_10)
-	__tui_11 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithBorder(tui.BorderSingle),
+	__tui_11 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderSingle),
 	)
-	__tui_12 := element.New(
-		element.WithText("First"),
-		element.WithPadding(1),
+	__tui_12 := tui.New(
+		tui.WithText("First"),
+		tui.WithPadding(1),
 	)
 	__tui_11.AddChild(__tui_12)
-	__tui_13 := element.New(
-		element.WithText("Second"),
-		element.WithPadding(1),
+	__tui_13 := tui.New(
+		tui.WithText("Second"),
+		tui.WithPadding(1),
 	)
 	__tui_11.AddChild(__tui_13)
-	__tui_14 := element.New(
-		element.WithText("Third"),
-		element.WithPadding(1),
+	__tui_14 := tui.New(
+		tui.WithText("Third"),
+		tui.WithPadding(1),
 	)
 	__tui_11.AddChild(__tui_14)
 	__tui_9.AddChild(__tui_11)
 	__tui_0.AddChild(__tui_9)
-	__tui_15 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
+	__tui_15 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
 	)
-	__tui_16 := element.New(
-		element.WithText("Justify content:"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_16 := tui.New(
+		tui.WithText("Justify content:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_15.AddChild(__tui_16)
-	__tui_17 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
+	__tui_17 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_18 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyStart),
-		element.WithBorder(tui.BorderSingle),
-		element.WithWidth(20),
+	__tui_18 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyStart),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithWidth(20),
 	)
-	__tui_19 := element.New(
-		element.WithText("start"),
+	__tui_19 := tui.New(
+		tui.WithText("start"),
 	)
 	__tui_18.AddChild(__tui_19)
 	__tui_17.AddChild(__tui_18)
-	__tui_20 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithWidth(20),
+	__tui_20 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithWidth(20),
 	)
-	__tui_21 := element.New(
-		element.WithText("center"),
+	__tui_21 := tui.New(
+		tui.WithText("center"),
 	)
 	__tui_20.AddChild(__tui_21)
 	__tui_17.AddChild(__tui_20)
-	__tui_22 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyEnd),
-		element.WithBorder(tui.BorderSingle),
-		element.WithWidth(20),
+	__tui_22 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyEnd),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithWidth(20),
 	)
-	__tui_23 := element.New(
-		element.WithText("end"),
+	__tui_23 := tui.New(
+		tui.WithText("end"),
 	)
 	__tui_22.AddChild(__tui_23)
 	__tui_17.AddChild(__tui_22)
 	__tui_15.AddChild(__tui_17)
 	__tui_0.AddChild(__tui_15)
-	__tui_24 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
+	__tui_24 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
 	)
-	__tui_25 := element.New(
-		element.WithText("Flex grow:"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_25 := tui.New(
+		tui.WithText("Flex grow:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_24.AddChild(__tui_25)
-	__tui_26 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
-		element.WithWidth(60),
+	__tui_26 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithWidth(60),
 	)
-	__tui_27 := element.New(
-		element.WithText("Fixed"),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+	__tui_27 := tui.New(
+		tui.WithText("Fixed"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
 	__tui_26.AddChild(__tui_27)
-	__tui_28 := element.New(
-		element.WithText("Grows to fill space"),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithFlexGrow(1),
+	__tui_28 := tui.New(
+		tui.WithText("Grows to fill space"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithFlexGrow(1),
 	)
 	__tui_26.AddChild(__tui_28)
-	__tui_29 := element.New(
-		element.WithText("Fixed"),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+	__tui_29 := tui.New(
+		tui.WithText("Fixed"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
 	__tui_26.AddChild(__tui_29)
 	__tui_24.AddChild(__tui_26)
 	__tui_0.AddChild(__tui_24)
-	__tui_30 := element.New(
-		element.WithText("Press q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_30 := tui.New(
+		tui.WithText("Press q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_30)
 

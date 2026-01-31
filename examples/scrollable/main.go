@@ -5,9 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func main() {
@@ -21,40 +19,40 @@ func main() {
 	width, height := app.Size()
 
 	// Root container
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
 	)
 
 	// Header
-	header := element.New(
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	header := tui.New(
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
-	headerTitle := element.New(
-		element.WithText("Scrollable List Demo - Use Arrow Keys, j/k, PgUp/PgDn, Home/End"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
+	headerTitle := tui.New(
+		tui.WithText("Scrollable List Demo - Use Arrow Keys, j/k, PgUp/PgDn, Home/End"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
 	header.AddChild(headerTitle)
 
 	// Main area with sidebar and content
-	mainArea := element.New(
-		element.WithFlexGrow(1),
-		element.WithDirection(layout.Row),
+	mainArea := tui.New(
+		tui.WithFlexGrow(1),
+		tui.WithDirection(tui.Row),
 	)
 
 	// Scrollable list (sidebar) - now just an Element with WithScrollable!
-	scrollableList := element.New(
-		element.WithWidth(30),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithDirection(layout.Column),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		element.WithPadding(1),
+	scrollableList := tui.New(
+		tui.WithWidth(30),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithPadding(1),
 	)
 
 	// Add many items to demonstrate scrolling
@@ -66,26 +64,26 @@ func main() {
 			style = tui.NewStyle().Foreground(tui.Yellow)
 		}
 
-		item := element.New(
-			element.WithText(fmt.Sprintf("Item %02d - Sample text", i+1)),
-			element.WithTextStyle(style),
+		item := tui.New(
+			tui.WithText(fmt.Sprintf("Item %02d - Sample text", i+1)),
+			tui.WithTextStyle(style),
 		)
 		scrollableList.AddChild(item)
 	}
 
 	// Content area
-	content := element.New(
-		element.WithFlexGrow(1),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
+	content := tui.New(
+		tui.WithFlexGrow(1),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
 	)
 
-	instructions := element.New(
-		element.WithText("Focus is on the scrollable list"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	instructions := tui.New(
+		tui.WithText("Focus is on the scrollable list"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	content.AddChild(instructions)
 
@@ -93,17 +91,17 @@ func main() {
 	mainArea.AddChild(scrollableList, content)
 
 	// Footer with status
-	footer := element.New(
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	footer := tui.New(
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
-	footerText := element.New(
-		element.WithText("Press ESC to exit"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	footerText := tui.New(
+		tui.WithText("Press ESC to exit"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	footer.AddChild(footerText)
 
@@ -137,8 +135,8 @@ func main() {
 			case tui.ResizeEvent:
 				width, height = e.Width, e.Height
 				style := root.Style()
-				style.Width = layout.Fixed(width)
-				style.Height = layout.Fixed(height)
+				style.Width = tui.Fixed(width)
+				style.Height = tui.Fixed(height)
 				root.SetStyle(style)
 				app.Dispatch(event)
 			}

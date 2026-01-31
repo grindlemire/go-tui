@@ -1,9 +1,7 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 templ Focus() {
@@ -51,7 +49,7 @@ templ Focus() {
 	</div>
 }
 
-func onFocusBox(name string, focused *tui.State[string], box *element.Element) func() {
+func onFocusBox(name string, focused *tui.State[string], box *tui.Element) func() {
 	return func() {
 		focused.Set(name)
 		// Change border to double when focused
@@ -59,7 +57,7 @@ func onFocusBox(name string, focused *tui.State[string], box *element.Element) f
 	}
 }
 
-func onBlurBox(focused *tui.State[string], box *element.Element) func() {
+func onBlurBox(focused *tui.State[string], box *tui.Element) func() {
 	return func() {
 		focused.Set("(none)")
 		// Change border back to single when blurred

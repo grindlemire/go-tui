@@ -3,8 +3,7 @@ package testdata
 
 import (
 	"fmt"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
+	tui "github.com/grindlemire/go-tui"
 )
 
 // Unassigned block comment
@@ -12,7 +11,7 @@ import (
 
 // ItemList test
 templ ItemList(items []string, selected int) {
-	<div direction={layout.Column} gap={1}>
+	<div direction={tui.Column} gap={1}>
 		// ItemList direction
 		@for i, item := range items {
 			// ItemList for loop
@@ -44,14 +43,14 @@ tests block comment
 */
 templ Counter(count int, label string) {
 	@let countText = <span>{fmt.Sprintf("%d", count)}</span>
-	<div direction={layout.Column} gap={1} padding={1}>
+	<div direction={tui.Column} gap={1} padding={1}>
 		<span class="font-bold">{label}</span>
 		{countText}
 	</div>
 }
 
 templ ConditionalContent(showHeader bool, showFooter bool) {
-	<div direction={layout.Column}>
+	<div direction={tui.Column}>
 		@if showHeader {
 			<span>Header</span>
 		}

@@ -4,12 +4,10 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
-func onFocusBox(name string, focused *tui.State[string], box *element.Element) func() {
+func onFocusBox(name string, focused *tui.State[string], box *tui.Element) func() {
 	return func() {
 		focused.Set(name)
 		// Change border to double when focused
@@ -17,7 +15,7 @@ func onFocusBox(name string, focused *tui.State[string], box *element.Element) f
 	}
 }
 
-func onBlurBox(focused *tui.State[string], box *element.Element) func() {
+func onBlurBox(focused *tui.State[string], box *tui.Element) func() {
 	return func() {
 		focused.Set("(none)")
 		// Change border back to single when blurred
@@ -26,11 +24,11 @@ func onBlurBox(focused *tui.State[string], box *element.Element) func() {
 }
 
 type FocusView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
-	BoxA     *element.Element
-	BoxB     *element.Element
-	BoxC     *element.Element
+	BoxA     *tui.Element
+	BoxB     *tui.Element
+	BoxC     *tui.Element
 }
 
 func (v FocusView) GetRoot() tui.Renderable { return v.Root }
@@ -41,93 +39,93 @@ func Focus() FocusView {
 	var view FocusView
 	var watchers []tui.Watcher
 
-	var BoxA *element.Element
-	var BoxB *element.Element
-	var BoxC *element.Element
+	var BoxA *tui.Element
+	var BoxB *tui.Element
+	var BoxC *tui.Element
 
 	focused := tui.NewState("(none)")
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(2),
-		element.WithPadding(2),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(2),
+		tui.WithPadding(2),
 	)
-	__tui_1 := element.New(
-		element.WithText("Focus Navigation"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_1 := tui.New(
+		tui.WithText("Focus Navigation"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	BoxA = element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(2),
-		element.WithWidth(15),
-		element.WithHeight(5),
-		element.WithAlign(layout.AlignCenter),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithFocusable(true),
+	BoxA = tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(2),
+		tui.WithWidth(15),
+		tui.WithHeight(5),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithFocusable(true),
 	)
-	__tui_4 := element.New(
-		element.WithText("Box A"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
+	__tui_4 := tui.New(
+		tui.WithText("Box A"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
 	)
 	BoxA.AddChild(__tui_4)
 	__tui_3.AddChild(BoxA)
-	BoxB = element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(2),
-		element.WithWidth(15),
-		element.WithHeight(5),
-		element.WithAlign(layout.AlignCenter),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithFocusable(true),
+	BoxB = tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(2),
+		tui.WithWidth(15),
+		tui.WithHeight(5),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithFocusable(true),
 	)
-	__tui_5 := element.New(
-		element.WithText("Box B"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	__tui_5 := tui.New(
+		tui.WithText("Box B"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
 	BoxB.AddChild(__tui_5)
 	__tui_3.AddChild(BoxB)
-	BoxC = element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(2),
-		element.WithWidth(15),
-		element.WithHeight(5),
-		element.WithAlign(layout.AlignCenter),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithFocusable(true),
+	BoxC = tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(2),
+		tui.WithWidth(15),
+		tui.WithHeight(5),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithFocusable(true),
 	)
-	__tui_6 := element.New(
-		element.WithText("Box C"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Blue)),
+	__tui_6 := tui.New(
+		tui.WithText("Box C"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
 	BoxC.AddChild(__tui_6)
 	__tui_3.AddChild(BoxC)
 	__tui_0.AddChild(__tui_3)
-	__tui_7 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
+	__tui_7 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_8 := element.New(
-		element.WithText("Focused:"),
+	__tui_8 := tui.New(
+		tui.WithText("Focused:"),
 	)
 	__tui_7.AddChild(__tui_8)
-	__tui_9 := element.New(
-		element.WithText(focused.Get()),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Yellow)),
+	__tui_9 := tui.New(
+		tui.WithText(focused.Get()),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Yellow)),
 	)
 	__tui_7.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_7)
-	__tui_10 := element.New(
-		element.WithText("Press Tab/Shift+Tab to navigate, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_10 := tui.New(
+		tui.WithText("Press Tab/Shift+Tab to navigate, q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_10)
 

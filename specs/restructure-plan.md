@@ -8,37 +8,37 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
 
 **Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
-**Completed in commit:** (pending)
+**Completed in commit:** 93fd701
 
-- [ ] Move `pkg/layout/*.go` to `internal/layout/`
+- [x] Move `pkg/layout/*.go` to `internal/layout/`
   - Move all source files: `calculate.go`, `flex.go`, `layoutable.go`, `style.go`, `value.go`, `rect.go`, `edges.go`, `point.go`, `layout.go`
   - Move all test files: `calculate_test.go`, `integration_test.go`, `layoutable_test.go`, `rect_test.go`, `value_test.go`, `benchmark_test.go`
   - Update package-internal imports (layout has no internal deps — just verify `package layout` declarations)
 
-- [ ] Create `layout.go` in module root (package `tui`)
+- [x] Create `layout.go` in module root (package `tui`)
   - Re-export all layout types via type aliases: `Direction`, `Justify`, `Align`, `Value`, `Style` (as `LayoutStyle`), `Edges`, `Rect`, `Size`, `Point`, `Layout` (as `LayoutResult`)
   - Re-export all constants: `Row`, `Column`, `JustifyStart` through `JustifySpaceEvenly`, `AlignStart` through `AlignStretch`
   - Re-export constructors: `Fixed()`, `Percent()`, `Auto()`, `DefaultStyle()` (as `DefaultLayoutStyle()`), `NewRect()`, `EdgeAll()`, `EdgeSymmetric()`, `EdgeTRBL()`
   - Add header comment: `// layout.go re-exports layout types from internal/layout. Any changes to internal/layout types must be mirrored here.`
   - See [restructure-design.md §3](./restructure-design.md#3-core-entities) for the re-export pattern
 
-- [ ] Create backward-compat shim at `pkg/layout/compat.go`
+- [x] Create backward-compat shim at `pkg/layout/compat.go`
   - `package layout` that re-exports everything from `internal/layout` via type aliases
   - This is TEMPORARY — allows examples and generated code to keep using `pkg/layout` until Phase 6
   - Add comment: `// DEPRECATED: This package is a temporary compatibility shim. Use "github.com/grindlemire/go-tui" instead.`
 
-- [ ] Update `pkg/tui/*.go` imports
+- [x] Update `pkg/tui/*.go` imports
   - Change `"github.com/grindlemire/go-tui/pkg/layout"` → `"github.com/grindlemire/go-tui/internal/layout"` in all pkg/tui source and test files
-  - Files: `rect.go`, `app.go`, and any others importing layout
+  - Files: `rect.go` (only file importing layout; `app.go` does not import layout)
 
-- [ ] Update `pkg/tui/element/*.go` imports
+- [x] Update `pkg/tui/element/*.go` imports
   - Change `"github.com/grindlemire/go-tui/pkg/layout"` → `"github.com/grindlemire/go-tui/internal/layout"` in all element source and test files
-  - Files: `element.go`, `options.go`, `options_auto.go`, `render.go`, `scroll.go`, and all test files
+  - Files: `element.go`, `options.go`, `options_auto.go`, `render.go`, `scroll.go`, `element_test.go`, `options_test.go`, `render_test.go`, `scrollbox_test.go`, `integration_test.go`
 
-- [ ] Update `pkg/tuigen/*.go` imports (if any reference pkg/layout)
-  - Check `analyzer.go`, `generator.go`, `tailwind.go` for layout import paths
+- [x] Update `pkg/tuigen/*.go` imports (if any reference pkg/layout)
+  - Checked `analyzer.go`, `generator.go`, `tailwind.go` — none have actual Go imports of `pkg/layout` (only string literals for generated code paths). No changes needed.
 
-- [ ] Create `doc.go` in module root
+- [x] Create `doc.go` in module root
   - Package comment: brief description of the tui package as the public API
   - `package tui`
 
@@ -50,9 +50,9 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
 
 **Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
-**Completed in commit:** (pending)
+**Completed in commit:** 93fd701
 
-- [ ] Move `pkg/tui/element/*.go` source files to module root
+- [x] Move `pkg/tui/element/*.go` source files to module root
   - `element.go` → root `element.go` (change `package element` → `package tui`)
   - `options.go` → root `element_options.go`
   - `options_auto.go` → root `element_options_auto.go`
@@ -62,7 +62,7 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
   - Remove `import "github.com/grindlemire/go-tui/internal/layout"` — already available via root's own import
   - Remove `import "github.com/grindlemire/go-tui/pkg/debug"` — update to `internal/debug` path
 
-- [ ] Move `pkg/tui/element/*_test.go` files to module root
+- [x] Move `pkg/tui/element/*_test.go` files to module root
   - `element_test.go` → root `element_test.go`
   - `options_test.go` → root `element_options_test.go`
   - `render_test.go` → root `element_render_test.go`
@@ -71,29 +71,29 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
   - Remove cross-package test imports (`"github.com/grindlemire/go-tui/pkg/tui"`, `"github.com/grindlemire/go-tui/pkg/layout"`)
   - Tests now reference types directly (same package)
 
-- [ ] Move `pkg/tui/*.go` source files to module root
+- [x] Move `pkg/tui/*.go` source files to module root
   - Move ALL source files: `app.go`, `border.go`, `buffer.go`, `caps.go`, `cell.go`, `color.go`, `dirty.go`, `escape.go`, `event.go`, `focus.go`, `key.go`, `mock_reader.go`, `mock_terminal.go`, `parse.go`, `reader.go`, `reader_unix.go`, `render.go`, `state.go`, `style.go`, `terminal.go`, `terminal_ansi.go`, `terminal_unix.go`, `watcher.go`
   - Change `package tui` is already correct (root package is also `tui`)
   - Update `import "github.com/grindlemire/go-tui/pkg/layout"` → `"github.com/grindlemire/go-tui/internal/layout"` (if not done in Phase 1 — some files may still reference old path)
   - Update `import "github.com/grindlemire/go-tui/pkg/debug"` → `"github.com/grindlemire/go-tui/internal/debug"` in all files
   - Remove root `rect.go` duplicate (Phase 1 created one; `pkg/tui/rect.go` has the same content — keep the Phase 1 version which already points to internal/layout)
 
-- [ ] Move `pkg/tui/*_test.go` files to module root
+- [x] Move `pkg/tui/*_test.go` files to module root
   - Move ALL test files, keeping original names
   - Rename conflicts: `integration_test.go` → `app_integration_test.go` (since element's is `element_integration_test.go`)
   - Update test imports to remove `"github.com/grindlemire/go-tui/pkg/layout"` and `"github.com/grindlemire/go-tui/pkg/tui/element"`
 
-- [ ] Create backward-compat shims (TEMPORARY)
+- [x] Create backward-compat shims (TEMPORARY)
   - `pkg/tui/compat.go`: `package tui` that re-exports key types from root via aliases
   - `pkg/tui/element/compat.go`: `package element` that re-exports Element, New, Option, and all With* from root
   - These allow examples and generated code to keep working until Phase 6
 
-- [ ] Update `cmd/tui/*.go` imports
+- [x] Update `cmd/tui/*.go` imports
   - Change `"github.com/grindlemire/go-tui/pkg/tui"` → `"github.com/grindlemire/go-tui"`
   - Change `"github.com/grindlemire/go-tui/pkg/tui/element"` → remove (same package now)
   - Change `"github.com/grindlemire/go-tui/pkg/layout"` → remove (re-exported from root)
 
-- [ ] Delete empty directories
+- [x] Delete empty directories
   - Delete `pkg/tui/element/` contents (except compat.go shim)
   - Verify `pkg/tui/` only has compat shims left
 
@@ -107,23 +107,23 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
 
 **Completed in commit:** (pending)
 
-- [ ] Move `pkg/debug/` → `internal/debug/`
+- [x] Move `pkg/debug/` → `internal/debug/`
   - Move `debug.go`
   - Update ALL consumers: root package files (`state.go`, `watcher.go`, `focus.go`, etc.)
   - Update `import "github.com/grindlemire/go-tui/pkg/debug"` → `"github.com/grindlemire/go-tui/internal/debug"`
 
-- [ ] Move `pkg/tuigen/` → `internal/tuigen/`
+- [x] Move `pkg/tuigen/` → `internal/tuigen/`
   - Move all source files: `ast.go`, `token.go`, `errors.go`, `lexer.go`, `parser.go`, `analyzer.go`, `generator.go`, `tailwind.go`
   - Move all test files
   - Move `cmd/tui/testdata/` if it references tuigen
   - Package declaration stays `package tuigen`
 
-- [ ] Move `pkg/formatter/` → `internal/formatter/`
+- [x] Move `pkg/formatter/` → `internal/formatter/`
   - Move all source files: `formatter.go`, `printer.go`, `imports.go`
   - Move all test files: `formatter_test.go`, `formatter_comment_test.go`
   - Update `import "github.com/grindlemire/go-tui/pkg/tuigen"` → `"github.com/grindlemire/go-tui/internal/tuigen"` in formatter files
 
-- [ ] Move `pkg/lsp/` → `internal/lsp/`
+- [x] Move `pkg/lsp/` → `internal/lsp/`
   - Move all source files and subdirectories: `gopls/`, `log/`, `provider/`, `schema/`
   - Core files: `server.go`, `router.go`, `handler.go`, `context.go`, `context_test.go`, `document.go`, `index.go`, `provider_adapters.go`, `providers.go`
   - Legacy adapters (thin delegators): `completion.go`, `definition.go`, `diagnostics.go`, `formatting.go`, `hover.go`, `references.go`, `semantic_tokens.go`, `symbols.go`
@@ -132,13 +132,13 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
   - Update imports: `pkg/tuigen` → `internal/tuigen`, `pkg/formatter` → `internal/formatter`
   - Update imports within `provider/*.go` and `schema/*.go` files if they reference `pkg/tuigen` or `pkg/formatter`
 
-- [ ] Update `cmd/tui/*.go` imports
+- [x] Update `cmd/tui/*.go` imports
   - `generate.go`: `"github.com/grindlemire/go-tui/pkg/tuigen"` → `"github.com/grindlemire/go-tui/internal/tuigen"`
   - `check.go`: same tuigen import update
   - `fmt.go`: `"github.com/grindlemire/go-tui/pkg/formatter"` → `"github.com/grindlemire/go-tui/internal/formatter"`
   - `lsp.go`: `"github.com/grindlemire/go-tui/pkg/lsp"` → `"github.com/grindlemire/go-tui/internal/lsp"`
 
-- [ ] Update code generator output paths
+- [x] Update code generator output paths
   - In `internal/tuigen/generator.go`, change emitted import paths:
     - `"github.com/grindlemire/go-tui/pkg/tui"` → `"github.com/grindlemire/go-tui"`
     - `"github.com/grindlemire/go-tui/pkg/tui/element"` → remove (merged into root)
@@ -146,15 +146,20 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
   - Update generated code references: `element.New(` → `tui.New(`, `element.With*` → `tui.With*`, `layout.Column` → `tui.Column`, etc.
   - Update view struct: `*element.Element` → `*tui.Element`
 
-- [ ] Update `internal/tuigen/analyzer.go` import path references
+- [x] Update `internal/tuigen/analyzer.go` import path references
   - String literals referencing `"github.com/grindlemire/go-tui/pkg/tui"` → `"github.com/grindlemire/go-tui"`
 
-- [ ] Delete `pkg/` directory entirely
+- [x] Delete `pkg/` directory entirely
   - Remove all shim/compat files created in Phases 1-2
   - Delete `pkg/layout/`, `pkg/tui/`, `pkg/tui/element/`, `pkg/debug/`, `pkg/tuigen/`, `pkg/formatter/`, `pkg/lsp/`
   - The `pkg/` directory should no longer exist
 
-**Tests:** Run `go test ./internal/... ./cmd/...` and `go test .` (root package) — all pass. Examples may not compile yet (old imports).
+- [x] Update all examples/ and editor/ files to use new import paths
+  - Replace `pkg/tui` → root import, remove `pkg/layout` and `pkg/tui/element` imports
+  - Update `element.*` → `tui.*` and `layout.*` → `tui.*` code references
+  - Update `pkg/debug` → `internal/debug`
+
+**Tests:** `go build ./...` and `go test ./...` — all pass.
 
 ---
 
@@ -423,8 +428,8 @@ All splits are pure test file reorganization. Target: every test file <=500 line
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Move layout to internal, create root re-exports + compat shim | Pending |
-| 2 | Merge pkg/tui + pkg/tui/element into root package | Pending |
+| 1 | Move layout to internal, create root re-exports + compat shim | Done |
+| 2 | Merge pkg/tui + pkg/tui/element into root package | Done |
 | 3 | Move tuigen, formatter, lsp, debug to internal | Pending |
 | 4 | Split oversized source files (<=500 lines each) | Pending |
 | 5 | Split oversized test files (<=500 lines each) | Pending |
