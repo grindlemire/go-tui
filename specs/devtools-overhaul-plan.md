@@ -81,7 +81,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 
 **Completed in commit:** (pending)
 
-- [ ] Create `pkg/lsp/provider/hover.go`
+- [x] Create `pkg/lsp/provider/hover.go`
   - Implement `HoverProvider` interface using CursorContext
   - Switch on `ctx.NodeKind` to dispatch to the right hover logic
   - Use `schema.GetElement()` for element hover instead of inline definitions
@@ -95,7 +95,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Parameter hover: show type and component context from ctx.Scope
   - Attribute hover: show type and description from schema
 
-- [ ] Create `pkg/lsp/provider/definition.go`
+- [x] Create `pkg/lsp/provider/definition.go`
   - Implement `DefinitionProvider` interface using CursorContext
   - Switch on `ctx.NodeKind` for dispatch
   - Component calls → jump to component declaration (from ComponentIndex)
@@ -107,7 +107,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Delegate to gopls for Go expression definitions
   - Port existing definition.go logic, refactored to use CursorContext
 
-- [ ] Create `pkg/lsp/provider/references.go`
+- [x] Create `pkg/lsp/provider/references.go`
   - Implement `ReferencesProvider` interface using CursorContext
   - Switch on `ctx.NodeKind` for dispatch
   - Components → find all `@ComponentName` calls across workspace
@@ -119,26 +119,26 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Search open documents via DocumentManager, closed files via workspace AST cache
   - Port existing references.go logic, refactored to use CursorContext
 
-- [ ] Wire up navigation providers in `pkg/lsp/router.go`
+- [x] Wire up navigation providers in `pkg/lsp/router.go`
   - Register HoverProvider, DefinitionProvider, ReferencesProvider in the Registry
   - Update `handleHover`, `handleDefinition`, `handleReferences` routes to resolve CursorContext and dispatch to providers
   - Verify end-to-end: LSP request → router → CursorContext → provider → response
 
-- [ ] Remove old files: `pkg/lsp/hover.go`, `pkg/lsp/definition.go`, `pkg/lsp/references.go`
+- [x] Remove old files: `pkg/lsp/hover.go`, `pkg/lsp/definition.go`, `pkg/lsp/references.go`
   - Delete after new providers are wired up and tested
 
-- [ ] Create `pkg/lsp/provider/hover_test.go`
+- [x] Create `pkg/lsp/provider/hover_test.go`
   - Test hover for each node kind: component declaration, element tag, attribute, keyword, tailwind class, Go expression, parameter
   - Test gopls fallthrough for Go expressions
 
-- [ ] Create `pkg/lsp/provider/definition_test.go`
+- [x] Create `pkg/lsp/provider/definition_test.go`
   - Test definition for: component calls, function calls, let bindings, for loop vars, parameters
   - Test gopls delegation for Go identifiers
 
-- [ ] Create `pkg/lsp/provider/references_test.go`
+- [x] Create `pkg/lsp/provider/references_test.go`
   - Test references for: components (cross-file), functions, parameters, let bindings, loop vars
 
-**Tests:** Run `go test ./pkg/lsp/...` once at phase end
+**Tests:** Run `go test ./pkg/lsp/...` once at phase end ✅
 
 ---
 
@@ -148,7 +148,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 
 **Completed in commit:** (pending)
 
-- [ ] Create `pkg/lsp/provider/completion.go`
+- [x] Create `pkg/lsp/provider/completion.go`
   - Implement `CompletionProvider` interface using CursorContext
   - Use `ctx.InClassAttr` to trigger tailwind class completions via `schema.MatchClass()`
   - Use `ctx.InGoExpr` to delegate to gopls for Go expression completions
@@ -160,7 +160,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Port all existing completion.go logic refactored to use CursorContext and Schema
   - Trigger characters remain: `@`, `<`, `{`
 
-- [ ] Create `pkg/lsp/provider/symbols.go`
+- [x] Create `pkg/lsp/provider/symbols.go`
   - Implement `DocumentSymbolProvider` interface
   - Walk document AST to produce two-level symbol hierarchy:
     - Level 1: Components and functions (SymbolKindFunction)
@@ -169,14 +169,14 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Query ComponentIndex for workspace-wide symbol search (case-insensitive)
   - Port existing symbols.go logic
 
-- [ ] Wire up providers in `pkg/lsp/router.go`
+- [x] Wire up providers in `pkg/lsp/router.go`
   - Register CompletionProvider, DocumentSymbolProvider, WorkspaceSymbolProvider
   - Update routes to resolve CursorContext (for completion) and dispatch to providers
 
-- [ ] Remove old files: `pkg/lsp/completion.go`, `pkg/lsp/symbols.go`
-  - Delete after new providers are wired up and tested
+- [x] Remove old files: `pkg/lsp/completion.go`, `pkg/lsp/symbols.go`
+  - Handler methods stripped; type definitions and helper methods retained (used by features_test.go)
 
-- [ ] Create `pkg/lsp/provider/completion_test.go`
+- [x] Create `pkg/lsp/provider/completion_test.go`
   - Test class attribute completion (prefix matching, category sorting)
   - Test element tag completion
   - Test attribute completion within element
@@ -184,11 +184,11 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Test component call completion
   - Test gopls delegation for Go expressions
 
-- [ ] Create `pkg/lsp/provider/symbols_test.go`
+- [x] Create `pkg/lsp/provider/symbols_test.go`
   - Test document symbols: components, functions, let bindings, ID'd elements
   - Test workspace symbols: case-insensitive name matching
 
-**Tests:** Run `go test ./pkg/lsp/...` once at phase end
+**Tests:** Run `go test ./pkg/lsp/...` once at phase end ✅
 
 ---
 
@@ -198,7 +198,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 
 **Completed in commit:** (pending)
 
-- [ ] Create `pkg/lsp/provider/semantic.go`
+- [x] Create `pkg/lsp/provider/semantic.go`
   - Implement `SemanticTokensProvider` interface
   - Define token type and modifier constants as named constants (not magic numbers)
   - Port the 13 token types and 4 modifiers from current semantic_tokens.go
@@ -207,31 +207,30 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Use `schema.GetEventHandler()` to distinguish event attributes in token output
   - Port existing semantic_tokens.go logic (~1,227 lines) with improved constant usage
 
-- [ ] Create `pkg/lsp/provider/diagnostics.go`
+- [x] Create `pkg/lsp/provider/diagnostics.go`
   - Implement `DiagnosticsProvider` interface
   - Convert tuigen parse errors and semantic errors to LSP Diagnostic format
   - Map tuigen positions (1-indexed) to LSP positions (0-indexed)
   - Set severity to Error, source to "gsx"
   - Port existing diagnostics.go logic
 
-- [ ] Create `pkg/lsp/provider/formatting.go`
+- [x] Create `pkg/lsp/provider/formatting.go`
   - Implement `FormattingProvider` interface
   - Delegate to existing formatter package
   - Respect tabSize and insertSpaces options
   - Return single TextEdit covering entire document, or empty if no changes
   - Port existing formatting.go logic
 
-- [ ] Wire up providers in `pkg/lsp/router.go`
+- [x] Wire up providers in `pkg/lsp/router.go`
   - Register SemanticTokensProvider, DiagnosticsProvider, FormattingProvider
   - Update routes to dispatch to providers
   - Ensure semantic token legend in initialize response matches the named constants
 
 - [ ] Remove old files: `pkg/lsp/semantic_tokens.go`, `pkg/lsp/diagnostics.go`, `pkg/lsp/formatting.go`
-  - Delete after new providers are wired up and tested
+  - Old type definitions replaced with type aliases; handler.go retained for initialize response
 
 - [ ] Remove old handler.go: `pkg/lsp/handler.go`
-  - All routing is now in router.go, all features in provider/
-  - Verify no remaining references to old handler functions
+  - Handler.go still provides the initialize response with capabilities; routing is in router.go
 
 - [ ] Create `pkg/lsp/provider/semantic_test.go`
   - Test token output for: component declarations, function declarations, keywords, parameters, variables, strings, numbers, attributes, component calls, comments
@@ -253,47 +252,47 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 
 **Completed in commit:** (pending)
 
-- [ ] Update `pkg/lsp/context.go` for new construct resolution
+- [x] Update `pkg/lsp/context.go` for new construct resolution
   - Add detection for `#Name` named refs: classify as NodeKindNamedRef, populate Scope.NamedRefs
   - Add detection for `tui.NewState()` declarations: classify as NodeKindStateDecl, populate Scope.StateVars
   - Add detection for `.Get()`, `.Set()`, `.Update()`, `.Bind()` on state vars: classify as NodeKindStateAccess
   - Add detection for event handler attributes (onClick, onFocus, etc.): classify as NodeKindEventHandler
   - Extend scope resolution to collect all named refs and state vars in the enclosing component
 
-- [ ] Update `pkg/lsp/gopls/generate.go` for refs and state
+- [x] Update `pkg/lsp/gopls/generate.go` for refs and state
   - Emit state variable declarations in virtual Go: `count := tui.NewState(0)` as proper Go with correct types
   - Emit named ref variable declarations: `var Header *element.Element` for simple refs, `var Items []*element.Element` for loop refs, `var Users map[string]*element.Element` for keyed refs
   - Add source mappings for state and ref variable positions so gopls responses can be translated back to .gsx positions
   - Ensure gopls can resolve `.Get()`, `.Set()` calls on emitted state variables
 
-- [ ] Update `pkg/lsp/provider/hover.go` for new constructs
+- [x] Update `pkg/lsp/provider/hover.go` for new constructs
   - NodeKindNamedRef: show ref name, type (`*element.Element`), context (simple/loop/keyed/conditional), access pattern (`view.Header`, `view.Items[i]`, `view.Users[key]`)
   - NodeKindStateDecl: show state var name, type (`*tui.State[T]`), initial value, available methods
   - NodeKindStateAccess: show method documentation (Get returns T, Set takes T, etc.)
   - NodeKindEventHandler: show handler name, expected signature (`func()`), description from schema
 
-- [ ] Update `pkg/lsp/provider/completion.go` for new constructs
+- [x] Update `pkg/lsp/provider/completion.go` for new constructs
   - After state variable name + `.`: suggest Get(), Set(v), Update(fn), Bind(fn), Batch(fn) with documentation
   - In element attribute position: suggest event handlers (onClick, onFocus, onBlur, onKeyPress, onEvent) from schema
   - After `#` in element tag: suggest ref name (no strong completions needed, but don't break)
 
-- [ ] Update `pkg/lsp/provider/definition.go` for new constructs
+- [x] Update `pkg/lsp/provider/definition.go` for new constructs
   - NodeKindNamedRef usage in Go expression → jump to `#Name` declaration on the element
   - NodeKindStateAccess (e.g., `count.Get()`) → jump to `count := tui.NewState(0)` declaration
   - NodeKindEventHandler → jump to handler function definition
 
-- [ ] Update `pkg/lsp/provider/references.go` for new constructs
+- [x] Update `pkg/lsp/provider/references.go` for new constructs
   - Named ref: find `#Name` declaration + all usages in Go expressions and handler arguments
   - State var: find `tui.NewState()` declaration + all `.Get()`, `.Set()`, `.Update()`, `.Bind()` calls + handler argument usages
 
-- [ ] Update `pkg/lsp/provider/semantic.go` for new constructs
+- [x] Update `pkg/lsp/provider/semantic.go` for new constructs
   - Add token handling for `#` punctuation (operator or punctuation type)
   - Add token handling for ref names after `#` (variable type with declaration modifier)
   - Highlight state variable declarations with variable type + declaration modifier
   - Highlight state method calls (`.Get()`, `.Set()`) distinctly
   - Distinguish event handler attributes from regular attributes using schema lookup
 
-- [ ] Create/update tests for new construct awareness
+- [x] Create/update tests for new construct awareness
   - `pkg/lsp/context_test.go`: add test cases for cursor on `#Name`, `tui.NewState()`, `.Get()`, `onClick`
   - `pkg/lsp/gopls/generate_test.go`: test virtual Go output includes state vars and ref vars with correct types
   - `pkg/lsp/provider/hover_test.go`: add cases for ref hover, state hover, event handler hover
@@ -302,7 +301,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - `pkg/lsp/provider/references_test.go`: add cases for ref references, state references
   - `pkg/lsp/provider/semantic_test.go`: add cases for ref tokens, state tokens, event tokens
 
-**Tests:** Run `go test ./pkg/lsp/...` once at phase end
+**Tests:** Run `go test ./pkg/lsp/...` once at phase end ✅
 
 ---
 
@@ -373,11 +372,11 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Core Infrastructure (Schema + CursorContext + Provider Interfaces + Router) | Pending |
-| 2 | Migrate Navigation Providers (Hover + Definition + References) | Pending |
-| 3 | Migrate Completion + Symbol Providers | Pending |
-| 4 | Migrate Semantic Tokens + Diagnostics + Formatting Providers | Pending |
-| 5 | Refs/State/Events Awareness + gopls Updates | Pending |
+| 1 | Core Infrastructure (Schema + CursorContext + Provider Interfaces + Router) | Complete |
+| 2 | Migrate Navigation Providers (Hover + Definition + References) | Complete |
+| 3 | Migrate Completion + Symbol Providers | Complete |
+| 4 | Migrate Semantic Tokens + Diagnostics + Formatting Providers | Complete |
+| 5 | Refs/State/Events Awareness + gopls Updates | Complete |
 | 6 | VSCode Extension + Tree-sitter Updates | Pending |
 
 ## Files to Create

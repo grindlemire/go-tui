@@ -171,7 +171,7 @@ templ Main() {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Create a server and test directly via handlers
+			// Create a server and test via router
 			server := NewServer(nil, nil)
 
 			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
@@ -182,10 +182,13 @@ templ Main() {
 				Position:     Position{Line: tt.line, Character: tt.character},
 			})
 
-			result, rpcErr := server.handleDefinition(params)
+			result, rpcErr := server.router.Route(Request{
+				Method: "textDocument/definition",
+				Params: params,
+			})
 
 			if rpcErr != nil {
-				t.Fatalf("handleDefinition error: %v", rpcErr)
+				t.Fatalf("definition error: %v", rpcErr)
 			}
 
 			if tt.wantDefined {
@@ -248,10 +251,13 @@ templ Hello() {
 				Position:     Position{Line: tt.line, Character: tt.character},
 			})
 
-			result, rpcErr := server.handleHover(params)
+			result, rpcErr := server.router.Route(Request{
+				Method: "textDocument/hover",
+				Params: params,
+			})
 
 			if rpcErr != nil {
-				t.Fatalf("handleHover error: %v", rpcErr)
+				t.Fatalf("hover error: %v", rpcErr)
 			}
 
 			if tt.wantHover {
@@ -322,14 +328,14 @@ templ Hello() {
 			}
 
 			params, _ := json.Marshal(completionParams)
-			result, rpcErr := server.handleCompletion(params)
+			result, rpcErr := server.router.Route(Request{Method: "textDocument/completion", Params: params})
 
 			if rpcErr != nil {
 				t.Fatalf("handleCompletion error: %v", rpcErr)
 			}
 
 			if tt.wantItems {
-				list, ok := result.(CompletionList)
+				list, ok := result.(*CompletionList)
 				if !ok {
 					t.Fatalf("expected CompletionList, got %T", result)
 				}
@@ -401,7 +407,7 @@ func helper() string {
 				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 			})
 
-			result, rpcErr := server.handleDocumentSymbol(params)
+			result, rpcErr := server.router.Route(Request{Method: "textDocument/documentSymbol", Params: params})
 
 			if rpcErr != nil {
 				t.Fatalf("handleDocumentSymbol error: %v", rpcErr)
@@ -490,7 +496,7 @@ templ HelloWorld() {
 				Query: tt.query,
 			})
 
-			result, rpcErr := server.handleWorkspaceSymbol(params)
+			result, rpcErr := server.router.Route(Request{Method: "workspace/symbol", Params: params})
 
 			if rpcErr != nil {
 				t.Fatalf("handleWorkspaceSymbol error: %v", rpcErr)
@@ -816,13 +822,13 @@ templ Hello() {
 			}
 
 			params, _ := json.Marshal(completionParams)
-			result, rpcErr := server.handleCompletion(params)
+			result, rpcErr := server.router.Route(Request{Method: "textDocument/completion", Params: params})
 
 			if rpcErr != nil {
 				t.Fatalf("handleCompletion error: %v", rpcErr)
 			}
 
-			list, ok := result.(CompletionList)
+			list, ok := result.(*CompletionList)
 			if !ok {
 				t.Fatalf("expected CompletionList, got %T", result)
 			}

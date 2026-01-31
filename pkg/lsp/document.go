@@ -3,6 +3,7 @@ package lsp
 import (
 	"sync"
 
+	"github.com/grindlemire/go-tui/pkg/lsp/provider"
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
@@ -137,23 +138,11 @@ func uriToPath(uri string) string {
 	return uri
 }
 
-// Position represents a position in a document (0-indexed).
-type Position struct {
-	Line      int `json:"line"`
-	Character int `json:"character"`
-}
-
-// Range represents a range in a document.
-type Range struct {
-	Start Position `json:"start"`
-	End   Position `json:"end"`
-}
-
-// Location represents a location in a document.
-type Location struct {
-	URI   string `json:"uri"`
-	Range Range  `json:"range"`
-}
+// Position, Range, and Location are type aliases for the canonical definitions
+// in the provider package, eliminating duplicate type definitions.
+type Position = provider.Position
+type Range = provider.Range
+type Location = provider.Location
 
 // PositionToOffset converts a Position to a byte offset in the content.
 func PositionToOffset(content string, pos Position) int {

@@ -24,6 +24,9 @@ type Server struct {
 	writer io.Writer
 	mu     sync.Mutex // protects writer
 
+	// Request routing
+	router *Router
+
 	// Document management
 	docs *DocumentManager
 
@@ -53,7 +56,7 @@ type Server struct {
 // NewServer creates a new LSP server that communicates over the given reader/writer.
 func NewServer(reader io.Reader, writer io.Writer) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &Server{
+	s := &Server{
 		reader:        bufio.NewReader(reader),
 		writer:        writer,
 		docs:          NewDocumentManager(),
@@ -63,6 +66,10 @@ func NewServer(reader io.Reader, writer io.Writer) *Server {
 		ctx:           ctx,
 		cancel:        cancel,
 	}
+	// Create provider registry for all LSP feature providers.
+	registry := s.CreateProviderRegistry()
+	s.router = NewRouter(s, registry)
+	return s
 }
 
 // SetLogFile sets a file for debug logging.
@@ -322,8 +329,8 @@ func (s *Server) handleMessage(msg []byte) ([]byte, error) {
 
 	log.Server("Handling method: %s", req.Method)
 
-	// Route to appropriate handler
-	result, rpcErr := s.route(req)
+	// Route to appropriate handler via router
+	result, rpcErr := s.router.Route(req)
 
 	// Notifications don't get responses
 	if req.ID == nil {

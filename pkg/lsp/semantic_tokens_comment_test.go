@@ -3,6 +3,8 @@ package lsp
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/grindlemire/go-tui/pkg/lsp/provider"
 )
 
 func TestCommentSemanticTokens(t *testing.T) {
@@ -118,24 +120,22 @@ templ Hello() {
 				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
 			})
 
-			result, rpcErr := server.handleSemanticTokensFull(params)
+			result, rpcErr := server.router.Route(Request{
+				Method: "textDocument/semanticTokens/full",
+				Params: params,
+			})
 
 			if rpcErr != nil {
-				t.Fatalf("handleSemanticTokensFull error: %v", rpcErr)
+				t.Fatalf("semantic tokens error: %v", rpcErr)
 			}
 
-			tokens, ok := result.(SemanticTokens)
+			tokens, ok := result.(*SemanticTokens)
 			if !ok {
-				t.Fatalf("expected SemanticTokens, got %T", result)
+				t.Fatalf("expected *SemanticTokens, got %T", result)
 			}
 
 			// Count comment tokens (every 5th value starting at index 3 is the token type)
-			commentCount := 0
-			for i := 3; i < len(tokens.Data); i += 5 {
-				if tokens.Data[i] == tokenTypeComment {
-					commentCount++
-				}
-			}
+			commentCount := countTokensByType(tokens.Data, provider.TokenTypeComment)
 
 			if commentCount < tt.wantTokens {
 				t.Errorf("got %d comment tokens, want at least %d", commentCount, tt.wantTokens)
@@ -186,13 +186,30 @@ templ Hello() {
 			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
 			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
-			tokens := server.collectSemanticTokens(doc)
+			params, _ := json.Marshal(SemanticTokensParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
+			})
 
-			// Find the comment token
-			var foundComment *semanticToken
-			for i := range tokens {
-				if tokens[i].tokenType == tokenTypeComment {
-					foundComment = &tokens[i]
+			result, rpcErr := server.router.Route(Request{
+				Method: "textDocument/semanticTokens/full",
+				Params: params,
+			})
+
+			if rpcErr != nil {
+				t.Fatalf("semantic tokens error: %v", rpcErr)
+			}
+
+			tokens, ok := result.(*SemanticTokens)
+			if !ok {
+				t.Fatalf("expected *SemanticTokens, got %T", result)
+			}
+
+			// Decode delta-encoded tokens to find the first comment token
+			decoded := decodeSemanticTokens(tokens.Data)
+			var foundComment *decodedToken
+			for i := range decoded {
+				if decoded[i].tokenType == provider.TokenTypeComment {
+					foundComment = &decoded[i]
 					break
 				}
 			}
@@ -254,15 +271,25 @@ templ Hello() {
 			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
 			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
-			tokens := server.collectSemanticTokens(doc)
+			params, _ := json.Marshal(SemanticTokensParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
+			})
 
-			// Count comment tokens
-			commentCount := 0
-			for i := range tokens {
-				if tokens[i].tokenType == tokenTypeComment {
-					commentCount++
-				}
+			result, rpcErr := server.router.Route(Request{
+				Method: "textDocument/semanticTokens/full",
+				Params: params,
+			})
+
+			if rpcErr != nil {
+				t.Fatalf("semantic tokens error: %v", rpcErr)
 			}
+
+			tokens, ok := result.(*SemanticTokens)
+			if !ok {
+				t.Fatalf("expected *SemanticTokens, got %T", result)
+			}
+
+			commentCount := countTokensByType(tokens.Data, provider.TokenTypeComment)
 
 			if commentCount != tt.wantTokens {
 				t.Errorf("got %d comment tokens, want %d", commentCount, tt.wantTokens)
@@ -305,13 +332,30 @@ templ Hello(x int) {
 			doc := server.docs.Open("file:///test.gsx", tt.content, 1)
 			server.index.IndexDocument("file:///test.gsx", doc.AST)
 
-			tokens := server.collectSemanticTokens(doc)
+			params, _ := json.Marshal(SemanticTokensParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
+			})
 
-			// Find comment tokens
-			var foundComment *semanticToken
-			for i := range tokens {
-				if tokens[i].tokenType == tokenTypeComment {
-					foundComment = &tokens[i]
+			result, rpcErr := server.router.Route(Request{
+				Method: "textDocument/semanticTokens/full",
+				Params: params,
+			})
+
+			if rpcErr != nil {
+				t.Fatalf("semantic tokens error: %v", rpcErr)
+			}
+
+			tokens, ok := result.(*SemanticTokens)
+			if !ok {
+				t.Fatalf("expected *SemanticTokens, got %T", result)
+			}
+
+			// Decode and find comment tokens
+			decoded := decodeSemanticTokens(tokens.Data)
+			var foundComment *decodedToken
+			for i := range decoded {
+				if decoded[i].tokenType == provider.TokenTypeComment {
+					foundComment = &decoded[i]
 					break
 				}
 			}
@@ -352,15 +396,25 @@ func helper() string {
 	doc := server.docs.Open("file:///test.gsx", content, 1)
 	server.index.IndexDocument("file:///test.gsx", doc.AST)
 
-	tokens := server.collectSemanticTokens(doc)
+	params, _ := json.Marshal(SemanticTokensParams{
+		TextDocument: TextDocumentIdentifier{URI: "file:///test.gsx"},
+	})
 
-	// Count comment tokens
-	commentCount := 0
-	for i := range tokens {
-		if tokens[i].tokenType == tokenTypeComment {
-			commentCount++
-		}
+	result, rpcErr := server.router.Route(Request{
+		Method: "textDocument/semanticTokens/full",
+		Params: params,
+	})
+
+	if rpcErr != nil {
+		t.Fatalf("semantic tokens error: %v", rpcErr)
 	}
+
+	tokens, ok := result.(*SemanticTokens)
+	if !ok {
+		t.Fatalf("expected *SemanticTokens, got %T", result)
+	}
+
+	commentCount := countTokensByType(tokens.Data, provider.TokenTypeComment)
 
 	// We expect at least 7 comments:
 	// 1. File leading
@@ -374,4 +428,61 @@ func helper() string {
 	if commentCount < expectedMin {
 		t.Errorf("got %d comment tokens, want at least %d", commentCount, expectedMin)
 	}
+}
+
+// --- Test helpers ---
+
+// decodedToken represents a semantic token decoded from LSP delta format.
+type decodedToken struct {
+	line      int
+	startChar int
+	length    int
+	tokenType int
+	modifiers int
+}
+
+// countTokensByType counts tokens of a given type in LSP delta-encoded data.
+func countTokensByType(data []int, tokenType int) int {
+	count := 0
+	for i := 3; i < len(data); i += 5 {
+		if data[i] == tokenType {
+			count++
+		}
+	}
+	return count
+}
+
+// decodeSemanticTokens decodes LSP delta-encoded semantic token data into
+// absolute positions.
+func decodeSemanticTokens(data []int) []decodedToken {
+	var tokens []decodedToken
+	prevLine := 0
+	prevChar := 0
+
+	for i := 0; i+4 < len(data); i += 5 {
+		deltaLine := data[i]
+		deltaChar := data[i+1]
+		length := data[i+2]
+		tokenType := data[i+3]
+		modifiers := data[i+4]
+
+		line := prevLine + deltaLine
+		startChar := deltaChar
+		if deltaLine == 0 {
+			startChar = prevChar + deltaChar
+		}
+
+		tokens = append(tokens, decodedToken{
+			line:      line,
+			startChar: startChar,
+			length:    length,
+			tokenType: tokenType,
+			modifiers: modifiers,
+		})
+
+		prevLine = line
+		prevChar = startChar
+	}
+
+	return tokens
 }

@@ -10,54 +10,6 @@ import (
 	"github.com/grindlemire/go-tui/pkg/tuigen"
 )
 
-// route dispatches a request to the appropriate handler.
-func (s *Server) route(req Request) (any, *Error) {
-	switch req.Method {
-	// Lifecycle
-	case "initialize":
-		return s.handleInitialize(req.Params)
-	case "initialized":
-		return s.handleInitialized()
-	case "shutdown":
-		return s.handleShutdown()
-	case "exit":
-		s.handleExit()
-		return nil, nil
-
-	// Document synchronization
-	case "textDocument/didOpen":
-		return s.handleDidOpen(req.Params)
-	case "textDocument/didChange":
-		return s.handleDidChange(req.Params)
-	case "textDocument/didClose":
-		return s.handleDidClose(req.Params)
-	case "textDocument/didSave":
-		return s.handleDidSave(req.Params)
-
-	// Language features
-	case "textDocument/definition":
-		return s.handleDefinition(req.Params)
-	case "textDocument/hover":
-		return s.handleHover(req.Params)
-	case "textDocument/completion":
-		return s.handleCompletion(req.Params)
-	case "textDocument/documentSymbol":
-		return s.handleDocumentSymbol(req.Params)
-	case "workspace/symbol":
-		return s.handleWorkspaceSymbol(req.Params)
-	case "textDocument/references":
-		return s.handleReferences(req.Params)
-	case "textDocument/formatting":
-		return s.handleFormatting(req.Params)
-	case "textDocument/semanticTokens/full":
-		return s.handleSemanticTokensFull(req.Params)
-
-	default:
-		log.Server("Unknown method: %s", req.Method)
-		return nil, &Error{Code: CodeMethodNotFound, Message: "Method not found: " + req.Method}
-	}
-}
-
 // InitializeParams represents the parameters for the initialize request.
 type InitializeParams struct {
 	ProcessID             *int               `json:"processId"`
@@ -207,7 +159,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 						"parameter",   // 4: parameters
 						"variable",    // 5: variables
 						"property",    // 6: attributes
-						"keyword",     // 7: keywords (@component, @for, etc.)
+						"keyword",     // 7: keywords (templ, @for, etc.)
 						"string",      // 8: strings
 						"number",      // 9: numbers
 						"operator",    // 10: operators
