@@ -312,34 +312,34 @@ templ Styled() {
 }
 `,
 		},
-		"named ref": {
+		"ref attribute": {
 			input: `package main
 
 templ App() {
-<div #Content class="flex-col"></div>
+<div ref={content} class="flex-col"></div>
 }
 `,
 			want: `package main
 
 templ App() {
-	<div #Content class="flex-col"></div>
+	<div ref={content} class="flex-col"></div>
 }
 `,
 		},
-		"named ref with children": {
+		"ref attribute with children": {
 			input: `package main
 
 templ App() {
-<div #Wrapper>
-<span #Title>Hello</span>
+<div ref={wrapper}>
+<span ref={title}>Hello</span>
 </div>
 }
 `,
 			want: `package main
 
 templ App() {
-	<div #Wrapper>
-		<span #Title>Hello</span>
+	<div ref={wrapper}>
+		<span ref={title}>Hello</span>
 	</div>
 }
 `,
@@ -795,12 +795,12 @@ templ Test() {
 }
 `,
 		},
-		"named ref in multi-line mode": {
+		"ref attribute in multi-line mode": {
 			input: `package main
 
 templ Test() {
 <div
-#Content
+ref={content}
 class="flex-col">
 <span>Hello</span>
 </div>
@@ -810,7 +810,7 @@ class="flex-col">
 
 templ Test() {
 	<div
-		#Content
+		ref={content}
 		class="flex-col">
 		<span>Hello</span>
 	</div>

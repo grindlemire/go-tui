@@ -127,10 +127,10 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// emits corresponding Go declarations with source mappings.
 	g.emitStateVarDeclarations(comp)
 
-	// Emit named ref variable declarations so gopls understands ref types.
-	// Scans component body for elements with #Name refs and emits
+	// Emit ref variable declarations so gopls understands ref types.
+	// Scans component body for elements with ref={} attributes and emits
 	// var declarations with the appropriate type.
-	g.emitNamedRefDeclarations(comp)
+	g.emitRefDeclarations(comp)
 
 	// Generate dummy assignments for all Go expressions in the body
 	g.generateNodes(comp.Body, 1)

@@ -27,10 +27,12 @@ templ SimpleCard(title string, content string) {
 	</div>
 }
 
-// Named ref example
+// Ref attribute example
 templ Layout(title string) {
-	<div #Main class="flex-col gap-1">
-		<span #Title class="font-bold">{title}</span>
+	main := tui.NewRef()
+	titleRef := tui.NewRef()
+	<div ref={main} class="flex-col gap-1">
+		<span ref={titleRef} class="font-bold">{title}</span>
 		<span>Body content</span>
 	</div>
 }

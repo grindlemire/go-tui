@@ -38,7 +38,7 @@ func TestGenerateVirtualGo_StateVarDeclarations(t *testing.T) {
 	}
 }
 
-func TestGenerateVirtualGo_NamedRefSimple(t *testing.T) {
+func TestGenerateVirtualGo_RefSimple(t *testing.T) {
 	file := &tuigen.File{
 		Package: "main",
 		Components: []*tuigen.Component{
@@ -48,8 +48,8 @@ func TestGenerateVirtualGo_NamedRefSimple(t *testing.T) {
 				ReturnType: "*element.Element",
 				Body: []tuigen.Node{
 					&tuigen.Element{
-						Tag:      "div",
-						NamedRef: "Header",
+						Tag:     "div",
+						RefExpr: &tuigen.GoExpr{Code: "header", Position: tuigen.Position{Line: 4, Column: 10}},
 						Position: tuigen.Position{Line: 4, Column: 2},
 					},
 				},
@@ -60,12 +60,12 @@ func TestGenerateVirtualGo_NamedRefSimple(t *testing.T) {
 	source, _ := GenerateVirtualGo(file)
 
 	// Simple ref should be *element.Element
-	if !strings.Contains(source, "var Header *element.Element") {
+	if !strings.Contains(source, "var header *element.Element") {
 		t.Errorf("expected virtual Go to contain simple ref declaration, got:\n%s", source)
 	}
 }
 
-func TestGenerateVirtualGo_NamedRefInLoop(t *testing.T) {
+func TestGenerateVirtualGo_RefInLoop(t *testing.T) {
 	file := &tuigen.File{
 		Package: "main",
 		Components: []*tuigen.Component{
@@ -81,8 +81,8 @@ func TestGenerateVirtualGo_NamedRefInLoop(t *testing.T) {
 						Position: tuigen.Position{Line: 4, Column: 2},
 						Body: []tuigen.Node{
 							&tuigen.Element{
-								Tag:      "span",
-								NamedRef: "Items",
+								Tag:     "span",
+								RefExpr: &tuigen.GoExpr{Code: "items", Position: tuigen.Position{Line: 5, Column: 14}},
 								Position: tuigen.Position{Line: 5, Column: 3},
 							},
 						},
@@ -95,12 +95,12 @@ func TestGenerateVirtualGo_NamedRefInLoop(t *testing.T) {
 	source, _ := GenerateVirtualGo(file)
 
 	// Loop ref should be []*element.Element
-	if !strings.Contains(source, "var Items []*element.Element") {
+	if !strings.Contains(source, "var items []*element.Element") {
 		t.Errorf("expected virtual Go to contain loop ref slice declaration, got:\n%s", source)
 	}
 }
 
-func TestGenerateVirtualGo_NamedRefKeyed(t *testing.T) {
+func TestGenerateVirtualGo_RefKeyed(t *testing.T) {
 	file := &tuigen.File{
 		Package: "main",
 		Components: []*tuigen.Component{
@@ -116,9 +116,9 @@ func TestGenerateVirtualGo_NamedRefKeyed(t *testing.T) {
 						Position: tuigen.Position{Line: 4, Column: 2},
 						Body: []tuigen.Node{
 							&tuigen.Element{
-								Tag:      "span",
-								NamedRef: "Users",
-								RefKey:   &tuigen.GoExpr{Code: "user.ID", Position: tuigen.Position{Line: 5, Column: 20}},
+								Tag:     "span",
+								RefExpr: &tuigen.GoExpr{Code: "users", Position: tuigen.Position{Line: 5, Column: 14}},
+								RefKey:  &tuigen.GoExpr{Code: "user.ID", Position: tuigen.Position{Line: 5, Column: 28}},
 								Position: tuigen.Position{Line: 5, Column: 3},
 							},
 						},
@@ -131,7 +131,7 @@ func TestGenerateVirtualGo_NamedRefKeyed(t *testing.T) {
 	source, _ := GenerateVirtualGo(file)
 
 	// Keyed ref should be map[string]*element.Element
-	if !strings.Contains(source, "var Users map[string]*element.Element") {
+	if !strings.Contains(source, "var users map[string]*element.Element") {
 		t.Errorf("expected virtual Go to contain keyed ref map declaration, got:\n%s", source)
 	}
 }

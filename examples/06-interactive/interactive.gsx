@@ -23,26 +23,26 @@ templ Counter() {
 	</div>
 }
 
-func increment(count *tui.State[int]) func() {
-	return func() {
+func increment(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(count.Get() + 1)
 	}
 }
 
-func decrement(count *tui.State[int]) func() {
-	return func() {
+func decrement(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(count.Get() - 1)
 	}
 }
 
-func reset(count *tui.State[int]) func() {
-	return func() {
+func reset(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(0)
 	}
 }
 
-func keyPress(count *tui.State[int]) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
+func keyPress(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
+	return func(el *tui.Element, e tui.KeyEvent) {
 		if e.Rune == '-' {
 			count.Set(count.Get() - 1)
 		} else if e.Rune == '+' {

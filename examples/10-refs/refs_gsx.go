@@ -9,14 +9,14 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleIncrement(count *tui.State[int]) func() {
-	return func() {
+func handleIncrement(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(count.Get() + 1)
 	}
 }
 
-func handleDecrement(count *tui.State[int]) func() {
-	return func() {
+func handleDecrement(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(count.Get() - 1)
 	}
 }
@@ -38,12 +38,11 @@ func Refs() RefsView {
 	var view RefsView
 	var watchers []tui.Watcher
 
-	var Counter *tui.Element
-	var IncrementBtn *tui.Element
-	var DecrementBtn *tui.Element
-	var Status *tui.Element
-
 	count := tui.NewState(0)
+	counter := tui.NewRef()
+	incrementBtn := tui.NewRef()
+	decrementBtn := tui.NewRef()
+	status := tui.NewRef()
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -60,74 +59,76 @@ func Refs() RefsView {
 		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	Counter = tui.New(
+	__tui_3 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 	)
-	__tui_3 := tui.New()
-	__tui_4 := tui.New(tui.WithText("Counter"))
+	counter.Set(__tui_3)
+	__tui_4 := tui.New()
+	__tui_5 := tui.New(tui.WithText("Counter"))
+	__tui_4.AddChild(__tui_5)
+	__tui_6 := tui.New(tui.WithText(fmt.Sprintf("%d", count.Get())))
+	__tui_4.AddChild(__tui_6)
 	__tui_3.AddChild(__tui_4)
-	__tui_5 := tui.New(tui.WithText(fmt.Sprintf("%d", count.Get())))
-	__tui_3.AddChild(__tui_5)
-	Counter.AddChild(__tui_3)
-	__tui_0.AddChild(Counter)
-	__tui_6 := tui.New(
+	__tui_0.AddChild(__tui_3)
+	__tui_7 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithWidthPercent(100.00),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	IncrementBtn = tui.New(
+	__tui_8 := tui.New(
+		tui.WithOnClick(handleIncrement(count)),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithPadding(1),
 		tui.WithWidth(10),
 		tui.WithHeight(5),
 	)
-	__tui_7 := tui.New(tui.WithText(" + "))
-	IncrementBtn.AddChild(__tui_7)
-	__tui_6.AddChild(IncrementBtn)
-	DecrementBtn = tui.New(
+	incrementBtn.Set(__tui_8)
+	__tui_9 := tui.New(tui.WithText(" + "))
+	__tui_8.AddChild(__tui_9)
+	__tui_7.AddChild(__tui_8)
+	__tui_10 := tui.New(
+		tui.WithOnClick(handleDecrement(count)),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithPadding(1),
 		tui.WithWidth(10),
 		tui.WithHeight(5),
 	)
-	__tui_8 := tui.New(tui.WithText(" - "))
-	DecrementBtn.AddChild(__tui_8)
-	__tui_6.AddChild(DecrementBtn)
-	__tui_0.AddChild(__tui_6)
-	Status = tui.New(
+	decrementBtn.Set(__tui_10)
+	__tui_11 := tui.New(tui.WithText(" - "))
+	__tui_10.AddChild(__tui_11)
+	__tui_7.AddChild(__tui_10)
+	__tui_0.AddChild(__tui_7)
+	__tui_12 := tui.New(
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_9 := tui.New(
+	status.Set(__tui_12)
+	__tui_13 := tui.New(
 		tui.WithText("Click buttons to update the counter"),
 	)
-	Status.AddChild(__tui_9)
-	__tui_0.AddChild(Status)
-	__tui_10 := tui.New(
+	__tui_12.AddChild(__tui_13)
+	__tui_0.AddChild(__tui_12)
+	__tui_14 := tui.New(
 		tui.WithText("Press q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_10)
-
-	// Attach handlers (deferred until refs are assigned)
-	IncrementBtn.SetOnClick(handleIncrement(count))
-	DecrementBtn.SetOnClick(handleDecrement(count))
+	__tui_0.AddChild(__tui_14)
 
 	// State bindings
 	count.Bind(func(_ int) {
-		__tui_5.SetText(fmt.Sprintf("%d", count.Get()))
+		__tui_6.SetText(fmt.Sprintf("%d", count.Get()))
 	})
 
 	view = RefsView{
 		Root:         __tui_0,
 		watchers:     watchers,
-		Counter:      Counter,
-		IncrementBtn: IncrementBtn,
-		DecrementBtn: DecrementBtn,
-		Status:       Status,
+		Counter:      counter.El(),
+		IncrementBtn: incrementBtn.El(),
+		DecrementBtn: decrementBtn.El(),
+		Status:       status.El(),
 	}
 	return view
 }

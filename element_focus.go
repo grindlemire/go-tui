@@ -22,7 +22,7 @@ func (e *Element) Focus() {
 	debug.Log("Element.Focus: text=%q", e.text)
 	e.focused = true
 	if e.onFocus != nil {
-		e.onFocus()
+		e.onFocus(e)
 	}
 	for _, child := range e.children {
 		child.Focus()
@@ -34,7 +34,7 @@ func (e *Element) Focus() {
 func (e *Element) Blur() {
 	e.focused = false
 	if e.onBlur != nil {
-		e.onBlur()
+		e.onBlur(e)
 	}
 	for _, child := range e.children {
 		child.Blur()
@@ -49,38 +49,43 @@ func (e *Element) SetFocusable(focusable bool) {
 // --- Event Handler API ---
 
 // SetOnKeyPress sets a handler for key press events.
+// The handler receives the element as its first parameter (self-inject).
 // No return value needed - mutations mark dirty automatically via MarkDirty().
 // Implicitly sets focusable = true so the element can receive keyboard events.
-func (e *Element) SetOnKeyPress(fn func(KeyEvent)) {
+func (e *Element) SetOnKeyPress(fn func(*Element, KeyEvent)) {
 	e.focusable = true
 	e.onKeyPress = fn
 }
 
 // SetOnClick sets a handler for click events.
+// The handler receives the element as its first parameter (self-inject).
 // No return value needed - mutations mark dirty automatically via MarkDirty().
 // Implicitly sets focusable = true so the element can receive mouse and keyboard events.
-func (e *Element) SetOnClick(fn func()) {
+func (e *Element) SetOnClick(fn func(*Element)) {
 	e.focusable = true
 	e.onClick = fn
 }
 
 // SetOnEvent sets the event handler for this element.
+// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
-func (e *Element) SetOnEvent(fn func(Event) bool) {
+func (e *Element) SetOnEvent(fn func(*Element, Event) bool) {
 	e.focusable = true
 	e.onEvent = fn
 }
 
 // SetOnFocus sets a handler that's called when this element gains focus.
+// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
-func (e *Element) SetOnFocus(fn func()) {
+func (e *Element) SetOnFocus(fn func(*Element)) {
 	e.focusable = true
 	e.onFocus = fn
 }
 
 // SetOnBlur sets a handler that's called when this element loses focus.
+// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
-func (e *Element) SetOnBlur(fn func()) {
+func (e *Element) SetOnBlur(fn func(*Element)) {
 	e.focusable = true
 	e.onBlur = fn
 }
@@ -93,7 +98,7 @@ func (e *Element) HandleEvent(event Event) bool {
 	// First, let user handler try to consume the event (legacy bool-returning handler)
 	if e.onEvent != nil {
 		debug.Log("Element.HandleEvent: calling onEvent handler")
-		if e.onEvent(event) {
+		if e.onEvent(e, event) {
 			debug.Log("Element.HandleEvent: onEvent consumed event")
 			return true
 		}
@@ -104,7 +109,7 @@ func (e *Element) HandleEvent(event Event) bool {
 		debug.Log("Element.HandleEvent: KeyEvent key=%d rune=%c", keyEvent.Key, keyEvent.Rune)
 		if e.onKeyPress != nil {
 			debug.Log("Element.HandleEvent: calling onKeyPress handler")
-			e.onKeyPress(keyEvent)
+			e.onKeyPress(e, keyEvent)
 			// Note: new-style handlers don't return bool, so we continue processing
 			// The handler will mark dirty via mutations if needed
 		}
@@ -112,7 +117,7 @@ func (e *Element) HandleEvent(event Event) bool {
 		// Trigger onClick on Enter or Space when focused
 		if e.onClick != nil && (keyEvent.Key == KeyEnter || keyEvent.Rune == ' ') {
 			debug.Log("Element.HandleEvent: triggering onClick via Enter/Space")
-			e.onClick()
+			e.onClick(e)
 			return true
 		}
 	}
@@ -124,7 +129,7 @@ func (e *Element) HandleEvent(event Event) bool {
 		if mouseEvent.Button == MouseLeft && mouseEvent.Action == MousePress {
 			if e.onClick != nil {
 				debug.Log("Element.HandleEvent: triggering onClick via mouse click")
-				e.onClick()
+				e.onClick(e)
 				return true
 			}
 			// Bubble up to parent if we didn't handle it

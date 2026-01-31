@@ -367,7 +367,7 @@ func TestElement_UserHandlerCalledFirst(t *testing.T) {
 	e := New(
 		WithHeight(10),
 		WithScrollable(ScrollVertical),
-		WithOnEvent(func(event Event) bool {
+		WithOnEvent(func(_ *Element, event Event) bool {
 			handlerCalled = true
 			return true // Consume the event
 		}),

@@ -7,7 +7,7 @@ import (
 // --- Focus Tests ---
 
 func TestElement_WithOnFocus_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnFocus(func() {}))
+	e := New(WithOnFocus(func(*Element) {}))
 
 	if !e.IsFocusable() {
 		t.Error("WithOnFocus should set focusable = true")
@@ -15,7 +15,7 @@ func TestElement_WithOnFocus_ImpliesFocusable(t *testing.T) {
 }
 
 func TestElement_WithOnBlur_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnBlur(func() {}))
+	e := New(WithOnBlur(func(*Element) {}))
 
 	if !e.IsFocusable() {
 		t.Error("WithOnBlur should set focusable = true")
@@ -23,7 +23,7 @@ func TestElement_WithOnBlur_ImpliesFocusable(t *testing.T) {
 }
 
 func TestElement_WithOnEvent_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnEvent(func(Event) bool { return false }))
+	e := New(WithOnEvent(func(*Element, Event) bool { return false }))
 
 	if !e.IsFocusable() {
 		t.Error("WithOnEvent should set focusable = true")
@@ -32,7 +32,7 @@ func TestElement_WithOnEvent_ImpliesFocusable(t *testing.T) {
 
 func TestElement_Focus_SetsAndCallsCallback(t *testing.T) {
 	focusCalled := false
-	e := New(WithOnFocus(func() { focusCalled = true }))
+	e := New(WithOnFocus(func(*Element) { focusCalled = true }))
 
 	if e.IsFocused() {
 		t.Error("element should not be focused initially")
@@ -50,7 +50,7 @@ func TestElement_Focus_SetsAndCallsCallback(t *testing.T) {
 
 func TestElement_Blur_ClearsAndCallsCallback(t *testing.T) {
 	blurCalled := false
-	e := New(WithOnBlur(func() { blurCalled = true }))
+	e := New(WithOnBlur(func(*Element) { blurCalled = true }))
 
 	// First focus, then blur
 	e.Focus()
@@ -65,7 +65,7 @@ func TestElement_Blur_ClearsAndCallsCallback(t *testing.T) {
 }
 
 func TestElement_Focus_CascadesToChildren(t *testing.T) {
-	parent := New(WithOnFocus(func() {}))
+	parent := New(WithOnFocus(func(*Element) {}))
 	child := New()
 	grandchild := New()
 
@@ -86,7 +86,7 @@ func TestElement_Focus_CascadesToChildren(t *testing.T) {
 }
 
 func TestElement_Blur_CascadesToChildren(t *testing.T) {
-	parent := New(WithOnBlur(func() {}))
+	parent := New(WithOnBlur(func(*Element) {}))
 	child := New()
 	grandchild := New()
 
@@ -112,8 +112,8 @@ func TestElement_Focus_ChildCallbacksCalled(t *testing.T) {
 	parentFocusCalled := false
 	childFocusCalled := false
 
-	parent := New(WithOnFocus(func() { parentFocusCalled = true }))
-	child := New(WithOnFocus(func() { childFocusCalled = true }))
+	parent := New(WithOnFocus(func(*Element) { parentFocusCalled = true }))
+	child := New(WithOnFocus(func(*Element) { childFocusCalled = true }))
 
 	parent.AddChild(child)
 	parent.Focus()
@@ -130,8 +130,8 @@ func TestElement_Blur_ChildCallbacksCalled(t *testing.T) {
 	parentBlurCalled := false
 	childBlurCalled := false
 
-	parent := New(WithOnBlur(func() { parentBlurCalled = true }))
-	child := New(WithOnBlur(func() { childBlurCalled = true }))
+	parent := New(WithOnBlur(func(*Element) { parentBlurCalled = true }))
+	child := New(WithOnBlur(func(*Element) { childBlurCalled = true }))
 
 	parent.AddChild(child)
 	parent.Focus()

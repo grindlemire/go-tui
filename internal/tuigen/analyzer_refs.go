@@ -5,45 +5,61 @@ import (
 	"unicode"
 )
 
-// validateNamedRefs validates named element references in a component.
+// validateRefs validates element references declared via ref={} in a component.
 // It checks for:
-// - Valid Go identifiers (PascalCase required)
-// - Reserved name 'Root'
+// - Valid Go identifiers (lowercase, regular Go variable names)
+// - Reserved export name 'Root' (capitalized ref name must not be "Root")
 // - Unique names within the component
 // - key attribute only valid inside @for loops
-func (a *Analyzer) validateNamedRefs(comp *Component) []NamedRef {
+// - Determines ref kind from context (single, list, or map)
+func (a *Analyzer) validateRefs(comp *Component) []RefInfo {
 	names := make(map[string]Position)
-	var refs []NamedRef
+	var refs []RefInfo
 
 	var check func(nodes []Node, inLoop, inConditional bool)
 	check = func(nodes []Node, inLoop, inConditional bool) {
 		for _, node := range nodes {
 			switch n := node.(type) {
 			case *Element:
-				if n.NamedRef != "" {
-					// Must be valid Go identifier starting with uppercase
-					if !isValidRefName(n.NamedRef) {
+				if n.RefExpr != nil {
+					refName := n.RefExpr.Code
+
+					// Must be a simple identifier (no dots, parens, etc.)
+					if !isSimpleIdentifier(refName) {
 						a.errors.AddErrorf(n.Position,
-							"invalid ref name %q - must be valid Go identifier starting with uppercase letter",
-							n.NamedRef)
+							"ref expression must be a simple identifier, got %q",
+							refName)
 					}
-					// Reserved name check
-					if n.NamedRef == "Root" {
-						a.errors.AddErrorf(n.Position, "ref name 'Root' is reserved")
+
+					// Generate export name by capitalizing first letter
+					exportName := capitalizeFirst(refName)
+
+					// Reserved name check (export name must not be "Root")
+					if exportName == "Root" {
+						a.errors.AddErrorf(n.Position, "ref name %q is reserved (capitalizes to 'Root')", refName)
 					}
+
 					// Must be unique
-					if prev, exists := names[n.NamedRef]; exists {
+					if prev, exists := names[refName]; exists {
 						a.errors.AddErrorf(n.Position,
 							"duplicate ref name %q (first defined at %s)",
-							n.NamedRef, prev)
+							refName, prev)
 					}
-					names[n.NamedRef] = n.Position
+					names[refName] = n.Position
 
-					ref := NamedRef{
-						Name:          n.NamedRef,
+					// Determine ref kind from context
+					kind := RefSingle
+					if inLoop {
+						kind = RefList
+					}
+
+					ref := RefInfo{
+						Name:          refName,
+						ExportName:    exportName,
 						Element:       n,
 						InLoop:        inLoop,
 						InConditional: inConditional,
+						RefKind:       kind,
 						Position:      n.Position,
 					}
 
@@ -52,10 +68,11 @@ func (a *Analyzer) validateNamedRefs(comp *Component) []NamedRef {
 						if !inLoop {
 							a.errors.AddErrorf(n.Position,
 								"key attribute on ref %q only valid inside @for loop",
-								n.NamedRef)
+								refName)
 						}
 						ref.KeyExpr = n.RefKey.Code
 						ref.KeyType = a.inferKeyType(n.RefKey.Code)
+						ref.RefKind = RefMap
 					}
 
 					refs = append(refs, ref)
@@ -84,23 +101,14 @@ func (a *Analyzer) validateNamedRefs(comp *Component) []NamedRef {
 	return refs
 }
 
-// isValidRefName checks if a name is a valid Go identifier starting with uppercase.
-func isValidRefName(name string) bool {
-	if len(name) == 0 {
-		return false
+// capitalizeFirst returns the string with its first letter capitalized.
+func capitalizeFirst(s string) string {
+	if len(s) == 0 {
+		return s
 	}
-	// First character must be uppercase letter
-	first := rune(name[0])
-	if !unicode.IsUpper(first) {
-		return false
-	}
-	// Rest must be letters, digits, or underscores
-	for _, ch := range name[1:] {
-		if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '_' {
-			return false
-		}
-	}
-	return true
+	runes := []rune(s)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
 
 // inferKeyType attempts to infer the type of a key expression.
@@ -118,10 +126,10 @@ func (a *Analyzer) inferKeyType(expr string) string {
 	return "string"
 }
 
-// CollectNamedRefs collects all named refs from a component.
-// This is used by the generator to determine struct fields.
-func (a *Analyzer) CollectNamedRefs(comp *Component) []NamedRef {
-	return a.validateNamedRefs(comp)
+// CollectRefs collects all refs from a component.
+// This is used by the generator to determine struct fields and ref bindings.
+func (a *Analyzer) CollectRefs(comp *Component) []RefInfo {
+	return a.validateRefs(comp)
 }
 
 // collectLetBindings traverses nodes to collect all @let binding names.

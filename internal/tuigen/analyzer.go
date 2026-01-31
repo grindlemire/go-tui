@@ -25,14 +25,25 @@ type StateBinding struct {
 }
 
 
-// NamedRef tracks information about a named element reference.
-type NamedRef struct {
-	Name          string
+// RefKind describes how a ref should be generated.
+type RefKind int
+
+const (
+	RefSingle RefKind = iota // Single ref: tui.NewRef()
+	RefList                  // Loop ref without key: tui.NewRefList()
+	RefMap                   // Loop ref with key: tui.NewRefMap[K]()
+)
+
+// RefInfo tracks information about an element reference declared via ref={}.
+type RefInfo struct {
+	Name          string   // Variable name from ref={name} (e.g., "content")
+	ExportName    string   // Capitalized for View struct (e.g., "Content")
 	Element       *Element
-	InLoop        bool   // true = generate slice or map type
-	InConditional bool   // true = may be nil at runtime
-	KeyExpr       string // if set, generate map[KeyType]*element.Element
-	KeyType       string // inferred type of key expression (e.g., "string", "int")
+	InLoop        bool     // true = generate slice or map type
+	InConditional bool     // true = may be nil at runtime
+	KeyExpr       string   // if set, generate map[KeyType]*element.Element
+	KeyType       string   // inferred type of key expression (e.g., "string", "int")
+	RefKind       RefKind  // RefSingle, RefList, RefMap
 	Position      Position
 }
 
@@ -150,6 +161,10 @@ var knownAttributes = map[string]bool{
 
 	// State reactive bindings
 	"deps": true, // explicit dependencies for reactive bindings
+
+	// Element refs
+	"ref": true, // ref={varName} for element references
+	"key": true, // key={expr} for map-based refs in loops
 }
 
 // stateNewStateRegex matches tui.NewState(...) declarations.
@@ -210,9 +225,9 @@ func (a *Analyzer) Analyze(file *File) error {
 		comp.Body = a.transformElementRefs(comp.Body)
 	}
 
-	// Fourth pass: validate named refs
+	// Fourth pass: validate refs
 	for _, comp := range file.Components {
-		a.validateNamedRefs(comp)
+		a.validateRefs(comp)
 	}
 
 	// Fifth pass: validate elements and attributes

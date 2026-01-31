@@ -56,8 +56,8 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 	switch ctx.NodeKind {
 	case NodeKindComponentCall:
 		return d.definitionComponentCall(ctx)
-	case NodeKindNamedRef:
-		return d.definitionNamedRef(ctx)
+	case NodeKindRefAttr:
+		return d.definitionRefAttr(ctx)
 	case NodeKindEventHandler:
 		return d.definitionEventHandler(ctx)
 	case NodeKindParameter:
@@ -69,9 +69,9 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		}
 		// Fall through to gopls for unresolved state references
 	case NodeKindGoExpr:
-		// Check named refs in scope before deferring to gopls (which would
-		// return the element tag position from generated code, not #Name).
-		if locs := d.definitionNamedRefFromScope(ctx); len(locs) > 0 {
+		// Check refs in scope before deferring to gopls (which would
+		// return the element tag position from generated code, not the ref site).
+		if locs := d.definitionRefFromScope(ctx); len(locs) > 0 {
 			return locs, nil
 		}
 		// Fall through to gopls
@@ -162,22 +162,22 @@ func (d *definitionProvider) definitionComponentCall(ctx *CursorContext) ([]Loca
 	return nil, nil
 }
 
-// definitionNamedRefFromScope checks if the word under the cursor matches a
-// named ref in the component scope and returns its #Name definition position.
-func (d *definitionProvider) definitionNamedRefFromScope(ctx *CursorContext) []Location {
+// definitionRefFromScope checks if the word under the cursor matches a
+// ref variable in the component scope and returns its ref={} definition position.
+func (d *definitionProvider) definitionRefFromScope(ctx *CursorContext) []Location {
 	if ctx.Scope.Component == nil {
 		return nil
 	}
-	for _, ref := range ctx.Scope.NamedRefs {
+	for _, ref := range ctx.Scope.Refs {
 		if ref.Name == ctx.Word && ref.Element != nil {
-			lineIdx, charIdx, found := findNamedRefPosition(ctx.Document.Content, ref.Element)
+			lineIdx, charIdx, found := findRefAttrPosition(ctx.Document.Content, ref.Element)
 			if found {
-				hashRef := "#" + ref.Name
+				refAttr := "ref={" + ref.Name + "}"
 				return []Location{{
 					URI: ctx.Document.URI,
 					Range: Range{
 						Start: Position{Line: lineIdx, Character: charIdx},
-						End:   Position{Line: lineIdx, Character: charIdx + len(hashRef)},
+						End:   Position{Line: lineIdx, Character: charIdx + len(refAttr)},
 					},
 				}}
 			}
@@ -186,39 +186,49 @@ func (d *definitionProvider) definitionNamedRefFromScope(ctx *CursorContext) []L
 	return nil
 }
 
-func (d *definitionProvider) definitionNamedRef(ctx *CursorContext) ([]Location, error) {
+func (d *definitionProvider) definitionRefAttr(ctx *CursorContext) ([]Location, error) {
 	elem, ok := ctx.Node.(*tuigen.Element)
-	if !ok || elem == nil || elem.NamedRef == "" {
+	if !ok || elem == nil || elem.RefExpr == nil {
 		return nil, nil
 	}
 
-	lineIdx, charIdx, found := findNamedRefPosition(ctx.Document.Content, elem)
+	refName := elem.RefExpr.Code
+
+	// Try to find the variable declaration (e.g., content := tui.NewRef())
+	if ctx.Scope.Component != nil && ctx.Document.AST != nil {
+		if loc := d.findGoCodeVariableDefinition(ctx, refName); loc != nil {
+			return []Location{*loc}, nil
+		}
+	}
+
+	// Fall back to pointing to the ref={} attribute itself
+	lineIdx, charIdx, found := findRefAttrPosition(ctx.Document.Content, elem)
 	if !found {
 		// Fallback to element tag position
 		lineIdx = elem.Position.Line - 1
 		charIdx = elem.Position.Column - 1
 	}
 
-	hashRef := "#" + elem.NamedRef
+	refAttr := "ref={" + refName + "}"
 	return []Location{{
 		URI: ctx.Document.URI,
 		Range: Range{
 			Start: Position{Line: lineIdx, Character: charIdx},
-			End:   Position{Line: lineIdx, Character: charIdx + len(hashRef)},
+			End:   Position{Line: lineIdx, Character: charIdx + len(refAttr)},
 		},
 	}}, nil
 }
 
-// findNamedRefPosition finds the source position of #Name for an element.
+// findRefAttrPosition finds the source position of ref={name} for an element.
 // Searches from the element's tag line through subsequent lines to handle
-// multiline elements where #Name is on its own line.
+// multiline elements where ref={} is on its own line.
 // Returns 0-indexed line and column.
-func findNamedRefPosition(content string, elem *tuigen.Element) (line, col int, found bool) {
-	if elem == nil || elem.NamedRef == "" {
+func findRefAttrPosition(content string, elem *tuigen.Element) (line, col int, found bool) {
+	if elem == nil || elem.RefExpr == nil {
 		return 0, 0, false
 	}
 
-	hashRef := "#" + elem.NamedRef
+	refAttr := "ref={" + elem.RefExpr.Code + "}"
 	lines := strings.Split(content, "\n")
 	startLine := elem.Position.Line - 1 // 0-indexed
 
@@ -228,7 +238,7 @@ func findNamedRefPosition(content string, elem *tuigen.Element) (line, col int, 
 	}
 
 	for lineIdx := startLine; lineIdx < maxSearch; lineIdx++ {
-		idx := strings.Index(lines[lineIdx], hashRef)
+		idx := strings.Index(lines[lineIdx], refAttr)
 		if idx >= 0 {
 			return lineIdx, idx, true
 		}

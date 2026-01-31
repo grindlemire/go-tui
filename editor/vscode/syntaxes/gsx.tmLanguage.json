@@ -213,17 +213,8 @@
         "1": { "name": "punctuation.definition.tag.end.gsx" }
       },
       "patterns": [
-        { "include": "#named-ref" },
         { "include": "#attributes" }
       ]
-    },
-    "named-ref": {
-      "name": "meta.named-ref.gsx",
-      "match": "(#)([A-Z][a-zA-Z0-9_]*)",
-      "captures": {
-        "1": { "name": "punctuation.definition.named-ref.gsx" },
-        "2": { "name": "entity.name.tag.named-ref.gsx" }
-      }
     },
     "element-close-tag": {
       "name": "meta.element.close-tag.gsx",
@@ -236,6 +227,26 @@
     },
     "attributes": {
       "patterns": [
+        {
+          "comment": "Ref attribute: ref={varName}",
+          "name": "meta.attribute.ref.gsx",
+          "begin": "(ref)\\s*(=)\\s*(\\{)",
+          "end": "(\\})",
+          "beginCaptures": {
+            "1": { "name": "entity.other.attribute-name.ref.gsx" },
+            "2": { "name": "punctuation.separator.key-value.gsx" },
+            "3": { "name": "punctuation.definition.expression.begin.gsx" }
+          },
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.expression.end.gsx" }
+          },
+          "patterns": [
+            {
+              "match": "[a-zA-Z_][a-zA-Z0-9_]*",
+              "name": "variable.other.ref.gsx"
+            }
+          ]
+        },
         {
           "comment": "Event handler attribute with expression value: onClick={handler}",
           "name": "meta.attribute.event.gsx",

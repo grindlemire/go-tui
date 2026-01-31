@@ -73,7 +73,7 @@ func TestElement_SetOnKeyPress(t *testing.T) {
 	var receivedEvent KeyEvent
 	e := New()
 
-	e.SetOnKeyPress(func(event KeyEvent) {
+	e.SetOnKeyPress(func(_ *Element, event KeyEvent) {
 		receivedEvent = event
 	})
 
@@ -90,7 +90,7 @@ func TestElement_SetOnClick(t *testing.T) {
 	clickCalled := false
 	e := New()
 
-	e.SetOnClick(func() {
+	e.SetOnClick(func(_ *Element) {
 		clickCalled = true
 	})
 
@@ -101,14 +101,14 @@ func TestElement_SetOnClick(t *testing.T) {
 	}
 
 	// Call the handler directly to verify it works
-	e.onClick()
+	e.onClick(e)
 	if !clickCalled {
 		t.Error("onClick handler should be callable")
 	}
 }
 
 func TestElement_WithOnKeyPress_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnKeyPress(func(KeyEvent) {}))
+	e := New(WithOnKeyPress(func(*Element, KeyEvent) {}))
 
 	if !e.IsFocusable() {
 		t.Error("WithOnKeyPress should set focusable = true")
@@ -116,7 +116,7 @@ func TestElement_WithOnKeyPress_ImpliesFocusable(t *testing.T) {
 }
 
 func TestElement_WithOnClick_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnClick(func() {}))
+	e := New(WithOnClick(func(*Element) {}))
 
 	if !e.IsFocusable() {
 		t.Error("WithOnClick should set focusable = true")
@@ -295,7 +295,7 @@ func TestElement_HandleEvent_CallsOnKeyPress(t *testing.T) {
 	handlerCalled := false
 	var receivedEvent KeyEvent
 
-	e := New(WithOnKeyPress(func(event KeyEvent) {
+	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) {
 		handlerCalled = true
 		receivedEvent = event
 	}))

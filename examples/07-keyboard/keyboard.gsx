@@ -28,8 +28,8 @@ templ Keyboard() {
 	</div>
 }
 
-func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
+func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
+	return func(el *tui.Element, e tui.KeyEvent) {
 		keyCount.Set(keyCount.Get() + 1)
 
 		if e.Rune != 0 {

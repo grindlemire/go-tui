@@ -204,8 +204,9 @@ func WithTextAlign(align TextAlign) Option {
 // --- Focus Options ---
 
 // WithOnFocus sets the callback for when this element gains focus.
+// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
-func WithOnFocus(fn func()) Option {
+func WithOnFocus(fn func(*Element)) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.onFocus = fn
@@ -213,8 +214,9 @@ func WithOnFocus(fn func()) Option {
 }
 
 // WithOnBlur sets the callback for when this element loses focus.
+// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
-func WithOnBlur(fn func()) Option {
+func WithOnBlur(fn func(*Element)) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.onBlur = fn
@@ -222,8 +224,9 @@ func WithOnBlur(fn func()) Option {
 }
 
 // WithOnEvent sets the event handler for this element.
+// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
-func WithOnEvent(fn func(Event) bool) Option {
+func WithOnEvent(fn func(*Element, Event) bool) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.onEvent = fn
@@ -240,9 +243,10 @@ func WithFocusable(focusable bool) Option {
 // --- Event Handler Options ---
 
 // WithOnKeyPress sets the key press handler.
+// The handler receives the element as its first parameter (self-inject).
 // No return value needed - mutations mark dirty automatically via MarkDirty().
 // Implicitly sets focusable = true.
-func WithOnKeyPress(fn func(KeyEvent)) Option {
+func WithOnKeyPress(fn func(*Element, KeyEvent)) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.onKeyPress = fn
@@ -250,9 +254,10 @@ func WithOnKeyPress(fn func(KeyEvent)) Option {
 }
 
 // WithOnClick sets the click handler.
+// The handler receives the element as its first parameter (self-inject).
 // No return value needed - mutations mark dirty automatically via MarkDirty().
 // Implicitly sets focusable = true.
-func WithOnClick(fn func()) Option {
+func WithOnClick(fn func(*Element)) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.onClick = fn

@@ -136,30 +136,25 @@ func (p *Parser) parseElement() *Element {
 	}
 	p.advance()
 
-	// Check for #Name (named ref) — track position for multi-line detection
-	// Skip newlines to support #Name on its own line in multi-line mode
-	namedRefLine := pos.Line
-	p.skipNewlines()
-	if p.current.Type == TokenHash {
-		p.advance() // consume #
-		if p.current.Type != TokenIdent {
-			p.errors.AddError(p.position(), "expected identifier after '#' for named ref")
-			return nil
-		}
-		namedRefLine = p.current.Line
-		elem.NamedRef = p.current.Literal
-		p.advance()
-	}
-
-	// Parse attributes
+	// Parse attributes (ref={} and key={} are parsed as regular attributes, then extracted)
 	elem.Attributes = p.parseAttributes()
 
 	// Detect multi-line attributes from source positions
 	if len(elem.Attributes) > 0 {
 		lastAttr := elem.Attributes[len(elem.Attributes)-1]
 		elem.MultiLineAttrs = lastAttr.Position.Line != pos.Line
-	} else if elem.NamedRef != "" {
-		elem.MultiLineAttrs = namedRefLine != pos.Line
+	}
+
+	// Extract ref={expr} attribute and move it to RefExpr
+	for i, attr := range elem.Attributes {
+		if attr.Name == "ref" {
+			if expr, ok := attr.Value.(*GoExpr); ok {
+				elem.RefExpr = expr
+				// Remove ref from attributes
+				elem.Attributes = append(elem.Attributes[:i], elem.Attributes[i+1:]...)
+				break
+			}
+		}
 	}
 
 	// Check for key={expr} attribute and move it to RefKey
@@ -178,8 +173,6 @@ func (p *Parser) parseElement() *Element {
 	lastLineBeforeBracket := pos.Line
 	if len(elem.Attributes) > 0 {
 		lastLineBeforeBracket = elem.Attributes[len(elem.Attributes)-1].Position.Line
-	} else if elem.NamedRef != "" {
-		lastLineBeforeBracket = namedRefLine
 	}
 
 	// Check for self-closing or opening tag

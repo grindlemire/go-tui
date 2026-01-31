@@ -137,13 +137,13 @@ func createBox(label string, color tui.Color) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithAlign(tui.AlignCenter),
-		tui.WithOnFocus(func() {
+		tui.WithOnFocus(func(el *tui.Element) {
 			box.SetBorderStyle(focusedStyle)
 			box.SetBorder(tui.BorderDouble)
 			// Make label bold when focused
 			labelElem.SetTextStyle(tui.NewStyle().Foreground(tui.White).Bold())
 		}),
-		tui.WithOnBlur(func() {
+		tui.WithOnBlur(func(el *tui.Element) {
 			box.SetBorderStyle(normalStyle)
 			box.SetBorder(tui.BorderSingle)
 			// Revert label style when blurred

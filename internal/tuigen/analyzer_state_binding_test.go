@@ -248,10 +248,10 @@ templ Static() {
 	}
 }
 
-func TestAnalyzer_DetectStateBindings_WithNamedRef(t *testing.T) {
+func TestAnalyzer_DetectStateBindings_WithRef(t *testing.T) {
 	input := `package x
 templ Counter(count *tui.State[int]) {
-	<span #Label>{count.Get()}</span>
+	<span ref={label}>{count.Get()}</span>
 }`
 
 	l := NewLexer("test.gsx", input)
@@ -270,8 +270,9 @@ templ Counter(count *tui.State[int]) {
 	}
 
 	b := bindings[0]
-	if b.ElementName != "Label" {
-		t.Errorf("ElementName = %q, want 'Label'", b.ElementName)
+	// All elements use auto-generated variable names now
+	if b.ElementName != "__tui_0" {
+		t.Errorf("ElementName = %q, want '__tui_0'", b.ElementName)
 	}
 }
 

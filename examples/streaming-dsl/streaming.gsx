@@ -7,14 +7,15 @@ import (
 )
 
 // StreamApp - fully declarative with onChannel and onTimer in DSL
-// Content ref is forward-declared, so handlers can reference it
+// content ref is declared explicitly for cross-element access
 templ StreamApp(dataCh <-chan string) {
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
+	content := tui.NewRef()
 	<div
 		class="flex-col"
 		onTimer={tui.OnTimer(time.Second, tickElapsed(elapsed))}
-		onChannel={tui.Watch(dataCh, addLine(lineCount, Content))}>
+		onChannel={tui.Watch(dataCh, addLine(lineCount, content))}>
 		// Header
 		<div
 			class="border-blue"
@@ -26,16 +27,16 @@ templ StreamApp(dataCh <-chan string) {
 			<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k to scroll, q to quit"}</span>
 		</div>
 
-		// Content area with named ref
+		// Content area with ref
 		<div
-			#Content
+			ref={content}
 			class="flex-col border-cyan"
 			border={tui.BorderSingle}
 			flexGrow={1}
 			scrollable={tui.ScrollVertical}
 			focusable={true}
-			onKeyPress={handleScrollKeys(Content)}
-			onEvent={handleEvent(Content)}></div>
+			onKeyPress={handleScrollKeys}
+			onEvent={handleEvent}></div>
 
 		// Footer with reactive state (auto-updates when lineCount/elapsed change)
 		<div
@@ -58,47 +59,44 @@ func tickElapsed(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
-		stayAtBottom := content.IsAtBottom()
+		el := content.El()
+		stayAtBottom := el.IsAtBottom()
 
 		lineElem := tui.New(
 			tui.WithText(line),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
-		content.AddChild(lineElem)
+		el.AddChild(lineElem)
 
 		if stayAtBottom {
-			content.ScrollToBottom()
+			el.ScrollToBottom()
 		}
 	}
 }
 
-func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
-		switch e.Rune {
-		case 'j':
-			content.ScrollBy(0, 1)
-		case 'k':
-			content.ScrollBy(0, -1)
-		}
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+	case 'k':
+		el.ScrollBy(0, -1)
 	}
 }
 
-func handleEvent(content *tui.Element) func(tui.Event) bool {
-	return func(e tui.Event) bool {
-		if mouse, ok := e.(tui.MouseEvent); ok {
-			switch mouse.Button {
-			case tui.MouseWheelUp:
-				content.ScrollBy(0, -1)
-				return true
-			case tui.MouseWheelDown:
-				content.ScrollBy(0, 1)
-				return true
-			}
+func handleEvent(el *tui.Element, e tui.Event) bool {
+	if mouse, ok := e.(tui.MouseEvent); ok {
+		switch mouse.Button {
+		case tui.MouseWheelUp:
+			el.ScrollBy(0, -1)
+			return true
+		case tui.MouseWheelDown:
+			el.ScrollBy(0, 1)
+			return true
 		}
-		return false
 	}
+	return false
 }

@@ -11,39 +11,19 @@ func (g *Generator) generateElement(elem *Element, parentVar string) string {
 	return g.generateElementWithRefs(elem, parentVar, false, false)
 }
 
-// generateElementWithRefs generates code for an element with named ref handling.
+// generateElementWithRefs generates code for an element with ref handling.
 // inLoop and inConditional track the context for proper variable handling.
 func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
-	// Determine variable name and whether we need := or =
-	var varName string
-	useAssignment := false // true means use "=", false means use ":="
-
-	if elem.NamedRef != "" {
-		if inLoop {
-			// In loops, use temp var then append/assign to the ref slice/map
-			varName = g.nextVar()
-		} else {
-			// Outside loops, the ref is forward-declared, use assignment
-			varName = elem.NamedRef
-			useAssignment = true
-		}
-	} else {
-		varName = g.nextVar()
-	}
+	// All elements use auto-generated variable names now
+	varName := g.nextVar()
 
 	// Build options from attributes and tag
 	elemOpts := g.buildElementOptions(elem)
 
-	// Generate element creation - use = for forward-declared refs, := otherwise
-	assignOp := ":="
-	if useAssignment {
-		assignOp = "="
-	}
-
 	if len(elemOpts.options) == 0 {
-		g.writef("%s %s tui.New()\n", varName, assignOp)
+		g.writef("%s := tui.New()\n", varName)
 	} else {
-		g.writef("%s %s tui.New(\n", varName, assignOp)
+		g.writef("%s := tui.New(\n", varName)
 		g.indent++
 		for _, opt := range elemOpts.options {
 			g.writef("%s,\n", opt)
@@ -53,7 +33,7 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 	}
 
 	// Defer watcher attachment until after all elements are created
-	// This ensures forward-declared refs are assigned before handlers reference them
+	// This ensures ref pointers are resolved before handlers reference them
 	for _, watcher := range elemOpts.watchers {
 		g.deferredWatchers = append(g.deferredWatchers, deferredWatcher{
 			elementVar:  varName,
@@ -61,23 +41,18 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 		})
 	}
 
-	// Defer handler attachment (onKeyPress, onClick) for the same reason
-	for _, h := range elemOpts.handlers {
-		g.deferredHandlers = append(g.deferredHandlers, deferredHandler{
-			elementVar: varName,
-			setter:     h.setter,
-			handlerExp: h.expr,
-		})
-	}
-
-	// Handle named ref assignment in loops (append to slice or assign to map)
-	if elem.NamedRef != "" && inLoop {
+	// Handle ref binding — emit the appropriate Set/Append/Put call
+	if elem.RefExpr != nil {
+		refName := elem.RefExpr.Code
 		if elem.RefKey != nil {
-			// Map-based ref: assign to map with key
-			g.writef("%s[%s] = %s\n", elem.NamedRef, elem.RefKey.Code, varName)
+			// Map-based ref: put with key
+			g.writef("%s.Put(%s, %s)\n", refName, elem.RefKey.Code, varName)
+		} else if inLoop {
+			// List-based ref: append
+			g.writef("%s.Append(%s)\n", refName, varName)
 		} else {
-			// Slice-based ref: append to slice
-			g.writef("%s = append(%s, %s)\n", elem.NamedRef, elem.NamedRef, varName)
+			// Single ref: set
+			g.writef("%s.Set(%s)\n", refName, varName)
 		}
 	}
 
@@ -94,14 +69,10 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 	return varName
 }
 
-// elementOptions holds options, watchers, and deferred handlers for an element.
+// elementOptions holds options and watchers for an element.
 type elementOptions struct {
 	options  []string
 	watchers []string
-	handlers []struct { // Handlers to defer (onKeyPress, onClick)
-		setter string // e.g., "SetOnKeyPress"
-		expr   string // the handler expression
-	}
 }
 
 // buildElementOptions generates option expressions for an element.
@@ -151,14 +122,11 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 			continue
 		}
 
-		// Handle handler attributes - defer them so forward-declared refs are assigned first
-		if setter, isHandler := handlerAttributes[attr.Name]; isHandler {
+		// Handle handler attributes — emit as inline With* options (self-inject)
+		if optionFunc, isHandler := handlerAttributes[attr.Name]; isHandler {
 			handlerExpr := g.generateAttributeValue(attr.Value)
 			if handlerExpr != "" {
-				result.handlers = append(result.handlers, struct {
-					setter string
-					expr   string
-				}{setter: setter, expr: handlerExpr})
+				result.options = append(result.options, fmt.Sprintf("%s(%s)", optionFunc, handlerExpr))
 			}
 			continue
 		}
@@ -212,16 +180,15 @@ func (g *Generator) extractTextContent(children []Node) string {
 	return ""
 }
 
-// handlerAttributes maps handler/callback attribute names to their setter methods.
-// These attributes take function values that might capture forward-declared refs,
-// so they are always deferred until after all elements are created.
-// When adding a new handler attribute, add it here AND add the Set* method to element.go.
+// handlerAttributes maps handler/callback attribute names to their With* option functions.
+// Handlers are emitted as inline options during element creation (self-inject pattern).
+// When adding a new handler attribute, add it here AND add the With* option to element_options.go.
 var handlerAttributes = map[string]string{
-	"onKeyPress": "SetOnKeyPress",
-	"onClick":    "SetOnClick",
-	"onEvent":    "SetOnEvent",
-	"onFocus":    "SetOnFocus",
-	"onBlur":     "SetOnBlur",
+	"onKeyPress": "tui.WithOnKeyPress",
+	"onClick":    "tui.WithOnClick",
+	"onEvent":    "tui.WithOnEvent",
+	"onFocus":    "tui.WithOnFocus",
+	"onBlur":     "tui.WithOnBlur",
 }
 
 // watcherAttributes are special attributes that create watchers, not element options.

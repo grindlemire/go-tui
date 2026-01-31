@@ -233,10 +233,6 @@ func (l *Lexer) Next() Token {
 		l.readChar()
 		return l.makeToken(TokenBang, "!")
 
-	case '#':
-		l.readChar()
-		return l.makeToken(TokenHash, "#")
-
 	case '_':
 		// Could be _ or an identifier starting with _
 		if isLetter(l.peekChar()) || isDigit(l.peekChar()) {

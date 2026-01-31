@@ -319,16 +319,6 @@
     "type": "element_with_children",
     "named": true,
     "fields": {
-      "named_ref": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "named_ref",
-            "named": true
-          }
-        ]
-      },
       "tag": {
         "multiple": false,
         "required": true,
@@ -391,6 +381,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "go_string_literal",
+          "named": true
+        },
         {
           "type": "nested_braces",
           "named": true
@@ -501,6 +495,10 @@
       "required": false,
       "types": [
         {
+          "type": "go_string_literal",
+          "named": true
+        },
+        {
           "type": "nested_braces",
           "named": true
         }
@@ -567,6 +565,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "go_string_literal",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "if_statement",
@@ -746,21 +749,6 @@
     }
   },
   {
-    "type": "named_ref",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "nested_braces",
     "named": true,
     "fields": {},
@@ -768,6 +756,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "go_string_literal",
+          "named": true
+        },
         {
           "type": "nested_braces",
           "named": true
@@ -945,16 +937,6 @@
     "type": "self_closing_element",
     "named": true,
     "fields": {
-      "named_ref": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "named_ref",
-            "named": true
-          }
-        ]
-      },
       "tag": {
         "multiple": false,
         "required": true,
@@ -1071,10 +1053,6 @@
   },
   {
     "type": "!=",
-    "named": false
-  },
-  {
-    "type": "#",
     "named": false
   },
   {

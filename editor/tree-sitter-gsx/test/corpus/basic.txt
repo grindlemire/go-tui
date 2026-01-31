@@ -364,11 +364,11 @@ templ Box() {
           (identifier))))))
 
 ================================================================================
-Named ref on element
+Ref attribute on element
 ================================================================================
 
 templ Layout() {
-	<div #Main></div>
+	<div ref={main}></div>
 }
 
 --------------------------------------------------------------------------------
@@ -381,16 +381,18 @@ templ Layout() {
       (element
         (element_with_children
           tag: (identifier)
-          named_ref: (named_ref
-            (identifier))
+          (attribute
+            name: (identifier)
+            value: (go_expression
+              (expression_content)))
           (identifier))))))
 
 ================================================================================
-Named ref on self-closing element
+Ref attribute on self-closing element
 ================================================================================
 
 templ WithRef() {
-	<hr #Divider />
+	<hr ref={divider} />
 }
 
 --------------------------------------------------------------------------------
@@ -403,8 +405,10 @@ templ WithRef() {
       (element
         (self_closing_element
           tag: (identifier)
-          named_ref: (named_ref
-            (identifier)))))))
+          (attribute
+            name: (identifier)
+            value: (go_expression
+              (expression_content))))))))
 
 ================================================================================
 State declaration
@@ -463,11 +467,11 @@ templ Button() {
           (identifier))))))
 
 ================================================================================
-Element with named ref and attributes
+Element with ref attribute and other attributes
 ================================================================================
 
 templ Card() {
-	<div #Header class="font-bold"></div>
+	<div ref={header} class="font-bold"></div>
 }
 
 --------------------------------------------------------------------------------
@@ -480,8 +484,10 @@ templ Card() {
       (element
         (element_with_children
           tag: (identifier)
-          named_ref: (named_ref
-            (identifier))
+          (attribute
+            name: (identifier)
+            value: (go_expression
+              (expression_content)))
           (attribute
             name: (identifier)
             value: (string))

@@ -198,20 +198,20 @@ func TestDefinition_NilDocument(t *testing.T) {
 	}
 }
 
-func TestDefinition_NamedRef(t *testing.T) {
+func TestDefinition_RefAttr(t *testing.T) {
 	index := newStubIndex()
 	dp := newTestDefinitionProvider(index)
 
 	src := `package test
 
 templ Layout() {
-	<div #Header class="p-1">title</div>
+	<div ref={header} class="p-1">title</div>
 }
 `
 	doc := parseTestDoc(src)
 	elem := doc.AST.Components[0].Body[0].(*tuigen.Element)
 
-	ctx := makeCtx(doc, NodeKindNamedRef, "Header")
+	ctx := makeCtx(doc, NodeKindRefAttr, "header")
 	ctx.Node = elem
 
 	result, err := dp.Definition(ctx)
@@ -219,9 +219,9 @@ templ Layout() {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(result) == 0 {
-		t.Fatal("expected definition location for named ref")
+		t.Fatal("expected definition location for ref attr")
 	}
-	// Should point to #Header, not the element tag
+	// Should point to ref={header}, not the element tag
 	loc := result[0]
 	line := loc.Range.Start.Line
 	char := loc.Range.Start.Character
@@ -229,12 +229,12 @@ templ Layout() {
 	if line != 3 {
 		t.Errorf("expected line 3, got %d", line)
 	}
-	if endChar-char != len("#Header") {
-		t.Errorf("expected range length %d, got %d", len("#Header"), endChar-char)
+	if endChar-char != len("ref={header}") {
+		t.Errorf("expected range length %d, got %d", len("ref={header}"), endChar-char)
 	}
 }
 
-func TestDefinition_NamedRef_Usage(t *testing.T) {
+func TestDefinition_RefAttr_Usage(t *testing.T) {
 	index := newStubIndex()
 	dp := newTestDefinitionProvider(index)
 
@@ -242,20 +242,20 @@ func TestDefinition_NamedRef_Usage(t *testing.T) {
 
 templ Layout() {
 	<div
-		#Content
+		ref={content}
 		class="p-1">title</div>
-	<span>{Content}</span>
+	<span>{content}</span>
 }
 `
 	doc := parseTestDoc(src)
 	elem := doc.AST.Components[0].Body[0].(*tuigen.Element)
 
-	// Simulate cursor on "Content" inside {Content} — a Go expression usage
-	ctx := makeCtx(doc, NodeKindGoExpr, "Content")
+	// Simulate cursor on "content" inside {content} — a Go expression usage
+	ctx := makeCtx(doc, NodeKindGoExpr, "content")
 	ctx.InGoExpr = true
 	ctx.Scope.Component = doc.AST.Components[0]
-	ctx.Scope.NamedRefs = []tuigen.NamedRef{
-		{Name: "Content", Element: elem},
+	ctx.Scope.Refs = []tuigen.RefInfo{
+		{Name: "content", Element: elem},
 	}
 
 	result, err := dp.Definition(ctx)
@@ -263,19 +263,54 @@ templ Layout() {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(result) == 0 {
-		t.Fatal("expected definition location for named ref usage in Go expr")
+		t.Fatal("expected definition location for ref usage in Go expr")
 	}
 	loc := result[0]
-	// Should point to #Content on line 4, not the <div on line 3
+	// Should point to ref={content} on line 4, not the <div on line 3
 	if loc.Range.Start.Line != 4 {
 		t.Errorf("expected line 4, got %d", loc.Range.Start.Line)
 	}
-	if loc.Range.End.Character-loc.Range.Start.Character != len("#Content") {
-		t.Errorf("expected range length %d, got %d", len("#Content"), loc.Range.End.Character-loc.Range.Start.Character)
+	if loc.Range.End.Character-loc.Range.Start.Character != len("ref={content}") {
+		t.Errorf("expected range length %d, got %d", len("ref={content}"), loc.Range.End.Character-loc.Range.Start.Character)
 	}
 }
 
-func TestDefinition_NamedRef_Multiline(t *testing.T) {
+func TestDefinition_RefAttr_WithDeclaration(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	src := `package test
+
+templ StreamApp() {
+	content := tui.NewRef()
+	<div ref={content} class="p-1">title</div>
+}
+`
+	doc := parseTestDoc(src)
+	elem := doc.AST.Components[0].Body[1].(*tuigen.Element)
+
+	ctx := makeCtx(doc, NodeKindRefAttr, "content")
+	ctx.Node = elem
+	ctx.Scope.Component = doc.AST.Components[0]
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) == 0 {
+		t.Fatal("expected definition location for ref attr with declaration")
+	}
+	loc := result[0]
+	// Should point to content := tui.NewRef() on line 3 (0-indexed), not ref={content}
+	if loc.Range.Start.Line != 3 {
+		t.Errorf("expected line 3 (declaration), got %d", loc.Range.Start.Line)
+	}
+	if loc.Range.End.Character-loc.Range.Start.Character != len("content") {
+		t.Errorf("expected range length %d, got %d", len("content"), loc.Range.End.Character-loc.Range.Start.Character)
+	}
+}
+
+func TestDefinition_RefAttr_Multiline(t *testing.T) {
 	index := newStubIndex()
 	dp := newTestDefinitionProvider(index)
 
@@ -283,14 +318,14 @@ func TestDefinition_NamedRef_Multiline(t *testing.T) {
 
 templ Layout() {
 	<div
-		#Header
+		ref={header}
 		class="p-1">title</div>
 }
 `
 	doc := parseTestDoc(src)
 	elem := doc.AST.Components[0].Body[0].(*tuigen.Element)
 
-	ctx := makeCtx(doc, NodeKindNamedRef, "#Header")
+	ctx := makeCtx(doc, NodeKindRefAttr, "header")
 	ctx.Node = elem
 
 	result, err := dp.Definition(ctx)
@@ -298,15 +333,15 @@ templ Layout() {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(result) == 0 {
-		t.Fatal("expected definition location for multiline named ref")
+		t.Fatal("expected definition location for multiline ref attr")
 	}
 	loc := result[0]
-	// #Header is on line 4 (0-indexed), not line 3 (the <div line)
+	// ref={header} is on line 4 (0-indexed), not line 3 (the <div line)
 	if loc.Range.Start.Line != 4 {
 		t.Errorf("expected line 4, got %d", loc.Range.Start.Line)
 	}
-	if loc.Range.End.Character-loc.Range.Start.Character != len("#Header") {
-		t.Errorf("expected range length %d, got %d", len("#Header"), loc.Range.End.Character-loc.Range.Start.Character)
+	if loc.Range.End.Character-loc.Range.Start.Character != len("ref={header}") {
+		t.Errorf("expected range length %d, got %d", len("ref={header}"), loc.Range.End.Character-loc.Range.Start.Character)
 	}
 }
 

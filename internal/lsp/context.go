@@ -12,7 +12,7 @@ const (
 	NodeKindComponent
 	NodeKindElement
 	NodeKindAttribute
-	NodeKindNamedRef
+	NodeKindRefAttr // Cursor on ref={} attribute value
 	NodeKindGoExpr
 	NodeKindForLoop
 	NodeKindIfStmt
@@ -37,8 +37,8 @@ func (k NodeKind) String() string {
 		return "Element"
 	case NodeKindAttribute:
 		return "Attribute"
-	case NodeKindNamedRef:
-		return "NamedRef"
+	case NodeKindRefAttr:
+		return "RefAttr"
 	case NodeKindGoExpr:
 		return "GoExpr"
 	case NodeKindForLoop:
@@ -76,7 +76,7 @@ type Scope struct {
 	Function  *tuigen.GoFunc     // Enclosing function (nil if not in a function)
 	ForLoop   *tuigen.ForLoop    // Enclosing for loop (nil if not in a loop)
 	IfStmt    *tuigen.IfStmt     // Enclosing if statement (nil if not in conditional)
-	NamedRefs []tuigen.NamedRef  // Named refs in scope
+	Refs      []tuigen.RefInfo   // Element refs in scope (from ref={} attributes)
 	StateVars []tuigen.StateVar  // State variables in scope
 	LetBinds  []*tuigen.LetBinding
 	Params    []*tuigen.Param

@@ -11,27 +11,24 @@ templ Focus() {
 		<hr class="border" />
 		<div class="flex gap-2">
 			<div
-				#BoxA
 				class="border-single p-2 w-15 h-5 items-center justify-center"
 				focusable={true}
-				onFocus={onFocusBox("Box A", focused, BoxA)}
-				onBlur={onBlurBox(focused, BoxA)}>
+				onFocus={onFocusBox("Box A", focused)}
+				onBlur={onBlurBox(focused)}>
 				<span class="text-red">Box A</span>
 			</div>
 			<div
-				#BoxB
 				class="border-single p-2 w-15 h-5 items-center justify-center"
 				focusable={true}
-				onFocus={onFocusBox("Box B", focused, BoxB)}
-				onBlur={onBlurBox(focused, BoxB)}>
+				onFocus={onFocusBox("Box B", focused)}
+				onBlur={onBlurBox(focused)}>
 				<span class="text-green">Box B</span>
 			</div>
 			<div
-				#BoxC
 				class="border-single p-2 w-15 h-5 items-center justify-center"
 				focusable={true}
-				onFocus={onFocusBox("Box C", focused, BoxC)}
-				onBlur={onBlurBox(focused, BoxC)}>
+				onFocus={onFocusBox("Box C", focused)}
+				onBlur={onBlurBox(focused)}>
 				<span
 					class="text-blue"
 				>
@@ -49,18 +46,18 @@ templ Focus() {
 	</div>
 }
 
-func onFocusBox(name string, focused *tui.State[string], box *tui.Element) func() {
-	return func() {
+func onFocusBox(name string, focused *tui.State[string]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		focused.Set(name)
 		// Change border to double when focused
-		box.SetBorder(tui.BorderDouble)
+		el.SetBorder(tui.BorderDouble)
 	}
 }
 
-func onBlurBox(focused *tui.State[string], box *tui.Element) func() {
-	return func() {
+func onBlurBox(focused *tui.State[string]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		focused.Set("(none)")
 		// Change border back to single when blurred
-		box.SetBorder(tui.BorderSingle)
+		el.SetBorder(tui.BorderSingle)
 	}
 }

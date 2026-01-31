@@ -182,23 +182,23 @@ templ Greeting(name string) {
 	}
 }
 
-func TestSemanticTokens_NamedRef(t *testing.T) {
+func TestSemanticTokens_RefAttr(t *testing.T) {
 	type tc struct {
-		content      string
-		wantOperator int // # operator token
-		wantVarDecl  int // ref name as variable with declaration modifier
+		content     string
+		wantRefAttr int // "ref" attribute token
+		wantVarDecl int // ref value as variable with declaration modifier
 	}
 
 	tests := map[string]tc{
-		"simple named ref": {
+		"simple ref attr": {
 			content: `package main
 
 templ Layout() {
-	<div #Header class="p-1">title</div>
+	<div ref={header} class="p-1">title</div>
 }
 `,
-			wantOperator: 1, // the # symbol
-			wantVarDecl:  1, // Header ref name (label token with declaration modifier)
+			wantRefAttr: 1, // the "ref" attribute name
+			wantVarDecl: 1, // header ref value (variable with declaration modifier)
 		},
 	}
 
@@ -214,21 +214,26 @@ templ Layout() {
 
 			tokens := decodeTokens(result.Data)
 
-			// Count operator tokens (the # symbol)
-			operatorCount := countByType(tokens, TokenTypeOperator)
-			if operatorCount < tt.wantOperator {
-				t.Errorf("got %d operator tokens, want at least %d (for # in named ref)", operatorCount, tt.wantOperator)
-			}
-
-			// Find keyword tokens with declaration modifier (the ref name)
-			keywordDeclCount := 0
+			// Count function tokens that match "ref" (attribute name)
+			refAttrCount := 0
 			for _, tok := range tokens {
-				if tok.TokenType == TokenTypeKeyword && tok.Modifiers&TokenModDeclaration != 0 {
-					keywordDeclCount++
+				if tok.TokenType == TokenTypeFunction && tok.Length == len("ref") {
+					refAttrCount++
 				}
 			}
-			if keywordDeclCount < tt.wantVarDecl {
-				t.Errorf("got %d keyword declaration tokens, want at least %d (for ref name)", keywordDeclCount, tt.wantVarDecl)
+			if refAttrCount < tt.wantRefAttr {
+				t.Errorf("got %d ref attribute tokens, want at least %d", refAttrCount, tt.wantRefAttr)
+			}
+
+			// Find variable tokens with declaration modifier (the ref value)
+			varDeclCount := 0
+			for _, tok := range tokens {
+				if tok.TokenType == TokenTypeVariable && tok.Modifiers&TokenModDeclaration != 0 {
+					varDeclCount++
+				}
+			}
+			if varDeclCount < tt.wantVarDecl {
+				t.Errorf("got %d variable declaration tokens, want at least %d (for ref value)", varDeclCount, tt.wantVarDecl)
 			}
 		})
 	}

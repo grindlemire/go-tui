@@ -148,14 +148,10 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 				}
 
 				// Generate element name (same pattern as generator)
-				// Named refs outside loops use the ref name directly without incrementing the counter.
-				// Named refs inside loops or conditionals still use the counter (generator creates temp var).
+				// All elements use auto-generated variable names now (__tui_N).
+				// Refs are user-declared variables, bound after element creation.
 				elementName := "__tui_" + strconv.Itoa(elementIndex)
 				usesCounter := true
-				if n.NamedRef != "" && !inLoop {
-					elementName = n.NamedRef
-					usesCounter = false
-				}
 
 				// Skip creating bindings for elements inside for loops - their variable
 				// names are scoped to the loop and can't be referenced from the binding code

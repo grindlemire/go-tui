@@ -186,7 +186,7 @@ func isTextToken(typ TokenType) bool {
 		return true
 	case TokenLParen, TokenRParen, TokenLBracket, TokenRBracket:
 		return true
-	case TokenUnderscore, TokenHash:
+	case TokenUnderscore:
 		return true
 	default:
 		return false

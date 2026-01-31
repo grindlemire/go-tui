@@ -9,16 +9,17 @@ import (
 templ Streaming(dataCh <-chan string) {
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
+	content := tui.NewRef()
 	<div class="flex-col gap-1 p-1"
 	     onTimer={tui.OnTimer(time.Second, tick(elapsed))}
-	     onChannel={tui.Watch(dataCh, addLine(lineCount, Content))}>
+	     onChannel={tui.Watch(dataCh, addLine(lineCount, content))}>
 		<span class="font-bold text-cyan">Streaming with Channels and Timers</span>
 		<hr class="border" />
 
-		<div #Content
+		<div ref={content}
 		     class="border-single p-1 flex-col flex-grow overflow-y-scroll"
 		     focusable={true}
-		     onKeyPress={handleScrollKeys(Content)}></div>
+		     onKeyPress={handleScrollKeys}></div>
 
 		<div class="flex gap-2">
 			<span>Lines: {fmt.Sprintf("%d", lineCount.Get())}</span>
@@ -35,31 +36,30 @@ func tick(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
-		stayAtBottom := content.IsAtBottom()
+		el := content.El()
+		stayAtBottom := el.IsAtBottom()
 
 		lineElem := tui.New(
 			tui.WithText(line),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
-		content.AddChild(lineElem)
+		el.AddChild(lineElem)
 
 		if stayAtBottom {
-			content.ScrollToBottom()
+			el.ScrollToBottom()
 		}
 	}
 }
 
-func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
-		switch e.Rune {
-		case 'j':
-			content.ScrollBy(0, 1)
-		case 'k':
-			content.ScrollBy(0, -1)
-		}
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+	case 'k':
+		el.ScrollBy(0, -1)
 	}
 }

@@ -195,12 +195,12 @@ func TestResolveCursorContext_Keyword(t *testing.T) {
 	}
 }
 
-func TestResolveCursorContext_ScopeCollectsNamedRefs(t *testing.T) {
+func TestResolveCursorContext_ScopeCollectsRefs(t *testing.T) {
 	src := `package test
 
 templ Layout() {
-	<div #Header class="p-1">title</div>
-	<div #Footer class="p-1">footer</div>
+	<div ref={header} class="p-1">title</div>
+	<div ref={footer} class="p-1">footer</div>
 }
 `
 	doc := parseTestDoc(src)
@@ -211,20 +211,20 @@ templ Layout() {
 	if ctx.Scope.Component == nil {
 		t.Fatal("expected Scope.Component to be set")
 	}
-	if len(ctx.Scope.NamedRefs) < 2 {
-		t.Errorf("expected at least 2 named refs in scope, got %d", len(ctx.Scope.NamedRefs))
+	if len(ctx.Scope.Refs) < 2 {
+		t.Errorf("expected at least 2 refs in scope, got %d", len(ctx.Scope.Refs))
 	}
 
 	// Verify ref names
 	refNames := make(map[string]bool)
-	for _, ref := range ctx.Scope.NamedRefs {
+	for _, ref := range ctx.Scope.Refs {
 		refNames[ref.Name] = true
 	}
-	if !refNames["Header"] {
-		t.Error("expected 'Header' in named refs")
+	if !refNames["header"] {
+		t.Error("expected 'header' in refs")
 	}
-	if !refNames["Footer"] {
-		t.Error("expected 'Footer' in named refs")
+	if !refNames["footer"] {
+		t.Error("expected 'footer' in refs")
 	}
 }
 
@@ -371,7 +371,7 @@ func TestNodeKind_String(t *testing.T) {
 		"component":     {kind: NodeKindComponent, want: "Component"},
 		"element":       {kind: NodeKindElement, want: "Element"},
 		"attribute":     {kind: NodeKindAttribute, want: "Attribute"},
-		"named ref":     {kind: NodeKindNamedRef, want: "NamedRef"},
+		"ref attr":      {kind: NodeKindRefAttr, want: "RefAttr"},
 		"go expr":       {kind: NodeKindGoExpr, want: "GoExpr"},
 		"for loop":      {kind: NodeKindForLoop, want: "ForLoop"},
 		"if stmt":       {kind: NodeKindIfStmt, want: "IfStmt"},

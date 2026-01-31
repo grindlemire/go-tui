@@ -157,10 +157,11 @@ func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 	p.buf.WriteString("<")
 	p.buf.WriteString(let.Element.Tag)
 
-	// Named ref (e.g., #Content)
-	if let.Element.NamedRef != "" {
-		p.buf.WriteString(" #")
-		p.buf.WriteString(let.Element.NamedRef)
+	// Emit ref={expr} if present (extracted from attributes during parsing)
+	if let.Element.RefExpr != nil {
+		p.buf.WriteString(" ref={")
+		p.buf.WriteString(let.Element.RefExpr.Code)
+		p.buf.WriteString("}")
 	}
 
 	for _, attr := range let.Element.Attributes {

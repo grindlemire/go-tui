@@ -31,46 +31,37 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		if n == nil {
 			return
 		}
-		// Named ref (#Name) — emit # as operator and ref name as variable declaration
-		if n.NamedRef != "" {
-			line := n.Position.Line - 1
-			// Search for the actual '#' position in the document line rather than
-			// hardcoding an offset, since spacing between the tag and # may vary.
-			hashCol := -1
-			if s.docs != nil {
-				if doc := s.docs.GetDocument(s.currentURI); doc != nil {
-					lines := strings.Split(doc.Content, "\n")
-					if line < len(lines) {
-						// Search for #RefName starting after the tag
-						tagEnd := n.Position.Column - 1 + len(n.Tag)
-						searchTarget := "#" + n.NamedRef
-						idx := strings.Index(lines[line][min(tagEnd, len(lines[line])):], searchTarget)
-						if idx >= 0 {
-							hashCol = tagEnd + idx
-						}
-					}
+		// ref={name} attribute — emit "ref" as function token and the value as variable
+		if n.RefExpr != nil && s.currentContent != "" {
+			// Search for "ref={" in the document content to find exact position
+			docLines := strings.Split(s.currentContent, "\n")
+			startLine := n.Position.Line - 1
+			maxSearch := startLine + 20
+			if maxSearch > len(docLines) {
+				maxSearch = len(docLines)
+			}
+			for lineIdx := startLine; lineIdx < maxSearch; lineIdx++ {
+				refIdx := strings.Index(docLines[lineIdx], "ref={"+n.RefExpr.Code+"}")
+				if refIdx >= 0 {
+					// Emit "ref" as function token (attribute name)
+					*tokens = append(*tokens, SemanticToken{
+						Line:      lineIdx,
+						StartChar: refIdx,
+						Length:    len("ref"),
+						TokenType: TokenTypeFunction,
+						Modifiers: 0,
+					})
+					// Emit ref value as variable with declaration modifier
+					*tokens = append(*tokens, SemanticToken{
+						Line:      lineIdx,
+						StartChar: refIdx + len("ref={"),
+						Length:    len(n.RefExpr.Code),
+						TokenType: TokenTypeVariable,
+						Modifiers: TokenModDeclaration,
+					})
+					break
 				}
 			}
-			// Fall back to approximation if document content isn't available
-			if hashCol < 0 {
-				hashCol = n.Position.Column - 1 + len(n.Tag) + 1
-			}
-			// Emit # as operator token
-			*tokens = append(*tokens, SemanticToken{
-				Line:      line,
-				StartChar: hashCol,
-				Length:    1,
-				TokenType: TokenTypeOperator,
-				Modifiers: 0,
-			})
-			// Emit ref name as label (pink) with declaration modifier
-			*tokens = append(*tokens, SemanticToken{
-				Line:      line,
-				StartChar: hashCol + 1,
-				Length:    len(n.NamedRef),
-				TokenType: TokenTypeKeyword,
-				Modifiers: TokenModDeclaration,
-			})
 		}
 		// Attributes — distinguish event handlers from regular attributes
 		for _, attr := range n.Attributes {

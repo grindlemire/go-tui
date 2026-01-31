@@ -21,7 +21,7 @@ type RefsDemoView struct {
 	watchers  []tui.Watcher
 	Header    *tui.Element
 	Content   *tui.Element
-	Items     []*tui.Element
+	ItemRefs  []*tui.Element
 	Warning   *tui.Element // may be nil
 	StatusBar *tui.Element
 }
@@ -34,18 +34,17 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 	var view RefsDemoView
 	var watchers []tui.Watcher
 
-	var Header *tui.Element
-	var Content *tui.Element
-	var Items []*tui.Element
-	var Warning *tui.Element
-	var StatusBar *tui.Element
-
+	header := tui.NewRef()
+	content := tui.NewRef()
+	itemRefs := tui.NewRefList()
+	warning := tui.NewRef()
+	statusBar := tui.NewRef()
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithHeight(24),
 		tui.WithWidth(80),
 	)
-	Header = tui.New(
+	__tui_1 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 		tui.WithHeight(3),
@@ -53,13 +52,14 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_1 := tui.New(
+	header.Set(__tui_1)
+	__tui_2 := tui.New(
 		tui.WithText("Named Element Refs Demo"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
-	Header.AddChild(__tui_1)
-	__tui_0.AddChild(Header)
-	Content = tui.New(
+	__tui_1.AddChild(__tui_2)
+	__tui_0.AddChild(__tui_1)
+	__tui_3 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
@@ -67,22 +67,23 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithDirection(tui.Column),
 	)
-	__tui_2 := tui.New(
+	content.Set(__tui_3)
+	__tui_4 := tui.New(
 		tui.WithText("Items (loop refs) - j/k to scroll, +/- to select"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
-	Content.AddChild(__tui_2)
+	__tui_3.AddChild(__tui_4)
 	for i, item := range items {
 		_ = i
-		__tui_3 := tui.New(
+		__tui_5 := tui.New(
 			tui.WithText(item),
 		)
-		Items = append(Items, __tui_3)
-		Content.AddChild(__tui_3)
+		itemRefs.Append(__tui_5)
+		__tui_3.AddChild(__tui_5)
 	}
-	__tui_0.AddChild(Content)
+	__tui_0.AddChild(__tui_3)
 	if showWarning {
-		Warning = tui.New(
+		__tui_6 := tui.New(
 			tui.WithBorder(tui.BorderDouble),
 			tui.WithPadding(1),
 			tui.WithHeight(3),
@@ -91,14 +92,15 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 			tui.WithAlign(tui.AlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 		)
-		__tui_4 := tui.New(
+		warning.Set(__tui_6)
+		__tui_7 := tui.New(
 			tui.WithText("⚠ Warning: This is a conditional ref (may be nil)"),
 			tui.WithTextStyle(tui.NewStyle().Bold()),
 		)
-		Warning.AddChild(__tui_4)
-		__tui_0.AddChild(Warning)
+		__tui_6.AddChild(__tui_7)
+		__tui_0.AddChild(__tui_6)
 	}
-	StatusBar = tui.New(
+	__tui_8 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 		tui.WithHeight(3),
@@ -106,26 +108,27 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_5 := tui.New(
+	statusBar.Set(__tui_8)
+	__tui_9 := tui.New(
 		tui.WithText("j/k: scroll | +/-: select | Tab: warning | d: switch demo | q: quit"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
-	StatusBar.AddChild(__tui_5)
-	__tui_6 := tui.New(
+	__tui_8.AddChild(__tui_9)
+	__tui_10 := tui.New(
 		tui.WithText(fmt.Sprintf(" Selected: %d", selectedIdx)),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	StatusBar.AddChild(__tui_6)
-	__tui_0.AddChild(StatusBar)
+	__tui_8.AddChild(__tui_10)
+	__tui_0.AddChild(__tui_8)
 
 	view = RefsDemoView{
 		Root:      __tui_0,
 		watchers:  watchers,
-		Header:    Header,
-		Content:   Content,
-		Items:     Items,
-		Warning:   Warning,
-		StatusBar: StatusBar,
+		Header:    header.El(),
+		Content:   content.El(),
+		ItemRefs:  itemRefs.All(),
+		Warning:   warning.El(),
+		StatusBar: statusBar.El(),
 	}
 	return view
 }
@@ -133,7 +136,7 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 type KeyedRefsDemoView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
-	Users    []*tui.Element
+	UserRefs []*tui.Element
 }
 
 func (v KeyedRefsDemoView) GetRoot() tui.Renderable { return v.Root }
@@ -144,8 +147,7 @@ func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 	var view KeyedRefsDemoView
 	var watchers []tui.Watcher
 
-	var Users []*tui.Element
-
+	userRefs := tui.NewRefList()
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
@@ -181,7 +183,7 @@ func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 		__tui_5 := tui.New(
 			tui.WithText(fmt.Sprintf("[%s] %s", user.ID, user.Name)),
 		)
-		Users = append(Users, __tui_5)
+		userRefs.Append(__tui_5)
 		__tui_3.AddChild(__tui_5)
 	}
 	__tui_0.AddChild(__tui_3)
@@ -200,7 +202,7 @@ func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 	view = KeyedRefsDemoView{
 		Root:     __tui_0,
 		watchers: watchers,
-		Users:    Users,
+		UserRefs: userRefs.All(),
 	}
 	return view
 }

@@ -62,7 +62,7 @@ templ Test() {
 	}
 }
 
-func TestAnalyzer_NamedRefValidation(t *testing.T) {
+func TestAnalyzer_RefValidation(t *testing.T) {
 	type tc struct {
 		input         string
 		wantError     bool
@@ -73,53 +73,37 @@ func TestAnalyzer_NamedRefValidation(t *testing.T) {
 		"valid ref name": {
 			input: `package x
 templ Test() {
-	<div #Content></div>
+	<div ref={content}></div>
 }`,
 			wantError: false,
 		},
 		"valid ref name with digits": {
 			input: `package x
 templ Test() {
-	<div #Content2></div>
+	<div ref={content2}></div>
 }`,
 			wantError: false,
 		},
 		"valid ref name with underscore": {
 			input: `package x
 templ Test() {
-	<div #My_Content></div>
+	<div ref={my_Content}></div>
 }`,
 			wantError: false,
-		},
-		"invalid ref name lowercase": {
-			input: `package x
-templ Test() {
-	<div #content></div>
-}`,
-			wantError:     true,
-			errorContains: "invalid ref name",
-		},
-		"invalid ref name starts with digit": {
-			input: `package x
-templ Test() {
-	<div #123invalid></div>
-}`,
-			wantError:     true,
-			errorContains: "expected identifier", // Parser rejects this before analyzer
 		},
 		"reserved name Root": {
 			input: `package x
 templ Test() {
-	<div #Root></div>
+	<div ref={root}></div>
 }`,
 			wantError:     true,
-			errorContains: "ref name 'Root' is reserved",
+			errorContains: "ref name \"root\" is reserved",
 		},
 		"duplicate ref name": {
 			input: `package x
 templ Test() {
-	<div #Content></div>
-	<div #Content></div>
+	<div ref={content}></div>
+	<div ref={content}></div>
 }`,
 			wantError:     true,
 			errorContains: "duplicate ref name",
@@ -128,9 +112,9 @@ templ Test() {
 			input: `package x
 templ Test(show bool) {
 	@if show {
-		<div #Content></div>
+		<div ref={content}></div>
 	} @else {
-		<div #Content></div>
+		<div ref={content}></div>
 	}
 }`,
 			wantError:     true,
@@ -159,7 +143,7 @@ templ Test(show bool) {
 	}
 }
 
-func TestAnalyzer_NamedRefInLoop(t *testing.T) {
+func TestAnalyzer_RefInLoop(t *testing.T) {
 	type tc struct {
 		input         string
 		wantError     bool
@@ -172,7 +156,7 @@ func TestAnalyzer_NamedRefInLoop(t *testing.T) {
 templ Test(items []string) {
 	<ul>
 		@for _, item := range items {
-			<li #Items>{item}</li>
+			<li ref={items}>{item}</li>
 		}
 	</ul>
 }`,
@@ -183,7 +167,7 @@ templ Test(items []string) {
 templ Test(items []Item) {
 	<ul>
 		@for _, item := range items {
-			<li #Items key={item.ID}>{item.Name}</li>
+			<li ref={items} key={item.ID}>{item.Name}</li>
 		}
 	</ul>
 }`,
@@ -192,7 +176,7 @@ templ Test(items []Item) {
 		"ref with key outside loop is invalid": {
 			input: `package x
 templ Test() {
-	<div #Content key={someKey}></div>
+	<div ref={content} key={someKey}></div>
 }`,
 			wantError:     true,
 			errorContains: "key attribute on ref",
@@ -220,12 +204,12 @@ templ Test() {
 	}
 }
 
-func TestAnalyzer_NamedRefInConditional(t *testing.T) {
+func TestAnalyzer_RefInConditional(t *testing.T) {
 	input := `package x
 templ Test(show bool) {
 	<div>
 		@if show {
-			<span #Label>hello</span>
+			<span ref={label}>hello</span>
 		}
 	</div>
 }`
@@ -237,16 +221,16 @@ templ Test(show bool) {
 	// Ref inside conditional is valid, it just may be nil at runtime
 }
 
-func TestAnalyzer_CollectNamedRefs(t *testing.T) {
+func TestAnalyzer_CollectRefs(t *testing.T) {
 	input := `package x
 templ Test(items []Item, show bool) {
 	<div>
-		<div #Header></div>
+		<div ref={header}></div>
 		@if show {
-			<span #Label>hello</span>
+			<span ref={label}>hello</span>
 		}
 		@for _, item := range items {
-			<li #Items>{item.Name}</li>
+			<li ref={items}>{item.Name}</li>
 		}
 	</div>
 }`
@@ -259,36 +243,45 @@ templ Test(items []Item, show bool) {
 	}
 
 	analyzer := NewAnalyzer()
-	refs := analyzer.CollectNamedRefs(file.Components[0])
+	refs := analyzer.CollectRefs(file.Components[0])
 
 	if len(refs) != 3 {
 		t.Fatalf("expected 3 refs, got %d", len(refs))
 	}
 
-	// Check Header ref
-	if refs[0].Name != "Header" {
-		t.Errorf("refs[0].Name = %q, want 'Header'", refs[0].Name)
+	// Check header ref
+	if refs[0].Name != "header" {
+		t.Errorf("refs[0].Name = %q, want 'header'", refs[0].Name)
+	}
+	if refs[0].ExportName != "Header" {
+		t.Errorf("refs[0].ExportName = %q, want 'Header'", refs[0].ExportName)
 	}
 	if refs[0].InLoop || refs[0].InConditional {
-		t.Error("Header should not be in loop or conditional")
+		t.Error("header should not be in loop or conditional")
 	}
 
-	// Check Label ref (in conditional)
-	if refs[1].Name != "Label" {
-		t.Errorf("refs[1].Name = %q, want 'Label'", refs[1].Name)
+	// Check label ref (in conditional)
+	if refs[1].Name != "label" {
+		t.Errorf("refs[1].Name = %q, want 'label'", refs[1].Name)
+	}
+	if refs[1].ExportName != "Label" {
+		t.Errorf("refs[1].ExportName = %q, want 'Label'", refs[1].ExportName)
 	}
 	if refs[1].InLoop {
-		t.Error("Label should not be in loop")
+		t.Error("label should not be in loop")
 	}
 	if !refs[1].InConditional {
-		t.Error("Label should be in conditional")
+		t.Error("label should be in conditional")
 	}
 
-	// Check Items ref (in loop)
-	if refs[2].Name != "Items" {
-		t.Errorf("refs[2].Name = %q, want 'Items'", refs[2].Name)
+	// Check items ref (in loop)
+	if refs[2].Name != "items" {
+		t.Errorf("refs[2].Name = %q, want 'items'", refs[2].Name)
+	}
+	if refs[2].ExportName != "Items" {
+		t.Errorf("refs[2].ExportName = %q, want 'Items'", refs[2].ExportName)
 	}
 	if !refs[2].InLoop {
-		t.Error("Items should be in loop")
+		t.Error("items should be in loop")
 	}
 }

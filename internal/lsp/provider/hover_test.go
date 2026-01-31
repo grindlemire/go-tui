@@ -267,11 +267,11 @@ func TestHover_TailwindInClass(t *testing.T) {
 	}
 }
 
-func TestHover_NamedRef(t *testing.T) {
+func TestHover_RefAttr(t *testing.T) {
 	src := `package test
 
 templ Layout() {
-	<div #Header class="p-1">content</div>
+	<div ref={header} class="p-1">content</div>
 }
 `
 	doc := parseTestDoc(src)
@@ -280,10 +280,10 @@ templ Layout() {
 	index := newStubIndex()
 	hp := newTestHoverProvider(index)
 
-	ctx := makeCtx(doc, NodeKindNamedRef, "#Header")
+	ctx := makeCtx(doc, NodeKindRefAttr, "header")
 	ctx.Node = elem
-	ctx.Scope.NamedRefs = []tuigen.NamedRef{
-		{Name: "Header", Element: elem},
+	ctx.Scope.Refs = []tuigen.RefInfo{
+		{Name: "header", ExportName: "Header", Element: elem},
 	}
 
 	result, err := hp.Hover(ctx)
@@ -291,12 +291,12 @@ templ Layout() {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result == nil {
-		t.Fatal("expected hover result for named ref")
+		t.Fatal("expected hover result for ref attr")
 	}
-	if !strings.Contains(result.Contents.Value, "Named Ref") {
-		t.Errorf("hover should mention 'Named Ref', got: %s", result.Contents.Value)
+	if !strings.Contains(result.Contents.Value, "Element Ref") {
+		t.Errorf("hover should mention 'Element Ref', got: %s", result.Contents.Value)
 	}
-	if !strings.Contains(result.Contents.Value, "Header") {
+	if !strings.Contains(result.Contents.Value, "header") {
 		t.Errorf("hover should mention ref name, got: %s", result.Contents.Value)
 	}
 }

@@ -48,21 +48,22 @@ func (g *generator) emitStateVarDeclarations(comp *tuigen.Component) {
 	}
 }
 
-// emitNamedRefDeclarations scans a component body for elements with #Name refs
+// emitRefDeclarations scans a component body for elements with ref={} attributes
 // and emits Go variable declarations so gopls understands ref types.
-func (g *generator) emitNamedRefDeclarations(comp *tuigen.Component) {
-	g.emitNamedRefFromNodes(comp.Body, false, false)
+func (g *generator) emitRefDeclarations(comp *tuigen.Component) {
+	g.emitRefFromNodes(comp.Body, false, false)
 }
 
-// emitNamedRefFromNodes recursively finds named refs in AST nodes.
-func (g *generator) emitNamedRefFromNodes(nodes []tuigen.Node, inLoop, inConditional bool) {
+// emitRefFromNodes recursively finds ref attributes in AST nodes.
+func (g *generator) emitRefFromNodes(nodes []tuigen.Node, inLoop, inConditional bool) {
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *tuigen.Element:
 			if n == nil {
 				continue
 			}
-			if n.NamedRef != "" {
+			if n.RefExpr != nil {
+				refName := n.RefExpr.Code
 				refType := "var %s *element.Element"
 				if inLoop {
 					if n.RefKey != nil {
@@ -72,10 +73,8 @@ func (g *generator) emitNamedRefFromNodes(nodes []tuigen.Node, inLoop, inConditi
 					}
 				}
 
-				tuiLine := n.Position.Line - 1
-				// Map to the #Name position, not the element tag position
-				// Position.Column-1 is the '<' char; skip <, tag name, and space to reach '#'
-				tuiCol := n.Position.Column - 1 + 1 + len(n.Tag) + 1
+				tuiLine := n.RefExpr.Position.Line - 1
+				tuiCol := n.RefExpr.Position.Column - 1
 
 				goVarStartCol := 1 + len("var ") // "\t" + "var "
 				g.sourceMap.AddMapping(Mapping{
@@ -83,30 +82,30 @@ func (g *generator) emitNamedRefFromNodes(nodes []tuigen.Node, inLoop, inConditi
 					TuiCol:  tuiCol,
 					GoLine:  g.goLine,
 					GoCol:   goVarStartCol,
-					Length:  len(n.NamedRef),
+					Length:  len(refName),
 				})
-				log.Generate("REF mapping: #%s -> TuiLine=%d TuiCol=%d GoLine=%d",
-					n.NamedRef, tuiLine, tuiCol, g.goLine)
+				log.Generate("REF mapping: ref={%s} -> TuiLine=%d TuiCol=%d GoLine=%d",
+					refName, tuiLine, tuiCol, g.goLine)
 
-				g.writeLine(fmt.Sprintf("\t"+refType, n.NamedRef))
+				g.writeLine(fmt.Sprintf("\t"+refType, refName))
 			}
-			g.emitNamedRefFromNodes(n.Children, inLoop, inConditional)
+			g.emitRefFromNodes(n.Children, inLoop, inConditional)
 		case *tuigen.ForLoop:
 			if n != nil {
-				g.emitNamedRefFromNodes(n.Body, true, inConditional)
+				g.emitRefFromNodes(n.Body, true, inConditional)
 			}
 		case *tuigen.IfStmt:
 			if n != nil {
-				g.emitNamedRefFromNodes(n.Then, inLoop, true)
-				g.emitNamedRefFromNodes(n.Else, inLoop, true)
+				g.emitRefFromNodes(n.Then, inLoop, true)
+				g.emitRefFromNodes(n.Else, inLoop, true)
 			}
 		case *tuigen.LetBinding:
 			if n != nil && n.Element != nil {
-				g.emitNamedRefFromNodes([]tuigen.Node{n.Element}, inLoop, inConditional)
+				g.emitRefFromNodes([]tuigen.Node{n.Element}, inLoop, inConditional)
 			}
 		case *tuigen.ComponentCall:
 			if n != nil {
-				g.emitNamedRefFromNodes(n.Children, inLoop, inConditional)
+				g.emitRefFromNodes(n.Children, inLoop, inConditional)
 			}
 		}
 	}

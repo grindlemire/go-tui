@@ -130,7 +130,7 @@ func TestElement_ElementAtPoint_ReturnsNilForPointOutsideBounds(t *testing.T) {
 func TestElement_HandleEvent_MouseClick_TriggersOnClick(t *testing.T) {
 	handlerCalled := false
 
-	e := New(WithOnClick(func() {
+	e := New(WithOnClick(func(_ *Element) {
 		handlerCalled = true
 	}))
 
@@ -170,7 +170,7 @@ func TestElement_HandleEvent_MouseClick_NoHandlerNotConsumed(t *testing.T) {
 func TestElement_HandleEvent_MouseRelease_DoesNotTriggerOnClick(t *testing.T) {
 	handlerCalled := false
 
-	e := New(WithOnClick(func() {
+	e := New(WithOnClick(func(_ *Element) {
 		handlerCalled = true
 	}))
 
@@ -191,7 +191,7 @@ func TestElement_HandleEvent_MouseRelease_DoesNotTriggerOnClick(t *testing.T) {
 func TestElement_HandleEvent_RightClick_DoesNotTriggerOnClick(t *testing.T) {
 	handlerCalled := false
 
-	e := New(WithOnClick(func() {
+	e := New(WithOnClick(func(_ *Element) {
 		handlerCalled = true
 	}))
 

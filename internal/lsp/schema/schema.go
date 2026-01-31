@@ -227,6 +227,7 @@ func genericAttrs() []AttributeDef {
 		{Name: "class", Type: "string", Description: "Tailwind-style CSS classes", Category: "generic"},
 		{Name: "disabled", Type: "bool", Description: "Whether the element is disabled", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
+		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable (tui.NewRef/NewRefList/NewRefMap)", Category: "ref"},
 	}
 }
 

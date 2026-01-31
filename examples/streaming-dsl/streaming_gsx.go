@@ -16,49 +16,46 @@ func tickElapsed(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
-		stayAtBottom := content.IsAtBottom()
+		el := content.El()
+		stayAtBottom := el.IsAtBottom()
 
 		lineElem := tui.New(
 			tui.WithText(line),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
-		content.AddChild(lineElem)
+		el.AddChild(lineElem)
 
 		if stayAtBottom {
-			content.ScrollToBottom()
+			el.ScrollToBottom()
 		}
 	}
 }
 
-func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
-		switch e.Rune {
-		case 'j':
-			content.ScrollBy(0, 1)
-		case 'k':
-			content.ScrollBy(0, -1)
-		}
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+	case 'k':
+		el.ScrollBy(0, -1)
 	}
 }
 
-func handleEvent(content *tui.Element) func(tui.Event) bool {
-	return func(e tui.Event) bool {
-		if mouse, ok := e.(tui.MouseEvent); ok {
-			switch mouse.Button {
-			case tui.MouseWheelUp:
-				content.ScrollBy(0, -1)
-				return true
-			case tui.MouseWheelDown:
-				content.ScrollBy(0, 1)
-				return true
-			}
+func handleEvent(el *tui.Element, e tui.Event) bool {
+	if mouse, ok := e.(tui.MouseEvent); ok {
+		switch mouse.Button {
+		case tui.MouseWheelUp:
+			el.ScrollBy(0, -1)
+			return true
+		case tui.MouseWheelDown:
+			el.ScrollBy(0, 1)
+			return true
 		}
-		return false
 	}
+	return false
 }
 
 type StreamAppView struct {
@@ -75,10 +72,9 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 	var view StreamAppView
 	var watchers []tui.Watcher
 
-	var Content *tui.Element
-
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
+	content := tui.NewRef()
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 	)
@@ -96,16 +92,19 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
-	Content = tui.New(
+	__tui_3 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithFocusable(true),
+		tui.WithOnKeyPress(handleScrollKeys),
+		tui.WithOnEvent(handleEvent),
 	)
-	__tui_0.AddChild(Content)
-	__tui_3 := tui.New(
+	content.Set(__tui_3)
+	__tui_0.AddChild(__tui_3)
+	__tui_4 := tui.New(
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithHeight(3),
@@ -113,32 +112,28 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_4 := tui.New(
+	__tui_5 := tui.New(
 		tui.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
-	__tui_3.AddChild(__tui_4)
-	__tui_0.AddChild(__tui_3)
-
-	// Attach handlers (deferred until refs are assigned)
-	Content.SetOnKeyPress(handleScrollKeys(Content))
-	Content.SetOnEvent(handleEvent(Content))
+	__tui_4.AddChild(__tui_5)
+	__tui_0.AddChild(__tui_4)
 
 	// Attach watchers (deferred until refs are assigned)
 	__tui_0.AddWatcher(tui.OnTimer(time.Second, tickElapsed(elapsed)))
-	__tui_0.AddWatcher(tui.Watch(dataCh, addLine(lineCount, Content)))
+	__tui_0.AddWatcher(tui.Watch(dataCh, addLine(lineCount, content)))
 
 	// State bindings
-	__update___tui_4 := func() {
-		__tui_4.SetText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get()))
+	__update___tui_5 := func() {
+		__tui_5.SetText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get()))
 	}
-	lineCount.Bind(func(_ int) { __update___tui_4() })
-	elapsed.Bind(func(_ int) { __update___tui_4() })
+	lineCount.Bind(func(_ int) { __update___tui_5() })
+	elapsed.Bind(func(_ int) { __update___tui_5() })
 
 	view = StreamAppView{
 		Root:     __tui_0,
 		watchers: watchers,
-		Content:  Content,
+		Content:  content.El(),
 	}
 	return view
 }

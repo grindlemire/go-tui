@@ -57,21 +57,26 @@ templ Dashboard(user string, items []string, count int) {
 	</div>
 }
 
-// Named refs - simple, loop, keyed, conditional
+// Refs - simple, loop, keyed, conditional
 templ RefsExample(items []string, users map[string]string, showWarning bool) {
-	<div #Container class="flex-col gap-1">
-		<span #Title class="font-bold">Dashboard</span>
+	container := tui.NewRef()
+	titleRef := tui.NewRef()
+	itemRefs := tui.NewRefList()
+	userRefs := tui.NewRefMap[string]()
+	warning := tui.NewRef()
+	<div ref={container} class="flex-col gap-1">
+		<span ref={titleRef} class="font-bold">Dashboard</span>
 
 		@for _, item := range items {
-			<span #Items>{item}</span>
+			<span ref={itemRefs}>{item}</span>
 		}
 
 		@for id, name := range users {
-			<span #Users key={id}>{name}</span>
+			<span ref={userRefs} key={id}>{name}</span>
 		}
 
 		@if showWarning {
-			<div #Warning class="text-red border-single p-1">
+			<div ref={warning} class="text-red border-single p-1">
 				<span>Warning!</span>
 			</div>
 		}

@@ -6,14 +6,13 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.varCounter = 0
 	g.watchers = nil
 	g.deferredWatchers = nil
-	g.deferredHandlers = nil
 	g.componentVars = nil
 	g.stateVars = nil
 	g.stateBindings = nil
 
-	// Collect named refs from this component
+	// Collect refs from this component
 	analyzer := NewAnalyzer()
-	g.namedRefs = analyzer.CollectNamedRefs(comp)
+	g.refs = analyzer.CollectRefs(comp)
 
 	// Detect state variables and bindings
 	g.stateVars = analyzer.DetectStateVars(comp)
@@ -21,7 +20,7 @@ func (g *Generator) generateComponent(comp *Component) {
 
 	// Generate view struct for this component (always generated)
 	structName := comp.Name + "View"
-	g.generateViewStruct(comp.Name, g.namedRefs)
+	g.generateViewStruct(comp.Name, g.refs)
 
 	// Generate function signature - always returns struct
 	g.writef("func %s(", comp.Name)
@@ -46,30 +45,12 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.writeln("var watchers []tui.Watcher")
 	g.writeln("")
 
-	// Forward-declare ALL named refs at function scope
-	// This allows handlers to reference refs that appear later in the tree
-	for _, ref := range g.namedRefs {
-		if ref.InLoop {
-			if ref.KeyExpr != "" {
-				g.writef("%s := make(map[%s]*tui.Element)\n", ref.Name, ref.KeyType)
-			} else {
-				g.writef("var %s []*tui.Element\n", ref.Name)
-			}
-		} else {
-			// ALL non-loop refs are forward-declared as pointers
-			g.writef("var %s *tui.Element\n", ref.Name)
-		}
-	}
-
-	// Add blank line after declarations if we had any
-	if len(g.namedRefs) > 0 {
-		g.writeln("")
-	}
+	// No forward declarations needed — refs are user-declared Go variables
+	// (e.g., content := tui.NewRef()) written in the component body Go code
 
 	// Track the root element variable name
 	// The root is the first top-level Element (not LetBinding, which is typically a child reference)
 	var rootVar string
-	var rootRef string       // Named ref on root element, if any
 	var rootIsComponent bool // Whether root is a component call (needs .Root accessor)
 
 	// Generate body nodes
@@ -79,9 +60,6 @@ func (g *Generator) generateComponent(comp *Component) {
 			varName := g.generateElementWithRefs(n, "", false, false)
 			if rootVar == "" {
 				rootVar = varName
-				if n.NamedRef != "" {
-					rootRef = n.NamedRef
-				}
 			}
 		case *LetBinding:
 			// @let bindings create elements that are typically used as children
@@ -118,15 +96,6 @@ func (g *Generator) generateComponent(comp *Component) {
 		}
 	}
 
-	// Emit deferred handler attachments (after all elements/refs are created)
-	if len(g.deferredHandlers) > 0 {
-		g.writeln("")
-		g.writeln("// Attach handlers (deferred until refs are assigned)")
-		for _, dh := range g.deferredHandlers {
-			g.writef("%s.%s(%s)\n", dh.elementVar, dh.setter, dh.handlerExp)
-		}
-	}
-
 	// Emit deferred watcher attachments (after all elements/refs are created)
 	if len(g.deferredWatchers) > 0 {
 		g.writeln("")
@@ -153,12 +122,15 @@ func (g *Generator) generateComponent(comp *Component) {
 		g.writeln("Root: nil,")
 	}
 	g.writeln("watchers: watchers,")
-	for _, ref := range g.namedRefs {
-		// If this ref is on the root element, point to rootVar
-		if ref.Name == rootRef {
-			g.writef("%s: %s,\n", ref.Name, rootVar)
-		} else {
-			g.writef("%s: %s,\n", ref.Name, ref.Name)
+	for _, ref := range g.refs {
+		// View struct exposes *tui.Element (not ref types)
+		switch ref.RefKind {
+		case RefSingle:
+			g.writef("%s: %s.El(),\n", ref.ExportName, ref.Name)
+		case RefList:
+			g.writef("%s: %s.All(),\n", ref.ExportName, ref.Name)
+		case RefMap:
+			g.writef("%s: %s.All(),\n", ref.ExportName, ref.Name)
 		}
 	}
 	g.indent--
@@ -172,7 +144,7 @@ func (g *Generator) generateComponent(comp *Component) {
 }
 
 // generateViewStruct generates the ComponentNameView struct definition.
-func (g *Generator) generateViewStruct(compName string, refs []NamedRef) {
+func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	structName := compName + "View"
 
 	g.writef("type %s struct {\n", structName)
@@ -181,18 +153,17 @@ func (g *Generator) generateViewStruct(compName string, refs []NamedRef) {
 	g.writeln("watchers []tui.Watcher")
 
 	for _, ref := range refs {
-		if ref.InLoop {
-			if ref.KeyExpr != "" {
-				// Map type for keyed refs
-				g.writef("%s map[%s]*tui.Element\n", ref.Name, ref.KeyType)
+		switch ref.RefKind {
+		case RefSingle:
+			if ref.InConditional {
+				g.writef("%s *tui.Element // may be nil\n", ref.ExportName)
 			} else {
-				// Slice type for unkeyed loop refs
-				g.writef("%s []*tui.Element\n", ref.Name)
+				g.writef("%s *tui.Element\n", ref.ExportName)
 			}
-		} else if ref.InConditional {
-			g.writef("%s *tui.Element // may be nil\n", ref.Name)
-		} else {
-			g.writef("%s *tui.Element\n", ref.Name)
+		case RefList:
+			g.writef("%s []*tui.Element\n", ref.ExportName)
+		case RefMap:
+			g.writef("%s map[%s]*tui.Element\n", ref.ExportName, ref.KeyType)
 		}
 	}
 

@@ -9,47 +9,42 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
-		switch e.Rune {
-		case 'j':
-			content.ScrollBy(0, 1)
-			return
-		case 'k':
-			content.ScrollBy(0, -1)
-			return
-		}
-		switch e.Key {
-		case tui.KeyDown:
-			content.ScrollBy(0, 1)
-			return
-		case tui.KeyUp:
-			content.ScrollBy(0, -1)
-			return
-		}
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+		return
+	case 'k':
+		el.ScrollBy(0, -1)
+		return
+	}
+	switch e.Key {
+	case tui.KeyDown:
+		el.ScrollBy(0, 1)
+		return
+	case tui.KeyUp:
+		el.ScrollBy(0, -1)
+		return
 	}
 }
 
-func handleMouseScroll(content *tui.Element) func(tui.Event) bool {
-	return func(e tui.Event) bool {
-		if mouse, ok := e.(tui.MouseEvent); ok {
-			switch mouse.Button {
-			case tui.MouseWheelUp:
-				content.ScrollBy(0, -1)
-				return true
-			case tui.MouseWheelDown:
-				content.ScrollBy(0, 1)
-				return true
-			}
+func handleMouseScroll(el *tui.Element, e tui.Event) bool {
+	if mouse, ok := e.(tui.MouseEvent); ok {
+		switch mouse.Button {
+		case tui.MouseWheelUp:
+			el.ScrollBy(0, -1)
+			return true
+		case tui.MouseWheelDown:
+			el.ScrollBy(0, 1)
+			return true
 		}
-		return false
 	}
+	return false
 }
 
 type ScrollableView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
-	Content  *tui.Element
 }
 
 func (v ScrollableView) GetRoot() tui.Renderable { return v.Root }
@@ -59,8 +54,6 @@ func (v ScrollableView) GetWatchers() []tui.Watcher { return v.watchers }
 func Scrollable(items []string) ScrollableView {
 	var view ScrollableView
 	var watchers []tui.Watcher
-
-	var Content *tui.Element
 
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
@@ -78,54 +71,51 @@ func Scrollable(items []string) ScrollableView {
 		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	Content = tui.New(
+	__tui_3 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 		tui.WithFocusable(true),
+		tui.WithOnEvent(handleMouseScroll),
+		tui.WithOnKeyPress(handleScrollKeys),
 	)
 	for i, item := range items {
 		_ = i
-		__tui_3 := tui.New(
+		__tui_4 := tui.New(
 			tui.WithText(fmt.Sprintf("%02d. %s", i+1, item)),
 		)
-		Content.AddChild(__tui_3)
+		__tui_3.AddChild(__tui_4)
 	}
-	__tui_0.AddChild(Content)
-	__tui_4 := tui.New(
+	__tui_0.AddChild(__tui_3)
+	__tui_5 := tui.New(
 		tui.WithWidthPercent(100.00),
 		tui.WithGap(1),
 		tui.WithDirection(tui.Row),
 		tui.WithDirection(tui.Row),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_5 := tui.New(
+	__tui_6 := tui.New(
 		tui.WithText("Use arrow keys or j"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_4.AddChild(__tui_5)
-	__tui_6 := tui.New(
+	__tui_5.AddChild(__tui_6)
+	__tui_7 := tui.New(
 		tui.WithText("k to scroll"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_4.AddChild(__tui_6)
-	__tui_7 := tui.New(
+	__tui_5.AddChild(__tui_7)
+	__tui_8 := tui.New(
 		tui.WithText("q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_4.AddChild(__tui_7)
-	__tui_0.AddChild(__tui_4)
-
-	// Attach handlers (deferred until refs are assigned)
-	Content.SetOnEvent(handleMouseScroll(Content))
-	Content.SetOnKeyPress(handleScrollKeys(Content))
+	__tui_5.AddChild(__tui_8)
+	__tui_0.AddChild(__tui_5)
 
 	view = ScrollableView{
 		Root:     __tui_0,
 		watchers: watchers,
-		Content:  Content,
 	}
 	return view
 }

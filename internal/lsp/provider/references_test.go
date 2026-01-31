@@ -175,12 +175,12 @@ func TestReferences_EmptyWord(t *testing.T) {
 	}
 }
 
-func TestReferences_NamedRef(t *testing.T) {
+func TestReferences_RefAttr(t *testing.T) {
 	src := `package test
 
 templ Layout() {
-	<div #Header class="p-1">title</div>
-	<span>{Header}</span>
+	<div ref={header} class="p-1">title</div>
+	<span>{header}</span>
 }
 `
 	doc := parseTestDoc(src)
@@ -189,10 +189,10 @@ templ Layout() {
 	docsAccessor := &stubDocAccessor{docs: []*Document{doc}}
 	rp := newTestReferencesProvider(index, docsAccessor)
 
-	ctx := makeCtx(doc, NodeKindNamedRef, "Header")
+	ctx := makeCtx(doc, NodeKindRefAttr, "header")
 	ctx.Scope.Component = doc.AST.Components[0]
-	ctx.Scope.NamedRefs = []tuigen.NamedRef{
-		{Name: "Header", Position: tuigen.Position{Line: 4, Column: 7}},
+	ctx.Scope.Refs = []tuigen.RefInfo{
+		{Name: "header", Position: tuigen.Position{Line: 4, Column: 7}},
 	}
 
 	result, err := rp.References(ctx, true)
@@ -200,18 +200,18 @@ templ Layout() {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(result) != 2 {
-		t.Errorf("expected 2 references (decl + usage) for named ref, got %d", len(result))
+		t.Errorf("expected 2 references (decl + usage) for ref attr, got %d", len(result))
 	}
 }
 
-func TestReferences_NamedRef_Multiline(t *testing.T) {
+func TestReferences_RefAttr_Multiline(t *testing.T) {
 	src := `package test
 
 templ Layout() {
 	<div
-		#Header
+		ref={header}
 		class="p-1">title</div>
-	<span>{Header}</span>
+	<span>{header}</span>
 }
 `
 	doc := parseTestDoc(src)
@@ -220,10 +220,10 @@ templ Layout() {
 	docsAccessor := &stubDocAccessor{docs: []*Document{doc}}
 	rp := newTestReferencesProvider(index, docsAccessor)
 
-	ctx := makeCtx(doc, NodeKindNamedRef, "Header")
+	ctx := makeCtx(doc, NodeKindRefAttr, "header")
 	ctx.Scope.Component = doc.AST.Components[0]
-	ctx.Scope.NamedRefs = []tuigen.NamedRef{
-		{Name: "Header", Position: tuigen.Position{Line: 5, Column: 3}},
+	ctx.Scope.Refs = []tuigen.RefInfo{
+		{Name: "header", Position: tuigen.Position{Line: 5, Column: 3}},
 	}
 
 	result, err := rp.References(ctx, true)
@@ -231,17 +231,17 @@ templ Layout() {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(result) != 2 {
-		t.Errorf("expected 2 references (decl + usage) for multiline named ref, got %d", len(result))
+		t.Errorf("expected 2 references (decl + usage) for multiline ref attr, got %d", len(result))
 	}
 
-	// The declaration should point to #Header on line 4 (0-indexed), not the <div line
+	// The declaration should point to ref={header} on line 4 (0-indexed), not the <div line
 	if len(result) > 0 {
 		decl := result[0]
 		if decl.Range.Start.Line != 4 {
 			t.Errorf("expected decl on line 4, got %d", decl.Range.Start.Line)
 		}
-		if decl.Range.End.Character-decl.Range.Start.Character != len("#Header") {
-			t.Errorf("expected decl range length %d, got %d", len("#Header"), decl.Range.End.Character-decl.Range.Start.Character)
+		if decl.Range.End.Character-decl.Range.Start.Character != len("ref={header}") {
+			t.Errorf("expected decl range length %d, got %d", len("ref={header}"), decl.Range.End.Character-decl.Range.Start.Character)
 		}
 	}
 }

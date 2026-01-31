@@ -75,7 +75,7 @@ func TestGetWordAtOffset(t *testing.T) {
 		"hash prefix": {
 			content: "<div #Header>",
 			offset:  7,
-			want:    "#Header",
+			want:    "Header",
 		},
 		"out of bounds": {
 			content: "test",

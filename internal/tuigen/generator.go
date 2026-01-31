@@ -14,13 +14,6 @@ type deferredWatcher struct {
 	watcherExpr string // The watcher expression (e.g., "tui.Watch(dataCh, handler)")
 }
 
-// deferredHandler tracks a handler to be set after all elements are created.
-type deferredHandler struct {
-	elementVar string // The element variable to set the handler on
-	setter     string // The setter method (e.g., "SetOnKeyPress")
-	handlerExp string // The handler expression
-}
-
 // Generator transforms a validated AST into Go source code.
 type Generator struct {
 	buf        bytes.Buffer
@@ -28,8 +21,8 @@ type Generator struct {
 	varCounter int
 	sourceFile string // original .tui filename for header comment
 
-	// Named refs tracking for current component
-	namedRefs []NamedRef
+	// Refs tracking for current component
+	refs []RefInfo
 
 	// Watcher expressions for current component (onChannel/onTimer)
 	watchers []string
@@ -37,9 +30,6 @@ type Generator struct {
 	// Deferred watcher attachments (element var -> watcher expr)
 	// These are emitted after all elements are created so refs are valid
 	deferredWatchers []deferredWatcher
-
-	// Deferred handler attachments (for onKeyPress, onClick that reference refs)
-	deferredHandlers []deferredHandler
 
 	// Component calls with watchers that need aggregation
 	componentVars []string

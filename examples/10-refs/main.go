@@ -1,6 +1,6 @@
-// Package main demonstrates named element references (#Name).
+// Package main demonstrates element references using ref={} attributes.
 //
-// Named refs allow imperative access to elements from handlers.
+// Refs allow imperative access to elements from handlers.
 // This example shows how to use refs to access elements by name.
 //
 // To build and run:

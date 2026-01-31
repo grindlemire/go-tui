@@ -1,12 +1,12 @@
-// Package main demonstrates using named element refs (#Name) in .gsx files.
+// Package main demonstrates using element refs (ref={}) in .gsx files.
 //
-// This example shows how to use the named refs feature to access elements
+// This example shows how to use the refs feature to access elements
 // imperatively from Go code:
 //
-//   - Simple refs (#Header, #Content, #StatusBar): Direct element access
-//   - Loop refs (#Items): Slice of elements for items created in @for loops
-//   - Keyed loop refs (#Users): Slice of elements in the keyed demo
-//   - Conditional refs (#Warning): May be nil if the @if condition is false
+//   - Simple refs (header, content, statusBar): Direct element access
+//   - Loop refs (itemRefs): Slice of elements for items created in @for loops
+//   - Keyed loop refs (userRefs): Slice of elements in the keyed demo
+//   - Conditional refs (warning): May be nil if the @if condition is false
 //
 // To build and run:
 //
@@ -126,17 +126,17 @@ func handleRefsDemoKey(
 		refsView.view.Content.ScrollToBottom()
 		return true
 
-	// Change selection - demonstrates accessing Items slice ref
+	// Change selection - demonstrates accessing ItemRefs slice ref
 	case e.Rune == '+' || e.Rune == '=':
 		if *selectedIdx < len(items)-1 {
 			*selectedIdx++
-			highlightSelected(refsView.view.Items, *selectedIdx)
+			highlightSelected(refsView.view.ItemRefs, *selectedIdx)
 		}
 		return true
 	case e.Rune == '-' || e.Rune == '_':
 		if *selectedIdx > 0 {
 			*selectedIdx--
-			highlightSelected(refsView.view.Items, *selectedIdx)
+			highlightSelected(refsView.view.ItemRefs, *selectedIdx)
 		}
 		return true
 
@@ -170,13 +170,13 @@ func handleRefsDemoKey(
 func handleKeyedDemoKey(app *tui.App, e tui.KeyEvent, keyedView keyedDemoState, users []User) bool {
 	switch e.Rune {
 	case '1':
-		highlightUserByIdx(keyedView.view.Users, 0, users)
+		highlightUserByIdx(keyedView.view.UserRefs, 0, users)
 		return true
 	case '2':
-		highlightUserByIdx(keyedView.view.Users, 1, users)
+		highlightUserByIdx(keyedView.view.UserRefs, 1, users)
 		return true
 	case '3':
-		highlightUserByIdx(keyedView.view.Users, 2, users)
+		highlightUserByIdx(keyedView.view.UserRefs, 2, users)
 		return true
 	}
 	return false
@@ -220,7 +220,7 @@ func buildKeyedDemo(app *tui.App, users []User) keyedDemoState {
 	}
 }
 
-// highlightSelected demonstrates using the Items slice ref to modify
+// highlightSelected demonstrates using the ItemRefs slice ref to modify
 // individual elements created in a @for loop.
 func highlightSelected(items []*tui.Element, selectedIdx int) {
 	for i, item := range items {

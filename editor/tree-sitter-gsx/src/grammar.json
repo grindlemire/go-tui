@@ -376,22 +376,6 @@
           }
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "named_ref",
-              "content": {
-                "type": "SYMBOL",
-                "name": "named_ref"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
@@ -424,22 +408,6 @@
           }
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "named_ref",
-              "content": {
-                "type": "SYMBOL",
-                "name": "named_ref"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
           "type": "REPEAT",
           "content": {
             "type": "SYMBOL",
@@ -468,19 +436,6 @@
         {
           "type": "STRING",
           "value": ">"
-        }
-      ]
-    },
-    "named_ref": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "#"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "identifier"
         }
       ]
     },
@@ -845,8 +800,12 @@
         "type": "CHOICE",
         "members": [
           {
+            "type": "SYMBOL",
+            "name": "go_string_literal"
+          },
+          {
             "type": "PATTERN",
-            "value": "[^{}]+"
+            "value": "[^{}\"'`]+"
           },
           {
             "type": "SYMBOL",
@@ -854,6 +813,19 @@
           }
         ]
       }
+    },
+    "go_string_literal": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "PATTERN",
+          "value": "\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\""
+        },
+        {
+          "type": "PATTERN",
+          "value": "`[^`]*`"
+        }
+      ]
     },
     "nested_braces": {
       "type": "SEQ",
@@ -868,8 +840,12 @@
             "type": "CHOICE",
             "members": [
               {
+                "type": "SYMBOL",
+                "name": "go_string_literal"
+              },
+              {
                 "type": "PATTERN",
-                "value": "[^{}]+"
+                "value": "[^{}\"'`]+"
               },
               {
                 "type": "SYMBOL",
@@ -1187,8 +1163,12 @@
             "type": "CHOICE",
             "members": [
               {
+                "type": "SYMBOL",
+                "name": "go_string_literal"
+              },
+              {
                 "type": "PATTERN",
-                "value": "[^{}]+"
+                "value": "[^{}\"'`]+"
               },
               {
                 "type": "SYMBOL",

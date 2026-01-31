@@ -1,14 +1,11 @@
 # Build binaries
 /tui
-/dashboard
-/hello_layout
-/hello_rect
-/dsl-counter
-/focus
-/streaming
-/streaming-dsl
-/scrollabe
-/counter-state
+
+# Example binaries (go build output has no file extension)
+examples/*/*
+!examples/*/*.go
+!examples/*/*.gsx
+!examples/*/*.md
 
 debug.log
 

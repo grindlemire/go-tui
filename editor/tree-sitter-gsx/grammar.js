@@ -95,7 +95,6 @@ module.exports = grammar({
     self_closing_element: $ => seq(
       '<',
       field('tag', $.identifier),
-      optional(field('named_ref', $.named_ref)),
       repeat($.attribute),
       '/',
       '>',
@@ -104,7 +103,6 @@ module.exports = grammar({
     element_with_children: $ => seq(
       '<',
       field('tag', $.identifier),
-      optional(field('named_ref', $.named_ref)),
       repeat($.attribute),
       '>',
       repeat($._element_child),
@@ -112,9 +110,6 @@ module.exports = grammar({
       $.identifier,
       '>',
     ),
-
-    // Named reference: #Name
-    named_ref: $ => seq('#', $.identifier),
 
     _element_child: $ => choice(
       $.element,

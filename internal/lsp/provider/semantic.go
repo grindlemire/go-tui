@@ -62,9 +62,10 @@ type FunctionNameChecker interface {
 
 // semanticTokensProvider implements SemanticTokensProvider.
 type semanticTokensProvider struct {
-	fnChecker  FunctionNameChecker
-	docs       DocumentAccessor // optional, for accurate position lookups
-	currentURI string          // set during SemanticTokensFull call
+	fnChecker      FunctionNameChecker
+	docs           DocumentAccessor // optional, for accurate position lookups
+	currentURI     string          // set during SemanticTokensFull call
+	currentContent string          // set during SemanticTokensFull call
 }
 
 // NewSemanticTokensProvider creates a new semantic tokens provider.
@@ -74,6 +75,7 @@ func NewSemanticTokensProvider(fnChecker FunctionNameChecker, docs DocumentAcces
 
 func (s *semanticTokensProvider) SemanticTokensFull(doc *Document) (*SemanticTokens, error) {
 	s.currentURI = doc.URI
+	s.currentContent = doc.Content
 	log.Server("=== SemanticTokens provider for %s ===", doc.URI)
 
 	if doc.AST == nil {

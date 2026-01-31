@@ -165,7 +165,7 @@ func CursorContextToProvider(ctx *CursorContext) *provider.CursorContext {
 			Function:  ctx.Scope.Function,
 			ForLoop:   ctx.Scope.ForLoop,
 			IfStmt:    ctx.Scope.IfStmt,
-			NamedRefs: ctx.Scope.NamedRefs,
+			Refs:      ctx.Scope.Refs,
 			StateVars: ctx.Scope.StateVars,
 			LetBinds:  ctx.Scope.LetBinds,
 			Params:    ctx.Scope.Params,

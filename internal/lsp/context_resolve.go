@@ -201,17 +201,18 @@ func resolveInElement(ctx *CursorContext, elem *tuigen.Element, line, col int) b
 		}
 	}
 
-	// Check named ref (#Name) — can be on any line within the opening tag,
-	// not just the tag line (supports multiline elements).
-	if elem.NamedRef != "" && ctx.InElement {
-		hashIdx := strings.Index(ctx.Line, "#"+elem.NamedRef)
-		if hashIdx >= 0 {
-			refColStart := hashIdx + 1 // 0-indexed column of the ref name
-			refColEnd := refColStart + len(elem.NamedRef)
+	// Check ref={} attribute — detect cursor on ref attribute name or value.
+	// The ref attribute is stored in elem.RefExpr (extracted from attributes by the analyzer).
+	if elem.RefExpr != nil && ctx.InElement {
+		// Look for ref={...} in the source line
+		refIdx := strings.Index(ctx.Line, "ref={")
+		if refIdx >= 0 {
 			cursorCol := ctx.Position.Character
-			if cursorCol >= hashIdx && cursorCol <= refColEnd {
+			// ref={expr} — cover from "ref" through the closing "}"
+			refEnd := refIdx + len("ref={") + len(elem.RefExpr.Code) + 1 // +1 for }
+			if cursorCol >= refIdx && cursorCol <= refEnd {
 				ctx.Node = elem
-				ctx.NodeKind = NodeKindNamedRef
+				ctx.NodeKind = NodeKindRefAttr
 				return true
 			}
 		}
@@ -416,10 +417,14 @@ func collectScopeFromBodyInner(ctx *CursorContext, nodes []tuigen.Node, comp *tu
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *tuigen.Element:
-			if n.NamedRef != "" {
-				ref := tuigen.NamedRef{
-					Name:    n.NamedRef,
+			if n.RefExpr != nil {
+				ref := tuigen.RefInfo{
+					Name:    n.RefExpr.Code,
 					Element: n,
+				}
+				// Capitalize first letter for export name
+				if len(ref.Name) > 0 {
+					ref.ExportName = strings.ToUpper(ref.Name[:1]) + ref.Name[1:]
 				}
 				if ctx.Scope.ForLoop != nil {
 					ref.InLoop = true
@@ -430,7 +435,18 @@ func collectScopeFromBodyInner(ctx *CursorContext, nodes []tuigen.Node, comp *tu
 				if n.RefKey != nil {
 					ref.KeyExpr = n.RefKey.Code
 				}
-				ctx.Scope.NamedRefs = append(ctx.Scope.NamedRefs, ref)
+				// Determine ref kind
+				if ref.InLoop {
+					if ref.KeyExpr != "" {
+						ref.RefKind = tuigen.RefMap
+					} else {
+						ref.RefKind = tuigen.RefList
+					}
+				} else {
+					ref.RefKind = tuigen.RefSingle
+				}
+				ref.Position = n.RefExpr.Position
+				ctx.Scope.Refs = append(ctx.Scope.Refs, ref)
 			}
 			collectScopeFromBodyInner(ctx, n.Children, comp, stateVarsCollected)
 		case *tuigen.GoCode:
@@ -509,10 +525,7 @@ func getWordAtOffset(content string, offset int) string {
 	if start > 0 && content[start-1] == '@' {
 		start--
 	}
-	// Include # prefix for named refs
-	if start > 0 && content[start-1] == '#' {
-		start--
-	}
+	// Note: # prefix no longer needed (refs now use ref={} syntax)
 
 	// Find word end
 	end := offset

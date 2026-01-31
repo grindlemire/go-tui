@@ -47,9 +47,8 @@ func (r *referencesProvider) References(ctx *CursorContext, includeDecl bool) ([
 		}
 	case NodeKindLetBinding:
 		return r.findLocalVariableReferences(ctx, word, includeDecl), nil
-	case NodeKindNamedRef:
-		refWord := strings.TrimPrefix(word, "#")
-		return r.findNamedRefReferences(ctx, refWord, includeDecl), nil
+	case NodeKindRefAttr:
+		return r.findRefAttrReferences(ctx, word, includeDecl), nil
 	case NodeKindStateDecl, NodeKindStateAccess:
 		return r.findStateVarReferences(ctx, word, includeDecl), nil
 	}
@@ -67,10 +66,9 @@ func (r *referencesProvider) References(ctx *CursorContext, includeDecl bool) ([
 	if ctx.Scope.Component != nil {
 		compName := ctx.Scope.Component.Name
 
-		refWord := strings.TrimPrefix(word, "#")
-		for _, ref := range ctx.Scope.NamedRefs {
-			if ref.Name == refWord {
-				return r.findNamedRefReferences(ctx, refWord, includeDecl), nil
+		for _, ref := range ctx.Scope.Refs {
+			if ref.Name == word {
+				return r.findRefAttrReferences(ctx, word, includeDecl), nil
 			}
 		}
 
@@ -424,9 +422,9 @@ func (r *referencesProvider) findGoCodeVariableReferences(ctx *CursorContext, va
 	return refs
 }
 
-// --- Named ref references ---
+// --- Ref attribute references ---
 
-func (r *referencesProvider) findNamedRefReferences(ctx *CursorContext, refName string, includeDecl bool) []Location {
+func (r *referencesProvider) findRefAttrReferences(ctx *CursorContext, refName string, includeDecl bool) []Location {
 	var refs []Location
 
 	if ctx.Document.AST == nil {
@@ -438,9 +436,9 @@ func (r *referencesProvider) findNamedRefReferences(ctx *CursorContext, refName 
 			continue
 		}
 
-		// Find the #Name declaration on the element
+		// Find the ref={name} declaration on the element
 		if includeDecl {
-			findNamedRefDeclInNodes(comp.Body, refName, ctx.Document.Content, ctx.Document.URI, &refs)
+			findRefAttrDeclInNodes(comp.Body, refName, ctx.Document.Content, ctx.Document.URI, &refs)
 		}
 
 		// Find all usages of the ref name in Go expressions and handler arguments
@@ -451,14 +449,14 @@ func (r *referencesProvider) findNamedRefReferences(ctx *CursorContext, refName 
 	return refs
 }
 
-// findNamedRefDeclInNodes finds the element with #Name declaration.
-func findNamedRefDeclInNodes(nodes []tuigen.Node, refName string, content string, uri string, refs *[]Location) {
+// findRefAttrDeclInNodes finds the element with ref={name} declaration.
+func findRefAttrDeclInNodes(nodes []tuigen.Node, refName string, content string, uri string, refs *[]Location) {
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *tuigen.Element:
-			if n != nil && n.NamedRef == refName {
-				hashRef := "#" + refName
-				lineIdx, charIdx, found := findNamedRefPosition(content, n)
+			if n != nil && n.RefExpr != nil && n.RefExpr.Code == refName {
+				refAttr := "ref={" + refName + "}"
+				lineIdx, charIdx, found := findRefAttrPosition(content, n)
 				if !found {
 					// Fallback to element tag position
 					lineIdx = n.Position.Line - 1
@@ -468,29 +466,29 @@ func findNamedRefDeclInNodes(nodes []tuigen.Node, refName string, content string
 					URI: uri,
 					Range: Range{
 						Start: Position{Line: lineIdx, Character: charIdx},
-						End:   Position{Line: lineIdx, Character: charIdx + len(hashRef)},
+						End:   Position{Line: lineIdx, Character: charIdx + len(refAttr)},
 					},
 				})
 			}
 			if n != nil {
-				findNamedRefDeclInNodes(n.Children, refName, content, uri, refs)
+				findRefAttrDeclInNodes(n.Children, refName, content, uri, refs)
 			}
 		case *tuigen.ForLoop:
 			if n != nil {
-				findNamedRefDeclInNodes(n.Body, refName, content, uri, refs)
+				findRefAttrDeclInNodes(n.Body, refName, content, uri, refs)
 			}
 		case *tuigen.IfStmt:
 			if n != nil {
-				findNamedRefDeclInNodes(n.Then, refName, content, uri, refs)
-				findNamedRefDeclInNodes(n.Else, refName, content, uri, refs)
+				findRefAttrDeclInNodes(n.Then, refName, content, uri, refs)
+				findRefAttrDeclInNodes(n.Else, refName, content, uri, refs)
 			}
 		case *tuigen.LetBinding:
 			if n != nil && n.Element != nil {
-				findNamedRefDeclInNodes([]tuigen.Node{n.Element}, refName, content, uri, refs)
+				findRefAttrDeclInNodes([]tuigen.Node{n.Element}, refName, content, uri, refs)
 			}
 		case *tuigen.ComponentCall:
 			if n != nil {
-				findNamedRefDeclInNodes(n.Children, refName, content, uri, refs)
+				findRefAttrDeclInNodes(n.Children, refName, content, uri, refs)
 			}
 		}
 	}

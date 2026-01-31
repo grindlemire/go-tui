@@ -1,12 +1,12 @@
 // Package main demonstrates streaming text using DSL-generated components
-// with reactive state and named refs.
+// with reactive state and explicit refs.
 //
 // This example shows:
 // - Fully declarative UI in .gsx file
 // - Reactive state with auto-binding for footer updates
-// - Named refs (#Content) for element access in handlers
+// - Explicit refs (ref={content}) for cross-element access in handlers
+// - Self-inject handlers for element-local operations
 // - onChannel and onTimer watchers in DSL
-// - Forward-declared refs enabling handlers to reference later elements
 //
 // To build and run:
 //
@@ -35,7 +35,7 @@ func main() {
 
 	// Create app with all configuration via options
 	app, err := tui.NewApp(
-		tui.WithRoot(view.Root),
+		tui.WithRoot(view),
 		tui.WithGlobalKeyHandler(func(e tui.KeyEvent) bool {
 			if e.Rune == 'q' || e.Key == tui.KeyEscape {
 				tui.Stop()

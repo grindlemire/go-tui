@@ -122,63 +122,63 @@ templ Button(label string) {
 	}
 }
 
-func TestResolveCursorContext_NamedRef(t *testing.T) {
+func TestResolveCursorContext_RefAttr(t *testing.T) {
 	src := `package test
 
 templ Layout() {
-	<div #Header class="p-1">content</div>
+	<div ref={header} class="p-1">content</div>
 }
 `
 	doc := parseTestDoc(src)
 
-	// Cursor on "#Header" — "\t<div #Header ..." — '#' appears after '<div '
-	// We need to find the exact column. '#' char in the line.
+	// Cursor on "ref={header}" — find "ref=" in the line
 	line := getLineText(doc.Content, 3)
-	hashIdx := -1
-	for i := range line {
-		if line[i] == '#' {
-			hashIdx = i
+	refIdx := -1
+	for i := 0; i < len(line)-4; i++ {
+		if line[i:i+4] == "ref=" {
+			refIdx = i
 			break
 		}
 	}
-	if hashIdx < 0 {
-		t.Fatal("could not find # in line")
+	if refIdx < 0 {
+		t.Fatal("could not find ref= in line")
 	}
 
-	ctx := ResolveCursorContext(doc, Position{Line: 3, Character: hashIdx + 1})
+	// Position on the value part (inside ref={header})
+	ctx := ResolveCursorContext(doc, Position{Line: 3, Character: refIdx + 5})
 
-	if ctx.NodeKind != NodeKindNamedRef {
-		t.Errorf("expected NodeKindNamedRef, got %s", ctx.NodeKind)
+	if ctx.NodeKind != NodeKindRefAttr {
+		t.Errorf("expected NodeKindRefAttr, got %s", ctx.NodeKind)
 	}
 }
 
-func TestResolveCursorContext_NamedRef_Multiline(t *testing.T) {
+func TestResolveCursorContext_RefAttr_Multiline(t *testing.T) {
 	src := `package test
 
 templ Layout() {
 	<div
-		#Header
+		ref={header}
 		class="p-1">content</div>
 }
 `
 	doc := parseTestDoc(src)
 
-	// Cursor on "#Header" on its own line (line 4)
+	// Cursor on "ref={header}" on its own line (line 4)
 	line := getLineText(doc.Content, 4)
-	hashIdx := -1
-	for i := range line {
-		if line[i] == '#' {
-			hashIdx = i
+	refIdx := -1
+	for i := 0; i < len(line)-4; i++ {
+		if line[i:i+4] == "ref=" {
+			refIdx = i
 			break
 		}
 	}
-	if hashIdx < 0 {
-		t.Fatal("could not find # in line")
+	if refIdx < 0 {
+		t.Fatal("could not find ref= in line")
 	}
 
-	ctx := ResolveCursorContext(doc, Position{Line: 4, Character: hashIdx + 1})
+	ctx := ResolveCursorContext(doc, Position{Line: 4, Character: refIdx + 5})
 
-	if ctx.NodeKind != NodeKindNamedRef {
-		t.Errorf("expected NodeKindNamedRef, got %s", ctx.NodeKind)
+	if ctx.NodeKind != NodeKindRefAttr {
+		t.Errorf("expected NodeKindRefAttr, got %s", ctx.NodeKind)
 	}
 }

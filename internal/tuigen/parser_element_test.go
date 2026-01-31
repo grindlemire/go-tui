@@ -279,7 +279,7 @@ templ Test() {
 	}
 }
 
-func TestParser_NamedRef(t *testing.T) {
+func TestParser_RefAttribute(t *testing.T) {
 	type tc struct {
 		input     string
 		wantRef   string
@@ -288,39 +288,39 @@ func TestParser_NamedRef(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"simple named ref": {
+		"simple ref attribute": {
 			input: `package x
 templ Test() {
-	<div #Content></div>
+	<div ref={content}></div>
 }`,
-			wantRef:   "Content",
+			wantRef:   "content",
 			wantTag:   "div",
 			wantAttrs: 0,
 		},
-		"named ref with attributes": {
+		"ref attribute with attributes": {
 			input: `package x
 templ Test() {
-	<span #Title class="bold">hello</span>
+	<span ref={title} class="bold">hello</span>
 }`,
-			wantRef:   "Title",
+			wantRef:   "title",
 			wantTag:   "span",
 			wantAttrs: 1,
 		},
-		"named ref self-closing": {
+		"ref attribute self-closing": {
 			input: `package x
 templ Test() {
-	<div #Spacer />
+	<div ref={spacer} />
 }`,
-			wantRef:   "Spacer",
+			wantRef:   "spacer",
 			wantTag:   "div",
 			wantAttrs: 0,
 		},
-		"named ref with multiple attributes": {
+		"ref attribute with multiple attributes": {
 			input: `package x
 templ Test() {
-	<div #Content width=100 height=50></div>
+	<div ref={content} width=100 height=50></div>
 }`,
-			wantRef:   "Content",
+			wantRef:   "content",
 			wantTag:   "div",
 			wantAttrs: 2,
 		},
@@ -350,8 +350,11 @@ templ Test() {
 				t.Fatalf("body[0]: expected *Element, got %T", body[0])
 			}
 
-			if elem.NamedRef != tt.wantRef {
-				t.Errorf("NamedRef = %q, want %q", elem.NamedRef, tt.wantRef)
+			if elem.RefExpr == nil {
+				t.Fatal("RefExpr should not be nil")
+			}
+			if elem.RefExpr.Code != tt.wantRef {
+				t.Errorf("RefExpr.Code = %q, want %q", elem.RefExpr.Code, tt.wantRef)
 			}
 			if elem.Tag != tt.wantTag {
 				t.Errorf("Tag = %q, want %q", elem.Tag, tt.wantTag)
@@ -359,16 +362,23 @@ templ Test() {
 			if len(elem.Attributes) != tt.wantAttrs {
 				t.Errorf("len(Attributes) = %d, want %d", len(elem.Attributes), tt.wantAttrs)
 			}
+
+			// ref should be removed from attributes
+			for _, attr := range elem.Attributes {
+				if attr.Name == "ref" {
+					t.Error("ref attribute should be moved to RefExpr, not remain in Attributes")
+				}
+			}
 		})
 	}
 }
 
-func TestParser_NamedRefWithKey(t *testing.T) {
+func TestParser_RefAttributeWithKey(t *testing.T) {
 	input := `package x
 templ Test(items []Item) {
 	<ul>
 		@for _, item := range items {
-			<li #Items key={item.ID}>{item.Name}</li>
+			<li ref={items} key={item.ID}>{item.Name}</li>
 		}
 	</ul>
 }`
@@ -386,8 +396,12 @@ templ Test(items []Item) {
 	forLoop := ul.Children[0].(*ForLoop)
 	li := forLoop.Body[0].(*Element)
 
-	if li.NamedRef != "Items" {
-		t.Errorf("NamedRef = %q, want 'Items'", li.NamedRef)
+	if li.RefExpr == nil {
+		t.Fatal("RefExpr should not be nil")
+	}
+
+	if li.RefExpr.Code != "items" {
+		t.Errorf("RefExpr.Code = %q, want 'items'", li.RefExpr.Code)
 	}
 
 	if li.RefKey == nil {
@@ -398,21 +412,24 @@ templ Test(items []Item) {
 		t.Errorf("RefKey.Code = %q, want 'item.ID'", li.RefKey.Code)
 	}
 
-	// key should be removed from attributes
+	// ref and key should be removed from attributes
 	for _, attr := range li.Attributes {
+		if attr.Name == "ref" {
+			t.Error("ref attribute should be moved to RefExpr, not remain in Attributes")
+		}
 		if attr.Name == "key" {
 			t.Error("key attribute should be moved to RefKey, not remain in Attributes")
 		}
 	}
 }
 
-func TestParser_MultipleNamedRefs(t *testing.T) {
+func TestParser_MultipleRefAttributes(t *testing.T) {
 	input := `package x
 templ Test() {
 	<div>
-		<div #Header height=3></div>
-		<div #Content></div>
-		<div #Footer height=3></div>
+		<div ref={header} height=3></div>
+		<div ref={content}></div>
+		<div ref={footer} height=3></div>
 	</div>
 }`
 
@@ -431,14 +448,18 @@ templ Test() {
 		t.Fatalf("expected 3 children, got %d", len(container.Children))
 	}
 
-	expectedRefs := []string{"Header", "Content", "Footer"}
+	expectedRefs := []string{"header", "content", "footer"}
 	for i, child := range container.Children {
 		elem, ok := child.(*Element)
 		if !ok {
 			t.Fatalf("child %d: expected *Element, got %T", i, child)
 		}
-		if elem.NamedRef != expectedRefs[i] {
-			t.Errorf("child %d: NamedRef = %q, want %q", i, elem.NamedRef, expectedRefs[i])
+		if elem.RefExpr == nil {
+			t.Errorf("child %d: RefExpr should not be nil", i)
+			continue
+		}
+		if elem.RefExpr.Code != expectedRefs[i] {
+			t.Errorf("child %d: RefExpr.Code = %q, want %q", i, elem.RefExpr.Code, expectedRefs[i])
 		}
 	}
 }

@@ -75,8 +75,8 @@ func (h *hoverProvider) Hover(ctx *CursorContext) (*Hover, error) {
 		return h.hoverFunction(ctx)
 	case NodeKindComponentCall:
 		return h.hoverComponentCall(ctx)
-	case NodeKindNamedRef:
-		return h.hoverNamedRef(ctx)
+	case NodeKindRefAttr:
+		return h.hoverRefAttr(ctx)
 	case NodeKindStateDecl:
 		return h.hoverStateDecl(ctx)
 	case NodeKindStateAccess:
@@ -240,41 +240,46 @@ func (h *hoverProvider) hoverComponentCall(ctx *CursorContext) (*Hover, error) {
 	return nil, nil
 }
 
-func (h *hoverProvider) hoverNamedRef(ctx *CursorContext) (*Hover, error) {
+func (h *hoverProvider) hoverRefAttr(ctx *CursorContext) (*Hover, error) {
 	elem, ok := ctx.Node.(*tuigen.Element)
-	if !ok || elem == nil {
+	if !ok || elem == nil || elem.RefExpr == nil {
 		return nil, nil
 	}
 
-	refType := "`*element.Element`"
+	refName := elem.RefExpr.Code
+	// Capitalize first letter for export name
+	exportName := refName
+	if len(refName) > 0 {
+		exportName = strings.ToUpper(refName[:1]) + refName[1:]
+	}
+
+	refType := "`*tui.Element`"
 	refContext := "Simple (direct access)"
-	accessPattern := fmt.Sprintf("`view.%s`", elem.NamedRef)
+	accessPattern := fmt.Sprintf("`view.%s`", exportName)
 
 	// Check scope for richer context
-	{
-		for _, ref := range ctx.Scope.NamedRefs {
-			if ref.Name == elem.NamedRef {
-				if ref.InLoop {
-					if ref.KeyExpr != "" {
-						refType = "`map[KeyType]*element.Element`"
-						refContext = "Keyed (map access)"
-						accessPattern = fmt.Sprintf("`view.%s[key]`", elem.NamedRef)
-					} else {
-						refType = "`[]*element.Element`"
-						refContext = "Loop (slice access)"
-						accessPattern = fmt.Sprintf("`view.%s[i]`", elem.NamedRef)
-					}
+	for _, ref := range ctx.Scope.Refs {
+		if ref.Name == refName {
+			if ref.InLoop {
+				if ref.KeyExpr != "" {
+					refType = "`map[KeyType]*tui.Element`"
+					refContext = "Keyed (map access)"
+					accessPattern = fmt.Sprintf("`view.%s[key]`", exportName)
+				} else {
+					refType = "`[]*tui.Element`"
+					refContext = "Loop (slice access)"
+					accessPattern = fmt.Sprintf("`view.%s[i]`", exportName)
 				}
-				if ref.InConditional {
-					refContext += " (nullable)"
-				}
-				break
 			}
+			if ref.InConditional {
+				refContext += " (nullable)"
+			}
+			break
 		}
 	}
 
-	md := fmt.Sprintf("**Named Ref** `%s`\n\nType: %s\n\nContext: %s\n\nAccess via view struct: %s",
-		elem.NamedRef, refType, refContext, accessPattern)
+	md := fmt.Sprintf("**Element Ref** `%s`\n\nType: %s\n\nContext: %s\n\nAccess via view struct: %s",
+		refName, refType, refContext, accessPattern)
 	return markdownHover(md), nil
 }
 

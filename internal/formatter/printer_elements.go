@@ -20,13 +20,15 @@ func (p *printer) printElement(elem *tuigen.Element) {
 	multiLine := elem.MultiLineAttrs || elem.ClosingBracketNewLine
 
 	if multiLine {
-		// Multi-line: each attr/ref on its own line, indented one tab deeper than element
+		// Multi-line: each attr on its own line, indented one tab deeper than element
 		p.depth++
-		if elem.NamedRef != "" {
+		// Emit ref={expr} first if present (extracted from attributes during parsing)
+		if elem.RefExpr != nil {
 			p.newline()
 			p.writeIndent()
-			p.write("#")
-			p.write(elem.NamedRef)
+			p.write("ref={")
+			p.write(elem.RefExpr.Code)
+			p.write("}")
 		}
 		for _, attr := range elem.Attributes {
 			p.newline()
@@ -35,10 +37,12 @@ func (p *printer) printElement(elem *tuigen.Element) {
 		}
 		p.depth--
 	} else {
-		// Single-line: all attrs/ref on same line
-		if elem.NamedRef != "" {
-			p.write(" #")
-			p.write(elem.NamedRef)
+		// Single-line: all attrs on same line
+		// Emit ref={expr} first if present (extracted from attributes during parsing)
+		if elem.RefExpr != nil {
+			p.write(" ref={")
+			p.write(elem.RefExpr.Code)
+			p.write("}")
 		}
 		for _, attr := range elem.Attributes {
 			p.write(" ")

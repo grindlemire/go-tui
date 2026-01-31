@@ -48,7 +48,7 @@ const (
 	NodeKindComponent
 	NodeKindElement
 	NodeKindAttribute
-	NodeKindNamedRef
+	NodeKindRefAttr // Cursor on ref={} attribute value
 	NodeKindGoExpr
 	NodeKindForLoop
 	NodeKindIfStmt
@@ -73,8 +73,8 @@ func (k NodeKind) String() string {
 		return "Element"
 	case NodeKindAttribute:
 		return "Attribute"
-	case NodeKindNamedRef:
-		return "NamedRef"
+	case NodeKindRefAttr:
+		return "RefAttr"
 	case NodeKindGoExpr:
 		return "GoExpr"
 	case NodeKindForLoop:
@@ -112,7 +112,7 @@ type Scope struct {
 	Function  *tuigen.GoFunc
 	ForLoop   *tuigen.ForLoop
 	IfStmt    *tuigen.IfStmt
-	NamedRefs []tuigen.NamedRef
+	Refs      []tuigen.RefInfo
 	StateVars []tuigen.StateVar
 	LetBinds  []*tuigen.LetBinding
 	Params    []*tuigen.Param

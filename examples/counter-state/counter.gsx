@@ -29,21 +29,21 @@ templ CounterUI() {
 	</div>
 }
 
-func increment(count *tui.State[int]) func() {
-	return func() {
+func increment(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		debug.Log("increment callback called")
 		count.Set(count.Get() + 1)
 	}
 }
 
-func decrement(count *tui.State[int]) func() {
-	return func() {
+func decrement(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(count.Get() - 1)
 	}
 }
 
-func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
+func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
+	return func(el *tui.Element, e tui.KeyEvent) {
 		debug.Log("[CounterUI] handleKeys called: %+v", e)
 		switch e.Rune {
 		case '+':

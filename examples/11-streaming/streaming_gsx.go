@@ -16,32 +16,31 @@ func tick(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
-		stayAtBottom := content.IsAtBottom()
+		el := content.El()
+		stayAtBottom := el.IsAtBottom()
 
 		lineElem := tui.New(
 			tui.WithText(line),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
-		content.AddChild(lineElem)
+		el.AddChild(lineElem)
 
 		if stayAtBottom {
-			content.ScrollToBottom()
+			el.ScrollToBottom()
 		}
 	}
 }
 
-func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
-		switch e.Rune {
-		case 'j':
-			content.ScrollBy(0, 1)
-		case 'k':
-			content.ScrollBy(0, -1)
-		}
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+	case 'k':
+		el.ScrollBy(0, -1)
 	}
 }
 
@@ -59,10 +58,9 @@ func Streaming(dataCh <-chan string) StreamingView {
 	var view StreamingView
 	var watchers []tui.Watcher
 
-	var Content *tui.Element
-
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
+	content := tui.NewRef()
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -78,57 +76,56 @@ func Streaming(dataCh <-chan string) StreamingView {
 		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	Content = tui.New(
+	__tui_3 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithFocusable(true),
+		tui.WithOnKeyPress(handleScrollKeys),
 	)
-	__tui_0.AddChild(Content)
-	__tui_3 := tui.New(
+	content.Set(__tui_3)
+	__tui_0.AddChild(__tui_3)
+	__tui_4 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_4 := tui.New()
-	__tui_5 := tui.New(tui.WithText("Lines:"))
+	__tui_5 := tui.New()
+	__tui_6 := tui.New(tui.WithText("Lines:"))
+	__tui_5.AddChild(__tui_6)
+	__tui_7 := tui.New(tui.WithText(fmt.Sprintf("%d", lineCount.Get())))
+	__tui_5.AddChild(__tui_7)
 	__tui_4.AddChild(__tui_5)
-	__tui_6 := tui.New(tui.WithText(fmt.Sprintf("%d", lineCount.Get())))
-	__tui_4.AddChild(__tui_6)
-	__tui_3.AddChild(__tui_4)
-	__tui_7 := tui.New()
-	__tui_8 := tui.New(tui.WithText("Elapsed:"))
-	__tui_7.AddChild(__tui_8)
-	__tui_9 := tui.New(tui.WithText(fmt.Sprintf("%ds", elapsed.Get())))
-	__tui_7.AddChild(__tui_9)
-	__tui_3.AddChild(__tui_7)
-	__tui_0.AddChild(__tui_3)
-	__tui_10 := tui.New(
+	__tui_8 := tui.New()
+	__tui_9 := tui.New(tui.WithText("Elapsed:"))
+	__tui_8.AddChild(__tui_9)
+	__tui_10 := tui.New(tui.WithText(fmt.Sprintf("%ds", elapsed.Get())))
+	__tui_8.AddChild(__tui_10)
+	__tui_4.AddChild(__tui_8)
+	__tui_0.AddChild(__tui_4)
+	__tui_11 := tui.New(
 		tui.WithText("Press q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_10)
-
-	// Attach handlers (deferred until refs are assigned)
-	Content.SetOnKeyPress(handleScrollKeys(Content))
+	__tui_0.AddChild(__tui_11)
 
 	// Attach watchers (deferred until refs are assigned)
 	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(elapsed)))
-	__tui_0.AddWatcher(tui.Watch(dataCh, addLine(lineCount, Content)))
+	__tui_0.AddWatcher(tui.Watch(dataCh, addLine(lineCount, content)))
 
 	// State bindings
 	lineCount.Bind(func(_ int) {
-		__tui_6.SetText(fmt.Sprintf("%d", lineCount.Get()))
+		__tui_7.SetText(fmt.Sprintf("%d", lineCount.Get()))
 	})
 	elapsed.Bind(func(_ int) {
-		__tui_9.SetText(fmt.Sprintf("%ds", elapsed.Get()))
+		__tui_10.SetText(fmt.Sprintf("%ds", elapsed.Get()))
 	})
 
 	view = StreamingView{
 		Root:     __tui_0,
 		watchers: watchers,
-		Content:  Content,
+		Content:  content.El(),
 	}
 	return view
 }

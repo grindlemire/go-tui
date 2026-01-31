@@ -9,8 +9,8 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
+func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
+	return func(el *tui.Element, e tui.KeyEvent) {
 		keyCount.Set(keyCount.Get() + 1)
 
 		if e.Rune != 0 {
@@ -76,6 +76,7 @@ func Keyboard() KeyboardView {
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithOnKeyPress(handleKey(lastKey, keyCount)),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Keyboard Events"),
@@ -125,9 +126,6 @@ func Keyboard() KeyboardView {
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_10)
-
-	// Attach handlers (deferred until refs are assigned)
-	__tui_0.SetOnKeyPress(handleKey(lastKey, keyCount))
 
 	// State bindings
 	lastKey.Bind(func(_ string) {

@@ -58,13 +58,13 @@ type Element struct {
 	// Focus properties
 	focusable bool
 	focused   bool
-	onFocus   func()
-	onBlur    func()
-	onEvent   func(Event) bool
+	onFocus   func(*Element)
+	onBlur    func(*Element)
+	onEvent   func(*Element, Event) bool
 
 	// Event handlers (no bool return - mutations mark dirty automatically)
-	onKeyPress func(KeyEvent)
-	onClick    func()
+	onKeyPress func(*Element, KeyEvent)
+	onClick    func(*Element)
 
 	// Tree notification
 	onChildAdded     func(*Element)

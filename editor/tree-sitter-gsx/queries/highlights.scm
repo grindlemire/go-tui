@@ -57,15 +57,6 @@
 "/" @tag.delimiter
 
 ; ====================
-; Named References
-; ====================
-
-; Named ref punctuation and name
-(named_ref
-  "#" @punctuation.special
-  (identifier) @variable.definition)
-
-; ====================
 ; Attributes
 ; ====================
 

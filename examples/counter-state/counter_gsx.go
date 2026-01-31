@@ -11,21 +11,21 @@ import (
 	"github.com/grindlemire/go-tui/internal/debug"
 )
 
-func increment(count *tui.State[int]) func() {
-	return func() {
+func increment(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		debug.Log("increment callback called")
 		count.Set(count.Get() + 1)
 	}
 }
 
-func decrement(count *tui.State[int]) func() {
-	return func() {
+func decrement(count *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
 		count.Set(count.Get() - 1)
 	}
 }
 
-func handleKeys(count *tui.State[int]) func(tui.KeyEvent) {
-	return func(e tui.KeyEvent) {
+func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
+	return func(el *tui.Element, e tui.KeyEvent) {
 		debug.Log("[CounterUI] handleKeys called: %+v", e)
 		switch e.Rune {
 		case '+':
@@ -61,6 +61,7 @@ func CounterUI() CounterUIView {
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
+		tui.WithOnKeyPress(handleKeys(count)),
 	)
 	__tui_1 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
@@ -99,11 +100,15 @@ func CounterUI() CounterUIView {
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_8 := tui.New()
+	__tui_8 := tui.New(
+		tui.WithOnClick(increment(count)),
+	)
 	__tui_9 := tui.New(tui.WithText(" + "))
 	__tui_8.AddChild(__tui_9)
 	__tui_7.AddChild(__tui_8)
-	__tui_10 := tui.New()
+	__tui_10 := tui.New(
+		tui.WithOnClick(decrement(count)),
+	)
 	__tui_11 := tui.New(tui.WithText(" - "))
 	__tui_10.AddChild(__tui_11)
 	__tui_7.AddChild(__tui_10)
@@ -118,11 +123,6 @@ func CounterUI() CounterUIView {
 	)
 	__tui_12.AddChild(__tui_13)
 	__tui_0.AddChild(__tui_12)
-
-	// Attach handlers (deferred until refs are assigned)
-	__tui_0.SetOnKeyPress(handleKeys(count))
-	__tui_8.SetOnClick(increment(count))
-	__tui_10.SetOnClick(decrement(count))
 
 	// Attach watchers (deferred until refs are assigned)
 	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(count)))

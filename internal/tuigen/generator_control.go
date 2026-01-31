@@ -29,15 +29,6 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string) {
 		})
 	}
 
-	// Defer handler attachment (onKeyPress, onClick)
-	for _, h := range elemOpts.handlers {
-		g.deferredHandlers = append(g.deferredHandlers, deferredHandler{
-			elementVar: let.Name,
-			setter:     h.setter,
-			handlerExp: h.expr,
-		})
-	}
-
 	// Generate children for the let-bound element - skip if text element already has content in WithText
 	if !skipTextChildren(let.Element) {
 		g.generateChildren(let.Name, let.Element.Children)
