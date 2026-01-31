@@ -105,7 +105,7 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
 
 **Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
-**Completed in commit:** (pending)
+**Completed in commit:** 89c986a
 
 - [x] Move `pkg/debug/` → `internal/debug/`
   - Move `debug.go`
@@ -167,11 +167,11 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
 
 **Reference:** [restructure-design.md §2](./restructure-design.md#2-architecture)
 
-**Completed in commit:** (pending)
+**Completed in commit:** (will fill after commit)
 
 All splits are pure file reorganization — no logic changes. Target: every source file <=500 lines.
 
-- [ ] Split root `app.go` (~913 lines) into:
+- [x] Split root `app.go` (~913 lines) into:
   - `app.go` — App struct, NewApp constructor, NewAppWithReader
   - `app_options.go` — AppOption type and all With* option functions (~112 lines)
   - `app_lifecycle.go` — Close, PrintAbove, printAboveRaw
@@ -179,7 +179,7 @@ All splits are pure file reorganization — no logic changes. Target: every sour
   - `app_render.go` — Render, renderInline, RenderFull methods
   - `app_loop.go` — Run, Stop, QueueUpdate
 
-- [ ] Split root `element.go` (~713 lines) into:
+- [x] Split root `element.go` (~713 lines) into:
   - `element.go` — Element struct, New(), type definitions (TextAlign, ScrollMode)
   - `element_layout.go` — Layoutable interface impl (LayoutStyle, LayoutChildren, IntrinsicSize)
   - `element_tree.go` — AddChild, RemoveChild, Children, Parent, tree walking, notifyChildAdded
@@ -187,74 +187,74 @@ All splits are pure file reorganization — no logic changes. Target: every sour
   - `element_focus.go` — Focus/Blur, HandleEvent, handleScrollEvent, WalkFocusables
   - `element_watchers.go` — SetOnUpdate, AddWatcher, WalkWatchers, ElementAtPoint
 
-- [ ] Split `internal/tuigen/parser.go` (~1537 lines) into:
+- [x] Split `internal/tuigen/parser.go` (~1537 lines) into:
   - `parser.go` — Parser struct, initialization, token navigation, comment handling, file/package/import parsing
   - `parser_component.go` — Component and function signature parsing, templ detection
   - `parser_element.go` — Element tag parsing, attributes, inline children
   - `parser_control.go` — @let, @for, @if parsing and related helpers
   - `parser_expr.go` — Go expression parsing, text content, component calls
 
-- [ ] Split `internal/tuigen/generator.go` (~1312 lines) into:
+- [x] Split `internal/tuigen/generator.go` (~1312 lines) into:
   - `generator.go` — Generator struct, file/package/import generation, utility methods
   - `generator_component.go` — Component function generation, view struct generation
   - `generator_element.go` — Element creation, option building, attribute-to-option mapping
   - `generator_control.go` — For loop, if statement, let binding generation
   - `generator_children.go` — Children rendering, body dispatch, slice-building context
 
-- [ ] Split `internal/tuigen/analyzer.go` (~1133 lines) into:
+- [x] Split `internal/tuigen/analyzer.go` (~1133 lines) into:
   - `analyzer.go` — Analyzer struct, known attributes/tags, main Analyze method, component validation
   - `analyzer_refs.go` — Named ref validation, inference, let-binding transformation
   - `analyzer_imports.go` — Import management, missing import insertion
   - `analyzer_state.go` — State variable detection, binding detection, deps parsing
 
-- [ ] Split `internal/tuigen/lexer.go` (~924 lines) into:
+- [x] Split `internal/tuigen/lexer.go` (~924 lines) into:
   - `lexer.go` — Lexer struct, initialization, main Next() method, position tracking
   - `lexer_strings.go` — String, rune, raw string literal reading
   - `lexer_goexpr.go` — Balanced brace reading for Go expressions, peek variants
   - `lexer_utils.go` — Comment collection, identifier reading, number literals, utility helpers
 
-- [ ] Split `internal/tuigen/tailwind.go` (~929 lines) into:
+- [x] Split `internal/tuigen/tailwind.go` (~929 lines) into:
   - `tailwind.go` — ParseTailwindClass, ParseTailwindClasses, BuildTextStyleOption
   - `tailwind_data.go` — Static class map, regex patterns, accumulator types
   - `tailwind_validation.go` — Validation, fuzzy matching, Levenshtein distance
   - `tailwind_autocomplete.go` — AllTailwindClasses documentation data
 
-- [ ] Split `internal/lsp/provider/semantic.go` (~1382 lines) into:
+- [x] Split `internal/lsp/provider/semantic.go` (~1382 lines) into:
   - `semantic.go` — Types, constants, main SemanticTokensProvider, encoding
   - `semantic_nodes.go` — AST node processing and dispatch
   - `semantic_gocode.go` — Go expression tokenization, variable extraction
 
-- [ ] Split `internal/lsp/provider/references.go` (~874 lines) into:
+- [x] Split `internal/lsp/provider/references.go` (~874 lines) into:
   - `references.go` — Main ReferencesProvider, reference dispatch
   - `references_search.go` — Cross-file search, workspace scanning
 
-- [ ] Split `internal/lsp/context.go` (~837 lines) into:
+- [x] Split `internal/lsp/context.go` (~837 lines) into:
   - `context.go` — CursorContext struct, NodeKind enum, Scope struct, resolve entry point
   - `context_resolve.go` — AST walking, node classification, scope building
 
-- [ ] Split `internal/lsp/provider/definition.go` (~741 lines) into:
+- [x] Split `internal/lsp/provider/definition.go` (~741 lines) into:
   - `definition.go` — Main DefinitionProvider, definition dispatch
   - `definition_search.go` — Cross-file definition search, gopls delegation
 
-- [ ] Split `internal/lsp/provider/completion.go` (~587 lines) into:
+- [x] Split `internal/lsp/provider/completion.go` (~587 lines) into:
   - `completion.go` — Main CompletionProvider, completion dispatch
   - `completion_items.go` — Completion item builders, attribute/event completions
 
-- [ ] Split `internal/formatter/printer.go` (~852 lines) into:
+- [x] Split `internal/formatter/printer.go` (~852 lines) into:
   - `printer.go` — Printer struct, PrintFile, package/component printing, node dispatch
   - `printer_elements.go` — Element printing with attributes and inline children
   - `printer_control.go` — @for, @if, @let, component call printing
   - `printer_comments.go` — Comment formatting and printing methods
 
-- [ ] Split `internal/lsp/gopls/proxy.go` (~564 lines) into:
+- [x] Split `internal/lsp/gopls/proxy.go` (~564 lines) into:
   - `proxy.go` — GoplsProxy struct, lifecycle, communication
   - `proxy_requests.go` — Request forwarding, response handling
 
-- [ ] Split `internal/lsp/gopls/generate.go` (~557 lines) into:
+- [x] Split `internal/lsp/gopls/generate.go` (~557 lines) into:
   - `generate.go` — Virtual Go file generation core
   - `generate_state.go` — State variable and named ref emission
 
-- [ ] Note: The following LSP root-level files are now thin adapters (≤195 lines each) after the devtools overhaul moved logic into `provider/`. No splits needed:
+- [x] Note: The following LSP root-level files are now thin adapters (≤195 lines each) after the devtools overhaul moved logic into `provider/`. No splits needed:
   - `semantic_tokens.go` (12 lines), `hover.go` (33 lines), `references.go` (14 lines), `definition.go` (13 lines), `formatting.go` (14 lines), `diagnostics.go` (69 lines), `completion.go` (195 lines), `symbols.go` (49 lines), `handler.go` (466 lines)
 
 **Tests:** Run `go test ./... ` (excluding examples) — all pass, no logic changes
