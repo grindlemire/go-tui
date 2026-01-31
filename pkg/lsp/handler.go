@@ -141,7 +141,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 				},
 			},
 			CompletionProvider: &CompletionOptions{
-				TriggerCharacters: []string{"@", "<", "{"},
+				TriggerCharacters: []string{"@", "<", "{", "."},
 			},
 			HoverProvider:              true,
 			DefinitionProvider:         true,
@@ -166,6 +166,8 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 						"decorator",   // 11: @ prefix
 						"regexp",      // 12: format specifiers (often purple)
 						"comment",     // 13: comments
+					"label",         // 14: named refs (#Name)
+						"typeParameter", // 15: generic type arguments
 					},
 					TokenModifiers: []string{
 						"declaration",  // 0: where defined

@@ -60,6 +60,10 @@ func (s *stubIndex) LookupParam(componentName, paramName string) (*ParamInfo, bo
 	return info, ok
 }
 
+func (s *stubIndex) LookupFuncParam(funcName, paramName string) (*FuncParamInfo, bool) {
+	return nil, false
+}
+
 func (s *stubIndex) All() []string {
 	names := make([]string, 0, len(s.components))
 	for name := range s.components {

@@ -226,19 +226,19 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Update routes to dispatch to providers
   - Ensure semantic token legend in initialize response matches the named constants
 
-- [ ] Remove old files: `pkg/lsp/semantic_tokens.go`, `pkg/lsp/diagnostics.go`, `pkg/lsp/formatting.go`
+- [x] Remove old files: `pkg/lsp/semantic_tokens.go`, `pkg/lsp/diagnostics.go`, `pkg/lsp/formatting.go`
   - Old type definitions replaced with type aliases; handler.go retained for initialize response
 
-- [ ] Remove old handler.go: `pkg/lsp/handler.go`
+- [x] Remove old handler.go: `pkg/lsp/handler.go`
   - Handler.go still provides the initialize response with capabilities; routing is in router.go
 
-- [ ] Create `pkg/lsp/provider/semantic_test.go`
+- [x] Create `pkg/lsp/provider/semantic_test.go`
   - Test token output for: component declarations, function declarations, keywords, parameters, variables, strings, numbers, attributes, component calls, comments
   - Test per-component context (parameters recognized as known identifiers)
   - Test format specifier highlighting in strings
   - Verify token type constants match legend order
 
-- [ ] Create `pkg/lsp/provider/diagnostics_test.go`
+- [x] Create `pkg/lsp/provider/diagnostics_test.go`
   - Test error position mapping from tuigen to LSP format
   - Test multiple errors in a single document
 
@@ -311,7 +311,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 
 **Completed in commit:** (pending)
 
-- [ ] Update `editor/vscode/syntaxes/gsx.tmLanguage.json`
+- [x] Update `editor/vscode/syntaxes/gsx.tmLanguage.json`
   - Change all `.tui` scope suffixes to `.gsx` in named-ref patterns (meta.named-ref, punctuation.definition.named-ref, entity.name.tag.named-ref)
   - Add scope patterns for state declarations: `tui.NewState(...)` with `entity.name.function.gsx` for NewState
   - Add scope patterns for state method calls: `.Get()`, `.Set()`, `.Update()`, `.Bind()` with `entity.name.function.gsx`
@@ -319,12 +319,12 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Verify `templ` keyword is highlighted (not `@component`)
   - Test all patterns against the test files
 
-- [ ] Update `editor/vscode/language-configuration.json`
+- [x] Update `editor/vscode/language-configuration.json`
   - Change folding start pattern from `@component` to `templ`: update `"start": "^\\s*(@component|@for|@if|@let|\\{)"` to `"start": "^\\s*(templ|@for|@if|@let|\\{)"`
   - Verify indentation rules work with `templ` keyword
   - Verify auto-closing pairs and surrounding pairs are complete
 
-- [ ] Update `editor/vscode/README.md`
+- [x] Update `editor/vscode/README.md`
   - Replace all `<box>` references with `<div>`
   - Replace all `<text>` references with `<span>`
   - Replace `@component` with `templ` throughout
@@ -335,31 +335,31 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
   - Remove "coming soon" note about LSP configuration (it's already implemented)
   - Update examples to use current syntax
 
-- [ ] Update `editor/vscode/test/simple.gsx`
+- [x] Update `editor/vscode/test/simple.gsx`
   - Update to use current syntax: `templ` instead of any old keywords
   - Add examples of `#Name` refs
   - Add state variable usage
 
-- [ ] Update `editor/vscode/test/complex.gsx`
+- [x] Update `editor/vscode/test/complex.gsx`
   - Update to use current syntax throughout
   - Add named ref examples (simple, loop, keyed, conditional)
   - Add state variable declaration and usage
   - Add event handler attribute examples
   - Ensure all language constructs are represented for grammar testing
 
-- [ ] Update `editor/tree-sitter-gsx/grammar.js`
+- [x] Update `editor/tree-sitter-gsx/grammar.js`
   - Verify state declaration syntax is parseable: `name := tui.NewState(initialValue)`
   - Verify event handler attributes parse correctly: `onClick={handler}`
   - Add any missing constructs identified during testing
   - Ensure `key={expr}` attribute is handled in element parsing
 
-- [ ] Update `editor/tree-sitter-gsx/queries/highlights.scm`
+- [x] Update `editor/tree-sitter-gsx/queries/highlights.scm`
   - Add highlight rules for state declarations if not present
   - Add highlight rules for state method calls (.Get, .Set, etc.)
   - Verify event handler attributes get appropriate highlights
   - Verify named ref `#Name` highlights are correct
 
-- [ ] Update `editor/tree-sitter-gsx/test/corpus/basic.txt`
+- [x] Update `editor/tree-sitter-gsx/test/corpus/basic.txt`
   - Add test case for state declaration
   - Add test case for event handler attributes
   - Add test case for named refs with different contexts (simple, loop, keyed)
@@ -377,7 +377,7 @@ Implementation phases for the LSP rearchitecture, new construct support, and edi
 | 3 | Migrate Completion + Symbol Providers | Complete |
 | 4 | Migrate Semantic Tokens + Diagnostics + Formatting Providers | Complete |
 | 5 | Refs/State/Events Awareness + gopls Updates | Complete |
-| 6 | VSCode Extension + Tree-sitter Updates | Pending |
+| 6 | VSCode Extension + Tree-sitter Updates | Complete |
 
 ## Files to Create
 

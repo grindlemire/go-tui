@@ -243,6 +243,82 @@ func TestDiagnostics_MultipleErrors(t *testing.T) {
 	}
 }
 
+func TestEstimateErrorLength(t *testing.T) {
+	type tc struct {
+		message string
+		want    int
+	}
+
+	tests := map[string]tc{
+		"quoted token single": {
+			message: "unexpected 'foo'",
+			want:    3,
+		},
+		"quoted token double": {
+			message: `expected "bar"`,
+			want:    3,
+		},
+		"quoted token backtick": {
+			message: "unknown `element`",
+			want:    7,
+		},
+		"no quotes, last word": {
+			message: "unexpected token",
+			want:    5, // len("token")
+		},
+		"trailing punctuation": {
+			message: "missing semicolon.",
+			want:    9, // len("semicolon")
+		},
+		"empty message": {
+			message: "",
+			want:    1, // minimum
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := estimateErrorLength(tt.message)
+			if got != tt.want {
+				t.Errorf("estimateErrorLength(%q) = %d, want %d", tt.message, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDiagnostics_ErrorHighlightWidth(t *testing.T) {
+	// Regression: error highlights should use message content, not hardcoded width.
+	dp := NewDiagnosticsProvider()
+	doc := &Document{
+		URI:     "file:///test.gsx",
+		Content: "package main\n",
+		Version: 1,
+		AST:     nil,
+		Errors: []*tuigen.Error{
+			{
+				Pos:     tuigen.Position{Line: 1, Column: 1},
+				Message: "unexpected 'xyz'",
+			},
+		},
+	}
+
+	result, err := dp.Diagnose(doc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 {
+		t.Fatalf("expected 1 diagnostic, got %d", len(result))
+	}
+
+	width := result[0].Range.End.Character - result[0].Range.Start.Character
+	if width == 10 {
+		t.Error("error highlight width should not be hardcoded to 10")
+	}
+	if width != 3 {
+		t.Errorf("error highlight width = %d, want 3 (length of 'xyz')", width)
+	}
+}
+
 func containsStr(s, sub string) bool {
 	return len(s) >= len(sub) && (s == sub || len(s) > 0 && containsSubstring(s, sub))
 }

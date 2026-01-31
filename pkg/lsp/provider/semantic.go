@@ -13,6 +13,9 @@ import (
 // formatSpecifierRegex matches Go format specifiers like %s, %d, %v, %.2f, %#x, etc.
 var formatSpecifierRegex = regexp.MustCompile(`%[-+# 0]*(\*|\d+)?(\.\*|\.\d+)?[vTtbcdoqxXUeEfFgGsp%]`)
 
+// stateNewStateRegex matches state declarations like: count := tui.NewState(0)
+var stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewState\((.+)\)`)
+
 // Semantic token types (must match the order in SemanticTokensLegend.TokenTypes).
 const (
 	TokenTypeNamespace = 0  // package
@@ -29,6 +32,8 @@ const (
 	TokenTypeDecorator = 11 // @ prefix
 	TokenTypeRegexp    = 12 // format specifiers (often purple)
 	TokenTypeComment   = 13 // comments
+	TokenTypeLabel         = 14 // named refs (#Name)
+	TokenTypeTypeParameter = 15 // generic type arguments
 )
 
 // Semantic token modifiers (bit flags).
@@ -60,15 +65,18 @@ type FunctionNameChecker interface {
 
 // semanticTokensProvider implements SemanticTokensProvider.
 type semanticTokensProvider struct {
-	fnChecker FunctionNameChecker
+	fnChecker  FunctionNameChecker
+	docs       DocumentAccessor // optional, for accurate position lookups
+	currentURI string          // set during SemanticTokensFull call
 }
 
 // NewSemanticTokensProvider creates a new semantic tokens provider.
-func NewSemanticTokensProvider(fnChecker FunctionNameChecker) SemanticTokensProvider {
-	return &semanticTokensProvider{fnChecker: fnChecker}
+func NewSemanticTokensProvider(fnChecker FunctionNameChecker, docs DocumentAccessor) SemanticTokensProvider {
+	return &semanticTokensProvider{fnChecker: fnChecker, docs: docs}
 }
 
 func (s *semanticTokensProvider) SemanticTokensFull(doc *Document) (*SemanticTokens, error) {
+	s.currentURI = doc.URI
 	log.Server("=== SemanticTokens provider for %s ===", doc.URI)
 
 	if doc.AST == nil {
@@ -124,7 +132,7 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 			Modifiers: TokenModDeclaration | TokenModDefinition,
 		})
 
-		// Parameters (declarations)
+		// Parameters (declarations) with type coloring
 		for _, param := range comp.Params {
 			tokens = append(tokens, SemanticToken{
 				Line:      param.Position.Line - 1,
@@ -133,6 +141,9 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				TokenType: TokenTypeParameter,
 				Modifiers: TokenModDeclaration,
 			})
+			// Parameter type
+			typeStart := param.Position.Column - 1 + len(param.Name) + 1 // +1 for space
+			emitGoTypeTokens(param.Type, param.Position.Line-1, typeStart, &tokens)
 		}
 
 		// Collect tokens from body
@@ -151,28 +162,52 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 		})
 
 		// Function name
-		name, _, params, _ := parseFuncSignatureForTokens(fn.Code)
+		name, _, params, returns := parseFuncSignatureForTokens(fn.Code)
 		if name != "" {
+			line := fn.Position.Line - 1
 			nameStart := fn.Position.Column - 1 + len("func ")
 			tokens = append(tokens, SemanticToken{
-				Line:      fn.Position.Line - 1,
+				Line:      line,
 				StartChar: nameStart,
 				Length:    len(name),
 				TokenType: TokenTypeFunction,
 				Modifiers: TokenModDeclaration | TokenModDefinition,
 			})
 
-			// Function parameters
+			// Function parameters — names and types
 			paramStart := nameStart + len(name) + 1 // +1 for '('
 			for _, p := range params {
+				// Parameter name
 				tokens = append(tokens, SemanticToken{
-					Line:      fn.Position.Line - 1,
+					Line:      line,
 					StartChar: paramStart,
 					Length:    len(p.Name),
 					TokenType: TokenTypeParameter,
 					Modifiers: TokenModDeclaration,
 				})
-				paramStart += len(p.Name) + 1 + len(p.Type) + 2
+				// Parameter type
+				typeStart := paramStart + len(p.Name) + 1 // +1 for space
+				emitGoTypeTokens(p.Type, line, typeStart, &tokens)
+				paramStart += len(p.Name) + 1 + len(p.Type) + 2 // +2 for ", "
+			}
+
+			// Return type
+			if returns != "" {
+				// Return type starts after closing paren + space
+				// paramStart is past the last param; it's at the position after "lastType, "
+				// but we need position after ')'
+				returnStart := nameStart + len(name) + 1 // "name("
+				if len(params) > 0 {
+					// Calculate total param string length
+					for i, p := range params {
+						returnStart += len(p.Name) + 1 + len(p.Type)
+						if i < len(params)-1 {
+							returnStart += 2 // ", "
+						}
+					}
+				}
+				returnStart += 2 // ") " — close paren + space
+				emitGoTypeTokens(returns, line, returnStart, &tokens)
 			}
 
 			// Build parameter names map for body tokenization
@@ -214,24 +249,42 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		}
 		// Named ref (#Name) — emit # as operator and ref name as variable declaration
 		if n.NamedRef != "" {
-			// Find the # position in the line by searching the document content
-			// The # appears after the tag name on the element's position line
 			line := n.Position.Line - 1
-			tagEnd := n.Position.Column - 1 + len(n.Tag)
-			// Emit # as operator token at approximated position after tag
+			// Search for the actual '#' position in the document line rather than
+			// hardcoding an offset, since spacing between the tag and # may vary.
+			hashCol := -1
+			if s.docs != nil {
+				if doc := s.docs.GetDocument(s.currentURI); doc != nil {
+					lines := strings.Split(doc.Content, "\n")
+					if line < len(lines) {
+						// Search for #RefName starting after the tag
+						tagEnd := n.Position.Column - 1 + len(n.Tag)
+						searchTarget := "#" + n.NamedRef
+						idx := strings.Index(lines[line][min(tagEnd, len(lines[line])):], searchTarget)
+						if idx >= 0 {
+							hashCol = tagEnd + idx
+						}
+					}
+				}
+			}
+			// Fall back to approximation if document content isn't available
+			if hashCol < 0 {
+				hashCol = n.Position.Column - 1 + len(n.Tag) + 1
+			}
+			// Emit # as operator token
 			*tokens = append(*tokens, SemanticToken{
 				Line:      line,
-				StartChar: tagEnd + 1, // space + #
+				StartChar: hashCol,
 				Length:    1,
 				TokenType: TokenTypeOperator,
 				Modifiers: 0,
 			})
-			// Emit ref name as variable with declaration modifier
+			// Emit ref name as label (pink) with declaration modifier
 			*tokens = append(*tokens, SemanticToken{
 				Line:      line,
-				StartChar: tagEnd + 2, // space + # + Name
+				StartChar: hashCol + 1,
 				Length:    len(n.NamedRef),
-				TokenType: TokenTypeVariable,
+				TokenType: TokenTypeKeyword,
 				Modifiers: TokenModDeclaration,
 			})
 		}
@@ -338,8 +391,21 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		for _, child := range n.Then {
 			s.collectTokensFromNode(child, paramNames, localVars, tokens)
 		}
-		for _, child := range n.Else {
-			s.collectTokensFromNode(child, paramNames, localVars, tokens)
+		if len(n.Else) > 0 {
+			// Emit @else keyword token by scanning source text
+			elseKeywordLine, elseKeywordCol := s.findElseKeyword(n)
+			if elseKeywordLine >= 0 {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      elseKeywordLine,
+					StartChar: elseKeywordCol,
+					Length:    len("@else"),
+					TokenType: TokenTypeKeyword,
+					Modifiers: 0,
+				})
+			}
+			for _, child := range n.Else {
+				s.collectTokensFromNode(child, paramNames, localVars, tokens)
+			}
 		}
 
 	case *tuigen.LetBinding:
@@ -370,13 +436,17 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		if n == nil {
 			return
 		}
-		// Check if this is a state variable declaration for distinct highlighting
-		isStateDecl := strings.Contains(n.Code, "tui.NewState(")
+		// Identify which specific variable (if any) is the state declaration.
+		// Only that variable gets the readonly modifier, not all vars in the block.
+		stateVarName := ""
+		if matches := stateNewStateRegex.FindStringSubmatch(n.Code); len(matches) >= 2 {
+			stateVarName = matches[1]
+		}
 		varDecls := extractVarDeclarationsWithPositions(n.Code)
 		for _, decl := range varDecls {
 			localVars[decl.name] = true
 			modifiers := TokenModDeclaration
-			if isStateDecl {
+			if stateVarName != "" && decl.name == stateVarName {
 				modifiers = TokenModDeclaration | TokenModReadonly // State vars use readonly modifier
 			}
 			*tokens = append(*tokens, SemanticToken{
@@ -561,13 +631,25 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 						i++
 					}
 				} else {
-					for i < len(code) && (isDigit(code[i]) || code[i] == '.' || code[i] == 'e' || code[i] == 'E' || code[i] == '+' || code[i] == '-') {
-						i++
+					for i < len(code) {
+						if isDigit(code[i]) || code[i] == '.' || code[i] == 'e' || code[i] == 'E' {
+							i++
+						} else if (code[i] == '+' || code[i] == '-') && i > 0 && (code[i-1] == 'e' || code[i-1] == 'E') {
+							i++
+						} else {
+							break
+						}
 					}
 				}
 			} else {
-				for i < len(code) && (isDigit(code[i]) || code[i] == '.' || code[i] == 'e' || code[i] == 'E' || code[i] == '+' || code[i] == '-') {
-					i++
+				for i < len(code) {
+					if isDigit(code[i]) || code[i] == '.' || code[i] == 'e' || code[i] == 'E' {
+						i++
+					} else if (code[i] == '+' || code[i] == '-') && i > 0 && (code[i-1] == 'e' || code[i-1] == 'E') {
+						i++
+					} else {
+						break
+					}
 				}
 			}
 			charPos := pos.Column - 1 + startOffset + start
@@ -713,13 +795,13 @@ func (s *semanticTokensProvider) emitStringWithFormatSpecifiers(str string, line
 				Modifiers: 0,
 			})
 		}
-		log.Server("  emit NUMBER token for format spec: line=%d startChar=%d length=%d (content=%q)",
+		log.Server("  emit REGEXP token for format spec: line=%d startChar=%d length=%d (content=%q)",
 			line, stringStartChar+match[0], match[1]-match[0], str[match[0]:match[1]])
 		*tokens = append(*tokens, SemanticToken{
 			Line:      line,
 			StartChar: stringStartChar + match[0],
 			Length:    match[1] - match[0],
-			TokenType: TokenTypeNumber,
+			TokenType: TokenTypeRegexp,
 			Modifiers: 0,
 		})
 		idx = match[1]
@@ -794,6 +876,28 @@ func (s *semanticTokensProvider) collectTokensFromFuncBody(code string, pos tuig
 		linePos := tuigen.Position{Line: docLine, Column: lineStartCol}
 		s.collectTokensInGoCode(line, linePos, 0, paramNames, localVars, tokens)
 	}
+}
+
+// findElseKeyword scans the document content to find the @else keyword position for an IfStmt.
+// Returns 0-indexed (line, col), or (-1, -1) if not found.
+func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, int) {
+	if s.docs == nil {
+		return -1, -1
+	}
+	doc := s.docs.GetDocument(s.currentURI)
+	if doc == nil {
+		return -1, -1
+	}
+	lines := strings.Split(doc.Content, "\n")
+	// Scan from the @if line downward looking for @else
+	startLine := ifStmt.Position.Line - 1 // 0-indexed
+	for i := startLine; i < len(lines); i++ {
+		idx := strings.Index(lines[i], "@else")
+		if idx >= 0 {
+			return i, idx
+		}
+	}
+	return -1, -1
 }
 
 // --- Comment collection ---
@@ -956,6 +1060,142 @@ func (s *semanticTokensProvider) collectCommentToken(c *tuigen.Comment, tokens *
 				Modifiers: 0,
 			})
 		}
+	}
+}
+
+// --- Go type expression tokenizer ---
+
+// emitGoTypeTokens tokenizes a Go type expression and emits semantic tokens.
+// Handles: *Type, pkg.Type, Type[Generic], func(...) ReturnType, (T1, T2).
+// Types inside brackets (generic type arguments) use TokenTypeTypeParameter.
+func emitGoTypeTokens(typeStr string, line int, startCol int, tokens *[]SemanticToken) {
+	i := 0
+	bracketDepth := 0
+	for i < len(typeStr) {
+		ch := typeStr[i]
+
+		// Skip whitespace
+		if ch == ' ' || ch == '\t' {
+			i++
+			continue
+		}
+
+		// Pointer star
+		if ch == '*' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + i,
+				Length:    1,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			i++
+			continue
+		}
+
+		// Brackets — track depth for generic type argument coloring
+		if ch == '[' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + i,
+				Length:    1,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			bracketDepth++
+			i++
+			continue
+		}
+		if ch == ']' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + i,
+				Length:    1,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			bracketDepth--
+			i++
+			continue
+		}
+
+		// Commas, dots, parens — skip
+		if ch == ',' || ch == '.' || ch == '(' || ch == ')' {
+			i++
+			continue
+		}
+
+		// Variadic ...
+		if ch == '.' && i+2 < len(typeStr) && typeStr[i:i+3] == "..." {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + i,
+				Length:    3,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			i += 3
+			continue
+		}
+
+		// Identifier
+		if isWordStartChar(ch) {
+			start := i
+			for i < len(typeStr) && isWordCharByte(typeStr[i]) {
+				i++
+			}
+			ident := typeStr[start:i]
+
+			// Check what follows: if '.', this is a package prefix — emit as namespace
+			if i < len(typeStr) && typeStr[i] == '.' {
+				// Package prefix (e.g. "tui" in "tui.State")
+				// Skip — don't emit token, keeping it uncolored like Go convention
+				i++ // skip the dot
+				continue
+			}
+
+			// "func" keyword in function types
+			if ident == "func" || ident == "map" || ident == "chan" || ident == "interface" {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      line,
+					StartChar: startCol + start,
+					Length:    len(ident),
+					TokenType: TokenTypeKeyword,
+					Modifiers: 0,
+				})
+				continue
+			}
+
+			// Type name — use typeParameter for types inside brackets (generic args)
+			tokenType := TokenTypeType
+			if bracketDepth > 0 {
+				tokenType = TokenTypeTypeParameter
+			}
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + start,
+				Length:    len(ident),
+				TokenType: tokenType,
+				Modifiers: 0,
+			})
+			continue
+		}
+
+		// Channel direction operator <-
+		if ch == '<' && i+1 < len(typeStr) && typeStr[i+1] == '-' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + i,
+				Length:    2,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			i += 2
+			continue
+		}
+
+		// Skip anything else
+		i++
 	}
 }
 

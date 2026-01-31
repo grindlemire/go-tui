@@ -5,9 +5,12 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
 ## Features
 
 - **Syntax Highlighting**: Full highlighting support for the GSX DSL
-  - Component declarations: `templ Name(params) {... }`
+  - Component declarations: `templ Name(params) { ... }`
   - Keywords: `@for`, `@if`, `@else`, `@let`
-  - Element tags: `<box>`, `<text>`, `<div>`, `<span>`, etc.
+  - Element tags: `<div>`, `<span>`, `<p>`, `<button>`, `<input>`, etc.
+  - Named references: `#RefName` on elements
+  - Reactive state: `tui.NewState()`, `.Get()`, `.Set()`
+  - Event handlers: `onClick`, `onFocus`, `onBlur`, `onKeyPress`
   - Attributes with string, number, and expression values
   - Go expressions inside `{}`
   - Comments: `//` and `/* */`
@@ -17,6 +20,16 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
   - Comment toggling
   - Code folding
   - Smart indentation
+
+- **LSP Support** (via `tui lsp`)
+  - Real-time diagnostics
+  - Go-to-definition for components, functions, refs, and state
+  - Hover documentation for elements, attributes, keywords, and state
+  - Auto-completion for elements, attributes, tailwind classes, and Go expressions
+  - Find references across workspace
+  - Document and workspace symbols
+  - Semantic token highlighting
+  - Code formatting
 
 ## Installation
 
@@ -63,18 +76,23 @@ package main
 
 import (
     "fmt"
+    "github.com/grindlemire/go-tui/pkg/tui"
 )
 
-templ Counter(count int) {
-    <box border={tui.BorderSingle} padding={1}>
-        <text>{fmt.Sprintf("Count: %d", count)}</text>
-    </box>
+templ Counter() {
+    count := tui.NewState(0)
+    <div class="flex-col gap-2 p-2 border-rounded">
+        <span class="font-bold">{fmt.Sprintf("Count: %d", count.Get())}</span>
+        <button onClick={increment(count)}>+</button>
+    </div>
+}
 
-    @if count > 0 {
-        <text>Positive!</text>
-    } @else {
-        <text>Zero or negative</text>
-    }
+templ Dashboard(items []string) {
+    <div #Main class="flex-col gap-1">
+        @for _, item := range items {
+            <span #Items>{item}</span>
+        }
+    </div>
 }
 ```
 
@@ -87,18 +105,25 @@ templ Counter(count int) {
 | If/Else | `@if condition { ... } @else { ... }` |
 | Let binding | `@let x = <element>` |
 | Component call | `@ComponentName(args)` |
-| Element | `<box attr={value}>children</box>` |
+| Element | `<div attr={value}>children</div>` |
+| Named ref | `<div #Header>...</div>` |
+| State | `count := tui.NewState(0)` |
+| State access | `count.Get()`, `count.Set(v)` |
+| Event handler | `onClick={handler}`, `onFocus={fn}` |
 | Go expression | `{fmt.Sprintf(...)}` |
+| Helper function | `func helper(s string) string { ... }` |
 
-## LSP Support
+## LSP Configuration
 
-For advanced features like go-to-definition, hover, and auto-completion, run the GSX language server:
+The extension automatically starts the GSX language server when you open a `.gsx` file. Configure via VS Code settings:
 
-```bash
-tui lsp
-```
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `gsx.lsp.enabled` | `true` | Enable/disable the language server |
+| `gsx.lsp.path` | `tui` | Path to the `tui` binary |
+| `gsx.lsp.logPath` | `""` | Path for LSP log file (empty = no logging) |
 
-Configure your VS Code settings to use the language server (coming soon).
+If the `tui` binary is not found, the extension will offer to install it automatically via `go install`.
 
 ## Contributing
 

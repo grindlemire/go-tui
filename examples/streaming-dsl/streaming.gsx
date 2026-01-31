@@ -13,33 +13,40 @@ import (
 templ StreamApp(dataCh <-chan string) {
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
-	<div class="flex-col"
-	     onTimer={tui.OnTimer(time.Second, tickElapsed(elapsed))}
-	     onChannel={tui.Watch(dataCh, addLine(lineCount, Content))}>
+	<div
+		class="flex-col"
+		onTimer={tui.OnTimer(time.Second, tickElapsed(elapsed))}
+		onChannel={tui.Watch(dataCh, addLine(lineCount, Content))}>
 		// Header
-		<div class="border-blue"
-		     border={tui.BorderSingle}
-		     height={3}
-		     direction={layout.Row}
-		     justify={layout.JustifyCenter}
-		     align={layout.AlignCenter}>
+		<div
+			class="border-blue"
+			border={tui.BorderSingle}
+			height={3}
+			direction={layout.Row}
+			justify={layout.JustifyCenter}
+			align={layout.AlignCenter}>
 			<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k to scroll, q to quit"}</span>
 		</div>
+
 		// Content area with named ref
-		<div #Content class="flex-col border-cyan"
-		     border={tui.BorderSingle}
-		     flexGrow={1}
-		     scrollable={element.ScrollVertical}
-		     focusable={true}
-		     onKeyPress={handleScrollKeys(Content)}
-		     onEvent={handleEvent(Content)}></div>
+		<div
+			#Content
+			class="flex-col border-cyan"
+			border={tui.BorderSingle}
+			flexGrow={1}
+			scrollable={element.ScrollVertical}
+			focusable={true}
+			onKeyPress={handleScrollKeys(Content)}
+			onEvent={handleEvent(Content)}></div>
+
 		// Footer with reactive state (auto-updates when lineCount/elapsed change)
-		<div class="border-blue"
-		     border={tui.BorderSingle}
-		     height={3}
-		     direction={layout.Row}
-		     justify={layout.JustifyCenter}
-		     align={layout.AlignCenter}>
+		<div
+			class="border-blue"
+			border={tui.BorderSingle}
+			height={3}
+			direction={layout.Row}
+			justify={layout.JustifyCenter}
+			align={layout.AlignCenter}>
 			<span class="text-white">
 				{fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())}
 			</span>

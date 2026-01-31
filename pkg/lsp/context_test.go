@@ -152,6 +152,37 @@ templ Layout() {
 	}
 }
 
+func TestResolveCursorContext_NamedRef_Multiline(t *testing.T) {
+	src := `package test
+
+templ Layout() {
+	<div
+		#Header
+		class="p-1">content</div>
+}
+`
+	doc := parseTestDoc(src)
+
+	// Cursor on "#Header" on its own line (line 4)
+	line := getLineText(doc.Content, 4)
+	hashIdx := -1
+	for i := range line {
+		if line[i] == '#' {
+			hashIdx = i
+			break
+		}
+	}
+	if hashIdx < 0 {
+		t.Fatal("could not find # in line")
+	}
+
+	ctx := ResolveCursorContext(doc, Position{Line: 4, Character: hashIdx + 1})
+
+	if ctx.NodeKind != NodeKindNamedRef {
+		t.Errorf("expected NodeKindNamedRef, got %s", ctx.NodeKind)
+	}
+}
+
 func TestResolveCursorContext_ForLoop(t *testing.T) {
 	src := `package test
 
@@ -467,6 +498,25 @@ templ Counter() {
 
 	if ctx.NodeKind != NodeKindStateDecl {
 		t.Errorf("expected NodeKindStateDecl, got %s", ctx.NodeKind)
+	}
+}
+
+func TestResolveCursorContext_StateAccess(t *testing.T) {
+	src := `package test
+
+templ Counter() {
+	count := tui.NewState(0)
+	<span>{count.Get()}</span>
+}
+`
+	doc := parseTestDoc(src)
+
+	// Cursor on "count" inside {count.Get()} expression (line 4)
+	// "\t<span>{count.Get()}</span>" — '{' is at col 7, 'count' starts at col 8
+	ctx := ResolveCursorContext(doc, Position{Line: 4, Character: 9})
+
+	if ctx.NodeKind != NodeKindStateAccess {
+		t.Errorf("expected NodeKindStateAccess, got %s", ctx.NodeKind)
 	}
 }
 

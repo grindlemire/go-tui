@@ -115,11 +115,25 @@
     "body-contents": {
       "patterns": [
         { "include": "#comments" },
+        { "include": "#state-declaration-line" },
         { "include": "#go-expression-block" },
         { "include": "#control-keywords" },
         { "include": "#component-call" },
         { "include": "#element" }
       ]
+    },
+    "state-declaration-line": {
+      "comment": "State variable declaration at body level: name := tui.NewState(value)",
+      "name": "meta.state-declaration.gsx",
+      "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:=)\\s*(tui)(\\.)(NewState)\\s*\\(([^)]*)\\)",
+      "captures": {
+        "1": { "name": "variable.other.state.gsx" },
+        "2": { "name": "keyword.operator.go.gsx" },
+        "3": { "name": "variable.other.go.gsx" },
+        "4": { "name": "punctuation.delimiter.go.gsx" },
+        "5": { "name": "entity.name.function.go.gsx" },
+        "6": { "name": "meta.embedded.block.go" }
+      }
     },
     "control-keywords": {
       "patterns": [
@@ -204,11 +218,11 @@
       ]
     },
     "named-ref": {
-      "name": "meta.named-ref.tui",
+      "name": "meta.named-ref.gsx",
       "match": "(#)([A-Z][a-zA-Z0-9_]*)",
       "captures": {
-        "1": { "name": "punctuation.definition.named-ref.tui" },
-        "2": { "name": "entity.name.tag.named-ref.tui" }
+        "1": { "name": "punctuation.definition.named-ref.gsx" },
+        "2": { "name": "entity.name.tag.named-ref.gsx" }
       }
     },
     "element-close-tag": {
@@ -222,6 +236,24 @@
     },
     "attributes": {
       "patterns": [
+        {
+          "comment": "Event handler attribute with expression value: onClick={handler}",
+          "name": "meta.attribute.event.gsx",
+          "begin": "(on(?:Click|Focus|Blur|KeyPress|Event))\\s*(=)\\s*(\\{)",
+          "end": "(\\})",
+          "beginCaptures": {
+            "1": { "name": "entity.other.attribute-name.event.gsx" },
+            "2": { "name": "punctuation.separator.key-value.gsx" },
+            "3": { "name": "punctuation.definition.expression.begin.gsx" }
+          },
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.expression.end.gsx" }
+          },
+          "contentName": "meta.embedded.block.go",
+          "patterns": [
+            { "include": "#go-expression-content" }
+          ]
+        },
         {
           "name": "meta.attribute.gsx",
           "begin": "([a-zA-Z_][a-zA-Z0-9_-]*)\\s*(=)\\s*(\\{)",
@@ -289,6 +321,8 @@
         { "include": "#go-keywords" },
         { "include": "#go-constants" },
         { "include": "#go-builtin-functions" },
+        { "include": "#state-declaration" },
+        { "include": "#state-method-call" },
         { "include": "#go-operators" },
         { "include": "#strings" },
         { "include": "#numbers" },
@@ -329,6 +363,22 @@
           }
         }
       ]
+    },
+    "state-declaration": {
+      "comment": "State variable declaration: name := tui.NewState(value)",
+      "match": "(tui)(\\.)(NewState)\\s*(?=\\()",
+      "captures": {
+        "1": { "name": "variable.other.go.gsx" },
+        "2": { "name": "punctuation.delimiter.go.gsx" },
+        "3": { "name": "entity.name.function.go.gsx" }
+      }
+    },
+    "state-method-call": {
+      "comment": "State method calls: .Get(), .Set(), .Update(), .Bind(), .Batch()",
+      "match": "\\.(Get|Set|Update|Bind|Batch)\\s*(?=\\()",
+      "captures": {
+        "1": { "name": "entity.name.function.go.gsx" }
+      }
     },
     "go-identifiers": {
       "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
@@ -432,6 +482,19 @@
       },
       "patterns": [
         { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#go-nested-block" },
+        { "include": "#go-expression-content" }
+      ]
+    },
+    "go-nested-block": {
+      "comment": "Recursive brace matching for nested Go blocks (if, for, func, etc.)",
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#go-nested-block" },
         { "include": "#go-expression-content" }
       ]
     }

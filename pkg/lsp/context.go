@@ -184,6 +184,16 @@ func resolveFromAST(ctx *CursorContext, file *tuigen.File) {
 					}
 				}
 			}
+
+			// Cursor is on the declaration line but not on the name or a param name
+			// (e.g., on a parameter type). Set NodeKindComponent so hover/definition
+			// providers can delegate to gopls for type resolution.
+			ctx.Node = comp
+			ctx.NodeKind = NodeKindComponent
+			ctx.Scope.Component = comp
+			ctx.Scope.Params = comp.Params
+			collectScopeFromBody(ctx, comp.Body, comp)
+			return
 		}
 	}
 
@@ -198,19 +208,36 @@ func resolveFromAST(ctx *CursorContext, file *tuigen.File) {
 		}
 	}
 
+	// Verify cursor is actually inside the component body (#20)
+	if enclosingComp != nil {
+		endLine := findComponentEndLine(ctx.Document.Content, enclosingComp)
+		if line-1 > endLine { // line is 1-indexed, endLine is 0-indexed
+			enclosingComp = nil
+		}
+	}
+
 	if enclosingComp != nil {
 		ctx.Scope.Component = enclosingComp
 		ctx.Scope.Params = enclosingComp.Params
+		ctx.ParentChain = append(ctx.ParentChain, enclosingComp)
 		collectScopeFromBody(ctx, enclosingComp.Body, enclosingComp)
 
 		if found := resolveInNodes(ctx, enclosingComp.Body, line, col); found {
 			return
 		}
+		ctx.ParentChain = ctx.ParentChain[:len(ctx.ParentChain)-1]
 	}
 
-	// Check if cursor is on a function
+	// Check if cursor is on a function declaration line
 	for _, fn := range file.Funcs {
 		if line == fn.Position.Line {
+			// Check if cursor is on a parameter name
+			if paramName := findFuncParamAtColumn(fn, col); paramName != "" {
+				ctx.Node = fn
+				ctx.NodeKind = NodeKindParameter
+				ctx.Scope.Function = fn
+				return
+			}
 			ctx.Node = fn
 			ctx.NodeKind = NodeKindFunction
 			ctx.Scope.Function = fn
@@ -233,7 +260,17 @@ func resolveInNodes(ctx *CursorContext, nodes []tuigen.Node, line, col int) bool
 }
 
 // resolveInNode checks a single AST node and its children.
+// Manages the ParentChain: pushes the node before checking, pops if not found.
 func resolveInNode(ctx *CursorContext, node tuigen.Node, line, col int) bool {
+	ctx.ParentChain = append(ctx.ParentChain, node)
+	found := resolveInNodeInner(ctx, node, line, col)
+	if !found {
+		ctx.ParentChain = ctx.ParentChain[:len(ctx.ParentChain)-1]
+	}
+	return found
+}
+
+func resolveInNodeInner(ctx *CursorContext, node tuigen.Node, line, col int) bool {
 	switch n := node.(type) {
 	case *tuigen.Element:
 		return resolveInElement(ctx, n, line, col)
@@ -247,12 +284,28 @@ func resolveInNode(ctx *CursorContext, node tuigen.Node, line, col int) bool {
 		return resolveInComponentCall(ctx, n, line, col)
 	case *tuigen.GoExpr:
 		if n != nil && n.Position.Line == line {
+			// For single-line expressions, also verify column range (#26)
+			if !strings.Contains(n.Code, "\n") {
+				start := n.Position.Column
+				end := start + len(n.Code)
+				if col < start || col > end {
+					return false
+				}
+			}
 			ctx.Node = n
-			ctx.NodeKind = NodeKindGoExpr
+			ctx.NodeKind = classifyGoExpr(n)
 			return true
 		}
 	case *tuigen.GoCode:
 		if n != nil && n.Position.Line == line {
+			// For single-line code blocks, also verify column range (#26)
+			if !strings.Contains(n.Code, "\n") {
+				start := n.Position.Column
+				end := start + len(n.Code)
+				if col < start || col > end {
+					return false
+				}
+			}
 			ctx.Node = n
 			ctx.NodeKind = classifyGoCode(ctx, n)
 			return true
@@ -275,31 +328,30 @@ func resolveInElement(ctx *CursorContext, elem *tuigen.Element, line, col int) b
 
 	pos := elem.Position
 
-	// Check if cursor is on the element's tag line
+	// Check if cursor is on the element's tag name (always on the opening tag line)
 	if pos.Line == line {
-		// Check named ref (#Name)
-		if elem.NamedRef != "" {
-			// The # appears after the tag name. Search for it in the line text.
-			hashIdx := strings.Index(ctx.Line, "#"+elem.NamedRef)
-			if hashIdx >= 0 {
-				refColStart := hashIdx + 1 // 0-indexed column of the ref name
-				refColEnd := refColStart + len(elem.NamedRef)
-				cursorCol := ctx.Position.Character
-				if cursorCol >= hashIdx && cursorCol <= refColEnd {
-					ctx.Node = elem
-					ctx.NodeKind = NodeKindNamedRef
-					return true
-				}
-			}
-		}
-
-		// Check if cursor is on the tag name
 		tagStart := pos.Column
 		tagEnd := tagStart + len(elem.Tag)
 		if col >= tagStart && col <= tagEnd {
 			ctx.Node = elem
 			ctx.NodeKind = NodeKindElement
 			return true
+		}
+	}
+
+	// Check named ref (#Name) — can be on any line within the opening tag,
+	// not just the tag line (supports multiline elements).
+	if elem.NamedRef != "" && ctx.InElement {
+		hashIdx := strings.Index(ctx.Line, "#"+elem.NamedRef)
+		if hashIdx >= 0 {
+			refColStart := hashIdx + 1 // 0-indexed column of the ref name
+			refColEnd := refColStart + len(elem.NamedRef)
+			cursorCol := ctx.Position.Character
+			if cursorCol >= hashIdx && cursorCol <= refColEnd {
+				ctx.Node = elem
+				ctx.NodeKind = NodeKindNamedRef
+				return true
+			}
 		}
 	}
 
@@ -416,6 +468,23 @@ func resolveInComponentCall(ctx *CursorContext, call *tuigen.ComponentCall, line
 	return resolveInNodes(ctx, call.Children, line, col)
 }
 
+// classifyGoExpr determines the NodeKind for a GoExpr node.
+// Detects state access patterns (.Get(), .Set(), etc.).
+func classifyGoExpr(expr *tuigen.GoExpr) NodeKind {
+	if expr == nil {
+		return NodeKindGoExpr
+	}
+	trimmed := strings.TrimSpace(expr.Code)
+	if strings.Contains(trimmed, ".Get()") ||
+		strings.Contains(trimmed, ".Set(") ||
+		strings.Contains(trimmed, ".Update(") ||
+		strings.Contains(trimmed, ".Bind(") ||
+		strings.Contains(trimmed, ".Batch(") {
+		return NodeKindStateAccess
+	}
+	return NodeKindGoExpr
+}
+
 // classifyGoCode determines the NodeKind for a GoCode node.
 // Detects state declarations (tui.NewState).
 func classifyGoCode(ctx *CursorContext, code *tuigen.GoCode) NodeKind {
@@ -517,10 +586,16 @@ func collectScopeFromBodyInner(ctx *CursorContext, nodes []tuigen.Node, comp *tu
 				collectScopeFromBodyInner(ctx, []tuigen.Node{n.Element}, comp, stateVarsCollected)
 			}
 		case *tuigen.ForLoop:
+			prevLoop := ctx.Scope.ForLoop
+			ctx.Scope.ForLoop = n
 			collectScopeFromBodyInner(ctx, n.Body, comp, stateVarsCollected)
+			ctx.Scope.ForLoop = prevLoop
 		case *tuigen.IfStmt:
+			prevIf := ctx.Scope.IfStmt
+			ctx.Scope.IfStmt = n
 			collectScopeFromBodyInner(ctx, n.Then, comp, stateVarsCollected)
 			collectScopeFromBodyInner(ctx, n.Else, comp, stateVarsCollected)
+			ctx.Scope.IfStmt = prevIf
 		case *tuigen.ComponentCall:
 			collectScopeFromBodyInner(ctx, n.Children, comp, stateVarsCollected)
 		}
@@ -645,6 +720,27 @@ func isOffsetInClassAttr(content string, offset int) bool {
 	return !strings.Contains(afterClass, `"`)
 }
 
+// findComponentEndLine finds the 0-indexed line number of the closing '}' for a component.
+// Uses brace counting from the component declaration line.
+func findComponentEndLine(content string, comp *tuigen.Component) int {
+	lines := strings.Split(content, "\n")
+	startLine := comp.Position.Line - 1 // convert to 0-indexed
+	depth := 0
+	for i := startLine; i < len(lines); i++ {
+		for _, ch := range lines[i] {
+			if ch == '{' {
+				depth++
+			} else if ch == '}' {
+				depth--
+				if depth == 0 {
+					return i
+				}
+			}
+		}
+	}
+	return len(lines) - 1
+}
+
 // isOffsetInElementTag checks if the offset is inside an element tag (between < and >).
 // Supports multi-line element tags where attributes span multiple lines.
 func isOffsetInElementTag(content string, offset int) bool {
@@ -667,4 +763,75 @@ func isOffsetInElementTag(content string, offset int) bool {
 		}
 	}
 	return false
+}
+
+// findFuncParamAtColumn checks if the cursor column (1-indexed) is on a parameter
+// name in a function declaration. Returns the parameter name if found, empty string otherwise.
+func findFuncParamAtColumn(fn *tuigen.GoFunc, col int) string {
+	code := fn.Code
+	if !strings.HasPrefix(strings.TrimSpace(code), "func ") {
+		return ""
+	}
+
+	parenIdx := strings.Index(code, "(")
+	if parenIdx < 0 {
+		return ""
+	}
+
+	// Find matching close paren (depth-aware for nested parens in types)
+	depth := 0
+	closeIdx := -1
+	for i := parenIdx; i < len(code); i++ {
+		switch code[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				closeIdx = i
+			}
+		}
+		if closeIdx >= 0 {
+			break
+		}
+	}
+	if closeIdx < 0 {
+		return ""
+	}
+
+	paramStr := code[parenIdx+1 : closeIdx]
+	// Column where param content starts (1-indexed, matching col)
+	paramStartCol := fn.Position.Column + parenIdx + 1
+
+	// Split params at top level (depth-aware for nested parens/brackets in types)
+	depth = 0
+	paramBegin := 0
+	for i := 0; i <= len(paramStr); i++ {
+		if i < len(paramStr) {
+			switch paramStr[i] {
+			case '(', '[':
+				depth++
+			case ')', ']':
+				depth--
+			}
+		}
+
+		if (i == len(paramStr)) || (paramStr[i] == ',' && depth == 0) {
+			param := paramStr[paramBegin:i]
+			trimmed := strings.TrimSpace(param)
+			fields := strings.Fields(trimmed)
+			if len(fields) >= 2 {
+				paramName := fields[0]
+				// Find name position within the raw param substring
+				nameInParam := strings.Index(param, paramName)
+				nameCol := paramStartCol + paramBegin + nameInParam
+				if col >= nameCol && col < nameCol+len(paramName) {
+					return paramName
+				}
+			}
+			paramBegin = i + 1
+		}
+	}
+
+	return ""
 }

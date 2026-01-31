@@ -14,6 +14,14 @@ var stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewState\((.+)\)`
 
 // GenerateVirtualGo generates a valid Go source file from a .gsx AST.
 // It returns the generated source and a SourceMap for position translation.
+//
+// Position convention: tuigen positions are 1-indexed (Line and Column both start at 1).
+// All TuiLine/TuiCol values in source mappings are 0-indexed. The conversion depends on
+// the node type:
+//   - GoExpr/RawGoExpr: Position.Column points to the '{' delimiter. Expression content
+//     starts at Column+1 (1-indexed) = Column (0-indexed). So: tuiCol = Position.Column.
+//   - GoCode/ForLoop/IfStmt/LetBinding: Position.Column points to the code/keyword itself.
+//     So: tuiCol = Position.Column - 1.
 func GenerateVirtualGo(file *tuigen.File) (string, *SourceMap) {
 	g := &generator{
 		sourceMap: NewSourceMap(),
@@ -95,13 +103,14 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Add mappings for each parameter
 	for _, p := range comp.Params {
 		if p.Position.Line > 0 && p.Position.Column > 0 {
-			// Map the parameter name from .gsx to .go
+			// Map the full parameter (name + space + type) from .gsx to .go
+			// so gopls can resolve types in component signatures
 			m := Mapping{
 				TuiLine: p.Position.Line - 1,
 				TuiCol:  p.Position.Column - 1,
 				GoLine:  g.goLine,
 				GoCol:   goParamStartCol,
-				Length:  len(p.Name),
+				Length:  len(p.Name) + 1 + len(p.Type),
 			}
 			log.Generate("PARAM mapping: %s -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
 				p.Name, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, p.Position.Line, p.Position.Column)
@@ -196,8 +205,9 @@ func (g *generator) emitNamedRefFromNodes(nodes []tuigen.Node, inLoop, inConditi
 				}
 
 				tuiLine := n.Position.Line - 1
-				// Find the # position in the element line
-				tuiCol := n.Position.Column - 1
+				// Map to the #Name position, not the element tag position
+				// Position.Column-1 is the '<' char; skip <, tag name, and space to reach '#'
+				tuiCol := n.Position.Column - 1 + 1 + len(n.Tag) + 1
 
 				goVarStartCol := 1 + len("var ") // "\t" + "var "
 				g.sourceMap.AddMapping(Mapping{
@@ -259,6 +269,8 @@ func (g *generator) generateNode(node tuigen.Node, indent string) {
 		g.generateComponentCall(n, indent)
 	case *tuigen.TextContent:
 		// Ignore plain text
+	case *tuigen.GoCode:
+		g.generateGoCode(n, indent)
 	case *tuigen.RawGoExpr:
 		g.generateRawGoExpr(n, indent)
 	case *tuigen.ChildrenSlot:
@@ -298,7 +310,9 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 	// Record position mapping before writing
 	// The expression starts after "_ = " (4 characters + indent)
 	tuiLine := expr.Position.Line - 1 // convert to 0-indexed
-	tuiCol := expr.Position.Column    // column where { starts, expression starts after {
+	// Position.Column is 1-indexed and points to the '{' delimiter.
+	// The expression content starts at Column+1 (1-indexed) = Column (0-indexed).
+	tuiCol := expr.Position.Column
 
 	goExprStartCol := len(indent) + 4 // "_ = " is 4 chars
 
@@ -317,6 +331,37 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 	g.writeLine(fmt.Sprintf("%s_ = %s", indent, code))
 }
 
+// generateGoCode generates Go code for a GoCode node (non-tui.NewState code).
+// tui.NewState declarations are handled separately by emitStateVarDeclarations.
+func (g *generator) generateGoCode(gc *tuigen.GoCode, indent string) {
+	if gc == nil {
+		return
+	}
+	code := strings.TrimSpace(gc.Code)
+	if code == "" {
+		return
+	}
+	// Skip tui.NewState declarations — already handled by emitStateVarDeclarations
+	if stateNewStateRegex.MatchString(code) {
+		return
+	}
+
+	tuiLine := gc.Position.Line - 1
+	// GoCode Position.Column is 1-indexed and points directly to the code content
+	// (no delimiter), so subtract 1 to convert to 0-indexed.
+	tuiCol := gc.Position.Column - 1
+
+	g.sourceMap.AddMapping(Mapping{
+		TuiLine: tuiLine,
+		TuiCol:  tuiCol,
+		GoLine:  g.goLine,
+		GoCol:   len(indent),
+		Length:  len(code),
+	})
+
+	g.writeLine(fmt.Sprintf("%s%s", indent, code))
+}
+
 // generateRawGoExpr generates a raw Go expression.
 func (g *generator) generateRawGoExpr(expr *tuigen.RawGoExpr, indent string) {
 	if expr == nil {
@@ -328,6 +373,8 @@ func (g *generator) generateRawGoExpr(expr *tuigen.RawGoExpr, indent string) {
 	}
 
 	tuiLine := expr.Position.Line - 1
+	// RawGoExpr: same convention as GoExpr — Position.Column is 1-indexed and
+	// points to the '{' delimiter, so Column (0-indexed) = expression start.
 	tuiCol := expr.Position.Column
 
 	goExprStartCol := len(indent) + 4
@@ -376,7 +423,7 @@ func (g *generator) generateForLoop(loop *tuigen.ForLoop, indent string) {
 	g.writeLine(fmt.Sprintf("%sfor %s, %s := range %s {", indent, indexVar, loop.Value, loop.Iterable))
 
 	// Generate body
-	g.generateNodes(loop.Body, len(indent)/4+1)
+	g.generateNodes(loop.Body, len(indent)+1)
 
 	g.writeLine(fmt.Sprintf("%s}", indent))
 }
@@ -407,11 +454,11 @@ func (g *generator) generateIfStmt(stmt *tuigen.IfStmt, indent string) {
 	g.writeLine(fmt.Sprintf("%sif %s {", indent, stmt.Condition))
 
 	// Generate then branch
-	g.generateNodes(stmt.Then, len(indent)/4+1)
+	g.generateNodes(stmt.Then, len(indent)+1)
 
 	if len(stmt.Else) > 0 {
 		g.writeLine(fmt.Sprintf("%s} else {", indent))
-		g.generateNodes(stmt.Else, len(indent)/4+1)
+		g.generateNodes(stmt.Else, len(indent)+1)
 	}
 
 	g.writeLine(fmt.Sprintf("%s}", indent))
@@ -476,7 +523,7 @@ func (g *generator) generateComponentCall(call *tuigen.ComponentCall, indent str
 	g.writeLine(fmt.Sprintf("%s_ = %s(%s)", indent, call.Name, call.Args))
 
 	// Generate children
-	g.generateNodes(call.Children, len(indent)/4+1)
+	g.generateNodes(call.Children, len(indent)+1)
 }
 
 // generateFunc generates a top-level function with source mapping.

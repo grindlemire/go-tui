@@ -44,7 +44,18 @@ func (s *Server) publishDiagnostics(doc *Document) {
 			diagnostics = diags
 		}
 	} else {
-		diagnostics = []Diagnostic{}
+		// No provider registered — fall back to inline conversion of parse errors
+		for _, e := range doc.Errors {
+			diagnostics = append(diagnostics, Diagnostic{
+				Range: Range{
+					Start: Position{Line: e.Pos.Line - 1, Character: e.Pos.Column - 1},
+					End:   Position{Line: e.Pos.Line - 1, Character: e.Pos.Column - 1 + 10},
+				},
+				Severity: DiagnosticSeverityError,
+				Source:   "gsx",
+				Message:  e.Message,
+			})
+		}
 	}
 
 	params := PublishDiagnosticsParams{

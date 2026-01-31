@@ -10,8 +10,6 @@ type TailwindClassDef struct {
 	Name        string
 	Description string
 	Category    string // "layout", "flex", "spacing", "typography", "visual", "scroll"
-	Pattern     string // Optional regex pattern for parameterized classes (e.g., "gap-\\d+")
-	SortKey     int    // Sort priority for completion ordering (lower = higher priority)
 }
 
 // GetClassDoc returns hover documentation for a Tailwind-style class.

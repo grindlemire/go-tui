@@ -362,3 +362,127 @@ templ Box() {
               (text_content)
               (identifier)))
           (identifier))))))
+
+================================================================================
+Named ref on element
+================================================================================
+
+templ Layout() {
+	<div #Main></div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          named_ref: (named_ref
+            (identifier))
+          (identifier))))))
+
+================================================================================
+Named ref on self-closing element
+================================================================================
+
+templ WithRef() {
+	<hr #Divider />
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (self_closing_element
+          tag: (identifier)
+          named_ref: (named_ref
+            (identifier)))))))
+
+================================================================================
+State declaration
+================================================================================
+
+templ Counter() {
+	count := tui.NewState(0)
+	<span>{count}</span>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (state_declaration
+        name: (identifier)
+        initializer: (call_expression
+          (selector_expression
+            (identifier)
+            (identifier))
+          (argument_list
+            (number))))
+      (element
+        (element_with_children
+          tag: (identifier)
+          (go_expression
+            (expression_content))
+          (identifier))))))
+
+================================================================================
+Event handler attributes
+================================================================================
+
+templ Button() {
+	<button onClick={handleClick}>Click</button>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          (attribute
+            name: (identifier)
+            value: (go_expression
+              (expression_content)))
+          (text_content)
+          (identifier))))))
+
+================================================================================
+Element with named ref and attributes
+================================================================================
+
+templ Card() {
+	<div #Header class="font-bold"></div>
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (element
+        (element_with_children
+          tag: (identifier)
+          named_ref: (named_ref
+            (identifier))
+          (attribute
+            name: (identifier)
+            value: (string))
+          (identifier))))))

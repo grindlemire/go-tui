@@ -51,6 +51,25 @@ func (a *componentIndexAdapter) LookupParam(componentName, paramName string) (*p
 	}, true
 }
 
+func (a *componentIndexAdapter) LookupFuncParam(funcName, paramName string) (*provider.FuncParamInfo, bool) {
+	param, uri, ok := a.index.LookupFuncParam(funcName, paramName)
+	if !ok || param == nil {
+		return nil, false
+	}
+	return &provider.FuncParamInfo{
+		Name:     param.Name,
+		Type:     param.Type,
+		FuncName: funcName,
+		Location: provider.Location{
+			URI: uri,
+			Range: provider.Range{
+				Start: param.Position,
+				End:   provider.Position{Line: param.Position.Line, Character: param.Position.Character + len(param.Name)},
+			},
+		},
+	}, true
+}
+
 func (a *componentIndexAdapter) All() []string {
 	return a.index.All()
 }
@@ -190,7 +209,7 @@ func (s *Server) CreateProviderRegistry() *Registry {
 		WorkspaceSymbol: newWorkspaceSymbolProviderAdapter(provider.NewWorkspaceSymbolProvider(indexAdapter)),
 		Diagnostics:     newDiagnosticsProviderAdapter(provider.NewDiagnosticsProvider()),
 		Formatting:      newFormattingProviderAdapter(provider.NewFormattingProvider()),
-		SemanticTokens:  newSemanticTokensProviderAdapter(provider.NewSemanticTokensProvider(&functionNameCheckerAdapter{server: s})),
+		SemanticTokens:  newSemanticTokensProviderAdapter(provider.NewSemanticTokensProvider(&functionNameCheckerAdapter{server: s}, docsAdapter)),
 	}
 }
 
@@ -336,19 +355,22 @@ type functionNameCheckerAdapter struct {
 	server *Server
 }
 
+// goBuiltinFunctions is the set of Go built-in function names used for
+// semantic token classification. Defined at package level to avoid
+// reconstructing the map on every IsFunctionName call.
+var goBuiltinFunctions = map[string]bool{
+	"len": true, "cap": true, "make": true, "new": true,
+	"append": true, "copy": true, "delete": true,
+	"close": true, "panic": true, "recover": true,
+	"print": true, "println": true,
+	"real": true, "imag": true, "complex": true,
+}
+
 func (a *functionNameCheckerAdapter) IsFunctionName(name string) bool {
 	// Check indexed functions
 	if _, ok := a.server.index.LookupFunc(name); ok {
 		return true
 	}
 
-	// Check common Go built-ins
-	builtins := map[string]bool{
-		"len": true, "cap": true, "make": true, "new": true,
-		"append": true, "copy": true, "delete": true,
-		"close": true, "panic": true, "recover": true,
-		"print": true, "println": true,
-		"real": true, "imag": true, "complex": true,
-	}
-	return builtins[name]
+	return goBuiltinFunctions[name]
 }

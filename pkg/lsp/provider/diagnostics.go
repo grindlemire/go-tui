@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"strings"
+
 	"github.com/grindlemire/go-tui/pkg/lsp/log"
 )
 
@@ -83,6 +85,30 @@ func (d *diagnosticsProvider) Diagnose(doc *Document) ([]Diagnostic, error) {
 }
 
 // estimateErrorLength estimates the length of text to highlight for an error.
+// It extracts quoted tokens from the message (e.g., "unexpected 'foo'") and uses
+// their length, or falls back to the first word length if no quotes are found.
 func estimateErrorLength(message string) int {
-	return 10
+	// Try to extract a quoted token from the message (single or double quotes).
+	for _, q := range []byte{'\'', '"', '`'} {
+		start := strings.IndexByte(message, q)
+		if start >= 0 {
+			end := strings.IndexByte(message[start+1:], q)
+			if end > 0 {
+				return end
+			}
+		}
+	}
+
+	// Try to extract the last meaningful word (often the problematic token).
+	words := strings.Fields(message)
+	if len(words) > 0 {
+		last := words[len(words)-1]
+		// Strip trailing punctuation
+		last = strings.TrimRight(last, ".,;:!?")
+		if len(last) > 0 {
+			return len(last)
+		}
+	}
+
+	return 1 // Minimum highlight of 1 character
 }

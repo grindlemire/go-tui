@@ -96,7 +96,7 @@ func (c *completionProvider) Complete(ctx *CursorContext) (*CompletionList, erro
 	}
 
 	// State method completions (count. → Get, Set, Update, Bind, Batch)
-	if ctx.InGoExpr && ctx.Scope != nil {
+	if ctx.InGoExpr {
 		stateItems := c.getStateMethodCompletions(ctx)
 		if len(stateItems) > 0 {
 			return &CompletionList{Items: stateItems}, nil
@@ -152,13 +152,18 @@ func triggerChar(ctx *CursorContext) string {
 	return string(ctx.Document.Content[offset-1])
 }
 
+// maxClassAttrSearchDistance is the maximum number of bytes to search backwards
+// when looking for a class="..." attribute opening. Must match the value in
+// context.go's isOffsetInClassAttr for consistent behavior.
+const maxClassAttrSearchDistance = 500
+
 // classPrefix extracts the partial class name the user is typing inside class="...".
 func classPrefix(ctx *CursorContext) string {
 	offset := PositionToOffset(ctx.Document.Content, ctx.Position)
 	content := ctx.Document.Content
 
 	// Search backwards for class="
-	searchStart := offset - 100
+	searchStart := offset - maxClassAttrSearchDistance
 	if searchStart < 0 {
 		searchStart = 0
 	}
@@ -381,7 +386,7 @@ func enclosingTagFromText(ctx *CursorContext) string {
 // getStateMethodCompletions returns state method completions when the user types
 // a state variable name followed by a dot (e.g., "count.").
 func (c *completionProvider) getStateMethodCompletions(ctx *CursorContext) []CompletionItem {
-	if ctx.Scope == nil || len(ctx.Scope.StateVars) == 0 {
+	if len(ctx.Scope.StateVars) == 0 {
 		return nil
 	}
 

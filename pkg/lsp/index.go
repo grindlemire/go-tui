@@ -189,6 +189,14 @@ func (idx *ComponentIndex) AddFunc(uri string, fn *tuigen.GoFunc) {
 		return
 	}
 
+	// Adjust param positions from code-relative to document-absolute (0-indexed)
+	for i := range params {
+		params[i].Position = Position{
+			Line:      fn.Position.Line - 1,
+			Character: fn.Position.Column - 1 + params[i].Position.Character,
+		}
+	}
+
 	info := &FuncInfo{
 		Name:      name,
 		Signature: sig,
@@ -275,6 +283,24 @@ func (idx *ComponentIndex) LookupParamInAnyComponent(paramName string) (*ParamIn
 	return nil, false
 }
 
+// LookupFuncParam finds a function parameter by function name and param name.
+// Returns the param and the function's URI.
+func (idx *ComponentIndex) LookupFuncParam(funcName, paramName string) (*FuncParam, string, bool) {
+	idx.mu.RLock()
+	defer idx.mu.RUnlock()
+
+	funcInfo, ok := idx.Functions[funcName]
+	if !ok {
+		return nil, "", false
+	}
+	for i := range funcInfo.Params {
+		if funcInfo.Params[i].Name == paramName {
+			return &funcInfo.Params[i], funcInfo.Location.URI, true
+		}
+	}
+	return nil, "", false
+}
+
 // AllFunctions returns all function names in the index.
 func (idx *ComponentIndex) AllFunctions() []string {
 	idx.mu.RLock()
@@ -311,16 +337,27 @@ func parseFuncSignature(code string) (name, signature string, params []FuncParam
 		signature += " " + returns
 	}
 
-	// Parse params
+	// Parse params with positions relative to code start
 	if paramStr != "" {
+		// Find the opening paren in the original code to calculate positions
+		parenIdx := strings.Index(code, "(")
+		paramContentStart := parenIdx + 1
+
 		paramParts := strings.Split(paramStr, ",")
-		for _, part := range paramParts {
-			part = strings.TrimSpace(part)
-			fields := strings.Fields(part)
+		offset := 0
+		for _, rawPart := range paramParts {
+			trimmed := strings.TrimSpace(rawPart)
+			fields := strings.Fields(trimmed)
 			if len(fields) >= 2 {
+				// Find where the name starts within the raw part
+				nameInPart := strings.Index(rawPart, fields[0])
+				charPos := paramContentStart + offset + nameInPart
 				params = append(params, FuncParam{
 					Name: fields[0],
 					Type: strings.Join(fields[1:], " "),
+					Position: Position{
+						Character: charPos, // relative to code start; adjusted to absolute in AddFunc
+					},
 				})
 			} else if len(fields) == 1 {
 				// Type only, no name (or name only)
@@ -328,6 +365,7 @@ func parseFuncSignature(code string) (name, signature string, params []FuncParam
 					Name: fields[0],
 				})
 			}
+			offset += len(rawPart) + 1 // +1 for comma
 		}
 	}
 

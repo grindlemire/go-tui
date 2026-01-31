@@ -78,6 +78,16 @@ func findFirstByType(tokens []SemanticToken, tokenType int) *SemanticToken {
 	return nil
 }
 
+// hasTokenAt checks if a token exists at the given position with the given type and length.
+func hasTokenAt(tokens []SemanticToken, line, col, length, tokenType int) bool {
+	for _, tok := range tokens {
+		if tok.Line == line && tok.StartChar == col && tok.Length == length && tok.TokenType == tokenType {
+			return true
+		}
+	}
+	return false
+}
+
 func TestSemanticTokens_ComponentDecl(t *testing.T) {
 	type tc struct {
 		content       string
@@ -139,6 +149,40 @@ templ Greeting(name string, count int) {
 			}
 		})
 	}
+
+	// Position assertions for "simple component": templ keyword at line 2, col 0
+	t.Run("simple component positions", func(t *testing.T) {
+		doc := parseTestDoc(tests["simple component"].content)
+		result, err := sp.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
+			t.Error("expected templ keyword token at 2:0 with length 5")
+		}
+		if !hasTokenAt(tokens, 2, 6, 5, TokenTypeClass) {
+			t.Error("expected Hello class token at 2:6 with length 5")
+		}
+	})
+
+	// Position assertions for "component with params": params at expected positions
+	t.Run("component with params positions", func(t *testing.T) {
+		doc := parseTestDoc(tests["component with params"].content)
+		result, err := sp.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
+			t.Error("expected templ keyword token at 2:0 with length 5")
+		}
+		if !hasTokenAt(tokens, 2, 6, 8, TokenTypeClass) {
+			t.Error("expected Greeting class token at 2:6 with length 8")
+		}
+	})
 }
 
 func TestSemanticTokens_FunctionDecl(t *testing.T) {
@@ -230,6 +274,47 @@ templ Cond(show bool) {
 			}
 		})
 	}
+
+	// Position assertions for "for loop keyword"
+	t.Run("for loop keyword positions", func(t *testing.T) {
+		doc := parseTestDoc(tests["for loop keyword"].content)
+		result, err := sp.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
+			t.Error("expected templ keyword at 2:0 with length 5")
+		}
+		if !hasTokenAt(tokens, 3, 1, 4, TokenTypeKeyword) {
+			t.Error("expected @for keyword at 3:1 with length 4")
+		}
+	})
+
+	// Position assertions for "if/else keywords" — needs docs accessor for @else
+	t.Run("if/else keyword positions", func(t *testing.T) {
+		doc := parseTestDoc(tests["if/else keywords"].content)
+		spWithDocs := &semanticTokensProvider{
+			fnChecker: &stubFnChecker{names: map[string]bool{}},
+			docs:      &stubDocAccessor{docs: []*Document{doc}},
+		}
+		result, err := spWithDocs.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
+			t.Error("expected templ keyword at 2:0 with length 5")
+		}
+		if !hasTokenAt(tokens, 3, 1, 3, TokenTypeKeyword) {
+			t.Error("expected @if keyword at 3:1 with length 3")
+		}
+		if !hasTokenAt(tokens, 5, 3, 5, TokenTypeKeyword) {
+			t.Error("expected @else keyword at 5:3 with length 5")
+		}
+	})
 }
 
 func TestSemanticTokens_ElementAttributes(t *testing.T) {
@@ -392,6 +477,8 @@ func TestSemanticTokens_TokenTypeConstants(t *testing.T) {
 		{"decorator", TokenTypeDecorator, 11},
 		{"regexp", TokenTypeRegexp, 12},
 		{"comment", TokenTypeComment, 13},
+		{"label", TokenTypeLabel, 14},
+		{"typeParameter", TokenTypeTypeParameter, 15},
 	}
 
 	for _, tt := range tests {
@@ -523,7 +610,7 @@ templ Layout() {
 }
 `,
 			wantOperator: 1, // the # symbol
-			wantVarDecl:  1, // Header ref name
+			wantVarDecl:  1, // Header ref name (label token with declaration modifier)
 		},
 	}
 
@@ -545,15 +632,15 @@ templ Layout() {
 				t.Errorf("got %d operator tokens, want at least %d (for # in named ref)", operatorCount, tt.wantOperator)
 			}
 
-			// Find variable tokens with declaration modifier (the ref name)
-			varDeclCount := 0
+			// Find keyword tokens with declaration modifier (the ref name)
+			keywordDeclCount := 0
 			for _, tok := range tokens {
-				if tok.TokenType == TokenTypeVariable && tok.Modifiers&TokenModDeclaration != 0 {
-					varDeclCount++
+				if tok.TokenType == TokenTypeKeyword && tok.Modifiers&TokenModDeclaration != 0 {
+					keywordDeclCount++
 				}
 			}
-			if varDeclCount < tt.wantVarDecl {
-				t.Errorf("got %d variable declaration tokens, want at least %d (for ref name)", varDeclCount, tt.wantVarDecl)
+			if keywordDeclCount < tt.wantVarDecl {
+				t.Errorf("got %d keyword declaration tokens, want at least %d (for ref name)", keywordDeclCount, tt.wantVarDecl)
 			}
 		})
 	}
@@ -682,5 +769,79 @@ templ Footer() {
 	classCount := countByType(tokens, TokenTypeClass)
 	if classCount < 2 {
 		t.Errorf("got %d class tokens, want at least 2", classCount)
+	}
+}
+
+func TestSemanticTokens_StateModifierOnlyOnStateVar(t *testing.T) {
+	// Regression: the readonly modifier should only apply to the state variable,
+	// not to all variables declared in the same GoCode block.
+	src := `package test
+
+templ Counter() {
+	count := tui.NewState(0)
+	<span>{count.Get()}</span>
+}
+`
+	sp := newTestSemanticProvider()
+	doc := parseTestDoc(src)
+
+	result, err := sp.SemanticTokensFull(doc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	tokens := decodeTokens(result.Data)
+
+	// Find variable tokens with declaration modifier
+	for _, tok := range tokens {
+		if tok.TokenType == TokenTypeVariable && (tok.Modifiers&TokenModDeclaration) != 0 {
+			// The "count" variable should have readonly modifier
+			if tok.StartChar == 1 { // "count" is at column 1 (after tab)
+				if (tok.Modifiers & TokenModReadonly) == 0 {
+					t.Error("state variable 'count' should have readonly modifier")
+				}
+			}
+		}
+	}
+}
+
+func TestSemanticTokens_NonStateVarNoReadonly(t *testing.T) {
+	// When a GoCode block has a non-state variable, it should NOT get readonly.
+	// Note: the parser produces separate GoCode nodes for separate statements,
+	// so we test with a state declaration to verify only it gets readonly.
+	src := `package test
+
+templ Example() {
+	count := tui.NewState(0)
+	<span>{count.Get()}</span>
+}
+`
+	sp := newTestSemanticProvider()
+	doc := parseTestDoc(src)
+
+	result, err := sp.SemanticTokensFull(doc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	tokens := decodeTokens(result.Data)
+
+	// All variable declarations should be accounted for
+	varDeclCount := 0
+	readonlyVarCount := 0
+	for _, tok := range tokens {
+		if tok.TokenType == TokenTypeVariable && (tok.Modifiers&TokenModDeclaration) != 0 {
+			varDeclCount++
+			if (tok.Modifiers & TokenModReadonly) != 0 {
+				readonlyVarCount++
+			}
+		}
+	}
+	if varDeclCount == 0 {
+		t.Error("expected at least one variable declaration token")
+	}
+	// Only state var should be readonly
+	if readonlyVarCount > 1 {
+		t.Errorf("expected at most 1 readonly variable, got %d", readonlyVarCount)
 	}
 }

@@ -197,3 +197,266 @@ func TestDefinition_NilDocument(t *testing.T) {
 		t.Errorf("expected nil for empty word, got %v", result)
 	}
 }
+
+func TestDefinition_NamedRef(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	src := `package test
+
+templ Layout() {
+	<div #Header class="p-1">title</div>
+}
+`
+	doc := parseTestDoc(src)
+	elem := doc.AST.Components[0].Body[0].(*tuigen.Element)
+
+	ctx := makeCtx(doc, NodeKindNamedRef, "Header")
+	ctx.Node = elem
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) == 0 {
+		t.Fatal("expected definition location for named ref")
+	}
+	// Should point to #Header, not the element tag
+	loc := result[0]
+	line := loc.Range.Start.Line
+	char := loc.Range.Start.Character
+	endChar := loc.Range.End.Character
+	if line != 3 {
+		t.Errorf("expected line 3, got %d", line)
+	}
+	if endChar-char != len("#Header") {
+		t.Errorf("expected range length %d, got %d", len("#Header"), endChar-char)
+	}
+}
+
+func TestDefinition_NamedRef_Usage(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	src := `package test
+
+templ Layout() {
+	<div
+		#Content
+		class="p-1">title</div>
+	<span>{Content}</span>
+}
+`
+	doc := parseTestDoc(src)
+	elem := doc.AST.Components[0].Body[0].(*tuigen.Element)
+
+	// Simulate cursor on "Content" inside {Content} — a Go expression usage
+	ctx := makeCtx(doc, NodeKindGoExpr, "Content")
+	ctx.InGoExpr = true
+	ctx.Scope.Component = doc.AST.Components[0]
+	ctx.Scope.NamedRefs = []tuigen.NamedRef{
+		{Name: "Content", Element: elem},
+	}
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) == 0 {
+		t.Fatal("expected definition location for named ref usage in Go expr")
+	}
+	loc := result[0]
+	// Should point to #Content on line 4, not the <div on line 3
+	if loc.Range.Start.Line != 4 {
+		t.Errorf("expected line 4, got %d", loc.Range.Start.Line)
+	}
+	if loc.Range.End.Character-loc.Range.Start.Character != len("#Content") {
+		t.Errorf("expected range length %d, got %d", len("#Content"), loc.Range.End.Character-loc.Range.Start.Character)
+	}
+}
+
+func TestDefinition_NamedRef_Multiline(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	src := `package test
+
+templ Layout() {
+	<div
+		#Header
+		class="p-1">title</div>
+}
+`
+	doc := parseTestDoc(src)
+	elem := doc.AST.Components[0].Body[0].(*tuigen.Element)
+
+	ctx := makeCtx(doc, NodeKindNamedRef, "#Header")
+	ctx.Node = elem
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) == 0 {
+		t.Fatal("expected definition location for multiline named ref")
+	}
+	loc := result[0]
+	// #Header is on line 4 (0-indexed), not line 3 (the <div line)
+	if loc.Range.Start.Line != 4 {
+		t.Errorf("expected line 4, got %d", loc.Range.Start.Line)
+	}
+	if loc.Range.End.Character-loc.Range.Start.Character != len("#Header") {
+		t.Errorf("expected range length %d, got %d", len("#Header"), loc.Range.End.Character-loc.Range.Start.Character)
+	}
+}
+
+func TestDefinition_StateDecl(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	src := `package test
+
+templ Counter() {
+	count := tui.NewState(0)
+	<span>{count.Get()}</span>
+}
+`
+	doc := parseTestDoc(src)
+
+	ctx := makeCtx(doc, NodeKindStateDecl, "count")
+	ctx.Scope.Component = doc.AST.Components[0]
+	ctx.Scope.StateVars = []tuigen.StateVar{
+		{Name: "count", Type: "int", InitExpr: "0", Position: tuigen.Position{Line: 4, Column: 2}},
+	}
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) == 0 {
+		t.Fatal("expected definition location for state decl")
+	}
+	if result[0].Range.Start.Line != 3 {
+		t.Errorf("expected line 3, got %d", result[0].Range.Start.Line)
+	}
+}
+
+func TestDefinition_StateAccess(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	src := `package test
+
+templ Counter() {
+	count := tui.NewState(0)
+	<span>{count.Get()}</span>
+}
+`
+	doc := parseTestDoc(src)
+
+	ctx := makeCtx(doc, NodeKindStateAccess, "count")
+	ctx.Scope.Component = doc.AST.Components[0]
+	ctx.Scope.StateVars = []tuigen.StateVar{
+		{Name: "count", Type: "int", InitExpr: "0", Position: tuigen.Position{Line: 4, Column: 2}},
+	}
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) == 0 {
+		t.Fatal("expected definition location for state access")
+	}
+	if result[0].Range.Start.Line != 3 {
+		t.Errorf("expected line 3, got %d", result[0].Range.Start.Line)
+	}
+}
+
+func TestDefinition_EventHandler(t *testing.T) {
+	index := newStubIndex()
+	dp := newTestDefinitionProvider(index)
+
+	doc := parseTestDoc("package test")
+
+	ctx := makeCtx(doc, NodeKindEventHandler, "handleClick")
+	ctx.InGoExpr = true
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Without a real gopls proxy, this should return nil
+	if result != nil && len(result) > 0 {
+		t.Errorf("expected nil result without gopls, got %v", result)
+	}
+}
+
+func TestFindVarDeclPosition_WordBoundary(t *testing.T) {
+	type tc struct {
+		code    string
+		varName string
+		want    int
+	}
+
+	tests := map[string]tc{
+		"simple decl": {
+			code: "count := 1", varName: "count", want: 0,
+		},
+		"no substring match": {
+			code: "accountCount := 1", varName: "count", want: -1,
+		},
+		"multi var decl": {
+			code: "a, count := 1, 2", varName: "count", want: 3,
+		},
+		"var keyword": {
+			code: "var count = 1", varName: "count", want: 4,
+		},
+		"var keyword no substring": {
+			code: "var accountCount = 1", varName: "count", want: -1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := findVarDeclPosition(tt.code, tt.varName)
+			if got != tt.want {
+				t.Errorf("findVarDeclPosition(%q, %q) = %d, want %d", tt.code, tt.varName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestContainsVarDecl(t *testing.T) {
+	type tc struct {
+		code    string
+		varName string
+		want    bool
+	}
+
+	tests := map[string]tc{
+		"simple match": {
+			code: "x := 1", varName: "x", want: true,
+		},
+		"no match": {
+			code: "y := 1", varName: "x", want: false,
+		},
+		"multi var": {
+			code: "a, b := 1, 2", varName: "b", want: true,
+		},
+		"var keyword": {
+			code: "var x = 1", varName: "x", want: true,
+		},
+		"no assignment": {
+			code: "fmt.Println(x)", varName: "x", want: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := containsVarDecl(tt.code, tt.varName)
+			if got != tt.want {
+				t.Errorf("containsVarDecl(%q, %q) = %v, want %v", tt.code, tt.varName, got, tt.want)
+			}
+		})
+	}
+}

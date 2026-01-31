@@ -70,6 +70,13 @@
           "description": "Path to LSP log file for debugging (e.g., /tmp/gsx-lsp.log)"
         }
       }
+    },
+    "configurationDefaults": {
+      "editor.semanticTokenColorCustomizations": {
+        "rules": {
+          "typeParameter:gsx": "#C586C0"
+        }
+      }
     }
   },
   "scripts": {

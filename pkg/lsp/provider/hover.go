@@ -44,6 +44,11 @@ func (h *hoverProvider) Hover(ctx *CursorContext) (*Hover, error) {
 	// Dispatch based on node kind
 	switch ctx.NodeKind {
 	case NodeKindComponent:
+		// Try gopls for types in component parameter signatures
+		hover, err := h.getGoplsHover(ctx)
+		if err == nil && hover != nil {
+			return hover, nil
+		}
 		return h.hoverComponent(ctx)
 	case NodeKindElement:
 		return h.hoverElement(ctx)
@@ -62,6 +67,11 @@ func (h *hoverProvider) Hover(ctx *CursorContext) (*Hover, error) {
 	case NodeKindLetBinding:
 		return h.hoverKeyword(ctx)
 	case NodeKindFunction:
+		// Try gopls for types in function signatures (e.g., *tui.State[int])
+		hover, err := h.getGoplsHover(ctx)
+		if err == nil && hover != nil {
+			return hover, nil
+		}
 		return h.hoverFunction(ctx)
 	case NodeKindComponentCall:
 		return h.hoverComponentCall(ctx)
@@ -100,7 +110,7 @@ func (h *hoverProvider) Hover(ctx *CursorContext) (*Hover, error) {
 	}
 
 	// Check if word is a parameter in the current component
-	if ctx.Scope != nil && ctx.Scope.Component != nil {
+	if ctx.Scope.Component != nil {
 		if paramInfo, ok := h.index.LookupParam(ctx.Scope.Component.Name, word); ok {
 			return hoverForParamInfo(paramInfo), nil
 		}
@@ -192,7 +202,7 @@ func (h *hoverProvider) hoverParameter(ctx *CursorContext) (*Hover, error) {
 	}
 
 	compName := ""
-	if ctx.Scope != nil && ctx.Scope.Component != nil {
+	if ctx.Scope.Component != nil {
 		compName = ctx.Scope.Component.Name
 	}
 
@@ -241,7 +251,7 @@ func (h *hoverProvider) hoverNamedRef(ctx *CursorContext) (*Hover, error) {
 	accessPattern := fmt.Sprintf("`view.%s`", elem.NamedRef)
 
 	// Check scope for richer context
-	if ctx.Scope != nil {
+	{
 		for _, ref := range ctx.Scope.NamedRefs {
 			if ref.Name == elem.NamedRef {
 				if ref.InLoop {
@@ -270,13 +280,11 @@ func (h *hoverProvider) hoverNamedRef(ctx *CursorContext) (*Hover, error) {
 
 func (h *hoverProvider) hoverStateDecl(ctx *CursorContext) (*Hover, error) {
 	// Try to find the state variable info from scope, matching by name
-	if ctx.Scope != nil {
-		for _, sv := range ctx.Scope.StateVars {
-			if sv.Name == ctx.Word {
-				md := fmt.Sprintf("**State Variable** `%s`\n\nType: `*tui.State[%s]`\n\nInitial: `%s`\n\nMethods: Get(), Set(), Update(), Bind(), Batch()",
-					sv.Name, sv.Type, sv.InitExpr)
-				return markdownHover(md), nil
-			}
+	for _, sv := range ctx.Scope.StateVars {
+		if sv.Name == ctx.Word {
+			md := fmt.Sprintf("**State Variable** `%s`\n\nType: `*tui.State[%s]`\n\nInitial: `%s`\n\nMethods: Get(), Set(), Update(), Bind(), Batch()",
+				sv.Name, sv.Type, sv.InitExpr)
+			return markdownHover(md), nil
 		}
 	}
 
@@ -307,11 +315,6 @@ func (h *hoverProvider) hoverStateAccess(ctx *CursorContext) (*Hover, error) {
 func (h *hoverProvider) hoverTailwindClass(ctx *CursorContext) (*Hover, error) {
 	return h.hoverForTailwindWord(ctx)
 }
-
-// maxClassAttrSearchDistance is the maximum number of bytes to search backwards
-// when looking for a class="..." attribute opening. This should be large enough to
-// handle elements with many attributes before the class attribute.
-const maxClassAttrSearchDistance = 500
 
 // hoverForTailwindWord extracts the class name at the cursor and returns hover docs.
 func (h *hoverProvider) hoverForTailwindWord(ctx *CursorContext) (*Hover, error) {

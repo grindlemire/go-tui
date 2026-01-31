@@ -1,4 +1,4 @@
-; Tree-sitter highlight queries for TUI DSL
+; Tree-sitter highlight queries for GSX DSL
 ; This file maps tree-sitter node types to highlight groups
 
 ; ====================
@@ -15,6 +15,9 @@
 "@if" @keyword.conditional
 "@else" @keyword.conditional
 "@let" @keyword
+
+; Function keyword
+"func" @keyword.function
 
 ; Range keyword
 "range" @keyword.repeat
@@ -54,6 +57,15 @@
 "/" @tag.delimiter
 
 ; ====================
+; Named References
+; ====================
+
+; Named ref punctuation and name
+(named_ref
+  "#" @punctuation.special
+  (identifier) @variable.definition)
+
+; ====================
 ; Attributes
 ; ====================
 
@@ -61,8 +73,20 @@
   name: (identifier) @property)
 
 ; ====================
+; State Declarations
+; ====================
+
+; State variable name in declaration
+(state_declaration
+  name: (identifier) @variable.definition)
+
+; ====================
 ; Functions
 ; ====================
+
+; Function declaration name
+(function_declaration
+  name: (identifier) @function.definition)
 
 ; Function calls in expressions
 (call_expression

@@ -31,23 +31,63 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 
 	word := ctx.Word
 
-	// First, check local function definitions before gopls (prevents gopls from
+	// Check local function definitions first (prevents gopls from
 	// returning generated .go files instead of .gsx sources).
 	if word != "" {
 		if funcInfo, ok := d.index.LookupFunc(word); ok {
 			log.Server("Found local function %s at %s (before gopls)", word, funcInfo.Location.URI)
 			return []Location{funcInfo.Location}, nil
 		}
+	}
 
-		// Check for loop variables before gopls (gopls doesn't understand .gsx for loops)
-		if ctx.Scope != nil && ctx.Scope.Component != nil {
-			if loc := d.findLoopVariableDefinition(ctx, word); loc != nil {
-				return []Location{*loc}, nil
+	if word == "" {
+		// Without a word, only gopls can resolve (it works by position).
+		if ctx.InGoExpr {
+			locs, err := d.getGoplsDefinition(ctx)
+			if err == nil && len(locs) > 0 {
+				return locs, nil
 			}
+		}
+		return nil, nil
+	}
+
+	// Dispatch based on node kind. Each case resolves using local knowledge
+	// first; unresolved Go expressions fall through to the gopls fallback.
+	switch ctx.NodeKind {
+	case NodeKindComponentCall:
+		return d.definitionComponentCall(ctx)
+	case NodeKindNamedRef:
+		return d.definitionNamedRef(ctx)
+	case NodeKindEventHandler:
+		return d.definitionEventHandler(ctx)
+	case NodeKindParameter:
+		return d.definitionParameter(ctx)
+	case NodeKindStateAccess, NodeKindStateDecl:
+		locs, err := d.definitionStateVar(ctx)
+		if err == nil && len(locs) > 0 {
+			return locs, nil
+		}
+		// Fall through to gopls for unresolved state references
+	case NodeKindGoExpr:
+		// Check named refs in scope before deferring to gopls (which would
+		// return the element tag position from generated code, not #Name).
+		if locs := d.definitionNamedRefFromScope(ctx); len(locs) > 0 {
+			return locs, nil
+		}
+		// Fall through to gopls
+	case NodeKindFunction:
+		locs, err := d.getGoplsDefinition(ctx)
+		if err == nil && len(locs) > 0 {
+			return locs, nil
+		}
+	case NodeKindComponent:
+		locs, err := d.getGoplsDefinition(ctx)
+		if err == nil && len(locs) > 0 {
+			return locs, nil
 		}
 	}
 
-	// For Go expressions, try gopls
+	// Gopls fallback for Go expressions not resolved by handlers above.
 	if ctx.InGoExpr {
 		locs, err := d.getGoplsDefinition(ctx)
 		if err != nil {
@@ -55,22 +95,6 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		} else if len(locs) > 0 {
 			return locs, nil
 		}
-	}
-
-	if word == "" {
-		return nil, nil
-	}
-
-	// Dispatch based on node kind
-	switch ctx.NodeKind {
-	case NodeKindComponentCall:
-		return d.definitionComponentCall(ctx)
-	case NodeKindNamedRef:
-		return d.definitionNamedRef(ctx)
-	case NodeKindStateAccess, NodeKindStateDecl:
-		return d.definitionStateVar(ctx)
-	case NodeKindEventHandler:
-		return d.definitionEventHandler(ctx)
 	}
 
 	// Word-based fallbacks
@@ -87,7 +111,7 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 	}
 
 	// Check within component scope
-	if ctx.Scope != nil && ctx.Scope.Component != nil {
+	if ctx.Scope.Component != nil {
 		compName := ctx.Scope.Component.Name
 
 		// Parameter
@@ -138,27 +162,82 @@ func (d *definitionProvider) definitionComponentCall(ctx *CursorContext) ([]Loca
 	return nil, nil
 }
 
+// definitionNamedRefFromScope checks if the word under the cursor matches a
+// named ref in the component scope and returns its #Name definition position.
+func (d *definitionProvider) definitionNamedRefFromScope(ctx *CursorContext) []Location {
+	if ctx.Scope.Component == nil {
+		return nil
+	}
+	for _, ref := range ctx.Scope.NamedRefs {
+		if ref.Name == ctx.Word && ref.Element != nil {
+			lineIdx, charIdx, found := findNamedRefPosition(ctx.Document.Content, ref.Element)
+			if found {
+				hashRef := "#" + ref.Name
+				return []Location{{
+					URI: ctx.Document.URI,
+					Range: Range{
+						Start: Position{Line: lineIdx, Character: charIdx},
+						End:   Position{Line: lineIdx, Character: charIdx + len(hashRef)},
+					},
+				}}
+			}
+		}
+	}
+	return nil
+}
+
 func (d *definitionProvider) definitionNamedRef(ctx *CursorContext) ([]Location, error) {
 	elem, ok := ctx.Node.(*tuigen.Element)
-	if !ok || elem == nil {
+	if !ok || elem == nil || elem.NamedRef == "" {
 		return nil, nil
 	}
 
-	// The definition of a named ref is the element itself (where #Name is declared)
+	lineIdx, charIdx, found := findNamedRefPosition(ctx.Document.Content, elem)
+	if !found {
+		// Fallback to element tag position
+		lineIdx = elem.Position.Line - 1
+		charIdx = elem.Position.Column - 1
+	}
+
+	hashRef := "#" + elem.NamedRef
 	return []Location{{
 		URI: ctx.Document.URI,
 		Range: Range{
-			Start: Position{Line: elem.Position.Line - 1, Character: elem.Position.Column - 1},
-			End:   Position{Line: elem.Position.Line - 1, Character: elem.Position.Column - 1 + len(elem.Tag)},
+			Start: Position{Line: lineIdx, Character: charIdx},
+			End:   Position{Line: lineIdx, Character: charIdx + len(hashRef)},
 		},
 	}}, nil
 }
 
-func (d *definitionProvider) definitionStateVar(ctx *CursorContext) ([]Location, error) {
-	if ctx.Scope == nil {
-		return nil, nil
+// findNamedRefPosition finds the source position of #Name for an element.
+// Searches from the element's tag line through subsequent lines to handle
+// multiline elements where #Name is on its own line.
+// Returns 0-indexed line and column.
+func findNamedRefPosition(content string, elem *tuigen.Element) (line, col int, found bool) {
+	if elem == nil || elem.NamedRef == "" {
+		return 0, 0, false
 	}
 
+	hashRef := "#" + elem.NamedRef
+	lines := strings.Split(content, "\n")
+	startLine := elem.Position.Line - 1 // 0-indexed
+
+	maxSearch := startLine + 20
+	if maxSearch > len(lines) {
+		maxSearch = len(lines)
+	}
+
+	for lineIdx := startLine; lineIdx < maxSearch; lineIdx++ {
+		idx := strings.Index(lines[lineIdx], hashRef)
+		if idx >= 0 {
+			return lineIdx, idx, true
+		}
+	}
+
+	return 0, 0, false
+}
+
+func (d *definitionProvider) definitionStateVar(ctx *CursorContext) ([]Location, error) {
 	// Find the state variable declaration in scope, matching by name
 	for _, sv := range ctx.Scope.StateVars {
 		if sv.Name == ctx.Word {
@@ -183,10 +262,31 @@ func (d *definitionProvider) definitionEventHandler(ctx *CursorContext) ([]Locat
 	return nil, nil
 }
 
+func (d *definitionProvider) definitionParameter(ctx *CursorContext) ([]Location, error) {
+	word := ctx.Word
+
+	// Function parameter
+	if ctx.Scope.Function != nil {
+		funcName := parseFuncName(ctx.Scope.Function.Code)
+		if paramInfo, ok := d.index.LookupFuncParam(funcName, word); ok {
+			return []Location{paramInfo.Location}, nil
+		}
+	}
+
+	// Component parameter
+	if ctx.Scope.Component != nil {
+		if paramInfo, ok := d.index.LookupParam(ctx.Scope.Component.Name, word); ok {
+			return []Location{paramInfo.Location}, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // --- Local variable definitions ---
 
 func (d *definitionProvider) findLetBindingDefinition(ctx *CursorContext, varName string) *Location {
-	if ctx.Document.AST == nil || ctx.Scope == nil || ctx.Scope.Component == nil {
+	if ctx.Document.AST == nil || ctx.Scope.Component == nil {
 		return nil
 	}
 
@@ -215,7 +315,7 @@ func (d *definitionProvider) findLetBindingDefinition(ctx *CursorContext, varNam
 }
 
 func (d *definitionProvider) findLoopVariableDefinition(ctx *CursorContext, varName string) *Location {
-	if ctx.Document.AST == nil || ctx.Scope == nil || ctx.Scope.Component == nil {
+	if ctx.Document.AST == nil || ctx.Scope.Component == nil {
 		return nil
 	}
 
@@ -267,7 +367,7 @@ func (d *definitionProvider) findLoopVariableDefinition(ctx *CursorContext, varN
 }
 
 func (d *definitionProvider) findGoCodeVariableDefinition(ctx *CursorContext, varName string) *Location {
-	if ctx.Document.AST == nil || ctx.Scope == nil || ctx.Scope.Component == nil {
+	if ctx.Document.AST == nil || ctx.Scope.Component == nil {
 		return nil
 	}
 
@@ -373,7 +473,7 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 			if cachedFile != nil && cachedFile.SourceMap != nil {
 				tuiStartLine, tuiStartCol, startFound := cachedFile.SourceMap.GoToTui(gl.Range.Start.Line, gl.Range.Start.Character)
 				tuiEndLine, tuiEndCol, endFound := cachedFile.SourceMap.GoToTui(gl.Range.End.Line, gl.Range.End.Character)
-				if startFound || endFound {
+				if startFound && endFound {
 					locs = append(locs, Location{
 						URI: tuiURI,
 						Range: Range{
@@ -527,6 +627,7 @@ func findGoCodeWithVariable(nodes []tuigen.Node, varName string) *tuigen.GoCode 
 }
 
 // containsVarDecl checks if code declares the given variable.
+// Uses exact identifier matching (not substring) for each declared name.
 func containsVarDecl(code, varName string) bool {
 	if idx := strings.Index(code, ":="); idx > 0 {
 		lhs := code[:idx]
@@ -556,7 +657,15 @@ func containsVarDecl(code, varName string) bool {
 	return false
 }
 
+// isWordBoundary checks if position i in s is at a word boundary for the given word length.
+func isWordBoundary(s string, i, wordLen int) bool {
+	before := i == 0 || !IsWordChar(s[i-1])
+	after := i+wordLen >= len(s) || !IsWordChar(s[i+wordLen])
+	return before && after
+}
+
 // findVarDeclPosition finds the position of a variable declaration in code.
+// Uses word-boundary-aware search so "count" doesn't match inside "accountCount".
 func findVarDeclPosition(code, varName string) int {
 	if idx := strings.Index(code, ":="); idx > 0 {
 		lhs := code[:idx]
@@ -579,9 +688,10 @@ func findVarDeclPosition(code, varName string) int {
 		rest := code[varIdx+4:]
 		if idx := strings.Index(rest, "="); idx > 0 {
 			lhs := rest[:idx]
-			partStart := strings.Index(lhs, varName)
-			if partStart >= 0 {
-				return varIdx + 4 + partStart
+			// Use word-boundary search within the LHS
+			offset := indexWholeWordIn(lhs, varName)
+			if offset >= 0 {
+				return varIdx + 4 + offset
 			}
 		}
 	}
@@ -589,14 +699,40 @@ func findVarDeclPosition(code, varName string) int {
 	return -1
 }
 
+// indexWholeWordIn finds the first whole-word occurrence of word in s.
+func indexWholeWordIn(s, word string) int {
+	idx := 0
+	for {
+		i := strings.Index(s[idx:], word)
+		if i < 0 {
+			return -1
+		}
+		absIdx := idx + i
+		if isWordBoundary(s, absIdx, len(word)) {
+			return absIdx
+		}
+		idx = absIdx + len(word)
+	}
+}
+
 // parseFuncName extracts the function name from a Go function definition.
+// Handles both plain functions ("func Name(") and methods ("func (r *T) Name(").
 func parseFuncName(code string) string {
-	// Simple extraction: "func Name(" -> "Name"
 	idx := strings.Index(code, "func ")
 	if idx < 0 {
 		return ""
 	}
-	rest := code[idx+5:]
+	rest := strings.TrimSpace(code[idx+5:])
+
+	// Skip receiver type: func (r *Receiver) Name(...)
+	if len(rest) > 0 && rest[0] == '(' {
+		closeIdx := strings.Index(rest, ")")
+		if closeIdx < 0 {
+			return ""
+		}
+		rest = strings.TrimSpace(rest[closeIdx+1:])
+	}
+
 	parenIdx := strings.Index(rest, "(")
 	if parenIdx < 0 {
 		return ""

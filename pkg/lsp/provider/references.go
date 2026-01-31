@@ -31,24 +31,42 @@ func (r *referencesProvider) References(ctx *CursorContext, includeDecl bool) ([
 		return []Location{}, nil
 	}
 
-	// Dispatch based on what we can identify
-	componentName := strings.TrimPrefix(word, "@")
+	// Dispatch based on NodeKind when available
+	switch ctx.NodeKind {
+	case NodeKindComponentCall, NodeKindComponent:
+		componentName := strings.TrimPrefix(word, "@")
+		return r.findComponentReferences(componentName, includeDecl), nil
+	case NodeKindFunction:
+		return r.findFunctionReferences(word, includeDecl), nil
+	case NodeKindParameter:
+		if ctx.Scope.Function != nil {
+			return r.findFuncParamReferences(ctx, word, includeDecl), nil
+		}
+		if ctx.Scope.Component != nil {
+			return r.findParamReferences(ctx, word, includeDecl), nil
+		}
+	case NodeKindLetBinding:
+		return r.findLocalVariableReferences(ctx, word, includeDecl), nil
+	case NodeKindNamedRef:
+		refWord := strings.TrimPrefix(word, "#")
+		return r.findNamedRefReferences(ctx, refWord, includeDecl), nil
+	case NodeKindStateDecl, NodeKindStateAccess:
+		return r.findStateVarReferences(ctx, word, includeDecl), nil
+	}
 
-	// Check if this is a component
+	// Fallback: word-based heuristic for unknown/unhandled kinds
+	componentName := strings.TrimPrefix(word, "@")
 	if _, ok := r.index.Lookup(componentName); ok {
 		return r.findComponentReferences(componentName, includeDecl), nil
 	}
 
-	// Check if this is a function
 	if _, ok := r.index.LookupFunc(word); ok {
 		return r.findFunctionReferences(word, includeDecl), nil
 	}
 
-	// Check within component scope
-	if ctx.Scope != nil && ctx.Scope.Component != nil {
+	if ctx.Scope.Component != nil {
 		compName := ctx.Scope.Component.Name
 
-		// Named ref — check if the word matches a named ref in scope
 		refWord := strings.TrimPrefix(word, "#")
 		for _, ref := range ctx.Scope.NamedRefs {
 			if ref.Name == refWord {
@@ -56,31 +74,26 @@ func (r *referencesProvider) References(ctx *CursorContext, includeDecl bool) ([
 			}
 		}
 
-		// State variable — check if the word matches a state var in scope
 		for _, sv := range ctx.Scope.StateVars {
 			if sv.Name == word {
 				return r.findStateVarReferences(ctx, word, includeDecl), nil
 			}
 		}
 
-		// Parameter
 		if _, ok := r.index.LookupParam(compName, word); ok {
 			return r.findParamReferences(ctx, word, includeDecl), nil
 		}
 
-		// Let binding
 		refs := r.findLocalVariableReferences(ctx, word, includeDecl)
 		if len(refs) > 0 {
 			return refs, nil
 		}
 
-		// For loop variable
 		refs = r.findLoopVariableReferences(ctx, word, includeDecl)
 		if len(refs) > 0 {
 			return refs, nil
 		}
 
-		// GoCode variable
 		refs = r.findGoCodeVariableReferences(ctx, word, includeDecl)
 		if len(refs) > 0 {
 			return refs, nil
@@ -110,6 +123,9 @@ func (r *referencesProvider) findComponentReferences(name string, includeDecl bo
 			findComponentCallsInNodes(comp.Body, name, doc.URI, &refs)
 		}
 	}
+
+	// Search workspace ASTs for files not open in editor
+	r.searchWorkspaceForComponentRefs(name, &refs)
 
 	return refs
 }
@@ -172,6 +188,101 @@ func (r *referencesProvider) findParamReferences(ctx *CursorContext, paramName s
 
 		findVariableUsagesInNodes(comp.Body, paramName, ctx.Document.URI, &refs)
 		break
+	}
+
+	return refs
+}
+
+// --- Function parameter references ---
+
+func (r *referencesProvider) findFuncParamReferences(ctx *CursorContext, paramName string, includeDecl bool) []Location {
+	var refs []Location
+
+	fn := ctx.Scope.Function
+	if fn == nil {
+		return refs
+	}
+
+	funcName := parseFuncName(fn.Code)
+
+	// Include declaration
+	if includeDecl {
+		if paramInfo, ok := r.index.LookupFuncParam(funcName, paramName); ok {
+			refs = append(refs, paramInfo.Location)
+		}
+	}
+
+	// Find usages in function body
+	code := fn.Code
+	lines := strings.Split(code, "\n")
+
+	braceIdx := strings.Index(code, "{")
+	if braceIdx == -1 {
+		return refs
+	}
+
+	// Find which line the opening brace is on
+	charCount := 0
+	bodyStartLine := 0
+	for lineIdx, line := range lines {
+		lineEnd := charCount + len(line)
+		if braceIdx >= charCount && braceIdx < lineEnd+1 {
+			bodyStartLine = lineIdx
+			break
+		}
+		charCount = lineEnd + 1
+	}
+
+	// Search body lines for param usages
+	for lineIdx := bodyStartLine; lineIdx < len(lines); lineIdx++ {
+		line := lines[lineIdx]
+		docLine := fn.Position.Line - 1 + lineIdx // 0-indexed
+
+		searchLine := line
+		colBase := 0
+		if lineIdx == 0 {
+			colBase = fn.Position.Column - 1
+		}
+
+		// On the body start line, skip past the opening brace
+		if lineIdx == bodyStartLine {
+			braceInLine := strings.Index(line, "{")
+			if braceInLine >= 0 {
+				searchLine = line[braceInLine+1:]
+				if lineIdx == 0 {
+					colBase = fn.Position.Column - 1 + braceInLine + 1
+				} else {
+					colBase = braceInLine + 1
+				}
+			}
+		}
+
+		// Find whole-word occurrences of the param name
+		idx := 0
+		for {
+			i := strings.Index(searchLine[idx:], paramName)
+			if i < 0 {
+				break
+			}
+			absIdx := idx + i
+
+			before := absIdx == 0 || !IsWordChar(searchLine[absIdx-1])
+			after := absIdx+len(paramName) >= len(searchLine) || !IsWordChar(searchLine[absIdx+len(paramName)])
+
+			if before && after {
+				charPos := colBase + absIdx
+
+				refs = append(refs, Location{
+					URI: ctx.Document.URI,
+					Range: Range{
+						Start: Position{Line: docLine, Character: charPos},
+						End:   Position{Line: docLine, Character: charPos + len(paramName)},
+					},
+				})
+			}
+
+			idx = absIdx + len(paramName)
+		}
 	}
 
 	return refs
@@ -329,7 +440,7 @@ func (r *referencesProvider) findNamedRefReferences(ctx *CursorContext, refName 
 
 		// Find the #Name declaration on the element
 		if includeDecl {
-			findNamedRefDeclInNodes(comp.Body, refName, ctx.Document.URI, &refs)
+			findNamedRefDeclInNodes(comp.Body, refName, ctx.Document.Content, ctx.Document.URI, &refs)
 		}
 
 		// Find all usages of the ref name in Go expressions and handler arguments
@@ -341,38 +452,45 @@ func (r *referencesProvider) findNamedRefReferences(ctx *CursorContext, refName 
 }
 
 // findNamedRefDeclInNodes finds the element with #Name declaration.
-func findNamedRefDeclInNodes(nodes []tuigen.Node, refName string, uri string, refs *[]Location) {
+func findNamedRefDeclInNodes(nodes []tuigen.Node, refName string, content string, uri string, refs *[]Location) {
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *tuigen.Element:
 			if n != nil && n.NamedRef == refName {
+				hashRef := "#" + refName
+				lineIdx, charIdx, found := findNamedRefPosition(content, n)
+				if !found {
+					// Fallback to element tag position
+					lineIdx = n.Position.Line - 1
+					charIdx = n.Position.Column - 1
+				}
 				*refs = append(*refs, Location{
 					URI: uri,
 					Range: Range{
-						Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1},
-						End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + len(n.Tag)},
+						Start: Position{Line: lineIdx, Character: charIdx},
+						End:   Position{Line: lineIdx, Character: charIdx + len(hashRef)},
 					},
 				})
 			}
 			if n != nil {
-				findNamedRefDeclInNodes(n.Children, refName, uri, refs)
+				findNamedRefDeclInNodes(n.Children, refName, content, uri, refs)
 			}
 		case *tuigen.ForLoop:
 			if n != nil {
-				findNamedRefDeclInNodes(n.Body, refName, uri, refs)
+				findNamedRefDeclInNodes(n.Body, refName, content, uri, refs)
 			}
 		case *tuigen.IfStmt:
 			if n != nil {
-				findNamedRefDeclInNodes(n.Then, refName, uri, refs)
-				findNamedRefDeclInNodes(n.Else, refName, uri, refs)
+				findNamedRefDeclInNodes(n.Then, refName, content, uri, refs)
+				findNamedRefDeclInNodes(n.Else, refName, content, uri, refs)
 			}
 		case *tuigen.LetBinding:
 			if n != nil && n.Element != nil {
-				findNamedRefDeclInNodes([]tuigen.Node{n.Element}, refName, uri, refs)
+				findNamedRefDeclInNodes([]tuigen.Node{n.Element}, refName, content, uri, refs)
 			}
 		case *tuigen.ComponentCall:
 			if n != nil {
-				findNamedRefDeclInNodes(n.Children, refName, uri, refs)
+				findNamedRefDeclInNodes(n.Children, refName, content, uri, refs)
 			}
 		}
 	}
@@ -410,8 +528,9 @@ func findStateVarDeclInNodes(nodes []tuigen.Node, varName string, uri string, re
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *tuigen.GoCode:
-			if n != nil && strings.Contains(n.Code, varName) && strings.Contains(n.Code, "tui.NewState(") {
-				idx := strings.Index(n.Code, varName)
+			if n != nil && strings.Contains(n.Code, "tui.NewState(") {
+				// Use word-boundary-aware search so "count" doesn't match "accountCount"
+				idx := indexWholeWord(n.Code, varName)
 				if idx >= 0 {
 					*refs = append(*refs, Location{
 						URI: uri,
@@ -444,6 +563,21 @@ func findStateVarDeclInNodes(nodes []tuigen.Node, varName string, uri string, re
 }
 
 // --- Workspace search ---
+
+func (r *referencesProvider) searchWorkspaceForComponentRefs(name string, refs *[]Location) {
+	for uri, ast := range r.workspace.AllWorkspaceASTs() {
+		// Skip if file is already open (already searched above)
+		if r.docs.GetDocument(uri) != nil {
+			continue
+		}
+		if ast == nil {
+			continue
+		}
+		for _, comp := range ast.Components {
+			findComponentCallsInNodes(comp.Body, name, uri, refs)
+		}
+	}
+}
 
 func (r *referencesProvider) searchWorkspaceForFunctionRefs(name string, refs *[]Location) {
 	for uri, ast := range r.workspace.AllWorkspaceASTs() {
@@ -505,47 +639,18 @@ func findFunctionCallsInNodes(nodes []tuigen.Node, name string, uri string, refs
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *tuigen.GoCode:
-			if n != nil && strings.Contains(n.Code, name+"(") {
-				idx := strings.Index(n.Code, name)
-				if idx >= 0 {
-					*refs = append(*refs, Location{
-						URI: uri,
-						Range: Range{
-							Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + idx},
-							End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + idx + len(name)},
-						},
-					})
-				}
+			if n != nil {
+				findFuncCallInCode(n.Code, name, n.Position.Line-1, n.Position.Column-1, uri, refs)
 			}
 		case *tuigen.GoExpr:
-			if n != nil && strings.Contains(n.Code, name+"(") {
-				idx := strings.Index(n.Code, name)
-				if idx >= 0 {
-					*refs = append(*refs, Location{
-						URI: uri,
-						Range: Range{
-							Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column + idx},
-							End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column + idx + len(name)},
-						},
-					})
-				}
+			if n != nil {
+				findFuncCallInCode(n.Code, name, n.Position.Line-1, n.Position.Column, uri, refs)
 			}
 		case *tuigen.Element:
 			if n != nil {
 				for _, attr := range n.Attributes {
 					if expr, ok := attr.Value.(*tuigen.GoExpr); ok && expr != nil {
-						if strings.Contains(expr.Code, name+"(") {
-							idx := strings.Index(expr.Code, name)
-							if idx >= 0 {
-								*refs = append(*refs, Location{
-									URI: uri,
-									Range: Range{
-										Start: Position{Line: expr.Position.Line - 1, Character: expr.Position.Column + idx},
-										End:   Position{Line: expr.Position.Line - 1, Character: expr.Position.Column + idx + len(name)},
-									},
-								})
-							}
-						}
+						findFuncCallInCode(expr.Code, name, expr.Position.Line-1, expr.Position.Column, uri, refs)
 					}
 				}
 				findFunctionCallsInNodes(n.Children, name, uri, refs)
@@ -561,18 +666,8 @@ func findFunctionCallsInNodes(nodes []tuigen.Node, name string, uri string, refs
 			}
 		case *tuigen.ComponentCall:
 			if n != nil {
-				if strings.Contains(n.Args, name+"(") {
-					idx := strings.Index(n.Args, name)
-					if idx >= 0 {
-						*refs = append(*refs, Location{
-							URI: uri,
-							Range: Range{
-								Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column + len("@") + len(n.Name) + 1 + idx},
-								End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column + len("@") + len(n.Name) + 1 + idx + len(name)},
-							},
-						})
-					}
-				}
+				colOffset := n.Position.Column + len("@") + len(n.Name) + 1
+				findFuncCallInCode(n.Args, name, n.Position.Line-1, colOffset, uri, refs)
 				findFunctionCallsInNodes(n.Children, name, uri, refs)
 			}
 		case *tuigen.LetBinding:
@@ -580,6 +675,33 @@ func findFunctionCallsInNodes(nodes []tuigen.Node, name string, uri string, refs
 				findFunctionCallsInNodes(n.Element.Children, name, uri, refs)
 			}
 		}
+	}
+}
+
+// findFuncCallInCode finds all occurrences of name+"(" in code with word-boundary checks.
+func findFuncCallInCode(code, name string, line, colBase int, uri string, refs *[]Location) {
+	searchTarget := name + "("
+	idx := 0
+	for {
+		i := strings.Index(code[idx:], searchTarget)
+		if i < 0 {
+			break
+		}
+		absIdx := idx + i
+
+		// Check word boundary before the match
+		before := absIdx == 0 || !IsWordChar(code[absIdx-1])
+		if before {
+			*refs = append(*refs, Location{
+				URI: uri,
+				Range: Range{
+					Start: Position{Line: line, Character: colBase + absIdx},
+					End:   Position{Line: line, Character: colBase + absIdx + len(name)},
+				},
+			})
+		}
+
+		idx = absIdx + len(searchTarget)
 	}
 }
 
@@ -691,36 +813,62 @@ func findVariableInCode(code, varName string, pos tuigen.Position, startOffset i
 }
 
 // findVariableInCodeExcluding finds variable occurrences, excluding a specific location.
+// Handles multi-line code blocks by splitting on newlines and tracking line offsets.
 func findVariableInCodeExcluding(code, varName string, pos tuigen.Position, startOffset int, uri string, exclLine, exclCharStart, exclCharEnd int, refs *[]Location) {
-	idx := 0
-	for {
-		i := strings.Index(code[idx:], varName)
-		if i < 0 {
-			break
-		}
-		absIdx := idx + i
+	lines := strings.Split(code, "\n")
+	for lineIdx, lineContent := range lines {
+		idx := 0
+		for {
+			i := strings.Index(lineContent[idx:], varName)
+			if i < 0 {
+				break
+			}
+			absIdx := idx + i
 
-		before := absIdx == 0 || !IsWordChar(code[absIdx-1])
-		after := absIdx+len(varName) >= len(code) || !IsWordChar(code[absIdx+len(varName)])
+			before := absIdx == 0 || !IsWordChar(lineContent[absIdx-1])
+			after := absIdx+len(varName) >= len(lineContent) || !IsWordChar(lineContent[absIdx+len(varName)])
 
-		if before && after {
-			charPos := pos.Column - 1 + startOffset + absIdx
-			line := pos.Line - 1
+			if before && after {
+				line := pos.Line - 1 + lineIdx
+				charPos := absIdx
+				if lineIdx == 0 {
+					charPos = pos.Column - 1 + startOffset + absIdx
+				}
 
-			if line == exclLine && charPos == exclCharStart && charPos+len(varName) == exclCharEnd {
-				idx = absIdx + len(varName)
-				continue
+				if line == exclLine && charPos == exclCharStart && charPos+len(varName) == exclCharEnd {
+					idx = absIdx + len(varName)
+					continue
+				}
+
+				*refs = append(*refs, Location{
+					URI: uri,
+					Range: Range{
+						Start: Position{Line: line, Character: charPos},
+						End:   Position{Line: line, Character: charPos + len(varName)},
+					},
+				})
 			}
 
-			*refs = append(*refs, Location{
-				URI: uri,
-				Range: Range{
-					Start: Position{Line: line, Character: charPos},
-					End:   Position{Line: line, Character: charPos + len(varName)},
-				},
-			})
+			idx = absIdx + len(varName)
 		}
+	}
+}
 
-		idx = absIdx + len(varName)
+// indexWholeWord finds the first occurrence of word in s with word boundary checks.
+// Returns -1 if not found as a whole word.
+func indexWholeWord(s, word string) int {
+	idx := 0
+	for {
+		i := strings.Index(s[idx:], word)
+		if i < 0 {
+			return -1
+		}
+		absIdx := idx + i
+		before := absIdx == 0 || !IsWordChar(s[absIdx-1])
+		after := absIdx+len(word) >= len(s) || !IsWordChar(s[absIdx+len(word)])
+		if before && after {
+			return absIdx
+		}
+		idx = absIdx + len(word)
 	}
 }

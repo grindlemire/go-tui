@@ -1,5 +1,12 @@
 package lsp
 
+// NOTE: These provider interfaces mirror the ones in provider/provider.go.
+// Both sets exist to avoid circular imports: the lsp package uses these interfaces
+// (with lsp-package types like *CursorContext, *Document), while the provider package
+// defines its own copies (with provider-package types). The adapters in
+// provider_adapters.go bridge the two. Changes to a provider interface must be
+// made in both files.
+
 // HoverProvider produces hover documentation for a cursor position.
 type HoverProvider interface {
 	Hover(ctx *CursorContext) (*Hover, error)

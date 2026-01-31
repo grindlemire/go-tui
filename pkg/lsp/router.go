@@ -81,6 +81,7 @@ func (r *Router) handleHover(params json.RawMessage) (any, *Error) {
 			return r.registry.Hover.Hover(ctx)
 		})
 	}
+	log.Server("WARN: hover provider not registered")
 	return nil, nil
 }
 
@@ -90,6 +91,7 @@ func (r *Router) handleCompletion(params json.RawMessage) (any, *Error) {
 			return r.registry.Completion.Complete(ctx)
 		})
 	}
+	log.Server("WARN: completion provider not registered")
 	return nil, nil
 }
 
@@ -99,6 +101,7 @@ func (r *Router) handleDefinition(params json.RawMessage) (any, *Error) {
 			return r.registry.Definition.Definition(ctx)
 		})
 	}
+	log.Server("WARN: definition provider not registered")
 	return nil, nil
 }
 
@@ -128,6 +131,7 @@ func (r *Router) handleReferences(params json.RawMessage) (any, *Error) {
 		}
 		return result, nil
 	}
+	log.Server("WARN: references provider not registered")
 	return nil, nil
 }
 
@@ -140,7 +144,7 @@ func (r *Router) handleDocumentSymbol(params json.RawMessage) (any, *Error) {
 
 		doc := r.server.docs.Get(p.TextDocument.URI)
 		if doc == nil {
-			return []DocumentSymbol{}, nil
+			return nil, nil
 		}
 
 		result, err := r.registry.DocumentSymbol.DocumentSymbols(doc)
@@ -149,6 +153,7 @@ func (r *Router) handleDocumentSymbol(params json.RawMessage) (any, *Error) {
 		}
 		return result, nil
 	}
+	log.Server("WARN: documentSymbol provider not registered")
 	return nil, nil
 }
 
@@ -165,6 +170,7 @@ func (r *Router) handleWorkspaceSymbol(params json.RawMessage) (any, *Error) {
 		}
 		return result, nil
 	}
+	log.Server("WARN: workspaceSymbol provider not registered")
 	return nil, nil
 }
 
@@ -186,6 +192,7 @@ func (r *Router) handleFormatting(params json.RawMessage) (any, *Error) {
 		}
 		return result, nil
 	}
+	log.Server("WARN: formatting provider not registered")
 	return nil, nil
 }
 
@@ -198,7 +205,7 @@ func (r *Router) handleSemanticTokensFull(params json.RawMessage) (any, *Error) 
 
 		doc := r.server.docs.Get(p.TextDocument.URI)
 		if doc == nil {
-			return &SemanticTokens{Data: []int{}}, nil
+			return nil, nil
 		}
 
 		result, err := r.registry.SemanticTokens.SemanticTokensFull(doc)

@@ -15,9 +15,10 @@ import (
 // --- Type aliases for parent-package types ---
 // These let provider code reference types without importing the parent lsp package.
 
-// CursorContext is the resolved cursor context from the lsp package.
-// We define it here so providers can reference it without circular imports.
+// CursorContext is the resolved cursor context, mirroring lsp.CursorContext.
+// This type is duplicated here to avoid circular imports between lsp and provider.
 // The lsp package's router converts its CursorContext to this type before dispatch.
+// Changes to either CursorContext must be reflected in both packages.
 type CursorContext struct {
 	Document *Document
 	Position Position
@@ -38,7 +39,8 @@ type CursorContext struct {
 	AttrName string
 }
 
-// NodeKind classifies the cursor position.
+// NodeKind classifies the cursor position. Mirrors lsp.NodeKind — both enums
+// must stay in sync. See CursorContext comment above for the duplication rationale.
 type NodeKind int
 
 const (
@@ -104,7 +106,7 @@ func (k NodeKind) String() string {
 	}
 }
 
-// Scope holds enclosing scope information.
+// Scope holds enclosing scope information. Mirrors lsp.Scope.
 type Scope struct {
 	Component *tuigen.Component
 	Function  *tuigen.GoFunc
@@ -165,6 +167,7 @@ type ComponentIndex interface {
 	Lookup(name string) (*ComponentInfo, bool)
 	LookupFunc(name string) (*FuncInfo, bool)
 	LookupParam(componentName, paramName string) (*ParamInfo, bool)
+	LookupFuncParam(funcName, paramName string) (*FuncParamInfo, bool)
 	All() []string
 	AllFunctions() []string
 }
@@ -190,6 +193,14 @@ type ParamInfo struct {
 	Type          string
 	ComponentName string
 	Location      Location
+}
+
+// FuncParamInfo stores information about a function parameter.
+type FuncParamInfo struct {
+	Name     string
+	Type     string
+	FuncName string
+	Location Location
 }
 
 // GoplsProxyAccessor provides access to the gopls proxy.

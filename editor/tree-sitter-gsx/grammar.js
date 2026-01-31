@@ -12,11 +12,20 @@ module.exports = grammar({
 
   word: $ => $.identifier,
 
+  // state_declaration (name := call_expression) overlaps with _expression since
+  // "identifier := call_expression" could be parsed as either. Tree-sitter resolves
+  // this by preferring the longer match (state_declaration) when both apply.
+  // This is intentional: inside a component body, `x := tui.NewState(0)` should
+  // parse as a state_declaration, not as an expression.
+  conflicts: $ => [
+    [$.state_declaration, $._expression],
+  ],
+
   rules: {
     source_file: $ => seq(
       optional($.package_clause),
       optional($.import_section),
-      repeat($.component_declaration),
+      repeat(choice($.component_declaration, $.function_declaration)),
     ),
 
     // Package clause
@@ -75,6 +84,7 @@ module.exports = grammar({
       $.for_statement,
       $.if_statement,
       $.let_binding,
+      $.state_declaration,
       $.component_call,
       $.go_expression,
     ),
@@ -154,6 +164,13 @@ module.exports = grammar({
       field('value', choice($.element, $.go_expression)),
     ),
 
+    // State declaration: name := tui.NewState(value)
+    state_declaration: $ => seq(
+      field('name', $.identifier),
+      ':=',
+      field('initializer', $.call_expression),
+    ),
+
     component_call: $ => seq(
       '@',
       field('name', $.identifier),
@@ -162,12 +179,28 @@ module.exports = grammar({
 
     block: $ => seq('{', repeat($._child), '}'),
 
-    // Go expressions
+    // Go expressions: content between balanced braces, including nested braces
+    // and string literals (which may contain unbalanced braces).
     go_expression: $ => seq('{', $.expression_content, '}'),
 
-    expression_content: $ => repeat1(choice(/[^{}]+/, $.nested_braces)),
+    expression_content: $ => repeat1(choice(
+      $.go_string_literal,  // Handle string literals so braces inside them don't confuse parsing
+      /[^{}"'`]+/,          // Non-brace, non-quote content
+      $.nested_braces,
+    )),
 
-    nested_braces: $ => seq('{', repeat(choice(/[^{}]+/, $.nested_braces)), '}'),
+    // String literals inside Go expressions — captures "...", '...', `...` to prevent
+    // their contents (which may include braces) from being parsed as structure.
+    go_string_literal: $ => choice(
+      /"[^"\\]*(?:\\.[^"\\]*)*"/,   // Double-quoted string with escape handling
+      /`[^`]*`/,                     // Backtick (raw) string
+    ),
+
+    nested_braces: $ => seq('{', repeat(choice(
+      $.go_string_literal,
+      /[^{}"'`]+/,
+      $.nested_braces,
+    )), '}'),
 
     // Expressions (simplified)
     _expression: $ => choice(
@@ -209,6 +242,17 @@ module.exports = grammar({
     string: $ => /"[^"]*"/,
     true: $ => 'true',
     false: $ => 'false',
+
+    // Function declarations (helper functions)
+    function_declaration: $ => seq(
+      'func',
+      field('name', $.identifier),
+      field('parameters', $.parameter_list),
+      optional(field('return_type', $.type_expression)),
+      field('body', $.function_body),
+    ),
+
+    function_body: $ => seq('{', repeat(choice($.go_string_literal, /[^{}"'`]+/, $.nested_braces)), '}'),
 
     // Comments (for explicit use in the AST)
     comment: $ => choice(/\/\/.*/, /\/\*[^*]*\*+([^/*][^*]*\*+)*\//),

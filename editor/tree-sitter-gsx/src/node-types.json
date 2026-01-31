@@ -158,6 +158,10 @@
         {
           "type": "let_binding",
           "named": true
+        },
+        {
+          "type": "state_declaration",
+          "named": true
         }
       ]
     }
@@ -221,6 +225,10 @@
         },
         {
           "type": "let_binding",
+          "named": true
+        },
+        {
+          "type": "state_declaration",
           "named": true
         }
       ]
@@ -311,6 +319,16 @@
     "type": "element_with_children",
     "named": true,
     "fields": {
+      "named_ref": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "named_ref",
+            "named": true
+          }
+        ]
+      },
       "tag": {
         "multiple": false,
         "required": true,
@@ -468,6 +486,67 @@
         "types": [
           {
             "type": "for_clause",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "function_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "nested_braces",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "function_declaration",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "function_body",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "parameters": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "parameter_list",
+            "named": true
+          }
+        ]
+      },
+      "return_type": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_expression",
             "named": true
           }
         ]
@@ -667,6 +746,21 @@
     }
   },
   {
+    "type": "named_ref",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "nested_braces",
     "named": true,
     "fields": {},
@@ -851,6 +945,16 @@
     "type": "self_closing_element",
     "named": true,
     "fields": {
+      "named_ref": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "named_ref",
+            "named": true
+          }
+        ]
+      },
       "tag": {
         "multiple": false,
         "required": true,
@@ -902,6 +1006,10 @@
           "named": true
         },
         {
+          "type": "function_declaration",
+          "named": true
+        },
+        {
           "type": "import_section",
           "named": true
         },
@@ -910,6 +1018,32 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "state_declaration",
+    "named": true,
+    "fields": {
+      "initializer": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "call_expression",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -937,6 +1071,10 @@
   },
   {
     "type": "!=",
+    "named": false
+  },
+  {
+    "type": "#",
     "named": false
   },
   {
@@ -1012,10 +1150,6 @@
     "named": false
   },
   {
-    "type": "@component",
-    "named": false
-  },
-  {
     "type": "@else",
     "named": false
   },
@@ -1044,6 +1178,10 @@
     "named": true
   },
   {
+    "type": "func",
+    "named": false
+  },
+  {
     "type": "identifier",
     "named": true
   },
@@ -1066,6 +1204,10 @@
   {
     "type": "string",
     "named": true
+  },
+  {
+    "type": "templ",
+    "named": false
   },
   {
     "type": "text_content",

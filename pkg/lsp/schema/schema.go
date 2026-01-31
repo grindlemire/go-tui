@@ -134,6 +134,16 @@ var EventHandlers = map[string]*EventHandlerDef{
 		Description: "Generic event handler called for any event on the element.",
 		Signature:   "func(event tui.Event) bool",
 	},
+	"onChannel": {
+		Name:        "onChannel",
+		Description: "Called when a message is received on the channel watcher.",
+		Signature:   "func()",
+	},
+	"onTimer": {
+		Name:        "onTimer",
+		Description: "Called on each timer tick.",
+		Signature:   "func()",
+	},
 }
 
 // VoidElements returns the set of elements that cannot have children.
@@ -341,6 +351,7 @@ func inputAttrs() []AttributeDef {
 		{Name: "placeholder", Type: "string", Description: "Placeholder text when empty", Category: "generic"},
 		{Name: "width", Type: "int", Description: "Input width in characters", Category: "layout"},
 		{Name: "disabled", Type: "bool", Description: "Whether input is disabled", Category: "generic"},
+		{Name: "onClick", Type: "func", Description: "Click/activation handler", Category: "event"},
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
 		{Name: "onKeyPress", Type: "func", Description: "Key press handler", Category: "event"},
