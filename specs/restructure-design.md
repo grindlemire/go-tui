@@ -151,27 +151,51 @@ github.com/grindlemire/go-tui/
 │   │   ├── printer_comment.go    # Comment printing
 │   │   └── imports.go            # Import management
 │   │
-│   ├── lsp/                      # Language server
-│   │   ├── server.go             # LSP server lifecycle
-│   │   ├── handler.go            # Request dispatch
+│   ├── lsp/                      # Language server (Provider + CursorContext architecture)
+│   │   ├── server.go             # LSP server lifecycle, JSON-RPC I/O
+│   │   ├── router.go             # Method routing with provider dispatch
+│   │   ├── handler.go            # Initialize response, capabilities
+│   │   ├── context.go            # CursorContext resolver (split)
+│   │   ├── context_resolve.go    # AST walking, node classification
 │   │   ├── document.go           # Document management
-│   │   ├── diagnostics.go        # Error reporting
-│   │   ├── completion.go         # Auto-completion
-│   │   ├── completion_attr.go    # Attribute completions
-│   │   ├── definition.go         # Go-to-definition
-│   │   ├── hover.go              # Hover info (core)
-│   │   ├── hover_attribute.go    # Hover for attributes
-│   │   ├── hover_element.go      # Hover for elements
-│   │   ├── references.go         # Find references
-│   │   ├── semantic_tokens.go    # Semantic token core
-│   │   ├── semantic_tokens_go.go # Go expression tokens
-│   │   ├── symbols.go            # Document symbols
-│   │   ├── formatting.go         # Format integration
-│   │   ├── index.go              # Symbol index
-│   │   └── gopls/                # gopls proxy (unchanged)
-│   │       ├── proxy.go
-│   │       ├── mapping.go
-│   │       └── generate.go
+│   │   ├── index.go              # Workspace symbol index
+│   │   ├── provider_adapters.go  # Adapter layer: router → providers
+│   │   ├── providers.go          # Provider initialization
+│   │   │
+│   │   ├── schema/               # Centralized language knowledge
+│   │   │   ├── schema.go         # Elements, attributes, type defs
+│   │   │   ├── keywords.go       # DSL keywords and documentation
+│   │   │   └── tailwind.go       # Tailwind class defs and docs
+│   │   │
+│   │   ├── provider/             # LSP feature providers
+│   │   │   ├── provider.go       # Provider interfaces and registry
+│   │   │   ├── hover.go          # Hover provider
+│   │   │   ├── completion.go     # Completion provider (split)
+│   │   │   ├── completion_items.go
+│   │   │   ├── definition.go     # Definition provider (split)
+│   │   │   ├── definition_search.go
+│   │   │   ├── references.go     # References provider (split)
+│   │   │   ├── references_search.go
+│   │   │   ├── symbols.go        # Symbol providers
+│   │   │   ├── diagnostics.go    # Diagnostics provider
+│   │   │   ├── formatting.go     # Formatting provider
+│   │   │   ├── semantic.go       # Semantic tokens (split)
+│   │   │   ├── semantic_nodes.go # AST node token processing
+│   │   │   └── semantic_gocode.go # Go expression tokenization
+│   │   │
+│   │   ├── gopls/                # gopls integration
+│   │   │   ├── proxy.go          # Subprocess communication (split)
+│   │   │   ├── proxy_requests.go # Request forwarding
+│   │   │   ├── generate.go       # Virtual Go generation (split)
+│   │   │   ├── generate_state.go # State/ref var emission
+│   │   │   └── mapping.go        # Source position mapping
+│   │   │
+│   │   ├── log/                  # Logging
+│   │   │   └── log.go
+│   │   │
+│   │   └── (thin legacy adapters: completion.go, definition.go,
+│   │        diagnostics.go, formatting.go, hover.go, references.go,
+│   │        semantic_tokens.go, symbols.go — delegate to providers)
 │   │
 │   └── debug/                    # Debug logging
 │       └── debug.go

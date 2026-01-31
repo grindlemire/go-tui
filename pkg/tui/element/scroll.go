@@ -1,6 +1,6 @@
 package element
 
-import "github.com/grindlemire/go-tui/pkg/layout"
+import "github.com/grindlemire/go-tui/internal/layout"
 
 // --- Scroll Query Methods ---
 

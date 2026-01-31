@@ -1,7 +1,7 @@
 package element
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
+	"github.com/grindlemire/go-tui/internal/layout"
 )
 
 // WithWidthAuto sets width to auto (size to content).

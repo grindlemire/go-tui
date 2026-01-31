@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
+	"github.com/grindlemire/go-tui/internal/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
