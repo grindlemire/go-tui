@@ -6,9 +6,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(tui.KeyEvent) {
@@ -59,7 +57,7 @@ func keyName(key tui.Key) string {
 }
 
 type KeyboardView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -73,58 +71,58 @@ func Keyboard() KeyboardView {
 
 	lastKey := tui.NewState("(none)")
 	keyCount := tui.NewState(0)
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(2),
-		element.WithBorder(tui.BorderRounded),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(2),
+		tui.WithBorder(tui.BorderRounded),
 	)
-	__tui_1 := element.New(
-		element.WithText("Keyboard Events"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_1 := tui.New(
+		tui.WithText("Keyboard Events"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	__tui_4 := element.New(
-		element.WithText("Last key pressed:"),
+	__tui_4 := tui.New(
+		tui.WithText("Last key pressed:"),
 	)
 	__tui_3.AddChild(__tui_4)
-	__tui_5 := element.New(
-		element.WithText(lastKey.Get()),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Green)),
+	__tui_5 := tui.New(
+		tui.WithText(lastKey.Get()),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Green)),
 	)
 	__tui_3.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_3)
-	__tui_6 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_6 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	__tui_7 := element.New(
-		element.WithText("Total keys pressed:"),
+	__tui_7 := tui.New(
+		tui.WithText("Total keys pressed:"),
 	)
 	__tui_6.AddChild(__tui_7)
-	__tui_8 := element.New(
-		element.WithText(fmt.Sprintf("%d", keyCount.Get())),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
+	__tui_8 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", keyCount.Get())),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
 	__tui_6.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_6)
-	__tui_9 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_9 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_9)
-	__tui_10 := element.New(
-		element.WithText("Press any key to see it displayed, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_10 := tui.New(
+		tui.WithText("Press any key to see it displayed, q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_10)
 

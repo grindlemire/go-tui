@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/grindlemire/go-tui/pkg/lsp"
+	"github.com/grindlemire/go-tui/internal/lsp"
 )
 
 func runLSP(args []string) error {

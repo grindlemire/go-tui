@@ -19,9 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 //go:generate go run ../../cmd/tui generate refs.gsx
@@ -93,12 +91,12 @@ func main() {
 }
 
 type refsDemoState struct {
-	root *element.Element
+	root *tui.Element
 	view RefsDemoView
 }
 
 type keyedDemoState struct {
-	root *element.Element
+	root *tui.Element
 	view KeyedRefsDemoView
 }
 
@@ -188,9 +186,9 @@ func handleKeyedDemoKey(app *tui.App, e tui.KeyEvent, keyedView keyedDemoState, 
 func buildRefsDemo(app *tui.App, items []string, showWarning bool, selectedIdx int) refsDemoState {
 	width, height := app.Size()
 
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
 	)
 
 	view := RefsDemo(items, showWarning, selectedIdx)
@@ -206,11 +204,11 @@ func buildRefsDemo(app *tui.App, items []string, showWarning bool, selectedIdx i
 func buildKeyedDemo(app *tui.App, users []User) keyedDemoState {
 	width, height := app.Size()
 
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
 
 	view := KeyedRefsDemo(users)
@@ -224,7 +222,7 @@ func buildKeyedDemo(app *tui.App, users []User) keyedDemoState {
 
 // highlightSelected demonstrates using the Items slice ref to modify
 // individual elements created in a @for loop.
-func highlightSelected(items []*element.Element, selectedIdx int) {
+func highlightSelected(items []*tui.Element, selectedIdx int) {
 	for i, item := range items {
 		if i == selectedIdx {
 			item.SetTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan))
@@ -236,7 +234,7 @@ func highlightSelected(items []*element.Element, selectedIdx int) {
 
 // highlightUserByIdx demonstrates using loop refs (slice access) to
 // highlight a specific user element by index.
-func highlightUserByIdx(users []*element.Element, highlightIdx int, allUsers []User) {
+func highlightUserByIdx(users []*tui.Element, highlightIdx int, allUsers []User) {
 	for i, elem := range users {
 		if i == highlightIdx {
 			elem.SetTextStyle(tui.NewStyle().Bold().Foreground(tui.Green))

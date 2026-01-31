@@ -13,9 +13,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 //go:generate go run ../../cmd/tui generate counter.gsx
@@ -66,15 +64,15 @@ func main() {
 }
 
 // buildUI creates the UI tree using the DSL-generated CounterUI component.
-func buildUI(app *tui.App, count int) *element.Element {
+func buildUI(app *tui.App, count int) *tui.Element {
 	width, height := app.Size()
 
 	// Wrap the generated component in a root container
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
 
 	// Add the generated counter UI - now returns a view struct with .Root

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/tui"
+	tui "github.com/grindlemire/go-tui"
 )
 
 //go:generate go run ../../cmd/tui generate streaming.gsx

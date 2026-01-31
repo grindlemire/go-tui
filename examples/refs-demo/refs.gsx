@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 // RefsDemo demonstrates named element references:
@@ -17,17 +15,17 @@ templ RefsDemo(items []string, showWarning bool, selectedIdx int) {
 			#Header
 			class="border p-1"
 			height={3}
-			direction={layout.Row}
-			justify={layout.JustifyCenter}
-			align={layout.AlignCenter}>
+			direction={tui.Row}
+			justify={tui.JustifyCenter}
+			align={tui.AlignCenter}>
 			<span class="font-bold text-cyan">{"Named Element Refs Demo"}</span>
 		</div>
 		<div
 			#Content
 			class="flex-col border p-1"
 			flexGrow={1}
-			scrollable={element.ScrollVertical}
-			direction={layout.Column}>
+			scrollable={tui.ScrollVertical}
+			direction={tui.Column}>
 			<span class="font-bold text-white">{"Items (loop refs) - j/k to scroll, +/- to select"}</span>
 			@for i, item := range items {
 				<span #Items class={itemStyle(i, selectedIdx)}>{item}</span>
@@ -38,9 +36,9 @@ templ RefsDemo(items []string, showWarning bool, selectedIdx int) {
 				#Warning
 				class="border-double p-1 text-yellow"
 				height={3}
-				direction={layout.Row}
-				justify={layout.JustifyCenter}
-				align={layout.AlignCenter}>
+				direction={tui.Row}
+				justify={tui.JustifyCenter}
+				align={tui.AlignCenter}>
 				<span class="font-bold">
 					{"⚠ Warning: This is a conditional ref (may be nil)"}
 				</span>
@@ -50,9 +48,9 @@ templ RefsDemo(items []string, showWarning bool, selectedIdx int) {
 			#StatusBar
 			class="border p-1"
 			height={3}
-			direction={layout.Row}
-			justify={layout.JustifySpaceBetween}
-			align={layout.AlignCenter}>
+			direction={tui.Row}
+			justify={tui.JustifySpaceBetween}
+			align={tui.AlignCenter}>
 			<span class="text-white">
 				{"j/k: scroll | +/-: select | Tab: warning | d: switch demo | q: quit"}
 			</span>
@@ -61,16 +59,16 @@ templ RefsDemo(items []string, showWarning bool, selectedIdx int) {
 	</div>
 }
 
-// KeyedRefsDemo demonstrates keyed refs that generate map[KeyType]*element.Element
+// KeyedRefsDemo demonstrates keyed refs that generate map[KeyType]*tui.Element
 // Use key={expr} inside @for loops for stable key-based element access
 templ KeyedRefsDemo(users []User) {
 	<div class="flex-col p-1" height={20} width={60}>
 		<div
 			class="border p-1"
 			height={3}
-			direction={layout.Row}
-			justify={layout.JustifyCenter}
-			align={layout.AlignCenter}>
+			direction={tui.Row}
+			justify={tui.JustifyCenter}
+			align={tui.AlignCenter}>
 			<span class="font-bold text-cyan">{"Keyed Refs Demo (map access)"}</span>
 		</div>
 		<div class="flex-col border p-1" flexGrow={1}>

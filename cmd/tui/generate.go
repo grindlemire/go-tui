@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/grindlemire/go-tui/pkg/tuigen"
+	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
 // runGenerate implements the generate subcommand.

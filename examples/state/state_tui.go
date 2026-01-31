@@ -5,9 +5,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 	"time"
 )
 
@@ -59,9 +57,9 @@ func tick(elapsed *tui.State[int]) func() {
 }
 
 type StreamingCounterView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
-	Content  *element.Element
+	Content  *tui.Element
 }
 
 func (v StreamingCounterView) GetRoot() tui.Renderable { return v.Root }
@@ -75,72 +73,72 @@ func StreamingCounter(dataCh chan string) StreamingCounterView {
 	count := tui.NewState(0)
 	lines := tui.NewState([]string{})
 	elapsed := tui.NewState(0)
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(1),
-		element.WithBorder(tui.BorderSingle),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderSingle),
 	)
-	__tui_1 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifySpaceBetween),
+	__tui_1 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
 	)
-	__tui_2 := element.New(
-		element.WithText("Streaming Counter"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_2 := tui.New(
+		tui.WithText("Streaming Counter"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithText(fmt.Sprintf("Count: %d | Time: %ds", count.Get(), elapsed.Get())),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_3 := tui.New(
+		tui.WithText(fmt.Sprintf("Count: %d | Time: %ds", count.Get(), elapsed.Get())),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_1.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_1)
-	__tui_4 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_4 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	__tui_5 := element.New(
-		element.WithOnClick(increment(count)),
+	__tui_5 := tui.New(
+		tui.WithOnClick(increment(count)),
 	)
-	__tui_6 := element.New(element.WithText("+ Increment"))
+	__tui_6 := tui.New(tui.WithText("+ Increment"))
 	__tui_5.AddChild(__tui_6)
 	__tui_4.AddChild(__tui_5)
-	__tui_7 := element.New(
-		element.WithOnClick(decrement(count)),
+	__tui_7 := tui.New(
+		tui.WithOnClick(decrement(count)),
 	)
-	__tui_8 := element.New(element.WithText("- Decrement"))
+	__tui_8 := tui.New(tui.WithText("- Decrement"))
 	__tui_7.AddChild(__tui_8)
 	__tui_4.AddChild(__tui_7)
-	__tui_9 := element.New(
-		element.WithOnClick(reset(count)),
+	__tui_9 := tui.New(
+		tui.WithOnClick(reset(count)),
 	)
-	__tui_10 := element.New(element.WithText("Reset"))
+	__tui_10 := tui.New(tui.WithText("Reset"))
 	__tui_9.AddChild(__tui_10)
 	__tui_4.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_4)
-	Content := element.New(
-		element.WithDirection(layout.Column),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithOnKeyPress(handleKeys(view)),
-		element.WithFocusable(true),
-		element.WithFlexGrow(1),
+	Content := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithOnKeyPress(handleKeys(view)),
+		tui.WithFocusable(true),
+		tui.WithFlexGrow(1),
 	)
 	for _, line := range lines.Get() {
-		__tui_11 := element.New(
-			element.WithText(line),
+		__tui_11 := tui.New(
+			tui.WithText(line),
 		)
 		Content.AddChild(__tui_11)
 	}
 	__tui_0.AddChild(Content)
-	__tui_12 := element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithHeight(1),
+	__tui_12 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithHeight(1),
 	)
-	__tui_13 := element.New(
-		element.WithText(fmt.Sprintf("Lines: %d | j/k scroll, G bottom, g top, q quit", len(lines.Get()))),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_13 := tui.New(
+		tui.WithText(fmt.Sprintf("Lines: %d | j/k scroll, G bottom, g top, q quit", len(lines.Get()))),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_12.AddChild(__tui_13)
 	__tui_0.AddChild(__tui_12)

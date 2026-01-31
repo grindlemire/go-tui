@@ -5,34 +5,32 @@ package testdata
 
 import (
 	"fmt"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func helperFunction(s string) string {
 	return fmt.Sprintf("[%s]", s)
 }
 
-func ItemList(items []string, selected int) *element.Element {
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
+func ItemList(items []string, selected int) *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
 	)
 	for i, item := range items {
 		_ = i
 		if i == selected {
-			__tui_1 := element.New(
-				element.WithBorder(tui.BorderSingle),
+			__tui_1 := tui.New(
+				tui.WithBorder(tui.BorderSingle),
 			)
-			__tui_2 := element.New(
-				element.WithText(fmt.Sprintf("> %s" /* ItemList item */, item)),
+			__tui_2 := tui.New(
+				tui.WithText(fmt.Sprintf("> %s" /* ItemList item */, item)),
 			)
 			__tui_1.AddChild(__tui_2)
 			__tui_0.AddChild(__tui_1)
 		} else {
-			__tui_3 := element.New(
-				element.WithText(fmt.Sprintf("  %s", item)),
+			__tui_3 := tui.New(
+				tui.WithText(fmt.Sprintf("  %s", item)),
 			)
 			__tui_0.AddChild(__tui_3)
 		}
@@ -40,66 +38,66 @@ func ItemList(items []string, selected int) *element.Element {
 	return __tui_0
 }
 
-func Counter(count int, label string) *element.Element {
-	countText := element.New(
-		element.WithText(fmt.Sprintf("%d", count)),
+func Counter(count int, label string) *tui.Element {
+	countText := tui.New(
+		tui.WithText(fmt.Sprintf("%d", count)),
 	)
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(1),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText(label),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText(label),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_0.AddChild(countText)
 	return __tui_0
 }
 
-func ConditionalContent(showHeader bool, showFooter bool) *element.Element {
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
+func ConditionalContent(showHeader bool, showFooter bool) *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
 	)
 	if showHeader {
-		__tui_1 := element.New(
-			element.WithText("Header"),
+		__tui_1 := tui.New(
+			tui.WithText("Header"),
 		)
 		__tui_0.AddChild(__tui_1)
 	}
-	__tui_2 := element.New(
-		element.WithText("Main Content"),
+	__tui_2 := tui.New(
+		tui.WithText("Main Content"),
 	)
 	__tui_0.AddChild(__tui_2)
 	if showFooter {
-		__tui_3 := element.New(
-			element.WithText("Footer"),
+		__tui_3 := tui.New(
+			tui.WithText("Footer"),
 		)
 		__tui_0.AddChild(__tui_3)
 	} else {
-		__tui_4 := element.New(
-			element.WithText("No Footer"),
+		__tui_4 := tui.New(
+			tui.WithText("No Footer"),
 		)
 		__tui_0.AddChild(__tui_4)
 	}
 	return __tui_0
 }
 
-func WithHelper(text string) *element.Element {
+func WithHelper(text string) *tui.Element {
 	shouldShowHeader := true
 	otherHelperFunction("test")
-	__tui_0 := element.New()
-	__tui_1 := element.New(
-		element.WithText(helperFunction(text)),
+	__tui_0 := tui.New()
+	__tui_1 := tui.New(
+		tui.WithText(helperFunction(text)),
 	)
 	__tui_0.AddChild(__tui_1)
 	if shouldShowHeader {
 		__tui_2 := ConditionalContent(true, false, nil)
 		__tui_0.AddChild(__tui_2)
 	} else {
-		__tui_3 := element.New(
-			element.WithText("False"),
+		__tui_3 := tui.New(
+			tui.WithText("False"),
 		)
 		__tui_0.AddChild(__tui_3)
 	}

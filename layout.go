@@ -111,3 +111,16 @@ func EdgeTRBL(t, r, b, l int) Edges {
 func Calculate(root Layoutable, availableWidth, availableHeight int) {
 	layout.Calculate(root, availableWidth, availableHeight)
 }
+
+// InsetRect returns a new Rect inset by the given amounts on each edge.
+// The order follows CSS convention: top, right, bottom, left.
+// This is a convenience function that wraps Rect.Inset(Edges).
+func InsetRect(r Rect, top, right, bottom, left int) Rect {
+	return r.Inset(layout.EdgeTRBL(top, right, bottom, left))
+}
+
+// InsetUniform returns a new Rect inset by n on all edges.
+// This is a convenience function that wraps Rect.Inset(Edges).
+func InsetUniform(r Rect, n int) Rect {
+	return r.Inset(layout.EdgeAll(n))
+}

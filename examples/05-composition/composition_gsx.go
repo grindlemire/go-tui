@@ -4,13 +4,11 @@
 package main
 
 import (
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type CardView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -18,23 +16,23 @@ func (v CardView) GetRoot() tui.Renderable { return v.Root }
 
 func (v CardView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func Card(title string, children []*element.Element) CardView {
+func Card(title string, children []*tui.Element) CardView {
 	var view CardView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithBorder(tui.BorderRounded),
-		element.WithPadding(1),
-		element.WithDirection(layout.Column),
+	__tui_0 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
 	)
-	__tui_1 := element.New(
-		element.WithText(title),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_1 := tui.New(
+		tui.WithText(title),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
 	for _, __child := range children {
@@ -49,7 +47,7 @@ func Card(title string, children []*element.Element) CardView {
 }
 
 type BadgeView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -61,10 +59,10 @@ func Badge(text string) BadgeView {
 	var view BadgeView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithText(" "+text+" "),
-		element.WithBackground(tui.NewStyle().Background(tui.Blue)),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	__tui_0 := tui.New(
+		tui.WithText(" "+text+" "),
+		tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
 	view = BadgeView{
@@ -75,7 +73,7 @@ func Badge(text string) BadgeView {
 }
 
 type HeaderView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -87,13 +85,13 @@ func Header(text string) HeaderView {
 	var view HeaderView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithBorder(tui.BorderDouble),
-		element.WithPadding(1),
+	__tui_0 := tui.New(
+		tui.WithBorder(tui.BorderDouble),
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText(text),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText(text),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 
@@ -105,7 +103,7 @@ func Header(text string) HeaderView {
 }
 
 type AppView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -117,28 +115,28 @@ func App() AppView {
 	var view AppView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(2),
-		element.WithPadding(2),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(2),
+		tui.WithPadding(2),
 	)
 	__tui_1 := Header("Component Composition Demo")
 	__tui_0.AddChild(__tui_1.Root)
-	__tui_3_children := []*element.Element{}
-	__tui_4 := element.New(
-		element.WithText("Name: Alice"),
+	__tui_3_children := []*tui.Element{}
+	__tui_4 := tui.New(
+		tui.WithText("Name: Alice"),
 	)
 	__tui_3_children = append(__tui_3_children, __tui_4)
-	__tui_5 := element.New(
-		element.WithText("Role: Admin"),
+	__tui_5 := tui.New(
+		tui.WithText("Role: Admin"),
 	)
 	__tui_3_children = append(__tui_3_children, __tui_5)
-	__tui_6 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
+	__tui_6 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_7 := element.New(
-		element.WithText("Status:"),
+	__tui_7 := tui.New(
+		tui.WithText("Status:"),
 	)
 	__tui_6.AddChild(__tui_7)
 	__tui_8 := Badge("Active")
@@ -146,21 +144,21 @@ func App() AppView {
 	__tui_3_children = append(__tui_3_children, __tui_6)
 	__tui_2 := Card("User Profile", __tui_3_children)
 	__tui_0.AddChild(__tui_2.Root)
-	__tui_10_children := []*element.Element{}
-	__tui_11 := element.New(
-		element.WithText("Theme: Dark"),
+	__tui_10_children := []*tui.Element{}
+	__tui_11 := tui.New(
+		tui.WithText("Theme: Dark"),
 	)
 	__tui_10_children = append(__tui_10_children, __tui_11)
-	__tui_12 := element.New(
-		element.WithText("Notifications: On"),
+	__tui_12 := tui.New(
+		tui.WithText("Notifications: On"),
 	)
 	__tui_10_children = append(__tui_10_children, __tui_12)
-	__tui_13 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(1),
+	__tui_13 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_14 := element.New(
-		element.WithText("Version:"),
+	__tui_14 := tui.New(
+		tui.WithText("Version:"),
 	)
 	__tui_13.AddChild(__tui_14)
 	__tui_15 := Badge("v1.0")
@@ -168,9 +166,9 @@ func App() AppView {
 	__tui_10_children = append(__tui_10_children, __tui_13)
 	__tui_9 := Card("Settings", __tui_10_children)
 	__tui_0.AddChild(__tui_9.Root)
-	__tui_16 := element.New(
-		element.WithText("Press q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_16 := tui.New(
+		tui.WithText("Press q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_16)
 

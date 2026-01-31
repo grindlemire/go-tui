@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 // StreamApp - fully declarative with onChannel and onTimer in DSL
@@ -22,9 +20,9 @@ templ StreamApp(dataCh <-chan string) {
 			class="border-blue"
 			border={tui.BorderSingle}
 			height={3}
-			direction={layout.Row}
-			justify={layout.JustifyCenter}
-			align={layout.AlignCenter}>
+			direction={tui.Row}
+			justify={tui.JustifyCenter}
+			align={tui.AlignCenter}>
 			<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k to scroll, q to quit"}</span>
 		</div>
 
@@ -34,7 +32,7 @@ templ StreamApp(dataCh <-chan string) {
 			class="flex-col border-cyan"
 			border={tui.BorderSingle}
 			flexGrow={1}
-			scrollable={element.ScrollVertical}
+			scrollable={tui.ScrollVertical}
 			focusable={true}
 			onKeyPress={handleScrollKeys(Content)}
 			onEvent={handleEvent(Content)}></div>
@@ -44,9 +42,9 @@ templ StreamApp(dataCh <-chan string) {
 			class="border-blue"
 			border={tui.BorderSingle}
 			height={3}
-			direction={layout.Row}
-			justify={layout.JustifyCenter}
-			align={layout.AlignCenter}>
+			direction={tui.Row}
+			justify={tui.JustifyCenter}
+			align={tui.AlignCenter}>
 			<span class="text-white">
 				{fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())}
 			</span>
@@ -60,15 +58,15 @@ func tickElapsed(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
 		stayAtBottom := content.IsAtBottom()
 
-		lineElem := element.New(
-			element.WithText(line),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		lineElem := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
 		content.AddChild(lineElem)
 
@@ -78,7 +76,7 @@ func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
 	}
 }
 
-func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
 	return func(e tui.KeyEvent) {
 		switch e.Rune {
 		case 'j':
@@ -89,7 +87,7 @@ func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
 	}
 }
 
-func handleEvent(content *element.Element) func(tui.Event) bool {
+func handleEvent(content *tui.Element) func(tui.Event) bool {
 	return func(e tui.Event) bool {
 		if mouse, ok := e.(tui.MouseEvent); ok {
 			switch mouse.Button {

@@ -6,12 +6,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
-func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
 	return func(e tui.KeyEvent) {
 		switch e.Rune {
 		case 'j':
@@ -32,7 +30,7 @@ func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
 	}
 }
 
-func handleMouseScroll(content *element.Element) func(tui.Event) bool {
+func handleMouseScroll(content *tui.Element) func(tui.Event) bool {
 	return func(e tui.Event) bool {
 		if mouse, ok := e.(tui.MouseEvent); ok {
 			switch mouse.Button {
@@ -49,9 +47,9 @@ func handleMouseScroll(content *element.Element) func(tui.Event) bool {
 }
 
 type ScrollableView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
-	Content  *element.Element
+	Content  *tui.Element
 }
 
 func (v ScrollableView) GetRoot() tui.Renderable { return v.Root }
@@ -62,60 +60,60 @@ func Scrollable(items []string) ScrollableView {
 	var view ScrollableView
 	var watchers []tui.Watcher
 
-	var Content *element.Element
+	var Content *tui.Element
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(1),
-		element.WithHeightPercent(100.00),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(1),
+		tui.WithHeightPercent(100.00),
 	)
-	__tui_1 := element.New(
-		element.WithText("Scrollable Content"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_1 := tui.New(
+		tui.WithText("Scrollable Content"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	Content = element.New(
-		element.WithDirection(layout.Column),
-		element.WithFlexGrow(1),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithFocusable(true),
+	Content = tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithFocusable(true),
 	)
 	for i, item := range items {
 		_ = i
-		__tui_3 := element.New(
-			element.WithText(fmt.Sprintf("%02d. %s", i+1, item)),
+		__tui_3 := tui.New(
+			tui.WithText(fmt.Sprintf("%02d. %s", i+1, item)),
 		)
 		Content.AddChild(__tui_3)
 	}
 	__tui_0.AddChild(Content)
-	__tui_4 := element.New(
-		element.WithWidthPercent(100.00),
-		element.WithGap(1),
-		element.WithDirection(layout.Row),
-		element.WithDirection(layout.Row),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_4 := tui.New(
+		tui.WithWidthPercent(100.00),
+		tui.WithGap(1),
+		tui.WithDirection(tui.Row),
+		tui.WithDirection(tui.Row),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_5 := element.New(
-		element.WithText("Use arrow keys or j"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_5 := tui.New(
+		tui.WithText("Use arrow keys or j"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_4.AddChild(__tui_5)
-	__tui_6 := element.New(
-		element.WithText("k to scroll"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_6 := tui.New(
+		tui.WithText("k to scroll"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_4.AddChild(__tui_6)
-	__tui_7 := element.New(
-		element.WithText("q to quit"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_7 := tui.New(
+		tui.WithText("q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_4.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_4)

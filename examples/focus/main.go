@@ -8,9 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func main() {
@@ -25,32 +23,32 @@ func main() {
 	width, height := app.Size()
 
 	// Root container - full screen
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
-		element.WithPadding(2),
-		element.WithGap(2),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(2),
+		tui.WithGap(2),
 	)
 
 	// Title
-	title := element.New(
-		element.WithText("Focus Navigation Demo"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
+	title := tui.New(
+		tui.WithText("Focus Navigation Demo"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
 
 	// Instructions
-	instructions := element.New(
-		element.WithText("Press Tab/Shift+Tab to navigate, ESC to exit"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
+	instructions := tui.New(
+		tui.WithText("Press Tab/Shift+Tab to navigate, ESC to exit"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 
 	// Container for focusable boxes
-	boxContainer := element.New(
-		element.WithFlexGrow(1),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithGap(4),
+	boxContainer := tui.New(
+		tui.WithFlexGrow(1),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithGap(4),
 	)
 
 	// Create focusable boxes with different colors
@@ -63,9 +61,9 @@ func main() {
 	boxContainer.AddChild(box1, box2, box3, box4)
 
 	// Status line at bottom
-	statusLine := element.New(
-		element.WithText(""),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	statusLine := tui.New(
+		tui.WithText(""),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
 	// Build the tree
@@ -95,8 +93,8 @@ func main() {
 			case tui.ResizeEvent:
 				width, height = e.Width, e.Height
 				style := root.Style()
-				style.Width = layout.Fixed(width)
-				style.Height = layout.Fixed(height)
+				style.Width = tui.Fixed(width)
+				style.Height = tui.Fixed(height)
 				root.SetStyle(style)
 				app.Dispatch(event)
 			}
@@ -105,7 +103,7 @@ func main() {
 		// Update status line to show which box is focused
 		focused := app.Focused()
 		if focused != nil {
-			if elem, ok := focused.(*element.Element); ok {
+			if elem, ok := focused.(*tui.Element); ok {
 				// Find the label child
 				children := elem.Children()
 				if len(children) > 0 && children[0].Text() != "" {
@@ -120,32 +118,32 @@ func main() {
 }
 
 // createBox creates a focusable box with a label.
-func createBox(label string, color tui.Color) *element.Element {
+func createBox(label string, color tui.Color) *tui.Element {
 	normalStyle := tui.NewStyle().Foreground(color)
 	focusedStyle := tui.NewStyle().Foreground(tui.White).Background(color).Bold()
 
 	// Create the label element
-	labelElem := element.New(
-		element.WithText(label),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	labelElem := tui.New(
+		tui.WithText(label),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 
 	// Declare box first so closures can capture it
-	var box *element.Element
-	box = element.New(
-		element.WithSize(20, 5),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(normalStyle),
-		element.WithDirection(layout.Column),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithOnFocus(func() {
+	var box *tui.Element
+	box = tui.New(
+		tui.WithSize(20, 5),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(normalStyle),
+		tui.WithDirection(tui.Column),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithOnFocus(func() {
 			box.SetBorderStyle(focusedStyle)
 			box.SetBorder(tui.BorderDouble)
 			// Make label bold when focused
 			labelElem.SetTextStyle(tui.NewStyle().Foreground(tui.White).Bold())
 		}),
-		element.WithOnBlur(func() {
+		tui.WithOnBlur(func() {
 			box.SetBorderStyle(normalStyle)
 			box.SetBorder(tui.BorderSingle)
 			// Revert label style when blurred

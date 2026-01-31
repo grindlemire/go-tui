@@ -4,28 +4,27 @@
 package testdata
 
 import (
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
-func Header(title string) *element.Element {
-	__tui_0 := element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
+func Header(title string) *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText(title),
+	__tui_1 := tui.New(
+		tui.WithText(title),
 	)
 	__tui_0.AddChild(__tui_1)
 	return __tui_0
 }
 
-func Footer() *element.Element {
-	__tui_0 := element.New(
-		element.WithPadding(1),
+func Footer() *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText("Footer content"),
+	__tui_1 := tui.New(
+		tui.WithText("Footer content"),
 	)
 	__tui_0.AddChild(__tui_1)
 	return __tui_0

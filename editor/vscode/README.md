@@ -76,7 +76,7 @@ package main
 
 import (
     "fmt"
-    "github.com/grindlemire/go-tui/pkg/tui"
+    tui "github.com/grindlemire/go-tui"
 )
 
 templ Counter() {

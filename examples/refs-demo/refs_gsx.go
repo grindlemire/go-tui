@@ -6,9 +6,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func itemStyle(idx, selected int) string {
@@ -19,13 +17,13 @@ func itemStyle(idx, selected int) string {
 }
 
 type RefsDemoView struct {
-	Root      *element.Element
+	Root      *tui.Element
 	watchers  []tui.Watcher
-	Header    *element.Element
-	Content   *element.Element
-	Items     []*element.Element
-	Warning   *element.Element // may be nil
-	StatusBar *element.Element
+	Header    *tui.Element
+	Content   *tui.Element
+	Items     []*tui.Element
+	Warning   *tui.Element // may be nil
+	StatusBar *tui.Element
 }
 
 func (v RefsDemoView) GetRoot() tui.Renderable { return v.Root }
@@ -36,86 +34,86 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 	var view RefsDemoView
 	var watchers []tui.Watcher
 
-	var Header *element.Element
-	var Content *element.Element
-	var Items []*element.Element
-	var Warning *element.Element
-	var StatusBar *element.Element
+	var Header *tui.Element
+	var Content *tui.Element
+	var Items []*tui.Element
+	var Warning *tui.Element
+	var StatusBar *tui.Element
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithHeight(24),
-		element.WithWidth(80),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithHeight(24),
+		tui.WithWidth(80),
 	)
-	Header = element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	Header = tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_1 := element.New(
-		element.WithText("Named Element Refs Demo"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_1 := tui.New(
+		tui.WithText("Named Element Refs Demo"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	Header.AddChild(__tui_1)
 	__tui_0.AddChild(Header)
-	Content = element.New(
-		element.WithDirection(layout.Column),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithFlexGrow(1),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithDirection(layout.Column),
+	Content = tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithFlexGrow(1),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithDirection(tui.Column),
 	)
-	__tui_2 := element.New(
-		element.WithText("Items (loop refs) - j/k to scroll, +/- to select"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
+	__tui_2 := tui.New(
+		tui.WithText("Items (loop refs) - j/k to scroll, +/- to select"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	Content.AddChild(__tui_2)
 	for i, item := range items {
 		_ = i
-		__tui_3 := element.New(
-			element.WithText(item),
+		__tui_3 := tui.New(
+			tui.WithText(item),
 		)
 		Items = append(Items, __tui_3)
 		Content.AddChild(__tui_3)
 	}
 	__tui_0.AddChild(Content)
 	if showWarning {
-		Warning = element.New(
-			element.WithBorder(tui.BorderDouble),
-			element.WithPadding(1),
-			element.WithHeight(3),
-			element.WithDirection(layout.Row),
-			element.WithJustify(layout.JustifyCenter),
-			element.WithAlign(layout.AlignCenter),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
+		Warning = tui.New(
+			tui.WithBorder(tui.BorderDouble),
+			tui.WithPadding(1),
+			tui.WithHeight(3),
+			tui.WithDirection(tui.Row),
+			tui.WithJustify(tui.JustifyCenter),
+			tui.WithAlign(tui.AlignCenter),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 		)
-		__tui_4 := element.New(
-			element.WithText("⚠ Warning: This is a conditional ref (may be nil)"),
-			element.WithTextStyle(tui.NewStyle().Bold()),
+		__tui_4 := tui.New(
+			tui.WithText("⚠ Warning: This is a conditional ref (may be nil)"),
+			tui.WithTextStyle(tui.NewStyle().Bold()),
 		)
 		Warning.AddChild(__tui_4)
 		__tui_0.AddChild(Warning)
 	}
-	StatusBar = element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifySpaceBetween),
-		element.WithAlign(layout.AlignCenter),
+	StatusBar = tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_5 := element.New(
-		element.WithText("j/k: scroll | +/-: select | Tab: warning | d: switch demo | q: quit"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	__tui_5 := tui.New(
+		tui.WithText("j/k: scroll | +/-: select | Tab: warning | d: switch demo | q: quit"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	StatusBar.AddChild(__tui_5)
-	__tui_6 := element.New(
-		element.WithText(fmt.Sprintf(" Selected: %d", selectedIdx)),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_6 := tui.New(
+		tui.WithText(fmt.Sprintf(" Selected: %d", selectedIdx)),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	StatusBar.AddChild(__tui_6)
 	__tui_0.AddChild(StatusBar)
@@ -133,9 +131,9 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 }
 
 type KeyedRefsDemoView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
-	Users    []*element.Element
+	Users    []*tui.Element
 }
 
 func (v KeyedRefsDemoView) GetRoot() tui.Renderable { return v.Root }
@@ -146,55 +144,55 @@ func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 	var view KeyedRefsDemoView
 	var watchers []tui.Watcher
 
-	var Users []*element.Element
+	var Users []*tui.Element
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithPadding(1),
-		element.WithHeight(20),
-		element.WithWidth(60),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(1),
+		tui.WithHeight(20),
+		tui.WithWidth(60),
 	)
-	__tui_1 := element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	__tui_1 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_2 := element.New(
-		element.WithText("Keyed Refs Demo (map access)"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_2 := tui.New(
+		tui.WithText("Keyed Refs Demo (map access)"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithFlexGrow(1),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithFlexGrow(1),
 	)
-	__tui_4 := element.New(
-		element.WithText("Users (keyed by ID)"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
+	__tui_4 := tui.New(
+		tui.WithText("Users (keyed by ID)"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	__tui_3.AddChild(__tui_4)
 	for _, user := range users {
-		__tui_5 := element.New(
-			element.WithText(fmt.Sprintf("[%s] %s", user.ID, user.Name)),
+		__tui_5 := tui.New(
+			tui.WithText(fmt.Sprintf("[%s] %s", user.ID, user.Name)),
 		)
 		Users = append(Users, __tui_5)
 		__tui_3.AddChild(__tui_5)
 	}
 	__tui_0.AddChild(__tui_3)
-	__tui_6 := element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithHeight(2),
+	__tui_6 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithHeight(2),
 	)
-	__tui_7 := element.New(
-		element.WithText("1-3: highlight user | d: switch demo | q: quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_7 := tui.New(
+		tui.WithText("1-3: highlight user | d: switch demo | q: quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_6.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_6)

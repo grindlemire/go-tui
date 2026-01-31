@@ -3,13 +3,12 @@ package example
 import (
 	"fmt"
 	"strings"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
+	tui "github.com/grindlemire/go-tui"
 )
 
 // For loops and conditionals
 templ ItemList(items []string, selected int) {
-	<div direction={layout.Column} gap={1}>
+	<div direction={tui.Column} gap={1}>
 		@for i, item := range items {
 			@if i == selected {
 				<div class="border-single">

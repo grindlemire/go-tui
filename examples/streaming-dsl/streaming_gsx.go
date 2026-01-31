@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func tickElapsed(elapsed *tui.State[int]) func() {
@@ -18,15 +16,15 @@ func tickElapsed(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
 		stayAtBottom := content.IsAtBottom()
 
-		lineElem := element.New(
-			element.WithText(line),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		lineElem := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
 		content.AddChild(lineElem)
 
@@ -36,7 +34,7 @@ func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
 	}
 }
 
-func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
 	return func(e tui.KeyEvent) {
 		switch e.Rune {
 		case 'j':
@@ -47,7 +45,7 @@ func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
 	}
 }
 
-func handleEvent(content *element.Element) func(tui.Event) bool {
+func handleEvent(content *tui.Element) func(tui.Event) bool {
 	return func(e tui.Event) bool {
 		if mouse, ok := e.(tui.MouseEvent); ok {
 			switch mouse.Button {
@@ -64,9 +62,9 @@ func handleEvent(content *element.Element) func(tui.Event) bool {
 }
 
 type StreamAppView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
-	Content  *element.Element
+	Content  *tui.Element
 }
 
 func (v StreamAppView) GetRoot() tui.Renderable { return v.Root }
@@ -77,47 +75,47 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 	var view StreamAppView
 	var watchers []tui.Watcher
 
-	var Content *element.Element
+	var Content *tui.Element
 
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
 	)
-	__tui_1 := element.New(
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
-		element.WithBorder(tui.BorderSingle),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	__tui_1 := tui.New(
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_2 := element.New(
-		element.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
+	__tui_2 := tui.New(
+		tui.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
-	Content = element.New(
-		element.WithDirection(layout.Column),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		element.WithBorder(tui.BorderSingle),
-		element.WithFlexGrow(1),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithFocusable(true),
+	Content = tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithFlexGrow(1),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithFocusable(true),
 	)
 	__tui_0.AddChild(Content)
-	__tui_3 := element.New(
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
-		element.WithBorder(tui.BorderSingle),
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
+	__tui_3 := tui.New(
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_4 := element.New(
-		element.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	__tui_4 := tui.New(
+		tui.WithText(fmt.Sprintf("Lines: %d | Elapsed: %ds | Press q to exit", lineCount.Get(), elapsed.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	__tui_3.AddChild(__tui_4)
 	__tui_0.AddChild(__tui_3)

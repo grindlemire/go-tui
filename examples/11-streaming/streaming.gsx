@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 templ Streaming(dataCh <-chan string) {
@@ -36,15 +35,15 @@ func tick(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
 		stayAtBottom := content.IsAtBottom()
 
-		lineElem := element.New(
-			element.WithText(line),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		lineElem := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
 		content.AddChild(lineElem)
 
@@ -54,7 +53,7 @@ func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
 	}
 }
 
-func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
 	return func(e tui.KeyEvent) {
 		switch e.Rune {
 		case 'j':

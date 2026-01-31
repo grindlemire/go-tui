@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 templ Scrollable(items []string) {
@@ -27,7 +25,7 @@ templ Scrollable(items []string) {
 	</div>
 }
 
-func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
 	return func(e tui.KeyEvent) {
 		switch e.Rune {
 		case 'j':
@@ -48,7 +46,7 @@ func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
 	}
 }
 
-func handleMouseScroll(content *element.Element) func(tui.Event) bool {
+func handleMouseScroll(content *tui.Element) func(tui.Event) bool {
 	return func(e tui.Event) bool {
 		if mouse, ok := e.(tui.MouseEvent); ok {
 			switch mouse.Button {

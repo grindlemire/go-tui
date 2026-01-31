@@ -6,13 +6,11 @@ package main
 import (
 	"fmt"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 type LoopsView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
@@ -24,50 +22,50 @@ func Loops(items []string, selected int) LoopsView {
 	var view LoopsView
 	var watchers []tui.Watcher
 
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(2),
-		element.WithBorder(tui.BorderRounded),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(2),
+		tui.WithBorder(tui.BorderRounded),
 	)
-	__tui_1 := element.New(
-		element.WithText("Loop Rendering"),
-		element.WithTextStyle(tui.NewStyle().Bold()),
+	__tui_1 := tui.New(
+		tui.WithText("Loop Rendering"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Column),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Column),
 	)
 	for i, item := range items {
 		_ = i
 		if i == selected {
-			__tui_4 := element.New(
-				element.WithText(fmt.Sprintf("> %d. %s", i+1, item)),
-				element.WithBackground(tui.NewStyle().Background(tui.Blue)),
-				element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+			__tui_4 := tui.New(
+				tui.WithText(fmt.Sprintf("> %d. %s", i+1, item)),
+				tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 			)
 			__tui_3.AddChild(__tui_4)
 		} else {
-			__tui_5 := element.New(
-				element.WithText(fmt.Sprintf("  %d. %s", i+1, item)),
+			__tui_5 := tui.New(
+				tui.WithText(fmt.Sprintf("  %d. %s", i+1, item)),
 			)
 			__tui_3.AddChild(__tui_5)
 		}
 	}
 	__tui_0.AddChild(__tui_3)
-	__tui_6 := element.New(
-		element.WithWidth(0),
-		element.WithHeight(1),
+	__tui_6 := tui.New(
+		tui.WithWidth(0),
+		tui.WithHeight(1),
 	)
 	__tui_0.AddChild(__tui_6)
-	__tui_7 := element.New(
-		element.WithText("Press j/k to move, q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_7 := tui.New(
+		tui.WithText("Press j/k to move, q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_7)
 

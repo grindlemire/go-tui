@@ -9,16 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 // StreamBox wraps an Element to provide channel-based text streaming.
 // This is defined locally in the example - not part of the library.
 // Users can copy and adapt this pattern for their own streaming needs.
 type StreamBox struct {
-	elem       *element.Element
+	elem       *tui.Element
 	textCh     <-chan string
 	textStyle  tui.Style
 	autoScroll bool
@@ -29,9 +27,9 @@ type StreamBox struct {
 // displays each line as a child element with auto-scroll behavior.
 func NewStreamBox(textCh <-chan string) *StreamBox {
 	s := &StreamBox{
-		elem: element.New(
-			element.WithScrollable(element.ScrollVertical),
-			element.WithDirection(layout.Column),
+		elem: tui.New(
+			tui.WithScrollable(tui.ScrollVertical),
+			tui.WithDirection(tui.Column),
 		),
 		textCh:     textCh,
 		textStyle:  tui.NewStyle().Foreground(tui.White),
@@ -45,7 +43,7 @@ func NewStreamBox(textCh <-chan string) *StreamBox {
 }
 
 // Element returns the underlying Element for adding to the tree.
-func (s *StreamBox) Element() *element.Element {
+func (s *StreamBox) Element() *tui.Element {
 	return s.elem
 }
 
@@ -94,9 +92,9 @@ func (s *StreamBox) appendText(text string) {
 		if line == "" {
 			continue
 		}
-		lineElem := element.New(
-			element.WithText(line),
-			element.WithTextStyle(s.textStyle),
+		lineElem := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(s.textStyle),
 		)
 		s.elem.AddChild(lineElem)
 	}
@@ -142,23 +140,23 @@ func main() {
 	width, height := app.Size()
 
 	// Root container
-	root := element.New(
-		element.WithSize(width, height),
-		element.WithDirection(layout.Column),
+	root := tui.New(
+		tui.WithSize(width, height),
+		tui.WithDirection(tui.Column),
 	)
 
 	// Header
-	header := element.New(
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	header := tui.New(
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
-	headerTitle := element.New(
-		element.WithText("Streaming Demo - Use j/k, PgUp/PgDn, Arrow Keys to scroll"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
+	headerTitle := tui.New(
+		tui.WithText("Streaming Demo - Use j/k, PgUp/PgDn, Arrow Keys to scroll"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
 	header.AddChild(headerTitle)
 
@@ -174,21 +172,21 @@ func main() {
 	// Apply flexGrow to make it fill available space
 	style := streamBox.Element().Style()
 	style.FlexGrow = 1
-	style.Padding = layout.EdgeAll(1)
+	style.Padding = tui.EdgeAll(1)
 	streamBox.Element().SetStyle(style)
 
 	// Footer with status
-	footer := element.New(
-		element.WithHeight(3),
-		element.WithDirection(layout.Row),
-		element.WithJustify(layout.JustifyCenter),
-		element.WithAlign(layout.AlignCenter),
-		element.WithBorder(tui.BorderSingle),
-		element.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	footer := tui.New(
+		tui.WithHeight(3),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
-	footerText := element.New(
-		element.WithText("Press ESC to exit"),
-		element.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	footerText := tui.New(
+		tui.WithText("Press ESC to exit"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	footer.AddChild(footerText)
 
@@ -240,8 +238,8 @@ func main() {
 			case tui.ResizeEvent:
 				width, height = e.Width, e.Height
 				style := root.Style()
-				style.Width = layout.Fixed(width)
-				style.Height = layout.Fixed(height)
+				style.Width = tui.Fixed(width)
+				style.Height = tui.Fixed(height)
 				root.SetStyle(style)
 				app.Dispatch(event)
 			}

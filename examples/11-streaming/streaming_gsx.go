@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grindlemire/go-tui/pkg/layout"
-	"github.com/grindlemire/go-tui/pkg/tui"
-	"github.com/grindlemire/go-tui/pkg/tui/element"
+	tui "github.com/grindlemire/go-tui"
 )
 
 func tick(elapsed *tui.State[int]) func() {
@@ -18,15 +16,15 @@ func tick(elapsed *tui.State[int]) func() {
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
+func addLine(lineCount *tui.State[int], content *tui.Element) func(string) {
 	return func(line string) {
 		lineCount.Set(lineCount.Get() + 1)
 
 		stayAtBottom := content.IsAtBottom()
 
-		lineElem := element.New(
-			element.WithText(line),
-			element.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		lineElem := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
 		content.AddChild(lineElem)
 
@@ -36,7 +34,7 @@ func addLine(lineCount *tui.State[int], content *element.Element) func(string) {
 	}
 }
 
-func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
+func handleScrollKeys(content *tui.Element) func(tui.KeyEvent) {
 	return func(e tui.KeyEvent) {
 		switch e.Rune {
 		case 'j':
@@ -48,9 +46,9 @@ func handleScrollKeys(content *element.Element) func(tui.KeyEvent) {
 }
 
 type StreamingView struct {
-	Root     *element.Element
+	Root     *tui.Element
 	watchers []tui.Watcher
-	Content  *element.Element
+	Content  *tui.Element
 }
 
 func (v StreamingView) GetRoot() tui.Renderable { return v.Root }
@@ -61,54 +59,54 @@ func Streaming(dataCh <-chan string) StreamingView {
 	var view StreamingView
 	var watchers []tui.Watcher
 
-	var Content *element.Element
+	var Content *tui.Element
 
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
-	__tui_0 := element.New(
-		element.WithDirection(layout.Column),
-		element.WithGap(1),
-		element.WithPadding(1),
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(1),
 	)
-	__tui_1 := element.New(
-		element.WithText("Streaming with Channels and Timers"),
-		element.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	__tui_1 := tui.New(
+		tui.WithText("Streaming with Channels and Timers"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := element.New(
-		element.WithHR(),
-		element.WithBorder(tui.BorderSingle),
+	__tui_2 := tui.New(
+		tui.WithHR(),
+		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_0.AddChild(__tui_2)
-	Content = element.New(
-		element.WithBorder(tui.BorderSingle),
-		element.WithPadding(1),
-		element.WithDirection(layout.Column),
-		element.WithFlexGrow(1),
-		element.WithScrollable(element.ScrollVertical),
-		element.WithFocusable(true),
+	Content = tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithFocusable(true),
 	)
 	__tui_0.AddChild(Content)
-	__tui_3 := element.New(
-		element.WithDirection(layout.Row),
-		element.WithGap(2),
+	__tui_3 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 	)
-	__tui_4 := element.New()
-	__tui_5 := element.New(element.WithText("Lines:"))
+	__tui_4 := tui.New()
+	__tui_5 := tui.New(tui.WithText("Lines:"))
 	__tui_4.AddChild(__tui_5)
-	__tui_6 := element.New(element.WithText(fmt.Sprintf("%d", lineCount.Get())))
+	__tui_6 := tui.New(tui.WithText(fmt.Sprintf("%d", lineCount.Get())))
 	__tui_4.AddChild(__tui_6)
 	__tui_3.AddChild(__tui_4)
-	__tui_7 := element.New()
-	__tui_8 := element.New(element.WithText("Elapsed:"))
+	__tui_7 := tui.New()
+	__tui_8 := tui.New(tui.WithText("Elapsed:"))
 	__tui_7.AddChild(__tui_8)
-	__tui_9 := element.New(element.WithText(fmt.Sprintf("%ds", elapsed.Get())))
+	__tui_9 := tui.New(tui.WithText(fmt.Sprintf("%ds", elapsed.Get())))
 	__tui_7.AddChild(__tui_9)
 	__tui_3.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_3)
-	__tui_10 := element.New(
-		element.WithText("Press q to quit"),
-		element.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_10 := tui.New(
+		tui.WithText("Press q to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_10)
 
