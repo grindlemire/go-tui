@@ -124,9 +124,13 @@ Implementation phases for the go-tui restructure. Each phase builds on the previ
   - Update `import "github.com/grindlemire/go-tui/pkg/tuigen"` → `"github.com/grindlemire/go-tui/internal/tuigen"` in formatter files
 
 - [ ] Move `pkg/lsp/` → `internal/lsp/`
-  - Move all source files and subdirectories (`gopls/`, `log/`)
+  - Move all source files and subdirectories: `gopls/`, `log/`, `provider/`, `schema/`
+  - Core files: `server.go`, `router.go`, `handler.go`, `context.go`, `context_test.go`, `document.go`, `index.go`, `provider_adapters.go`, `providers.go`
+  - Legacy adapters (thin delegators): `completion.go`, `definition.go`, `diagnostics.go`, `formatting.go`, `hover.go`, `references.go`, `semantic_tokens.go`, `symbols.go`
+  - Test files: `features_test.go`, `server_test.go`, `semantic_tokens_comment_test.go`
   - Move all test files
   - Update imports: `pkg/tuigen` → `internal/tuigen`, `pkg/formatter` → `internal/formatter`
+  - Update imports within `provider/*.go` and `schema/*.go` files if they reference `pkg/tuigen` or `pkg/formatter`
 
 - [ ] Update `cmd/tui/*.go` imports
   - `generate.go`: `"github.com/grindlemire/go-tui/pkg/tuigen"` → `"github.com/grindlemire/go-tui/internal/tuigen"`
@@ -210,17 +214,26 @@ All splits are pure file reorganization — no logic changes. Target: every sour
   - `tailwind_validation.go` — Validation, fuzzy matching, Levenshtein distance
   - `tailwind_autocomplete.go` — AllTailwindClasses documentation data
 
-- [ ] Split `internal/lsp/semantic_tokens.go` (~1226 lines) into:
-  - `semantic_tokens.go` — Types, constants, main handler, encoding
-  - `semantic_tokens_nodes.go` — AST node processing and dispatch
-  - `semantic_tokens_gocode.go` — Go expression tokenization, variable extraction
-  - `semantic_tokens_comments.go` — Comment token collection
+- [ ] Split `internal/lsp/provider/semantic.go` (~1382 lines) into:
+  - `semantic.go` — Types, constants, main SemanticTokensProvider, encoding
+  - `semantic_nodes.go` — AST node processing and dispatch
+  - `semantic_gocode.go` — Go expression tokenization, variable extraction
 
-- [ ] Split `internal/lsp/hover.go` (~908 lines) into:
-  - `hover.go` — Types, main handler, component/func/param hovers
-  - `hover_keywords.go` — Keyword documentation
-  - `hover_elements.go` — Element and attribute documentation
-  - `hover_tailwind.go` — Tailwind class hover, position detection, gopls integration
+- [ ] Split `internal/lsp/provider/references.go` (~874 lines) into:
+  - `references.go` — Main ReferencesProvider, reference dispatch
+  - `references_search.go` — Cross-file search, workspace scanning
+
+- [ ] Split `internal/lsp/context.go` (~837 lines) into:
+  - `context.go` — CursorContext struct, NodeKind enum, Scope struct, resolve entry point
+  - `context_resolve.go` — AST walking, node classification, scope building
+
+- [ ] Split `internal/lsp/provider/definition.go` (~741 lines) into:
+  - `definition.go` — Main DefinitionProvider, definition dispatch
+  - `definition_search.go` — Cross-file definition search, gopls delegation
+
+- [ ] Split `internal/lsp/provider/completion.go` (~587 lines) into:
+  - `completion.go` — Main CompletionProvider, completion dispatch
+  - `completion_items.go` — Completion item builders, attribute/event completions
 
 - [ ] Split `internal/formatter/printer.go` (~852 lines) into:
   - `printer.go` — Printer struct, PrintFile, package/component printing, node dispatch
@@ -228,21 +241,16 @@ All splits are pure file reorganization — no logic changes. Target: every sour
   - `printer_control.go` — @for, @if, @let, component call printing
   - `printer_comments.go` — Comment formatting and printing methods
 
-- [ ] Split `internal/lsp/completion.go` (~734 lines) into:
-  - `completion.go` — Main handler, completion dispatch
-  - `completion_attributes.go` — Attribute name and value completions
+- [ ] Split `internal/lsp/gopls/proxy.go` (~564 lines) into:
+  - `proxy.go` — GoplsProxy struct, lifecycle, communication
+  - `proxy_requests.go` — Request forwarding, response handling
 
-- [ ] Split `internal/lsp/references.go` (~681 lines) into:
-  - `references.go` — Main handler, reference collection
-  - `references_gopls.go` — gopls integration for Go references
+- [ ] Split `internal/lsp/gopls/generate.go` (~557 lines) into:
+  - `generate.go` — Virtual Go file generation core
+  - `generate_state.go` — State variable and named ref emission
 
-- [ ] Split `internal/lsp/definition.go` (~624 lines) into:
-  - `definition.go` — Main handler, definition resolution
-  - `definition_gopls.go` — gopls integration for Go definitions
-
-- [ ] Split `internal/lsp/handler.go` (~512 lines) into:
-  - `handler.go` — Request dispatch, initialization
-  - `handler_lifecycle.go` — Shutdown, document sync handlers
+- [ ] Note: The following LSP root-level files are now thin adapters (≤195 lines each) after the devtools overhaul moved logic into `provider/`. No splits needed:
+  - `semantic_tokens.go` (12 lines), `hover.go` (33 lines), `references.go` (14 lines), `definition.go` (13 lines), `formatting.go` (14 lines), `diagnostics.go` (69 lines), `completion.go` (195 lines), `symbols.go` (49 lines), `handler.go` (466 lines)
 
 **Tests:** Run `go test ./... ` (excluding examples) — all pass, no logic changes
 
@@ -318,10 +326,22 @@ All splits are pure test file reorganization. Target: every test file <=500 line
   - `formatter_element_test.go` — Element/attribute formatting tests
   - `formatter_control_test.go` — Control flow formatting tests
 
-- [ ] Split `internal/lsp/features_test.go` (~849 lines) into:
+- [ ] Split `internal/lsp/features_test.go` (~855 lines) into:
   - `features_test.go` — Basic LSP feature tests
   - `features_completion_test.go` — Completion-specific tests
   - `features_hover_test.go` — Hover-specific tests
+
+- [ ] Split `internal/lsp/provider/semantic_test.go` (~847 lines) into:
+  - `semantic_test.go` — Basic semantic token tests, constant verification
+  - `semantic_nodes_test.go` — AST node token output tests
+
+- [ ] Split `internal/lsp/context_test.go` (~775 lines) into:
+  - `context_test.go` — Basic CursorContext resolution, NodeKind classification
+  - `context_scope_test.go` — Scope resolution, state vars, named refs in scope
+
+- [ ] Split `internal/lsp/gopls/proxy_test.go` (~640 lines) into:
+  - `proxy_test.go` — GoplsProxy lifecycle, communication tests
+  - `proxy_requests_test.go` — Request forwarding, response mapping tests
 
 - [ ] Split root `focus_test.go` (~618 lines) into:
   - `focus_test.go` — FocusManager, Register, Next, Prev
@@ -335,7 +355,7 @@ All splits are pure test file reorganization. Target: every test file <=500 line
   - Each gets: `rect_test.go` (construction, accessors) + `rect_ops_test.go` (intersection, union, contains)
 
 - [ ] Split remaining test files >500 lines similarly by topic
-  - `element_integration_test.go` (~589 lines), `element_render_test.go` (~529 lines), `parser_comment_test.go` (~546 lines), `server_test.go` (~549 lines) — split if over 500 lines after the Phase 2 move
+  - `element_integration_test.go` (~589 lines), `element_render_test.go` (~529 lines), `parser_comment_test.go` (~546 lines), `internal/lsp/server_test.go` (~549 lines), `internal/lsp/semantic_tokens_comment_test.go` (~488 lines) — split if over 500 lines after the Phase 2 move
 
 **Tests:** Run `go test ./...` (excluding examples) — all pass, no logic changes
 
@@ -472,17 +492,44 @@ All splits are pure test file reorganization. Target: every test file <=500 line
 │   │   └── (other files unchanged)
 │   ├── lsp/
 │   │   ├── doc.go
-│   │   ├── semantic_tokens.go    # Split original
-│   │   ├── semantic_tokens_nodes.go
-│   │   ├── semantic_tokens_gocode.go
-│   │   ├── semantic_tokens_comments.go
-│   │   ├── hover.go              # Split original
-│   │   ├── hover_keywords.go
-│   │   ├── hover_elements.go
-│   │   ├── hover_tailwind.go
-│   │   ├── completion.go         # Split original
-│   │   ├── completion_attributes.go
-│   │   └── (other files)
+│   │   ├── server.go             # LSP server lifecycle
+│   │   ├── router.go             # Method routing with provider dispatch
+│   │   ├── handler.go            # Initialize response, capabilities
+│   │   ├── context.go            # CursorContext (split)
+│   │   ├── context_resolve.go    # AST walking, node classification
+│   │   ├── document.go           # Document management
+│   │   ├── index.go              # Workspace symbol index
+│   │   ├── provider_adapters.go  # Adapter layer: router → providers
+│   │   ├── providers.go          # Provider initialization
+│   │   ├── (thin legacy adapters: completion.go, definition.go, etc.)
+│   │   ├── schema/
+│   │   │   ├── schema.go         # Elements, attributes, type defs
+│   │   │   ├── keywords.go       # DSL keywords and documentation
+│   │   │   └── tailwind.go       # Tailwind class defs and docs
+│   │   ├── provider/
+│   │   │   ├── provider.go       # Interfaces and registry
+│   │   │   ├── hover.go          # Hover provider
+│   │   │   ├── completion.go     # Completion provider (split)
+│   │   │   ├── completion_items.go
+│   │   │   ├── definition.go     # Definition provider (split)
+│   │   │   ├── definition_search.go
+│   │   │   ├── references.go     # References provider (split)
+│   │   │   ├── references_search.go
+│   │   │   ├── symbols.go        # Symbol providers
+│   │   │   ├── diagnostics.go    # Diagnostics provider
+│   │   │   ├── formatting.go     # Formatting provider
+│   │   │   ├── semantic.go       # Semantic tokens (split)
+│   │   │   ├── semantic_nodes.go
+│   │   │   ├── semantic_gocode.go
+│   │   │   └── (test files)
+│   │   ├── gopls/
+│   │   │   ├── proxy.go          # Subprocess communication (split)
+│   │   │   ├── proxy_requests.go
+│   │   │   ├── generate.go       # Virtual Go generation (split)
+│   │   │   ├── generate_state.go
+│   │   │   └── mapping.go
+│   │   └── log/
+│   │       └── log.go
 │   └── debug/
 │       ├── doc.go
 │       └── debug.go

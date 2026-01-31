@@ -1,6 +1,6 @@
 package tui
 
-import "github.com/grindlemire/go-tui/pkg/layout"
+import "github.com/grindlemire/go-tui/internal/layout"
 
 // Rect is a type alias for layout.Rect.
 // This allows the tui package to use the canonical geometry primitive

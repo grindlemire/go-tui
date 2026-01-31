@@ -6,7 +6,7 @@ package element
 
 import (
 	"github.com/grindlemire/go-tui/pkg/debug"
-	"github.com/grindlemire/go-tui/pkg/layout"
+	"github.com/grindlemire/go-tui/internal/layout"
 	"github.com/grindlemire/go-tui/pkg/tui"
 )
 
