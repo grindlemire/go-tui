@@ -245,15 +245,6 @@ func (e *Element) needsVerticalScrollbar() bool {
 	return e.contentHeight > vh
 }
 
-// needsHorizontalScrollbar returns whether a horizontal scrollbar should be shown.
-func (e *Element) needsHorizontalScrollbar() bool {
-	if e.scrollMode != ScrollHorizontal && e.scrollMode != ScrollBoth {
-		return false
-	}
-	vw, _ := e.ViewportSize()
-	return e.contentWidth > vw
-}
-
 // clamp restricts v to the range [minVal, maxVal].
 func clamp(v, minVal, maxVal int) int {
 	if v < minVal {

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/grindlemire/go-tui/internal/debug"
 	tui "github.com/grindlemire/go-tui"
+	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 func increment(count *tui.State[int]) func() {
