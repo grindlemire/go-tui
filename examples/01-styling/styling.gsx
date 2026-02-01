@@ -141,6 +141,92 @@ templ Styling() {
 			</div>
 		</div>
 		<hr />
+		// Text Gradients
+		<div class="flex-col border-white border-single p-0">
+			<span class="font-bold">Text Gradients</span>
+			<div class="flex-col gap-1">
+				<div class="flex-row gap-1">
+					<span class="text-gradient-red-blue">Red to Blue</span>
+					<span class="text-gradient-cyan-magenta">Cyan to Magenta</span>
+					<span class="text-gradient-yellow-red">Yellow to Red</span>
+					<span class="text-gradient-green-blue">Green to Blue</span>
+				</div>
+				<div class="flex-row gap-1">
+					<span class="text-gradient-red-blue-v">Vertical</span>
+					<span class="text-gradient-cyan-magenta-dd">Diagonal Down</span>
+					<span class="text-gradient-yellow-red-du">Diagonal Up</span>
+				</div>
+				<div class="flex-row gap-1">
+					<span class="text-gradient-bright-red-bright-blue">Bright Red to Blue</span>
+					<span class="text-gradient-bright-cyan-bright-magenta">Bright Cyan to Magenta</span>
+				</div>
+			</div>
+		</div>
+		<hr />
+		// Background Gradients
+		<div class="flex-col border-white border-single p-0">
+			<span class="font-bold">Background Gradients</span>
+			<div class="flex-col gap-1">
+				<div class="flex-row gap-1">
+					<div class="bg-gradient-red-blue p-1">
+						<span>Horizontal</span>
+					</div>
+					<div class="bg-gradient-cyan-magenta-v p-1">
+						<span>Vertical</span>
+					</div>
+					<div class="bg-gradient-yellow-red-dd p-1">
+						<span>Diagonal Down</span>
+					</div>
+					<div class="bg-gradient-green-blue-du p-1">
+						<span>Diagonal Up</span>
+					</div>
+				</div>
+				<div class="flex-row gap-1">
+					<div class="bg-gradient-bright-red-bright-blue p-1">
+						<span class="text-white">Bright Colors</span>
+					</div>
+					<div class="bg-gradient-white-black p-1">
+						<span>White to Black</span>
+					</div>
+					<div class="bg-gradient-black-white p-1">
+						<span class="text-white">Black to White</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<hr />
+		// Border Gradients
+		<div class="flex-col border-white border-single p-0">
+			<span class="font-bold">Border Gradients</span>
+			<div class="flex-row gap-1">
+				<div class="border-rounded border-gradient-red-blue p-1">
+					<span>Red to Blue</span>
+				</div>
+				<div class="border-single border-gradient-cyan-magenta p-1">
+					<span>Cyan to Magenta</span>
+				</div>
+				<div class="border-double border-gradient-yellow-red p-1">
+					<span>Yellow to Red</span>
+				</div>
+				<div class="border-thick border-gradient-green-blue p-1">
+					<span>Green to Blue</span>
+				</div>
+			</div>
+		</div>
+		<hr />
+		// Combined Gradients
+		<div class="flex-col border-white border-single p-0">
+			<span class="font-bold">Combined Gradients</span>
+			<div class="flex-col gap-1">
+				<div class="bg-gradient-red-blue border-gradient-yellow-red border-rounded p-1">
+					<span class="text-gradient-white-black">Text+Bg+Border</span>
+				</div>
+				<div class="bg-gradient-cyan-magenta-v border-gradient-green-blue border-single p-1">
+					<span class="text-gradient-bright-red-bright-blue">All Gradients</span>
+				</div>
+			</div>
+		</div>
+		<hr />
 		<span class="font-dim">Press q to quit</span>
 	</div>
 }

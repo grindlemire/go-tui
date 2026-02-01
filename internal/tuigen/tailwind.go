@@ -286,6 +286,154 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 		return TailwindMapping{Option: "tui.WithFlexShrink(" + strconv.Itoa(n) + ")"}, true
 	}
 
+	// Gradient patterns
+	if matches := textGradientPattern.FindStringSubmatch(class); matches != nil {
+		var startColorName, endColorName string
+		direction := "tui.GradientHorizontal"
+		
+		// Check if class ends with a direction suffix
+		if strings.HasSuffix(class, "-v") || strings.HasSuffix(class, "-dd") || strings.HasSuffix(class, "-du") || strings.HasSuffix(class, "-h") {
+			// Has direction suffix - use first alternative
+			startColorName = matches[1]
+			endColorName = matches[2]
+			if matches[3] != "" {
+				switch matches[3] {
+				case "v":
+					direction = "tui.GradientVertical"
+				case "dd":
+					direction = "tui.GradientDiagonalDown"
+				case "du":
+					direction = "tui.GradientDiagonalUp"
+				}
+			}
+		} else {
+			// No direction suffix - parse manually by matching known color names from the end
+			prefix := "text-gradient-"
+			rest := strings.TrimPrefix(class, prefix)
+			// Try to match known color names from the end (check longer names first to avoid partial matches)
+			colorNames := []string{"bright-red", "bright-green", "bright-blue", "bright-cyan", "bright-magenta", "bright-yellow", "bright-white", "bright-black", "red", "green", "blue", "cyan", "magenta", "yellow", "white", "black"}
+			for _, colorName := range colorNames {
+				suffix := "-" + colorName
+				if strings.HasSuffix(rest, suffix) {
+					endColorName = colorName
+					startColorName = strings.TrimSuffix(rest, suffix)
+					break
+				}
+			}
+			if endColorName == "" {
+				// Fallback: use regex matches if available
+				if matches[4] != "" && matches[5] != "" {
+					startColorName = matches[4]
+					endColorName = matches[5]
+				} else {
+					// Last resort: split on last hyphen
+					lastHyphen := strings.LastIndex(rest, "-")
+					if lastHyphen > 0 {
+						startColorName = rest[:lastHyphen]
+						endColorName = rest[lastHyphen+1:]
+					}
+				}
+			}
+		}
+		
+		startColor := colorNameToColor(startColorName)
+		endColor := colorNameToColor(endColorName)
+		option := "tui.WithTextGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
+		return TailwindMapping{Option: option, NeedsImport: "tui"}, true
+	}
+
+	if matches := bgGradientPattern.FindStringSubmatch(class); matches != nil {
+		var startColorName, endColorName string
+		direction := "tui.GradientHorizontal"
+		
+		// Check if class ends with a direction suffix
+		if strings.HasSuffix(class, "-v") || strings.HasSuffix(class, "-dd") || strings.HasSuffix(class, "-du") || strings.HasSuffix(class, "-h") {
+			// Has direction suffix - use first alternative
+			startColorName = matches[1]
+			endColorName = matches[2]
+			if matches[3] != "" {
+				switch matches[3] {
+				case "v":
+					direction = "tui.GradientVertical"
+				case "dd":
+					direction = "tui.GradientDiagonalDown"
+				case "du":
+					direction = "tui.GradientDiagonalUp"
+				}
+			}
+		} else {
+			// No direction suffix - parse manually by matching known color names from the end
+			prefix := "bg-gradient-"
+			rest := strings.TrimPrefix(class, prefix)
+			colorNames := []string{"bright-red", "bright-green", "bright-blue", "bright-cyan", "bright-magenta", "bright-yellow", "bright-white", "bright-black", "red", "green", "blue", "cyan", "magenta", "yellow", "white", "black"}
+			for _, colorName := range colorNames {
+				if strings.HasSuffix(rest, "-"+colorName) {
+					endColorName = colorName
+					startColorName = strings.TrimSuffix(rest, "-"+colorName)
+					break
+				}
+			}
+			if endColorName == "" {
+				lastHyphen := strings.LastIndex(rest, "-")
+				if lastHyphen > 0 {
+					startColorName = rest[:lastHyphen]
+					endColorName = rest[lastHyphen+1:]
+				}
+			}
+		}
+		
+		startColor := colorNameToColor(startColorName)
+		endColor := colorNameToColor(endColorName)
+		option := "tui.WithBackgroundGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
+		return TailwindMapping{Option: option, NeedsImport: "tui"}, true
+	}
+
+	if matches := borderGradientPattern.FindStringSubmatch(class); matches != nil {
+		var startColorName, endColorName string
+		direction := "tui.GradientHorizontal"
+		
+		// Check if class ends with a direction suffix
+		if strings.HasSuffix(class, "-v") || strings.HasSuffix(class, "-dd") || strings.HasSuffix(class, "-du") || strings.HasSuffix(class, "-h") {
+			// Has direction suffix - use first alternative
+			startColorName = matches[1]
+			endColorName = matches[2]
+			if matches[3] != "" {
+				switch matches[3] {
+				case "v":
+					direction = "tui.GradientVertical"
+				case "dd":
+					direction = "tui.GradientDiagonalDown"
+				case "du":
+					direction = "tui.GradientDiagonalUp"
+				}
+			}
+		} else {
+			// No direction suffix - parse manually by matching known color names from the end
+			prefix := "border-gradient-"
+			rest := strings.TrimPrefix(class, prefix)
+			colorNames := []string{"bright-red", "bright-green", "bright-blue", "bright-cyan", "bright-magenta", "bright-yellow", "bright-white", "bright-black", "red", "green", "blue", "cyan", "magenta", "yellow", "white", "black"}
+			for _, colorName := range colorNames {
+				if strings.HasSuffix(rest, "-"+colorName) {
+					endColorName = colorName
+					startColorName = strings.TrimSuffix(rest, "-"+colorName)
+					break
+				}
+			}
+			if endColorName == "" {
+				lastHyphen := strings.LastIndex(rest, "-")
+				if lastHyphen > 0 {
+					startColorName = rest[:lastHyphen]
+					endColorName = rest[lastHyphen+1:]
+				}
+			}
+		}
+		
+		startColor := colorNameToColor(startColorName)
+		endColor := colorNameToColor(endColorName)
+		option := "tui.WithBorderGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
+		return TailwindMapping{Option: option, NeedsImport: "tui"}, true
+	}
+
 	// Individual padding/margin classes - these are valid but handled separately in ParseTailwindClasses
 	if _, ok := parseIndividualSpacing(class); ok {
 		// Return a marker mapping - actual handling is done in ParseTailwindClasses
@@ -294,6 +442,47 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 
 	// Unknown class - silently ignore
 	return TailwindMapping{}, false
+}
+
+// colorNameToColor maps a color name string to the corresponding tui.Color constant.
+func colorNameToColor(name string) string {
+	switch name {
+	case "red":
+		return "tui.Red"
+	case "green":
+		return "tui.Green"
+	case "blue":
+		return "tui.Blue"
+	case "cyan":
+		return "tui.Cyan"
+	case "magenta":
+		return "tui.Magenta"
+	case "yellow":
+		return "tui.Yellow"
+	case "white":
+		return "tui.White"
+	case "black":
+		return "tui.Black"
+	case "bright-red":
+		return "tui.BrightRed"
+	case "bright-green":
+		return "tui.BrightGreen"
+	case "bright-blue":
+		return "tui.BrightBlue"
+	case "bright-cyan":
+		return "tui.BrightCyan"
+	case "bright-magenta":
+		return "tui.BrightMagenta"
+	case "bright-yellow":
+		return "tui.BrightYellow"
+	case "bright-white":
+		return "tui.BrightWhite"
+	case "bright-black":
+		return "tui.BrightBlack"
+	default:
+		// Default to black if unknown
+		return "tui.Black"
+	}
 }
 
 // TailwindParseResult contains the parsed results from a class string

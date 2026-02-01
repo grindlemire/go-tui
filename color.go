@@ -310,5 +310,64 @@ func (c Color) IsLight() bool {
 	if c.typ == ColorDefault {
 		return false // Assume default is dark
 	}
-	return c.Luminance() > 0.2
+	return c.Luminance() > 0.5
+}
+
+// GradientDirection specifies the direction of a gradient.
+type GradientDirection int
+
+const (
+	// GradientHorizontal is a left-to-right gradient.
+	GradientHorizontal GradientDirection = iota
+	// GradientVertical is a top-to-bottom gradient.
+	GradientVertical
+	// GradientDiagonalDown is a top-left to bottom-right gradient.
+	GradientDiagonalDown
+	// GradientDiagonalUp is a bottom-left to top-right gradient.
+	GradientDiagonalUp
+)
+
+// Gradient represents a color gradient between two colors.
+type Gradient struct {
+	Start     Color
+	End       Color
+	Direction GradientDirection
+}
+
+// NewGradient creates a new horizontal gradient from start to end color.
+func NewGradient(start, end Color) Gradient {
+	return Gradient{
+		Start:     start,
+		End:       end,
+		Direction: GradientHorizontal,
+	}
+}
+
+// WithDirection returns a new gradient with the specified direction.
+func (g Gradient) WithDirection(d GradientDirection) Gradient {
+	g.Direction = d
+	return g
+}
+
+// At returns the interpolated color at position t in [0, 1].
+// t=0 returns the start color, t=1 returns the end color.
+func (g Gradient) At(t float64) Color {
+	// Clamp t to [0, 1]
+	if t < 0 {
+		t = 0
+	}
+	if t > 1 {
+		t = 1
+	}
+
+	// Convert both colors to RGB for interpolation
+	r1, g1, b1 := g.Start.ToRGBValues()
+	r2, g2, b2 := g.End.ToRGBValues()
+
+	// Linearly interpolate each component
+	r := uint8(float64(r1) + t*float64(int(r2)-int(r1)))
+	gVal := uint8(float64(g1) + t*float64(int(g2)-int(g1)))
+	b := uint8(float64(b1) + t*float64(int(b2)-int(b1)))
+
+	return RGBColor(r, gVal, b)
 }

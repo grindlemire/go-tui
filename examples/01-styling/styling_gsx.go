@@ -531,10 +531,293 @@ func Styling() StylingView {
 	)
 	__tui_0.AddChild(__tui_96)
 	__tui_97 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_98 := tui.New(
+		tui.WithText("Text Gradients"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_97.AddChild(__tui_98)
+	__tui_99 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+	)
+	__tui_100 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_101 := tui.New(
+		tui.WithText("Red to Blue"),
+		tui.WithTextGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_100.AddChild(__tui_101)
+	__tui_102 := tui.New(
+		tui.WithText("Cyan to Magenta"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_100.AddChild(__tui_102)
+	__tui_103 := tui.New(
+		tui.WithText("Yellow to Red"),
+		tui.WithTextGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_100.AddChild(__tui_103)
+	__tui_104 := tui.New(
+		tui.WithText("Green to Blue"),
+		tui.WithTextGradient(tui.NewGradient(tui.Green, tui.Blue).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_100.AddChild(__tui_104)
+	__tui_99.AddChild(__tui_100)
+	__tui_105 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_106 := tui.New(
+		tui.WithText("Vertical"),
+		tui.WithTextGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientVertical)),
+	)
+	__tui_105.AddChild(__tui_106)
+	__tui_107 := tui.New(
+		tui.WithText("Diagonal Down"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientDiagonalDown)),
+	)
+	__tui_105.AddChild(__tui_107)
+	__tui_108 := tui.New(
+		tui.WithText("Diagonal Up"),
+		tui.WithTextGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientDiagonalUp)),
+	)
+	__tui_105.AddChild(__tui_108)
+	__tui_99.AddChild(__tui_105)
+	__tui_109 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_110 := tui.New(
+		tui.WithText("Bright Red to Blue"),
+		tui.WithTextGradient(tui.NewGradient(tui.BrightRed, tui.BrightBlue).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_109.AddChild(__tui_110)
+	__tui_111 := tui.New(
+		tui.WithText("Bright Cyan to Magenta"),
+		tui.WithTextGradient(tui.NewGradient(tui.BrightCyan, tui.BrightMagenta).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_109.AddChild(__tui_111)
+	__tui_99.AddChild(__tui_109)
+	__tui_97.AddChild(__tui_99)
+	__tui_0.AddChild(__tui_97)
+	__tui_112 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_112)
+	__tui_113 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_114 := tui.New(
+		tui.WithText("Background Gradients"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_113.AddChild(__tui_114)
+	__tui_115 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+	)
+	__tui_116 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_117 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_118 := tui.New(
+		tui.WithText("Horizontal"),
+	)
+	__tui_117.AddChild(__tui_118)
+	__tui_116.AddChild(__tui_117)
+	__tui_119 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientVertical)),
+		tui.WithPadding(1),
+	)
+	__tui_120 := tui.New(
+		tui.WithText("Vertical"),
+	)
+	__tui_119.AddChild(__tui_120)
+	__tui_116.AddChild(__tui_119)
+	__tui_121 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientDiagonalDown)),
+		tui.WithPadding(1),
+	)
+	__tui_122 := tui.New(
+		tui.WithText("Diagonal Down"),
+	)
+	__tui_121.AddChild(__tui_122)
+	__tui_116.AddChild(__tui_121)
+	__tui_123 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Green, tui.Blue).WithDirection(tui.GradientDiagonalUp)),
+		tui.WithPadding(1),
+	)
+	__tui_124 := tui.New(
+		tui.WithText("Diagonal Up"),
+	)
+	__tui_123.AddChild(__tui_124)
+	__tui_116.AddChild(__tui_123)
+	__tui_115.AddChild(__tui_116)
+	__tui_125 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_126 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.BrightRed, tui.BrightBlue).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_127 := tui.New(
+		tui.WithText("Bright Colors"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_126.AddChild(__tui_127)
+	__tui_125.AddChild(__tui_126)
+	__tui_128 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.White, tui.Black).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_129 := tui.New(
+		tui.WithText("White to Black"),
+	)
+	__tui_128.AddChild(__tui_129)
+	__tui_125.AddChild(__tui_128)
+	__tui_130 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Black, tui.White).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_131 := tui.New(
+		tui.WithText("Black to White"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_130.AddChild(__tui_131)
+	__tui_125.AddChild(__tui_130)
+	__tui_115.AddChild(__tui_125)
+	__tui_113.AddChild(__tui_115)
+	__tui_0.AddChild(__tui_113)
+	__tui_132 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_132)
+	__tui_133 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_134 := tui.New(
+		tui.WithText("Border Gradients"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_133.AddChild(__tui_134)
+	__tui_135 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_136 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_137 := tui.New(
+		tui.WithText("Red to Blue"),
+	)
+	__tui_136.AddChild(__tui_137)
+	__tui_135.AddChild(__tui_136)
+	__tui_138 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_139 := tui.New(
+		tui.WithText("Cyan to Magenta"),
+	)
+	__tui_138.AddChild(__tui_139)
+	__tui_135.AddChild(__tui_138)
+	__tui_140 := tui.New(
+		tui.WithBorder(tui.BorderDouble),
+		tui.WithBorderGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_141 := tui.New(
+		tui.WithText("Yellow to Red"),
+	)
+	__tui_140.AddChild(__tui_141)
+	__tui_135.AddChild(__tui_140)
+	__tui_142 := tui.New(
+		tui.WithBorder(tui.BorderThick),
+		tui.WithBorderGradient(tui.NewGradient(tui.Green, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
+	)
+	__tui_143 := tui.New(
+		tui.WithText("Green to Blue"),
+	)
+	__tui_142.AddChild(__tui_143)
+	__tui_135.AddChild(__tui_142)
+	__tui_133.AddChild(__tui_135)
+	__tui_0.AddChild(__tui_133)
+	__tui_144 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_144)
+	__tui_145 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_146 := tui.New(
+		tui.WithText("Combined Gradients"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_145.AddChild(__tui_146)
+	__tui_147 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+	)
+	__tui_148 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorderGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+	)
+	__tui_149 := tui.New(
+		tui.WithText("Text+Bg+Border"),
+		tui.WithTextGradient(tui.NewGradient(tui.White, tui.Black).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_148.AddChild(__tui_149)
+	__tui_147.AddChild(__tui_148)
+	__tui_150 := tui.New(
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientVertical)),
+		tui.WithBorderGradient(tui.NewGradient(tui.Green, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+	)
+	__tui_151 := tui.New(
+		tui.WithText("All Gradients"),
+		tui.WithTextGradient(tui.NewGradient(tui.BrightRed, tui.BrightBlue).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_150.AddChild(__tui_151)
+	__tui_147.AddChild(__tui_150)
+	__tui_145.AddChild(__tui_147)
+	__tui_0.AddChild(__tui_145)
+	__tui_152 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_152)
+	__tui_153 := tui.New(
 		tui.WithText("Press q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_97)
+	__tui_0.AddChild(__tui_153)
 
 	view = StylingView{
 		Root:     __tui_0,

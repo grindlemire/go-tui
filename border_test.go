@@ -387,6 +387,147 @@ func TestDrawBoxWithTitle_WideCharTitle(t *testing.T) {
 	}
 }
 
+func TestDrawBoxClipped(t *testing.T) {
+	type tc struct {
+		boxRect  Rect
+		clipRect Rect
+		// positions that SHOULD have border chars
+		wantDrawn map[[2]int]rune
+		// positions that should remain spaces (clipped away)
+		wantSpace [][2]int
+	}
+
+	chars := BorderSingle.Chars()
+
+	tests := map[string]tc{
+		"fully visible": {
+			boxRect:  NewRect(1, 1, 5, 3),
+			clipRect: NewRect(0, 0, 10, 10),
+			wantDrawn: map[[2]int]rune{
+				{1, 1}: chars.TopLeft,
+				{5, 1}: chars.TopRight,
+				{1, 3}: chars.BottomLeft,
+				{5, 3}: chars.BottomRight,
+				{3, 1}: chars.Top,
+				{3, 3}: chars.Bottom,
+				{1, 2}: chars.Left,
+				{5, 2}: chars.Right,
+			},
+		},
+		"top clipped": {
+			boxRect:  NewRect(1, 0, 5, 4),
+			clipRect: NewRect(0, 1, 10, 9),
+			wantDrawn: map[[2]int]rune{
+				// bottom row visible
+				{1, 3}: chars.BottomLeft,
+				{5, 3}: chars.BottomRight,
+				{3, 3}: chars.Bottom,
+				// side edges visible at y=1,2
+				{1, 1}: chars.Left,
+				{5, 1}: chars.Right,
+				{1, 2}: chars.Left,
+				{5, 2}: chars.Right,
+			},
+			wantSpace: [][2]int{
+				{1, 0}, // top-left corner clipped
+				{5, 0}, // top-right corner clipped
+				{3, 0}, // top edge clipped
+			},
+		},
+		"bottom clipped": {
+			boxRect:  NewRect(1, 1, 5, 4),
+			clipRect: NewRect(0, 0, 10, 4),
+			wantDrawn: map[[2]int]rune{
+				// top row visible
+				{1, 1}: chars.TopLeft,
+				{5, 1}: chars.TopRight,
+				{3, 1}: chars.Top,
+				// side edges at y=2,3
+				{1, 2}: chars.Left,
+				{5, 2}: chars.Right,
+				{1, 3}: chars.Left,
+				{5, 3}: chars.Right,
+			},
+			wantSpace: [][2]int{
+				{1, 4}, // bottom-left corner clipped
+				{5, 4}, // bottom-right corner clipped
+				{3, 4}, // bottom edge clipped
+			},
+		},
+		"entirely outside": {
+			boxRect:  NewRect(0, 0, 5, 3),
+			clipRect: NewRect(10, 10, 5, 5),
+			wantDrawn: map[[2]int]rune{},
+			wantSpace: [][2]int{
+				{0, 0}, {4, 0}, {0, 2}, {4, 2},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := NewBuffer(15, 10)
+			style := NewStyle()
+
+			DrawBoxClipped(buf, tt.boxRect, BorderSingle, style, tt.clipRect)
+
+			for pos, wantRune := range tt.wantDrawn {
+				got := buf.Cell(pos[0], pos[1]).Rune
+				if got != wantRune {
+					t.Errorf("(%d,%d) = %q, want %q", pos[0], pos[1], got, wantRune)
+				}
+			}
+
+			for _, pos := range tt.wantSpace {
+				got := buf.Cell(pos[0], pos[1]).Rune
+				if got != ' ' {
+					t.Errorf("clipped (%d,%d) = %q, want ' '", pos[0], pos[1], got)
+				}
+			}
+		})
+	}
+}
+
+func TestDrawBoxGradientClipped(t *testing.T) {
+	buf := NewBuffer(15, 10)
+	style := NewStyle()
+	g := NewGradient(Red, Blue)
+
+	boxRect := NewRect(1, 0, 5, 4)
+	clipRect := NewRect(0, 1, 15, 9) // clip top row
+
+	DrawBoxGradientClipped(buf, boxRect, BorderSingle, g, style, clipRect)
+
+	chars := BorderSingle.Chars()
+
+	// Top row (y=0) should be clipped
+	if buf.Cell(1, 0).Rune != ' ' {
+		t.Errorf("clipped top-left = %q, want ' '", buf.Cell(1, 0).Rune)
+	}
+
+	// Bottom row (y=3) should be drawn
+	if buf.Cell(1, 3).Rune != chars.BottomLeft {
+		t.Errorf("bottom-left = %q, want %q", buf.Cell(1, 3).Rune, chars.BottomLeft)
+	}
+	if buf.Cell(5, 3).Rune != chars.BottomRight {
+		t.Errorf("bottom-right = %q, want %q", buf.Cell(5, 3).Rune, chars.BottomRight)
+	}
+
+	// Side edges should be drawn at visible rows
+	if buf.Cell(1, 1).Rune != chars.Left {
+		t.Errorf("left edge at y=1 = %q, want %q", buf.Cell(1, 1).Rune, chars.Left)
+	}
+	if buf.Cell(5, 2).Rune != chars.Right {
+		t.Errorf("right edge at y=2 = %q, want %q", buf.Cell(5, 2).Rune, chars.Right)
+	}
+
+	// Verify gradient colors are non-default on visible border chars
+	cell := buf.Cell(1, 3)
+	if cell.Style.Fg.IsDefault() {
+		t.Error("gradient border should have non-default foreground color")
+	}
+}
+
 func TestFillBox(t *testing.T) {
 	buf := NewBuffer(10, 5)
 	style := NewStyle().Foreground(Blue)

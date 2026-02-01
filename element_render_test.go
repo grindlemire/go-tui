@@ -415,6 +415,7 @@ func TestRenderTree_TextWithBorder(t *testing.T) {
 			parent := New(
 				WithDirection(Column),
 				WithSize(40, 20),
+				WithAlign(AlignStart),
 			)
 			parent.AddChild(span)
 

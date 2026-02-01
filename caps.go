@@ -16,23 +16,10 @@ func DetectCapabilities() Capabilities {
 		AltScreen: true,
 	}
 
-	// Check TERM environment variable
-	term := strings.ToLower(os.Getenv("TERM"))
-	switch {
-	case term == "dumb":
-		caps.Colors = ColorNone
-		caps.Unicode = false
-		caps.AltScreen = false
-		return caps // Early return for dumb terminal
-	case strings.Contains(term, "256color"):
-		caps.Colors = Color256
-	case strings.Contains(term, "truecolor"):
-		caps.Colors = ColorTrue
-		caps.TrueColor = true
-	}
+	// First, check for explicit true color indicators that override everything else.
+	// These environment variables definitively indicate true color support.
 
 	// Check COLORTERM for explicit true color support
-	// This takes precedence over TERM for color capability
 	colorterm := strings.ToLower(os.Getenv("COLORTERM"))
 	if colorterm == "truecolor" || colorterm == "24bit" {
 		caps.Colors = ColorTrue
@@ -68,6 +55,26 @@ func DetectCapabilities() Capabilities {
 
 	// VTE-based terminals (GNOME Terminal, Tilix, etc.)
 	if os.Getenv("VTE_VERSION") != "" {
+		caps.Colors = ColorTrue
+		caps.TrueColor = true
+	}
+
+	// If we already detected true color via explicit indicators, we're done
+	if caps.TrueColor {
+		return caps
+	}
+
+	// Now check TERM environment variable for terminals without explicit indicators
+	term := strings.ToLower(os.Getenv("TERM"))
+	switch {
+	case term == "dumb":
+		caps.Colors = ColorNone
+		caps.Unicode = false
+		caps.AltScreen = false
+		return caps // Early return for truly dumb terminal
+	case strings.Contains(term, "256color"):
+		caps.Colors = Color256
+	case strings.Contains(term, "truecolor"):
 		caps.Colors = ColorTrue
 		caps.TrueColor = true
 	}

@@ -320,3 +320,29 @@ func WithOnUpdate(fn func()) Option {
 		e.onUpdate = fn
 	}
 }
+
+// --- Gradient Options ---
+
+// WithTextGradient sets a gradient for text (overrides textStyle.Fg).
+// The gradient is applied per-character horizontally by default.
+func WithTextGradient(g Gradient) Option {
+	return func(e *Element) {
+		e.textGradient = &g
+	}
+}
+
+// WithBackgroundGradient sets a gradient for the background.
+// The gradient direction determines how it's applied across the element.
+func WithBackgroundGradient(g Gradient) Option {
+	return func(e *Element) {
+		e.bgGradient = &g
+	}
+}
+
+// WithBorderGradient sets a gradient for the border color.
+// The gradient is applied around the perimeter of the border.
+func WithBorderGradient(g Gradient) Option {
+	return func(e *Element) {
+		e.borderGradient = &g
+	}
+}

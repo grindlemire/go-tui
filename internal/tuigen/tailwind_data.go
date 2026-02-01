@@ -158,4 +158,12 @@ var (
 	// Flex grow/shrink patterns
 	flexGrowPattern   = regexp.MustCompile(`^flex-grow-(\d+)$`)
 	flexShrinkPattern = regexp.MustCompile(`^flex-shrink-(\d+)$`)
+
+	// Gradient patterns
+	// Color names can contain hyphens (e.g., "bright-red"), so we use [\w-]+ instead of \w+
+	// The direction suffix is optional and must be one of: h, v, dd, du
+	// We use a pattern that matches the direction suffix separately if present
+	textGradientPattern   = regexp.MustCompile(`^text-gradient-([\w-]+)-([\w-]+?)(?:-(h|v|dd|du))$|^text-gradient-([\w-]+)-([\w-]+)$`)
+	bgGradientPattern     = regexp.MustCompile(`^bg-gradient-([\w-]+)-([\w-]+?)(?:-(h|v|dd|du))$|^bg-gradient-([\w-]+)-([\w-]+)$`)
+	borderGradientPattern = regexp.MustCompile(`^border-gradient-([\w-]+)-([\w-]+?)(?:-(h|v|dd|du))$|^border-gradient-([\w-]+)-([\w-]+)$`)
 )

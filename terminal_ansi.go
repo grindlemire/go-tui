@@ -22,7 +22,7 @@ type ANSITerminal struct {
 // NewANSITerminal creates a new ANSI terminal with auto-detected capabilities.
 // The output writer is typically os.Stdout and the input reader is os.Stdin.
 func NewANSITerminal(out io.Writer, in io.Reader) (*ANSITerminal, error) {
-	caps := defaultCapabilities()
+	caps := DetectCapabilities()
 
 	t := &ANSITerminal{
 		out:  out,

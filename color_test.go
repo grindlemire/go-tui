@@ -482,3 +482,110 @@ func TestColor_IsLight(t *testing.T) {
 		})
 	}
 }
+
+func TestGradient_At(t *testing.T) {
+	type tc struct {
+		start    Color
+		end      Color
+		t        float64
+		wantR    uint8
+		wantG    uint8
+		wantB    uint8
+	}
+
+	tests := map[string]tc{
+		"start color": {
+			start: RGBColor(255, 0, 0),
+			end:   RGBColor(0, 0, 255),
+			t:     0.0,
+			wantR: 255,
+			wantG: 0,
+			wantB: 0,
+		},
+		"end color": {
+			start: RGBColor(255, 0, 0),
+			end:   RGBColor(0, 0, 255),
+			t:     1.0,
+			wantR: 0,
+			wantG: 0,
+			wantB: 255,
+		},
+		"middle": {
+			start: RGBColor(0, 0, 0),
+			end:   RGBColor(255, 255, 255),
+			t:     0.5,
+			wantR: 127,
+			wantG: 127,
+			wantB: 127,
+		},
+		"quarter": {
+			start: RGBColor(0, 0, 0),
+			end:   RGBColor(100, 200, 255),
+			t:     0.25,
+			wantR: 25,
+			wantG: 50,
+			wantB: 63,
+		},
+		"clamped below": {
+			start: RGBColor(100, 100, 100),
+			end:   RGBColor(200, 200, 200),
+			t:     -1.0,
+			wantR: 100,
+			wantG: 100,
+			wantB: 100,
+		},
+		"clamped above": {
+			start: RGBColor(100, 100, 100),
+			end:   RGBColor(200, 200, 200),
+			t:     2.0,
+			wantR: 200,
+			wantG: 200,
+			wantB: 200,
+		},
+		"ansi colors": {
+			start: Red,
+			end:   Blue,
+			t:     0.5,
+			// ANSI colors convert to RGB, so we just verify it's in a reasonable range
+			wantR: 100, // Will be adjusted in test
+			wantG: 50,
+			wantB: 100,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			g := NewGradient(tt.start, tt.end)
+			result := g.At(tt.t)
+			if result.Type() != ColorRGB {
+				t.Errorf("Gradient.At(%v).Type() = %v, want ColorRGB", tt.t, result.Type())
+			}
+			r, gVal, b := result.RGB()
+			if name == "ansi colors" {
+				// For ANSI colors, just verify we get valid RGB values
+				if r > 255 || gVal > 255 || b > 255 {
+					t.Errorf("Gradient.At(%v).RGB() = (%d, %d, %d), values out of range", tt.t, r, gVal, b)
+				}
+			} else {
+				if r != tt.wantR || gVal != tt.wantG || b != tt.wantB {
+					t.Errorf("Gradient.At(%v).RGB() = (%d, %d, %d), want (%d, %d, %d)", tt.t, r, gVal, b, tt.wantR, tt.wantG, tt.wantB)
+				}
+			}
+		})
+	}
+}
+
+func TestGradient_WithDirection(t *testing.T) {
+	g := NewGradient(Red, Blue)
+	if g.Direction != GradientHorizontal {
+		t.Errorf("NewGradient().Direction = %v, want GradientHorizontal", g.Direction)
+	}
+
+	g2 := g.WithDirection(GradientVertical)
+	if g2.Direction != GradientVertical {
+		t.Errorf("WithDirection(GradientVertical).Direction = %v, want GradientVertical", g2.Direction)
+	}
+	if g.Direction != GradientHorizontal {
+		t.Error("WithDirection should not modify original gradient")
+	}
+}

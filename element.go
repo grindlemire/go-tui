@@ -89,6 +89,11 @@ type Element struct {
 	// HR properties
 	hr bool // true if this element is a horizontal rule
 
+	// Gradient properties (nil = no gradient, use solid color)
+	textGradient   *Gradient
+	bgGradient     *Gradient
+	borderGradient *Gradient
+
 	// Pre-render hook for custom update logic (polling, animations, etc.)
 	onUpdate func()
 

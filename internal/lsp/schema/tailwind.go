@@ -123,6 +123,11 @@ var staticClassDocs = map[string]string{
 	"overflow-scroll":   "Enable scrolling for overflow content.",
 	"overflow-y-scroll": "Enable vertical scrolling for overflow content.",
 	"overflow-x-scroll": "Enable horizontal scrolling for overflow content.",
+
+	// Gradients
+	"text-gradient-red-blue":     "Apply a horizontal gradient to text from red to blue.",
+	"bg-gradient-red-blue":        "Apply a horizontal gradient to background from red to blue.",
+	"border-gradient-red-blue":    "Apply a horizontal gradient to border from red to blue.",
 }
 
 // paramPatterns defines parameterized class prefixes and their documentation.
@@ -147,6 +152,11 @@ var paramPatterns = []paramPattern{
 	{prefix: "mb-", docFmt: "Set bottom margin to %s."},
 	{prefix: "ml-", docFmt: "Set left margin to %s."},
 	{prefix: "mr-", docFmt: "Set right margin to %s."},
+
+	// Gradients (check before generic text/bg/border patterns)
+	{prefix: "text-gradient-", docFmt: "Apply a gradient to text from **%s** to another color. Use format: text-gradient-COLOR1-COLOR2[-DIRECTION] where DIRECTION is h (horizontal, default), v (vertical), dd (diagonal down), or du (diagonal up)."},
+	{prefix: "bg-gradient-", docFmt: "Apply a gradient to background from **%s** to another color. Use format: bg-gradient-COLOR1-COLOR2[-DIRECTION] where DIRECTION is h (horizontal, default), v (vertical), dd (diagonal down), or du (diagonal up)."},
+	{prefix: "border-gradient-", docFmt: "Apply a gradient to border from **%s** to another color. Use format: border-gradient-COLOR1-COLOR2[-DIRECTION] where DIRECTION is h (horizontal, default), v (vertical), dd (diagonal down), or du (diagonal up)."},
 
 	// Text colors
 	{prefix: "text-", docFmt: "Set text color to **%s**."},
@@ -296,4 +306,13 @@ var AllClasses = []TailwindClassDef{
 	{Name: "overflow-scroll", Description: "Enable scrolling for overflow content", Category: "scroll"},
 	{Name: "overflow-y-scroll", Description: "Enable vertical scrolling", Category: "scroll"},
 	{Name: "overflow-x-scroll", Description: "Enable horizontal scrolling", Category: "scroll"},
+
+	// Gradients
+	{Name: "text-gradient-red-blue", Description: "Apply horizontal gradient to text from red to blue", Category: "visual"},
+	{Name: "text-gradient-cyan-magenta", Description: "Apply horizontal gradient to text from cyan to magenta", Category: "visual"},
+	{Name: "text-gradient-red-blue-v", Description: "Apply vertical gradient to text from red to blue", Category: "visual"},
+	{Name: "bg-gradient-red-blue", Description: "Apply horizontal gradient to background from red to blue", Category: "visual"},
+	{Name: "bg-gradient-cyan-magenta", Description: "Apply horizontal gradient to background from cyan to magenta", Category: "visual"},
+	{Name: "bg-gradient-red-blue-dd", Description: "Apply diagonal-down gradient to background from red to blue", Category: "visual"},
+	{Name: "border-gradient-yellow-red", Description: "Apply horizontal gradient to border from yellow to red", Category: "visual"},
 }

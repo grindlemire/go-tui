@@ -270,6 +270,141 @@ func (b *Buffer) Fill(rect Rect, r rune, style Style) {
 	}
 }
 
+// SetStringGradient writes a string with a gradient applied per-character.
+// The gradient is applied horizontally along the string.
+// Returns the total display width consumed (handles wide characters).
+func (b *Buffer) SetStringGradient(x, y int, s string, g Gradient, baseStyle Style) int {
+	if y < 0 || y >= b.height {
+		return 0
+	}
+
+	runes := []rune(s)
+	if len(runes) == 0 {
+		return 0
+	}
+
+	totalWidth := 0
+	curX := x
+
+	for i, r := range runes {
+		if curX >= b.width {
+			break
+		}
+		if curX < 0 {
+			// Skip characters before the visible area
+			curX += RuneWidth(r)
+			continue
+		}
+
+		width := RuneWidth(r)
+
+		// Check if wide char fits
+		if width == 2 && curX+1 >= b.width {
+			// Wide char doesn't fit, stop here
+			break
+		}
+
+		// Calculate gradient position t in [0, 1]
+		t := float64(i) / float64(len(runes)-1)
+		if len(runes) == 1 {
+			t = 0
+		}
+
+		// Get gradient color and apply to style
+		gradColor := g.At(t)
+		style := baseStyle
+		style.Fg = gradColor
+
+		b.SetRune(curX, y, r, style)
+		curX += width
+		totalWidth += width
+	}
+
+	return totalWidth
+}
+
+// FillGradient fills a rectangle with a gradient background.
+// The gradient direction determines how it's applied:
+// - Horizontal: left to right
+// - Vertical: top to bottom
+// - DiagonalDown: top-left to bottom-right
+// - DiagonalUp: bottom-left to top-right
+func (b *Buffer) FillGradient(rect Rect, r rune, g Gradient, baseStyle Style) {
+	// Intersect with buffer bounds
+	rect = rect.Intersect(b.Rect())
+	if rect.IsEmpty() {
+		return
+	}
+
+	width := RuneWidth(r)
+	rectWidth := float64(rect.Width)
+	rectHeight := float64(rect.Height)
+
+	// Avoid division by zero
+	if rectWidth <= 0 {
+		rectWidth = 1
+	}
+	if rectHeight <= 0 {
+		rectHeight = 1
+	}
+
+	for y := rect.Y; y < rect.Bottom(); y++ {
+		for x := rect.X; x < rect.Right(); {
+			if width == 2 && x+1 >= rect.Right() {
+				// Wide char doesn't fit in remaining space, fill with space
+				style := baseStyle
+				var t float64
+				switch g.Direction {
+				case GradientHorizontal:
+					t = float64(x-rect.X) / rectWidth
+				case GradientVertical:
+					t = float64(y-rect.Y) / rectHeight
+				case GradientDiagonalDown:
+					tx := float64(x-rect.X) / rectWidth
+					ty := float64(y-rect.Y) / rectHeight
+					t = (tx + ty) / 2
+				case GradientDiagonalUp:
+					tx := float64(x-rect.X) / rectWidth
+					ty := float64(rect.Bottom()-1-y-rect.Y) / rectHeight
+					t = (tx + ty) / 2
+				default:
+					t = float64(x-rect.X) / rectWidth
+				}
+				style.Bg = g.At(t)
+				b.SetRune(x, y, ' ', style)
+				x++
+			} else {
+				// Calculate gradient position based on direction
+				var t float64
+				switch g.Direction {
+				case GradientHorizontal:
+					t = float64(x-rect.X) / rectWidth
+				case GradientVertical:
+					t = float64(y-rect.Y) / rectHeight
+				case GradientDiagonalDown:
+					tx := float64(x-rect.X) / rectWidth
+					ty := float64(y-rect.Y) / rectHeight
+					t = (tx + ty) / 2
+				case GradientDiagonalUp:
+					tx := float64(x-rect.X) / rectWidth
+					ty := float64(rect.Bottom()-1-y-rect.Y) / rectHeight
+					t = (tx + ty) / 2
+				default:
+					t = float64(x-rect.X) / rectWidth
+				}
+
+				// Get gradient color and apply to style
+				gradColor := g.At(t)
+				style := baseStyle
+				style.Bg = gradColor
+
+				b.SetRune(x, y, r, style)
+				x += width
+			}
+		}
+	}
+}
+
 // Clear clears the entire back buffer to spaces with default style.
 func (b *Buffer) Clear() {
 	b.ClearRect(b.Rect())

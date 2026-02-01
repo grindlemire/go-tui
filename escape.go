@@ -295,7 +295,15 @@ func (e *escBuilder) appendColor(c Color, fg bool, caps Capabilities) {
 			e.buf = append(e.buf, ';')
 			e.writeInt(int(b))
 		} else if caps.Colors >= Color256 {
-			// Fall back to ANSI approximation
+			// Fall back to ANSI 256-color approximation
+			ansi := c.ToANSI()
+			e.buf = append(e.buf, ';')
+			e.writeInt(base)
+			e.buf = append(e.buf, ';', '5', ';')
+			e.writeInt(int(ansi.ANSI()))
+		} else if caps.Colors >= Color16 {
+			// Fall back to basic 16-color approximation using 256-color mode
+			// (most terminals that claim only 16 colors still support 256-color sequences)
 			ansi := c.ToANSI()
 			e.buf = append(e.buf, ';')
 			e.writeInt(base)

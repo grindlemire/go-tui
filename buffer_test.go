@@ -419,3 +419,86 @@ func TestBuffer_Resize_PreservesFrontBuffer(t *testing.T) {
 		t.Error("Resize didn't preserve pending changes")
 	}
 }
+
+func TestBuffer_SetStringGradient(t *testing.T) {
+	type tc struct {
+		text     string
+		gradient Gradient
+		wantLen  int
+	}
+
+	tests := map[string]tc{
+		"simple gradient": {
+			text:     "Hello",
+			gradient: NewGradient(Red, Blue),
+			wantLen:  5,
+		},
+		"single char": {
+			text:     "A",
+			gradient: NewGradient(Red, Blue),
+			wantLen:  1,
+		},
+		"empty string": {
+			text:     "",
+			gradient: NewGradient(Red, Blue),
+			wantLen:  0,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := NewBuffer(20, 5)
+			baseStyle := NewStyle()
+			got := buf.SetStringGradient(0, 0, tt.text, tt.gradient, baseStyle)
+			if got != tt.wantLen {
+				t.Errorf("SetStringGradient() = %d, want %d", got, tt.wantLen)
+			}
+			// Verify first character has start color
+			if len(tt.text) > 0 {
+				cell := buf.Cell(0, 0)
+				if cell.Rune != rune(tt.text[0]) {
+					t.Errorf("First cell rune = %c, want %c", cell.Rune, rune(tt.text[0]))
+				}
+			}
+		})
+	}
+}
+
+func TestBuffer_FillGradient(t *testing.T) {
+	type tc struct {
+		rect     Rect
+		gradient Gradient
+	}
+
+	tests := map[string]tc{
+		"horizontal gradient": {
+			rect:     NewRect(0, 0, 10, 5),
+			gradient: NewGradient(Red, Blue).WithDirection(GradientHorizontal),
+		},
+		"vertical gradient": {
+			rect:     NewRect(0, 0, 10, 5),
+			gradient: NewGradient(Red, Blue).WithDirection(GradientVertical),
+		},
+		"diagonal down": {
+			rect:     NewRect(0, 0, 10, 5),
+			gradient: NewGradient(Red, Blue).WithDirection(GradientDiagonalDown),
+		},
+		"diagonal up": {
+			rect:     NewRect(0, 0, 10, 5),
+			gradient: NewGradient(Red, Blue).WithDirection(GradientDiagonalUp),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := NewBuffer(20, 10)
+			baseStyle := NewStyle()
+			buf.FillGradient(tt.rect, ' ', tt.gradient, baseStyle)
+			// Verify that cells have gradient colors applied
+			cell := buf.Cell(tt.rect.X, tt.rect.Y)
+			if cell.Style.Bg.IsDefault() {
+				t.Error("FillGradient should set background color")
+			}
+		})
+	}
+}

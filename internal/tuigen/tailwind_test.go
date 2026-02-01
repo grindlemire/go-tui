@@ -463,3 +463,88 @@ func TestParseTailwindClass_Unknown(t *testing.T) {
 		})
 	}
 }
+
+func TestParseTailwindClass_Gradients(t *testing.T) {
+	type tc struct {
+		input       string
+		wantOK      bool
+		wantOption  string
+		wantImport  string
+	}
+
+	tests := map[string]tc{
+		"text-gradient horizontal": {
+			input:      "text-gradient-red-blue",
+			wantOK:     true,
+			wantOption: "tui.WithTextGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientHorizontal))",
+			wantImport: "tui",
+		},
+		"text-gradient vertical": {
+			input:      "text-gradient-red-blue-v",
+			wantOK:     true,
+			wantOption: "tui.WithTextGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientVertical))",
+			wantImport: "tui",
+		},
+		"text-gradient diagonal down": {
+			input:      "text-gradient-cyan-magenta-dd",
+			wantOK:     true,
+			wantOption: "tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientDiagonalDown))",
+			wantImport: "tui",
+		},
+		"text-gradient diagonal up": {
+			input:      "text-gradient-yellow-red-du",
+			wantOK:     true,
+			wantOption: "tui.WithTextGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientDiagonalUp))",
+			wantImport: "tui",
+		},
+		"bg-gradient horizontal": {
+			input:      "bg-gradient-green-blue",
+			wantOK:     true,
+			wantOption: "tui.WithBackgroundGradient(tui.NewGradient(tui.Green, tui.Blue).WithDirection(tui.GradientHorizontal))",
+			wantImport: "tui",
+		},
+		"bg-gradient vertical": {
+			input:      "bg-gradient-red-blue-v",
+			wantOK:     true,
+			wantOption: "tui.WithBackgroundGradient(tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientVertical))",
+			wantImport: "tui",
+		},
+		"border-gradient horizontal": {
+			input:      "border-gradient-yellow-red",
+			wantOK:     true,
+			wantOption: "tui.WithBorderGradient(tui.NewGradient(tui.Yellow, tui.Red).WithDirection(tui.GradientHorizontal))",
+			wantImport: "tui",
+		},
+		"border-gradient diagonal": {
+			input:      "border-gradient-white-black-dd",
+			wantOK:     true,
+			wantOption: "tui.WithBorderGradient(tui.NewGradient(tui.White, tui.Black).WithDirection(tui.GradientDiagonalDown))",
+			wantImport: "tui",
+		},
+		"bright colors": {
+			input:      "text-gradient-bright-red-bright-blue",
+			wantOK:     true,
+			wantOption: "tui.WithTextGradient(tui.NewGradient(tui.BrightRed, tui.BrightBlue).WithDirection(tui.GradientHorizontal))",
+			wantImport: "tui",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mapping, ok := ParseTailwindClass(tt.input)
+			if ok != tt.wantOK {
+				t.Errorf("ParseTailwindClass(%q) ok = %v, want %v", tt.input, ok, tt.wantOK)
+				return
+			}
+			if !ok {
+				return
+			}
+			if mapping.Option != tt.wantOption {
+				t.Errorf("Option = %q, want %q", mapping.Option, tt.wantOption)
+			}
+			if mapping.NeedsImport != tt.wantImport {
+				t.Errorf("NeedsImport = %q, want %q", mapping.NeedsImport, tt.wantImport)
+			}
+		})
+	}
+}

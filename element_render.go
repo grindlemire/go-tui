@@ -72,13 +72,24 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 	}
 
 	// 1. Fill background
-	if bg != nil {
+	if e.bgGradient != nil {
+		// Use gradient background (create default style if bg is nil)
+		bgStyle := NewStyle()
+		if bg != nil {
+			bgStyle = *bg
+		}
+		buf.FillGradient(rect, ' ', *e.bgGradient, bgStyle)
+	} else if bg != nil {
 		buf.Fill(rect, ' ', *bg)
 	}
 
 	// 2. Draw border (border style does NOT inherit)
 	if e.border != BorderNone {
-		DrawBox(buf, rect, e.border, e.borderStyle)
+		if e.borderGradient != nil {
+			DrawBoxGradient(buf, rect, e.border, *e.borderGradient, e.borderStyle)
+		} else {
+			DrawBox(buf, rect, e.border, e.borderStyle)
+		}
 	}
 
 	// 3. Draw text content if present
@@ -149,9 +160,6 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 		return
 	}
 
-	// Check if fully visible (for border rendering decision)
-	fullyVisible := clipRect.ContainsRect(screenRect)
-
 	// Resolve effective styles (inheritance applied)
 	textStyle, bg := effectiveStyles(e, inherited)
 
@@ -166,13 +174,24 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	}
 
 	// Render background (only visible portion)
-	if bg != nil {
+	if e.bgGradient != nil {
+		// Use gradient background (create default style if bg is nil)
+		bgStyle := NewStyle()
+		if bg != nil {
+			bgStyle = *bg
+		}
+		buf.FillGradient(visibleRect, ' ', *e.bgGradient, bgStyle)
+	} else if bg != nil {
 		buf.Fill(visibleRect, ' ', *bg)
 	}
 
-	// Render border only if fully visible (border style does NOT inherit)
-	if e.border != BorderNone && fullyVisible {
-		DrawBox(buf, screenRect, e.border, e.borderStyle)
+	// Render border clipped to viewport (border style does NOT inherit)
+	if e.border != BorderNone {
+		if e.borderGradient != nil {
+			DrawBoxGradientClipped(buf, screenRect, e.border, *e.borderGradient, e.borderStyle, clipRect)
+		} else {
+			DrawBoxClipped(buf, screenRect, e.border, e.borderStyle, clipRect)
+		}
 	}
 
 	// Render text with clipping
@@ -190,7 +209,49 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			if bg != nil && !bg.Bg.IsDefault() {
 				ts.Bg = bg.Bg
 			}
-			buf.SetStringClipped(textX, textY, e.text, ts, clipRect)
+			// When the text background is unset or a text gradient is active,
+			// render char-by-char to preserve existing buffer backgrounds
+			// (e.g. gradient backgrounds painted by a parent) and apply clipping.
+			needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
+			if needPerCell {
+				runes := []rune(e.text)
+				if len(runes) > 0 {
+					curX := textX
+					for i, r := range runes {
+						if curX >= clipRect.Right() {
+							break
+						}
+						if curX < clipRect.X {
+							curX += RuneWidth(r)
+							continue
+						}
+						width := RuneWidth(r)
+						if width == 2 && curX+1 >= clipRect.Right() {
+							break
+						}
+						if curX >= clipRect.X && curX < clipRect.Right() {
+							style := ts
+							if ts.Bg.IsDefault() {
+								cellBg := buf.Cell(curX, textY).Style.Bg
+								if !cellBg.IsDefault() {
+									style.Bg = cellBg
+								}
+							}
+							if e.textGradient != nil {
+								t := float64(i) / float64(len(runes)-1)
+								if len(runes) == 1 {
+									t = 0
+								}
+								style.Fg = e.textGradient.At(t)
+							}
+							buf.SetRune(curX, textY, r, style)
+						}
+						curX += width
+					}
+				}
+			} else {
+				buf.SetStringClipped(textX, textY, e.text, ts, clipRect)
+			}
 		}
 	}
 
@@ -287,7 +348,41 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		ts.Bg = bg.Bg
 	}
 
-	buf.SetString(x, contentRect.Y, e.text, ts)
+	// When the text background is unset (default) or a text gradient is active,
+	// render char-by-char so we can read each cell's existing background from
+	// the buffer. This preserves gradient backgrounds painted by a parent element.
+	needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
+	if needPerCell {
+		runes := []rune(e.text)
+		curX := x
+		for i, r := range runes {
+			if curX >= buf.Width() {
+				break
+			}
+			width := RuneWidth(r)
+			if width == 2 && curX+1 >= buf.Width() {
+				break
+			}
+			style := ts
+			if ts.Bg.IsDefault() {
+				cellBg := buf.Cell(curX, contentRect.Y).Style.Bg
+				if !cellBg.IsDefault() {
+					style.Bg = cellBg
+				}
+			}
+			if e.textGradient != nil {
+				t := float64(i) / float64(len(runes)-1)
+				if len(runes) == 1 {
+					t = 0
+				}
+				style.Fg = e.textGradient.At(t)
+			}
+			buf.SetRune(curX, contentRect.Y, r, style)
+			curX += width
+		}
+	} else {
+		buf.SetString(x, contentRect.Y, e.text, ts)
+	}
 }
 
 // Render calculates layout (if needed) and renders the entire tree to the buffer.
