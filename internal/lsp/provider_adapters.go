@@ -187,6 +187,7 @@ func CursorContextToProvider(ctx *CursorContext) *provider.CursorContext {
 		InElement:   ctx.InElement,
 		AttrTag:     ctx.AttrTag,
 		AttrName:    ctx.AttrName,
+		ImportPath:  ctx.ImportPath,
 	}
 }
 

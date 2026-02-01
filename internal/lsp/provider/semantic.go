@@ -3,6 +3,7 @@ package provider
 import (
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/grindlemire/go-tui/internal/lsp/log"
 )
@@ -109,6 +110,84 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 
 	// Collect comment tokens
 	s.collectAllCommentTokens(ast, &tokens)
+
+	// Collect package and import tokens
+	if s.currentContent != "" {
+		lines := strings.Split(s.currentContent, "\n")
+
+		// Package keyword + name
+		if ast.Position.Line > 0 {
+			pkgLine := ast.Position.Line - 1
+			if pkgLine < len(lines) {
+				col := strings.Index(lines[pkgLine], "package")
+				if col >= 0 {
+					tokens = append(tokens, SemanticToken{
+						Line:      pkgLine,
+						StartChar: col,
+						Length:    len("package"),
+						TokenType: TokenTypeKeyword,
+						Modifiers: 0,
+					})
+					tokens = append(tokens, SemanticToken{
+						Line:      pkgLine,
+						StartChar: col + len("package "),
+						Length:    len(ast.Package),
+						TokenType: TokenTypeNamespace,
+						Modifiers: TokenModDeclaration,
+					})
+				}
+			}
+		}
+
+		// Import keyword(s)
+		for lineIdx, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "import") {
+				rest := trimmed[len("import"):]
+				if rest == "" || rest[0] == ' ' || rest[0] == '\t' || rest[0] == '(' {
+					col := strings.Index(line, "import")
+					tokens = append(tokens, SemanticToken{
+						Line:      lineIdx,
+						StartChar: col,
+						Length:    len("import"),
+						TokenType: TokenTypeKeyword,
+						Modifiers: 0,
+					})
+				}
+			}
+		}
+	}
+
+	// Collect individual import tokens (alias + path)
+	for _, imp := range ast.Imports {
+		line := imp.Position.Line - 1
+		col := imp.Position.Column - 1
+		if imp.Alias != "" {
+			tokens = append(tokens, SemanticToken{
+				Line:      line,
+				StartChar: col,
+				Length:    len(imp.Alias),
+				TokenType: TokenTypeNamespace,
+				Modifiers: 0,
+			})
+			pathCol := col + len(imp.Alias) + 1
+			tokens = append(tokens, SemanticToken{
+				Line:      line,
+				StartChar: pathCol,
+				Length:    len(imp.Path) + 2, // +2 for quotes
+				TokenType: TokenTypeString,
+				Modifiers: 0,
+			})
+		} else {
+			tokens = append(tokens, SemanticToken{
+				Line:      line,
+				StartChar: col,
+				Length:    len(imp.Path) + 2, // +2 for quotes
+				TokenType: TokenTypeString,
+				Modifiers: 0,
+			})
+		}
+	}
 
 	// Collect component-related tokens
 	for _, comp := range ast.Components {

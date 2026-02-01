@@ -1,13 +1,48 @@
 package tui
 
+// inheritedStyle carries cascading visual properties down the element tree.
+// Text style (Fg, Attrs) and background color cascade from parent to child.
+// Each field is only used when the child does not explicitly set its own value.
+type inheritedStyle struct {
+	textStyle Style
+	bg        *Style // nil = no inherited background
+}
+
+// effectiveStyles returns the resolved text style and background for an element,
+// taking inheritance into account. If the element explicitly set its textStyle,
+// that is used; otherwise the inherited textStyle is used. Similarly for background.
+//
+// Automatic contrast: If the background is light and no explicit foreground color
+// is set, the foreground is automatically set to black for readability.
+func effectiveStyles(e *Element, inherited inheritedStyle) (textStyle Style, bg *Style) {
+	if e.textStyleSet {
+		textStyle = e.textStyle
+	} else {
+		textStyle = inherited.textStyle
+	}
+
+	if e.background != nil {
+		bg = e.background
+	} else {
+		bg = inherited.bg
+	}
+
+	// Auto-contrast: if background is light and foreground is default, use black text
+	if bg != nil && !bg.Bg.IsDefault() && textStyle.Fg.IsDefault() && bg.Bg.IsLight() {
+		textStyle.Fg = Black
+	}
+
+	return textStyle, bg
+}
+
 // RenderTree traverses the Element tree and renders to the buffer.
 // This renders the element and all its descendants.
 func RenderTree(buf *Buffer, root *Element) {
-	renderElement(buf, root)
+	renderElement(buf, root, inheritedStyle{})
 }
 
 // renderElement renders a single element and recurses to its children.
-func renderElement(buf *Buffer, e *Element) {
+func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 	// Call pre-render hook for custom update logic (polling, animations, etc.)
 	if e.onUpdate != nil {
 		e.onUpdate()
@@ -27,39 +62,48 @@ func renderElement(buf *Buffer, e *Element) {
 		return
 	}
 
+	// Resolve effective styles (inheritance applied)
+	textStyle, bg := effectiveStyles(e, inherited)
+
 	// Handle HR specially - draws a horizontal line and returns (no children)
 	if e.hr {
-		renderHR(buf, e)
+		renderHR(buf, e, textStyle)
 		return
 	}
 
 	// 1. Fill background
-	if e.background != nil {
-		buf.Fill(rect, ' ', *e.background)
+	if bg != nil {
+		buf.Fill(rect, ' ', *bg)
 	}
 
-	// 2. Draw border
+	// 2. Draw border (border style does NOT inherit)
 	if e.border != BorderNone {
 		DrawBox(buf, rect, e.border, e.borderStyle)
 	}
 
 	// 3. Draw text content if present
 	if e.text != "" {
-		renderTextContent(buf, e)
+		renderTextContent(buf, e, textStyle, bg)
 	}
 
-	// 4. Render children (with scroll handling if scrollable)
+	// 4. Build inherited style for children
+	childInherited := inheritedStyle{
+		textStyle: textStyle,
+		bg:        bg,
+	}
+
+	// 5. Render children (with scroll handling if scrollable)
 	if e.IsScrollable() {
-		renderScrollableChildren(buf, e)
+		renderScrollableChildren(buf, e, childInherited)
 	} else {
 		for _, child := range e.children {
-			renderElement(buf, child)
+			renderElement(buf, child, childInherited)
 		}
 	}
 }
 
 // renderScrollableChildren renders children with scroll offset and clipping.
-func renderScrollableChildren(buf *Buffer, e *Element) {
+func renderScrollableChildren(buf *Buffer, e *Element, childInherited inheritedStyle) {
 	// First, do scroll-aware layout
 	e.layoutScrollContent()
 
@@ -73,17 +117,17 @@ func renderScrollableChildren(buf *Buffer, e *Element) {
 
 	// Render each child with scroll offset and clipping
 	for _, child := range e.children {
-		renderClippedElement(buf, child, clipRect, e.scrollX, e.scrollY, clipRect.X, clipRect.Y)
+		renderClippedElement(buf, child, clipRect, e.scrollX, e.scrollY, clipRect.X, clipRect.Y, childInherited)
 	}
 
-	// Draw scrollbar
+	// Draw scrollbar (scrollbar styles are independent, not inherited)
 	if e.needsVerticalScrollbar() {
 		renderVerticalScrollbar(buf, e)
 	}
 }
 
 // renderClippedElement renders an element with scroll offset and clipping.
-func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrollY, viewportX, viewportY int) {
+func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrollY, viewportX, viewportY int, inherited inheritedStyle) {
 	childRect := e.Rect()
 
 	// Translate from content space to screen space
@@ -108,12 +152,25 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	// Check if fully visible (for border rendering decision)
 	fullyVisible := clipRect.ContainsRect(screenRect)
 
-	// Render background (only visible portion)
-	if e.background != nil {
-		buf.Fill(visibleRect, ' ', *e.background)
+	// Resolve effective styles (inheritance applied)
+	textStyle, bg := effectiveStyles(e, inherited)
+
+	// Handle HR specially - draws a horizontal line and returns (no children)
+	if e.hr {
+		char := hrCharacter(e.border)
+		// Draw only within visible bounds
+		for x := visibleRect.X; x < visibleRect.Right(); x++ {
+			buf.SetRune(x, screenY, char, textStyle)
+		}
+		return
 	}
 
-	// Render border only if fully visible
+	// Render background (only visible portion)
+	if bg != nil {
+		buf.Fill(visibleRect, ' ', *bg)
+	}
+
+	// Render border only if fully visible (border style does NOT inherit)
 	if e.border != BorderNone && fullyVisible {
 		DrawBox(buf, screenRect, e.border, e.borderStyle)
 	}
@@ -122,15 +179,34 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	if e.text != "" {
 		textX := screenX + e.style.Padding.Left
 		textY := screenY + e.style.Padding.Top
+		if e.border != BorderNone {
+			textX += 1
+			textY += 1
+		}
 
 		if textY >= clipRect.Y && textY < clipRect.Bottom() {
-			buf.SetStringClipped(textX, textY, e.text, e.textStyle, clipRect)
+			ts := textStyle
+			// Merge background color into text style so text preserves the background
+			if bg != nil && !bg.Bg.IsDefault() {
+				ts.Bg = bg.Bg
+			}
+			buf.SetStringClipped(textX, textY, e.text, ts, clipRect)
 		}
 	}
 
+	// Build inherited style for children
+	childInherited := inheritedStyle{
+		textStyle: textStyle,
+		bg:        bg,
+	}
+
 	// Recurse to children
+	// Propagate the original viewport and scroll offsets rather than re-basing
+	// to the parent's screen position. Child Rect() values are absolute in the
+	// temp container's coordinate space (from layoutScrollContent), so the same
+	// viewport+scroll translation applies at every depth.
 	for _, child := range e.children {
-		renderClippedElement(buf, child, clipRect, 0, 0, screenX, screenY)
+		renderClippedElement(buf, child, clipRect, scrollX, scrollY, viewportX, viewportY, childInherited)
 	}
 }
 
@@ -183,7 +259,7 @@ func renderVerticalScrollbar(buf *Buffer, e *Element) {
 // When the element width is larger than text width (explicit sizing), text-level
 // alignment is applied. This supports use cases like centered text in a fixed-width
 // button, while avoiding jitter for intrinsic-width text in a centered layout.
-func renderTextContent(buf *Buffer, e *Element) {
+func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 	contentRect := e.ContentRect()
 
 	// Skip if content rect is empty or outside buffer
@@ -205,7 +281,13 @@ func renderTextContent(buf *Buffer, e *Element) {
 		}
 	}
 
-	buf.SetString(x, contentRect.Y, e.text, e.textStyle)
+	ts := textStyle
+	// Merge background color into text style so text preserves the background
+	if bg != nil && !bg.Bg.IsDefault() {
+		ts.Bg = bg.Bg
+	}
+
+	buf.SetString(x, contentRect.Y, e.text, ts)
 }
 
 // Render calculates layout (if needed) and renders the entire tree to the buffer.
@@ -231,12 +313,11 @@ func hrCharacter(border BorderStyle) rune {
 }
 
 // renderHR draws a horizontal rule across the element's width.
-func renderHR(buf *Buffer, e *Element) {
+func renderHR(buf *Buffer, e *Element, textStyle Style) {
 	rect := e.ContentRect()
 	char := hrCharacter(e.border)
 
 	for x := rect.X; x < rect.Right(); x++ {
-		buf.SetRune(x, rect.Y, char, e.textStyle)
+		buf.SetRune(x, rect.Y, char, textStyle)
 	}
 }
-

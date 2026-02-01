@@ -196,7 +196,7 @@ func (p *Parser) parseElement() *Element {
 	}
 
 	// Parse children
-	elem.Children = p.parseChildren(elem.Tag)
+	elem.Children, elem.OrphanComments = p.parseChildren(elem.Tag)
 
 	// Detect inline children from source positions
 	if len(elem.Children) > 0 {
@@ -327,8 +327,10 @@ func (p *Parser) parseAttribute() *Attribute {
 }
 
 // parseChildren parses children inside an element until the closing tag.
-func (p *Parser) parseChildren(parentTag string) []Node {
+// Returns the child nodes and any orphan comments not attached to a node.
+func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 	var children []Node
+	var orphanComments []*CommentGroup
 
 	for {
 		// Count newlines to detect blank lines between siblings
@@ -339,8 +341,13 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 		}
 		hadBlankLine := nlCount >= 2
 
-		// Check for closing tag
+		// Check for closing tag — consume any pending comments as orphans first
 		if p.current.Type == TokenLAngleSlash || p.current.Type == TokenEOF {
+			p.collectPendingComments()
+			remaining := p.consumePendingComments()
+			if len(remaining) > 0 {
+				orphanComments = append(orphanComments, groupComments(remaining)...)
+			}
 			break
 		}
 
@@ -419,12 +426,13 @@ func (p *Parser) parseChildren(parentTag string) []Node {
 			}
 			p.attachLeadingComments(child, leadingComments)
 			children = append(children, child)
+		} else if leadingComments != nil {
+			// No node was parsed, these comments are orphans
+			orphanComments = append(orphanComments, leadingComments)
 		}
-		// Note: if child is nil and we had leading comments, they become orphans
-		// but we don't track orphan comments in element children for simplicity
 	}
 
-	return children
+	return children, orphanComments
 }
 
 // setBlankLineBefore sets the BlankLineBefore field on a node.

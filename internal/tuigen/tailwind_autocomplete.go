@@ -173,6 +173,14 @@ func AllTailwindClasses() []TailwindClassInfo {
 		{Name: "text-yellow", Category: "visual", Description: "Yellow text color", Example: `<span class="text-yellow">Yellow</span>`},
 		{Name: "text-white", Category: "visual", Description: "White text color", Example: `<span class="text-white">White</span>`},
 		{Name: "text-black", Category: "visual", Description: "Black text color", Example: `<span class="text-black">Black</span>`},
+		{Name: "text-bright-red", Category: "visual", Description: "Bright red text color", Example: `<span class="text-bright-red">Bright Red</span>`},
+		{Name: "text-bright-green", Category: "visual", Description: "Bright green text color", Example: `<span class="text-bright-green">Bright Green</span>`},
+		{Name: "text-bright-blue", Category: "visual", Description: "Bright blue text color", Example: `<span class="text-bright-blue">Bright Blue</span>`},
+		{Name: "text-bright-cyan", Category: "visual", Description: "Bright cyan text color", Example: `<span class="text-bright-cyan">Bright Cyan</span>`},
+		{Name: "text-bright-magenta", Category: "visual", Description: "Bright magenta text color", Example: `<span class="text-bright-magenta">Bright Magenta</span>`},
+		{Name: "text-bright-yellow", Category: "visual", Description: "Bright yellow text color", Example: `<span class="text-bright-yellow">Bright Yellow</span>`},
+		{Name: "text-bright-white", Category: "visual", Description: "Bright white text color", Example: `<span class="text-bright-white">Bright White</span>`},
+		{Name: "text-bright-black", Category: "visual", Description: "Bright black (gray) text color", Example: `<span class="text-bright-black">Gray</span>`},
 	}
 	classes = append(classes, textColorClasses...)
 
@@ -186,6 +194,14 @@ func AllTailwindClasses() []TailwindClassInfo {
 		{Name: "bg-yellow", Category: "visual", Description: "Yellow background", Example: `<div class="bg-yellow">`},
 		{Name: "bg-white", Category: "visual", Description: "White background", Example: `<div class="bg-white">`},
 		{Name: "bg-black", Category: "visual", Description: "Black background", Example: `<div class="bg-black">`},
+		{Name: "bg-bright-red", Category: "visual", Description: "Bright red background", Example: `<div class="bg-bright-red">`},
+		{Name: "bg-bright-green", Category: "visual", Description: "Bright green background", Example: `<div class="bg-bright-green">`},
+		{Name: "bg-bright-blue", Category: "visual", Description: "Bright blue background", Example: `<div class="bg-bright-blue">`},
+		{Name: "bg-bright-cyan", Category: "visual", Description: "Bright cyan background", Example: `<div class="bg-bright-cyan">`},
+		{Name: "bg-bright-magenta", Category: "visual", Description: "Bright magenta background", Example: `<div class="bg-bright-magenta">`},
+		{Name: "bg-bright-yellow", Category: "visual", Description: "Bright yellow background", Example: `<div class="bg-bright-yellow">`},
+		{Name: "bg-bright-white", Category: "visual", Description: "Bright white background", Example: `<div class="bg-bright-white">`},
+		{Name: "bg-bright-black", Category: "visual", Description: "Bright black (dark gray) background", Example: `<div class="bg-bright-black">`},
 	}
 	classes = append(classes, bgColorClasses...)
 

@@ -138,7 +138,13 @@ func (e *Element) HandleEvent(event Event) bool {
 				return e.parent.HandleEvent(event)
 			}
 		}
-		// Mouse events not consumed by onClick are not propagated
+		// Bubble wheel events up to parent (for scrollable containers)
+		if mouseEvent.Button == MouseWheelUp || mouseEvent.Button == MouseWheelDown {
+			if e.parent != nil {
+				debug.Log("Element.HandleEvent: bubbling wheel event to parent")
+				return e.parent.HandleEvent(event)
+			}
+		}
 		return false
 	}
 
@@ -153,8 +159,25 @@ func (e *Element) HandleEvent(event Event) bool {
 	return false
 }
 
-// handleScrollEvent handles keyboard events for scrolling.
+// handleScrollEvent handles keyboard and mouse wheel events for scrolling.
 func (e *Element) handleScrollEvent(event Event) bool {
+	// Handle mouse wheel events
+	if mouse, ok := event.(MouseEvent); ok {
+		switch mouse.Button {
+		case MouseWheelUp:
+			if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+				e.ScrollBy(0, -1)
+				return true
+			}
+		case MouseWheelDown:
+			if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+				e.ScrollBy(0, 1)
+				return true
+			}
+		}
+		return false
+	}
+
 	key, ok := event.(KeyEvent)
 	if !ok {
 		return false

@@ -72,7 +72,8 @@ func (p *printer) printElement(elem *tuigen.Element) {
 	}
 
 	// Check if children should be rendered inline (preserving user's source layout)
-	if elem.InlineChildren && p.canStructurallyInline(elem.Children) {
+	// Don't inline if there are orphan comments that need to be printed inside the element
+	if elem.InlineChildren && len(elem.OrphanComments) == 0 && p.canStructurallyInline(elem.Children) {
 		p.printChildrenInline(elem.Children)
 		p.write("</")
 		p.write(elem.Tag)
@@ -89,6 +90,7 @@ func (p *printer) printElement(elem *tuigen.Element) {
 	p.newline()
 	p.depth++
 	p.printBody(elem.Children)
+	p.printOrphanComments(elem.OrphanComments)
 	p.depth--
 	p.writeIndent()
 	p.write("</")

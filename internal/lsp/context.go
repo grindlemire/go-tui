@@ -26,6 +26,7 @@ const (
 	NodeKindText
 	NodeKindKeyword
 	NodeKindTailwindClass
+	NodeKindImportPath
 )
 
 // String returns a human-readable name for the NodeKind.
@@ -65,6 +66,8 @@ func (k NodeKind) String() string {
 		return "Keyword"
 	case NodeKindTailwindClass:
 		return "TailwindClass"
+	case NodeKindImportPath:
+		return "ImportPath"
 	default:
 		return "Unknown"
 	}
@@ -106,6 +109,9 @@ type CursorContext struct {
 	// For attribute context
 	AttrTag  string // Element tag when cursor is on an attribute
 	AttrName string // Attribute name when cursor is on an attribute
+
+	// For import context
+	ImportPath string // Import path when cursor is on an import line
 }
 
 // ResolveCursorContext resolves the cursor context for a document position.

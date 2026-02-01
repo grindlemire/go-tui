@@ -66,7 +66,7 @@ func DefaultStyle() Style {
 		MaxWidth:   Auto(), // No maximum
 		MaxHeight:  Auto(), // No maximum
 		Direction:  Row,
-		AlignItems: AlignStretch,
+		AlignItems: AlignStart,
 		FlexShrink: 1.0,
 	}
 }

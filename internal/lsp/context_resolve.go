@@ -14,6 +14,39 @@ func resolveFromAST(ctx *CursorContext, file *tuigen.File) {
 	line := ctx.Position.Line + 1
 	col := ctx.Position.Character + 1
 
+	// Check if cursor is on an import line.
+	for i := range file.Imports {
+		imp := &file.Imports[i]
+		if imp.Position.Line != line {
+			continue
+		}
+		// Cursor is on this import's line. Check if it's within the
+		// import content (alias or path). Search line text for the quoted
+		// path to handle both aliased and non-aliased imports uniformly.
+		quotedPath := `"` + imp.Path + `"`
+		pathIdx := strings.Index(ctx.Line, quotedPath)
+		if pathIdx < 0 {
+			continue
+		}
+		// Determine the start of actionable content on this line.
+		// For aliased imports the alias precedes the path.
+		contentStart := pathIdx
+		if imp.Alias != "" {
+			aliasIdx := strings.Index(ctx.Line, imp.Alias)
+			if aliasIdx >= 0 && aliasIdx < pathIdx {
+				contentStart = aliasIdx
+			}
+		}
+		pathEnd := pathIdx + len(quotedPath)
+		if ctx.Position.Character >= contentStart && ctx.Position.Character < pathEnd {
+			ctx.NodeKind = NodeKindImportPath
+			ctx.Node = imp
+			ctx.ImportPath = imp.Path
+			ctx.Word = imp.Path
+			return
+		}
+	}
+
 	// Check if cursor is on a component declaration line (name or parameter).
 	// We check all components for exact line match first because it's a
 	// precise match regardless of component ordering.

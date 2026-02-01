@@ -7,6 +7,29 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+func handleEvent(el *tui.Element, e tui.Event) bool {
+	if mouse, ok := e.(tui.MouseEvent); ok {
+		switch mouse.Button {
+		case tui.MouseWheelUp:
+			el.ScrollBy(0, -1)
+			return true
+		case tui.MouseWheelDown:
+			el.ScrollBy(0, 1)
+			return true
+		}
+	}
+	return false
+}
+
+func handleKeyPress(el *tui.Element, e tui.KeyEvent) {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+	case 'k':
+		el.ScrollBy(0, -1)
+	}
+}
+
 type StylingView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
@@ -25,19 +48,24 @@ func Styling() StylingView {
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithHeightPercent(100.00),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithOnEvent(handleEvent),
+		tui.WithOnKeyPress(handleKeyPress),
 	)
 	__tui_1 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_2 := tui.New(
 		tui.WithText("Text Styles"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_2)
+	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_4 := tui.New(
@@ -60,117 +88,453 @@ func Styling() StylingView {
 		tui.WithTextStyle(tui.NewStyle().Underline()),
 	)
 	__tui_3.AddChild(__tui_7)
-	__tui_0.AddChild(__tui_3)
 	__tui_8 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
+		tui.WithText("Strikethrough text"),
+		tui.WithTextStyle(tui.NewStyle().Strikethrough()),
 	)
-	__tui_0.AddChild(__tui_8)
+	__tui_3.AddChild(__tui_8)
 	__tui_9 := tui.New(
+		tui.WithText("Reverse text"),
+		tui.WithTextStyle(tui.NewStyle().Reverse()),
+	)
+	__tui_3.AddChild(__tui_9)
+	__tui_10 := tui.New(
+		tui.WithText("Bold+Italic+Underline"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Italic().Underline()),
+	)
+	__tui_3.AddChild(__tui_10)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+	__tui_11 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_11)
+	__tui_12 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_13 := tui.New(
 		tui.WithText("Text Colors"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_0.AddChild(__tui_9)
-	__tui_10 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_10)
-	__tui_11 := tui.New(
+	__tui_12.AddChild(__tui_13)
+	__tui_14 := tui.New(
 		tui.WithDirection(tui.Row),
-		tui.WithGap(2),
+		tui.WithGap(1),
 	)
-	__tui_12 := tui.New(
+	__tui_15 := tui.New(
 		tui.WithText("Red"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
 	)
-	__tui_11.AddChild(__tui_12)
-	__tui_13 := tui.New(
+	__tui_14.AddChild(__tui_15)
+	__tui_16 := tui.New(
 		tui.WithText("Green"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	__tui_11.AddChild(__tui_13)
-	__tui_14 := tui.New(
+	__tui_14.AddChild(__tui_16)
+	__tui_17 := tui.New(
 		tui.WithText("Blue"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue)),
 	)
-	__tui_11.AddChild(__tui_14)
-	__tui_15 := tui.New(
+	__tui_14.AddChild(__tui_17)
+	__tui_18 := tui.New(
 		tui.WithText("Cyan"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
-	__tui_11.AddChild(__tui_15)
-	__tui_16 := tui.New(
+	__tui_14.AddChild(__tui_18)
+	__tui_19 := tui.New(
 		tui.WithText("Magenta"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta)),
 	)
-	__tui_11.AddChild(__tui_16)
-	__tui_17 := tui.New(
+	__tui_14.AddChild(__tui_19)
+	__tui_20 := tui.New(
 		tui.WithText("Yellow"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 	)
-	__tui_11.AddChild(__tui_17)
-	__tui_0.AddChild(__tui_11)
-	__tui_18 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
+	__tui_14.AddChild(__tui_20)
+	__tui_21 := tui.New(
+		tui.WithText("White"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
-	__tui_0.AddChild(__tui_18)
-	__tui_19 := tui.New(
+	__tui_14.AddChild(__tui_21)
+	__tui_12.AddChild(__tui_14)
+	__tui_0.AddChild(__tui_12)
+	__tui_22 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_22)
+	__tui_23 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_24 := tui.New(
+		tui.WithText("Bright Text Colors"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_23.AddChild(__tui_24)
+	__tui_25 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_26 := tui.New(
+		tui.WithText("Red"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightRed)),
+	)
+	__tui_25.AddChild(__tui_26)
+	__tui_27 := tui.New(
+		tui.WithText("Green"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightGreen)),
+	)
+	__tui_25.AddChild(__tui_27)
+	__tui_28 := tui.New(
+		tui.WithText("Blue"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlue)),
+	)
+	__tui_25.AddChild(__tui_28)
+	__tui_29 := tui.New(
+		tui.WithText("Cyan"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
+	)
+	__tui_25.AddChild(__tui_29)
+	__tui_30 := tui.New(
+		tui.WithText("Magenta"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightMagenta)),
+	)
+	__tui_25.AddChild(__tui_30)
+	__tui_31 := tui.New(
+		tui.WithText("Yellow"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightYellow)),
+	)
+	__tui_25.AddChild(__tui_31)
+	__tui_32 := tui.New(
+		tui.WithText("White"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightWhite)),
+	)
+	__tui_25.AddChild(__tui_32)
+	__tui_23.AddChild(__tui_25)
+	__tui_0.AddChild(__tui_23)
+	__tui_33 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_33)
+	__tui_34 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_35 := tui.New(
 		tui.WithText("Background Colors"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_0.AddChild(__tui_19)
-	__tui_20 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_20)
-	__tui_21 := tui.New(
+	__tui_34.AddChild(__tui_35)
+	__tui_36 := tui.New(
 		tui.WithDirection(tui.Row),
-		tui.WithGap(2),
+		tui.WithGap(1),
 	)
-	__tui_22 := tui.New(
+	__tui_37 := tui.New(
 		tui.WithText("Red"),
 		tui.WithBackground(tui.NewStyle().Background(tui.Red)),
 	)
-	__tui_21.AddChild(__tui_22)
-	__tui_23 := tui.New(
+	__tui_36.AddChild(__tui_37)
+	__tui_38 := tui.New(
 		tui.WithText("Green"),
 		tui.WithBackground(tui.NewStyle().Background(tui.Green)),
 	)
-	__tui_21.AddChild(__tui_23)
-	__tui_24 := tui.New(
+	__tui_36.AddChild(__tui_38)
+	__tui_39 := tui.New(
 		tui.WithText("Blue"),
 		tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
 	)
-	__tui_21.AddChild(__tui_24)
-	__tui_25 := tui.New(
+	__tui_36.AddChild(__tui_39)
+	__tui_40 := tui.New(
 		tui.WithText("Cyan"),
 		tui.WithBackground(tui.NewStyle().Background(tui.Cyan)),
 	)
-	__tui_21.AddChild(__tui_25)
-	__tui_26 := tui.New(
+	__tui_36.AddChild(__tui_40)
+	__tui_41 := tui.New(
 		tui.WithText("Magenta"),
 		tui.WithBackground(tui.NewStyle().Background(tui.Magenta)),
 	)
-	__tui_21.AddChild(__tui_26)
-	__tui_27 := tui.New(
+	__tui_36.AddChild(__tui_41)
+	__tui_42 := tui.New(
 		tui.WithText("Yellow"),
 		tui.WithBackground(tui.NewStyle().Background(tui.Yellow)),
 	)
-	__tui_21.AddChild(__tui_27)
-	__tui_0.AddChild(__tui_21)
-	__tui_28 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
+	__tui_36.AddChild(__tui_42)
+	__tui_43 := tui.New(
+		tui.WithText("White"),
+		tui.WithBackground(tui.NewStyle().Background(tui.White)),
 	)
-	__tui_0.AddChild(__tui_28)
-	__tui_29 := tui.New(
+	__tui_36.AddChild(__tui_43)
+	__tui_34.AddChild(__tui_36)
+	__tui_0.AddChild(__tui_34)
+	__tui_44 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_44)
+	__tui_45 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_46 := tui.New(
+		tui.WithText("Bright Background Colors"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_45.AddChild(__tui_46)
+	__tui_47 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_48 := tui.New(
+		tui.WithText("Red"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightRed)),
+	)
+	__tui_47.AddChild(__tui_48)
+	__tui_49 := tui.New(
+		tui.WithText("Green"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightGreen)),
+	)
+	__tui_47.AddChild(__tui_49)
+	__tui_50 := tui.New(
+		tui.WithText("Blue"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightBlue)),
+	)
+	__tui_47.AddChild(__tui_50)
+	__tui_51 := tui.New(
+		tui.WithText("Cyan"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightCyan)),
+	)
+	__tui_47.AddChild(__tui_51)
+	__tui_52 := tui.New(
+		tui.WithText("Magenta"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightMagenta)),
+	)
+	__tui_47.AddChild(__tui_52)
+	__tui_53 := tui.New(
+		tui.WithText("Yellow"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightYellow)),
+	)
+	__tui_47.AddChild(__tui_53)
+	__tui_54 := tui.New(
+		tui.WithText("White"),
+		tui.WithBackground(tui.NewStyle().Background(tui.BrightWhite)),
+	)
+	__tui_47.AddChild(__tui_54)
+	__tui_45.AddChild(__tui_47)
+	__tui_0.AddChild(__tui_45)
+	__tui_55 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_55)
+	__tui_56 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_57 := tui.New(
+		tui.WithText("Combined Foreground+Background"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_56.AddChild(__tui_57)
+	__tui_58 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_59 := tui.New(
+		tui.WithText("Error"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Red)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_58.AddChild(__tui_59)
+	__tui_60 := tui.New(
+		tui.WithText("Warning"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Yellow)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Black)),
+	)
+	__tui_58.AddChild(__tui_60)
+	__tui_61 := tui.New(
+		tui.WithText("Success"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Green)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_58.AddChild(__tui_61)
+	__tui_62 := tui.New(
+		tui.WithText("Info"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_58.AddChild(__tui_62)
+	__tui_63 := tui.New(
+		tui.WithText("Highlight"),
+		tui.WithBackground(tui.NewStyle().Background(tui.Cyan)),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Black)),
+	)
+	__tui_58.AddChild(__tui_63)
+	__tui_56.AddChild(__tui_58)
+	__tui_0.AddChild(__tui_56)
+	__tui_64 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_64)
+	__tui_65 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_66 := tui.New(
+		tui.WithText("Border Styles"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_65.AddChild(__tui_66)
+	__tui_67 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_68 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+	)
+	__tui_69 := tui.New(
+		tui.WithText("Single"),
+	)
+	__tui_68.AddChild(__tui_69)
+	__tui_67.AddChild(__tui_68)
+	__tui_70 := tui.New(
+		tui.WithBorder(tui.BorderDouble),
+	)
+	__tui_71 := tui.New(
+		tui.WithText("Double"),
+	)
+	__tui_70.AddChild(__tui_71)
+	__tui_67.AddChild(__tui_70)
+	__tui_72 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+	)
+	__tui_73 := tui.New(
+		tui.WithText("Rounded"),
+	)
+	__tui_72.AddChild(__tui_73)
+	__tui_67.AddChild(__tui_72)
+	__tui_74 := tui.New(
+		tui.WithBorder(tui.BorderThick),
+	)
+	__tui_75 := tui.New(
+		tui.WithText("Thick"),
+	)
+	__tui_74.AddChild(__tui_75)
+	__tui_67.AddChild(__tui_74)
+	__tui_65.AddChild(__tui_67)
+	__tui_0.AddChild(__tui_65)
+	__tui_76 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_76)
+	__tui_77 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(0),
+	)
+	__tui_78 := tui.New(
+		tui.WithText("Colored Borders"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_77.AddChild(__tui_78)
+	__tui_79 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_80 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Red)),
+	)
+	__tui_81 := tui.New(
+		tui.WithText("Red"),
+	)
+	__tui_80.AddChild(__tui_81)
+	__tui_79.AddChild(__tui_80)
+	__tui_82 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Green)),
+	)
+	__tui_83 := tui.New(
+		tui.WithText("Green"),
+	)
+	__tui_82.AddChild(__tui_83)
+	__tui_79.AddChild(__tui_82)
+	__tui_84 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Blue)),
+	)
+	__tui_85 := tui.New(
+		tui.WithText("Blue"),
+	)
+	__tui_84.AddChild(__tui_85)
+	__tui_79.AddChild(__tui_84)
+	__tui_86 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+	)
+	__tui_87 := tui.New(
+		tui.WithText("Cyan"),
+	)
+	__tui_86.AddChild(__tui_87)
+	__tui_79.AddChild(__tui_86)
+	__tui_88 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
+	)
+	__tui_89 := tui.New(
+		tui.WithText("Magenta"),
+	)
+	__tui_88.AddChild(__tui_89)
+	__tui_79.AddChild(__tui_88)
+	__tui_90 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Yellow)),
+	)
+	__tui_91 := tui.New(
+		tui.WithText("Yellow"),
+	)
+	__tui_90.AddChild(__tui_91)
+	__tui_79.AddChild(__tui_90)
+	__tui_92 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
+	)
+	__tui_93 := tui.New(
+		tui.WithText("White"),
+	)
+	__tui_92.AddChild(__tui_93)
+	__tui_79.AddChild(__tui_92)
+	__tui_94 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Black)),
+	)
+	__tui_95 := tui.New(
+		tui.WithText("Black"),
+	)
+	__tui_94.AddChild(__tui_95)
+	__tui_79.AddChild(__tui_94)
+	__tui_77.AddChild(__tui_79)
+	__tui_0.AddChild(__tui_77)
+	__tui_96 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_96)
+	__tui_97 := tui.New(
 		tui.WithText("Press q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_29)
+	__tui_0.AddChild(__tui_97)
 
 	view = StylingView{
 		Root:     __tui_0,

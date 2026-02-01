@@ -144,3 +144,40 @@ func TestHRIsHR(t *testing.T) {
 		t.Error("normal element.IsHR() = true, want false")
 	}
 }
+
+func TestRenderHRInScrollableContainer(t *testing.T) {
+	buf := NewBuffer(30, 10)
+
+	// Scrollable container with HR child
+	container := New(
+		WithSize(20, 8),
+		WithDirection(Column),
+		WithScrollable(ScrollVertical),
+		WithPadding(1),
+	)
+
+	hr := New(WithHR())
+	container.AddChild(hr)
+	container.Calculate(30, 10)
+
+	RenderTree(buf, container)
+
+	// HR should be rendered inside the scrollable container
+	// Container padding is 1, so HR should start at x=1, y=1
+	hrRect := hr.Rect()
+
+	// The HR should stretch to fill the content width (20 - 2 padding = 18)
+	expectedWidth := 18
+	if hrRect.Width != expectedWidth {
+		t.Errorf("HR width = %d, want %d (stretch to fill content area)", hrRect.Width, expectedWidth)
+	}
+
+	// Check that HR drew '─' characters at the correct position
+	// The container starts at (0,0), padding is 1, so HR line is at y=1, x=1 to x=18
+	for x := 1; x < 19; x++ {
+		cell := buf.Cell(x, 1)
+		if cell.Rune != '─' {
+			t.Errorf("HR at x=%d, y=1 = %q, want '─'", x, cell.Rune)
+		}
+	}
+}
