@@ -62,6 +62,8 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		return d.definitionEventHandler(ctx)
 	case NodeKindParameter:
 		return d.definitionParameter(ctx)
+	case NodeKindImportPath:
+		return d.definitionImport(ctx)
 	case NodeKindStateAccess, NodeKindStateDecl:
 		locs, err := d.definitionStateVar(ctx)
 		if err == nil && len(locs) > 0 {
@@ -507,4 +509,80 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 	}
 
 	return locs, nil
+}
+
+// --- Import definition ---
+
+// definitionImport resolves go-to-definition for an import path by finding the
+// quoted path in the virtual .go file and asking gopls to resolve it.
+func (d *definitionProvider) definitionImport(ctx *CursorContext) ([]Location, error) {
+	importPath := ctx.ImportPath
+	if importPath == "" {
+		return nil, nil
+	}
+
+	proxy := d.goplsProxy.GetProxy()
+	if proxy == nil {
+		log.Server("definitionImport: no gopls proxy available")
+		return nil, nil
+	}
+
+	cached := d.virtualFiles.GetVirtualFile(ctx.Document.URI)
+	if cached == nil {
+		log.Server("definitionImport: no virtual file for %s", ctx.Document.URI)
+		return nil, nil
+	}
+
+	// Find the quoted import path in the virtual Go file content.
+	quotedPath := `"` + importPath + `"`
+	idx := strings.Index(cached.Content, quotedPath)
+	if idx < 0 {
+		log.Server("definitionImport: import path %q not found in virtual file", importPath)
+		return nil, nil
+	}
+
+	// Convert byte offset to line/character and position inside the quotes.
+	goLine, goCol := offsetToLineChar(cached.Content, idx+1) // +1 skips opening quote
+
+	log.Server("definitionImport: asking gopls for %q at GoLine=%d GoCol=%d", importPath, goLine, goCol)
+
+	goplsLocs, err := proxy.Definition(cached.GoURI, gopls.Position{
+		Line:      goLine,
+		Character: goCol,
+	})
+	if err != nil {
+		log.Server("definitionImport: gopls error: %v", err)
+		return nil, err
+	}
+
+	if len(goplsLocs) == 0 {
+		return nil, nil
+	}
+
+	// Import definitions always resolve to external .go files, so no
+	// source map reverse-translation is needed.
+	var locs []Location
+	for _, gl := range goplsLocs {
+		locs = append(locs, Location{
+			URI: gl.URI,
+			Range: Range{
+				Start: Position{Line: gl.Range.Start.Line, Character: gl.Range.Start.Character},
+				End:   Position{Line: gl.Range.End.Line, Character: gl.Range.End.Character},
+			},
+		})
+	}
+	return locs, nil
+}
+
+// offsetToLineChar converts a byte offset in content to 0-indexed line and character.
+func offsetToLineChar(content string, offset int) (int, int) {
+	line := 0
+	lineStart := 0
+	for i := 0; i < offset && i < len(content); i++ {
+		if content[i] == '\n' {
+			line++
+			lineStart = i + 1
+		}
+	}
+	return line, offset - lineStart
 }

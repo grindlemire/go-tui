@@ -235,6 +235,16 @@ var AllClasses = []TailwindClassDef{
 	{Name: "text-white", Description: "Set text color to white", Category: "typography"},
 	{Name: "text-black", Description: "Set text color to black", Category: "typography"},
 
+	// Bright text colors
+	{Name: "text-bright-red", Description: "Set text color to bright red", Category: "typography"},
+	{Name: "text-bright-green", Description: "Set text color to bright green", Category: "typography"},
+	{Name: "text-bright-blue", Description: "Set text color to bright blue", Category: "typography"},
+	{Name: "text-bright-cyan", Description: "Set text color to bright cyan", Category: "typography"},
+	{Name: "text-bright-magenta", Description: "Set text color to bright magenta", Category: "typography"},
+	{Name: "text-bright-yellow", Description: "Set text color to bright yellow", Category: "typography"},
+	{Name: "text-bright-white", Description: "Set text color to bright white", Category: "typography"},
+	{Name: "text-bright-black", Description: "Set text color to bright black (gray)", Category: "typography"},
+
 	// Background colors
 	{Name: "bg-red", Description: "Set background to red", Category: "visual"},
 	{Name: "bg-green", Description: "Set background to green", Category: "visual"},
@@ -244,6 +254,16 @@ var AllClasses = []TailwindClassDef{
 	{Name: "bg-yellow", Description: "Set background to yellow", Category: "visual"},
 	{Name: "bg-white", Description: "Set background to white", Category: "visual"},
 	{Name: "bg-black", Description: "Set background to black", Category: "visual"},
+
+	// Bright background colors
+	{Name: "bg-bright-red", Description: "Set background to bright red", Category: "visual"},
+	{Name: "bg-bright-green", Description: "Set background to bright green", Category: "visual"},
+	{Name: "bg-bright-blue", Description: "Set background to bright blue", Category: "visual"},
+	{Name: "bg-bright-cyan", Description: "Set background to bright cyan", Category: "visual"},
+	{Name: "bg-bright-magenta", Description: "Set background to bright magenta", Category: "visual"},
+	{Name: "bg-bright-yellow", Description: "Set background to bright yellow", Category: "visual"},
+	{Name: "bg-bright-white", Description: "Set background to bright white", Category: "visual"},
+	{Name: "bg-bright-black", Description: "Set background to bright black (dark gray)", Category: "visual"},
 
 	// Borders
 	{Name: "border", Description: "Default border style", Category: "visual"},

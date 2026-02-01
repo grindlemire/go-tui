@@ -48,10 +48,11 @@ func (e *Element) Text() string {
 	return e.text
 }
 
-// SetText updates the text content and recalculates intrinsic width.
+// SetText updates the text content.
+// Width remains Auto so the flex algorithm uses IntrinsicSize(),
+// which correctly accounts for text dimensions, padding, and border.
 func (e *Element) SetText(content string) {
 	e.text = content
-	e.style.Width = Fixed(stringWidth(content))
 	e.MarkDirty()
 }
 
@@ -61,8 +62,10 @@ func (e *Element) TextStyle() Style {
 }
 
 // SetTextStyle sets the style used to render the text.
+// Setting this explicitly prevents inheritance from the parent element.
 func (e *Element) SetTextStyle(style Style) {
 	e.textStyle = style
+	e.textStyleSet = true
 }
 
 // TextAlign returns the text alignment.

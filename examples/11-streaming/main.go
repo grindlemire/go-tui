@@ -27,7 +27,7 @@ func main() {
 	view := Streaming(dataCh)
 
 	app, err := tui.NewApp(
-		tui.WithRoot(view.Root),
+		tui.WithRoot(view),
 		tui.WithGlobalKeyHandler(func(e tui.KeyEvent) bool {
 			if e.Rune == 'q' || e.Key == tui.KeyEscape {
 				tui.Stop()

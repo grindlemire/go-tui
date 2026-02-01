@@ -51,9 +51,10 @@ type Element struct {
 	background  *Style // nil = transparent
 
 	// Text properties
-	text      string
-	textStyle Style
-	textAlign TextAlign
+	text         string
+	textStyle    Style
+	textStyleSet bool // true if textStyle was explicitly configured (false = inherit from parent)
+	textAlign    TextAlign
 
 	// Focus properties
 	focusable bool

@@ -63,7 +63,7 @@ func WithGlobalKeyHandler(fn func(KeyEvent) bool) AppOption {
 //   - A raw Renderable (element.Element)
 //
 // The root is set after the app is fully initialized.
-func WithRoot(v any) AppOption {
+func WithRoot(v Viewable) AppOption {
 	return func(a *App) error {
 		a.pendingRoot = v
 		return nil

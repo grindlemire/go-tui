@@ -85,6 +85,16 @@ var tailwindClasses = map[string]TailwindMapping{
 	"text-white":   {IsTextStyle: true, TextMethod: "Foreground(tui.White)", NeedsImport: "tui"},
 	"text-black":   {IsTextStyle: true, TextMethod: "Foreground(tui.Black)", NeedsImport: "tui"},
 
+	// Bright text colors
+	"text-bright-red":     {IsTextStyle: true, TextMethod: "Foreground(tui.BrightRed)", NeedsImport: "tui"},
+	"text-bright-green":   {IsTextStyle: true, TextMethod: "Foreground(tui.BrightGreen)", NeedsImport: "tui"},
+	"text-bright-blue":    {IsTextStyle: true, TextMethod: "Foreground(tui.BrightBlue)", NeedsImport: "tui"},
+	"text-bright-cyan":    {IsTextStyle: true, TextMethod: "Foreground(tui.BrightCyan)", NeedsImport: "tui"},
+	"text-bright-magenta": {IsTextStyle: true, TextMethod: "Foreground(tui.BrightMagenta)", NeedsImport: "tui"},
+	"text-bright-yellow":  {IsTextStyle: true, TextMethod: "Foreground(tui.BrightYellow)", NeedsImport: "tui"},
+	"text-bright-white":   {IsTextStyle: true, TextMethod: "Foreground(tui.BrightWhite)", NeedsImport: "tui"},
+	"text-bright-black":   {IsTextStyle: true, TextMethod: "Foreground(tui.BrightBlack)", NeedsImport: "tui"},
+
 	// Background colors
 	"bg-red":     {Option: "tui.WithBackground(tui.NewStyle().Background(tui.Red))", NeedsImport: "tui"},
 	"bg-green":   {Option: "tui.WithBackground(tui.NewStyle().Background(tui.Green))", NeedsImport: "tui"},
@@ -94,6 +104,16 @@ var tailwindClasses = map[string]TailwindMapping{
 	"bg-yellow":  {Option: "tui.WithBackground(tui.NewStyle().Background(tui.Yellow))", NeedsImport: "tui"},
 	"bg-white":   {Option: "tui.WithBackground(tui.NewStyle().Background(tui.White))", NeedsImport: "tui"},
 	"bg-black":   {Option: "tui.WithBackground(tui.NewStyle().Background(tui.Black))", NeedsImport: "tui"},
+
+	// Bright background colors
+	"bg-bright-red":     {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightRed))", NeedsImport: "tui"},
+	"bg-bright-green":   {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightGreen))", NeedsImport: "tui"},
+	"bg-bright-blue":    {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightBlue))", NeedsImport: "tui"},
+	"bg-bright-cyan":    {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightCyan))", NeedsImport: "tui"},
+	"bg-bright-magenta": {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightMagenta))", NeedsImport: "tui"},
+	"bg-bright-yellow":  {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightYellow))", NeedsImport: "tui"},
+	"bg-bright-white":   {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightWhite))", NeedsImport: "tui"},
+	"bg-bright-black":   {Option: "tui.WithBackground(tui.NewStyle().Background(tui.BrightBlack))", NeedsImport: "tui"},
 
 	// Scroll
 	"overflow-scroll":   {Option: "tui.WithScrollable(tui.ScrollBoth)", NeedsImport: ""},

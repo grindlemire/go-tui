@@ -37,6 +37,8 @@ type CursorContext struct {
 
 	AttrTag  string
 	AttrName string
+
+	ImportPath string
 }
 
 // NodeKind classifies the cursor position. Mirrors lsp.NodeKind — both enums
@@ -62,6 +64,7 @@ const (
 	NodeKindText
 	NodeKindKeyword
 	NodeKindTailwindClass
+	NodeKindImportPath
 )
 
 // String returns a human-readable name for the NodeKind.
@@ -101,6 +104,8 @@ func (k NodeKind) String() string {
 		return "Keyword"
 	case NodeKindTailwindClass:
 		return "TailwindClass"
+	case NodeKindImportPath:
+		return "ImportPath"
 	default:
 		return "Unknown"
 	}

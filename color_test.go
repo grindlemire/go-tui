@@ -356,3 +356,129 @@ func TestPredefinedColors(t *testing.T) {
 		})
 	}
 }
+
+func TestColor_ToRGBValues(t *testing.T) {
+	type tc struct {
+		color Color
+		wantR uint8
+		wantG uint8
+		wantB uint8
+	}
+
+	tests := map[string]tc{
+		"default returns zero": {
+			color: DefaultColor(),
+			wantR: 0, wantG: 0, wantB: 0,
+		},
+		"RGB passes through": {
+			color: RGBColor(100, 150, 200),
+			wantR: 100, wantG: 150, wantB: 200,
+		},
+		"ANSI black": {
+			color: Black,
+			wantR: 0, wantG: 0, wantB: 0,
+		},
+		"ANSI white": {
+			color: White,
+			wantR: 229, wantG: 229, wantB: 229,
+		},
+		"ANSI red": {
+			color: Red,
+			wantR: 205, wantG: 49, wantB: 49,
+		},
+		"ANSI bright white": {
+			color: BrightWhite,
+			wantR: 255, wantG: 255, wantB: 255,
+		},
+		"ANSI 6x6x6 cube red": {
+			color: ANSIColor(196), // pure red in cube
+			wantR: 255, wantG: 0, wantB: 0,
+		},
+		"ANSI grayscale mid": {
+			color: ANSIColor(244), // middle gray
+			wantR: 128, wantG: 128, wantB: 128,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			r, g, b := tt.color.ToRGBValues()
+			if r != tt.wantR || g != tt.wantG || b != tt.wantB {
+				t.Errorf("ToRGBValues() = (%d, %d, %d), want (%d, %d, %d)",
+					r, g, b, tt.wantR, tt.wantG, tt.wantB)
+			}
+		})
+	}
+}
+
+func TestColor_IsLight(t *testing.T) {
+	type tc struct {
+		color    Color
+		wantLight bool
+	}
+
+	tests := map[string]tc{
+		"default is dark": {
+			color:    DefaultColor(),
+			wantLight: false,
+		},
+		"black is dark": {
+			color:    Black,
+			wantLight: false,
+		},
+		"white is light": {
+			color:    White,
+			wantLight: true,
+		},
+		"bright white is light": {
+			color:    BrightWhite,
+			wantLight: true,
+		},
+		"bright yellow is light": {
+			color:    BrightYellow,
+			wantLight: true,
+		},
+		"red is dark": {
+			color:    Red,
+			wantLight: false,
+		},
+		"blue is dark": {
+			color:    Blue,
+			wantLight: false,
+		},
+		"cyan is dark": {
+			color:    Cyan,
+			wantLight: false,
+		},
+		"bright cyan is dark": {
+			// Bright cyan RGB(41, 184, 219) has luminance ~0.4, below 0.5 threshold
+			color:    BrightCyan,
+			wantLight: false,
+		},
+		"RGB white is light": {
+			color:    RGBColor(255, 255, 255),
+			wantLight: true,
+		},
+		"RGB black is dark": {
+			color:    RGBColor(0, 0, 0),
+			wantLight: false,
+		},
+		"RGB light yellow is light": {
+			color:    RGBColor(255, 255, 200),
+			wantLight: true,
+		},
+		"RGB dark blue is dark": {
+			color:    RGBColor(20, 20, 60),
+			wantLight: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.color.IsLight()
+			if got != tt.wantLight {
+				t.Errorf("IsLight() = %v, want %v", got, tt.wantLight)
+			}
+		})
+	}
+}

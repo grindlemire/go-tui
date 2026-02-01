@@ -118,8 +118,9 @@ type Element struct {
 	InlineChildren        bool // children are on same line as opening/closing tags
 	BlankLineBefore        bool // blank line before this node in source
 	// Comment fields
-	LeadingComments  *CommentGroup // Comments immediately before this element
-	TrailingComments *CommentGroup // Comments on same line after this element
+	LeadingComments  *CommentGroup   // Comments immediately before this element
+	TrailingComments *CommentGroup   // Comments on same line after this element
+	OrphanComments   []*CommentGroup // Comments in children not attached to any node
 }
 
 func (e *Element) node()        {}

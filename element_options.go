@@ -177,20 +177,21 @@ func WithBackground(style Style) Option {
 
 // --- Text Options ---
 
-// WithText sets the text content and calculates intrinsic size.
-// Width is set to the text width, height is set to 1 (single line).
+// WithText sets the text content.
+// Width and Height remain Auto so the flex algorithm uses IntrinsicSize(),
+// which correctly accounts for text dimensions, padding, and border.
 func WithText(content string) Option {
 	return func(e *Element) {
 		e.text = content
-		e.style.Width = Fixed(stringWidth(content))
-		e.style.Height = Fixed(1)
 	}
 }
 
 // WithTextStyle sets the style for text content.
+// Setting this explicitly prevents inheritance from the parent element.
 func WithTextStyle(style Style) Option {
 	return func(e *Element) {
 		e.textStyle = style
+		e.textStyleSet = true
 	}
 }
 

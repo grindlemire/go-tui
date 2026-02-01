@@ -28,6 +28,7 @@ func Hello() HelloView {
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Hello, TUI!"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Red)),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(

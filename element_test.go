@@ -322,7 +322,7 @@ func TestElement_WithText_SetsIntrinsicSize(t *testing.T) {
 		"empty text": {
 			content: "",
 			wantW:   0,
-			wantH:   1,
+			wantH:   0,
 		},
 		"text with spaces": {
 			content: "Hello World",
@@ -334,11 +334,14 @@ func TestElement_WithText_SetsIntrinsicSize(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			e := New(WithText(tt.content))
-			if e.style.Width != Fixed(tt.wantW) {
-				t.Errorf("width = %v, want Fixed(%d)", e.style.Width, tt.wantW)
+			// WithText leaves Width/Height as Auto; IntrinsicSize computes
+			// the correct dimensions including padding and border.
+			w, h := e.IntrinsicSize()
+			if w != tt.wantW {
+				t.Errorf("IntrinsicSize width = %d, want %d", w, tt.wantW)
 			}
-			if e.style.Height != Fixed(tt.wantH) {
-				t.Errorf("height = %v, want Fixed(%d)", e.style.Height, tt.wantH)
+			if h != tt.wantH {
+				t.Errorf("IntrinsicSize height = %d, want %d", h, tt.wantH)
 			}
 			if e.Text() != tt.content {
 				t.Errorf("Text() = %q, want %q", e.Text(), tt.content)
@@ -356,8 +359,10 @@ func TestElement_SetText_UpdatesWidthAndMarksDirty(t *testing.T) {
 	if e.Text() != "Hello World" {
 		t.Errorf("Text() = %q, want %q", e.Text(), "Hello World")
 	}
-	if e.style.Width != Fixed(11) {
-		t.Errorf("width = %v, want Fixed(11)", e.style.Width)
+	// IntrinsicSize should reflect the new text dimensions
+	w, _ := e.IntrinsicSize()
+	if w != 11 {
+		t.Errorf("IntrinsicSize width = %d, want 11", w)
 	}
 	if !e.IsDirty() {
 		t.Error("SetText should mark element dirty")
