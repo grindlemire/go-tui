@@ -33,20 +33,26 @@ func handleData(lines *tui.State[[]string]) func(string) {
 	}
 }
 
-func handleKeys(v StreamingCounterView) func(*tui.Element, tui.KeyEvent) {
-	return func(el *tui.Element, e tui.KeyEvent) {
+func handleKeys(v StreamingCounterView) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
 		switch e.Rune {
 		case 'j':
 			v.Content.ScrollBy(0, 1)
+			return true
 		case 'k':
 			v.Content.ScrollBy(0, -1)
+			return true
 		case 'G':
 			v.Content.ScrollToBottom()
+			return true
 		case 'g':
 			v.Content.ScrollTo(0, 0)
+			return true
 		case 'q':
 			tui.Stop()
+			return true
 		}
+		return false
 	}
 }
 

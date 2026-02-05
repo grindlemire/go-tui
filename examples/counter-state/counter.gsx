@@ -11,7 +11,8 @@ templ CounterUI() {
 	count := tui.NewState(0)
 	<div class="flex-col gap-1 p-2"
 	     onKeyPress={handleKeys(count)}
-	     onTimer={tui.OnTimer(time.Second, tick(count))}>
+	     onTimer={tui.OnTimer(time.Second, tick(count))}
+	     focusable={true}>
 		<div class="border-rounded p-1 flex-col items-center justify-center">
 			<span class="font-bold text-cyan">Reactive Counter</span>
 			<hr class="border" />
@@ -42,15 +43,18 @@ func decrement(count *tui.State[int]) func(*tui.Element) {
 	}
 }
 
-func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
-	return func(el *tui.Element, e tui.KeyEvent) {
+func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
 		debug.Log("[CounterUI] handleKeys called: %+v", e)
 		switch e.Rune {
 		case '+':
 			count.Set(count.Get() + 1)
+			return true
 		case '-':
 			count.Set(count.Get() - 1)
+			return true
 		}
+		return false
 	}
 }
 

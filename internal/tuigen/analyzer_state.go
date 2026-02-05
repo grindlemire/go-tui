@@ -269,8 +269,13 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 				scan(n.Body, true)
 
 			case *IfStmt:
-				scan(n.Then, inLoop)
-				scan(n.Else, inLoop)
+				// Check if condition references state - if so, elements inside
+				// are rebuilt by the reactive update function and don't need
+				// separate text bindings (similar to loop-scoped elements).
+				condDeps := detectGetCallsInExpr(n.Condition, stateNames)
+				childInLoop := inLoop || len(condDeps) > 0
+				scan(n.Then, childInLoop)
+				scan(n.Else, childInLoop)
 
 			case *ComponentCall:
 				scan(n.Children, inLoop)
@@ -330,6 +335,12 @@ func (a *Analyzer) parseExplicitDeps(attr *Attribute, stateNames map[string]bool
 // detectGetCalls finds all state.Get() calls in an expression and returns the state variable names.
 // It handles both simple calls (count.Get()) and dereferenced pointers ((*count).Get()).
 func (a *Analyzer) detectGetCalls(expr string, stateNames map[string]bool) []string {
+	return detectGetCallsInExpr(expr, stateNames)
+}
+
+// detectGetCallsInExpr finds all state.Get() calls in an expression and returns the state variable names.
+// This is a standalone function usable by both the Analyzer and Generator.
+func detectGetCallsInExpr(expr string, stateNames map[string]bool) []string {
 	matches := stateGetRegex.FindAllStringSubmatch(expr, -1)
 
 	// Use a map to deduplicate

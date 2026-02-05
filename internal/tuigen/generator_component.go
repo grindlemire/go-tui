@@ -4,6 +4,8 @@ package tuigen
 func (g *Generator) generateComponent(comp *Component) {
 	// Reset variable counter and watcher tracking for each component
 	g.varCounter = 0
+	g.condCounter = 0
+	g.loopCounter = 0
 	g.watchers = nil
 	g.deferredWatchers = nil
 	g.componentVars = nil
@@ -66,7 +68,7 @@ func (g *Generator) generateComponent(comp *Component) {
 			// They are NOT the root element unless explicitly used
 			g.generateLetBinding(n, "")
 		case *ForLoop:
-			g.generateForLoopWithRefs(n, "", false)
+			g.generateForLoopWithRefs(n, "", false, false)
 		case *IfStmt:
 			g.generateIfStmtWithRefs(n, "", false)
 		case *GoCode:

@@ -24,15 +24,18 @@ func decrement(count *tui.State[int]) func(*tui.Element) {
 	}
 }
 
-func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
-	return func(el *tui.Element, e tui.KeyEvent) {
+func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
 		debug.Log("[CounterUI] handleKeys called: %+v", e)
 		switch e.Rune {
 		case '+':
 			count.Set(count.Get() + 1)
+			return true
 		case '-':
 			count.Set(count.Get() - 1)
+			return true
 		}
+		return false
 	}
 }
 
@@ -62,6 +65,7 @@ func CounterUI() CounterUIView {
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithOnKeyPress(handleKeys(count)),
+		tui.WithFocusable(true),
 	)
 	__tui_1 := tui.New(
 		tui.WithBorder(tui.BorderRounded),

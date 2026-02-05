@@ -19,7 +19,7 @@ func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, 
 		case *LetBinding:
 			g.generateLetBinding(c, parentVar)
 		case *ForLoop:
-			g.generateForLoopWithRefs(c, parentVar, inConditional)
+			g.generateForLoopWithRefs(c, parentVar, inLoop, inConditional)
 		case *IfStmt:
 			g.generateIfStmtWithRefs(c, parentVar, inLoop)
 		case *GoExpr:
@@ -61,7 +61,7 @@ func (g *Generator) generateBodyNodeWithRefs(node Node, parentVar string, inLoop
 	case *LetBinding:
 		g.generateLetBinding(n, parentVar)
 	case *ForLoop:
-		g.generateForLoopWithRefs(n, parentVar, inConditional)
+		g.generateForLoopWithRefs(n, parentVar, inLoop, inConditional)
 	case *IfStmt:
 		g.generateIfStmtWithRefs(n, parentVar, inLoop)
 	case *GoCode:

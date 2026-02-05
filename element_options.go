@@ -226,10 +226,9 @@ func WithOnBlur(fn func(*Element)) Option {
 
 // WithOnEvent sets the event handler for this element.
 // The handler receives the element as its first parameter (self-inject).
-// Implicitly sets focusable = true.
+// Does NOT set focusable — use WithFocusable(true) if the element should be a Tab target.
 func WithOnEvent(fn func(*Element, Event) bool) Option {
 	return func(e *Element) {
-		e.focusable = true
 		e.onEvent = fn
 	}
 }
@@ -245,11 +244,11 @@ func WithFocusable(focusable bool) Option {
 
 // WithOnKeyPress sets the key press handler.
 // The handler receives the element as its first parameter (self-inject).
-// No return value needed - mutations mark dirty automatically via MarkDirty().
-// Implicitly sets focusable = true.
-func WithOnKeyPress(fn func(*Element, KeyEvent)) Option {
+// Return true to consume the event (stops bubbling to parent elements).
+// Return false to let the event bubble up to the parent.
+// Does NOT set focusable — use WithFocusable(true) if the element should be a Tab target.
+func WithOnKeyPress(fn func(*Element, KeyEvent) bool) Option {
 	return func(e *Element) {
-		e.focusable = true
 		e.onKeyPress = fn
 	}
 }

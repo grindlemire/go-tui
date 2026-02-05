@@ -289,6 +289,78 @@ templ Test(count *tui.State[int]) {
 	}
 }
 
+func TestAnalyzer_DetectStateBindings_ReactiveIfSkipsChildren(t *testing.T) {
+	// Elements inside a reactive @if should NOT generate separate text bindings
+	// because the reactive update function rebuilds them entirely.
+	input := `package x
+templ Toggle() {
+	count := tui.NewState(0)
+	<div>
+		@if count.Get() == 0 {
+			<span>{fmt.Sprintf("zero: %d", count.Get())}</span>
+		} @else {
+			<span>{fmt.Sprintf("nonzero: %d", count.Get())}</span>
+		}
+	</div>
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	// Should have NO text bindings - elements inside reactive @if are skipped
+	if len(bindings) != 0 {
+		t.Errorf("expected 0 bindings for reactive @if children, got %d", len(bindings))
+		for i, b := range bindings {
+			t.Errorf("  binding[%d]: element=%s attr=%s expr=%s", i, b.ElementName, b.Attribute, b.Expr)
+		}
+	}
+}
+
+func TestAnalyzer_DetectStateBindings_NonReactiveIfKeepsBindings(t *testing.T) {
+	// Elements inside a non-reactive @if (no state in condition) should still
+	// generate text bindings normally.
+	input := `package x
+templ Toggle(count *tui.State[int]) {
+	<div>
+		@if true {
+			<span>{count.Get()}</span>
+		}
+	</div>
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	analyzer := NewAnalyzer()
+	stateVars := analyzer.DetectStateVars(file.Components[0])
+	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
+
+	// Should have 1 text binding since @if condition doesn't reference state
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding for non-reactive @if, got %d", len(bindings))
+	}
+
+	b := bindings[0]
+	if b.Attribute != "text" {
+		t.Errorf("Attribute = %q, want %q", b.Attribute, "text")
+	}
+	if len(b.StateVars) != 1 || b.StateVars[0] != "count" {
+		t.Errorf("StateVars = %v, want [count]", b.StateVars)
+	}
+}
+
 func TestAnalyzer_DetectStateBindings_DereferencedPointer(t *testing.T) {
 	// Test that (*count).Get() pattern is detected
 	input := `package x

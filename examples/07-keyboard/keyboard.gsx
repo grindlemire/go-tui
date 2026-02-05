@@ -9,7 +9,8 @@ templ Keyboard() {
 	lastKey := tui.NewState("(none)")
 	keyCount := tui.NewState(0)
 	<div class="flex-col gap-1 p-2 border-rounded"
-	     onKeyPress={handleKey(lastKey, keyCount)}>
+	     onKeyPress={handleKey(lastKey, keyCount)}
+	     focusable={true}>
 		<span class="font-bold text-cyan">Keyboard Events</span>
 		<hr class="border" />
 
@@ -28,8 +29,8 @@ templ Keyboard() {
 	</div>
 }
 
-func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
-	return func(el *tui.Element, e tui.KeyEvent) {
+func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
 		keyCount.Set(keyCount.Get() + 1)
 
 		if e.Rune != 0 {
@@ -37,6 +38,7 @@ func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(*tui.E
 		} else {
 			lastKey.Set(keyName(e.Key))
 		}
+		return true
 	}
 }
 

@@ -63,8 +63,8 @@ type Element struct {
 	onBlur    func(*Element)
 	onEvent   func(*Element, Event) bool
 
-	// Event handlers (no bool return - mutations mark dirty automatically)
-	onKeyPress func(*Element, KeyEvent)
+	// Event handlers
+	onKeyPress func(*Element, KeyEvent) bool // returns true to consume (stops bubbling)
 	onClick    func(*Element)
 
 	// Tree notification

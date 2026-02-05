@@ -9,6 +9,28 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+func handleKeys(selected *tui.State[int], count int) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
+		switch {
+		case e.Rune == 'j' || e.Key == tui.KeyDown:
+			if selected.Get() < count-1 {
+				selected.Set(selected.Get() + 1)
+			} else if selected.Get() == count-1 {
+				selected.Set(0)
+			}
+			return true
+		case e.Rune == 'k' || e.Key == tui.KeyUp:
+			if selected.Get() > 0 {
+				selected.Set(selected.Get() - 1)
+			} else if selected.Get() == 0 {
+				selected.Set(count - 1)
+			}
+			return true
+		}
+		return false
+	}
+}
+
 type LoopsView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
@@ -18,56 +40,162 @@ func (v LoopsView) GetRoot() tui.Renderable { return v.Root }
 
 func (v LoopsView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func Loops(items []string, selected int) LoopsView {
+func Loops(items []string) LoopsView {
 	var view LoopsView
 	var watchers []tui.Watcher
 
+	selected := tui.NewState(0)
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
-		tui.WithPadding(2),
+		tui.WithPadding(1),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithGap(1),
+		tui.WithFocusable(true),
+		tui.WithOnKeyPress(handleKeys(selected, len(items))),
 	)
 	__tui_1 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+	)
+	__tui_2 := tui.New(
 		tui.WithText("Loop Rendering"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+	)
+	__tui_1.AddChild(__tui_2)
+	__tui_3 := tui.New(
+		tui.WithText(fmt.Sprintf("Item %d/%d", selected.Get()+1, len(items))),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+	__tui_4 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_5 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_6 := tui.New(
+		tui.WithText("Simple @for"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_2)
-	__tui_3 := tui.New(
-		tui.WithDirection(tui.Column),
-	)
-	for i, item := range items {
-		_ = i
-		if i == selected {
-			__tui_4 := tui.New(
-				tui.WithText(fmt.Sprintf("> %d. %s", i+1, item)),
-				tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
-			)
-			__tui_3.AddChild(__tui_4)
-		} else {
-			__tui_5 := tui.New(
-				tui.WithText(fmt.Sprintf("  %d. %s", i+1, item)),
-			)
-			__tui_3.AddChild(__tui_5)
+	__tui_5.AddChild(__tui_6)
+	__loop_0_style := __tui_5.LayoutStyle()
+	__loop_0 := tui.New(tui.WithDirection(__loop_0_style.Direction), tui.WithGap(__loop_0_style.Gap))
+	__tui_5.AddChild(__loop_0)
+	__update___loop_0 := func() {
+		__loop_0.RemoveAllChildren()
+		for i, item := range items {
+			_ = i
+			if i == selected.Get() {
+				__tui_7 := tui.New(
+					tui.WithText(item),
+					tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+					tui.WithTextStyle(tui.NewStyle().Bold()),
+				)
+				__loop_0.AddChild(__tui_7)
+			} else {
+				__tui_8 := tui.New(
+					tui.WithText(item),
+				)
+				__loop_0.AddChild(__tui_8)
+			}
 		}
 	}
-	__tui_0.AddChild(__tui_3)
-	__tui_6 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
+	__update___loop_0()
+	selected.Bind(func(_ int) { __update___loop_0() })
+	__tui_4.AddChild(__tui_5)
+	__tui_9 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
 	)
-	__tui_0.AddChild(__tui_6)
-	__tui_7 := tui.New(
-		tui.WithText("Press j/k to move, q to quit"),
+	__tui_10 := tui.New(
+		tui.WithText("@for with index"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_9.AddChild(__tui_10)
+	__loop_1_style := __tui_9.LayoutStyle()
+	__loop_1 := tui.New(tui.WithDirection(__loop_1_style.Direction), tui.WithGap(__loop_1_style.Gap))
+	__tui_9.AddChild(__loop_1)
+	__update___loop_1 := func() {
+		__loop_1.RemoveAllChildren()
+		for i, item := range items {
+			_ = i
+			if i == selected.Get() {
+				__tui_11 := tui.New(
+					tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
+					tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+					tui.WithTextStyle(tui.NewStyle().Bold()),
+				)
+				__loop_1.AddChild(__tui_11)
+			} else {
+				__tui_12 := tui.New(
+					tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
+				)
+				__loop_1.AddChild(__tui_12)
+			}
+		}
+	}
+	__update___loop_1()
+	selected.Bind(func(_ int) { __update___loop_1() })
+	__tui_4.AddChild(__tui_9)
+	__tui_13 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_14 := tui.New(
+		tui.WithText("Selected (reactive)"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_13.AddChild(__tui_14)
+	__tui_15 := tui.New(
+		tui.WithText(items[selected.Get()]),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+	)
+	__tui_13.AddChild(__tui_15)
+	__tui_16 := tui.New(
+		tui.WithText(fmt.Sprintf("Index: %d", selected.Get())),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_7)
+	__tui_13.AddChild(__tui_16)
+	__tui_17 := tui.New(
+		tui.WithText(fmt.Sprintf("Length: %d chars", len(items[selected.Get()]))),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_13.AddChild(__tui_17)
+	__tui_4.AddChild(__tui_13)
+	__tui_0.AddChild(__tui_4)
+	__tui_18 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_19 := tui.New(
+		tui.WithText("[j/k] navigate  [q] quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_18.AddChild(__tui_19)
+	__tui_0.AddChild(__tui_18)
+
+	// State bindings
+	selected.Bind(func(_ int) {
+		__tui_3.SetText(fmt.Sprintf("Item %d/%d", selected.Get()+1, len(items)))
+	})
+	selected.Bind(func(_ int) {
+		__tui_15.SetText(items[selected.Get()])
+	})
+	selected.Bind(func(_ int) {
+		__tui_16.SetText(fmt.Sprintf("Index: %d", selected.Get()))
+	})
+	selected.Bind(func(_ int) {
+		__tui_17.SetText(fmt.Sprintf("Length: %d chars", len(items[selected.Get()])))
+	})
 
 	view = LoopsView{
 		Root:     __tui_0,
