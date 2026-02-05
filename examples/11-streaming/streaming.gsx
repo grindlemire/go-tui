@@ -55,11 +55,14 @@ func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 	}
 }
 
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
 	switch e.Rune {
 	case 'j':
 		el.ScrollBy(0, 1)
+		return true
 	case 'k':
 		el.ScrollBy(0, -1)
+		return true
 	}
+	return false
 }

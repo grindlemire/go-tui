@@ -73,8 +73,9 @@ func TestElement_SetOnKeyPress(t *testing.T) {
 	var receivedEvent KeyEvent
 	e := New()
 
-	e.SetOnKeyPress(func(_ *Element, event KeyEvent) {
+	e.SetOnKeyPress(func(_ *Element, event KeyEvent) bool {
 		receivedEvent = event
+		return true
 	})
 
 	// Dispatch a key event
@@ -107,11 +108,11 @@ func TestElement_SetOnClick(t *testing.T) {
 	}
 }
 
-func TestElement_WithOnKeyPress_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnKeyPress(func(*Element, KeyEvent) {}))
+func TestElement_WithOnKeyPress_DoesNotImplyFocusable(t *testing.T) {
+	e := New(WithOnKeyPress(func(*Element, KeyEvent) bool { return false }))
 
-	if !e.IsFocusable() {
-		t.Error("WithOnKeyPress should set focusable = true")
+	if e.IsFocusable() {
+		t.Error("WithOnKeyPress should not set focusable = true")
 	}
 }
 
@@ -295,9 +296,10 @@ func TestElement_HandleEvent_CallsOnKeyPress(t *testing.T) {
 	handlerCalled := false
 	var receivedEvent KeyEvent
 
-	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) {
+	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) bool {
 		handlerCalled = true
 		receivedEvent = event
+		return true
 	}))
 
 	sentEvent := KeyEvent{Key: KeyEnter}

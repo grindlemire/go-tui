@@ -188,3 +188,151 @@ templ Test() {
 		t.Error("missing source file comment")
 	}
 }
+
+func TestGenerator_ReactiveIf(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"reactive if with single state var": {
+			input: `package x
+templ Toggle() {
+	count := tui.NewState(0)
+	<div>
+		@if count.Get() == 0 {
+			<span>{"zero"}</span>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"__cond_0 := tui.New()",
+				"__tui_0.AddChild(__cond_0)",
+				"__update___cond_0 := func()",
+				"__cond_0.RemoveAllChildren()",
+				"if count.Get() == 0",
+				"__update___cond_0()",
+				`count.Bind(func(_ int) { __update___cond_0() })`,
+			},
+		},
+		"reactive if/else": {
+			input: `package x
+templ Toggle() {
+	count := tui.NewState(0)
+	<div>
+		@if count.Get() >= 5 {
+			<span>{"high"}</span>
+		} @else {
+			<span>{"low"}</span>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"__cond_0 := tui.New()",
+				"__update___cond_0 := func()",
+				"__cond_0.RemoveAllChildren()",
+				"if count.Get() >= 5",
+				"} else {",
+				"__update___cond_0()",
+				`count.Bind(func(_ int) { __update___cond_0() })`,
+			},
+		},
+		"non-reactive if stays plain": {
+			input: `package x
+templ Static(show bool) {
+	<div>
+		@if show {
+			<span>{"visible"}</span>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"if show {",
+			},
+			wantNotContains: []string{
+				"__cond_",
+				"RemoveAllChildren",
+			},
+		},
+		"for loop with state in body becomes reactive": {
+			input: `package x
+templ LoopCond(items []string) {
+	count := tui.NewState(0)
+	<div>
+		@for _, item := range items {
+			@if count.Get() > 0 {
+				<span>{item}</span>
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"__loop_0_style := __tui_0.LayoutStyle()",
+				"__loop_0 := tui.New(tui.WithDirection(__loop_0_style.Direction), tui.WithGap(__loop_0_style.Gap))",
+				"RemoveAllChildren",
+				"__update___loop_0 := func()",
+				"__update___loop_0()",
+				`count.Bind(func(_ int) { __update___loop_0() })`,
+			},
+			wantNotContains: []string{
+				"__cond_", // @if inside @for stays non-reactive
+			},
+		},
+		"for loop without state stays plain": {
+			input: `package x
+templ PlainLoop(items []string) {
+	<div>
+		@for _, item := range items {
+			<span>{item}</span>
+		}
+	</div>
+}`,
+			wantNotContains: []string{
+				"__loop_",
+				"__cond_",
+				"RemoveAllChildren",
+			},
+		},
+		"state in body also triggers binding": {
+			input: `package x
+import "fmt"
+templ Multi() {
+	count := tui.NewState(0)
+	name := tui.NewState("hello")
+	<div>
+		@if count.Get() > 0 {
+			<span>{fmt.Sprintf("%s: %d", name.Get(), count.Get())}</span>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"__cond_0 := tui.New()",
+				`count.Bind(func(_ int) { __update___cond_0() })`,
+				`name.Bind(func(_ string) { __update___cond_0() })`,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}

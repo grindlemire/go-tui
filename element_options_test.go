@@ -307,8 +307,9 @@ func TestWithHeightAuto(t *testing.T) {
 
 func TestWithOnKeyPress_SetsHandler(t *testing.T) {
 	handlerCalled := false
-	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) {
+	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) bool {
 		handlerCalled = true
+		return true
 	}))
 
 	if e.onKeyPress == nil {
@@ -322,11 +323,11 @@ func TestWithOnKeyPress_SetsHandler(t *testing.T) {
 	}
 }
 
-func TestWithOnKeyPress_SetsFocusable(t *testing.T) {
-	e := New(WithOnKeyPress(func(*Element, KeyEvent) {}))
+func TestWithOnKeyPress_DoesNotSetFocusable(t *testing.T) {
+	e := New(WithOnKeyPress(func(*Element, KeyEvent) bool { return false }))
 
-	if !e.focusable {
-		t.Error("WithOnKeyPress should set focusable = true")
+	if e.focusable {
+		t.Error("WithOnKeyPress should not set focusable = true")
 	}
 }
 

@@ -174,7 +174,7 @@ func TestElement_WalkFocusables(t *testing.T) {
 				root.AddChild(New(WithOnFocus(func(*Element) {})))
 				root.AddChild(New(WithOnBlur(func(*Element) {})))
 				middle := New()
-				middle.AddChild(New(WithOnEvent(func(*Element, Event) bool { return false })))
+				middle.AddChild(New(WithOnClick(func(*Element) {})))
 				root.AddChild(middle)
 				return root
 			},

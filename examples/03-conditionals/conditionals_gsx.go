@@ -9,31 +9,21 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
-	return func(el *tui.Element, e tui.KeyEvent) {
+func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
 		switch e.Rune {
 		case '+':
 			count.Set(count.Get() + 1)
+			return true
 		case '-':
 			count.Set(count.Get() - 1)
+			return true
 		case 'r':
 			count.Set(0)
-		}
-	}
-}
-
-func handleMouseScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
 			return true
 		}
+		return false
 	}
-	return false
 }
 
 type ConditionalsView struct {
@@ -52,199 +42,165 @@ func Conditionals() ConditionalsView {
 	count := tui.NewState(0)
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
-		tui.WithGap(2),
-		tui.WithPadding(2),
+		tui.WithPadding(1),
 		tui.WithBorder(tui.BorderRounded),
-		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithGap(1),
 		tui.WithFocusable(true),
-		tui.WithOnEvent(handleMouseScroll),
 		tui.WithOnKeyPress(handleKeys(count)),
 	)
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
-		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_2 := tui.New(
-		tui.WithText("Conditional Rendering Demo"),
+		tui.WithText("Reactive Conditionals"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
-		tui.WithAlign(tui.AlignCenter),
+		tui.WithText(fmt.Sprintf("Count: %d", count.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 	)
-	__tui_4 := tui.New(
-		tui.WithText("Count:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_3.AddChild(__tui_4)
-	__tui_5 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", count.Get())),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
-	)
-	__tui_3.AddChild(__tui_5)
 	__tui_1.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_1)
-	__tui_6 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
+	__tui_4 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_0.AddChild(__tui_6)
-	__tui_7 := tui.New(
+	__tui_5 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
 	)
-	__tui_8 := tui.New(
-		tui.WithText("Example 1: Reactive Text"),
+	__tui_6 := tui.New(
+		tui.WithText("Reactive Text"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_7.AddChild(__tui_8)
-	__tui_9 := tui.New(
-		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
-		tui.WithMargin(1),
+	__tui_5.AddChild(__tui_6)
+	__tui_7 := tui.New(
+		tui.WithText(fmt.Sprintf("Value:  %d", count.Get())),
 	)
-	__tui_10 := tui.New(
-		tui.WithText("Text expressions update live:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_9.AddChild(__tui_10)
-	__tui_11 := tui.New(
-		tui.WithText(fmt.Sprintf("Count: %d", count.Get())),
-	)
-	__tui_9.AddChild(__tui_11)
-	__tui_12 := tui.New(
+	__tui_5.AddChild(__tui_7)
+	__tui_8 := tui.New(
 		tui.WithText(fmt.Sprintf("Double: %d", count.Get()*2)),
 	)
-	__tui_9.AddChild(__tui_12)
-	__tui_13 := tui.New(
-		tui.WithText(fmt.Sprintf("Is even: %v", count.Get()%2 == 0)),
+	__tui_5.AddChild(__tui_8)
+	__tui_9 := tui.New(
+		tui.WithText(fmt.Sprintf("Even:   %v", count.Get()%2 == 0)),
 	)
-	__tui_9.AddChild(__tui_13)
-	__tui_7.AddChild(__tui_9)
-	__tui_0.AddChild(__tui_7)
-	__tui_14 := tui.New(
+	__tui_5.AddChild(__tui_9)
+	__tui_4.AddChild(__tui_5)
+	__tui_10 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
-	)
-	__tui_15 := tui.New(
-		tui.WithText("Example 2: Static Conditionals"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_14.AddChild(__tui_15)
-	__tui_16 := tui.New(
-		tui.WithMargin(1),
-	)
-	__tui_17 := tui.New(
-		tui.WithText("These show based on start value:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_16.AddChild(__tui_17)
-	if count.Get() == 0 {
-		__tui_18 := tui.New(
-			tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
-			tui.WithPadding(1),
-		)
-		__tui_19 := tui.New(
-			tui.WithText("Started at zero"),
-		)
-		__tui_18.AddChild(__tui_19)
-		__tui_16.AddChild(__tui_18)
-	}
-	if count.Get() > 0 {
-		__tui_20 := tui.New(
-			tui.WithBackground(tui.NewStyle().Background(tui.Green)),
-			tui.WithPadding(1),
-		)
-		__tui_21 := tui.New(
-			tui.WithText("Started positive"),
-		)
-		__tui_20.AddChild(__tui_21)
-		__tui_16.AddChild(__tui_20)
-	}
-	__tui_14.AddChild(__tui_16)
-	__tui_0.AddChild(__tui_14)
-	__tui_22 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-	)
-	__tui_23 := tui.New(
-		tui.WithText("Example 3: If/Else Blocks"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_22.AddChild(__tui_23)
-	__tui_24 := tui.New(
-		tui.WithMargin(1),
-	)
-	__tui_25 := tui.New(
-		tui.WithText("Evaluated once at start:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_24.AddChild(__tui_25)
-	if count.Get() >= 5 {
-		__tui_26 := tui.New(
-			tui.WithBackground(tui.NewStyle().Background(tui.Green)),
-			tui.WithPadding(1),
-		)
-		__tui_27 := tui.New(
-			tui.WithText("High count at start"),
-		)
-		__tui_26.AddChild(__tui_27)
-		__tui_24.AddChild(__tui_26)
-	} else {
-		__tui_28 := tui.New(
-			tui.WithBackground(tui.NewStyle().Background(tui.Red)),
-			tui.WithPadding(1),
-		)
-		__tui_29 := tui.New(
-			tui.WithText("Low count at start"),
-		)
-		__tui_28.AddChild(__tui_29)
-		__tui_24.AddChild(__tui_28)
-	}
-	__tui_22.AddChild(__tui_24)
-	__tui_0.AddChild(__tui_22)
-	__tui_30 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_30)
-	__tui_31 := tui.New(
 		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
-		tui.WithAlign(tui.AlignCenter),
+		tui.WithFlexGrow(1.0),
 	)
-	__tui_32 := tui.New(
-		tui.WithText("Press - to decrement, + to increment, r to reset, q to quit"),
+	__tui_11 := tui.New(
+		tui.WithText("Reactive @if"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_10.AddChild(__tui_11)
+	__cond_0 := tui.New()
+	__tui_10.AddChild(__cond_0)
+	__update___cond_0 := func() {
+		__cond_0.RemoveAllChildren()
+		if count.Get() > 0 {
+			__tui_12 := tui.New(
+				tui.WithText("Positive"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+			)
+			__cond_0.AddChild(__tui_12)
+		}
+	}
+	__update___cond_0()
+	count.Bind(func(_ int) { __update___cond_0() })
+	__cond_1 := tui.New()
+	__tui_10.AddChild(__cond_1)
+	__update___cond_1 := func() {
+		__cond_1.RemoveAllChildren()
+		if count.Get() == 0 {
+			__tui_13 := tui.New(
+				tui.WithText("Zero"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+			)
+			__cond_1.AddChild(__tui_13)
+		}
+	}
+	__update___cond_1()
+	count.Bind(func(_ int) { __update___cond_1() })
+	__cond_2 := tui.New()
+	__tui_10.AddChild(__cond_2)
+	__update___cond_2 := func() {
+		__cond_2.RemoveAllChildren()
+		if count.Get() < 0 {
+			__tui_14 := tui.New(
+				tui.WithText("Negative"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+			)
+			__cond_2.AddChild(__tui_14)
+		}
+	}
+	__update___cond_2()
+	count.Bind(func(_ int) { __update___cond_2() })
+	__tui_4.AddChild(__tui_10)
+	__tui_15 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_16 := tui.New(
+		tui.WithText("Reactive @if/else"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_15.AddChild(__tui_16)
+	__cond_3 := tui.New()
+	__tui_15.AddChild(__cond_3)
+	__update___cond_3 := func() {
+		__cond_3.RemoveAllChildren()
+		if count.Get() >= 5 {
+			__tui_17 := tui.New(
+				tui.WithText("High (5+)"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+			)
+			__cond_3.AddChild(__tui_17)
+		} else {
+			__tui_18 := tui.New(
+				tui.WithText("Low (under 5)"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
+			)
+			__cond_3.AddChild(__tui_18)
+		}
+	}
+	__update___cond_3()
+	count.Bind(func(_ int) { __update___cond_3() })
+	__tui_4.AddChild(__tui_15)
+	__tui_0.AddChild(__tui_4)
+	__tui_19 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_20 := tui.New(
+		tui.WithText("[-] dec  [+] inc  [r] reset  [q] quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_31.AddChild(__tui_32)
-	__tui_33 := tui.New(
-		tui.WithText("Note: @if blocks evaluate once at construction"),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Dim()),
-	)
-	__tui_31.AddChild(__tui_33)
-	__tui_34 := tui.New(
-		tui.WithText("Text expressions with braces update reactively"),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Dim()),
-	)
-	__tui_31.AddChild(__tui_34)
-	__tui_0.AddChild(__tui_31)
+	__tui_19.AddChild(__tui_20)
+	__tui_0.AddChild(__tui_19)
 
 	// State bindings
 	count.Bind(func(_ int) {
-		__tui_5.SetText(fmt.Sprintf("%d", count.Get()))
+		__tui_3.SetText(fmt.Sprintf("Count: %d", count.Get()))
 	})
 	count.Bind(func(_ int) {
-		__tui_11.SetText(fmt.Sprintf("Count: %d", count.Get()))
+		__tui_7.SetText(fmt.Sprintf("Value:  %d", count.Get()))
 	})
 	count.Bind(func(_ int) {
-		__tui_12.SetText(fmt.Sprintf("Double: %d", count.Get()*2))
+		__tui_8.SetText(fmt.Sprintf("Double: %d", count.Get()*2))
 	})
 	count.Bind(func(_ int) {
-		__tui_13.SetText(fmt.Sprintf("Is even: %v", count.Get()%2 == 0))
+		__tui_9.SetText(fmt.Sprintf("Even:   %v", count.Get()%2 == 0))
 	})
 
 	view = ConditionalsView{

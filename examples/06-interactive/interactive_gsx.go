@@ -5,120 +5,546 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
-func increment(count *tui.State[int]) func(*tui.Element) {
+func increment(count *tui.State[int], eventCount *tui.State[int]) func(*tui.Element) {
 	return func(el *tui.Element) {
 		count.Set(count.Get() + 1)
+		eventCount.Set(eventCount.Get() + 1)
 	}
 }
 
-func decrement(count *tui.State[int]) func(*tui.Element) {
+func decrement(count *tui.State[int], eventCount *tui.State[int]) func(*tui.Element) {
 	return func(el *tui.Element) {
 		count.Set(count.Get() - 1)
+		eventCount.Set(eventCount.Get() + 1)
 	}
 }
 
-func reset(count *tui.State[int]) func(*tui.Element) {
+func resetCount(count *tui.State[int], eventCount *tui.State[int]) func(*tui.Element) {
 	return func(el *tui.Element) {
 		count.Set(0)
+		eventCount.Set(eventCount.Get() + 1)
 	}
 }
 
-func keyPress(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) {
-	return func(el *tui.Element, e tui.KeyEvent) {
-		if e.Rune == '-' {
-			count.Set(count.Get() - 1)
-		} else if e.Rune == '+' {
+func handleKeys(count *tui.State[int], running *tui.State[bool], elapsed *tui.State[int], sound, notify, dark *tui.State[bool], eventCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
+	return func(el *tui.Element, e tui.KeyEvent) bool {
+		switch e.Rune {
+		// Counter
+		case '+', '=':
 			count.Set(count.Get() + 1)
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		case '-':
+			count.Set(count.Get() - 1)
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		case '0':
+			count.Set(0)
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		// Timer
+		case ' ':
+			running.Set(!running.Get())
+			return true
+		case 'r':
+			elapsed.Set(0)
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		// Toggles
+		case '1':
+			sound.Set(!sound.Get())
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		case '2':
+			notify.Set(!notify.Get())
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		case '3':
+			dark.Set(!dark.Get())
+			eventCount.Set(eventCount.Get() + 1)
+			return true
+		}
+		return false
+	}
+}
+
+func timerTick(elapsed *tui.State[int], running *tui.State[bool]) func() {
+	return func() {
+		if running.Get() {
+			elapsed.Set(elapsed.Get() + 1)
 		}
 	}
 }
 
-type CounterView struct {
+func formatTime(seconds int) string {
+	m := seconds / 60
+	s := seconds - (m * 60)
+	return fmt.Sprintf("%02d:%02d", m, s)
+}
+
+func toggle(state *tui.State[bool], eventCount *tui.State[int]) func(*tui.Element) {
+	return func(el *tui.Element) {
+		state.Set(!state.Get())
+		eventCount.Set(eventCount.Get() + 1)
+	}
+}
+
+func inspectEvent(lastEvent *tui.State[string], eventCount *tui.State[int]) func(*tui.Element, tui.Event) bool {
+	return func(el *tui.Element, e tui.Event) bool {
+		eventCount.Set(eventCount.Get() + 1)
+		switch ev := e.(type) {
+		case tui.KeyEvent:
+			if ev.Rune != 0 {
+				lastEvent.Set(fmt.Sprintf("Key '%c'", ev.Rune))
+			} else {
+				lastEvent.Set(describeKey(ev.Key))
+			}
+		case tui.MouseEvent:
+			lastEvent.Set(fmt.Sprintf("%s (%d,%d)", describeButton(ev.Button), ev.X, ev.Y))
+		}
+		return false
+	}
+}
+
+func describeKey(key tui.Key) string {
+	switch key {
+	case tui.KeyEnter:
+		return "Enter"
+	case tui.KeyBackspace:
+		return "Backspace"
+	case tui.KeyTab:
+		return "Tab"
+	case tui.KeyUp:
+		return "Up"
+	case tui.KeyDown:
+		return "Down"
+	case tui.KeyLeft:
+		return "Left"
+	case tui.KeyRight:
+		return "Right"
+	case tui.KeyHome:
+		return "Home"
+	case tui.KeyEnd:
+		return "End"
+	default:
+		return fmt.Sprintf("Key(%d)", key)
+	}
+}
+
+func describeButton(btn tui.MouseButton) string {
+	switch btn {
+	case tui.MouseLeft:
+		return "Left Click"
+	case tui.MouseRight:
+		return "Right Click"
+	case tui.MouseMiddle:
+		return "Middle Click"
+	case tui.MouseWheelUp:
+		return "Wheel Up"
+	case tui.MouseWheelDown:
+		return "Wheel Down"
+	default:
+		return "Mouse"
+	}
+}
+
+type InteractiveView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
 }
 
-func (v CounterView) GetRoot() tui.Renderable { return v.Root }
+func (v InteractiveView) GetRoot() tui.Renderable { return v.Root }
 
-func (v CounterView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v InteractiveView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func Counter() CounterView {
-	var view CounterView
+func Interactive() InteractiveView {
+	var view InteractiveView
 	var watchers []tui.Watcher
 
 	count := tui.NewState(0)
+	elapsed := tui.NewState(0)
+	running := tui.NewState(true)
+	lastEvent := tui.NewState("(waiting)")
+	eventCount := tui.NewState(0)
+	sound := tui.NewState(true)
+	notify := tui.NewState(false)
+	dark := tui.NewState(false)
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
-		tui.WithPadding(2),
+		tui.WithPadding(1),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithGap(1),
+		tui.WithOnKeyPress(handleKeys(count, running, elapsed, sound, notify, dark, eventCount)),
+		tui.WithOnEvent(inspectEvent(lastEvent, eventCount)),
 	)
 	__tui_1 := tui.New(
-		tui.WithText("Interactive Counter"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
-	)
-	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_2)
-	__tui_3 := tui.New(
 		tui.WithDirection(tui.Row),
-		tui.WithGap(2),
-		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifySpaceBetween),
 	)
+	__tui_2 := tui.New(
+		tui.WithText("Interactive Elements"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_1.AddChild(__tui_2)
+	__tui_3 := tui.New(
+		tui.WithText(fmt.Sprintf("Events: %d", eventCount.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
 	__tui_4 := tui.New(
-		tui.WithText("Count"),
-	)
-	__tui_3.AddChild(__tui_4)
-	__tui_5 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", count.Get())),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
-	)
-	__tui_3.AddChild(__tui_5)
-	__tui_0.AddChild(__tui_3)
-	__tui_6 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
+	__tui_5 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_6 := tui.New(
+		tui.WithText("onClick + onKeyPress"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_5.AddChild(__tui_6)
 	__tui_7 := tui.New(
-		tui.WithOnKeyPress(keyPress(count)),
-		tui.WithOnClick(decrement(count)),
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_8 := tui.New(tui.WithText(" - "))
-	__tui_7.AddChild(__tui_8)
-	__tui_6.AddChild(__tui_7)
-	__tui_9 := tui.New(
-		tui.WithOnKeyPress(keyPress(count)),
-		tui.WithOnClick(increment(count)),
-	)
-	__tui_10 := tui.New(tui.WithText(" + "))
-	__tui_9.AddChild(__tui_10)
-	__tui_6.AddChild(__tui_9)
-	__tui_11 := tui.New(
-		tui.WithOnClick(reset(count)),
-	)
-	__tui_12 := tui.New(tui.WithText(" Reset "))
-	__tui_11.AddChild(__tui_12)
-	__tui_6.AddChild(__tui_11)
-	__tui_0.AddChild(__tui_6)
-	__tui_13 := tui.New(
-		tui.WithText("Click buttons or press q to quit"),
+	__tui_8 := tui.New(
+		tui.WithText("Count:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_13)
+	__tui_7.AddChild(__tui_8)
+	__tui_9 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", count.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	)
+	__tui_7.AddChild(__tui_9)
+	__tui_5.AddChild(__tui_7)
+	__tui_10 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_11 := tui.New(
+		tui.WithOnClick(decrement(count, eventCount)),
+	)
+	__tui_12 := tui.New(tui.WithText(" - "))
+	__tui_11.AddChild(__tui_12)
+	__tui_10.AddChild(__tui_11)
+	__tui_13 := tui.New(
+		tui.WithOnClick(increment(count, eventCount)),
+	)
+	__tui_14 := tui.New(tui.WithText(" + "))
+	__tui_13.AddChild(__tui_14)
+	__tui_10.AddChild(__tui_13)
+	__tui_15 := tui.New(
+		tui.WithOnClick(resetCount(count, eventCount)),
+	)
+	__tui_16 := tui.New(tui.WithText(" 0 "))
+	__tui_15.AddChild(__tui_16)
+	__tui_10.AddChild(__tui_15)
+	__tui_5.AddChild(__tui_10)
+	__cond_0 := tui.New()
+	__tui_5.AddChild(__cond_0)
+	__update___cond_0 := func() {
+		__cond_0.RemoveAllChildren()
+		if count.Get() > 0 {
+			__tui_17 := tui.New(
+				tui.WithText("Positive"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+			)
+			__cond_0.AddChild(__tui_17)
+		} else if count.Get() < 0 {
+			__tui_18 := tui.New(
+				tui.WithText("Negative"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+			)
+			__cond_0.AddChild(__tui_18)
+		} else {
+			__tui_19 := tui.New(
+				tui.WithText("Zero"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+			)
+			__cond_0.AddChild(__tui_19)
+		}
+	}
+	__update___cond_0()
+	count.Bind(func(_ int) { __update___cond_0() })
+	__tui_20 := tui.New(
+		tui.WithText("click btns or +/-/0"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_5.AddChild(__tui_20)
+	__tui_4.AddChild(__tui_5)
+	__tui_21 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_22 := tui.New(
+		tui.WithText("onTimer"),
+		tui.WithTextGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_21.AddChild(__tui_22)
+	__tui_23 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_24 := tui.New(
+		tui.WithText("Elapsed:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_23.AddChild(__tui_24)
+	__tui_25 := tui.New(
+		tui.WithText(formatTime(elapsed.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+	)
+	__tui_23.AddChild(__tui_25)
+	__tui_21.AddChild(__tui_23)
+	__cond_1 := tui.New()
+	__tui_21.AddChild(__cond_1)
+	__update___cond_1 := func() {
+		__cond_1.RemoveAllChildren()
+		if running.Get() {
+			__tui_26 := tui.New(
+				tui.WithText("Running"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+			)
+			__cond_1.AddChild(__tui_26)
+		} else {
+			__tui_27 := tui.New(
+				tui.WithText("Stopped"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+			)
+			__cond_1.AddChild(__tui_27)
+		}
+	}
+	__update___cond_1()
+	running.Bind(func(_ bool) { __update___cond_1() })
+	__tui_28 := tui.New(
+		tui.WithText("[space] toggle [r] reset"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_21.AddChild(__tui_28)
+	__tui_4.AddChild(__tui_21)
+	__tui_0.AddChild(__tui_4)
+	__tui_29 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_30 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_31 := tui.New(
+		tui.WithText("onClick (toggles)"),
+		tui.WithTextGradient(tui.NewGradient(tui.Green, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_30.AddChild(__tui_31)
+	__tui_32 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_33 := tui.New(
+		tui.WithOnClick(toggle(sound, eventCount)),
+	)
+	__tui_34 := tui.New(tui.WithText("Sound  "))
+	__tui_33.AddChild(__tui_34)
+	__tui_32.AddChild(__tui_33)
+	__cond_2 := tui.New()
+	__tui_32.AddChild(__cond_2)
+	__update___cond_2 := func() {
+		__cond_2.RemoveAllChildren()
+		if sound.Get() {
+			__tui_35 := tui.New(
+				tui.WithText("ON"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+			)
+			__cond_2.AddChild(__tui_35)
+		} else {
+			__tui_36 := tui.New(
+				tui.WithText("OFF"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+			)
+			__cond_2.AddChild(__tui_36)
+		}
+	}
+	__update___cond_2()
+	sound.Bind(func(_ bool) { __update___cond_2() })
+	__tui_30.AddChild(__tui_32)
+	__tui_37 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_38 := tui.New(
+		tui.WithOnClick(toggle(notify, eventCount)),
+	)
+	__tui_39 := tui.New(tui.WithText("Notify "))
+	__tui_38.AddChild(__tui_39)
+	__tui_37.AddChild(__tui_38)
+	__cond_3 := tui.New()
+	__tui_37.AddChild(__cond_3)
+	__update___cond_3 := func() {
+		__cond_3.RemoveAllChildren()
+		if notify.Get() {
+			__tui_40 := tui.New(
+				tui.WithText("ON"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+			)
+			__cond_3.AddChild(__tui_40)
+		} else {
+			__tui_41 := tui.New(
+				tui.WithText("OFF"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+			)
+			__cond_3.AddChild(__tui_41)
+		}
+	}
+	__update___cond_3()
+	notify.Bind(func(_ bool) { __update___cond_3() })
+	__tui_30.AddChild(__tui_37)
+	__tui_42 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_43 := tui.New(
+		tui.WithOnClick(toggle(dark, eventCount)),
+	)
+	__tui_44 := tui.New(tui.WithText("Theme  "))
+	__tui_43.AddChild(__tui_44)
+	__tui_42.AddChild(__tui_43)
+	__cond_4 := tui.New()
+	__tui_42.AddChild(__cond_4)
+	__update___cond_4 := func() {
+		__cond_4.RemoveAllChildren()
+		if dark.Get() {
+			__tui_45 := tui.New(
+				tui.WithText("Dark"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+			)
+			__cond_4.AddChild(__tui_45)
+		} else {
+			__tui_46 := tui.New(
+				tui.WithText("Light"),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
+			)
+			__cond_4.AddChild(__tui_46)
+		}
+	}
+	__update___cond_4()
+	dark.Bind(func(_ bool) { __update___cond_4() })
+	__tui_30.AddChild(__tui_42)
+	__tui_47 := tui.New(
+		tui.WithText("click or press 1/2/3"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_30.AddChild(__tui_47)
+	__tui_29.AddChild(__tui_30)
+	__tui_48 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_49 := tui.New(
+		tui.WithText("Event Inspector"),
+		tui.WithTextGradient(tui.NewGradient(tui.Yellow, tui.Green).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_48.AddChild(__tui_49)
+	__tui_50 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_51 := tui.New(
+		tui.WithText("Last:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_50.AddChild(__tui_51)
+	__tui_52 := tui.New(
+		tui.WithText(lastEvent.Get()),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
+	)
+	__tui_50.AddChild(__tui_52)
+	__tui_48.AddChild(__tui_50)
+	__tui_53 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_54 := tui.New(
+		tui.WithText("Total:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_53.AddChild(__tui_54)
+	__tui_55 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", eventCount.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+	)
+	__tui_53.AddChild(__tui_55)
+	__tui_48.AddChild(__tui_53)
+	__tui_56 := tui.New(
+		tui.WithText("bubbled events shown"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_48.AddChild(__tui_56)
+	__tui_29.AddChild(__tui_48)
+	__tui_0.AddChild(__tui_29)
+	__tui_57 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+	)
+	__tui_58 := tui.New(
+		tui.WithText("[q] quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_57.AddChild(__tui_58)
+	__tui_0.AddChild(__tui_57)
+
+	// Attach watchers (deferred until refs are assigned)
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, timerTick(elapsed, running)))
 
 	// State bindings
+	eventCount.Bind(func(_ int) {
+		__tui_3.SetText(fmt.Sprintf("Events: %d", eventCount.Get()))
+	})
 	count.Bind(func(_ int) {
-		__tui_5.SetText(fmt.Sprintf("%d", count.Get()))
+		__tui_9.SetText(fmt.Sprintf("%d", count.Get()))
+	})
+	elapsed.Bind(func(_ int) {
+		__tui_25.SetText(formatTime(elapsed.Get()))
+	})
+	lastEvent.Bind(func(_ string) {
+		__tui_52.SetText(lastEvent.Get())
+	})
+	eventCount.Bind(func(_ int) {
+		__tui_55.SetText(fmt.Sprintf("%d", eventCount.Get()))
 	})
 
-	view = CounterView{
+	view = InteractiveView{
 		Root:     __tui_0,
 		watchers: watchers,
 	}

@@ -16,28 +16,22 @@ func (e *Element) IsFocused() bool {
 	return e.focused
 }
 
-// Focus marks this element and all children as focused.
-// Calls onFocus callback if set, then cascades to children.
+// Focus marks this element as focused and calls onFocus callback if set.
+// Does not cascade to children — only the FocusManager target receives focus.
 func (e *Element) Focus() {
 	debug.Log("Element.Focus: text=%q", e.text)
 	e.focused = true
 	if e.onFocus != nil {
 		e.onFocus(e)
 	}
-	for _, child := range e.children {
-		child.Focus()
-	}
 }
 
-// Blur marks this element and all children as not focused.
-// Calls onBlur callback if set, then cascades to children.
+// Blur marks this element as not focused and calls onBlur callback if set.
+// Does not cascade to children — only the FocusManager target loses focus.
 func (e *Element) Blur() {
 	e.focused = false
 	if e.onBlur != nil {
 		e.onBlur(e)
-	}
-	for _, child := range e.children {
-		child.Blur()
 	}
 }
 
@@ -50,10 +44,12 @@ func (e *Element) SetFocusable(focusable bool) {
 
 // SetOnKeyPress sets a handler for key press events.
 // The handler receives the element as its first parameter (self-inject).
-// No return value needed - mutations mark dirty automatically via MarkDirty().
-// Implicitly sets focusable = true so the element can receive keyboard events.
-func (e *Element) SetOnKeyPress(fn func(*Element, KeyEvent)) {
-	e.focusable = true
+// Return true to consume the event (stops bubbling to parent elements).
+// Return false to let the event bubble up to the parent.
+// Does NOT set focusable — this handler participates in bubbling without
+// making the element a Tab navigation target. Use SetFocusable(true) explicitly
+// if this element should receive focus directly.
+func (e *Element) SetOnKeyPress(fn func(*Element, KeyEvent) bool) {
 	e.onKeyPress = fn
 }
 
@@ -68,9 +64,10 @@ func (e *Element) SetOnClick(fn func(*Element)) {
 
 // SetOnEvent sets the event handler for this element.
 // The handler receives the element as its first parameter (self-inject).
-// Implicitly sets focusable = true.
+// Does NOT set focusable — this handler participates in bubbling without
+// making the element a Tab navigation target. Use SetFocusable(true) explicitly
+// if this element should receive focus directly.
 func (e *Element) SetOnEvent(fn func(*Element, Event) bool) {
-	e.focusable = true
 	e.onEvent = fn
 }
 
@@ -104,14 +101,15 @@ func (e *Element) HandleEvent(event Event) bool {
 		}
 	}
 
-	// Call the new-style handlers (no bool return - mutations mark dirty automatically)
+	// Handle key events with bubbling support
 	if keyEvent, ok := event.(KeyEvent); ok {
 		debug.Log("Element.HandleEvent: KeyEvent key=%d rune=%c", keyEvent.Key, keyEvent.Rune)
 		if e.onKeyPress != nil {
 			debug.Log("Element.HandleEvent: calling onKeyPress handler")
-			e.onKeyPress(e, keyEvent)
-			// Note: new-style handlers don't return bool, so we continue processing
-			// The handler will mark dirty via mutations if needed
+			if e.onKeyPress(e, keyEvent) {
+				debug.Log("Element.HandleEvent: onKeyPress consumed event")
+				return true
+			}
 		}
 
 		// Trigger onClick on Enter or Space when focused
@@ -119,6 +117,12 @@ func (e *Element) HandleEvent(event Event) bool {
 			debug.Log("Element.HandleEvent: triggering onClick via Enter/Space")
 			e.onClick(e)
 			return true
+		}
+
+		// Bubble to parent (same pattern as mouse events)
+		if e.parent != nil {
+			debug.Log("Element.HandleEvent: bubbling key event to parent")
+			return e.parent.HandleEvent(event)
 		}
 	}
 

@@ -25,23 +25,24 @@ templ Scrollable(items []string) {
 	</div>
 }
 
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) {
+func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
 	switch e.Rune {
 	case 'j':
 		el.ScrollBy(0, 1)
-		return
+		return true
 	case 'k':
 		el.ScrollBy(0, -1)
-		return
+		return true
 	}
 	switch e.Key {
 	case tui.KeyDown:
 		el.ScrollBy(0, 1)
-		return
+		return true
 	case tui.KeyUp:
 		el.ScrollBy(0, -1)
-		return
+		return true
 	}
+	return false
 }
 
 func handleMouseScroll(el *tui.Element, e tui.Event) bool {

@@ -21,13 +21,16 @@ func handleScroll(el *tui.Element, e tui.Event) bool {
 	return false
 }
 
-func handleKeyPress(el *tui.Element, e tui.KeyEvent) {
+func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
 	switch e.Rune {
 	case 'j':
 		el.ScrollBy(0, 1)
+		return true
 	case 'k':
 		el.ScrollBy(0, -1)
+		return true
 	}
+	return false
 }
 
 type LayoutView struct {

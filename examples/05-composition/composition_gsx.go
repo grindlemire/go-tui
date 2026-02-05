@@ -27,7 +27,8 @@ func Card(title string, children []*tui.Element) CardView {
 	)
 	__tui_1 := tui.New(
 		tui.WithText(title),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
@@ -61,8 +62,8 @@ func Badge(text string) BadgeView {
 
 	__tui_0 := tui.New(
 		tui.WithText(" "+text+" "),
-		tui.WithBackground(tui.NewStyle().Background(tui.Blue)),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
 
 	view = BadgeView{
@@ -91,11 +92,47 @@ func Header(text string) HeaderView {
 	)
 	__tui_1 := tui.New(
 		tui.WithText(text),
+		tui.WithTextGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 
 	view = HeaderView{
+		Root:     __tui_0,
+		watchers: watchers,
+	}
+	return view
+}
+
+type StatusLineView struct {
+	Root     *tui.Element
+	watchers []tui.Watcher
+}
+
+func (v StatusLineView) GetRoot() tui.Renderable { return v.Root }
+
+func (v StatusLineView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func StatusLine(label string, value string) StatusLineView {
+	var view StatusLineView
+	var watchers []tui.Watcher
+
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_1 := tui.New(
+		tui.WithText(label),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_0.AddChild(__tui_1)
+	__tui_2 := tui.New(
+		tui.WithText(value),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	)
+	__tui_0.AddChild(__tui_2)
+
+	view = StatusLineView{
 		Root:     __tui_0,
 		watchers: watchers,
 	}
@@ -117,66 +154,133 @@ func App() AppView {
 
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
-		tui.WithGap(2),
-		tui.WithPadding(2),
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithGap(1),
 	)
-	__tui_1 := Header("Component Composition Demo")
-	__tui_0.AddChild(__tui_1.Root)
-	__tui_3_children := []*tui.Element{}
+	__tui_1 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+	)
+	__tui_2 := tui.New(
+		tui.WithText("Component Composition"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_1.AddChild(__tui_2)
+	__tui_3 := tui.New(
+		tui.WithText("Nested Components"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
 	__tui_4 := tui.New(
-		tui.WithText("Name: Alice"),
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
 	)
-	__tui_3_children = append(__tui_3_children, __tui_4)
 	__tui_5 := tui.New(
-		tui.WithText("Role: Admin"),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
 	)
-	__tui_3_children = append(__tui_3_children, __tui_5)
 	__tui_6 := tui.New(
+		tui.WithText("@Component (leaf)"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_5.AddChild(__tui_6)
+	__tui_7 := Header("go-tui")
+	__tui_5.AddChild(__tui_7.Root)
+	__tui_8 := Badge("Framework")
+	__tui_5.AddChild(__tui_8.Root)
+	__tui_4.AddChild(__tui_5)
+	__tui_9 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_10 := tui.New(
+		tui.WithText("@Component {children}"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_9.AddChild(__tui_10)
+	__tui_12_children := []*tui.Element{}
+	__tui_13 := StatusLine("Name:", "Alice")
+	__tui_12_children = append(__tui_12_children, __tui_13.Root)
+	__tui_14 := StatusLine("Role:", "Admin")
+	__tui_12_children = append(__tui_12_children, __tui_14.Root)
+	__tui_15 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_7 := tui.New(
-		tui.WithText("Status:"),
-	)
-	__tui_6.AddChild(__tui_7)
-	__tui_8 := Badge("Active")
-	__tui_6.AddChild(__tui_8.Root)
-	__tui_3_children = append(__tui_3_children, __tui_6)
-	__tui_2 := Card("User Profile", __tui_3_children)
-	__tui_0.AddChild(__tui_2.Root)
-	__tui_10_children := []*tui.Element{}
-	__tui_11 := tui.New(
-		tui.WithText("Theme: Dark"),
-	)
-	__tui_10_children = append(__tui_10_children, __tui_11)
-	__tui_12 := tui.New(
-		tui.WithText("Notifications: On"),
-	)
-	__tui_10_children = append(__tui_10_children, __tui_12)
-	__tui_13 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
-	)
-	__tui_14 := tui.New(
-		tui.WithText("Version:"),
-	)
-	__tui_13.AddChild(__tui_14)
-	__tui_15 := Badge("v1.0")
-	__tui_13.AddChild(__tui_15.Root)
-	__tui_10_children = append(__tui_10_children, __tui_13)
-	__tui_9 := Card("Settings", __tui_10_children)
-	__tui_0.AddChild(__tui_9.Root)
 	__tui_16 := tui.New(
-		tui.WithText("Press q to quit"),
+		tui.WithText("Status:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_16)
+	__tui_15.AddChild(__tui_16)
+	__tui_17 := Badge("Active")
+	__tui_15.AddChild(__tui_17.Root)
+	__tui_12_children = append(__tui_12_children, __tui_15)
+	__tui_11 := Card("User Profile", __tui_12_children)
+	__tui_9.AddChild(__tui_11.Root)
+	__tui_4.AddChild(__tui_9)
+	__tui_18 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_19 := tui.New(
+		tui.WithText("Deep Nesting"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_18.AddChild(__tui_19)
+	__tui_21_children := []*tui.Element{}
+	__tui_22 := StatusLine("Theme:", "Dark")
+	__tui_21_children = append(__tui_21_children, __tui_22.Root)
+	__tui_23 := StatusLine("Notify:", "On")
+	__tui_21_children = append(__tui_21_children, __tui_23.Root)
+	__tui_24 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+	)
+	__tui_25 := tui.New(
+		tui.WithText("Tags:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_24.AddChild(__tui_25)
+	__tui_26 := Badge("New")
+	__tui_24.AddChild(__tui_26.Root)
+	__tui_27 := Badge("v1.0")
+	__tui_24.AddChild(__tui_27.Root)
+	__tui_21_children = append(__tui_21_children, __tui_24)
+	__tui_20 := Card("Settings", __tui_21_children)
+	__tui_18.AddChild(__tui_20.Root)
+	__tui_4.AddChild(__tui_18)
+	__tui_0.AddChild(__tui_4)
+	__tui_28 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_29 := tui.New(
+		tui.WithText("[q] quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_28.AddChild(__tui_29)
+	__tui_0.AddChild(__tui_28)
 
-	watchers = append(watchers, __tui_1.GetWatchers()...)
+	watchers = append(watchers, __tui_7.GetWatchers()...)
 	watchers = append(watchers, __tui_8.GetWatchers()...)
-	watchers = append(watchers, __tui_2.GetWatchers()...)
-	watchers = append(watchers, __tui_15.GetWatchers()...)
-	watchers = append(watchers, __tui_9.GetWatchers()...)
+	watchers = append(watchers, __tui_13.GetWatchers()...)
+	watchers = append(watchers, __tui_14.GetWatchers()...)
+	watchers = append(watchers, __tui_17.GetWatchers()...)
+	watchers = append(watchers, __tui_11.GetWatchers()...)
+	watchers = append(watchers, __tui_22.GetWatchers()...)
+	watchers = append(watchers, __tui_23.GetWatchers()...)
+	watchers = append(watchers, __tui_26.GetWatchers()...)
+	watchers = append(watchers, __tui_27.GetWatchers()...)
+	watchers = append(watchers, __tui_20.GetWatchers()...)
 
 	view = AppView{
 		Root:     __tui_0,

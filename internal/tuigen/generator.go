@@ -38,6 +38,12 @@ type Generator struct {
 	stateVars     []StateVar
 	stateBindings []StateBinding
 
+	// Conditional counter for reactive @if wrapper elements (__cond_0, __cond_1, etc.)
+	condCounter int
+
+	// Loop counter for reactive @for wrapper elements (__loop_0, __loop_1, etc.)
+	loopCounter int
+
 	// SkipImports uses format.Source instead of imports.Process (faster for tests)
 	SkipImports bool
 }
@@ -149,6 +155,29 @@ func (g *Generator) nextVar() string {
 	name := fmt.Sprintf("__tui_%d", g.varCounter)
 	g.varCounter++
 	return name
+}
+
+// nextCondVar returns the next unique conditional wrapper variable name.
+func (g *Generator) nextCondVar() string {
+	name := fmt.Sprintf("__cond_%d", g.condCounter)
+	g.condCounter++
+	return name
+}
+
+// nextLoopVar returns the next unique loop wrapper variable name.
+func (g *Generator) nextLoopVar() string {
+	name := fmt.Sprintf("__loop_%d", g.loopCounter)
+	g.loopCounter++
+	return name
+}
+
+// stateNameSet returns a set of state variable names for quick lookup.
+func (g *Generator) stateNameSet() map[string]bool {
+	m := make(map[string]bool)
+	for _, sv := range g.stateVars {
+		m[sv.Name] = true
+	}
+	return m
 }
 
 // write writes a string without indentation.

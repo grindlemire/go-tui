@@ -22,11 +22,11 @@ func TestElement_WithOnBlur_ImpliesFocusable(t *testing.T) {
 	}
 }
 
-func TestElement_WithOnEvent_ImpliesFocusable(t *testing.T) {
+func TestElement_WithOnEvent_DoesNotImplyFocusable(t *testing.T) {
 	e := New(WithOnEvent(func(*Element, Event) bool { return false }))
 
-	if !e.IsFocusable() {
-		t.Error("WithOnEvent should set focusable = true")
+	if e.IsFocusable() {
+		t.Error("WithOnEvent should not set focusable = true")
 	}
 }
 
@@ -64,7 +64,7 @@ func TestElement_Blur_ClearsAndCallsCallback(t *testing.T) {
 	}
 }
 
-func TestElement_Focus_CascadesToChildren(t *testing.T) {
+func TestElement_Focus_DoesNotCascadeToChildren(t *testing.T) {
 	parent := New(WithOnFocus(func(*Element) {}))
 	child := New()
 	grandchild := New()
@@ -77,38 +77,36 @@ func TestElement_Focus_CascadesToChildren(t *testing.T) {
 	if !parent.IsFocused() {
 		t.Error("parent should be focused")
 	}
-	if !child.IsFocused() {
-		t.Error("child should be focused when parent is focused")
+	if child.IsFocused() {
+		t.Error("child should not be focused when only parent is focused")
 	}
-	if !grandchild.IsFocused() {
-		t.Error("grandchild should be focused when parent is focused")
+	if grandchild.IsFocused() {
+		t.Error("grandchild should not be focused when only parent is focused")
 	}
 }
 
-func TestElement_Blur_CascadesToChildren(t *testing.T) {
+func TestElement_Blur_DoesNotCascadeToChildren(t *testing.T) {
 	parent := New(WithOnBlur(func(*Element) {}))
-	child := New()
+	child := New(WithOnFocus(func(*Element) {}))
 	grandchild := New()
 
 	parent.AddChild(child)
 	child.AddChild(grandchild)
 
-	// Focus first, then blur
+	// Focus parent and child separately, then blur parent
 	parent.Focus()
+	child.Focus()
 	parent.Blur()
 
 	if parent.IsFocused() {
 		t.Error("parent should not be focused after blur")
 	}
-	if child.IsFocused() {
-		t.Error("child should not be focused when parent is blurred")
-	}
-	if grandchild.IsFocused() {
-		t.Error("grandchild should not be focused when parent is blurred")
+	if !child.IsFocused() {
+		t.Error("child should still be focused when only parent is blurred")
 	}
 }
 
-func TestElement_Focus_ChildCallbacksCalled(t *testing.T) {
+func TestElement_Focus_ChildCallbackNotCalled(t *testing.T) {
 	parentFocusCalled := false
 	childFocusCalled := false
 
@@ -121,12 +119,12 @@ func TestElement_Focus_ChildCallbacksCalled(t *testing.T) {
 	if !parentFocusCalled {
 		t.Error("parent onFocus should be called")
 	}
-	if !childFocusCalled {
-		t.Error("child onFocus should be called when parent is focused")
+	if childFocusCalled {
+		t.Error("child onFocus should not be called when only parent is focused")
 	}
 }
 
-func TestElement_Blur_ChildCallbacksCalled(t *testing.T) {
+func TestElement_Blur_ChildCallbackNotCalled(t *testing.T) {
 	parentBlurCalled := false
 	childBlurCalled := false
 
@@ -140,8 +138,8 @@ func TestElement_Blur_ChildCallbacksCalled(t *testing.T) {
 	if !parentBlurCalled {
 		t.Error("parent onBlur should be called")
 	}
-	if !childBlurCalled {
-		t.Error("child onBlur should be called when parent is blurred")
+	if childBlurCalled {
+		t.Error("child onBlur should not be called when only parent is blurred")
 	}
 }
 
