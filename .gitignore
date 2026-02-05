@@ -27,6 +27,7 @@ vendor/
 .vscode/
 !editor/vscode/
 ./editor/zed-gsx/grammars/
+editor/zed-gsx/grammars/gsx/
 
 extension.wasm
 
