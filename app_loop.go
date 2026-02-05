@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"time"
@@ -31,6 +32,7 @@ func (a *App) Run() error {
 
 	// Initial render
 	a.Render()
+	a.rebuildDispatchTable()
 
 	// Frame-based loop with configurable frame timing
 	for !a.stopped {
@@ -54,6 +56,7 @@ func (a *App) Run() error {
 		// Always render if dirty
 		if checkAndClearDirty() {
 			a.Render()
+			a.rebuildDispatchTable()
 		}
 
 		// Sleep for remaining frame time to maintain consistent framerate
@@ -99,4 +102,23 @@ func (a *App) QueueUpdate(fn func()) {
 		// Queue full - this shouldn't happen with reasonable buffer size
 		// Could log a warning here
 	}
+}
+
+// rebuildDispatchTable walks the rendered element tree and builds a new
+// dispatch table from all mounted components' KeyMap() methods.
+// If the root is not an *Element or validation fails, the previous table is kept.
+func (a *App) rebuildDispatchTable() {
+	root, ok := a.root.(*Element)
+	if !ok {
+		return
+	}
+
+	table, err := buildDispatchTable(root)
+	if err != nil {
+		// Validation error (e.g., conflicting Stop handlers).
+		// Log and keep the previous valid table rather than crashing.
+		fmt.Fprintf(os.Stderr, "tui: dispatch table error: %v\n", err)
+		return
+	}
+	a.dispatchTable = table
 }

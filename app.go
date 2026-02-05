@@ -83,6 +83,11 @@ type App struct {
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow int // Terminal row where inline region starts (calculated at init)
+
+	// Component model (mount system for struct components)
+	mounts        *mountState
+	dispatchTable *dispatchTable // Key broadcast dispatch table, rebuilt on dirty frames
+	rootComponent Component      // Root struct component (set via SetRoot with Component)
 }
 
 // currentApp holds a reference to the currently running app for package-level Stop().
@@ -122,11 +127,12 @@ func NewApp(opts ...AppOption) (*App, error) {
 		focus:          focus,
 		stopCh:         make(chan struct{}),
 		stopped:        false,
-		inputLatency:   50 * time.Millisecond,  // Default polling timeout
-		frameDuration:  16 * time.Millisecond,  // Default ~60fps
-		eventQueueSize: 256,                    // Default queue size
-		mouseEnabled:   true,                   // Mouse enabled by default
-		cursorVisible:  false,                  // Cursor hidden by default
+		inputLatency:   50 * time.Millisecond, // Default polling timeout
+		frameDuration:  16 * time.Millisecond, // Default ~60fps
+		eventQueueSize: 256,                   // Default queue size
+		mouseEnabled:   true,                  // Mouse enabled by default
+		cursorVisible:  false,                 // Cursor hidden by default
+		mounts:         newMountState(),
 	}
 
 	// Apply options (may modify defaults above, including inlineHeight)
@@ -198,6 +204,10 @@ func NewApp(opts ...AppOption) (*App, error) {
 			}
 		}
 	}
+
+	// Set currentApp so that Mount() works during SetRoot (Component.Render may call Mount).
+	// Run() will set it again; this ensures it's available during initialization.
+	currentApp = app
 
 	// Set pending root if provided via WithRoot option
 	if app.pendingRoot != nil {
@@ -234,11 +244,12 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		focus:          focus,
 		stopCh:         make(chan struct{}),
 		stopped:        false,
-		inputLatency:   50 * time.Millisecond,  // Default polling timeout
-		frameDuration:  16 * time.Millisecond,  // Default ~60fps
-		eventQueueSize: 256,                    // Default queue size
-		mouseEnabled:   true,                   // Mouse enabled by default
-		cursorVisible:  false,                  // Cursor hidden by default
+		inputLatency:   50 * time.Millisecond, // Default polling timeout
+		frameDuration:  16 * time.Millisecond, // Default ~60fps
+		eventQueueSize: 256,                   // Default queue size
+		mouseEnabled:   true,                  // Mouse enabled by default
+		cursorVisible:  false,                 // Cursor hidden by default
+		mounts:         newMountState(),
 	}
 
 	// Apply options (may modify defaults above, including inlineHeight)
@@ -311,6 +322,10 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		}
 	}
 
+	// Set currentApp so that Mount() works during SetRoot (Component.Render may call Mount).
+	// Run() will set it again; this ensures it's available during initialization.
+	currentApp = app
+
 	// Set pending root if provided via WithRoot option
 	if app.pendingRoot != nil {
 		app.SetRoot(app.pendingRoot)
@@ -330,6 +345,13 @@ func (a *App) SetRoot(v any) {
 	var root Renderable
 
 	switch view := v.(type) {
+	case Component:
+		// Struct component: render to get element tree, tag root for discovery.
+		// Store as rootComponent so Run() re-renders the component each frame.
+		a.rootComponent = view
+		el := view.Render()
+		el.component = view
+		root = el
 	case Viewable:
 		root = view.GetRoot()
 		// Start all watchers collected during component construction
@@ -432,4 +454,19 @@ func (a *App) Buffer() *Buffer {
 // Convenience wrapper around the EventReader.
 func (a *App) PollEvent(timeout time.Duration) (Event, bool) {
 	return a.reader.PollEvent(timeout)
+}
+
+// walkComponents performs a DFS walk of the element tree, calling fn for
+// each element that has an associated component (set by Mount).
+// This is used to discover KeyListener and other component capabilities.
+func walkComponents(root *Element, fn func(Component)) {
+	if root == nil {
+		return
+	}
+	if root.component != nil {
+		fn(root.component)
+	}
+	for _, child := range root.children {
+		walkComponents(child, fn)
+	}
 }

@@ -120,7 +120,49 @@ func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string)
 
 // generateComponentCallWithRefs generates code for a component call.
 // Returns the variable name holding the result.
+//
+// For struct component mounts (IsStructMount=true), generates:
+//
+//	tui.Mount(receiverVar, index, func() tui.Component { return Name(args) })
+//
+// For function component calls (IsStructMount=false), generates the existing
+// view struct pattern: varName := Name(args)
 func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar string) string {
+	if call.IsStructMount {
+		return g.generateStructMount(call, parentVar)
+	}
+	return g.generateFunctionComponentCall(call, parentVar)
+}
+
+// generateStructMount generates a tui.Mount() call for struct components.
+// Returns the variable name holding the *tui.Element result.
+func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) string {
+	varName := g.nextVar()
+	index := g.mountIndex
+	g.mountIndex++
+
+	// Generate: varName := tui.Mount(receiverVar, index, func() tui.Component { return Name(args) })
+	g.writef("%s := tui.Mount(%s, %d, func() tui.Component {\n", varName, g.currentReceiver, index)
+	g.indent++
+	if call.Args == "" {
+		g.writef("return %s()\n", call.Name)
+	} else {
+		g.writef("return %s(%s)\n", call.Name, call.Args)
+	}
+	g.indent--
+	g.writeln("})")
+
+	// Add to parent if specified — Mount returns *tui.Element directly
+	if parentVar != "" {
+		g.writef("%s.AddChild(%s)\n", parentVar, varName)
+	}
+
+	return varName
+}
+
+// generateFunctionComponentCall generates a function component call (existing behavior).
+// Returns the variable name holding the view struct result.
+func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar string) string {
 	varName := g.nextVar()
 
 	if len(call.Children) == 0 {
@@ -143,7 +185,13 @@ func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
 			case *ComponentCall:
 				innerVar := g.generateComponentCallWithRefs(c, "")
-				g.writef("%s = append(%s, %s.Root)\n", childrenVar, childrenVar, innerVar)
+				if c.IsStructMount {
+					// Struct mount returns *tui.Element directly
+					g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, innerVar)
+				} else {
+					// Function component returns view struct — extract .Root
+					g.writef("%s = append(%s, %s.Root)\n", childrenVar, childrenVar, innerVar)
+				}
 			case *LetBinding:
 				g.generateLetBinding(c, "")
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, c.Name)
@@ -209,7 +257,11 @@ func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *ComponentCall:
 			callVar := g.generateComponentCallWithRefs(n, "")
-			g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
+			if n.IsStructMount {
+				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
+			} else {
+				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
+			}
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
@@ -242,7 +294,11 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *ComponentCall:
 			callVar := g.generateComponentCallWithRefs(n, "")
-			g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
+			if n.IsStructMount {
+				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
+			} else {
+				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
+			}
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
@@ -280,7 +336,11 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 			case *ComponentCall:
 				callVar := g.generateComponentCallWithRefs(n, "")
-				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
+				if n.IsStructMount {
+					g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
+				} else {
+					g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
+				}
 			case *LetBinding:
 				g.generateLetBinding(n, "")
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)

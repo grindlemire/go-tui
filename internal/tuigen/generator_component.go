@@ -1,17 +1,88 @@
 package tuigen
 
 // generateComponent generates a Go function from a component.
+// Dispatches to generateMethodComponent for method templs (has receiver)
+// or generateFunctionComponent for function templs (no receiver).
 func (g *Generator) generateComponent(comp *Component) {
 	// Reset variable counter and watcher tracking for each component
 	g.varCounter = 0
 	g.condCounter = 0
 	g.loopCounter = 0
+	g.mountIndex = 0
+	g.currentReceiver = ""
 	g.watchers = nil
 	g.deferredWatchers = nil
 	g.componentVars = nil
 	g.stateVars = nil
 	g.stateBindings = nil
 
+	if comp.Receiver != "" {
+		g.generateMethodComponent(comp)
+	} else {
+		g.generateFunctionComponent(comp)
+	}
+}
+
+// generateMethodComponent generates a Render() method on a struct receiver.
+// Method components return *tui.Element directly — no view struct, no watcher
+// aggregation. The receiver variable is available for expressions in the template.
+//
+// Generated form:
+//
+//	func (s *sidebar) Render() *tui.Element { ... return __tui_0 }
+func (g *Generator) generateMethodComponent(comp *Component) {
+	g.currentReceiver = comp.ReceiverName
+	defer func() { g.currentReceiver = "" }()
+
+	// Method signature: func (recv) Render() *tui.Element
+	g.writef("func (%s) Render() *tui.Element {\n", comp.Receiver)
+	g.indent++
+
+	// Track the root element variable name
+	var rootVar string
+
+	// Generate body nodes
+	for _, node := range comp.Body {
+		switch n := node.(type) {
+		case *Element:
+			varName := g.generateElementWithRefs(n, "", false, false)
+			if rootVar == "" {
+				rootVar = varName
+			}
+		case *LetBinding:
+			g.generateLetBinding(n, "")
+		case *ForLoop:
+			g.generateForLoopWithRefs(n, "", false, false)
+		case *IfStmt:
+			g.generateIfStmtWithRefs(n, "", false)
+		case *GoCode:
+			g.generateGoCode(n)
+		case *GoExpr:
+			g.writef("%s\n", n.Code)
+		case *ComponentCall:
+			varName := g.generateComponentCallWithRefs(n, "")
+			if rootVar == "" {
+				rootVar = varName
+			}
+		}
+	}
+
+	// Return the root element directly
+	g.writeln("")
+	if rootVar != "" {
+		g.writef("return %s\n", rootVar)
+	} else {
+		g.writeln("return nil")
+	}
+
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+}
+
+// generateFunctionComponent generates a function component (existing behavior).
+// Function components return a ComponentNameView struct.
+func (g *Generator) generateFunctionComponent(comp *Component) {
 	// Collect refs from this component
 	analyzer := NewAnalyzer()
 	g.refs = analyzer.CollectRefs(comp)

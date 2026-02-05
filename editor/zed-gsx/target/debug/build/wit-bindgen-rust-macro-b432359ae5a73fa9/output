@@ -1,0 +1,2 @@
+cargo:rerun-if-changed=build.rs
+cargo:rustc-env=DEBUG_OUTPUT_DIR=/Users/joelholsteen/go/src/github.com/grindlemire/go-tui/editor/zed-gsx/target/debug/build/wit-bindgen-rust-macro-b432359ae5a73fa9/out

@@ -9,6 +9,23 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+type scrollableApp struct {
+	items []string
+}
+
+func Scrollable(items []string) *scrollableApp {
+	return &scrollableApp{
+		items: items,
+	}
+}
+
+func (s *scrollableApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
+
 func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
 	switch e.Rune {
 	case 'j':
@@ -43,19 +60,7 @@ func handleMouseScroll(el *tui.Element, e tui.Event) bool {
 	return false
 }
 
-type ScrollableView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v ScrollableView) GetRoot() tui.Renderable { return v.Root }
-
-func (v ScrollableView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Scrollable(items []string) ScrollableView {
-	var view ScrollableView
-	var watchers []tui.Watcher
-
+func (s *scrollableApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -78,11 +83,11 @@ func Scrollable(items []string) ScrollableView {
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
-		tui.WithFocusable(true),
 		tui.WithOnEvent(handleMouseScroll),
 		tui.WithOnKeyPress(handleScrollKeys),
+		tui.WithFocusable(true),
 	)
-	for i, item := range items {
+	for i, item := range s.items {
 		_ = i
 		__tui_4 := tui.New(
 			tui.WithText(fmt.Sprintf("%02d. %s", i+1, item)),
@@ -114,9 +119,5 @@ func Scrollable(items []string) ScrollableView {
 	__tui_5.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_5)
 
-	view = ScrollableView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

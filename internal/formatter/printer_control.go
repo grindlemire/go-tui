@@ -240,3 +240,14 @@ func (p *printer) printGoFunc(fn *tuigen.GoFunc) {
 	p.printTrailingComment(fn.TrailingComments)
 	p.newline()
 }
+
+// printGoDecl outputs a top-level Go declaration (type, const, var).
+func (p *printer) printGoDecl(decl *tuigen.GoDecl) {
+	// Leading comments
+	p.printLeadingComments(decl.LeadingComments)
+
+	// Go declarations are printed as-is since they're raw Go code
+	p.write(decl.Code)
+	p.printTrailingComment(decl.TrailingComments)
+	p.newline()
+}

@@ -5,15 +5,32 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-templ Scrollable(items []string) {
+type scrollableApp struct {
+	items []string
+}
+
+func Scrollable(items []string) *scrollableApp {
+	return &scrollableApp{
+		items: items,
+	}
+}
+
+func (s *scrollableApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
+
+templ (s *scrollableApp) Render() {
 	<div class="flex-col gap-1 p-1 h-full">
 		<span class="font-bold text-cyan">Scrollable Content</span>
 		<hr class="border" />
 		<div class="flex-col flex-grow overflow-y-scroll border-single p-1"
-		     focusable={true}
 		     onEvent={handleMouseScroll}
-		     onKeyPress={handleScrollKeys}>
-			@for i, item := range items {
+		     onKeyPress={handleScrollKeys}
+		     focusable={true}>
+			@for i, item := range s.items {
 				<span class={itemStyle(i)}>{fmt.Sprintf("%02d. %s", i+1, item)}</span>
 			}
 		</div>

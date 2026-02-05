@@ -1,0 +1,31 @@
+package tui
+
+// Component is the base interface for struct components.
+// Any struct with a Render() method can be used as a component in the element tree.
+// Components are instantiated by constructor functions and cached by the Mount system.
+type Component interface {
+	Render() *Element
+}
+
+// KeyListener is implemented by components that handle keyboard input.
+// KeyMap() returns the current set of key bindings. It is called on every
+// tree walk (when dirty), so it can return different bindings based on state.
+type KeyListener interface {
+	KeyMap() KeyMap
+}
+
+// MouseListener is implemented by components that handle mouse input.
+// HandleMouse receives mouse events (clicks, wheel, etc.) and returns
+// true if the event was consumed. Like KeyListener, it is discovered by
+// walking the component tree.
+type MouseListener interface {
+	HandleMouse(MouseEvent) bool
+}
+
+// Initializer is implemented by components that need setup when first mounted.
+// Init() is called once when the component first enters the tree.
+// The returned function (if non-nil) is called when the component leaves
+// the tree. This pairs setup and cleanup at the same call site.
+type Initializer interface {
+	Init() func()
+}

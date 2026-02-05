@@ -7,45 +7,40 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleEvent(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
+type stylingApp struct {
+	scrollY *tui.State[int]
+}
+
+func Styling() *stylingApp {
+	return &stylingApp{
+		scrollY: tui.NewState(0),
+	}
+}
+
+func (s *stylingApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() + 1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() - 1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() + 1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() - 1) }),
+	}
+}
+
+func (s *stylingApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		s.scrollY.Set(s.scrollY.Get() - 1)
+		return true
+	case tui.MouseWheelDown:
+		s.scrollY.Set(s.scrollY.Get() + 1)
+		return true
 	}
 	return false
 }
 
-func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-type StylingView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v StylingView) GetRoot() tui.Renderable { return v.Root }
-
-func (v StylingView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Styling() StylingView {
-	var view StylingView
-	var watchers []tui.Watcher
-
+func (s *stylingApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -53,8 +48,7 @@ func Styling() StylingView {
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithHeightPercent(100.00),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithOnEvent(handleEvent),
-		tui.WithOnKeyPress(handleKeyPress),
+		tui.WithScrollOffset(0, s.scrollY.Get()),
 	)
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Column),
@@ -822,9 +816,5 @@ func Styling() StylingView {
 	)
 	__tui_0.AddChild(__tui_153)
 
-	view = StylingView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

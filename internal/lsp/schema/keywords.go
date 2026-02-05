@@ -18,27 +18,65 @@ var (
 		Syntax:      "templ Name(params) { ... }",
 		Documentation: `## templ
 
-Defines a reusable TUI component that compiles to a Go function.
+Defines a reusable TUI component. Supports two forms:
 
-**Syntax:**
+### Function Component
 ` + "```gsx" + `
 templ Name(param1 Type1, param2 Type2) {
     <div>...</div>
 }
 ` + "```" + `
 
-**Example:**
+Compiles to a Go function returning ` + "`*tui.Element`" + `.
+
+### Method Component (Struct)
 ` + "```gsx" + `
-templ Button(label string, disabled bool) {
-    <button class="p-1 border-rounded" disabled={disabled}>
-        {label}
-    </button>
+templ (s *MyStruct) Render() {
+    <div>...</div>
 }
 ` + "```" + `
 
-Components are compiled to functions with signature:
-` + "```go" + `
-func Name(params...) *element.Element
+Used with Go struct types that implement ` + "`tui.Component`" + `.
+The struct, constructor, and methods are defined as regular Go code
+in the same .gsx file:
+
+` + "```gsx" + `
+type sidebar struct {
+    expanded *tui.State[bool]
+}
+
+func Sidebar() *sidebar {
+    return &sidebar{expanded: tui.NewState(true)}
+}
+
+func (s *sidebar) KeyMap() tui.KeyMap {
+    return tui.KeyMap{...}
+}
+
+templ (s *sidebar) Render() {
+    <div>...</div>
+}
+` + "```" + `
+
+### Children Slot
+
+Components can accept children using ` + "`{children...}`" + `:
+
+` + "```gsx" + `
+templ Card(title string) {
+    <div class="border-rounded p-1">
+        <span>{title}</span>
+        {children...}
+    </div>
+}
+` + "```" + `
+
+Callers pass children with a block:
+
+` + "```gsx" + `
+@Card("Title") {
+    <span>Content</span>
+}
 ` + "```",
 	}
 
@@ -187,30 +225,32 @@ import (
 
 	kwFunc = &KeywordDef{
 		Name:        "func",
-		Description: "Define a helper function",
+		Description: "Define a helper function or method",
 		Syntax:      "func name(params) returnType { ... }",
 		Documentation: `## func
 
-Defines a helper function at the file level. Unlike ` + "`templ`" + `, helper functions
-are plain Go functions that do not return ` + "`*element.Element`" + `.
+Defines a Go function or method at the file level. Unlike ` + "`templ`" + `,
+these are plain Go code compiled as-is into the generated file.
 
-**Syntax:**
-` + "```gsx" + `
-func name(param1 Type1) ReturnType {
-    // Go code
-}
-` + "```" + `
-
-**Example:**
+### Helper Function
 ` + "```gsx" + `
 func formatLabel(s string) string {
     return fmt.Sprintf("[%s]", s)
 }
 ` + "```" + `
 
-- Regular Go function syntax
+### Method (for struct components)
+` + "```gsx" + `
+func (s *sidebar) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnKey(tui.KeyCtrlB, s.toggle),
+    }
+}
+` + "```" + `
+
+- Regular Go function and method syntax
 - Cannot contain GSX element literals
-- Useful for string formatting, data transformation, etc.
+- Methods are used with struct components for ` + "`KeyMap()`" + `, ` + "`Init()`" + `, callbacks, etc.
 - Compiled as-is into the generated Go file`,
 	}
 )

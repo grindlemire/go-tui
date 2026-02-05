@@ -1,0 +1,53 @@
+name = "GSX"
+grammar = "gsx"
+path_suffixes = ["gsx"]
+line_comments = ["//"]
+block_comment = ["/*", "*/"]
+tab_size = 4
+
+[overrides.element]
+word_characters = ["-"]
+
+[[brackets]]
+start = "{"
+end = "}"
+close = true
+newline = true
+
+[[brackets]]
+start = "["
+end = "]"
+close = true
+newline = true
+
+[[brackets]]
+start = "("
+end = ")"
+close = true
+newline = true
+
+[[brackets]]
+start = "<"
+end = ">"
+close = true
+newline = false
+
+[[autoclose]]
+open = "\""
+close = "\""
+not_in = ["string"]
+
+[[autoclose]]
+open = "'"
+close = "'"
+not_in = ["string", "comment"]
+
+[[autoclose]]
+open = "`"
+close = "`"
+not_in = ["string", "comment"]
+
+[[autoclose]]
+open = "/*"
+close = " */"
+not_in = ["string"]

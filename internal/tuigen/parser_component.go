@@ -205,8 +205,12 @@ func (p *Parser) captureRawGoFunc(startPos int, pos Position) *GoFunc {
 }
 
 // parseTempl parses a templ definition which is always a component.
-// Syntax: templ Name(params) { body }
-// No return type is specified - it's always generated as *element.Element.
+// Supports two forms:
+//
+//	templ Name(params) { body }           — function component (existing)
+//	templ (s *sidebar) Render() { body }  — method component (new)
+//
+// After 'templ', '(' means a method receiver; an identifier means a function name.
 func (p *Parser) parseTempl() *Component {
 	pos := p.position()
 
@@ -214,8 +218,13 @@ func (p *Parser) parseTempl() *Component {
 		return nil
 	}
 
+	// Disambiguation: '(' after templ means method receiver, identifier means function name
+	if p.current.Type == TokenLParen {
+		return p.parseMethodTempl(pos)
+	}
+
 	if p.current.Type != TokenIdent {
-		p.errors.AddError(p.position(), "expected component name")
+		p.errors.AddError(p.position(), "expected component name or method receiver")
 		return nil
 	}
 
@@ -241,6 +250,103 @@ func (p *Parser) parseTempl() *Component {
 		ReturnType: "*element.Element",
 		Position:   pos,
 	}
+
+	// Parse body as DSL (function templ — inMethodTempl stays false)
+	openBraceLine := p.current.Line
+	if !p.expect(TokenLBrace) {
+		return nil
+	}
+
+	// Check for trailing comment on the same line as opening brace
+	comp.TrailingComments = p.getTrailingCommentOnLine(openBraceLine)
+
+	p.skipNewlines()
+	comp.Body, comp.OrphanComments = p.parseComponentBodyWithOrphans()
+
+	if !p.expectSkipNewlines(TokenRBrace) {
+		return nil
+	}
+
+	return comp
+}
+
+// parseMethodTempl parses a method-style templ: templ (s *sidebar) Render() { body }
+// Called after 'templ' has been consumed and current token is '('.
+func (p *Parser) parseMethodTempl(pos Position) *Component {
+	// Consume '('
+	p.advance()
+
+	// Parse receiver: name *Type or name Type
+	if p.current.Type != TokenIdent {
+		p.errors.AddError(p.position(), "expected receiver name")
+		return nil
+	}
+	receiverName := p.current.Literal
+	p.advance()
+
+	// Parse receiver type — capture raw source until closing ')'
+	typeStart := p.current.StartPos
+	depth := 0
+	for p.current.Type != TokenEOF {
+		if p.current.Type == TokenLParen {
+			depth++
+		} else if p.current.Type == TokenRParen {
+			if depth == 0 {
+				break
+			}
+			depth--
+		}
+		p.advance()
+	}
+	receiverType := strings.TrimSpace(p.lexer.SourceRange(typeStart, p.current.StartPos))
+
+	if !p.expect(TokenRParen) {
+		return nil
+	}
+
+	// Full receiver text: "name Type"
+	receiver := receiverName + " " + receiverType
+
+	// Parse method name — must be 'Render'
+	if p.current.Type != TokenIdent {
+		p.errors.AddError(p.position(), "expected method name after receiver")
+		return nil
+	}
+	name := p.current.Literal
+	if name != "Render" {
+		p.errors.AddErrorf(p.position(), "method templ name must be 'Render', got %q", name)
+		return nil
+	}
+	p.advance()
+
+	// Parse empty parameter list — method templs don't accept params
+	if !p.expect(TokenLParen) {
+		return nil
+	}
+
+	if p.current.Type != TokenRParen {
+		p.errors.AddError(p.position(), "method templ Render() must not have parameters")
+		return nil
+	}
+
+	if !p.expect(TokenRParen) {
+		return nil
+	}
+
+	p.skipNewlines()
+
+	comp := &Component{
+		Name:         name,
+		ReturnType:   "*element.Element",
+		Position:     pos,
+		Receiver:     receiver,
+		ReceiverName: receiverName,
+		ReceiverType: receiverType,
+	}
+
+	// Set method templ context so parseComponentCall sets IsStructMount
+	p.inMethodTempl = true
+	defer func() { p.inMethodTempl = false }()
 
 	// Parse body as DSL
 	openBraceLine := p.current.Line

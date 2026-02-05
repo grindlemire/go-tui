@@ -241,7 +241,8 @@ var attributeToOption = map[string]string{
 	"focusable": "tui.WithFocusable(%s)",
 
 	// Scroll
-	"scrollable": "tui.WithScrollable(%s)",
+	"scrollable":   "tui.WithScrollable(%s)",
+	"scrollOffset": "tui.WithScrollOffset(%s)",
 }
 
 // generateAttributeOption generates an option expression from an attribute.

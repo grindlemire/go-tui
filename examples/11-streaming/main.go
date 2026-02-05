@@ -1,9 +1,10 @@
 // Package main demonstrates streaming data with channels and timers.
 //
 // This shows:
+// - Struct components with KeyMap-based key handling
 // - onChannel={tui.Watch(ch, handler)} for channel watchers
 // - onTimer={tui.OnTimer(duration, handler)} for timer watchers
-// - Forward-declared refs (#Content) for imperative access
+// - Refs for imperative access to elements
 //
 // To build and run:
 //
@@ -24,23 +25,14 @@ import (
 func main() {
 	dataCh := make(chan string, 100)
 
-	view := Streaming(dataCh)
-
-	app, err := tui.NewApp(
-		tui.WithRoot(view),
-		tui.WithGlobalKeyHandler(func(e tui.KeyEvent) bool {
-			if e.Rune == 'q' || e.Key == tui.KeyEscape {
-				tui.Stop()
-				return true
-			}
-			return false
-		}),
-	)
+	app, err := tui.NewApp()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
 		os.Exit(1)
 	}
 	defer app.Close()
+
+	app.SetRoot(Streaming(dataCh))
 
 	go produce(dataCh, app.StopCh())
 

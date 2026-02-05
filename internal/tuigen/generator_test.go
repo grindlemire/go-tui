@@ -189,6 +189,341 @@ templ Test() {
 	}
 }
 
+func TestGenerator_MethodComponent(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"method templ generates method Render returning Element": {
+			input: `package x
+
+type sidebar struct{}
+
+templ (s *sidebar) Render() {
+	<div></div>
+}`,
+			wantContains: []string{
+				"func (s *sidebar) Render() *tui.Element {",
+				"__tui_0 := tui.New()",
+				"return __tui_0",
+			},
+			wantNotContains: []string{
+				"View struct",
+				"var view",
+				"var watchers",
+				"return view",
+			},
+		},
+		"method templ with nested elements": {
+			input: `package x
+
+type panel struct{}
+
+templ (p *panel) Render() {
+	<div class="flex-col">
+		<span>hello</span>
+	</div>
+}`,
+			wantContains: []string{
+				"func (p *panel) Render() *tui.Element {",
+				"__tui_0 := tui.New(",
+				"return __tui_0",
+			},
+			wantNotContains: []string{
+				"PanelView",
+				"var view",
+			},
+		},
+		"method templ with struct mount": {
+			input: `package x
+
+type myApp struct{}
+
+templ (a *myApp) Render() {
+	<div>
+		@Sidebar()
+	</div>
+}`,
+			wantContains: []string{
+				"func (a *myApp) Render() *tui.Element {",
+				"tui.Mount(a, 0, func() tui.Component {",
+				"return Sidebar()",
+				"})",
+				"__tui_0.AddChild(",
+				"return __tui_0",
+			},
+			wantNotContains: []string{
+				".Root",
+				"var view",
+			},
+		},
+		"mount indices increment for multiple mounts": {
+			input: `package x
+
+type myApp struct{}
+
+templ (a *myApp) Render() {
+	<div>
+		@First()
+		@Second()
+		@Third()
+	</div>
+}`,
+			wantContains: []string{
+				"tui.Mount(a, 0, func() tui.Component {",
+				"return First()",
+				"tui.Mount(a, 1, func() tui.Component {",
+				"return Second()",
+				"tui.Mount(a, 2, func() tui.Component {",
+				"return Third()",
+			},
+		},
+		"struct mount with args": {
+			input: `package x
+
+type myApp struct{}
+
+templ (a *myApp) Render() {
+	<div>
+		@Sidebar(a.query)
+		@SearchInput(a.active, a.query)
+	</div>
+}`,
+			wantContains: []string{
+				"tui.Mount(a, 0, func() tui.Component {",
+				"return Sidebar(a.query)",
+				"tui.Mount(a, 1, func() tui.Component {",
+				"return SearchInput(a.active, a.query)",
+			},
+		},
+		"method templ with conditional": {
+			input: `package x
+
+type sidebar struct{}
+
+templ (s *sidebar) Render() {
+	@if true {
+		<div><span>visible</span></div>
+	}
+}`,
+			wantContains: []string{
+				"func (s *sidebar) Render() *tui.Element {",
+				"if true {",
+			},
+		},
+		"empty method templ returns nil": {
+			input: `package x
+
+type empty struct{}
+
+templ (e *empty) Render() {
+}`,
+			wantContains: []string{
+				"func (e *empty) Render() *tui.Element {",
+				"return nil",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerator_FunctionComponentCallUnchanged(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"function templ with component call uses view struct pattern": {
+			input: `package x
+
+templ Parent() {
+	<div>
+		@Header("title")
+	</div>
+}`,
+			wantContains: []string{
+				"func Parent() ParentView",
+				"type ParentView struct",
+				`__tui_1 := Header("title")`,
+				"__tui_0.AddChild(__tui_1.Root)",
+				"return view",
+			},
+			wantNotContains: []string{
+				"tui.Mount",
+				"tui.Component",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerator_VerbatimPassthrough(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"type definition passes through": {
+			input: `package x
+
+type sidebar struct {
+	Query    string
+	expanded bool
+}
+
+templ Header() {
+	<span>hello</span>
+}`,
+			wantContains: []string{
+				"type sidebar struct",
+				"Query    string",
+				"expanded bool",
+				"func Header() HeaderView",
+			},
+		},
+		"constructor method passes through": {
+			input: `package x
+
+func (s *sidebar) toggle() {
+	s.expanded = !s.expanded
+}
+
+templ Header() {
+	<span>hello</span>
+}`,
+			wantContains: []string{
+				"func (s *sidebar) toggle()",
+				"s.expanded = !s.expanded",
+			},
+		},
+		"simple var declaration passes through": {
+			input: `package x
+
+var defaultName = "hello"
+
+templ Header() {
+	<span>hello</span>
+}`,
+			wantContains: []string{
+				`var defaultName = "hello"`,
+			},
+		},
+		"const declaration passes through": {
+			input: `package x
+
+const maxItems = 10
+
+templ Header() {
+	<span>hello</span>
+}`,
+			wantContains: []string{
+				"const maxItems = 10",
+			},
+		},
+		"mixed file with type constructor method and templ": {
+			input: `package x
+
+type sidebar struct {
+	expanded bool
+}
+
+func NewSidebar() *sidebar {
+	return &sidebar{expanded: true}
+}
+
+func (s *sidebar) toggle() {
+	s.expanded = !s.expanded
+}
+
+templ (s *sidebar) Render() {
+	<div><span>sidebar</span></div>
+}`,
+			wantContains: []string{
+				"type sidebar struct",
+				"expanded bool",
+				"func NewSidebar() *sidebar",
+				"return &sidebar{expanded: true}",
+				"func (s *sidebar) toggle()",
+				"s.expanded = !s.expanded",
+				"func (s *sidebar) Render() *tui.Element",
+				"return __tui_0",
+			},
+			wantNotContains: []string{
+				"RenderView",
+				"var view",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
+
 func TestGenerator_ReactiveIf(t *testing.T) {
 	type tc struct {
 		input           string

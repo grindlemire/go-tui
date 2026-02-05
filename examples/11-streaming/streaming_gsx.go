@@ -5,33 +5,51 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
-func tick(elapsed *tui.State[int]) func() {
-	return func() {
-		elapsed.Set(elapsed.Get() + 1)
+type streamingApp struct {
+	dataCh    <-chan string
+	lineCount *tui.State[int]
+	elapsed   *tui.State[int]
+	content   *tui.Ref
+}
+
+func Streaming(dataCh <-chan string) *streamingApp {
+	return &streamingApp{
+		dataCh:    dataCh,
+		lineCount: tui.NewState(0),
+		elapsed:   tui.NewState(0),
+		content:   tui.NewRef(),
 	}
 }
 
-func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
-	return func(line string) {
-		lineCount.Set(lineCount.Get() + 1)
+func (s *streamingApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
 
-		el := content.El()
-		stayAtBottom := el.IsAtBottom()
+func (s *streamingApp) tick() {
+	s.elapsed.Set(s.elapsed.Get() + 1)
+}
 
-		lineElem := tui.New(
-			tui.WithText(line),
-			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
-		)
-		el.AddChild(lineElem)
+func (s *streamingApp) addLine(line string) {
+	s.lineCount.Set(s.lineCount.Get() + 1)
 
-		if stayAtBottom {
-			el.ScrollToBottom()
-		}
+	el := s.content.El()
+	stayAtBottom := el.IsAtBottom()
+
+	lineElem := tui.New(
+		tui.WithText(line),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+	)
+	el.AddChild(lineElem)
+
+	if stayAtBottom {
+		el.ScrollToBottom()
 	}
 }
 
@@ -47,23 +65,22 @@ func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
 	return false
 }
 
-type StreamingView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	Content  *tui.Element
+func handleMouseScroll(el *tui.Element, e tui.Event) bool {
+	if mouse, ok := e.(tui.MouseEvent); ok {
+		switch mouse.Button {
+		case tui.MouseWheelUp:
+			el.ScrollBy(0, -1)
+			return true
+		case tui.MouseWheelDown:
+			el.ScrollBy(0, 1)
+			return true
+		}
+	}
+	return false
 }
 
-func (v StreamingView) GetRoot() tui.Renderable { return v.Root }
-
-func (v StreamingView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Streaming(dataCh <-chan string) StreamingView {
-	var view StreamingView
-	var watchers []tui.Watcher
-
-	lineCount := tui.NewState(0)
-	elapsed := tui.NewState(0)
-	content := tui.NewRef()
+func (s *streamingApp) Render() *tui.Element {
+	content := s.content
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -85,8 +102,9 @@ func Streaming(dataCh <-chan string) StreamingView {
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithFocusable(true),
+		tui.WithOnEvent(handleMouseScroll),
 		tui.WithOnKeyPress(handleScrollKeys),
+		tui.WithFocusable(true),
 	)
 	content.Set(__tui_3)
 	__tui_0.AddChild(__tui_3)
@@ -97,13 +115,13 @@ func Streaming(dataCh <-chan string) StreamingView {
 	__tui_5 := tui.New()
 	__tui_6 := tui.New(tui.WithText("Lines:"))
 	__tui_5.AddChild(__tui_6)
-	__tui_7 := tui.New(tui.WithText(fmt.Sprintf("%d", lineCount.Get())))
+	__tui_7 := tui.New(tui.WithText(fmt.Sprintf("%d", s.lineCount.Get())))
 	__tui_5.AddChild(__tui_7)
 	__tui_4.AddChild(__tui_5)
 	__tui_8 := tui.New()
 	__tui_9 := tui.New(tui.WithText("Elapsed:"))
 	__tui_8.AddChild(__tui_9)
-	__tui_10 := tui.New(tui.WithText(fmt.Sprintf("%ds", elapsed.Get())))
+	__tui_10 := tui.New(tui.WithText(fmt.Sprintf("%ds", s.elapsed.Get())))
 	__tui_8.AddChild(__tui_10)
 	__tui_4.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_4)
@@ -113,22 +131,5 @@ func Streaming(dataCh <-chan string) StreamingView {
 	)
 	__tui_0.AddChild(__tui_11)
 
-	// Attach watchers (deferred until refs are assigned)
-	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(elapsed)))
-	__tui_0.AddWatcher(tui.Watch(dataCh, addLine(lineCount, content)))
-
-	// State bindings
-	lineCount.Bind(func(_ int) {
-		__tui_7.SetText(fmt.Sprintf("%d", lineCount.Get()))
-	})
-	elapsed.Bind(func(_ int) {
-		__tui_10.SetText(fmt.Sprintf("%ds", elapsed.Get()))
-	})
-
-	view = StreamingView{
-		Root:     __tui_0,
-		watchers: watchers,
-		Content:  content.El(),
-	}
-	return view
+	return __tui_0
 }

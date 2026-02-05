@@ -16,24 +16,16 @@ import (
 //go:generate go run ../../cmd/tui generate conditionals.gsx
 
 func main() {
-	app, err := tui.NewApp(
-		tui.WithRoot(Conditionals()),
-		tui.WithGlobalKeyHandler(func(e tui.KeyEvent) bool {
-			if e.Rune == 'q' || e.Key == tui.KeyEscape {
-				tui.Stop()
-				return true
-			}
-			return false
-		}),
-	)
+	app, err := tui.NewApp()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
 		os.Exit(1)
 	}
 	defer app.Close()
 
-	err = app.Run()
-	if err != nil {
+	app.SetRoot(Conditionals())
+
+	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
 		os.Exit(1)
 	}

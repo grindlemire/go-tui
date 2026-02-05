@@ -5,110 +5,126 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
-func increment(count *tui.State[int], eventCount *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		count.Set(count.Get() + 1)
-		eventCount.Set(eventCount.Get() + 1)
+type interactiveApp struct {
+	count      *tui.State[int]
+	elapsed    *tui.State[int]
+	running    *tui.State[bool]
+	lastEvent  *tui.State[string]
+	eventCount *tui.State[int]
+	sound      *tui.State[bool]
+	notify     *tui.State[bool]
+	dark       *tui.State[bool]
+}
+
+func Interactive() *interactiveApp {
+	return &interactiveApp{
+		count:      tui.NewState(0),
+		elapsed:    tui.NewState(0),
+		running:    tui.NewState(true),
+		lastEvent:  tui.NewState("(waiting)"),
+		eventCount: tui.NewState(0),
+		sound:      tui.NewState(true),
+		notify:     tui.NewState(false),
+		dark:       tui.NewState(false),
 	}
 }
 
-func decrement(count *tui.State[int], eventCount *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		count.Set(count.Get() - 1)
-		eventCount.Set(eventCount.Get() + 1)
-	}
-}
-
-func resetCount(count *tui.State[int], eventCount *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		count.Set(0)
-		eventCount.Set(eventCount.Get() + 1)
-	}
-}
-
-func handleKeys(count *tui.State[int], running *tui.State[bool], elapsed *tui.State[int], sound, notify, dark *tui.State[bool], eventCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
-	return func(el *tui.Element, e tui.KeyEvent) bool {
-		switch e.Rune {
+func (a *interactiveApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
 		// Counter
-		case '+', '=':
-			count.Set(count.Get() + 1)
-			eventCount.Set(eventCount.Get() + 1)
-			return true
-		case '-':
-			count.Set(count.Get() - 1)
-			eventCount.Set(eventCount.Get() + 1)
-			return true
-		case '0':
-			count.Set(0)
-			eventCount.Set(eventCount.Get() + 1)
-			return true
+		tui.OnRune('+', func(ke tui.KeyEvent) {
+			a.count.Set(a.count.Get() + 1)
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
+		tui.OnRune('=', func(ke tui.KeyEvent) {
+			a.count.Set(a.count.Get() + 1)
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
+		tui.OnRune('-', func(ke tui.KeyEvent) {
+			a.count.Set(a.count.Get() - 1)
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
+		tui.OnRune('0', func(ke tui.KeyEvent) {
+			a.count.Set(0)
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
 		// Timer
-		case ' ':
-			running.Set(!running.Get())
-			return true
-		case 'r':
-			elapsed.Set(0)
-			eventCount.Set(eventCount.Get() + 1)
-			return true
+		tui.OnRune(' ', func(ke tui.KeyEvent) {
+			a.running.Set(!a.running.Get())
+		}),
+		tui.OnRune('r', func(ke tui.KeyEvent) {
+			a.elapsed.Set(0)
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
 		// Toggles
-		case '1':
-			sound.Set(!sound.Get())
-			eventCount.Set(eventCount.Get() + 1)
-			return true
-		case '2':
-			notify.Set(!notify.Get())
-			eventCount.Set(eventCount.Get() + 1)
-			return true
-		case '3':
-			dark.Set(!dark.Get())
-			eventCount.Set(eventCount.Get() + 1)
-			return true
-		}
-		return false
+		tui.OnRune('1', func(ke tui.KeyEvent) {
+			a.sound.Set(!a.sound.Get())
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
+		tui.OnRune('2', func(ke tui.KeyEvent) {
+			a.notify.Set(!a.notify.Get())
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
+		tui.OnRune('3', func(ke tui.KeyEvent) {
+			a.dark.Set(!a.dark.Get())
+			a.eventCount.Set(a.eventCount.Get() + 1)
+		}),
 	}
 }
 
-func timerTick(elapsed *tui.State[int], running *tui.State[bool]) func() {
-	return func() {
-		if running.Get() {
-			elapsed.Set(elapsed.Get() + 1)
-		}
+func (a *interactiveApp) timerTick() {
+	if a.running.Get() {
+		a.elapsed.Set(a.elapsed.Get() + 1)
 	}
+}
+
+func (a *interactiveApp) increment(el *tui.Element) {
+	a.count.Set(a.count.Get() + 1)
+	a.eventCount.Set(a.eventCount.Get() + 1)
+}
+
+func (a *interactiveApp) decrement(el *tui.Element) {
+	a.count.Set(a.count.Get() - 1)
+	a.eventCount.Set(a.eventCount.Get() + 1)
+}
+
+func (a *interactiveApp) resetCount(el *tui.Element) {
+	a.count.Set(0)
+	a.eventCount.Set(a.eventCount.Get() + 1)
+}
+
+func (a *interactiveApp) toggleState(state *tui.State[bool]) func(*tui.Element) {
+	return func(el *tui.Element) {
+		state.Set(!state.Get())
+		a.eventCount.Set(a.eventCount.Get() + 1)
+	}
+}
+
+func (a *interactiveApp) inspectEvent(el *tui.Element, e tui.Event) bool {
+	a.eventCount.Set(a.eventCount.Get() + 1)
+	switch ev := e.(type) {
+	case tui.KeyEvent:
+		if ev.Rune != 0 {
+			a.lastEvent.Set(fmt.Sprintf("Key '%c'", ev.Rune))
+		} else {
+			a.lastEvent.Set(describeKey(ev.Key))
+		}
+	case tui.MouseEvent:
+		a.lastEvent.Set(fmt.Sprintf("%s (%d,%d)", describeButton(ev.Button), ev.X, ev.Y))
+	}
+	return false
 }
 
 func formatTime(seconds int) string {
 	m := seconds / 60
 	s := seconds - (m * 60)
 	return fmt.Sprintf("%02d:%02d", m, s)
-}
-
-func toggle(state *tui.State[bool], eventCount *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		state.Set(!state.Get())
-		eventCount.Set(eventCount.Get() + 1)
-	}
-}
-
-func inspectEvent(lastEvent *tui.State[string], eventCount *tui.State[int]) func(*tui.Element, tui.Event) bool {
-	return func(el *tui.Element, e tui.Event) bool {
-		eventCount.Set(eventCount.Get() + 1)
-		switch ev := e.(type) {
-		case tui.KeyEvent:
-			if ev.Rune != 0 {
-				lastEvent.Set(fmt.Sprintf("Key '%c'", ev.Rune))
-			} else {
-				lastEvent.Set(describeKey(ev.Key))
-			}
-		case tui.MouseEvent:
-			lastEvent.Set(fmt.Sprintf("%s (%d,%d)", describeButton(ev.Button), ev.X, ev.Y))
-		}
-		return false
-	}
 }
 
 func describeKey(key tui.Key) string {
@@ -153,34 +169,13 @@ func describeButton(btn tui.MouseButton) string {
 	}
 }
 
-type InteractiveView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v InteractiveView) GetRoot() tui.Renderable { return v.Root }
-
-func (v InteractiveView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Interactive() InteractiveView {
-	var view InteractiveView
-	var watchers []tui.Watcher
-
-	count := tui.NewState(0)
-	elapsed := tui.NewState(0)
-	running := tui.NewState(true)
-	lastEvent := tui.NewState("(waiting)")
-	eventCount := tui.NewState(0)
-	sound := tui.NewState(true)
-	notify := tui.NewState(false)
-	dark := tui.NewState(false)
+func (a *interactiveApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithGap(1),
-		tui.WithOnKeyPress(handleKeys(count, running, elapsed, sound, notify, dark, eventCount)),
-		tui.WithOnEvent(inspectEvent(lastEvent, eventCount)),
+		tui.WithOnEvent(a.inspectEvent),
 	)
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
@@ -193,7 +188,7 @@ func Interactive() InteractiveView {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText(fmt.Sprintf("Events: %d", eventCount.Get())),
+		tui.WithText(fmt.Sprintf("Events: %d", a.eventCount.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -210,7 +205,7 @@ func Interactive() InteractiveView {
 		tui.WithFlexGrow(1.0),
 	)
 	__tui_6 := tui.New(
-		tui.WithText("onClick + onKeyPress"),
+		tui.WithText("onClick + KeyMap"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
@@ -226,7 +221,7 @@ func Interactive() InteractiveView {
 	)
 	__tui_7.AddChild(__tui_8)
 	__tui_9 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", count.Get())),
+		tui.WithText(fmt.Sprintf("%d", a.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
 	__tui_7.AddChild(__tui_9)
@@ -236,50 +231,43 @@ func Interactive() InteractiveView {
 		tui.WithGap(1),
 	)
 	__tui_11 := tui.New(
-		tui.WithOnClick(decrement(count, eventCount)),
+		tui.WithOnClick(a.decrement),
 	)
 	__tui_12 := tui.New(tui.WithText(" - "))
 	__tui_11.AddChild(__tui_12)
 	__tui_10.AddChild(__tui_11)
 	__tui_13 := tui.New(
-		tui.WithOnClick(increment(count, eventCount)),
+		tui.WithOnClick(a.increment),
 	)
 	__tui_14 := tui.New(tui.WithText(" + "))
 	__tui_13.AddChild(__tui_14)
 	__tui_10.AddChild(__tui_13)
 	__tui_15 := tui.New(
-		tui.WithOnClick(resetCount(count, eventCount)),
+		tui.WithOnClick(a.resetCount),
 	)
 	__tui_16 := tui.New(tui.WithText(" 0 "))
 	__tui_15.AddChild(__tui_16)
 	__tui_10.AddChild(__tui_15)
 	__tui_5.AddChild(__tui_10)
-	__cond_0 := tui.New()
-	__tui_5.AddChild(__cond_0)
-	__update___cond_0 := func() {
-		__cond_0.RemoveAllChildren()
-		if count.Get() > 0 {
-			__tui_17 := tui.New(
-				tui.WithText("Positive"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-			)
-			__cond_0.AddChild(__tui_17)
-		} else if count.Get() < 0 {
-			__tui_18 := tui.New(
-				tui.WithText("Negative"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
-			)
-			__cond_0.AddChild(__tui_18)
-		} else {
-			__tui_19 := tui.New(
-				tui.WithText("Zero"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
-			)
-			__cond_0.AddChild(__tui_19)
-		}
+	if a.count.Get() > 0 {
+		__tui_17 := tui.New(
+			tui.WithText("Positive"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_5.AddChild(__tui_17)
+	} else if a.count.Get() < 0 {
+		__tui_18 := tui.New(
+			tui.WithText("Negative"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		)
+		__tui_5.AddChild(__tui_18)
+	} else {
+		__tui_19 := tui.New(
+			tui.WithText("Zero"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+		)
+		__tui_5.AddChild(__tui_19)
 	}
-	__update___cond_0()
-	count.Bind(func(_ int) { __update___cond_0() })
 	__tui_20 := tui.New(
 		tui.WithText("click btns or +/-/0"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
@@ -310,31 +298,24 @@ func Interactive() InteractiveView {
 	)
 	__tui_23.AddChild(__tui_24)
 	__tui_25 := tui.New(
-		tui.WithText(formatTime(elapsed.Get())),
+		tui.WithText(formatTime(a.elapsed.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 	)
 	__tui_23.AddChild(__tui_25)
 	__tui_21.AddChild(__tui_23)
-	__cond_1 := tui.New()
-	__tui_21.AddChild(__cond_1)
-	__update___cond_1 := func() {
-		__cond_1.RemoveAllChildren()
-		if running.Get() {
-			__tui_26 := tui.New(
-				tui.WithText("Running"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-			)
-			__cond_1.AddChild(__tui_26)
-		} else {
-			__tui_27 := tui.New(
-				tui.WithText("Stopped"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
-			)
-			__cond_1.AddChild(__tui_27)
-		}
+	if a.running.Get() {
+		__tui_26 := tui.New(
+			tui.WithText("Running"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_21.AddChild(__tui_26)
+	} else {
+		__tui_27 := tui.New(
+			tui.WithText("Stopped"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		)
+		__tui_21.AddChild(__tui_27)
 	}
-	__update___cond_1()
-	running.Bind(func(_ bool) { __update___cond_1() })
 	__tui_28 := tui.New(
 		tui.WithText("[space] toggle [r] reset"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
@@ -365,31 +346,24 @@ func Interactive() InteractiveView {
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_33 := tui.New(
-		tui.WithOnClick(toggle(sound, eventCount)),
+		tui.WithOnClick(a.toggleState(a.sound)),
 	)
 	__tui_34 := tui.New(tui.WithText("Sound  "))
 	__tui_33.AddChild(__tui_34)
 	__tui_32.AddChild(__tui_33)
-	__cond_2 := tui.New()
-	__tui_32.AddChild(__cond_2)
-	__update___cond_2 := func() {
-		__cond_2.RemoveAllChildren()
-		if sound.Get() {
-			__tui_35 := tui.New(
-				tui.WithText("ON"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-			)
-			__cond_2.AddChild(__tui_35)
-		} else {
-			__tui_36 := tui.New(
-				tui.WithText("OFF"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
-			)
-			__cond_2.AddChild(__tui_36)
-		}
+	if a.sound.Get() {
+		__tui_35 := tui.New(
+			tui.WithText("ON"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_32.AddChild(__tui_35)
+	} else {
+		__tui_36 := tui.New(
+			tui.WithText("OFF"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		)
+		__tui_32.AddChild(__tui_36)
 	}
-	__update___cond_2()
-	sound.Bind(func(_ bool) { __update___cond_2() })
 	__tui_30.AddChild(__tui_32)
 	__tui_37 := tui.New(
 		tui.WithDirection(tui.Row),
@@ -397,31 +371,24 @@ func Interactive() InteractiveView {
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_38 := tui.New(
-		tui.WithOnClick(toggle(notify, eventCount)),
+		tui.WithOnClick(a.toggleState(a.notify)),
 	)
 	__tui_39 := tui.New(tui.WithText("Notify "))
 	__tui_38.AddChild(__tui_39)
 	__tui_37.AddChild(__tui_38)
-	__cond_3 := tui.New()
-	__tui_37.AddChild(__cond_3)
-	__update___cond_3 := func() {
-		__cond_3.RemoveAllChildren()
-		if notify.Get() {
-			__tui_40 := tui.New(
-				tui.WithText("ON"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-			)
-			__cond_3.AddChild(__tui_40)
-		} else {
-			__tui_41 := tui.New(
-				tui.WithText("OFF"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
-			)
-			__cond_3.AddChild(__tui_41)
-		}
+	if a.notify.Get() {
+		__tui_40 := tui.New(
+			tui.WithText("ON"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_37.AddChild(__tui_40)
+	} else {
+		__tui_41 := tui.New(
+			tui.WithText("OFF"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		)
+		__tui_37.AddChild(__tui_41)
 	}
-	__update___cond_3()
-	notify.Bind(func(_ bool) { __update___cond_3() })
 	__tui_30.AddChild(__tui_37)
 	__tui_42 := tui.New(
 		tui.WithDirection(tui.Row),
@@ -429,31 +396,24 @@ func Interactive() InteractiveView {
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_43 := tui.New(
-		tui.WithOnClick(toggle(dark, eventCount)),
+		tui.WithOnClick(a.toggleState(a.dark)),
 	)
 	__tui_44 := tui.New(tui.WithText("Theme  "))
 	__tui_43.AddChild(__tui_44)
 	__tui_42.AddChild(__tui_43)
-	__cond_4 := tui.New()
-	__tui_42.AddChild(__cond_4)
-	__update___cond_4 := func() {
-		__cond_4.RemoveAllChildren()
-		if dark.Get() {
-			__tui_45 := tui.New(
-				tui.WithText("Dark"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-			)
-			__cond_4.AddChild(__tui_45)
-		} else {
-			__tui_46 := tui.New(
-				tui.WithText("Light"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
-			)
-			__cond_4.AddChild(__tui_46)
-		}
+	if a.dark.Get() {
+		__tui_45 := tui.New(
+			tui.WithText("Dark"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+		)
+		__tui_42.AddChild(__tui_45)
+	} else {
+		__tui_46 := tui.New(
+			tui.WithText("Light"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
+		)
+		__tui_42.AddChild(__tui_46)
 	}
-	__update___cond_4()
-	dark.Bind(func(_ bool) { __update___cond_4() })
 	__tui_30.AddChild(__tui_42)
 	__tui_47 := tui.New(
 		tui.WithText("click or press 1/2/3"),
@@ -485,7 +445,7 @@ func Interactive() InteractiveView {
 	)
 	__tui_50.AddChild(__tui_51)
 	__tui_52 := tui.New(
-		tui.WithText(lastEvent.Get()),
+		tui.WithText(a.lastEvent.Get()),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
 	)
 	__tui_50.AddChild(__tui_52)
@@ -501,7 +461,7 @@ func Interactive() InteractiveView {
 	)
 	__tui_53.AddChild(__tui_54)
 	__tui_55 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", eventCount.Get())),
+		tui.WithText(fmt.Sprintf("%d", a.eventCount.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
 	__tui_53.AddChild(__tui_55)
@@ -524,29 +484,5 @@ func Interactive() InteractiveView {
 	__tui_57.AddChild(__tui_58)
 	__tui_0.AddChild(__tui_57)
 
-	// Attach watchers (deferred until refs are assigned)
-	__tui_0.AddWatcher(tui.OnTimer(time.Second, timerTick(elapsed, running)))
-
-	// State bindings
-	eventCount.Bind(func(_ int) {
-		__tui_3.SetText(fmt.Sprintf("Events: %d", eventCount.Get()))
-	})
-	count.Bind(func(_ int) {
-		__tui_9.SetText(fmt.Sprintf("%d", count.Get()))
-	})
-	elapsed.Bind(func(_ int) {
-		__tui_25.SetText(formatTime(elapsed.Get()))
-	})
-	lastEvent.Bind(func(_ string) {
-		__tui_52.SetText(lastEvent.Get())
-	})
-	eventCount.Bind(func(_ int) {
-		__tui_55.SetText(fmt.Sprintf("%d", eventCount.Get()))
-	})
-
-	view = InteractiveView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

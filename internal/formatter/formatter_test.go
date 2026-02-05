@@ -344,6 +344,96 @@ templ App() {
 }
 `,
 		},
+		"method component receiver syntax": {
+			input: `package main
+
+templ (s *sidebar) Render() {
+<div>
+<span>Hello</span>
+</div>
+}
+`,
+			want: `package main
+
+templ (s *sidebar) Render() {
+	<div>
+		<span>Hello</span>
+	</div>
+}
+`,
+		},
+		"go type declaration preserved": {
+			input: `package main
+
+type myApp struct {
+	query string
+}
+
+templ Hello() {
+	<span>Hello</span>
+}
+`,
+			want: `package main
+
+type myApp struct {
+	query string
+}
+
+templ Hello() {
+	<span>Hello</span>
+}
+`,
+		},
+		"interleaved type func and method templ": {
+			input: `package main
+
+import tui "github.com/grindlemire/go-tui"
+
+type myApp struct {
+	query *tui.State[string]
+}
+
+func MyApp() *myApp {
+	return &myApp{
+		query: tui.NewState(""),
+	}
+}
+
+func (a *myApp) KeyMap() tui.KeyMap {
+	return nil
+}
+
+templ (a *myApp) Render() {
+	<div>
+		<span>Hello</span>
+	</div>
+}
+`,
+			want: `package main
+
+import tui "github.com/grindlemire/go-tui"
+
+type myApp struct {
+	query *tui.State[string]
+}
+
+func MyApp() *myApp {
+	return &myApp{
+		query: tui.NewState(""),
+	}
+}
+
+func (a *myApp) KeyMap() tui.KeyMap {
+	return nil
+}
+
+templ (a *myApp) Render() {
+	<div>
+		<span>Hello</span>
+	</div>
+}
+`,
+		},
 	}
 
 	for name, tt := range tests {

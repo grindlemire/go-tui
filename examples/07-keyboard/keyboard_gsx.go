@@ -9,76 +9,53 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleKey(lastKey *tui.State[string], keyCount *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
-	return func(el *tui.Element, e tui.KeyEvent) bool {
-		keyCount.Set(keyCount.Get() + 1)
+type keyboardApp struct {
+	lastKey  *tui.State[string]
+	keyCount *tui.State[int]
+}
 
-		if e.Rune != 0 {
-			lastKey.Set(fmt.Sprintf("'%c' (rune)", e.Rune))
-		} else {
-			lastKey.Set(keyName(e.Key))
-		}
-		return true
+func Keyboard() *keyboardApp {
+	return &keyboardApp{
+		lastKey:  tui.NewState("(none)"),
+		keyCount: tui.NewState(0),
 	}
 }
 
-func keyName(key tui.Key) string {
-	switch key {
-	case tui.KeyEnter:
-		return "Enter"
-	case tui.KeyBackspace:
-		return "Backspace"
-	case tui.KeyTab:
-		return "Tab"
-	case tui.KeyEscape:
-		return "Escape"
-	case tui.KeyUp:
-		return "Up Arrow"
-	case tui.KeyDown:
-		return "Down Arrow"
-	case tui.KeyLeft:
-		return "Left Arrow"
-	case tui.KeyRight:
-		return "Right Arrow"
-	case tui.KeyHome:
-		return "Home"
-	case tui.KeyEnd:
-		return "End"
-	case tui.KeyPageUp:
-		return "Page Up"
-	case tui.KeyPageDown:
-		return "Page Down"
-	case tui.KeyDelete:
-		return "Delete"
-	case tui.KeyInsert:
-		return "Insert"
-	default:
-		return fmt.Sprintf("Key(%d)", key)
+func (k *keyboardApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRunes(func(ke tui.KeyEvent) {
+			k.keyCount.Set(k.keyCount.Get() + 1)
+			k.lastKey.Set(fmt.Sprintf("'%c' (rune)", ke.Rune))
+		}),
+		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { k.recordSpecial("Enter") }),
+		tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { k.recordSpecial("Backspace") }),
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { k.recordSpecial("Tab") }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { k.recordSpecial("Up Arrow") }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { k.recordSpecial("Down Arrow") }),
+		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { k.recordSpecial("Left Arrow") }),
+		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { k.recordSpecial("Right Arrow") }),
+		tui.OnKey(tui.KeyHome, func(ke tui.KeyEvent) { k.recordSpecial("Home") }),
+		tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) { k.recordSpecial("End") }),
+		tui.OnKey(tui.KeyPageUp, func(ke tui.KeyEvent) { k.recordSpecial("Page Up") }),
+		tui.OnKey(tui.KeyPageDown, func(ke tui.KeyEvent) { k.recordSpecial("Page Down") }),
+		tui.OnKey(tui.KeyDelete, func(ke tui.KeyEvent) { k.recordSpecial("Delete") }),
+		tui.OnKey(tui.KeyInsert, func(ke tui.KeyEvent) { k.recordSpecial("Insert") }),
 	}
 }
 
-type KeyboardView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+func (k *keyboardApp) recordSpecial(name string) {
+	k.keyCount.Set(k.keyCount.Get() + 1)
+	k.lastKey.Set(name)
 }
 
-func (v KeyboardView) GetRoot() tui.Renderable { return v.Root }
-
-func (v KeyboardView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Keyboard() KeyboardView {
-	var view KeyboardView
-	var watchers []tui.Watcher
-
-	lastKey := tui.NewState("(none)")
-	keyCount := tui.NewState(0)
+func (k *keyboardApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithBorder(tui.BorderRounded),
-		tui.WithOnKeyPress(handleKey(lastKey, keyCount)),
-		tui.WithFocusable(true),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Keyboard Events"),
@@ -99,7 +76,7 @@ func Keyboard() KeyboardView {
 	)
 	__tui_3.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithText(lastKey.Get()),
+		tui.WithText(k.lastKey.Get()),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Green)),
 	)
 	__tui_3.AddChild(__tui_5)
@@ -113,7 +90,7 @@ func Keyboard() KeyboardView {
 	)
 	__tui_6.AddChild(__tui_7)
 	__tui_8 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", keyCount.Get())),
+		tui.WithText(fmt.Sprintf("%d", k.keyCount.Get())),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
 	__tui_6.AddChild(__tui_8)
@@ -129,17 +106,5 @@ func Keyboard() KeyboardView {
 	)
 	__tui_0.AddChild(__tui_10)
 
-	// State bindings
-	lastKey.Bind(func(_ string) {
-		__tui_5.SetText(lastKey.Get())
-	})
-	keyCount.Bind(func(_ int) {
-		__tui_8.SetText(fmt.Sprintf("%d", keyCount.Get()))
-	})
-
-	view = KeyboardView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

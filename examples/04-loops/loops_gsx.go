@@ -9,49 +9,51 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleKeys(selected *tui.State[int], count int) func(*tui.Element, tui.KeyEvent) bool {
-	return func(el *tui.Element, e tui.KeyEvent) bool {
-		switch {
-		case e.Rune == 'j' || e.Key == tui.KeyDown:
-			if selected.Get() < count-1 {
-				selected.Set(selected.Get() + 1)
-			} else if selected.Get() == count-1 {
-				selected.Set(0)
-			}
-			return true
-		case e.Rune == 'k' || e.Key == tui.KeyUp:
-			if selected.Get() > 0 {
-				selected.Set(selected.Get() - 1)
-			} else if selected.Get() == 0 {
-				selected.Set(count - 1)
-			}
-			return true
-		}
-		return false
+type loopsApp struct {
+	items    []string
+	selected *tui.State[int]
+}
+
+func Loops(items []string) *loopsApp {
+	return &loopsApp{
+		items:    items,
+		selected: tui.NewState(0),
 	}
 }
 
-type LoopsView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+func (l *loopsApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { l.next() }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { l.next() }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { l.prev() }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { l.prev() }),
+	}
 }
 
-func (v LoopsView) GetRoot() tui.Renderable { return v.Root }
+func (l *loopsApp) next() {
+	if l.selected.Get() < len(l.items)-1 {
+		l.selected.Set(l.selected.Get() + 1)
+	} else {
+		l.selected.Set(0)
+	}
+}
 
-func (v LoopsView) GetWatchers() []tui.Watcher { return v.watchers }
+func (l *loopsApp) prev() {
+	if l.selected.Get() > 0 {
+		l.selected.Set(l.selected.Get() - 1)
+	} else {
+		l.selected.Set(len(l.items) - 1)
+	}
+}
 
-func Loops(items []string) LoopsView {
-	var view LoopsView
-	var watchers []tui.Watcher
-
-	selected := tui.NewState(0)
+func (l *loopsApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithGap(1),
-		tui.WithFocusable(true),
-		tui.WithOnKeyPress(handleKeys(selected, len(items))),
 	)
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
@@ -63,7 +65,7 @@ func Loops(items []string) LoopsView {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText(fmt.Sprintf("Item %d/%d", selected.Get()+1, len(items))),
+		tui.WithText(fmt.Sprintf("Item %d/%d", l.selected.Get()+1, len(l.items))),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -83,30 +85,22 @@ func Loops(items []string) LoopsView {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_5.AddChild(__tui_6)
-	__loop_0_style := __tui_5.LayoutStyle()
-	__loop_0 := tui.New(tui.WithDirection(__loop_0_style.Direction), tui.WithGap(__loop_0_style.Gap))
-	__tui_5.AddChild(__loop_0)
-	__update___loop_0 := func() {
-		__loop_0.RemoveAllChildren()
-		for i, item := range items {
-			_ = i
-			if i == selected.Get() {
-				__tui_7 := tui.New(
-					tui.WithText(item),
-					tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-					tui.WithTextStyle(tui.NewStyle().Bold()),
-				)
-				__loop_0.AddChild(__tui_7)
-			} else {
-				__tui_8 := tui.New(
-					tui.WithText(item),
-				)
-				__loop_0.AddChild(__tui_8)
-			}
+	for i, item := range l.items {
+		_ = i
+		if i == l.selected.Get() {
+			__tui_7 := tui.New(
+				tui.WithText(item),
+				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+				tui.WithTextStyle(tui.NewStyle().Bold()),
+			)
+			__tui_5.AddChild(__tui_7)
+		} else {
+			__tui_8 := tui.New(
+				tui.WithText(item),
+			)
+			__tui_5.AddChild(__tui_8)
 		}
 	}
-	__update___loop_0()
-	selected.Bind(func(_ int) { __update___loop_0() })
 	__tui_4.AddChild(__tui_5)
 	__tui_9 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
@@ -119,30 +113,22 @@ func Loops(items []string) LoopsView {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_9.AddChild(__tui_10)
-	__loop_1_style := __tui_9.LayoutStyle()
-	__loop_1 := tui.New(tui.WithDirection(__loop_1_style.Direction), tui.WithGap(__loop_1_style.Gap))
-	__tui_9.AddChild(__loop_1)
-	__update___loop_1 := func() {
-		__loop_1.RemoveAllChildren()
-		for i, item := range items {
-			_ = i
-			if i == selected.Get() {
-				__tui_11 := tui.New(
-					tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
-					tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-					tui.WithTextStyle(tui.NewStyle().Bold()),
-				)
-				__loop_1.AddChild(__tui_11)
-			} else {
-				__tui_12 := tui.New(
-					tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
-				)
-				__loop_1.AddChild(__tui_12)
-			}
+	for i, item := range l.items {
+		_ = i
+		if i == l.selected.Get() {
+			__tui_11 := tui.New(
+				tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
+				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+				tui.WithTextStyle(tui.NewStyle().Bold()),
+			)
+			__tui_9.AddChild(__tui_11)
+		} else {
+			__tui_12 := tui.New(
+				tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
+			)
+			__tui_9.AddChild(__tui_12)
 		}
 	}
-	__update___loop_1()
-	selected.Bind(func(_ int) { __update___loop_1() })
 	__tui_4.AddChild(__tui_9)
 	__tui_13 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
@@ -156,17 +142,17 @@ func Loops(items []string) LoopsView {
 	)
 	__tui_13.AddChild(__tui_14)
 	__tui_15 := tui.New(
-		tui.WithText(items[selected.Get()]),
+		tui.WithText(l.items[l.selected.Get()]),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
 	__tui_13.AddChild(__tui_15)
 	__tui_16 := tui.New(
-		tui.WithText(fmt.Sprintf("Index: %d", selected.Get())),
+		tui.WithText(fmt.Sprintf("Index: %d", l.selected.Get())),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_13.AddChild(__tui_16)
 	__tui_17 := tui.New(
-		tui.WithText(fmt.Sprintf("Length: %d chars", len(items[selected.Get()]))),
+		tui.WithText(fmt.Sprintf("Length: %d chars", len(l.items[l.selected.Get()]))),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_13.AddChild(__tui_17)
@@ -183,23 +169,5 @@ func Loops(items []string) LoopsView {
 	__tui_18.AddChild(__tui_19)
 	__tui_0.AddChild(__tui_18)
 
-	// State bindings
-	selected.Bind(func(_ int) {
-		__tui_3.SetText(fmt.Sprintf("Item %d/%d", selected.Get()+1, len(items)))
-	})
-	selected.Bind(func(_ int) {
-		__tui_15.SetText(items[selected.Get()])
-	})
-	selected.Bind(func(_ int) {
-		__tui_16.SetText(fmt.Sprintf("Index: %d", selected.Get()))
-	})
-	selected.Bind(func(_ int) {
-		__tui_17.SetText(fmt.Sprintf("Length: %d chars", len(items[selected.Get()])))
-	})
-
-	view = LoopsView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

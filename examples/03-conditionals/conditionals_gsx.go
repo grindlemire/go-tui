@@ -9,44 +9,32 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
-	return func(el *tui.Element, e tui.KeyEvent) bool {
-		switch e.Rune {
-		case '+':
-			count.Set(count.Get() + 1)
-			return true
-		case '-':
-			count.Set(count.Get() - 1)
-			return true
-		case 'r':
-			count.Set(0)
-			return true
-		}
-		return false
+type conditionalsApp struct {
+	count *tui.State[int]
+}
+
+func Conditionals() *conditionalsApp {
+	return &conditionalsApp{
+		count: tui.NewState(0),
 	}
 }
 
-type ConditionalsView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+func (c *conditionalsApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() - 1) }),
+		tui.OnRune('r', func(ke tui.KeyEvent) { c.count.Set(0) }),
+	}
 }
 
-func (v ConditionalsView) GetRoot() tui.Renderable { return v.Root }
-
-func (v ConditionalsView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Conditionals() ConditionalsView {
-	var view ConditionalsView
-	var watchers []tui.Watcher
-
-	count := tui.NewState(0)
+func (c *conditionalsApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithGap(1),
-		tui.WithFocusable(true),
-		tui.WithOnKeyPress(handleKeys(count)),
 	)
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
@@ -58,7 +46,7 @@ func Conditionals() ConditionalsView {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText(fmt.Sprintf("Count: %d", count.Get())),
+		tui.WithText(fmt.Sprintf("Count: %d", c.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -79,15 +67,15 @@ func Conditionals() ConditionalsView {
 	)
 	__tui_5.AddChild(__tui_6)
 	__tui_7 := tui.New(
-		tui.WithText(fmt.Sprintf("Value:  %d", count.Get())),
+		tui.WithText(fmt.Sprintf("Value:  %d", c.count.Get())),
 	)
 	__tui_5.AddChild(__tui_7)
 	__tui_8 := tui.New(
-		tui.WithText(fmt.Sprintf("Double: %d", count.Get()*2)),
+		tui.WithText(fmt.Sprintf("Double: %d", c.count.Get()*2)),
 	)
 	__tui_5.AddChild(__tui_8)
 	__tui_9 := tui.New(
-		tui.WithText(fmt.Sprintf("Even:   %v", count.Get()%2 == 0)),
+		tui.WithText(fmt.Sprintf("Even:   %v", c.count.Get()%2 == 0)),
 	)
 	__tui_5.AddChild(__tui_9)
 	__tui_4.AddChild(__tui_5)
@@ -102,48 +90,27 @@ func Conditionals() ConditionalsView {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_10.AddChild(__tui_11)
-	__cond_0 := tui.New()
-	__tui_10.AddChild(__cond_0)
-	__update___cond_0 := func() {
-		__cond_0.RemoveAllChildren()
-		if count.Get() > 0 {
-			__tui_12 := tui.New(
-				tui.WithText("Positive"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-			)
-			__cond_0.AddChild(__tui_12)
-		}
+	if c.count.Get() > 0 {
+		__tui_12 := tui.New(
+			tui.WithText("Positive"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_10.AddChild(__tui_12)
 	}
-	__update___cond_0()
-	count.Bind(func(_ int) { __update___cond_0() })
-	__cond_1 := tui.New()
-	__tui_10.AddChild(__cond_1)
-	__update___cond_1 := func() {
-		__cond_1.RemoveAllChildren()
-		if count.Get() == 0 {
-			__tui_13 := tui.New(
-				tui.WithText("Zero"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
-			)
-			__cond_1.AddChild(__tui_13)
-		}
+	if c.count.Get() == 0 {
+		__tui_13 := tui.New(
+			tui.WithText("Zero"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+		)
+		__tui_10.AddChild(__tui_13)
 	}
-	__update___cond_1()
-	count.Bind(func(_ int) { __update___cond_1() })
-	__cond_2 := tui.New()
-	__tui_10.AddChild(__cond_2)
-	__update___cond_2 := func() {
-		__cond_2.RemoveAllChildren()
-		if count.Get() < 0 {
-			__tui_14 := tui.New(
-				tui.WithText("Negative"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
-			)
-			__cond_2.AddChild(__tui_14)
-		}
+	if c.count.Get() < 0 {
+		__tui_14 := tui.New(
+			tui.WithText("Negative"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		)
+		__tui_10.AddChild(__tui_14)
 	}
-	__update___cond_2()
-	count.Bind(func(_ int) { __update___cond_2() })
 	__tui_4.AddChild(__tui_10)
 	__tui_15 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
@@ -156,26 +123,19 @@ func Conditionals() ConditionalsView {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_15.AddChild(__tui_16)
-	__cond_3 := tui.New()
-	__tui_15.AddChild(__cond_3)
-	__update___cond_3 := func() {
-		__cond_3.RemoveAllChildren()
-		if count.Get() >= 5 {
-			__tui_17 := tui.New(
-				tui.WithText("High (5+)"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-			)
-			__cond_3.AddChild(__tui_17)
-		} else {
-			__tui_18 := tui.New(
-				tui.WithText("Low (under 5)"),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
-			)
-			__cond_3.AddChild(__tui_18)
-		}
+	if c.count.Get() >= 5 {
+		__tui_17 := tui.New(
+			tui.WithText("High (5+)"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_15.AddChild(__tui_17)
+	} else {
+		__tui_18 := tui.New(
+			tui.WithText("Low (under 5)"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
+		)
+		__tui_15.AddChild(__tui_18)
 	}
-	__update___cond_3()
-	count.Bind(func(_ int) { __update___cond_3() })
 	__tui_4.AddChild(__tui_15)
 	__tui_0.AddChild(__tui_4)
 	__tui_19 := tui.New(
@@ -189,23 +149,5 @@ func Conditionals() ConditionalsView {
 	__tui_19.AddChild(__tui_20)
 	__tui_0.AddChild(__tui_19)
 
-	// State bindings
-	count.Bind(func(_ int) {
-		__tui_3.SetText(fmt.Sprintf("Count: %d", count.Get()))
-	})
-	count.Bind(func(_ int) {
-		__tui_7.SetText(fmt.Sprintf("Value:  %d", count.Get()))
-	})
-	count.Bind(func(_ int) {
-		__tui_8.SetText(fmt.Sprintf("Double: %d", count.Get()*2))
-	})
-	count.Bind(func(_ int) {
-		__tui_9.SetText(fmt.Sprintf("Even:   %v", count.Get()%2 == 0))
-	})
-
-	view = ConditionalsView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

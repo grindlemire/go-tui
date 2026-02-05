@@ -26,6 +26,9 @@ vendor/
 *~
 .vscode/
 !editor/vscode/
+./editor/zed-gsx/grammars/
+
+extension.wasm
 
 # Claude
 .claude/

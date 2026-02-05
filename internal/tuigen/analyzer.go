@@ -148,8 +148,9 @@ var knownAttributes = map[string]bool{
 	"onTimer":   true,
 
 	// Scroll
-	"scrollable":         true,
-	"scrollbarStyle":     true,
+	"scrollable":          true,
+	"scrollOffset":        true,
+	"scrollbarStyle":      true,
 	"scrollbarThumbStyle": true,
 
 	// Generic

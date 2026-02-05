@@ -1,0 +1,1 @@
+{"rustc":2833068300835136146,"features":"[]","declared_features":"[\"alloc\", \"default\", \"std\"]","target":17459415408099892417,"profile":5347358027863023418,"path":9577214917884037837,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug/.fingerprint/leb128fmt-57da5ebdf9580eb1/dep-lib-leb128fmt","checksum":false}}],"rustflags":[],"config":2069994364910194474,"compile_kind":0}

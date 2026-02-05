@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -37,19 +38,34 @@ func (p *printer) PrintFile(file *tuigen.File) string {
 		p.newline()
 	}
 
-	// Components and functions
-	for i, comp := range file.Components {
+	// Merge all top-level declarations and sort by source position
+	// to preserve the original interleaved ordering.
+	var topLevel []tuigen.Node
+	for _, d := range file.Decls {
+		topLevel = append(topLevel, d)
+	}
+	for _, c := range file.Components {
+		topLevel = append(topLevel, c)
+	}
+	for _, f := range file.Funcs {
+		topLevel = append(topLevel, f)
+	}
+	sort.Slice(topLevel, func(i, j int) bool {
+		return topLevel[i].Pos().Line < topLevel[j].Pos().Line
+	})
+
+	for i, node := range topLevel {
 		if i > 0 {
 			p.newline()
 		}
-		p.printComponent(comp)
-	}
-
-	for i, fn := range file.Funcs {
-		if i > 0 || len(file.Components) > 0 {
-			p.newline()
+		switch n := node.(type) {
+		case *tuigen.GoDecl:
+			p.printGoDecl(n)
+		case *tuigen.Component:
+			p.printComponent(n)
+		case *tuigen.GoFunc:
+			p.printGoFunc(n)
 		}
-		p.printGoFunc(fn)
 	}
 
 	// Orphan comments at end of file
@@ -107,26 +123,40 @@ func (p *printer) printImports(imports []tuigen.Import) {
 }
 
 // printComponent outputs a component declaration.
-// Components are templ functions with no return type: templ Name(params) { ... }
+// Supports both function components: templ Name(params) { ... }
+// and method components: templ (s *Type) Render() { ... }
 func (p *printer) printComponent(comp *tuigen.Component) {
 	// Leading comments (doc comments)
 	p.printLeadingComments(comp.LeadingComments)
 
 	p.write("templ ")
-	p.write(comp.Name)
-	p.write("(")
 
-	// Parameters
-	for i, param := range comp.Params {
-		if i > 0 {
-			p.write(", ")
+	if comp.Receiver != "" {
+		// Method component: templ (s *sidebar) Render() { ... }
+		p.write("(")
+		p.write(comp.Receiver)
+		p.write(") ")
+		p.write(comp.Name)
+		p.write("()")
+	} else {
+		// Function component: templ Name(params) { ... }
+		p.write(comp.Name)
+		p.write("(")
+
+		// Parameters
+		for i, param := range comp.Params {
+			if i > 0 {
+				p.write(", ")
+			}
+			p.write(param.Name)
+			p.write(" ")
+			p.write(param.Type)
 		}
-		p.write(param.Name)
-		p.write(" ")
-		p.write(param.Type)
+
+		p.write(")")
 	}
 
-	p.write(") {")
+	p.write(" {")
 	p.printTrailingComment(comp.TrailingComments)
 	p.newline()
 

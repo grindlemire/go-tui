@@ -378,3 +378,363 @@ templ App() {
 		t.Errorf("children[1].Name = %q, want 'Footer'", call2.Name)
 	}
 }
+
+func TestParser_MethodTempl(t *testing.T) {
+	type tc struct {
+		input            string
+		wantName         string
+		wantReceiver     string
+		wantReceiverName string
+		wantReceiverType string
+		wantBodyLen      int
+	}
+
+	tests := map[string]tc{
+		"pointer receiver": {
+			input: `package x
+templ (s *sidebar) Render() {
+	<span>Hello</span>
+}`,
+			wantName:         "Render",
+			wantReceiver:     "s *sidebar",
+			wantReceiverName: "s",
+			wantReceiverType: "*sidebar",
+			wantBodyLen:      1,
+		},
+		"value receiver": {
+			input: `package x
+templ (v myView) Render() {
+	<span>Hello</span>
+}`,
+			wantName:         "Render",
+			wantReceiver:     "v myView",
+			wantReceiverName: "v",
+			wantReceiverType: "myView",
+			wantBodyLen:      1,
+		},
+		"receiver with qualified type": {
+			input: `package x
+templ (a *pkg.App) Render() {
+	<div>
+		<span>Content</span>
+	</div>
+}`,
+			wantName:         "Render",
+			wantReceiver:     "a *pkg.App",
+			wantReceiverName: "a",
+			wantReceiverType: "*pkg.App",
+			wantBodyLen:      1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+
+			comp := file.Components[0]
+			if comp.Name != tt.wantName {
+				t.Errorf("Name = %q, want %q", comp.Name, tt.wantName)
+			}
+			if comp.Receiver != tt.wantReceiver {
+				t.Errorf("Receiver = %q, want %q", comp.Receiver, tt.wantReceiver)
+			}
+			if comp.ReceiverName != tt.wantReceiverName {
+				t.Errorf("ReceiverName = %q, want %q", comp.ReceiverName, tt.wantReceiverName)
+			}
+			if comp.ReceiverType != tt.wantReceiverType {
+				t.Errorf("ReceiverType = %q, want %q", comp.ReceiverType, tt.wantReceiverType)
+			}
+			if len(comp.Params) != 0 {
+				t.Errorf("method templ should have no params, got %d", len(comp.Params))
+			}
+			if len(comp.Body) != tt.wantBodyLen {
+				t.Errorf("len(Body) = %d, want %d", len(comp.Body), tt.wantBodyLen)
+			}
+		})
+	}
+}
+
+func TestParser_MethodTemplErrors(t *testing.T) {
+	type tc struct {
+		input       string
+		wantErrText string
+	}
+
+	tests := map[string]tc{
+		"method name must be Render": {
+			input: `package x
+templ (s *sidebar) NotRender() {
+	<span>Hello</span>
+}`,
+			wantErrText: "method templ name must be 'Render'",
+		},
+		"method templ no params allowed": {
+			input: `package x
+templ (s *sidebar) Render(title string) {
+	<span>Hello</span>
+}`,
+			wantErrText: "method templ Render() must not have parameters",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			_, err := p.ParseFile()
+
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+
+			errStr := err.Error()
+			if !containsSubstring(errStr, tt.wantErrText) {
+				t.Errorf("error = %q, want to contain %q", errStr, tt.wantErrText)
+			}
+		})
+	}
+}
+
+func TestParser_FunctionTemplReceiverFieldsEmpty(t *testing.T) {
+	input := `package x
+templ Header(title string) {
+	<span>{title}</span>
+}`
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	comp := file.Components[0]
+	if comp.Receiver != "" {
+		t.Errorf("function templ Receiver = %q, want empty", comp.Receiver)
+	}
+	if comp.ReceiverName != "" {
+		t.Errorf("function templ ReceiverName = %q, want empty", comp.ReceiverName)
+	}
+	if comp.ReceiverType != "" {
+		t.Errorf("function templ ReceiverType = %q, want empty", comp.ReceiverType)
+	}
+}
+
+func TestParser_ComponentCallIsStructMount(t *testing.T) {
+	type tc struct {
+		input           string
+		wantStructMount bool
+	}
+
+	tests := map[string]tc{
+		"component call in method templ is struct mount": {
+			input: `package x
+templ (a *myApp) Render() {
+	@Sidebar(a.query)
+}`,
+			wantStructMount: true,
+		},
+		"component call in function templ is not struct mount": {
+			input: `package x
+templ App() {
+	@Header()
+}`,
+			wantStructMount: false,
+		},
+		"nested component call in method templ element": {
+			input: `package x
+templ (a *myApp) Render() {
+	<div>
+		@SearchInput(a.active, a.query)
+	</div>
+}`,
+			wantStructMount: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+
+			// Find the ComponentCall in the body (may be top-level or nested in element)
+			call := findComponentCall(file.Components[0].Body)
+			if call == nil {
+				t.Fatal("expected to find a ComponentCall in body")
+			}
+
+			if call.IsStructMount != tt.wantStructMount {
+				t.Errorf("IsStructMount = %v, want %v", call.IsStructMount, tt.wantStructMount)
+			}
+		})
+	}
+}
+
+func TestParser_BothTemplFormsCoexist(t *testing.T) {
+	input := `package x
+
+templ Header(title string) {
+	<span>{title}</span>
+}
+
+templ (s *sidebar) Render() {
+	<div>
+		@Header("Welcome")
+	</div>
+}
+`
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(file.Components) != 2 {
+		t.Fatalf("expected 2 components, got %d", len(file.Components))
+	}
+
+	// First: function templ
+	header := file.Components[0]
+	if header.Name != "Header" {
+		t.Errorf("component 0 Name = %q, want 'Header'", header.Name)
+	}
+	if header.Receiver != "" {
+		t.Errorf("component 0 should be function templ (no receiver), got %q", header.Receiver)
+	}
+
+	// Second: method templ
+	sidebar := file.Components[1]
+	if sidebar.Name != "Render" {
+		t.Errorf("component 1 Name = %q, want 'Render'", sidebar.Name)
+	}
+	if sidebar.Receiver != "s *sidebar" {
+		t.Errorf("component 1 Receiver = %q, want 's *sidebar'", sidebar.Receiver)
+	}
+
+	// @Header inside method templ should be struct mount
+	call := findComponentCall(sidebar.Body)
+	if call == nil {
+		t.Fatal("expected ComponentCall in method templ body")
+	}
+	if !call.IsStructMount {
+		t.Error("ComponentCall inside method templ should have IsStructMount=true")
+	}
+}
+
+func TestParser_MethodTemplWithControlFlow(t *testing.T) {
+	input := `package x
+templ (s *sidebar) Render() {
+	@if s.expanded.Get() {
+		<div>
+			@ChildComponent(s.query)
+		</div>
+	}
+}`
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(file.Components) != 1 {
+		t.Fatalf("expected 1 component, got %d", len(file.Components))
+	}
+
+	comp := file.Components[0]
+	if comp.Receiver != "s *sidebar" {
+		t.Errorf("Receiver = %q, want 's *sidebar'", comp.Receiver)
+	}
+
+	// Body should have an @if
+	if len(comp.Body) != 1 {
+		t.Fatalf("expected 1 body node, got %d", len(comp.Body))
+	}
+
+	ifStmt, ok := comp.Body[0].(*IfStmt)
+	if !ok {
+		t.Fatalf("body[0]: expected *IfStmt, got %T", comp.Body[0])
+	}
+
+	// The @if should contain a <div> which contains @ChildComponent
+	if len(ifStmt.Then) != 1 {
+		t.Fatalf("expected 1 then node, got %d", len(ifStmt.Then))
+	}
+	elem, ok := ifStmt.Then[0].(*Element)
+	if !ok {
+		t.Fatalf("then[0]: expected *Element, got %T", ifStmt.Then[0])
+	}
+
+	call := findComponentCall([]Node{elem})
+	if call == nil {
+		t.Fatal("expected ComponentCall inside @if body")
+	}
+	if call.Name != "ChildComponent" {
+		t.Errorf("call.Name = %q, want 'ChildComponent'", call.Name)
+	}
+	if !call.IsStructMount {
+		t.Error("ComponentCall inside method templ @if should have IsStructMount=true")
+	}
+}
+
+// containsSubstring checks if s contains substr.
+func containsSubstring(s, substr string) bool {
+	return len(s) >= len(substr) && searchSubstring(s, substr)
+}
+
+func searchSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
+// findComponentCall recursively searches nodes for the first ComponentCall.
+func findComponentCall(nodes []Node) *ComponentCall {
+	for _, n := range nodes {
+		switch v := n.(type) {
+		case *ComponentCall:
+			return v
+		case *Element:
+			if call := findComponentCall(v.Children); call != nil {
+				return call
+			}
+		case *IfStmt:
+			if call := findComponentCall(v.Then); call != nil {
+				return call
+			}
+			if call := findComponentCall(v.Else); call != nil {
+				return call
+			}
+		case *ForLoop:
+			if call := findComponentCall(v.Body); call != nil {
+				return call
+			}
+		}
+	}
+	return nil
+}

@@ -31,8 +31,21 @@ templ StatusLine(label string, value string) {
 	</div>
 }
 
+type compositionApp struct{}
+
+func App() *compositionApp {
+	return &compositionApp{}
+}
+
+func (a *compositionApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
+
 // App composes the other components together
-templ App() {
+templ (a *compositionApp) Render() {
 	<div class="flex-col p-1 border-rounded gap-1">
 		<div class="flex justify-between">
 			<span class="text-gradient-cyan-magenta font-bold">{"Component Composition"}</span>

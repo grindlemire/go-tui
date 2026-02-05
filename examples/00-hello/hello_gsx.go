@@ -7,19 +7,20 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type HelloView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+type helloApp struct{}
+
+func Hello() *helloApp {
+	return &helloApp{}
 }
 
-func (v HelloView) GetRoot() tui.Renderable { return v.Root }
+func (h *helloApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
 
-func (v HelloView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Hello() HelloView {
-	var view HelloView
-	var watchers []tui.Watcher
-
+func (h *helloApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
@@ -37,9 +38,5 @@ func Hello() HelloView {
 	)
 	__tui_0.AddChild(__tui_2)
 
-	view = HelloView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

@@ -1,0 +1,16 @@
+id = "gsx"
+name = "GSX"
+version = "0.1.0"
+schema_version = 1
+description = "GSX language support for go-tui"
+repository = "https://github.com/grindlemire/go-tui"
+authors = ["grindlemire"]
+
+[grammars.gsx]
+repository = "https://github.com/grindlemire/go-tui"
+rev = "bead34f494a0229563c92dcd4a09579ffc664e7d"
+path = "editor/tree-sitter-gsx"
+
+[language_servers.gsx-lsp]
+name = "GSX LSP"
+languages = ["GSX"]

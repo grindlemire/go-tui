@@ -2,8 +2,21 @@ package main
 
 import tui "github.com/grindlemire/go-tui"
 
-templ Layout() {
-	<div class="flex-col gap-1 p-1 h-full" scrollable={tui.ScrollVertical} onEvent={handleScroll} onKeyPress={handleKeyPress}>
+type layoutApp struct{}
+
+func Layout() *layoutApp {
+	return &layoutApp{}
+}
+
+func (l *layoutApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
+
+templ (l *layoutApp) Render() {
+	<div class="flex-col gap-1 p-1 h-full" scrollable={tui.ScrollVertical} onEvent={handleMouseScroll} onKeyPress={handleKeyPress}>
 		<span class="font-bold text-cyan">Flexbox Layout Demo</span>
 		<hr />
 		// === Direction ===
@@ -325,7 +338,19 @@ templ Layout() {
 	</div>
 }
 
-func handleScroll(el *tui.Element, e tui.Event) bool {
+func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
+	switch e.Rune {
+	case 'j':
+		el.ScrollBy(0, 1)
+		return true
+	case 'k':
+		el.ScrollBy(0, -1)
+		return true
+	}
+	return false
+}
+
+func handleMouseScroll(el *tui.Element, e tui.Event) bool {
 	if mouse, ok := e.(tui.MouseEvent); ok {
 		switch mouse.Button {
 		case tui.MouseWheelUp:
@@ -335,18 +360,6 @@ func handleScroll(el *tui.Element, e tui.Event) bool {
 			el.ScrollBy(0, 1)
 			return true
 		}
-	}
-	return false
-}
-
-func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
 	}
 	return false
 }

@@ -7,6 +7,7 @@ type Parser struct {
 	peek            Token
 	errors          *ErrorList
 	pendingComments []*Comment // Comments collected since last attachment
+	inMethodTempl   bool       // true when parsing inside a method templ (has receiver)
 }
 
 // NewParser creates a new Parser for the given lexer.

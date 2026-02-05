@@ -1,0 +1,2 @@
+repository = "https://github.com/grindlemire/go-tui"
+path = "editor/tree-sitter-gsx"

@@ -7,10 +7,26 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+type focusApp struct {
+	focused *tui.State[string]
+}
+
+func Focus() *focusApp {
+	return &focusApp{
+		focused: tui.NewState("(none)"),
+	}
+}
+
+func (f *focusApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
+
 func onFocusBox(name string, focused *tui.State[string]) func(*tui.Element) {
 	return func(el *tui.Element) {
 		focused.Set(name)
-		// Change border to double when focused
 		el.SetBorder(tui.BorderDouble)
 	}
 }
@@ -18,25 +34,11 @@ func onFocusBox(name string, focused *tui.State[string]) func(*tui.Element) {
 func onBlurBox(focused *tui.State[string]) func(*tui.Element) {
 	return func(el *tui.Element) {
 		focused.Set("(none)")
-		// Change border back to single when blurred
 		el.SetBorder(tui.BorderSingle)
 	}
 }
 
-type FocusView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v FocusView) GetRoot() tui.Renderable { return v.Root }
-
-func (v FocusView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Focus() FocusView {
-	var view FocusView
-	var watchers []tui.Watcher
-
-	focused := tui.NewState("(none)")
+func (f *focusApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(2),
@@ -64,8 +66,8 @@ func Focus() FocusView {
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFocusable(true),
-		tui.WithOnFocus(onFocusBox("Box A", focused)),
-		tui.WithOnBlur(onBlurBox(focused)),
+		tui.WithOnFocus(onFocusBox("Box A", f.focused)),
+		tui.WithOnBlur(onBlurBox(f.focused)),
 	)
 	__tui_5 := tui.New(
 		tui.WithText("Box A"),
@@ -81,8 +83,8 @@ func Focus() FocusView {
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFocusable(true),
-		tui.WithOnFocus(onFocusBox("Box B", focused)),
-		tui.WithOnBlur(onBlurBox(focused)),
+		tui.WithOnFocus(onFocusBox("Box B", f.focused)),
+		tui.WithOnBlur(onBlurBox(f.focused)),
 	)
 	__tui_7 := tui.New(
 		tui.WithText("Box B"),
@@ -98,8 +100,8 @@ func Focus() FocusView {
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFocusable(true),
-		tui.WithOnFocus(onFocusBox("Box C", focused)),
-		tui.WithOnBlur(onBlurBox(focused)),
+		tui.WithOnFocus(onFocusBox("Box C", f.focused)),
+		tui.WithOnBlur(onBlurBox(f.focused)),
 	)
 	__tui_9 := tui.New(
 		tui.WithText("Box C"),
@@ -117,7 +119,7 @@ func Focus() FocusView {
 	)
 	__tui_10.AddChild(__tui_11)
 	__tui_12 := tui.New(
-		tui.WithText(focused.Get()),
+		tui.WithText(f.focused.Get()),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Yellow)),
 	)
 	__tui_10.AddChild(__tui_12)
@@ -128,14 +130,5 @@ func Focus() FocusView {
 	)
 	__tui_0.AddChild(__tui_13)
 
-	// State bindings
-	focused.Bind(func(_ string) {
-		__tui_12.SetText(focused.Get())
-	})
-
-	view = FocusView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

@@ -277,6 +277,17 @@ func WithScrollable(mode ScrollMode) Option {
 	}
 }
 
+// WithScrollOffset sets the initial scroll offset for a scrollable element.
+// This is useful in the component model where elements are recreated each render
+// and scroll state needs to be preserved via State[int].
+// The offset is clamped to valid range during layout.
+func WithScrollOffset(x, y int) Option {
+	return func(e *Element) {
+		e.scrollX = x
+		e.scrollY = y
+	}
+}
+
 // WithScrollbarStyle sets the style for the scrollbar track.
 func WithScrollbarStyle(style Style) Option {
 	return func(e *Element) {

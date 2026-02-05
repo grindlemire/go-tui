@@ -1,0 +1,2 @@
+cargo:rustc-link-lib=static=wit_bindgen_cabi_realloc0_41_0
+cargo:rustc-link-search=native=/Users/joelholsteen/go/src/github.com/grindlemire/go-tui/editor/zed-gsx/target/wasm32-wasip2/debug/build/wit-bindgen-rt-f9713496e6e269cb/out

@@ -99,6 +99,9 @@ type Element struct {
 
 	// Watchers attached to this element (timers, channel watchers, etc.)
 	watchers []Watcher
+
+	// Component that produced this element (set by Mount, read during tree walks)
+	component Component
 }
 
 // New creates a new Element with the given options.

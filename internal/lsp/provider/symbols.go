@@ -128,19 +128,23 @@ func funcToSymbol(fn *tuigen.GoFunc, content string) DocumentSymbol {
 func extractFuncName(code string) string {
 	code = strings.TrimPrefix(strings.TrimSpace(code), "func ")
 
+	// Handle methods: (receiver) Name(...)
+	// Skip past the receiver before looking for the name.
+	if strings.HasPrefix(code, "(") {
+		closeIdx := strings.Index(code, ")")
+		if closeIdx != -1 {
+			code = strings.TrimSpace(code[closeIdx+1:])
+		}
+	}
+
 	idx := strings.Index(code, "(")
 	if idx == -1 {
 		return "unknown"
 	}
 
 	name := strings.TrimSpace(code[:idx])
-
-	// Handle methods: (receiver) Name
-	if strings.HasPrefix(name, "(") {
-		closeIdx := strings.Index(name, ")")
-		if closeIdx != -1 {
-			name = strings.TrimSpace(name[closeIdx+1:])
-		}
+	if name == "" {
+		return "unknown"
 	}
 
 	return name

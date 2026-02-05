@@ -44,6 +44,15 @@ type Generator struct {
 	// Loop counter for reactive @for wrapper elements (__loop_0, __loop_1, etc.)
 	loopCounter int
 
+	// Mount index counter for struct component @Component() calls in method templs.
+	// Reset per method component. Assigns position indices to tui.Mount() calls.
+	mountIndex int
+
+	// currentReceiver is the receiver variable name for the current method templ.
+	// Set during generateMethodComponent, used by generateComponentCallWithRefs
+	// to emit tui.Mount(receiverVar, index, factory).
+	currentReceiver string
+
 	// SkipImports uses format.Source instead of imports.Process (faster for tests)
 	SkipImports bool
 }

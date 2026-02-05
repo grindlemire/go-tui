@@ -1,4 +1,4 @@
-// Package main demonstrates keyboard event handling with onKeyPress.
+// Package main demonstrates keyboard event handling with KeyMap.
 //
 // To build and run:
 //
@@ -23,36 +23,10 @@ func main() {
 	}
 	defer app.Close()
 
-	root := buildUI(app)
-	app.SetRoot(root)
+	app.SetRoot(Keyboard())
 
-	app.SetGlobalKeyHandler(func(e tui.KeyEvent) bool {
-		if e.Rune == 'q' || e.Key == tui.KeyEscape {
-			app.Stop()
-			return true
-		}
-		return false
-	})
-
-	err = app.Run()
-	if err != nil {
+	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
 		os.Exit(1)
 	}
-}
-
-func buildUI(app *tui.App) *tui.Element {
-	width, height := app.Size()
-
-	root := tui.New(
-		tui.WithSize(width, height),
-		tui.WithDirection(tui.Column),
-		tui.WithJustify(tui.JustifyCenter),
-		tui.WithAlign(tui.AlignCenter),
-	)
-
-	keyboard := Keyboard()
-	root.AddChild(keyboard.Root)
-
-	return root
 }

@@ -7,18 +7,17 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func handleScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
+type layoutApp struct{}
+
+func Layout() *layoutApp {
+	return &layoutApp{}
+}
+
+func (l *layoutApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 	}
-	return false
 }
 
 func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
@@ -33,26 +32,28 @@ func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
 	return false
 }
 
-type LayoutView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+func handleMouseScroll(el *tui.Element, e tui.Event) bool {
+	if mouse, ok := e.(tui.MouseEvent); ok {
+		switch mouse.Button {
+		case tui.MouseWheelUp:
+			el.ScrollBy(0, -1)
+			return true
+		case tui.MouseWheelDown:
+			el.ScrollBy(0, 1)
+			return true
+		}
+	}
+	return false
 }
 
-func (v LayoutView) GetRoot() tui.Renderable { return v.Root }
-
-func (v LayoutView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Layout() LayoutView {
-	var view LayoutView
-	var watchers []tui.Watcher
-
+func (l *layoutApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(1),
 		tui.WithHeightPercent(100.00),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithOnEvent(handleScroll),
+		tui.WithOnEvent(handleMouseScroll),
 		tui.WithOnKeyPress(handleKeyPress),
 	)
 	__tui_1 := tui.New(
@@ -1276,9 +1277,5 @@ func Layout() LayoutView {
 	)
 	__tui_0.AddChild(__tui_223)
 
-	view = LayoutView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

@@ -7,6 +7,19 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+type compositionApp struct{}
+
+func App() *compositionApp {
+	return &compositionApp{}
+}
+
+func (a *compositionApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+	}
+}
+
 type CardView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
@@ -139,19 +152,7 @@ func StatusLine(label string, value string) StatusLineView {
 	return view
 }
 
-type AppView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v AppView) GetRoot() tui.Renderable { return v.Root }
-
-func (v AppView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func App() AppView {
-	var view AppView
-	var watchers []tui.Watcher
-
+func (a *compositionApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
@@ -189,10 +190,14 @@ func App() AppView {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_5.AddChild(__tui_6)
-	__tui_7 := Header("go-tui")
-	__tui_5.AddChild(__tui_7.Root)
-	__tui_8 := Badge("Framework")
-	__tui_5.AddChild(__tui_8.Root)
+	__tui_7 := tui.Mount(a, 0, func() tui.Component {
+		return Header("go-tui")
+	})
+	__tui_5.AddChild(__tui_7)
+	__tui_8 := tui.Mount(a, 1, func() tui.Component {
+		return Badge("Framework")
+	})
+	__tui_5.AddChild(__tui_8)
 	__tui_4.AddChild(__tui_5)
 	__tui_9 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
@@ -205,86 +210,38 @@ func App() AppView {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_9.AddChild(__tui_10)
-	__tui_12_children := []*tui.Element{}
-	__tui_13 := StatusLine("Name:", "Alice")
-	__tui_12_children = append(__tui_12_children, __tui_13.Root)
-	__tui_14 := StatusLine("Role:", "Admin")
-	__tui_12_children = append(__tui_12_children, __tui_14.Root)
-	__tui_15 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
-	)
-	__tui_16 := tui.New(
-		tui.WithText("Status:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_15.AddChild(__tui_16)
-	__tui_17 := Badge("Active")
-	__tui_15.AddChild(__tui_17.Root)
-	__tui_12_children = append(__tui_12_children, __tui_15)
-	__tui_11 := Card("User Profile", __tui_12_children)
-	__tui_9.AddChild(__tui_11.Root)
+	__tui_11 := tui.Mount(a, 2, func() tui.Component {
+		return Card("User Profile")
+	})
+	__tui_9.AddChild(__tui_11)
 	__tui_4.AddChild(__tui_9)
-	__tui_18 := tui.New(
+	__tui_12 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1.0),
 	)
-	__tui_19 := tui.New(
+	__tui_13 := tui.New(
 		tui.WithText("Deep Nesting"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_18.AddChild(__tui_19)
-	__tui_21_children := []*tui.Element{}
-	__tui_22 := StatusLine("Theme:", "Dark")
-	__tui_21_children = append(__tui_21_children, __tui_22.Root)
-	__tui_23 := StatusLine("Notify:", "On")
-	__tui_21_children = append(__tui_21_children, __tui_23.Root)
-	__tui_24 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
-	)
-	__tui_25 := tui.New(
-		tui.WithText("Tags:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_24.AddChild(__tui_25)
-	__tui_26 := Badge("New")
-	__tui_24.AddChild(__tui_26.Root)
-	__tui_27 := Badge("v1.0")
-	__tui_24.AddChild(__tui_27.Root)
-	__tui_21_children = append(__tui_21_children, __tui_24)
-	__tui_20 := Card("Settings", __tui_21_children)
-	__tui_18.AddChild(__tui_20.Root)
-	__tui_4.AddChild(__tui_18)
+	__tui_12.AddChild(__tui_13)
+	__tui_14 := tui.Mount(a, 3, func() tui.Component {
+		return Card("Settings")
+	})
+	__tui_12.AddChild(__tui_14)
+	__tui_4.AddChild(__tui_12)
 	__tui_0.AddChild(__tui_4)
-	__tui_28 := tui.New(
+	__tui_15 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_29 := tui.New(
+	__tui_16 := tui.New(
 		tui.WithText("[q] quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_28.AddChild(__tui_29)
-	__tui_0.AddChild(__tui_28)
+	__tui_15.AddChild(__tui_16)
+	__tui_0.AddChild(__tui_15)
 
-	watchers = append(watchers, __tui_7.GetWatchers()...)
-	watchers = append(watchers, __tui_8.GetWatchers()...)
-	watchers = append(watchers, __tui_13.GetWatchers()...)
-	watchers = append(watchers, __tui_14.GetWatchers()...)
-	watchers = append(watchers, __tui_17.GetWatchers()...)
-	watchers = append(watchers, __tui_11.GetWatchers()...)
-	watchers = append(watchers, __tui_22.GetWatchers()...)
-	watchers = append(watchers, __tui_23.GetWatchers()...)
-	watchers = append(watchers, __tui_26.GetWatchers()...)
-	watchers = append(watchers, __tui_27.GetWatchers()...)
-	watchers = append(watchers, __tui_20.GetWatchers()...)
-
-	view = AppView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

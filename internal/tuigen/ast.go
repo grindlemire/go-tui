@@ -84,6 +84,10 @@ type Component struct {
 	Body            []Node // Element, GoCode, LetBinding, ForLoop, IfStmt
 	AcceptsChildren bool   // true if body contains {children...}
 	Position        Position
+	// Method receiver fields (for templ (recv) Render() syntax)
+	Receiver     string // Full receiver text, e.g. "s *sidebar" (empty for function components)
+	ReceiverName string // Receiver variable name, e.g. "s" (empty for function components)
+	ReceiverType string // Receiver type, e.g. "*sidebar" (empty for function components)
 	// Comment fields
 	LeadingComments  *CommentGroup   // Doc comments before @component
 	TrailingComments *CommentGroup   // Comments on same line after opening {
@@ -295,6 +299,7 @@ type ComponentCall struct {
 	Name            string // component name (e.g., "Card", "Header")
 	Args            string // raw Go expression for arguments
 	Children        []Node // child elements (may be empty if no children block)
+	IsStructMount   bool   // true when inside a method templ (generates tui.Mount())
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields

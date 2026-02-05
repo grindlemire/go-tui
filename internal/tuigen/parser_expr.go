@@ -118,9 +118,10 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	p.skipNewlines()
 
 	call := &ComponentCall{
-		Name:     name,
-		Args:     args,
-		Position: pos,
+		Name:          name,
+		Args:          args,
+		IsStructMount: p.inMethodTempl,
+		Position:      pos,
 	}
 
 	// Optional children block

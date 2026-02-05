@@ -34,9 +34,24 @@ func (a *App) Render() {
 	// Clear buffer
 	a.buffer.Clear()
 
+	// If a root component is set, re-render it to get a fresh element tree.
+	// This is the core of the reactivity cycle: state changes → dirty → re-render
+	// component → new element tree with updated state reads.
+	if a.rootComponent != nil {
+		el := a.rootComponent.Render()
+		el.component = a.rootComponent
+		a.root = el
+	}
+
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, renderHeight)
+	}
+
+	// Sweep mount cache: clean up components no longer in the tree.
+	// Mount() marks active keys during Render(); sweep removes the rest.
+	if a.mounts != nil {
+		a.mounts.sweep()
 	}
 
 	// Flush to terminal (inline mode offsets Y coordinates)

@@ -2,12 +2,44 @@ package main
 
 import tui "github.com/grindlemire/go-tui"
 
-templ Styling() {
+type stylingApp struct {
+	scrollY *tui.State[int]
+}
+
+func Styling() *stylingApp {
+	return &stylingApp{
+		scrollY: tui.NewState(0),
+	}
+}
+
+func (s *stylingApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() + 1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() - 1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() + 1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() - 1) }),
+	}
+}
+
+func (s *stylingApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		s.scrollY.Set(s.scrollY.Get() - 1)
+		return true
+	case tui.MouseWheelDown:
+		s.scrollY.Set(s.scrollY.Get() + 1)
+		return true
+	}
+	return false
+}
+
+templ (s *stylingApp) Render() {
 	<div
 		class="flex-col gap-1 p-2 border-rounded h-full"
 		scrollable={tui.ScrollVertical}
-		onEvent={handleEvent}
-		onKeyPress={handleKeyPress}
+		scrollOffset={0, s.scrollY.Get()}
 	>
 		// Text Styles
 		<div class="flex-col border-white border-single p-0">
@@ -229,30 +261,4 @@ templ Styling() {
 		<hr />
 		<span class="font-dim">Press q to quit</span>
 	</div>
-}
-
-func handleEvent(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
-}
-
-func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
 }

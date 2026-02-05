@@ -48,6 +48,27 @@ func (a *App) Dispatch(event Event) bool {
 	return a.focus.Dispatch(event)
 }
 
+// dispatchMouseToComponents walks the component tree and dispatches a mouse
+// event to all MouseListener components. Returns true if any consumed it.
+func (a *App) dispatchMouseToComponents(me MouseEvent) bool {
+	root, ok := a.root.(*Element)
+	if !ok {
+		return false
+	}
+	consumed := false
+	walkComponents(root, func(comp Component) {
+		if consumed {
+			return
+		}
+		if ml, ok := comp.(MouseListener); ok {
+			if ml.HandleMouse(me) {
+				consumed = true
+			}
+		}
+	})
+	return consumed
+}
+
 // readInputEvents reads terminal input in a goroutine and queues events.
 func (a *App) readInputEvents() {
 	for {
@@ -66,12 +87,27 @@ func (a *App) readInputEvents() {
 		ev := event
 
 		a.eventQueue <- func() {
-			// Global key handler runs first (for app-level bindings like quit)
 			if keyEvent, isKey := ev.(KeyEvent); isKey {
+				// Component model path: use broadcast dispatch table exclusively.
+				// globalKeyHandler is skipped — components use KeyMap() instead.
+				if a.dispatchTable != nil {
+					a.dispatchTable.dispatch(keyEvent)
+					return
+				}
+				// Legacy path: global key handler runs before FocusManager dispatch.
 				if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
 					return // Event consumed by global handler
 				}
 			}
+			// Component model path for mouse events: dispatch to MouseListener
+			// components before falling through to element hit-testing.
+			if mouseEvent, isMouse := ev.(MouseEvent); isMouse {
+				if a.dispatchMouseToComponents(mouseEvent) {
+					return
+				}
+			}
+			// Non-key events (mouse, resize) and fallback for key events
+			// without a dispatch table still go through App.Dispatch.
 			a.Dispatch(ev)
 		}
 	}
