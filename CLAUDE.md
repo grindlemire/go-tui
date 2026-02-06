@@ -393,7 +393,7 @@ tui.AlignEnd
 tui.AlignStretch
 
 // tui.Style - text styling
-tui.Style{}.Bold().Fg(tui.ANSIColor(tui.Red))
+tui.Style{}.Bold().Foreground(tui.ANSIColor(tui.Red))
 
 // tui.State[T] - reactive state
 count := tui.NewState(0)
