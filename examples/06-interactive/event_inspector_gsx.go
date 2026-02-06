@@ -74,6 +74,15 @@ func (e *eventInspector) Render() *tui.Element {
 	)
 	__tui_5.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_5)
+	__tui_8 := tui.New(
+		tui.WithText(" "),
+	)
+	__tui_0.AddChild(__tui_8)
+	__tui_9 := tui.New(
+		tui.WithText("events from all components"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_0.AddChild(__tui_9)
 
 	return __tui_0
 }

@@ -35,5 +35,7 @@ templ (e *eventInspector) Render() {
 			<span class="font-dim">Count:</span>
 			<span class="text-cyan font-bold">{fmt.Sprintf("%d", e.eventCount.Get())}</span>
 		</div>
+		<span>{" "}</span>
+		<span class="font-dim">{"events from all components"}</span>
 	</div>
 }

@@ -62,11 +62,15 @@ templ (t *timer) Render() {
 			<span class="font-dim">Elapsed:</span>
 			<span class="text-blue font-bold">{formatTime(t.elapsed.Get())}</span>
 		</div>
-		@if t.running.Get() {
-			<span class="text-green font-bold">{"Running"}</span>
-		} @else {
-			<span class="text-red font-bold">{"Stopped"}</span>
-		}
+		<div class="flex gap-1 items-center">
+			<span class="font-dim">Status:</span>
+			@if t.running.Get() {
+				<span class="text-green font-bold">{"Running"}</span>
+			} @else {
+				<span class="text-red font-bold">{"Stopped"}</span>
+			}
+		</div>
+		<span>{" "}</span>
 		<span class="font-dim">{"[space] toggle [r] reset"}</span>
 	</div>
 }

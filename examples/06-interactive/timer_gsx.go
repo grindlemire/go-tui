@@ -89,24 +89,39 @@ func (t *timer) Render() *tui.Element {
 	)
 	__tui_2.AddChild(__tui_4)
 	__tui_0.AddChild(__tui_2)
+	__tui_5 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_6 := tui.New(
+		tui.WithText("Status:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_5.AddChild(__tui_6)
 	if t.running.Get() {
-		__tui_5 := tui.New(
+		__tui_7 := tui.New(
 			tui.WithText("Running"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
-		__tui_0.AddChild(__tui_5)
+		__tui_5.AddChild(__tui_7)
 	} else {
-		__tui_6 := tui.New(
+		__tui_8 := tui.New(
 			tui.WithText("Stopped"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
-		__tui_0.AddChild(__tui_6)
+		__tui_5.AddChild(__tui_8)
 	}
-	__tui_7 := tui.New(
+	__tui_0.AddChild(__tui_5)
+	__tui_9 := tui.New(
+		tui.WithText(" "),
+	)
+	__tui_0.AddChild(__tui_9)
+	__tui_10 := tui.New(
 		tui.WithText("[space] toggle [r] reset"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_7)
+	__tui_0.AddChild(__tui_10)
 
 	return __tui_0
 }
