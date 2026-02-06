@@ -9,35 +9,30 @@ import (
 type timer struct {
 	elapsed *tui.State[int]
 	running *tui.State[bool]
-	events  *Events[string]
 }
 
-func Timer(events *Events[string]) *timer {
+func Timer() *timer {
 	return &timer{
 		elapsed: tui.NewState(0),
 		running: tui.NewState(true),
-		events:  events,
 	}
 }
 
-func (t *timer) OnMount(r *Registrar) {
-	// Keyboard
-	r.OnRune(' ', t.toggleRunning)
-	r.OnRune('r', t.resetTimer)
-
-	// Timer - runs every second
-	r.Every(time.Second, t.tick)
+func (t *timer) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune(' ', func(ke tui.KeyEvent) { t.toggleRunning() }),
+		tui.OnRune('r', func(ke tui.KeyEvent) { t.resetTimer() }),
+	}
 }
 
-func (t *timer) toggleRunning() {
-	t.running.Set(!t.running.Get())
-	t.events.Emit("timer toggle")
+func (t *timer) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.OnTimer(time.Second, t.tick),
+	}
 }
 
-func (t *timer) resetTimer() {
-	t.elapsed.Set(0)
-	t.events.Emit("timer reset")
-}
+func (t *timer) toggleRunning() { t.running.Set(!t.running.Get()) }
+func (t *timer) resetTimer()    { t.elapsed.Set(0) }
 
 func (t *timer) tick() {
 	if t.running.Get() {

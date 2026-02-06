@@ -7,49 +7,40 @@ import (
 
 type counter struct {
 	count        *tui.State[int]
-	events       *Events[string]
 	decrementBtn *tui.Ref
 	incrementBtn *tui.Ref
 	resetBtn     *tui.Ref
 }
 
-func Counter(events *Events[string]) *counter {
+func Counter() *counter {
 	return &counter{
 		count:        tui.NewState(0),
-		events:       events,
 		decrementBtn: tui.NewRef(),
 		incrementBtn: tui.NewRef(),
 		resetBtn:     tui.NewRef(),
 	}
 }
 
-func (c *counter) OnMount(r *Registrar) {
-	// Keyboard
-	r.OnRune('+', c.increment)
-	r.OnRune('=', c.increment)
-	r.OnRune('-', c.decrement)
-	r.OnRune('0', c.reset)
-
-	// Mouse - automatic hit testing via refs
-	r.OnClick(c.decrementBtn, c.decrement)
-	r.OnClick(c.incrementBtn, c.increment)
-	r.OnClick(c.resetBtn, c.reset)
+func (c *counter) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('+', func(ke tui.KeyEvent) { c.increment() }),
+		tui.OnRune('=', func(ke tui.KeyEvent) { c.increment() }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { c.decrement() }),
+		tui.OnRune('0', func(ke tui.KeyEvent) { c.reset() }),
+	}
 }
 
-func (c *counter) increment() {
-	c.count.Set(c.count.Get() + 1)
-	c.events.Emit("increment")
+func (c *counter) HandleMouse(me tui.MouseEvent) bool {
+	return tui.HandleClicks(me,
+		tui.Click(c.decrementBtn, c.decrement),
+		tui.Click(c.incrementBtn, c.increment),
+		tui.Click(c.resetBtn, c.reset),
+	)
 }
 
-func (c *counter) decrement() {
-	c.count.Set(c.count.Get() - 1)
-	c.events.Emit("decrement")
-}
-
-func (c *counter) reset() {
-	c.count.Set(0)
-	c.events.Emit("reset")
-}
+func (c *counter) increment() { c.count.Set(c.count.Get() + 1) }
+func (c *counter) decrement() { c.count.Set(c.count.Get() - 1) }
+func (c *counter) reset()     { c.count.Set(0) }
 
 templ (c *counter) Render() {
 	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>

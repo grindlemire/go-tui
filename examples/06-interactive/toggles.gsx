@@ -6,50 +6,41 @@ type toggles struct {
 	sound     *tui.State[bool]
 	notify    *tui.State[bool]
 	dark      *tui.State[bool]
-	events    *Events[string]
 	soundBtn  *tui.Ref
 	notifyBtn *tui.Ref
 	themeBtn  *tui.Ref
 }
 
-func Toggles(events *Events[string]) *toggles {
+func Toggles() *toggles {
 	return &toggles{
 		sound:     tui.NewState(true),
 		notify:    tui.NewState(false),
 		dark:      tui.NewState(false),
-		events:    events,
 		soundBtn:  tui.NewRef(),
 		notifyBtn: tui.NewRef(),
 		themeBtn:  tui.NewRef(),
 	}
 }
 
-func (t *toggles) OnMount(r *Registrar) {
-	// Keyboard
-	r.OnRune('1', t.toggleSound)
-	r.OnRune('2', t.toggleNotify)
-	r.OnRune('3', t.toggleTheme)
-
-	// Mouse - automatic hit testing via refs
-	r.OnClick(t.soundBtn, t.toggleSound)
-	r.OnClick(t.notifyBtn, t.toggleNotify)
-	r.OnClick(t.themeBtn, t.toggleTheme)
+func (t *toggles) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('1', func(ke tui.KeyEvent) { t.toggleSound() }),
+		tui.OnRune('2', func(ke tui.KeyEvent) { t.toggleNotify() }),
+		tui.OnRune('3', func(ke tui.KeyEvent) { t.toggleTheme() }),
+	}
 }
 
-func (t *toggles) toggleSound() {
-	t.sound.Set(!t.sound.Get())
-	t.events.Emit("toggle sound")
+func (t *toggles) HandleMouse(me tui.MouseEvent) bool {
+	return tui.HandleClicks(me,
+		tui.Click(t.soundBtn, t.toggleSound),
+		tui.Click(t.notifyBtn, t.toggleNotify),
+		tui.Click(t.themeBtn, t.toggleTheme),
+	)
 }
 
-func (t *toggles) toggleNotify() {
-	t.notify.Set(!t.notify.Get())
-	t.events.Emit("toggle notify")
-}
-
-func (t *toggles) toggleTheme() {
-	t.dark.Set(!t.dark.Get())
-	t.events.Emit("toggle theme")
-}
+func (t *toggles) toggleSound()  { t.sound.Set(!t.sound.Get()) }
+func (t *toggles) toggleNotify() { t.notify.Set(!t.notify.Get()) }
+func (t *toggles) toggleTheme()  { t.dark.Set(!t.dark.Get()) }
 
 templ (t *toggles) Render() {
 	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>

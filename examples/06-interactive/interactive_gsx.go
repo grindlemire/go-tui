@@ -7,39 +7,20 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type interactiveApp struct {
-	events *Events[string]
-}
+type interactiveApp struct{}
 
 func Interactive() *interactiveApp {
-	return &interactiveApp{
-		events: NewEvents[string](),
-	}
+	return &interactiveApp{}
 }
 
 func (a *interactiveApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
-		// Catch special keys for event inspector
-		tui.OnKey(tui.KeyEnter, a.inspectSpecialKey("Enter")),
-		tui.OnKey(tui.KeyTab, a.inspectSpecialKey("Tab")),
-		tui.OnKey(tui.KeyBackspace, a.inspectSpecialKey("Backspace")),
-		tui.OnKey(tui.KeyUp, a.inspectSpecialKey("Up")),
-		tui.OnKey(tui.KeyDown, a.inspectSpecialKey("Down")),
-		tui.OnKey(tui.KeyLeft, a.inspectSpecialKey("Left")),
-		tui.OnKey(tui.KeyRight, a.inspectSpecialKey("Right")),
-	}
-}
-
-func (a *interactiveApp) inspectSpecialKey(name string) func(tui.KeyEvent) {
-	return func(ke tui.KeyEvent) {
-		a.events.Emit(name)
 	}
 }
 
 func (a *interactiveApp) Render() *tui.Element {
-	events := a.events
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
@@ -67,11 +48,11 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithGap(1),
 	)
 	__tui_5 := tui.Mount(a, 0, func() tui.Component {
-		return Counter(events)
+		return Counter()
 	})
 	__tui_4.AddChild(__tui_5)
 	__tui_6 := tui.Mount(a, 1, func() tui.Component {
-		return Timer(events)
+		return Timer()
 	})
 	__tui_4.AddChild(__tui_6)
 	__tui_0.AddChild(__tui_4)
@@ -80,13 +61,9 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithGap(1),
 	)
 	__tui_8 := tui.Mount(a, 2, func() tui.Component {
-		return Toggles(events)
+		return Toggles()
 	})
 	__tui_7.AddChild(__tui_8)
-	__tui_9 := tui.Mount(a, 3, func() tui.Component {
-		return EventInspector(events)
-	})
-	__tui_7.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_7)
 
 	return __tui_0
