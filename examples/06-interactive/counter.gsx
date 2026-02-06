@@ -7,13 +7,13 @@ import (
 
 type counter struct {
 	count        *tui.State[int]
-	events       *Events[string]
+	events       *tui.Events[string]
 	decrementBtn *tui.Ref
 	incrementBtn *tui.Ref
 	resetBtn     *tui.Ref
 }
 
-func Counter(events *Events[string]) *counter {
+func Counter(events *tui.Events[string]) *counter {
 	return &counter{
 		count:        tui.NewState(0),
 		events:       events,
@@ -56,25 +56,23 @@ func (c *counter) reset() {
 }
 
 templ (c *counter) Render() {
-	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>
-		<span class="text-gradient-cyan-blue font-bold">{"Counter"}</span>
-		<div class="flex gap-1 items-center">
+	<div class="border-single p-1 flex-col gap-1 grow justify-center">
+		<span class="text-gradient-cyan-blue font-bold text-center">{"Counter"}</span>
+		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Count:</span>
 			<span class="text-cyan font-bold">{fmt.Sprintf("%d", c.count.Get())}</span>
 		</div>
-		<div class="flex gap-1">
+		<div class="flex gap-1 justify-center">
 			<button ref={c.decrementBtn}>{" - "}</button>
 			<button ref={c.incrementBtn}>{" + "}</button>
 			<button ref={c.resetBtn}>{" 0 "}</button>
 		</div>
 		@if c.count.Get() > 0 {
-			<span class="text-green font-bold">{"Positive"}</span>
+			<span class="text-green font-bold text-center">{"Positive"}</span>
 		} @else @if c.count.Get() < 0 {
-			<span class="text-red font-bold">{"Negative"}</span>
+			<span class="text-red font-bold text-center">{"Negative"}</span>
 		} @else {
-			<span class="text-blue font-bold">{"Zero"}</span>
+			<span class="text-blue font-bold text-center">{"Zero"}</span>
 		}
-		<div flexGrow={1.0}></div>
-		<span class="font-dim">{"click btns or +/-/0"}</span>
 	</div>
 }

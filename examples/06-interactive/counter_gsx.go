@@ -11,13 +11,13 @@ import (
 
 type counter struct {
 	count        *tui.State[int]
-	events       *Events[string]
+	events       *tui.Events[string]
 	decrementBtn *tui.Ref
 	incrementBtn *tui.Ref
 	resetBtn     *tui.Ref
 }
 
-func Counter(events *Events[string]) *counter {
+func Counter(events *tui.Events[string]) *counter {
 	return &counter{
 		count:        tui.NewState(0),
 		events:       events,
@@ -65,11 +65,13 @@ func (c *counter) Render() *tui.Element {
 		tui.WithPadding(1),
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
-		tui.WithFlexGrow(1.0),
+		tui.WithFlexGrow(1),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Counter"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
@@ -77,6 +79,7 @@ func (c *counter) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_3 := tui.New(
 		tui.WithText("Count:"),
@@ -92,6 +95,7 @@ func (c *counter) Render() *tui.Element {
 	__tui_5 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_6 := tui.New()
 	c.decrementBtn.Set(__tui_6)
@@ -112,31 +116,25 @@ func (c *counter) Render() *tui.Element {
 	if c.count.Get() > 0 {
 		__tui_12 := tui.New(
 			tui.WithText("Positive"),
+			tui.WithTextAlign(tui.TextAlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
 		__tui_0.AddChild(__tui_12)
 	} else if c.count.Get() < 0 {
 		__tui_13 := tui.New(
 			tui.WithText("Negative"),
+			tui.WithTextAlign(tui.TextAlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
 		__tui_0.AddChild(__tui_13)
 	} else {
 		__tui_14 := tui.New(
 			tui.WithText("Zero"),
+			tui.WithTextAlign(tui.TextAlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 		)
 		__tui_0.AddChild(__tui_14)
 	}
-	__tui_15 := tui.New(
-		tui.WithFlexGrow(1.0),
-	)
-	__tui_0.AddChild(__tui_15)
-	__tui_16 := tui.New(
-		tui.WithText("click btns or +/-/0"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_0.AddChild(__tui_16)
 
 	return __tui_0
 }

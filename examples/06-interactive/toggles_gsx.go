@@ -11,13 +11,13 @@ type toggles struct {
 	sound     *tui.State[bool]
 	notify    *tui.State[bool]
 	dark      *tui.State[bool]
-	events    *Events[string]
+	events    *tui.Events[string]
 	soundBtn  *tui.Ref
 	notifyBtn *tui.Ref
 	themeBtn  *tui.Ref
 }
 
-func Toggles(events *Events[string]) *toggles {
+func Toggles(events *tui.Events[string]) *toggles {
 	return &toggles{
 		sound:     tui.NewState(true),
 		notify:    tui.NewState(false),
@@ -66,11 +66,13 @@ func (t *toggles) Render() *tui.Element {
 		tui.WithPadding(1),
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
-		tui.WithFlexGrow(1.0),
+		tui.WithFlexGrow(1),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Toggles"),
 		tui.WithTextGradient(tui.NewGradient(tui.Green, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
@@ -78,6 +80,7 @@ func (t *toggles) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_3 := tui.New()
 	t.soundBtn.Set(__tui_3)
@@ -102,6 +105,7 @@ func (t *toggles) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_8 := tui.New()
 	t.notifyBtn.Set(__tui_8)
@@ -126,6 +130,7 @@ func (t *toggles) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_13 := tui.New()
 	t.themeBtn.Set(__tui_13)
@@ -146,15 +151,6 @@ func (t *toggles) Render() *tui.Element {
 		__tui_12.AddChild(__tui_16)
 	}
 	__tui_0.AddChild(__tui_12)
-	__tui_17 := tui.New(
-		tui.WithFlexGrow(1.0),
-	)
-	__tui_0.AddChild(__tui_17)
-	__tui_18 := tui.New(
-		tui.WithText("click or press 1/2/3"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_0.AddChild(__tui_18)
 
 	return __tui_0
 }

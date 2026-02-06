@@ -8,12 +8,12 @@ import (
 )
 
 type interactiveApp struct {
-	events *Events[string]
+	events *tui.Events[string]
 }
 
 func Interactive() *interactiveApp {
 	return &interactiveApp{
-		events: NewEvents[string](),
+		events: tui.NewEvents[string](),
 	}
 }
 
@@ -34,7 +34,7 @@ func (a *interactiveApp) Render() *tui.Element {
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
-		tui.WithFlexShrink(0.0),
+		tui.WithFlexShrink(0),
 	)
 	__tui_2 := tui.New(
 		tui.WithText("Interactive Elements"),
@@ -43,7 +43,7 @@ func (a *interactiveApp) Render() *tui.Element {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText("[q] quit"),
+		tui.WithText("[+/-/0] counter  [space/r] timer  [1/2/3] toggles  [q] quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -52,7 +52,7 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignStretch),
-		tui.WithFlexGrow(1.0),
+		tui.WithFlexGrow(1), tui.WithFlexShrink(1),
 	)
 	__tui_5 := tui.Mount(a, 0, func() tui.Component {
 		return Counter(a.events)
@@ -67,7 +67,7 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignStretch),
-		tui.WithFlexGrow(1.0),
+		tui.WithFlexGrow(1), tui.WithFlexShrink(1),
 	)
 	__tui_8 := tui.Mount(a, 2, func() tui.Component {
 		return Toggles(a.events)

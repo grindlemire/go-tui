@@ -115,9 +115,14 @@ var staticClassDocs = map[string]string{
 	"w-3/4":   "Set width to 75%.",
 
 	// Flex grow/shrink keywords
-	"grow":     "Set flex grow factor to 1.",
-	"shrink":   "Set flex shrink factor to 1.",
-	"shrink-0": "Prevent element from shrinking.",
+	"grow":         "Set flex grow factor to 1.",
+	"grow-0":       "Set flex grow factor to 0 (don't grow).",
+	"shrink":       "Set flex shrink factor to 1.",
+	"shrink-0":     "Prevent element from shrinking.",
+	"flex-1":       "Shorthand for grow + shrink (flex: 1 1).",
+	"flex-auto":    "Shorthand for grow + shrink, respects content size.",
+	"flex-initial": "Don't grow but can shrink (flex: 0 1).",
+	"flex-none":    "Fixed size, don't grow or shrink (flex: 0 0).",
 
 	// Scroll
 	"overflow-scroll":   "Enable scrolling for overflow content.",
@@ -301,6 +306,10 @@ var AllClasses = []TailwindClassDef{
 	{Name: "grow-0", Description: "Set flex grow factor to 0", Category: "flex"},
 	{Name: "shrink", Description: "Set flex shrink factor to 1", Category: "flex"},
 	{Name: "shrink-0", Description: "Prevent element from shrinking", Category: "flex"},
+	{Name: "flex-1", Description: "Shorthand for grow + shrink (flex: 1 1)", Category: "flex"},
+	{Name: "flex-auto", Description: "Grow + shrink, respects content size", Category: "flex"},
+	{Name: "flex-initial", Description: "Don't grow but can shrink (flex: 0 1)", Category: "flex"},
+	{Name: "flex-none", Description: "Fixed size, don't grow or shrink", Category: "flex"},
 
 	// Scroll
 	{Name: "overflow-scroll", Description: "Enable scrolling for overflow content", Category: "scroll"},
