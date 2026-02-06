@@ -76,18 +76,20 @@ func (e *dispatchEntry) matches(ke KeyEvent) bool {
 
 // dispatch sends a key event to all matching handlers in tree order.
 // Stops early if a matching handler has Stop=true.
-func (dt *dispatchTable) dispatch(ke KeyEvent) {
+// Returns true if a handler with Stop=true consumed the event.
+func (dt *dispatchTable) dispatch(ke KeyEvent) bool {
 	if dt == nil {
-		return
+		return false
 	}
 	for i := range dt.entries {
 		if dt.entries[i].matches(ke) {
 			dt.entries[i].handler(ke)
 			if dt.entries[i].stop {
-				return
+				return true
 			}
 		}
 	}
+	return false
 }
 
 // validate checks for conflicting Stop handlers. Two active Stop handlers

@@ -4,32 +4,49 @@ import tui "github.com/grindlemire/go-tui"
 
 type stylingApp struct {
 	scrollY *tui.State[int]
+	content *tui.Ref
 }
 
 func Styling() *stylingApp {
 	return &stylingApp{
 		scrollY: tui.NewState(0),
+		content: tui.NewRef(),
 	}
+}
+
+func (s *stylingApp) scrollBy(delta int) {
+	el := s.content.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := s.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	s.scrollY.Set(newY)
 }
 
 func (s *stylingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() + 1) }),
-		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() - 1) }),
-		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() + 1) }),
-		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollY.Set(s.scrollY.Get() - 1) }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
 	}
 }
 
 func (s *stylingApp) HandleMouse(me tui.MouseEvent) bool {
 	switch me.Button {
 	case tui.MouseWheelUp:
-		s.scrollY.Set(s.scrollY.Get() - 1)
+		s.scrollBy(-1)
 		return true
 	case tui.MouseWheelDown:
-		s.scrollY.Set(s.scrollY.Get() + 1)
+		s.scrollBy(1)
 		return true
 	}
 	return false
@@ -37,6 +54,7 @@ func (s *stylingApp) HandleMouse(me tui.MouseEvent) bool {
 
 templ (s *stylingApp) Render() {
 	<div
+		ref={s.content}
 		class="flex-col gap-1 p-2 border-rounded h-full"
 		scrollable={tui.ScrollVertical}
 		scrollOffset={0, s.scrollY.Get()}

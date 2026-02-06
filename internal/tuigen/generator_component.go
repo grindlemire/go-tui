@@ -67,6 +67,15 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 		}
 	}
 
+	// Emit deferred watcher attachments (after all elements/refs are created)
+	if len(g.deferredWatchers) > 0 {
+		g.writeln("")
+		g.writeln("// Attach watchers (deferred until refs are assigned)")
+		for _, dw := range g.deferredWatchers {
+			g.writef("%s.AddWatcher(%s)\n", dw.elementVar, dw.watcherExpr)
+		}
+	}
+
 	// Return the root element directly
 	g.writeln("")
 	if rootVar != "" {

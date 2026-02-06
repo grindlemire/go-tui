@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
@@ -130,6 +131,10 @@ func (s *streamingApp) Render() *tui.Element {
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_11)
+
+	// Attach watchers (deferred until refs are assigned)
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, s.tick))
+	__tui_0.AddWatcher(tui.Watch(s.dataCh, s.addLine))
 
 	return __tui_0
 }

@@ -31,6 +31,17 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		if n == nil {
 			return
 		}
+
+		// Opening tag name — emit as Keyword token (same pink as func/templ)
+		// Position points to '<', so tag name starts one character after
+		*tokens = append(*tokens, SemanticToken{
+			Line:      n.Position.Line - 1,
+			StartChar: n.Position.Column, // after the '<'
+			Length:    len(n.Tag),
+			TokenType: TokenTypeKeyword,
+			Modifiers: 0,
+		})
+
 		// ref={name} attribute — emit "ref" as function token and the value as variable
 		if n.RefExpr != nil && s.currentContent != "" {
 			// Search for "ref={" in the document content to find exact position
@@ -259,6 +270,28 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		for _, child := range n.Children {
 			s.collectTokensFromNode(child, paramNames, localVars, tokens)
 		}
+
+	case *tuigen.ChildrenSlot:
+		if n == nil {
+			return
+		}
+		// {children...} — emit "children" as keyword
+		// Position points to '{', so "children" starts one character after
+		*tokens = append(*tokens, SemanticToken{
+			Line:      n.Position.Line - 1,
+			StartChar: n.Position.Column, // after the '{'
+			Length:    len("children"),
+			TokenType: TokenTypeKeyword,
+			Modifiers: 0,
+		})
+		// Emit "..." as operator
+		*tokens = append(*tokens, SemanticToken{
+			Line:      n.Position.Line - 1,
+			StartChar: n.Position.Column + len("children"),
+			Length:    3,
+			TokenType: TokenTypeOperator,
+			Modifiers: 0,
+		})
 	}
 }
 

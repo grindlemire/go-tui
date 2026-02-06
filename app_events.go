@@ -91,12 +91,17 @@ func (a *App) readInputEvents() {
 				// Component model path: use broadcast dispatch table exclusively.
 				// globalKeyHandler is skipped — components use KeyMap() instead.
 				if a.dispatchTable != nil {
-					a.dispatchTable.dispatch(keyEvent)
-					return
-				}
-				// Legacy path: global key handler runs before FocusManager dispatch.
-				if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
-					return // Event consumed by global handler
+					stopped := a.dispatchTable.dispatch(keyEvent)
+					if stopped {
+						return // Event consumed by a Stop handler
+					}
+					// Event was not stopped - continue to App.Dispatch for element handlers
+					// This allows onEvent handlers to see key events for inspection/logging
+				} else {
+					// Legacy path: global key handler runs before FocusManager dispatch.
+					if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
+						return // Event consumed by global handler
+					}
 				}
 			}
 			// Component model path for mouse events: dispatch to MouseListener

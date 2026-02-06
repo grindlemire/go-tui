@@ -20,11 +20,31 @@ func (s *semanticTokensProvider) collectTokensInGoCodeDirect(code string, pos tu
 // collectTokensInGoCode tokenizes Go code for semantic highlighting.
 func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.Position, startOffset int, paramNames map[string]bool, localVars map[string]bool, tokens *[]SemanticToken) {
 	log.Server("collectTokensInGoCode: code=%q pos.Line=%d pos.Column=%d startOffset=%d", code, pos.Line, pos.Column, startOffset)
+
+	// Handle multi-line code by splitting into lines and processing each separately.
+	// Without this, all tokens would be placed on the first line.
+	if strings.Contains(code, "\n") {
+		lines := strings.Split(code, "\n")
+		for lineIdx, line := range lines {
+			linePos := tuigen.Position{
+				Line:   pos.Line + lineIdx,
+				Column: pos.Column,
+			}
+			lineOffset := startOffset
+			if lineIdx > 0 {
+				linePos.Column = 1
+				lineOffset = 0
+			}
+			s.collectTokensInGoCode(line, linePos, lineOffset, paramNames, localVars, tokens)
+		}
+		return
+	}
+
 	i := 0
 	for i < len(code) {
 		ch := code[i]
 
-		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
+		if ch == ' ' || ch == '\t' || ch == '\r' {
 			i++
 			continue
 		}
@@ -410,25 +430,50 @@ type funcParam struct {
 	Type string
 }
 
-// parseFuncSignatureForTokens extracts function name, signature, params, and return type from code.
-func parseFuncSignatureForTokens(code string) (name, signature string, params []funcParam, returns string) {
+// parseFuncSignatureForTokens extracts function name, receiver, params, and return type from code.
+// For methods like "func (s *Type) Name(...) RetType { ... }", receiver will be "s *Type".
+// For plain functions, receiver will be "".
+func parseFuncSignatureForTokens(code string) (name, receiver string, params []funcParam, returns string) {
 	code = strings.TrimSpace(code)
 	if !strings.HasPrefix(code, "func ") {
 		return "", "", nil, ""
 	}
-	code = code[5:]
+	rest := code[5:] // skip "func "
 
-	parenIdx := strings.Index(code, "(")
+	// Check for method receiver: starts with '('
+	if len(rest) > 0 && rest[0] == '(' {
+		// Find matching close paren for receiver
+		depth := 0
+		closeIdx := -1
+		for i, c := range rest {
+			if c == '(' {
+				depth++
+			} else if c == ')' {
+				depth--
+				if depth == 0 {
+					closeIdx = i
+					break
+				}
+			}
+		}
+		if closeIdx == -1 {
+			return "", "", nil, ""
+		}
+		receiver = strings.TrimSpace(rest[1:closeIdx])
+		rest = strings.TrimSpace(rest[closeIdx+1:])
+	}
+
+	parenIdx := strings.Index(rest, "(")
 	if parenIdx == -1 {
 		return "", "", nil, ""
 	}
-	name = strings.TrimSpace(code[:parenIdx])
-	code = code[parenIdx:]
+	name = strings.TrimSpace(rest[:parenIdx])
+	rest = rest[parenIdx:]
 
-	// Find matching close paren
+	// Find matching close paren for params
 	depth := 0
 	closeIdx := -1
-	for i, c := range code {
+	for i, c := range rest {
 		if c == '(' {
 			depth++
 		} else if c == ')' {
@@ -440,11 +485,10 @@ func parseFuncSignatureForTokens(code string) (name, signature string, params []
 		}
 	}
 	if closeIdx == -1 {
-		return name, "", nil, ""
+		return name, receiver, nil, ""
 	}
 
-	paramStr := code[1:closeIdx]
-	signature = "func " + name + code[:closeIdx+1]
+	paramStr := rest[1:closeIdx]
 
 	// Parse parameters
 	if paramStr != "" {
@@ -458,10 +502,10 @@ func parseFuncSignatureForTokens(code string) (name, signature string, params []
 	}
 
 	// Return type
-	rest := strings.TrimSpace(code[closeIdx+1:])
-	if braceIdx := strings.Index(rest, "{"); braceIdx > 0 {
-		returns = strings.TrimSpace(rest[:braceIdx])
+	after := strings.TrimSpace(rest[closeIdx+1:])
+	if braceIdx := strings.Index(after, "{"); braceIdx > 0 {
+		returns = strings.TrimSpace(after[:braceIdx])
 	}
 
-	return name, signature, params, returns
+	return name, receiver, params, returns
 }

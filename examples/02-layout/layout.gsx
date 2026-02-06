@@ -2,21 +2,63 @@ package main
 
 import tui "github.com/grindlemire/go-tui"
 
-type layoutApp struct{}
+type layoutApp struct {
+	scrollY *tui.State[int]
+	content *tui.Ref
+}
 
 func Layout() *layoutApp {
-	return &layoutApp{}
+	return &layoutApp{
+		scrollY: tui.NewState(0),
+		content: tui.NewRef(),
+	}
+}
+
+func (l *layoutApp) scrollBy(delta int) {
+	el := l.content.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := l.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	l.scrollY.Set(newY)
 }
 
 func (l *layoutApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { l.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { l.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { l.scrollBy(1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { l.scrollBy(-1) }),
 	}
 }
 
+func (l *layoutApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		l.scrollBy(-1)
+		return true
+	case tui.MouseWheelDown:
+		l.scrollBy(1)
+		return true
+	}
+	return false
+}
+
 templ (l *layoutApp) Render() {
-	<div class="flex-col gap-1 p-1 h-full" scrollable={tui.ScrollVertical} onEvent={handleMouseScroll} onKeyPress={handleKeyPress}>
+	<div
+		ref={l.content}
+		class="flex-col gap-1 p-1 h-full"
+		scrollable={tui.ScrollVertical}
+		scrollOffset={0, l.scrollY.Get()}
+	>
 		<span class="font-bold text-cyan">Flexbox Layout Demo</span>
 		<hr />
 		// === Direction ===
@@ -334,32 +376,6 @@ templ (l *layoutApp) Render() {
 			</div>
 		</div>
 		<hr />
-		<span class="font-dim">Press q to quit(j/k or mouse wheel to scroll)</span>
+		<span class="font-dim">Press q to quit (j/k or mouse wheel to scroll)</span>
 	</div>
-}
-
-func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-func handleMouseScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
 }

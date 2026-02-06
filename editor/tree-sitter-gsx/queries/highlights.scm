@@ -61,11 +61,14 @@
 (element_with_children
   (identifier) @tag)
 
-; Tag delimiters
-"<" @tag.delimiter
-">" @tag.delimiter
-"</" @tag.delimiter
-"/" @tag.delimiter
+; Tag delimiters (context-specific to avoid operator conflicts)
+(self_closing_element "<" @tag.delimiter)
+(self_closing_element "/" @tag.delimiter)
+(self_closing_element ">" @tag.delimiter)
+
+(element_with_children "<" @tag.delimiter)
+(element_with_children ">" @tag.delimiter)
+(element_with_children "</" @tag.delimiter)
 
 ; ====================
 ; Attributes
@@ -117,6 +120,7 @@
 
 (call_expression
   (selector_expression
+    (_)
     (identifier) @function.method.call))
 
 ; ====================
@@ -164,6 +168,10 @@
 ; Identifiers
 ; ====================
 
+; Package name
+(package_clause
+  name: (identifier) @module)
+
 ; Selector expressions
 (selector_expression
   (identifier) @variable
@@ -190,20 +198,23 @@
 ; Operators
 ; ====================
 
+; These can remain bare (no conflicts)
 ":=" @operator
 "=" @operator
-"==" @operator
-"!=" @operator
-"<" @operator
-"<=" @operator
-">" @operator
-">=" @operator
-"+" @operator
-"-" @operator
-"*" @operator
-"/" @operator
-"&&" @operator
-"||" @operator
+
+; Comparison and arithmetic operators (context-specific)
+(binary_expression "<" @operator)
+(binary_expression ">" @operator)
+(binary_expression "<=" @operator)
+(binary_expression ">=" @operator)
+(binary_expression "*" @operator)
+(binary_expression "/" @operator)
+(binary_expression "+" @operator)
+(binary_expression "-" @operator)
+(binary_expression "==" @operator)
+(binary_expression "!=" @operator)
+(binary_expression "&&" @operator)
+(binary_expression "||" @operator)
 
 ; ====================
 ; Punctuation

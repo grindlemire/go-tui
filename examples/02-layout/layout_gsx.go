@@ -7,41 +7,52 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type layoutApp struct{}
+type layoutApp struct {
+	scrollY *tui.State[int]
+	content *tui.Ref
+}
 
 func Layout() *layoutApp {
-	return &layoutApp{}
+	return &layoutApp{
+		scrollY: tui.NewState(0),
+		content: tui.NewRef(),
+	}
+}
+
+func (l *layoutApp) scrollBy(delta int) {
+	el := l.content.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := l.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	l.scrollY.Set(newY)
 }
 
 func (l *layoutApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { l.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { l.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { l.scrollBy(1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { l.scrollBy(-1) }),
 	}
 }
 
-func handleKeyPress(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
+func (l *layoutApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		l.scrollBy(-1)
 		return true
-	case 'k':
-		el.ScrollBy(0, -1)
+	case tui.MouseWheelDown:
+		l.scrollBy(1)
 		return true
-	}
-	return false
-}
-
-func handleMouseScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
 	}
 	return false
 }
@@ -53,9 +64,9 @@ func (l *layoutApp) Render() *tui.Element {
 		tui.WithPadding(1),
 		tui.WithHeightPercent(100.00),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithOnEvent(handleMouseScroll),
-		tui.WithOnKeyPress(handleKeyPress),
+		tui.WithScrollOffset(0, l.scrollY.Get()),
 	)
+	l.content.Set(__tui_0)
 	__tui_1 := tui.New(
 		tui.WithText("Flexbox Layout Demo"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),

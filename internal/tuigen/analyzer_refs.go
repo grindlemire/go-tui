@@ -7,14 +7,19 @@ import (
 
 // validateRefs validates element references declared via ref={} in a component.
 // It checks for:
-// - Valid Go identifiers (lowercase, regular Go variable names)
+// - Valid Go identifiers for function components (needed for view struct generation)
+// - Any valid Go expression for struct components (e.g., s.content)
 // - Reserved export name 'Root' (capitalized ref name must not be "Root")
-// - Unique names within the component
+// - Unique names within the component (for function components only)
 // - key attribute only valid inside @for loops
 // - Determines ref kind from context (single, list, or map)
 func (a *Analyzer) validateRefs(comp *Component) []RefInfo {
 	names := make(map[string]Position)
 	var refs []RefInfo
+
+	// Struct components (with receiver) can use any Go expression for refs
+	// Function components need simple identifiers for view struct generation
+	isStructComponent := comp.Receiver != ""
 
 	var check func(nodes []Node, inLoop, inConditional bool)
 	check = func(nodes []Node, inLoop, inConditional bool) {
@@ -24,28 +29,32 @@ func (a *Analyzer) validateRefs(comp *Component) []RefInfo {
 				if n.RefExpr != nil {
 					refName := n.RefExpr.Code
 
-					// Must be a simple identifier (no dots, parens, etc.)
-					if !isSimpleIdentifier(refName) {
+					// For function components, must be a simple identifier
+					// For struct components, any Go expression is allowed
+					if !isStructComponent && !isSimpleIdentifier(refName) {
 						a.errors.AddErrorf(n.Position,
 							"ref expression must be a simple identifier, got %q",
 							refName)
 					}
 
 					// Generate export name by capitalizing first letter
+					// (only meaningful for function components)
 					exportName := capitalizeFirst(refName)
 
-					// Reserved name check (export name must not be "Root")
-					if exportName == "Root" {
+					// Reserved name check (only for function components)
+					if !isStructComponent && exportName == "Root" {
 						a.errors.AddErrorf(n.Position, "ref name %q is reserved (capitalizes to 'Root')", refName)
 					}
 
-					// Must be unique
-					if prev, exists := names[refName]; exists {
-						a.errors.AddErrorf(n.Position,
-							"duplicate ref name %q (first defined at %s)",
-							refName, prev)
+					// Must be unique (only for function components)
+					if !isStructComponent {
+						if prev, exists := names[refName]; exists {
+							a.errors.AddErrorf(n.Position,
+								"duplicate ref name %q (first defined at %s)",
+								refName, prev)
+						}
+						names[refName] = n.Position
 					}
-					names[refName] = n.Position
 
 					// Determine ref kind from context
 					kind := RefSingle

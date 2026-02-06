@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
@@ -483,6 +484,9 @@ func (a *interactiveApp) Render() *tui.Element {
 	)
 	__tui_57.AddChild(__tui_58)
 	__tui_0.AddChild(__tui_57)
+
+	// Attach watchers (deferred until refs are assigned)
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, a.timerTick))
 
 	return __tui_0
 }

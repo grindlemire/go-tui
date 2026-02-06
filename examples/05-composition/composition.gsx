@@ -2,35 +2,6 @@ package main
 
 import tui "github.com/grindlemire/go-tui"
 
-// Card is a reusable component that accepts children
-templ Card(title string) {
-	<div class="border-rounded p-1 flex-col">
-		<span class="text-gradient-cyan-magenta font-bold">{title}</span>
-		<hr class="border" />
-		{children...}
-	</div>
-}
-
-// Badge is a simple styled component
-templ Badge(text string) {
-	<span class="bg-gradient-blue-cyan text-white font-bold">{" " + text + " "}</span>
-}
-
-// Header shows a component without children
-templ Header(text string) {
-	<div class="border-double p-1">
-		<span class="text-gradient-blue-cyan font-bold">{text}</span>
-	</div>
-}
-
-// StatusLine pairs a dim label with a bright value
-templ StatusLine(label string, value string) {
-	<div class="flex gap-1">
-		<span class="font-dim">{label}</span>
-		<span class="text-cyan font-bold">{value}</span>
-	</div>
-}
-
 type compositionApp struct{}
 
 func App() *compositionApp {
@@ -44,45 +15,145 @@ func (a *compositionApp) KeyMap() tui.KeyMap {
 	}
 }
 
-// App composes the other components together
-templ (a *compositionApp) Render() {
-	<div class="flex-col p-1 border-rounded gap-1">
-		<div class="flex justify-between">
-			<span class="text-gradient-cyan-magenta font-bold">{"Component Composition"}</span>
-			<span class="text-blue font-bold">{"Nested Components"}</span>
-		</div>
-		<div class="flex gap-1">
-			<div class="border-single p-1 flex-col" flexGrow={1.0}>
-				<span class="font-bold">{"@Component (leaf)"}</span>
-				@Header("go-tui")
-				@Badge("Framework")
-			</div>
-			<div class="border-single p-1 flex-col" flexGrow={1.0}>
-				<span class="font-bold">{"@Component {children}"}</span>
-				@Card("User Profile") {
-					@StatusLine("Name:", "Alice")
-					@StatusLine("Role:", "Admin")
-					<div class="flex gap-1">
-						<span class="font-dim">Status:</span>
-						@Badge("Active")
-					</div>
-				}
-			</div>
-			<div class="border-single p-1 flex-col" flexGrow={1.0}>
-				<span class="font-bold">{"Deep Nesting"}</span>
-				@Card("Settings") {
-					@StatusLine("Theme:", "Dark")
-					@StatusLine("Notify:", "On")
-					<div class="flex gap-1">
-						<span class="font-dim">Tags:</span>
-						@Badge("New")
-						@Badge("v1.0")
-					</div>
-				}
-			</div>
-		</div>
-		<div class="flex justify-center">
-			<span class="font-dim">{"[q] quit"}</span>
-		</div>
-	</div>
+// Render demonstrates component composition using helper functions
+func (a *compositionApp) Render() *tui.Element {
+	root := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithGap(1),
+	)
+
+	// Header row
+	headerRow := tui.New(tui.WithDirection(tui.Row), tui.WithJustify(tui.JustifySpaceBetween))
+	headerRow.AddChild(tui.New(
+		tui.WithText("Component Composition"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	))
+	headerRow.AddChild(tui.New(
+		tui.WithText("Helper Functions"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+	))
+	root.AddChild(headerRow)
+
+	// Main content row
+	contentRow := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+
+	// Column 1: Simple Helpers
+	col1 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+	)
+	col1.AddChild(tui.New(tui.WithText("Simple Helpers"), tui.WithTextStyle(tui.NewStyle().Bold())))
+	col1.AddChild(Header("go-tui"))
+	col1.AddChild(Badge("Framework"))
+	contentRow.AddChild(col1)
+
+	// Column 2: With Children
+	col2 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+	)
+	col2.AddChild(tui.New(tui.WithText("With Children"), tui.WithTextStyle(tui.NewStyle().Bold())))
+	col2.AddChild(Card("User Profile",
+		StatusLine("Name:", "Alice"),
+		StatusLine("Role:", "Admin"),
+		statusRow("Status:", Badge("Active")),
+	))
+	contentRow.AddChild(col2)
+
+	// Column 3: Deep Nesting
+	col3 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+	)
+	col3.AddChild(tui.New(tui.WithText("Deep Nesting"), tui.WithTextStyle(tui.NewStyle().Bold())))
+	col3.AddChild(Card("Settings",
+		StatusLine("Theme:", "Dark"),
+		StatusLine("Notify:", "On"),
+		tagsRow(Badge("New"), Badge("v1.0")),
+	))
+	contentRow.AddChild(col3)
+
+	root.AddChild(contentRow)
+
+	// Footer
+	footerRow := tui.New(tui.WithDirection(tui.Row), tui.WithJustify(tui.JustifyCenter))
+	footerRow.AddChild(tui.New(tui.WithText("[q] quit"), tui.WithTextStyle(tui.NewStyle().Dim())))
+	root.AddChild(footerRow)
+
+	return root
+}
+
+// Card creates a reusable card component with title and children
+func Card(title string, children ...*tui.Element) *tui.Element {
+	card := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+	)
+	card.AddChild(tui.New(
+		tui.WithText(title),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	))
+	card.AddChild(tui.New(tui.WithHR(), tui.WithBorder(tui.BorderSingle)))
+	for _, child := range children {
+		card.AddChild(child)
+	}
+	return card
+}
+
+// Badge creates a simple styled badge
+func Badge(text string) *tui.Element {
+	return tui.New(
+		tui.WithText(" "+text+" "),
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
+	)
+}
+
+// Header creates a bordered header element
+func Header(text string) *tui.Element {
+	header := tui.New(
+		tui.WithBorder(tui.BorderDouble),
+		tui.WithPadding(1),
+	)
+	header.AddChild(tui.New(
+		tui.WithText(text),
+		tui.WithTextGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	))
+	return header
+}
+
+// StatusLine pairs a dim label with a bright value
+func StatusLine(label string, value string) *tui.Element {
+	line := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+	line.AddChild(tui.New(tui.WithText(label), tui.WithTextStyle(tui.NewStyle().Dim())))
+	line.AddChild(tui.New(tui.WithText(value), tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold())))
+	return line
+}
+
+func statusRow(label string, badge *tui.Element) *tui.Element {
+	row := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+	row.AddChild(tui.New(tui.WithText(label), tui.WithTextStyle(tui.NewStyle().Dim())))
+	row.AddChild(badge)
+	return row
+}
+
+func tagsRow(badges ...*tui.Element) *tui.Element {
+	row := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+	row.AddChild(tui.New(tui.WithText("Tags:"), tui.WithTextStyle(tui.NewStyle().Dim())))
+	for _, b := range badges {
+		row.AddChild(b)
+	}
+	return row
 }

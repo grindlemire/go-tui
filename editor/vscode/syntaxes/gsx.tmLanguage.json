@@ -7,6 +7,7 @@
     { "include": "#package-clause" },
     { "include": "#import-declaration" },
     { "include": "#component-declaration" },
+    { "include": "#go-declaration" },
     { "include": "#function-declaration" }
   ],
   "repository": {
@@ -70,15 +71,38 @@
       ]
     },
     "component-declaration": {
-      "name": "meta.component.gsx",
-      "begin": "^\\s*(templ)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{",
-      "end": "\\}",
-      "beginCaptures": {
-        "1": { "name": "keyword.function.gsx" },
-        "2": { "name": "entity.name.function.component.gsx" }
-      },
       "patterns": [
-        { "include": "#body-contents" }
+        {
+          "comment": "Method templ: templ (s *Type) Render() { ... }",
+          "name": "meta.component.method.gsx",
+          "begin": "^\\s*(templ)\\s+\\(([a-zA-Z_][a-zA-Z0-9_]*)\\s+(\\*?)([a-zA-Z_][a-zA-Z0-9_.]*)\\)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "end": "(?<=\\})",
+          "beginCaptures": {
+            "1": { "name": "keyword.function.gsx" },
+            "2": { "name": "variable.parameter.receiver.gsx" },
+            "3": { "name": "keyword.operator.go.gsx" },
+            "4": { "name": "entity.name.type.gsx" },
+            "5": { "name": "entity.name.function.component.gsx" }
+          },
+          "patterns": [
+            { "include": "#parameter-list" },
+            { "include": "#component-body" }
+          ]
+        },
+        {
+          "comment": "Function templ: templ Name(params) { ... }",
+          "name": "meta.component.gsx",
+          "begin": "^\\s*(templ)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "end": "(?<=\\})",
+          "beginCaptures": {
+            "1": { "name": "keyword.function.gsx" },
+            "2": { "name": "entity.name.function.component.gsx" }
+          },
+          "patterns": [
+            { "include": "#parameter-list" },
+            { "include": "#component-body" }
+          ]
+        }
       ]
     },
     "parameter-list": {
@@ -123,9 +147,9 @@
       ]
     },
     "state-declaration-line": {
-      "comment": "State variable declaration at body level: name := tui.NewState(value)",
+      "comment": "State/ref variable declaration at body level: name := tui.NewState(value) or tui.NewRef() etc.",
       "name": "meta.state-declaration.gsx",
-      "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:=)\\s*(tui)(\\.)(NewState)\\s*\\(([^)]*)\\)",
+      "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:=)\\s*(tui)(\\.)(NewState|NewRef|NewRefList|NewRefMap)\\s*(?:\\[[^\\]]*\\])?\\s*\\(([^)]*)\\)",
       "captures": {
         "1": { "name": "variable.other.state.gsx" },
         "2": { "name": "keyword.operator.go.gsx" },
@@ -165,11 +189,12 @@
         },
         {
           "name": "meta.control.let.gsx",
-          "begin": "(@let)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*=",
+          "begin": "(@let)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=)",
           "end": "(?=<|\\{|$)",
           "beginCaptures": {
             "1": { "name": "keyword.control.let.gsx" },
-            "2": { "name": "variable.other.gsx" }
+            "2": { "name": "variable.other.gsx" },
+            "3": { "name": "keyword.operator.assignment.gsx" }
           }
         },
         {
@@ -321,7 +346,11 @@
       "patterns": [
         { "include": "#go-keywords" },
         { "include": "#go-constants" },
+        { "include": "#go-builtin-functions" },
+        { "include": "#state-declaration" },
+        { "include": "#state-method-call" },
         { "include": "#go-operators" },
+        { "include": "#go-function-call" },
         { "include": "#go-identifiers" },
         { "include": "#strings" },
         { "include": "#numbers" }
@@ -463,17 +492,98 @@
       ]
     },
     "function-declaration": {
-      "name": "meta.function.gsx",
-      "begin": "^\\s*(func)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
-      "end": "(?<=\\})",
-      "beginCaptures": {
-        "1": { "name": "keyword.function.gsx" },
-        "2": { "name": "entity.name.function.gsx" }
-      },
       "patterns": [
-        { "include": "#parameter-list" },
-        { "include": "#function-return-type" },
-        { "include": "#function-body" }
+        {
+          "comment": "Method func: func (s *Type) Name(...) { ... }",
+          "name": "meta.function.method.gsx",
+          "begin": "^\\s*(func)\\s+\\(([a-zA-Z_][a-zA-Z0-9_]*)\\s+(\\*?)([a-zA-Z_][a-zA-Z0-9_.]*)\\)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "end": "(?<=\\})",
+          "beginCaptures": {
+            "1": { "name": "keyword.function.gsx" },
+            "2": { "name": "variable.parameter.receiver.gsx" },
+            "3": { "name": "keyword.operator.go.gsx" },
+            "4": { "name": "entity.name.type.gsx" },
+            "5": { "name": "entity.name.function.gsx" }
+          },
+          "patterns": [
+            { "include": "#parameter-list" },
+            { "include": "#function-return-type" },
+            { "include": "#function-body" }
+          ]
+        },
+        {
+          "comment": "Plain func: func Name(...) { ... }",
+          "name": "meta.function.gsx",
+          "begin": "^\\s*(func)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "end": "(?<=\\})",
+          "beginCaptures": {
+            "1": { "name": "keyword.function.gsx" },
+            "2": { "name": "entity.name.function.gsx" }
+          },
+          "patterns": [
+            { "include": "#parameter-list" },
+            { "include": "#function-return-type" },
+            { "include": "#function-body" }
+          ]
+        }
+      ]
+    },
+    "go-declaration": {
+      "patterns": [
+        {
+          "comment": "type struct/interface with body: type Name struct { ... }",
+          "name": "meta.declaration.type.gsx",
+          "begin": "^\\s*(type)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+(struct|interface)\\s*(\\{)",
+          "end": "(\\})",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.type.gsx" },
+            "2": { "name": "entity.name.type.gsx" },
+            "3": { "name": "keyword.other.gsx" },
+            "4": { "name": "punctuation.definition.block.begin.gsx" }
+          },
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.block.end.gsx" }
+          },
+          "patterns": [
+            { "include": "#comments" },
+            { "include": "#strings" },
+            { "include": "#go-nested-block" },
+            { "include": "#go-expression-content" }
+          ]
+        },
+        {
+          "comment": "type alias/definition: type Name = Type or type Name Type",
+          "name": "meta.declaration.type.gsx",
+          "match": "^\\s*(type)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.other.type.gsx" },
+            "2": { "name": "entity.name.type.gsx" }
+          }
+        },
+        {
+          "comment": "const/var grouped declaration: const ( ... ) or var ( ... )",
+          "name": "meta.declaration.grouped.gsx",
+          "begin": "^\\s*(const|var)\\s*\\(",
+          "end": "\\)",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.gsx" }
+          },
+          "patterns": [
+            { "include": "#comments" },
+            { "include": "#strings" },
+            { "include": "#numbers" },
+            { "include": "#go-expression-content" }
+          ]
+        },
+        {
+          "comment": "const/var single declaration: const Name = ... or var Name Type",
+          "name": "meta.declaration.gsx",
+          "match": "^\\s*(const|var)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.other.gsx" },
+            "2": { "name": "variable.other.gsx" }
+          }
+        }
       ]
     },
     "function-return-type": {

@@ -7,8 +7,8 @@ repository = "https://github.com/grindlemire/go-tui"
 authors = ["grindlemire"]
 
 [grammars.gsx]
-repository = "https://github.com/grindlemire/go-tui"
-rev = "bead34f494a0229563c92dcd4a09579ffc664e7d"
+repository = "file:///Users/joelholsteen/go/src/github.com/grindlemire/go-tui"
+rev = "87a0937921582890de25815441b4d1a3c1703f7d"
 path = "editor/tree-sitter-gsx"
 
 [language_servers.gsx-lsp]

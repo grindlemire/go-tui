@@ -72,6 +72,9 @@
       }
     },
     "configurationDefaults": {
+      "[gsx]": {
+        "editor.semanticHighlighting.enabled": true
+      },
       "editor.semanticTokenColorCustomizations": {
         "rules": {
           "typeParameter:gsx": "#C586C0"

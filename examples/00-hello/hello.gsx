@@ -16,8 +16,8 @@ func (h *helloApp) KeyMap() tui.KeyMap {
 }
 
 templ (h *helloApp) Render() {
-	<div class="flex-col items-center justify-center h-full">
-		<span class="font-bold text-red">Hello, TUI!</span>
-		<span class="font-dim">Press q to quit</span>
-	</div>
+    <div class="flex-col items-center justify-center h-full">
+        <span class="font-bold text-red">Hello, TUI!</span>
+        <span class="font-dim">Press q to quit</span>
+    </div>
 }

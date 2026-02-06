@@ -20,228 +20,140 @@ func (a *compositionApp) KeyMap() tui.KeyMap {
 	}
 }
 
-type CardView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+func (a *compositionApp) Render() *tui.Element {
+	root := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithGap(1),
+	)
+
+	// Header row
+	headerRow := tui.New(tui.WithDirection(tui.Row), tui.WithJustify(tui.JustifySpaceBetween))
+	headerRow.AddChild(tui.New(
+		tui.WithText("Component Composition"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	))
+	headerRow.AddChild(tui.New(
+		tui.WithText("Helper Functions"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+	))
+	root.AddChild(headerRow)
+
+	// Main content row
+	contentRow := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+
+	// Column 1: Simple Helpers
+	col1 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+	)
+	col1.AddChild(tui.New(tui.WithText("Simple Helpers"), tui.WithTextStyle(tui.NewStyle().Bold())))
+	col1.AddChild(Header("go-tui"))
+	col1.AddChild(Badge("Framework"))
+	contentRow.AddChild(col1)
+
+	// Column 2: With Children
+	col2 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+	)
+	col2.AddChild(tui.New(tui.WithText("With Children"), tui.WithTextStyle(tui.NewStyle().Bold())))
+	col2.AddChild(Card("User Profile",
+		StatusLine("Name:", "Alice"),
+		StatusLine("Role:", "Admin"),
+		statusRow("Status:", Badge("Active")),
+	))
+	contentRow.AddChild(col2)
+
+	// Column 3: Deep Nesting
+	col3 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+	)
+	col3.AddChild(tui.New(tui.WithText("Deep Nesting"), tui.WithTextStyle(tui.NewStyle().Bold())))
+	col3.AddChild(Card("Settings",
+		StatusLine("Theme:", "Dark"),
+		StatusLine("Notify:", "On"),
+		tagsRow(Badge("New"), Badge("v1.0")),
+	))
+	contentRow.AddChild(col3)
+
+	root.AddChild(contentRow)
+
+	// Footer
+	footerRow := tui.New(tui.WithDirection(tui.Row), tui.WithJustify(tui.JustifyCenter))
+	footerRow.AddChild(tui.New(tui.WithText("[q] quit"), tui.WithTextStyle(tui.NewStyle().Dim())))
+	root.AddChild(footerRow)
+
+	return root
 }
 
-func (v CardView) GetRoot() tui.Renderable { return v.Root }
-
-func (v CardView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Card(title string, children []*tui.Element) CardView {
-	var view CardView
-	var watchers []tui.Watcher
-
-	__tui_0 := tui.New(
+func Card(title string, children ...*tui.Element) *tui.Element {
+	card := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithDirection(tui.Column),
 	)
-	__tui_1 := tui.New(
+	card.AddChild(tui.New(
 		tui.WithText(title),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-	)
-	__tui_0.AddChild(__tui_2)
-	for _, __child := range children {
-		__tui_0.AddChild(__child)
+	))
+	card.AddChild(tui.New(tui.WithHR(), tui.WithBorder(tui.BorderSingle)))
+	for _, child := range children {
+		card.AddChild(child)
 	}
-
-	view = CardView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return card
 }
 
-type BadgeView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v BadgeView) GetRoot() tui.Renderable { return v.Root }
-
-func (v BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Badge(text string) BadgeView {
-	var view BadgeView
-	var watchers []tui.Watcher
-
-	__tui_0 := tui.New(
+func Badge(text string) *tui.Element {
+	return tui.New(
 		tui.WithText(" "+text+" "),
 		tui.WithBackgroundGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White).Bold()),
 	)
-
-	view = BadgeView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
 }
 
-type HeaderView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v HeaderView) GetRoot() tui.Renderable { return v.Root }
-
-func (v HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Header(text string) HeaderView {
-	var view HeaderView
-	var watchers []tui.Watcher
-
-	__tui_0 := tui.New(
+func Header(text string) *tui.Element {
+	header := tui.New(
 		tui.WithBorder(tui.BorderDouble),
 		tui.WithPadding(1),
 	)
-	__tui_1 := tui.New(
+	header.AddChild(tui.New(
 		tui.WithText(text),
 		tui.WithTextGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_0.AddChild(__tui_1)
+	))
+	return header
+}
 
-	view = HeaderView{
-		Root:     __tui_0,
-		watchers: watchers,
+func StatusLine(label string, value string) *tui.Element {
+	line := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+	line.AddChild(tui.New(tui.WithText(label), tui.WithTextStyle(tui.NewStyle().Dim())))
+	line.AddChild(tui.New(tui.WithText(value), tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold())))
+	return line
+}
+
+func statusRow(label string, badge *tui.Element) *tui.Element {
+	row := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+	row.AddChild(tui.New(tui.WithText(label), tui.WithTextStyle(tui.NewStyle().Dim())))
+	row.AddChild(badge)
+	return row
+}
+
+func tagsRow(badges ...*tui.Element) *tui.Element {
+	row := tui.New(tui.WithDirection(tui.Row), tui.WithGap(1))
+	row.AddChild(tui.New(tui.WithText("Tags:"), tui.WithTextStyle(tui.NewStyle().Dim())))
+	for _, b := range badges {
+		row.AddChild(b)
 	}
-	return view
-}
-
-type StatusLineView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v StatusLineView) GetRoot() tui.Renderable { return v.Root }
-
-func (v StatusLineView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func StatusLine(label string, value string) StatusLineView {
-	var view StatusLineView
-	var watchers []tui.Watcher
-
-	__tui_0 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
-	)
-	__tui_1 := tui.New(
-		tui.WithText(label),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithText(value),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-	)
-	__tui_0.AddChild(__tui_2)
-
-	view = StatusLineView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
-}
-
-func (a *compositionApp) Render() *tui.Element {
-	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
-		tui.WithPadding(1),
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithGap(1),
-	)
-	__tui_1 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifySpaceBetween),
-	)
-	__tui_2 := tui.New(
-		tui.WithText("Component Composition"),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_1.AddChild(__tui_2)
-	__tui_3 := tui.New(
-		tui.WithText("Nested Components"),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
-	)
-	__tui_1.AddChild(__tui_3)
-	__tui_0.AddChild(__tui_1)
-	__tui_4 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
-	)
-	__tui_5 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-		tui.WithDirection(tui.Column),
-		tui.WithFlexGrow(1.0),
-	)
-	__tui_6 := tui.New(
-		tui.WithText("@Component (leaf)"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_5.AddChild(__tui_6)
-	__tui_7 := tui.Mount(a, 0, func() tui.Component {
-		return Header("go-tui")
-	})
-	__tui_5.AddChild(__tui_7)
-	__tui_8 := tui.Mount(a, 1, func() tui.Component {
-		return Badge("Framework")
-	})
-	__tui_5.AddChild(__tui_8)
-	__tui_4.AddChild(__tui_5)
-	__tui_9 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-		tui.WithDirection(tui.Column),
-		tui.WithFlexGrow(1.0),
-	)
-	__tui_10 := tui.New(
-		tui.WithText("@Component {children}"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_9.AddChild(__tui_10)
-	__tui_11 := tui.Mount(a, 2, func() tui.Component {
-		return Card("User Profile")
-	})
-	__tui_9.AddChild(__tui_11)
-	__tui_4.AddChild(__tui_9)
-	__tui_12 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-		tui.WithDirection(tui.Column),
-		tui.WithFlexGrow(1.0),
-	)
-	__tui_13 := tui.New(
-		tui.WithText("Deep Nesting"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_12.AddChild(__tui_13)
-	__tui_14 := tui.Mount(a, 3, func() tui.Component {
-		return Card("Settings")
-	})
-	__tui_12.AddChild(__tui_14)
-	__tui_4.AddChild(__tui_12)
-	__tui_0.AddChild(__tui_4)
-	__tui_15 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifyCenter),
-	)
-	__tui_16 := tui.New(
-		tui.WithText("[q] quit"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_15.AddChild(__tui_16)
-	__tui_0.AddChild(__tui_15)
-
-	return __tui_0
+	return row
 }

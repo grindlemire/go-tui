@@ -87,18 +87,34 @@ func (e *Element) SetOnBlur(fn func(*Element)) {
 	e.onBlur = fn
 }
 
+// bubbleOnEvent walks up the parent chain calling onEvent handlers.
+// This allows inspection/logging handlers on ancestors to see events
+// before they are consumed by local handlers like onClick.
+// Returns true if any onEvent handler consumed the event.
+func (e *Element) bubbleOnEvent(event Event) bool {
+	for el := e; el != nil; el = el.parent {
+		if el.onEvent != nil {
+			debug.Log("Element.bubbleOnEvent: calling onEvent on element text=%q", el.text)
+			if el.onEvent(el, event) {
+				debug.Log("Element.bubbleOnEvent: onEvent consumed event")
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // HandleEvent dispatches an event to this element's handler.
 // Returns true if the event was consumed.
 func (e *Element) HandleEvent(event Event) bool {
 	debug.Log("Element.HandleEvent: event=%T text=%q focusable=%v onClick=%v", event, e.text, e.focusable, e.onClick != nil)
 
-	// First, let user handler try to consume the event (legacy bool-returning handler)
-	if e.onEvent != nil {
-		debug.Log("Element.HandleEvent: calling onEvent handler")
-		if e.onEvent(e, event) {
-			debug.Log("Element.HandleEvent: onEvent consumed event")
-			return true
-		}
+	// First, bubble onEvent notifications up the parent chain.
+	// This allows inspection/logging handlers on ancestors to see all events
+	// before they are consumed by local handlers like onClick.
+	if e.bubbleOnEvent(event) {
+		debug.Log("Element.HandleEvent: onEvent in ancestor chain consumed event")
+		return true
 	}
 
 	// Handle key events with bubbling support

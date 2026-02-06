@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/grindlemire/go-tui/internal/lsp/log"
+	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
 // formatSpecifierRegex matches Go format specifiers like %s, %d, %v, %.2f, %#x, etc.
@@ -191,19 +192,62 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 
 	// Collect component-related tokens
 	for _, comp := range ast.Components {
+		line := comp.Position.Line - 1
+
 		// Component keyword (templ)
 		tokens = append(tokens, SemanticToken{
-			Line:      comp.Position.Line - 1,
+			Line:      line,
 			StartChar: comp.Position.Column - 1,
 			Length:    len("templ"),
 			TokenType: TokenTypeKeyword,
 			Modifiers: 0,
 		})
 
-		// Component name (declaration)
+		// Method receiver tokens (if method templ)
+		if comp.ReceiverName != "" && s.currentContent != "" {
+			srcLines := strings.Split(s.currentContent, "\n")
+			if line < len(srcLines) {
+				srcLine := srcLines[line]
+				// Find the opening paren of the receiver after "templ"
+				searchStart := comp.Position.Column - 1 + len("templ")
+				parenIdx := strings.Index(srcLine[searchStart:], "(")
+				if parenIdx >= 0 {
+					recvStart := searchStart + parenIdx + 1 // after "("
+					// Receiver name — use parameter type so it's highlighted at the declaration
+					recvNameIdx := strings.Index(srcLine[recvStart:], comp.ReceiverName)
+					if recvNameIdx >= 0 {
+						tokens = append(tokens, SemanticToken{
+							Line:      line,
+							StartChar: recvStart + recvNameIdx,
+							Length:    len(comp.ReceiverName),
+							TokenType: TokenTypeParameter,
+							Modifiers: TokenModDeclaration,
+						})
+					}
+					// Receiver type
+					recvTypeIdx := strings.Index(srcLine[recvStart:], comp.ReceiverType)
+					if recvTypeIdx >= 0 {
+						emitGoTypeTokens(comp.ReceiverType, line, recvStart+recvTypeIdx, &tokens)
+					}
+				}
+			}
+		}
+
+		// Component name — find position by searching source for "Name("
 		nameStart := comp.Position.Column - 1 + len("templ ")
+		if comp.ReceiverName != "" && s.currentContent != "" {
+			srcLines := strings.Split(s.currentContent, "\n")
+			if line < len(srcLines) {
+				srcLine := srcLines[line]
+				searchFrom := comp.Position.Column - 1 + len("templ")
+				nameIdx := strings.Index(srcLine[searchFrom:], comp.Name+"(")
+				if nameIdx >= 0 {
+					nameStart = searchFrom + nameIdx
+				}
+			}
+		}
 		tokens = append(tokens, SemanticToken{
-			Line:      comp.Position.Line - 1,
+			Line:      line,
 			StartChar: nameStart,
 			Length:    len(comp.Name),
 			TokenType: TokenTypeClass,
@@ -224,8 +268,15 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 			emitGoTypeTokens(param.Type, param.Position.Line-1, typeStart, &tokens)
 		}
 
-		// Collect tokens from body
+		// Collect tokens from body — do NOT add receiver to paramNames so it gets
+		// default variable coloring in usage (TextMate fallback) while the declaration
+		// in the templ signature gets parameter highlighting.
 		s.collectTokensFromNodes(comp.Body, comp.Params, &tokens)
+	}
+
+	// Collect GoDecl tokens (type, const, var declarations)
+	for _, decl := range ast.Decls {
+		s.collectTokensFromGoDecl(decl, &tokens)
 	}
 
 	// Collect function-related tokens
@@ -239,11 +290,45 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 			Modifiers: 0,
 		})
 
-		// Function name
-		name, _, params, returns := parseFuncSignatureForTokens(fn.Code)
+		// Function name (handles both plain funcs and methods with receivers)
+		name, receiverText, params, returns := parseFuncSignatureForTokens(fn.Code)
 		if name != "" {
 			line := fn.Position.Line - 1
+
+			// Find name position by searching fn.Code for "Name("
+			nameInCode := strings.Index(fn.Code, name+"(")
 			nameStart := fn.Position.Column - 1 + len("func ")
+			if nameInCode >= 0 {
+				nameStart = fn.Position.Column - 1 + nameInCode
+			}
+
+			// Emit receiver tokens for methods
+			if receiverText != "" {
+				recvParts := strings.SplitN(strings.TrimSpace(receiverText), " ", 2)
+				if len(recvParts) == 2 {
+					recvName := recvParts[0]
+					recvType := recvParts[1]
+					// Find receiver in the source code
+					parenIdx := strings.Index(fn.Code, "(")
+					if parenIdx >= 0 {
+						recvNameIdx := strings.Index(fn.Code[parenIdx+1:], recvName)
+						if recvNameIdx >= 0 {
+							tokens = append(tokens, SemanticToken{
+								Line:      line,
+								StartChar: fn.Position.Column - 1 + parenIdx + 1 + recvNameIdx,
+								Length:    len(recvName),
+								TokenType: TokenTypeParameter,
+								Modifiers: TokenModDeclaration,
+							})
+						}
+						recvTypeIdx := strings.Index(fn.Code[parenIdx+1:], recvType)
+						if recvTypeIdx >= 0 {
+							emitGoTypeTokens(recvType, line, fn.Position.Column-1+parenIdx+1+recvTypeIdx, &tokens)
+						}
+					}
+				}
+			}
+
 			tokens = append(tokens, SemanticToken{
 				Line:      line,
 				StartChar: nameStart,
@@ -271,12 +356,8 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 
 			// Return type
 			if returns != "" {
-				// Return type starts after closing paren + space
-				// paramStart is past the last param; it's at the position after "lastType, "
-				// but we need position after ')'
 				returnStart := nameStart + len(name) + 1 // "name("
 				if len(params) > 0 {
-					// Calculate total param string length
 					for i, p := range params {
 						returnStart += len(p.Name) + 1 + len(p.Type)
 						if i < len(params)-1 {
@@ -288,7 +369,9 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				emitGoTypeTokens(returns, line, returnStart, &tokens)
 			}
 
-			// Build parameter names map for body tokenization
+			// Build parameter names map for body tokenization.
+			// Do NOT add the receiver name — it should get default variable coloring
+			// in usage (TextMate fallback) while the declaration gets parameter highlighting.
 			paramNames := make(map[string]bool)
 			for _, p := range params {
 				paramNames[p.Name] = true
@@ -300,6 +383,42 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 	}
 
 	return tokens
+}
+
+// collectTokensFromGoDecl tokenizes a top-level Go declaration (type, const, var).
+func (s *semanticTokensProvider) collectTokensFromGoDecl(decl *tuigen.GoDecl, tokens *[]SemanticToken) {
+	if decl == nil {
+		return
+	}
+
+	line := decl.Position.Line - 1
+	col := decl.Position.Column - 1
+
+	// Keyword token (type, const, var)
+	*tokens = append(*tokens, SemanticToken{
+		Line:      line,
+		StartChar: col,
+		Length:    len(decl.Kind),
+		TokenType: TokenTypeKeyword,
+		Modifiers: 0,
+	})
+
+	// Tokenize the body of the declaration
+	code := decl.Code
+	paramNames := make(map[string]bool)
+	localVars := make(map[string]bool)
+
+	// For multi-line declarations, process each line
+	codeLines := strings.Split(code, "\n")
+	for lineIdx, codeLine := range codeLines {
+		docLine := line + lineIdx
+		lineCol := 1
+		if lineIdx == 0 {
+			lineCol = decl.Position.Column
+		}
+		linePos := tuigen.Position{Line: docLine + 1, Column: lineCol}
+		s.collectTokensInGoCode(codeLine, linePos, 0, paramNames, localVars, tokens)
+	}
 }
 
 // --- Helper functions ---
