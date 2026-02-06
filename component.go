@@ -29,3 +29,10 @@ type MouseListener interface {
 type Initializer interface {
 	Init() func()
 }
+
+// WatcherProvider is an optional interface for components that provide
+// timers, tickers, or channel watchers. Watchers() is called after the
+// component is mounted and the returned watchers are started.
+type WatcherProvider interface {
+	Watchers() []Watcher
+}
