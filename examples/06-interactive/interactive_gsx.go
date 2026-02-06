@@ -7,10 +7,14 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type interactiveApp struct{}
+type interactiveApp struct {
+	events *Events[string]
+}
 
 func Interactive() *interactiveApp {
-	return &interactiveApp{}
+	return &interactiveApp{
+		events: NewEvents[string](),
+	}
 }
 
 func (a *interactiveApp) KeyMap() tui.KeyMap {
@@ -48,11 +52,11 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithGap(1),
 	)
 	__tui_5 := tui.Mount(a, 0, func() tui.Component {
-		return Counter()
+		return Counter(a.events)
 	})
 	__tui_4.AddChild(__tui_5)
 	__tui_6 := tui.Mount(a, 1, func() tui.Component {
-		return Timer()
+		return Timer(a.events)
 	})
 	__tui_4.AddChild(__tui_6)
 	__tui_0.AddChild(__tui_4)
@@ -61,9 +65,13 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithGap(1),
 	)
 	__tui_8 := tui.Mount(a, 2, func() tui.Component {
-		return Toggles()
+		return Toggles(a.events)
 	})
 	__tui_7.AddChild(__tui_8)
+	__tui_9 := tui.Mount(a, 3, func() tui.Component {
+		return EventInspector(a.events)
+	})
+	__tui_7.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_7)
 
 	return __tui_0

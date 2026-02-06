@@ -7,14 +7,16 @@ import (
 
 type counter struct {
 	count        *tui.State[int]
+	events       *Events[string]
 	decrementBtn *tui.Ref
 	incrementBtn *tui.Ref
 	resetBtn     *tui.Ref
 }
 
-func Counter() *counter {
+func Counter(events *Events[string]) *counter {
 	return &counter{
 		count:        tui.NewState(0),
+		events:       events,
 		decrementBtn: tui.NewRef(),
 		incrementBtn: tui.NewRef(),
 		resetBtn:     tui.NewRef(),
@@ -38,9 +40,20 @@ func (c *counter) HandleMouse(me tui.MouseEvent) bool {
 	)
 }
 
-func (c *counter) increment() { c.count.Set(c.count.Get() + 1) }
-func (c *counter) decrement() { c.count.Set(c.count.Get() - 1) }
-func (c *counter) reset()     { c.count.Set(0) }
+func (c *counter) increment() {
+	c.count.Set(c.count.Get() + 1)
+	c.events.Emit("increment")
+}
+
+func (c *counter) decrement() {
+	c.count.Set(c.count.Get() - 1)
+	c.events.Emit("decrement")
+}
+
+func (c *counter) reset() {
+	c.count.Set(0)
+	c.events.Emit("reset")
+}
 
 templ (c *counter) Render() {
 	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>

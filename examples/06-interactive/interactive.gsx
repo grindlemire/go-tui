@@ -2,10 +2,14 @@ package main
 
 import tui "github.com/grindlemire/go-tui"
 
-type interactiveApp struct{}
+type interactiveApp struct {
+	events *Events[string]
+}
 
 func Interactive() *interactiveApp {
-	return &interactiveApp{}
+	return &interactiveApp{
+		events: NewEvents[string](),
+	}
 }
 
 func (a *interactiveApp) KeyMap() tui.KeyMap {
@@ -22,11 +26,12 @@ templ (a *interactiveApp) Render() {
 			<span class="font-dim">{"[q] quit"}</span>
 		</div>
 		<div class="flex gap-1">
-			@Counter()
-			@Timer()
+			@Counter(a.events)
+			@Timer(a.events)
 		</div>
 		<div class="flex gap-1">
-			@Toggles()
+			@Toggles(a.events)
+			@EventInspector(a.events)
 		</div>
 	</div>
 }

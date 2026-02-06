@@ -11,16 +11,18 @@ type toggles struct {
 	sound     *tui.State[bool]
 	notify    *tui.State[bool]
 	dark      *tui.State[bool]
+	events    *Events[string]
 	soundBtn  *tui.Ref
 	notifyBtn *tui.Ref
 	themeBtn  *tui.Ref
 }
 
-func Toggles() *toggles {
+func Toggles(events *Events[string]) *toggles {
 	return &toggles{
 		sound:     tui.NewState(true),
 		notify:    tui.NewState(false),
 		dark:      tui.NewState(false),
+		events:    events,
 		soundBtn:  tui.NewRef(),
 		notifyBtn: tui.NewRef(),
 		themeBtn:  tui.NewRef(),
@@ -43,11 +45,20 @@ func (t *toggles) HandleMouse(me tui.MouseEvent) bool {
 	)
 }
 
-func (t *toggles) toggleSound() { t.sound.Set(!t.sound.Get()) }
+func (t *toggles) toggleSound() {
+	t.sound.Set(!t.sound.Get())
+	t.events.Emit("toggle sound")
+}
 
-func (t *toggles) toggleNotify() { t.notify.Set(!t.notify.Get()) }
+func (t *toggles) toggleNotify() {
+	t.notify.Set(!t.notify.Get())
+	t.events.Emit("toggle notify")
+}
 
-func (t *toggles) toggleTheme() { t.dark.Set(!t.dark.Get()) }
+func (t *toggles) toggleTheme() {
+	t.dark.Set(!t.dark.Get())
+	t.events.Emit("toggle theme")
+}
 
 func (t *toggles) Render() *tui.Element {
 	__tui_0 := tui.New(

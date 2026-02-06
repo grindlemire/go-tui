@@ -13,12 +13,14 @@ import (
 type timer struct {
 	elapsed *tui.State[int]
 	running *tui.State[bool]
+	events  *Events[string]
 }
 
-func Timer() *timer {
+func Timer(events *Events[string]) *timer {
 	return &timer{
 		elapsed: tui.NewState(0),
 		running: tui.NewState(true),
+		events:  events,
 	}
 }
 
@@ -35,9 +37,15 @@ func (t *timer) Watchers() []tui.Watcher {
 	}
 }
 
-func (t *timer) toggleRunning() { t.running.Set(!t.running.Get()) }
+func (t *timer) toggleRunning() {
+	t.running.Set(!t.running.Get())
+	t.events.Emit("timer toggle")
+}
 
-func (t *timer) resetTimer() { t.elapsed.Set(0) }
+func (t *timer) resetTimer() {
+	t.elapsed.Set(0)
+	t.events.Emit("timer reset")
+}
 
 func (t *timer) tick() {
 	if t.running.Get() {
