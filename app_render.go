@@ -54,6 +54,17 @@ func (a *App) Render() {
 		a.mounts.sweep()
 	}
 
+	// Collect and start component watchers (once after first render)
+	if !a.componentWatchersStarted {
+		if root, ok := a.root.(*Element); ok {
+			a.componentWatchers = collectComponentWatchers(root)
+			for _, w := range a.componentWatchers {
+				w.Start(a.eventQueue, a.stopCh)
+			}
+		}
+		a.componentWatchersStarted = true
+	}
+
 	// Flush to terminal (inline mode offsets Y coordinates)
 	if a.inlineHeight > 0 {
 		a.renderInline()

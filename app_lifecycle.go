@@ -22,6 +22,9 @@ func Stop() {
 // Close restores the terminal to its original state.
 // Must be called when the application exits.
 func (a *App) Close() error {
+	// Component watchers are stopped via stopCh (closed by Stop()).
+	// No explicit cleanup needed here - they exit when stopCh closes.
+
 	// Disable mouse event reporting (only if it was enabled)
 	if a.mouseEnabled {
 		a.terminal.DisableMouse()

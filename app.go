@@ -88,6 +88,10 @@ type App struct {
 	mounts        *mountState
 	dispatchTable *dispatchTable // Key broadcast dispatch table, rebuilt on dirty frames
 	rootComponent Component      // Root struct component (set via SetRoot with Component)
+
+	// Component watchers (from WatcherProvider components)
+	componentWatchers        []Watcher
+	componentWatchersStarted bool
 }
 
 // currentApp holds a reference to the currently running app for package-level Stop().
