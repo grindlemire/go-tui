@@ -11,61 +11,61 @@ import (
 	"github.com/grindlemire/go-tui/internal/debug"
 )
 
-func increment(count *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		debug.Log("increment callback called")
-		count.Set(count.Get() + 1)
+type counterApp struct {
+	count        *tui.State[int]
+	incrementBtn *tui.Ref
+	decrementBtn *tui.Ref
+}
+
+func Counter() *counterApp {
+	return &counterApp{
+		count:        tui.NewState(0),
+		incrementBtn: tui.NewRef(),
+		decrementBtn: tui.NewRef(),
 	}
 }
 
-func decrement(count *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		count.Set(count.Get() - 1)
+func (c *counterApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) {
+			debug.Log("increment via KeyMap")
+			c.count.Set(c.count.Get() + 1)
+		}),
+		tui.OnRune('-', func(ke tui.KeyEvent) {
+			c.count.Set(c.count.Get() - 1)
+		}),
 	}
 }
 
-func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
-	return func(el *tui.Element, e tui.KeyEvent) bool {
-		debug.Log("[CounterUI] handleKeys called: %+v", e)
-		switch e.Rune {
-		case '+':
-			count.Set(count.Get() + 1)
-			return true
-		case '-':
-			count.Set(count.Get() - 1)
+func (c *counterApp) HandleMouse(me tui.MouseEvent) bool {
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		if c.incrementBtn.El() != nil && c.incrementBtn.El().ContainsPoint(me.X, me.Y) {
+			debug.Log("increment via HandleMouse")
+			c.count.Set(c.count.Get() + 1)
 			return true
 		}
-		return false
+		if c.decrementBtn.El() != nil && c.decrementBtn.El().ContainsPoint(me.X, me.Y) {
+			c.count.Set(c.count.Get() - 1)
+			return true
+		}
 	}
+	return false
 }
 
-func tick(count *tui.State[int]) func() {
-	return func() {
-		debug.Log("tick callback called")
-		count.Set(count.Get() + 1)
-	}
+func (c *counterApp) tick() {
+	debug.Log("tick callback called")
+	c.count.Set(c.count.Get() + 1)
 }
 
-type CounterUIView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-}
-
-func (v CounterUIView) GetRoot() tui.Renderable { return v.Root }
-
-func (v CounterUIView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func CounterUI() CounterUIView {
-	var view CounterUIView
-	var watchers []tui.Watcher
-
-	count := tui.NewState(0)
+func (c *counterApp) Render() *tui.Element {
+	incrementBtn := c.incrementBtn
+	decrementBtn := c.decrementBtn
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
-		tui.WithOnKeyPress(handleKeys(count)),
-		tui.WithFocusable(true),
 	)
 	__tui_1 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
@@ -89,7 +89,7 @@ func CounterUI() CounterUIView {
 	)
 	__tui_1.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", count.Get())),
+		tui.WithText(fmt.Sprintf("%d", c.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
 	__tui_1.AddChild(__tui_5)
@@ -104,15 +104,13 @@ func CounterUI() CounterUIView {
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_8 := tui.New(
-		tui.WithOnClick(increment(count)),
-	)
+	__tui_8 := tui.New()
+	incrementBtn.Set(__tui_8)
 	__tui_9 := tui.New(tui.WithText(" + "))
 	__tui_8.AddChild(__tui_9)
 	__tui_7.AddChild(__tui_8)
-	__tui_10 := tui.New(
-		tui.WithOnClick(decrement(count)),
-	)
+	__tui_10 := tui.New()
+	decrementBtn.Set(__tui_10)
 	__tui_11 := tui.New(tui.WithText(" - "))
 	__tui_10.AddChild(__tui_11)
 	__tui_7.AddChild(__tui_10)
@@ -122,23 +120,14 @@ func CounterUI() CounterUIView {
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_13 := tui.New(
-		tui.WithText("Press q to quit"),
+		tui.WithText("Press +/- or q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_12.AddChild(__tui_13)
 	__tui_0.AddChild(__tui_12)
 
 	// Attach watchers (deferred until refs are assigned)
-	__tui_0.AddWatcher(tui.OnTimer(time.Second, tick(count)))
+	__tui_0.AddWatcher(tui.OnTimer(time.Second, c.tick))
 
-	// State bindings
-	count.Bind(func(_ int) {
-		__tui_5.SetText(fmt.Sprintf("%d", count.Get()))
-	})
-
-	view = CounterUIView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

@@ -22,14 +22,6 @@ func TestElement_WithOnBlur_ImpliesFocusable(t *testing.T) {
 	}
 }
 
-func TestElement_WithOnEvent_DoesNotImplyFocusable(t *testing.T) {
-	e := New(WithOnEvent(func(*Element, Event) bool { return false }))
-
-	if e.IsFocusable() {
-		t.Error("WithOnEvent should not set focusable = true")
-	}
-}
-
 func TestElement_Focus_SetsAndCallsCallback(t *testing.T) {
 	focusCalled := false
 	e := New(WithOnFocus(func(*Element) { focusCalled = true }))

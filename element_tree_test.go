@@ -4,64 +4,6 @@ import (
 	"testing"
 )
 
-func TestElement_HandleEvent_DelegatesToOnEvent(t *testing.T) {
-	type tc struct {
-		hasHandler  bool
-		handlerRet  bool
-		wantHandled bool
-	}
-
-	tests := map[string]tc{
-		"no handler returns false": {
-			hasHandler:  false,
-			wantHandled: false,
-		},
-		"handler returns true": {
-			hasHandler:  true,
-			handlerRet:  true,
-			wantHandled: true,
-		},
-		"handler returns false": {
-			hasHandler:  true,
-			handlerRet:  false,
-			wantHandled: false,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			var e *Element
-			if tt.hasHandler {
-				e = New(WithOnEvent(func(*Element, Event) bool { return tt.handlerRet }))
-			} else {
-				e = New()
-			}
-
-			event := KeyEvent{Key: KeyEnter}
-			handled := e.HandleEvent(event)
-
-			if handled != tt.wantHandled {
-				t.Errorf("HandleEvent() = %v, want %v", handled, tt.wantHandled)
-			}
-		})
-	}
-}
-
-func TestElement_HandleEvent_ReceivesEvent(t *testing.T) {
-	var receivedEvent Event
-	e := New(WithOnEvent(func(_ *Element, ev Event) bool {
-		receivedEvent = ev
-		return true
-	}))
-
-	sentEvent := KeyEvent{Key: KeyEnter, Rune: 0}
-	e.HandleEvent(sentEvent)
-
-	if receivedEvent != sentEvent {
-		t.Error("handler should receive the exact event passed to HandleEvent")
-	}
-}
-
 func TestElement_NotFocusableByDefault(t *testing.T) {
 	e := New()
 
@@ -174,7 +116,7 @@ func TestElement_WalkFocusables(t *testing.T) {
 				root.AddChild(New(WithOnFocus(func(*Element) {})))
 				root.AddChild(New(WithOnBlur(func(*Element) {})))
 				middle := New()
-				middle.AddChild(New(WithOnClick(func(*Element) {})))
+				middle.AddChild(New(WithFocusable(true)))
 				root.AddChild(middle)
 				return root
 			},

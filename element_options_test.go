@@ -303,58 +303,7 @@ func TestWithHeightAuto(t *testing.T) {
 	}
 }
 
-// --- Event Handler Option Tests ---
-
-func TestWithOnKeyPress_SetsHandler(t *testing.T) {
-	handlerCalled := false
-	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) bool {
-		handlerCalled = true
-		return true
-	}))
-
-	if e.onKeyPress == nil {
-		t.Error("WithOnKeyPress should set the onKeyPress handler")
-	}
-
-	// Verify handler works
-	e.onKeyPress(e, KeyEvent{Key: KeyEnter})
-	if !handlerCalled {
-		t.Error("onKeyPress handler should be callable")
-	}
-}
-
-func TestWithOnKeyPress_DoesNotSetFocusable(t *testing.T) {
-	e := New(WithOnKeyPress(func(*Element, KeyEvent) bool { return false }))
-
-	if e.focusable {
-		t.Error("WithOnKeyPress should not set focusable = true")
-	}
-}
-
-func TestWithOnClick_SetsHandler(t *testing.T) {
-	clickCalled := false
-	e := New(WithOnClick(func(_ *Element) {
-		clickCalled = true
-	}))
-
-	if e.onClick == nil {
-		t.Error("WithOnClick should set the onClick handler")
-	}
-
-	// Verify handler works
-	e.onClick(e)
-	if !clickCalled {
-		t.Error("onClick handler should be callable")
-	}
-}
-
-func TestWithOnClick_SetsFocusable(t *testing.T) {
-	e := New(WithOnClick(func(*Element) {}))
-
-	if !e.focusable {
-		t.Error("WithOnClick should set focusable = true")
-	}
-}
+// --- Focusable Option Tests ---
 
 func TestWithFocusable_True(t *testing.T) {
 	e := New(WithFocusable(true))

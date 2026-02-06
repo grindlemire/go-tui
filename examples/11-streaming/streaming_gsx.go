@@ -30,6 +30,17 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		// Custom j/k scrolling
+		tui.OnRune('j', func(ke tui.KeyEvent) {
+			if s.content.El() != nil {
+				s.content.El().ScrollBy(0, 1)
+			}
+		}),
+		tui.OnRune('k', func(ke tui.KeyEvent) {
+			if s.content.El() != nil {
+				s.content.El().ScrollBy(0, -1)
+			}
+		}),
 	}
 }
 
@@ -52,32 +63,6 @@ func (s *streamingApp) addLine(line string) {
 	if stayAtBottom {
 		el.ScrollToBottom()
 	}
-}
-
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-func handleMouseScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
 }
 
 func (s *streamingApp) Render() *tui.Element {
@@ -103,8 +88,6 @@ func (s *streamingApp) Render() *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithOnEvent(handleMouseScroll),
-		tui.WithOnKeyPress(handleScrollKeys),
 		tui.WithFocusable(true),
 	)
 	content.Set(__tui_3)
@@ -127,7 +110,7 @@ func (s *streamingApp) Render() *tui.Element {
 	__tui_4.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_4)
 	__tui_11 := tui.New(
-		tui.WithText("Press q to quit"),
+		tui.WithText("Press q to quit, j/k to scroll"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_11)

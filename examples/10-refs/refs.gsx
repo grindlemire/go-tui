@@ -30,12 +30,18 @@ func (r *refsApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (r *refsApp) increment(el *tui.Element) {
-	r.count.Set(r.count.Get() + 1)
-}
-
-func (r *refsApp) decrement(el *tui.Element) {
-	r.count.Set(r.count.Get() - 1)
+func (r *refsApp) HandleMouse(me tui.MouseEvent) bool {
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		if r.incrementBtn.El() != nil && r.incrementBtn.El().ContainsPoint(me.X, me.Y) {
+			r.count.Set(r.count.Get() + 1)
+			return true
+		}
+		if r.decrementBtn.El() != nil && r.decrementBtn.El().ContainsPoint(me.X, me.Y) {
+			r.count.Set(r.count.Get() - 1)
+			return true
+		}
+	}
+	return false
 }
 
 templ (r *refsApp) Render() {
@@ -53,8 +59,8 @@ templ (r *refsApp) Render() {
 			</span>
 		</div>
 		<div class="flex gap-1 w-full justify-center">
-			<button ref={incrementBtn} onClick={r.increment} class="border-single text-center p-1 w-10 h-5">{" + "}</button>
-			<button ref={decrementBtn} onClick={r.decrement} class="border-single text-center p-1 w-10 h-5">{" - "}</button>
+			<button ref={incrementBtn} class="border-single text-center p-1 w-10 h-5">{" + "}</button>
+			<button ref={decrementBtn} class="border-single text-center p-1 w-10 h-5">{" - "}</button>
 		</div>
 		<div ref={status} class="font-dim">
 			<span>Click buttons to update the counter</span>

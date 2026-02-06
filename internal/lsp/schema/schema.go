@@ -109,11 +109,6 @@ var Elements = map[string]*ElementDef{
 
 // EventHandlers maps event attribute names to their definitions.
 var EventHandlers = map[string]*EventHandlerDef{
-	"onClick": {
-		Name:        "onClick",
-		Description: "Called when the element is clicked or activated.",
-		Signature:   "func()",
-	},
 	"onFocus": {
 		Name:        "onFocus",
 		Description: "Called when the element gains focus.",
@@ -123,16 +118,6 @@ var EventHandlers = map[string]*EventHandlerDef{
 		Name:        "onBlur",
 		Description: "Called when the element loses focus.",
 		Signature:   "func()",
-	},
-	"onKeyPress": {
-		Name:        "onKeyPress",
-		Description: "Called when a key is pressed while the element is focused.",
-		Signature:   "func(event tui.Event) bool",
-	},
-	"onEvent": {
-		Name:        "onEvent",
-		Description: "Generic event handler called for any event on the element.",
-		Signature:   "func(event tui.Event) bool",
 	},
 	"onChannel": {
 		Name:        "onChannel",
@@ -281,11 +266,8 @@ func textAttrs() []AttributeDef {
 
 func eventAttrs() []AttributeDef {
 	return []AttributeDef{
-		{Name: "onClick", Type: "func", Description: "Click/activation handler", Category: "event"},
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
-		{Name: "onKeyPress", Type: "func", Description: "Key press handler", Category: "event"},
-		{Name: "onEvent", Type: "func", Description: "Generic event handler", Category: "event"},
 		{Name: "focusable", Type: "bool", Description: "Whether the element can receive focus", Category: "event"},
 	}
 }
@@ -352,11 +334,8 @@ func inputAttrs() []AttributeDef {
 		{Name: "placeholder", Type: "string", Description: "Placeholder text when empty", Category: "generic"},
 		{Name: "width", Type: "int", Description: "Input width in characters", Category: "layout"},
 		{Name: "disabled", Type: "bool", Description: "Whether input is disabled", Category: "generic"},
-		{Name: "onClick", Type: "func", Description: "Click/activation handler", Category: "event"},
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
-		{Name: "onKeyPress", Type: "func", Description: "Key press handler", Category: "event"},
-		{Name: "onEvent", Type: "func", Description: "Generic event handler", Category: "event"},
 	}
 }
 

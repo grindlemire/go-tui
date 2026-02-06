@@ -108,13 +108,13 @@ func TestResolveCursorContext_EventHandler(t *testing.T) {
 	src := `package test
 
 templ Button(label string) {
-	<button onClick={handleClick}>{label}</button>
+	<button onFocus={handleFocus}>{label}</button>
 }
 `
 	doc := parseTestDoc(src)
 
-	// Cursor on "onClick" — "\t<button onClick=..." — 'onClick' starts after '<button '
-	// '<' is col 1, 'button' is col 2-7, space at col 8, 'onClick' starts at col 9
+	// Cursor on "onFocus" — "\t<button onFocus=..." — 'onFocus' starts after '<button '
+	// '<' is col 1, 'button' is col 2-7, space at col 8, 'onFocus' starts at col 9
 	ctx := ResolveCursorContext(doc, Position{Line: 3, Character: 10})
 
 	if ctx.NodeKind != NodeKindEventHandler {

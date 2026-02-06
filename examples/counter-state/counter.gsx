@@ -7,60 +7,72 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-templ CounterUI() {
-	count := tui.NewState(0)
+type counterApp struct {
+	count        *tui.State[int]
+	incrementBtn *tui.Ref
+	decrementBtn *tui.Ref
+}
+
+func Counter() *counterApp {
+	return &counterApp{
+		count:        tui.NewState(0),
+		incrementBtn: tui.NewRef(),
+		decrementBtn: tui.NewRef(),
+	}
+}
+
+func (c *counterApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) {
+			debug.Log("increment via KeyMap")
+			c.count.Set(c.count.Get() + 1)
+		}),
+		tui.OnRune('-', func(ke tui.KeyEvent) {
+			c.count.Set(c.count.Get() - 1)
+		}),
+	}
+}
+
+func (c *counterApp) HandleMouse(me tui.MouseEvent) bool {
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		if c.incrementBtn.El() != nil && c.incrementBtn.El().ContainsPoint(me.X, me.Y) {
+			debug.Log("increment via HandleMouse")
+			c.count.Set(c.count.Get() + 1)
+			return true
+		}
+		if c.decrementBtn.El() != nil && c.decrementBtn.El().ContainsPoint(me.X, me.Y) {
+			c.count.Set(c.count.Get() - 1)
+			return true
+		}
+	}
+	return false
+}
+
+func (c *counterApp) tick() {
+	debug.Log("tick callback called")
+	c.count.Set(c.count.Get() + 1)
+}
+
+templ (c *counterApp) Render() {
+	incrementBtn := c.incrementBtn
+	decrementBtn := c.decrementBtn
 	<div class="flex-col gap-1 p-2"
-	     onKeyPress={handleKeys(count)}
-	     onTimer={tui.OnTimer(time.Second, tick(count))}
-	     focusable={true}>
+	     onTimer={tui.OnTimer(time.Second, c.tick)}>
 		<div class="border-rounded p-1 flex-col items-center justify-center">
 			<span class="font-bold text-cyan">Reactive Counter</span>
 			<hr class="border" />
 			<span>{"Count:"}</span>
-			<span class="font-bold text-blue">{fmt.Sprintf("%d", count.Get())}</span>
+			<span class="font-bold text-blue">{fmt.Sprintf("%d", c.count.Get())}</span>
 		</div>
 		<br />
 		<div class="flex gap-1 justify-center">
-			<button onClick={increment(count)}>{" + "}</button>
-			<button onClick={decrement(count)}>{" - "}</button>
+			<button ref={incrementBtn}>{" + "}</button>
+			<button ref={decrementBtn}>{" - "}</button>
 		</div>
 		<div class="flex justify-center">
-			<span class="font-dim">{"Press q to quit"}</span>
+			<span class="font-dim">{"Press +/- or q to quit"}</span>
 		</div>
 	</div>
-}
-
-func increment(count *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		debug.Log("increment callback called")
-		count.Set(count.Get() + 1)
-	}
-}
-
-func decrement(count *tui.State[int]) func(*tui.Element) {
-	return func(el *tui.Element) {
-		count.Set(count.Get() - 1)
-	}
-}
-
-func handleKeys(count *tui.State[int]) func(*tui.Element, tui.KeyEvent) bool {
-	return func(el *tui.Element, e tui.KeyEvent) bool {
-		debug.Log("[CounterUI] handleKeys called: %+v", e)
-		switch e.Rune {
-		case '+':
-			count.Set(count.Get() + 1)
-			return true
-		case '-':
-			count.Set(count.Get() - 1)
-			return true
-		}
-		return false
-	}
-}
-
-func tick(count *tui.State[int]) func() {
-	return func() {
-		debug.Log("tick callback called")
-		count.Set(count.Get() + 1)
-	}
 }

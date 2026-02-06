@@ -10,12 +10,14 @@ import (
 )
 
 type scrollableApp struct {
-	items []string
+	items   []string
+	content *tui.Ref
 }
 
 func Scrollable(items []string) *scrollableApp {
 	return &scrollableApp{
-		items: items,
+		items:   items,
+		content: tui.NewRef(),
 	}
 }
 
@@ -23,44 +25,22 @@ func (s *scrollableApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		// Custom j/k scrolling
+		tui.OnRune('j', func(ke tui.KeyEvent) {
+			if s.content.El() != nil {
+				s.content.El().ScrollBy(0, 1)
+			}
+		}),
+		tui.OnRune('k', func(ke tui.KeyEvent) {
+			if s.content.El() != nil {
+				s.content.El().ScrollBy(0, -1)
+			}
+		}),
 	}
-}
-
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	switch e.Key {
-	case tui.KeyDown:
-		el.ScrollBy(0, 1)
-		return true
-	case tui.KeyUp:
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-func handleMouseScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
 }
 
 func (s *scrollableApp) Render() *tui.Element {
+	content := s.content
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -83,10 +63,9 @@ func (s *scrollableApp) Render() *tui.Element {
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
-		tui.WithOnEvent(handleMouseScroll),
-		tui.WithOnKeyPress(handleScrollKeys),
 		tui.WithFocusable(true),
 	)
+	content.Set(__tui_3)
 	for i, item := range s.items {
 		_ = i
 		__tui_4 := tui.New(

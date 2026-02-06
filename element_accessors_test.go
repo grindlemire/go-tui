@@ -67,62 +67,7 @@ func TestElement_OnUpdate_CalledOnEachRender(t *testing.T) {
 	}
 }
 
-// --- Event Handler Tests ---
-
-func TestElement_SetOnKeyPress(t *testing.T) {
-	var receivedEvent KeyEvent
-	e := New()
-
-	e.SetOnKeyPress(func(_ *Element, event KeyEvent) bool {
-		receivedEvent = event
-		return true
-	})
-
-	// Dispatch a key event
-	sentEvent := KeyEvent{Key: KeyRune, Rune: 'a'}
-	e.HandleEvent(sentEvent)
-
-	if receivedEvent != sentEvent {
-		t.Errorf("SetOnKeyPress handler should receive the event, got %v, want %v", receivedEvent, sentEvent)
-	}
-}
-
-func TestElement_SetOnClick(t *testing.T) {
-	clickCalled := false
-	e := New()
-
-	e.SetOnClick(func(_ *Element) {
-		clickCalled = true
-	})
-
-	// onClick is stored but not invoked by HandleEvent (that's for key events)
-	// The onClick handler would be invoked by mouse events in future
-	if e.onClick == nil {
-		t.Error("SetOnClick should store the handler")
-	}
-
-	// Call the handler directly to verify it works
-	e.onClick(e)
-	if !clickCalled {
-		t.Error("onClick handler should be callable")
-	}
-}
-
-func TestElement_WithOnKeyPress_DoesNotImplyFocusable(t *testing.T) {
-	e := New(WithOnKeyPress(func(*Element, KeyEvent) bool { return false }))
-
-	if e.IsFocusable() {
-		t.Error("WithOnKeyPress should not set focusable = true")
-	}
-}
-
-func TestElement_WithOnClick_ImpliesFocusable(t *testing.T) {
-	e := New(WithOnClick(func(*Element) {}))
-
-	if !e.IsFocusable() {
-		t.Error("WithOnClick should set focusable = true")
-	}
-}
+// --- Focusable Tests ---
 
 func TestElement_WithFocusable(t *testing.T) {
 	type tc struct {
@@ -292,23 +237,3 @@ func TestElement_AddChild_MarksDirty(t *testing.T) {
 	}
 }
 
-func TestElement_HandleEvent_CallsOnKeyPress(t *testing.T) {
-	handlerCalled := false
-	var receivedEvent KeyEvent
-
-	e := New(WithOnKeyPress(func(_ *Element, event KeyEvent) bool {
-		handlerCalled = true
-		receivedEvent = event
-		return true
-	}))
-
-	sentEvent := KeyEvent{Key: KeyEnter}
-	e.HandleEvent(sentEvent)
-
-	if !handlerCalled {
-		t.Error("HandleEvent should call onKeyPress handler for key events")
-	}
-	if receivedEvent != sentEvent {
-		t.Errorf("onKeyPress should receive the event, got %v, want %v", receivedEvent, sentEvent)
-	}
-}

@@ -26,6 +26,17 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		// Custom j/k scrolling
+		tui.OnRune('j', func(ke tui.KeyEvent) {
+			if s.content.El() != nil {
+				s.content.El().ScrollBy(0, 1)
+			}
+		}),
+		tui.OnRune('k', func(ke tui.KeyEvent) {
+			if s.content.El() != nil {
+				s.content.El().ScrollBy(0, -1)
+			}
+		}),
 	}
 }
 
@@ -60,8 +71,6 @@ templ (s *streamingApp) Render() {
 
 		<div ref={content}
 		     class="border-single p-1 flex-col flex-grow overflow-y-scroll"
-		     onEvent={handleMouseScroll}
-		     onKeyPress={handleScrollKeys}
 		     focusable={true}></div>
 
 		<div class="flex gap-2">
@@ -69,32 +78,6 @@ templ (s *streamingApp) Render() {
 			<span>Elapsed: {fmt.Sprintf("%ds", s.elapsed.Get())}</span>
 		</div>
 
-		<span class="font-dim">Press q to quit</span>
+		<span class="font-dim">Press q to quit, j/k to scroll</span>
 	</div>
-}
-
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-func handleMouseScroll(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
 }

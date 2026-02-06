@@ -34,12 +34,18 @@ func (r *refsApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (r *refsApp) increment(el *tui.Element) {
-	r.count.Set(r.count.Get() + 1)
-}
-
-func (r *refsApp) decrement(el *tui.Element) {
-	r.count.Set(r.count.Get() - 1)
+func (r *refsApp) HandleMouse(me tui.MouseEvent) bool {
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		if r.incrementBtn.El() != nil && r.incrementBtn.El().ContainsPoint(me.X, me.Y) {
+			r.count.Set(r.count.Get() + 1)
+			return true
+		}
+		if r.decrementBtn.El() != nil && r.decrementBtn.El().ContainsPoint(me.X, me.Y) {
+			r.count.Set(r.count.Get() - 1)
+			return true
+		}
+	}
+	return false
 }
 
 func (r *refsApp) Render() *tui.Element {
@@ -82,7 +88,6 @@ func (r *refsApp) Render() *tui.Element {
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_8 := tui.New(
-		tui.WithOnClick(r.increment),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithPadding(1),
@@ -94,7 +99,6 @@ func (r *refsApp) Render() *tui.Element {
 	__tui_8.AddChild(__tui_9)
 	__tui_7.AddChild(__tui_8)
 	__tui_10 := tui.New(
-		tui.WithOnClick(r.decrement),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithPadding(1),

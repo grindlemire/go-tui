@@ -136,12 +136,7 @@ var knownAttributes = map[string]bool{
 	// Focus
 	"onFocus":   true,
 	"onBlur":    true,
-	"onEvent":   true,
 	"focusable": true,
-
-	// Event handlers (no bool return)
-	"onKeyPress": true,
-	"onClick":    true,
 
 	// Watchers
 	"onChannel": true,
@@ -185,16 +180,15 @@ var stateParamRegex = regexp.MustCompile(`\*tui\.State\[(.+)\]$`)
 
 // attributeSimilar maps common typos to correct attribute names.
 var attributeSimilar = map[string]string{
-	"colour":     "color",
-	"color":      "background",
-	"onclick":    "onEvent",
-	"onfocus":    "onFocus",
-	"onblur":     "onBlur",
-	"flexgrow":   "flexGrow",
-	"flexshrink": "flexShrink",
-	"textstyle":  "textStyle",
-	"textalign":  "textAlign",
-	"alignself":  "alignSelf",
+	"colour":      "color",
+	"color":       "background",
+	"onfocus":     "onFocus",
+	"onblur":      "onBlur",
+	"flexgrow":    "flexGrow",
+	"flexshrink":  "flexShrink",
+	"textstyle":   "textStyle",
+	"textalign":   "textAlign",
+	"alignself":   "alignSelf",
 	"borderstyle": "borderStyle",
 }
 

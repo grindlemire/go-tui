@@ -180,15 +180,11 @@ func (g *Generator) extractTextContent(children []Node) string {
 	return ""
 }
 
-// handlerAttributes maps handler/callback attribute names to their With* option functions.
+// handlerAttributes maps focus callback attribute names to their With* option functions.
 // Handlers are emitted as inline options during element creation (self-inject pattern).
-// When adding a new handler attribute, add it here AND add the With* option to element_options.go.
 var handlerAttributes = map[string]string{
-	"onKeyPress": "tui.WithOnKeyPress",
-	"onClick":    "tui.WithOnClick",
-	"onEvent":    "tui.WithOnEvent",
-	"onFocus":    "tui.WithOnFocus",
-	"onBlur":     "tui.WithOnBlur",
+	"onFocus": "tui.WithOnFocus",
+	"onBlur":  "tui.WithOnBlur",
 }
 
 // watcherAttributes are special attributes that create watchers, not element options.
@@ -199,8 +195,6 @@ var watcherAttributes = map[string]bool{
 }
 
 // attributeToOption maps DSL attribute names to tui.With* functions.
-// NOTE: Handler attributes (onKeyPress, onClick, etc.) are NOT in this map -
-// they are in handlerAttributes and are deferred so refs are assigned first.
 var attributeToOption = map[string]string{
 	// Dimensions
 	"width":         "tui.WithWidth(%s)",

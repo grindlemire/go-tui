@@ -279,17 +279,17 @@ templ Page() {
 	}
 
 	// Check that event handler attributes are included
-	foundOnClick := false
+	foundOnFocus := false
 	for _, item := range result.Items {
-		if item.Label == "onClick" {
-			foundOnClick = true
+		if item.Label == "onFocus" {
+			foundOnFocus = true
 			break
 		}
 	}
-	// onClick should already be in div's attribute set (it's in eventAttrs())
+	// onFocus should already be in div's attribute set (it's in eventAttrs())
 	// so it appears via getAttributeCompletions
-	if !foundOnClick {
-		t.Error("expected 'onClick' in attribute completions for div")
+	if !foundOnFocus {
+		t.Error("expected 'onFocus' in attribute completions for div")
 	}
 }
 

@@ -251,10 +251,10 @@ func TestSemanticTokens_EventHandlerAttributes(t *testing.T) {
 			content: `package main
 
 templ Button() {
-	<button onClick={handleClick} class="p-1">Click</button>
+	<button onFocus={handleFocus} class="p-1">Click</button>
 }
 `,
-			wantDecorator: 2, // onClick as decorator + the @ if there's a component call (just onClick here)
+			wantDecorator: 2, // onFocus as decorator + the @ if there's a component call (just onFocus here)
 			wantFunction:  1, // class as function
 		},
 	}
@@ -274,7 +274,7 @@ templ Button() {
 			// Event handler attributes should be decorated differently
 			decoratorCount := countByType(tokens, TokenTypeDecorator)
 			if decoratorCount < 1 {
-				t.Errorf("got %d decorator tokens, want at least 1 (for onClick)", decoratorCount)
+				t.Errorf("got %d decorator tokens, want at least 1 (for onFocus)", decoratorCount)
 			}
 
 			// Regular attributes should be function tokens

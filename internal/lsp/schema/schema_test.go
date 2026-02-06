@@ -115,9 +115,9 @@ func TestGetAttribute(t *testing.T) {
 			attr:    "border",
 			wantCat: "visual",
 		},
-		"div has onClick": {
+		"div has onFocus": {
 			tag:     "div",
-			attr:    "onClick",
+			attr:    "onFocus",
 			wantCat: "event",
 		},
 		"span has text": {
@@ -168,20 +168,11 @@ func TestGetEventHandler(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"onClick exists": {
-			name: "onClick",
-		},
 		"onFocus exists": {
 			name: "onFocus",
 		},
 		"onBlur exists": {
 			name: "onBlur",
-		},
-		"onKeyPress exists": {
-			name: "onKeyPress",
-		},
-		"onEvent exists": {
-			name: "onEvent",
 		},
 		"unknown handler returns nil": {
 			name:    "onSwipe",
@@ -242,8 +233,8 @@ func TestIsEventHandler(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"onClick is event":     {name: "onClick", want: true},
 		"onFocus is event":     {name: "onFocus", want: true},
+		"onBlur is event":      {name: "onBlur", want: true},
 		"class is not event":   {name: "class", want: false},
 		"padding is not event": {name: "padding", want: false},
 	}
@@ -403,21 +394,21 @@ func TestContainerHasEventAttrs(t *testing.T) {
 		t.Fatal("div element not found")
 	}
 
-	hasOnClick := false
 	hasOnFocus := false
+	hasOnBlur := false
 	for _, attr := range div.Attributes {
-		if attr.Name == "onClick" {
-			hasOnClick = true
-		}
 		if attr.Name == "onFocus" {
 			hasOnFocus = true
 		}
+		if attr.Name == "onBlur" {
+			hasOnBlur = true
+		}
 	}
 
-	if !hasOnClick {
-		t.Error("div should have onClick attribute")
-	}
 	if !hasOnFocus {
 		t.Error("div should have onFocus attribute")
+	}
+	if !hasOnBlur {
+		t.Error("div should have onBlur attribute")
 	}
 }

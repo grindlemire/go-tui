@@ -8,6 +8,7 @@ import (
 
 // StreamApp - fully declarative with onChannel and onTimer in DSL
 // content ref is declared explicitly for cross-element access
+// Scrolling uses built-in arrow keys and mouse wheel (Element.handleScrollEvent)
 templ StreamApp(dataCh <-chan string) {
 	lineCount := tui.NewState(0)
 	elapsed := tui.NewState(0)
@@ -24,19 +25,17 @@ templ StreamApp(dataCh <-chan string) {
 			direction={tui.Row}
 			justify={tui.JustifyCenter}
 			align={tui.AlignCenter}>
-			<span class="font-bold text-white">{"Streaming DSL Demo - Use j/k to scroll, q to quit"}</span>
+			<span class="font-bold text-white">{"Streaming DSL Demo - Use arrow keys to scroll, q to quit"}</span>
 		</div>
 
-		// Content area with ref
+		// Content area with ref - scrolling handled by Element.handleScrollEvent
 		<div
 			ref={content}
 			class="flex-col border-cyan"
 			border={tui.BorderSingle}
 			flexGrow={1}
 			scrollable={tui.ScrollVertical}
-			focusable={true}
-			onKeyPress={handleScrollKeys}
-			onEvent={handleEvent}></div>
+			focusable={true}></div>
 
 		// Footer with reactive state (auto-updates when lineCount/elapsed change)
 		<div
@@ -76,30 +75,4 @@ func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 			el.ScrollToBottom()
 		}
 	}
-}
-
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-func handleEvent(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
 }

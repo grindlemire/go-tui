@@ -361,36 +361,3 @@ func TestElement_ScrollUnhandledEvent(t *testing.T) {
 	}
 }
 
-func TestElement_UserHandlerCalledFirst(t *testing.T) {
-	handlerCalled := false
-
-	e := New(
-		WithHeight(10),
-		WithScrollable(ScrollVertical),
-		WithOnEvent(func(_ *Element, event Event) bool {
-			handlerCalled = true
-			return true // Consume the event
-		}),
-	)
-
-	for i := 0; i < 20; i++ {
-		e.AddChild(New(WithHeight(1)))
-	}
-
-	buf := NewBuffer(80, 25)
-	e.Render(buf, 80, 10)
-
-	// Send a scroll event
-	event := KeyEvent{Key: KeyDown}
-	e.HandleEvent(event)
-
-	if !handlerCalled {
-		t.Error("User handler should be called first")
-	}
-
-	// Scroll should NOT have happened because user handler consumed the event
-	_, y := e.ScrollOffset()
-	if y != 0 {
-		t.Errorf("Scroll should not have happened, got y=%d", y)
-	}
-}

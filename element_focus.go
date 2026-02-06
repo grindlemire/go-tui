@@ -40,37 +40,6 @@ func (e *Element) SetFocusable(focusable bool) {
 	e.focusable = focusable
 }
 
-// --- Event Handler API ---
-
-// SetOnKeyPress sets a handler for key press events.
-// The handler receives the element as its first parameter (self-inject).
-// Return true to consume the event (stops bubbling to parent elements).
-// Return false to let the event bubble up to the parent.
-// Does NOT set focusable — this handler participates in bubbling without
-// making the element a Tab navigation target. Use SetFocusable(true) explicitly
-// if this element should receive focus directly.
-func (e *Element) SetOnKeyPress(fn func(*Element, KeyEvent) bool) {
-	e.onKeyPress = fn
-}
-
-// SetOnClick sets a handler for click events.
-// The handler receives the element as its first parameter (self-inject).
-// No return value needed - mutations mark dirty automatically via MarkDirty().
-// Implicitly sets focusable = true so the element can receive mouse and keyboard events.
-func (e *Element) SetOnClick(fn func(*Element)) {
-	e.focusable = true
-	e.onClick = fn
-}
-
-// SetOnEvent sets the event handler for this element.
-// The handler receives the element as its first parameter (self-inject).
-// Does NOT set focusable — this handler participates in bubbling without
-// making the element a Tab navigation target. Use SetFocusable(true) explicitly
-// if this element should receive focus directly.
-func (e *Element) SetOnEvent(fn func(*Element, Event) bool) {
-	e.onEvent = fn
-}
-
 // SetOnFocus sets a handler that's called when this element gains focus.
 // The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true.
@@ -87,86 +56,11 @@ func (e *Element) SetOnBlur(fn func(*Element)) {
 	e.onBlur = fn
 }
 
-// bubbleOnEvent walks up the parent chain calling onEvent handlers.
-// This allows inspection/logging handlers on ancestors to see events
-// before they are consumed by local handlers like onClick.
-// Returns true if any onEvent handler consumed the event.
-func (e *Element) bubbleOnEvent(event Event) bool {
-	for el := e; el != nil; el = el.parent {
-		if el.onEvent != nil {
-			debug.Log("Element.bubbleOnEvent: calling onEvent on element text=%q", el.text)
-			if el.onEvent(el, event) {
-				debug.Log("Element.bubbleOnEvent: onEvent consumed event")
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // HandleEvent dispatches an event to this element's handler.
+// Only handles scroll events for scrollable elements.
 // Returns true if the event was consumed.
 func (e *Element) HandleEvent(event Event) bool {
-	debug.Log("Element.HandleEvent: event=%T text=%q focusable=%v onClick=%v", event, e.text, e.focusable, e.onClick != nil)
-
-	// First, bubble onEvent notifications up the parent chain.
-	// This allows inspection/logging handlers on ancestors to see all events
-	// before they are consumed by local handlers like onClick.
-	if e.bubbleOnEvent(event) {
-		debug.Log("Element.HandleEvent: onEvent in ancestor chain consumed event")
-		return true
-	}
-
-	// Handle key events with bubbling support
-	if keyEvent, ok := event.(KeyEvent); ok {
-		debug.Log("Element.HandleEvent: KeyEvent key=%d rune=%c", keyEvent.Key, keyEvent.Rune)
-		if e.onKeyPress != nil {
-			debug.Log("Element.HandleEvent: calling onKeyPress handler")
-			if e.onKeyPress(e, keyEvent) {
-				debug.Log("Element.HandleEvent: onKeyPress consumed event")
-				return true
-			}
-		}
-
-		// Trigger onClick on Enter or Space when focused
-		if e.onClick != nil && (keyEvent.Key == KeyEnter || keyEvent.Rune == ' ') {
-			debug.Log("Element.HandleEvent: triggering onClick via Enter/Space")
-			e.onClick(e)
-			return true
-		}
-
-		// Bubble to parent (same pattern as mouse events)
-		if e.parent != nil {
-			debug.Log("Element.HandleEvent: bubbling key event to parent")
-			return e.parent.HandleEvent(event)
-		}
-	}
-
-	// Handle MouseEvent - trigger onClick for left click press
-	// Bubbles up to parent elements if this element doesn't handle it
-	if mouseEvent, ok := event.(MouseEvent); ok {
-		debug.Log("Element.HandleEvent: MouseEvent button=%d action=%d x=%d y=%d", mouseEvent.Button, mouseEvent.Action, mouseEvent.X, mouseEvent.Y)
-		if mouseEvent.Button == MouseLeft && mouseEvent.Action == MousePress {
-			if e.onClick != nil {
-				debug.Log("Element.HandleEvent: triggering onClick via mouse click")
-				e.onClick(e)
-				return true
-			}
-			// Bubble up to parent if we didn't handle it
-			if e.parent != nil {
-				debug.Log("Element.HandleEvent: bubbling mouse event to parent")
-				return e.parent.HandleEvent(event)
-			}
-		}
-		// Bubble wheel events up to parent (for scrollable containers)
-		if mouseEvent.Button == MouseWheelUp || mouseEvent.Button == MouseWheelDown {
-			if e.parent != nil {
-				debug.Log("Element.HandleEvent: bubbling wheel event to parent")
-				return e.parent.HandleEvent(event)
-			}
-		}
-		return false
-	}
+	debug.Log("Element.HandleEvent: event=%T text=%q scrollMode=%v", event, e.text, e.scrollMode)
 
 	// Handle scroll events for scrollable elements
 	if e.scrollMode != ScrollNone {
@@ -177,6 +71,12 @@ func (e *Element) HandleEvent(event Event) bool {
 
 	debug.Log("Element.HandleEvent: event not consumed")
 	return false
+}
+
+// ContainsPoint returns true if the point (x, y) is within the element's bounds.
+// This is useful for hit testing in HandleMouse implementations.
+func (e *Element) ContainsPoint(x, y int) bool {
+	return e.layout.Rect.Contains(x, y)
 }
 
 // handleScrollEvent handles keyboard and mouse wheel events for scrolling.

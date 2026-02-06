@@ -272,7 +272,6 @@ func TestAnalyzer_ValidateAttribute(t *testing.T) {
 		"borderStyle": {attr: "borderStyle", valid: true},
 		"text":        {attr: "text", valid: true},
 		"textStyle":   {attr: "textStyle", valid: true},
-		"onEvent":     {attr: "onEvent", valid: true},
 		"onFocus":     {attr: "onFocus", valid: true},
 		"flexGrow":    {attr: "flexGrow", valid: true},
 		"class":       {attr: "class", valid: true},
@@ -300,10 +299,6 @@ func TestAnalyzer_SuggestAttribute(t *testing.T) {
 		"colour -> color/background": {
 			input:      "colour",
 			suggestion: "color",
-		},
-		"onclick -> onEvent": {
-			input:      "onclick",
-			suggestion: "onEvent",
 		},
 		"onfocus -> onFocus": {
 			input:      "onfocus",

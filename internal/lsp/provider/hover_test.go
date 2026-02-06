@@ -221,8 +221,8 @@ func TestHover_EventHandler(t *testing.T) {
 	hp := newTestHoverProvider(index)
 
 	doc := parseTestDoc("package test")
-	ctx := makeCtx(doc, NodeKindEventHandler, "onClick")
-	ctx.AttrName = "onClick"
+	ctx := makeCtx(doc, NodeKindEventHandler, "onFocus")
+	ctx.AttrName = "onFocus"
 
 	result, err := hp.Hover(ctx)
 	if err != nil {
@@ -231,7 +231,7 @@ func TestHover_EventHandler(t *testing.T) {
 	if result == nil {
 		t.Fatal("expected hover result for event handler")
 	}
-	if !strings.Contains(result.Contents.Value, "onClick") {
+	if !strings.Contains(result.Contents.Value, "onFocus") {
 		t.Errorf("hover should mention event handler name, got: %s", result.Contents.Value)
 	}
 }

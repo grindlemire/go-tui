@@ -128,7 +128,7 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 		"padding", "margin",
 		"border", "borderStyle", "background",
 		"text", "textStyle", "textAlign",
-		"onFocus", "onBlur", "onEvent",
+		"onFocus", "onBlur",
 		"scrollable", "scrollbarStyle", "scrollbarThumbStyle",
 		"disabled", "id",
 	}

@@ -127,32 +127,10 @@ func TestElement_ElementAtPoint_ReturnsNilForPointOutsideBounds(t *testing.T) {
 	}
 }
 
-func TestElement_HandleEvent_MouseClick_TriggersOnClick(t *testing.T) {
-	handlerCalled := false
+// --- HandleEvent Tests ---
 
-	e := New(WithOnClick(func(_ *Element) {
-		handlerCalled = true
-	}))
-
-	// Send a left mouse press event
-	event := MouseEvent{
-		Button: MouseLeft,
-		Action: MousePress,
-		X:      5,
-		Y:      5,
-	}
-	consumed := e.HandleEvent(event)
-
-	if !handlerCalled {
-		t.Error("HandleEvent should call onClick handler for left mouse press")
-	}
-	if !consumed {
-		t.Error("HandleEvent should return true when onClick is triggered")
-	}
-}
-
-func TestElement_HandleEvent_MouseClick_NoHandlerNotConsumed(t *testing.T) {
-	e := New() // No onClick handler
+func TestElement_HandleEvent_MouseNotHandledByDefault(t *testing.T) {
+	e := New()
 
 	event := MouseEvent{
 		Button: MouseLeft,
@@ -163,181 +141,17 @@ func TestElement_HandleEvent_MouseClick_NoHandlerNotConsumed(t *testing.T) {
 	consumed := e.HandleEvent(event)
 
 	if consumed {
-		t.Error("HandleEvent should return false when no onClick handler is set")
+		t.Error("HandleEvent should return false for mouse events (mouse handling is via component HandleMouse)")
 	}
 }
 
-func TestElement_HandleEvent_MouseRelease_DoesNotTriggerOnClick(t *testing.T) {
-	handlerCalled := false
+func TestElement_HandleEvent_KeyNotHandledByDefault(t *testing.T) {
+	e := New()
 
-	e := New(WithOnClick(func(_ *Element) {
-		handlerCalled = true
-	}))
+	event := KeyEvent{Key: KeyRune, Rune: 'x'}
+	consumed := e.HandleEvent(event)
 
-	// Send a left mouse release event (not press)
-	event := MouseEvent{
-		Button: MouseLeft,
-		Action: MouseRelease,
-		X:      5,
-		Y:      5,
-	}
-	e.HandleEvent(event)
-
-	if handlerCalled {
-		t.Error("HandleEvent should not call onClick for mouse release events")
-	}
-}
-
-func TestElement_HandleEvent_RightClick_DoesNotTriggerOnClick(t *testing.T) {
-	handlerCalled := false
-
-	e := New(WithOnClick(func(_ *Element) {
-		handlerCalled = true
-	}))
-
-	// Send a right mouse press event
-	event := MouseEvent{
-		Button: MouseRight,
-		Action: MousePress,
-		X:      5,
-		Y:      5,
-	}
-	e.HandleEvent(event)
-
-	if handlerCalled {
-		t.Error("HandleEvent should not call onClick for right click")
-	}
-}
-
-// --- Key Event Bubbling Tests ---
-
-func TestElement_HandleEvent_KeyBubblesToParent(t *testing.T) {
-	type tc struct {
-		childReturn  bool
-		expectParent bool
-	}
-
-	tests := map[string]tc{
-		"child returns false, parent receives event": {
-			childReturn:  false,
-			expectParent: true,
-		},
-		"child returns true, parent does not receive event": {
-			childReturn:  true,
-			expectParent: false,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			parentCalled := false
-			parent := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-				parentCalled = true
-				return true
-			}))
-			child := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-				return tt.childReturn
-			}))
-			parent.AddChild(child)
-
-			child.HandleEvent(KeyEvent{Key: KeyRune, Rune: 'x'})
-
-			if parentCalled != tt.expectParent {
-				t.Errorf("parentCalled = %v, want %v", parentCalled, tt.expectParent)
-			}
-		})
-	}
-}
-
-func TestElement_HandleEvent_KeyBubblesMultipleLevels(t *testing.T) {
-	grandparentCalled := false
-	grandparent := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		grandparentCalled = true
-		return true
-	}))
-	parent := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		return false // don't consume, let it bubble
-	}))
-	child := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		return false // don't consume, let it bubble
-	}))
-	grandparent.AddChild(parent)
-	parent.AddChild(child)
-
-	child.HandleEvent(KeyEvent{Key: KeyRune, Rune: 'x'})
-
-	if !grandparentCalled {
-		t.Error("key event should bubble through multiple levels to grandparent")
-	}
-}
-
-func TestElement_HandleEvent_KeyDoesNotBubbleToSibling(t *testing.T) {
-	siblingCalled := false
-	parent := New()
-	child := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		return false
-	}))
-	sibling := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		siblingCalled = true
-		return true
-	}))
-	parent.AddChild(child)
-	parent.AddChild(sibling)
-
-	child.HandleEvent(KeyEvent{Key: KeyRune, Rune: 'x'})
-
-	if siblingCalled {
-		t.Error("key event should not bubble to sibling elements")
-	}
-}
-
-func TestElement_HandleEvent_KeyBubblesWithNoHandler(t *testing.T) {
-	parentCalled := false
-	parent := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		parentCalled = true
-		return true
-	}))
-	child := New() // no onKeyPress handler
-	parent.AddChild(child)
-
-	child.HandleEvent(KeyEvent{Key: KeyRune, Rune: 'x'})
-
-	if !parentCalled {
-		t.Error("key event should bubble to parent when child has no handler")
-	}
-}
-
-func TestElement_HandleEvent_OnEventConsumesBeforeBubble(t *testing.T) {
-	parentCalled := false
-	parent := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		parentCalled = true
-		return true
-	}))
-	child := New(WithOnEvent(func(_ *Element, _ Event) bool {
-		return true // consume the event
-	}))
-	parent.AddChild(child)
-
-	child.HandleEvent(KeyEvent{Key: KeyRune, Rune: 'x'})
-
-	if parentCalled {
-		t.Error("key event should not bubble when onEvent consumes it")
-	}
-}
-
-func TestElement_HandleEvent_OnClickConsumesPreventsKeyBubble(t *testing.T) {
-	parentCalled := false
-	parent := New(WithOnKeyPress(func(_ *Element, _ KeyEvent) bool {
-		parentCalled = true
-		return true
-	}))
-	child := New(WithOnClick(func(_ *Element) {}))
-	parent.AddChild(child)
-
-	// Space triggers onClick, which should consume the event
-	child.HandleEvent(KeyEvent{Rune: ' '})
-
-	if parentCalled {
-		t.Error("key event should not bubble when onClick consumes Enter/Space")
+	if consumed {
+		t.Error("HandleEvent should return false for key events (key handling is via component KeyMap)")
 	}
 }

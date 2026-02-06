@@ -35,32 +35,6 @@ func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 	}
 }
 
-func handleScrollKeys(el *tui.Element, e tui.KeyEvent) bool {
-	switch e.Rune {
-	case 'j':
-		el.ScrollBy(0, 1)
-		return true
-	case 'k':
-		el.ScrollBy(0, -1)
-		return true
-	}
-	return false
-}
-
-func handleEvent(el *tui.Element, e tui.Event) bool {
-	if mouse, ok := e.(tui.MouseEvent); ok {
-		switch mouse.Button {
-		case tui.MouseWheelUp:
-			el.ScrollBy(0, -1)
-			return true
-		case tui.MouseWheelDown:
-			el.ScrollBy(0, 1)
-			return true
-		}
-	}
-	return false
-}
-
 type StreamAppView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
@@ -90,7 +64,7 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_2 := tui.New(
-		tui.WithText("Streaming DSL Demo - Use j/k to scroll, q to quit"),
+		tui.WithText("Streaming DSL Demo - Use arrow keys to scroll, q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	__tui_1.AddChild(__tui_2)
@@ -102,8 +76,6 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithFocusable(true),
-		tui.WithOnKeyPress(handleScrollKeys),
-		tui.WithOnEvent(handleEvent),
 	)
 	content.Set(__tui_3)
 	__tui_0.AddChild(__tui_3)

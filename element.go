@@ -61,11 +61,6 @@ type Element struct {
 	focused   bool
 	onFocus   func(*Element)
 	onBlur    func(*Element)
-	onEvent   func(*Element, Event) bool
-
-	// Event handlers
-	onKeyPress func(*Element, KeyEvent) bool // returns true to consume (stops bubbling)
-	onClick    func(*Element)
 
 	// Tree notification
 	onChildAdded     func(*Element)
