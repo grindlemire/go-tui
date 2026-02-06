@@ -6,13 +6,13 @@ type toggles struct {
 	sound     *tui.State[bool]
 	notify    *tui.State[bool]
 	dark      *tui.State[bool]
-	events    *Events[string]
+	events    *tui.Events[string]
 	soundBtn  *tui.Ref
 	notifyBtn *tui.Ref
 	themeBtn  *tui.Ref
 }
 
-func Toggles(events *Events[string]) *toggles {
+func Toggles(events *tui.Events[string]) *toggles {
 	return &toggles{
 		sound:     tui.NewState(true),
 		notify:    tui.NewState(false),
@@ -56,9 +56,9 @@ func (t *toggles) toggleTheme() {
 }
 
 templ (t *toggles) Render() {
-	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>
-		<span class="text-gradient-green-cyan font-bold">{"Toggles"}</span>
-		<div class="flex gap-1 items-center">
+	<div class="border-single p-1 flex-col gap-1 grow justify-center">
+		<span class="text-gradient-green-cyan font-bold text-center">{"Toggles"}</span>
+		<div class="flex gap-1 items-center justify-center">
 			<button ref={t.soundBtn}>{"Sound  "}</button>
 			@if t.sound.Get() {
 				<span class="text-green font-bold">ON</span>
@@ -66,7 +66,7 @@ templ (t *toggles) Render() {
 				<span class="text-red font-bold">OFF</span>
 			}
 		</div>
-		<div class="flex gap-1 items-center">
+		<div class="flex gap-1 items-center justify-center">
 			<button ref={t.notifyBtn}>{"Notify "}</button>
 			@if t.notify.Get() {
 				<span class="text-green font-bold">ON</span>
@@ -74,7 +74,7 @@ templ (t *toggles) Render() {
 				<span class="text-red font-bold">OFF</span>
 			}
 		</div>
-		<div class="flex gap-1 items-center">
+		<div class="flex gap-1 items-center justify-center">
 			<button ref={t.themeBtn}>{"Theme  "}</button>
 			@if t.dark.Get() {
 				<span class="text-cyan font-bold">Dark</span>
@@ -82,7 +82,5 @@ templ (t *toggles) Render() {
 				<span class="text-yellow font-bold">Light</span>
 			}
 		</div>
-		<div flexGrow={1.0}></div>
-		<span class="font-dim">{"click or press 1/2/3"}</span>
 	</div>
 }

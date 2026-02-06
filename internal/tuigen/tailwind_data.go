@@ -19,7 +19,23 @@ var tailwindClasses = map[string]TailwindMapping{
 	"flex-row": {Option: "tui.WithDirection(tui.Row)", NeedsImport: "tui"},
 	"flex-col": {Option: "tui.WithDirection(tui.Column)", NeedsImport: "tui"},
 
-	// Flex properties
+	// Flex grow/shrink (Tailwind standard)
+	"grow":     {Option: "tui.WithFlexGrow(1)", NeedsImport: ""},
+	"grow-0":   {Option: "tui.WithFlexGrow(0)", NeedsImport: ""},
+	"shrink":   {Option: "tui.WithFlexShrink(1)", NeedsImport: ""},
+	"shrink-0": {Option: "tui.WithFlexShrink(0)", NeedsImport: ""},
+
+	// Flex shorthand (Tailwind standard)
+	// flex-1: grow=1, shrink=1 - takes available space
+	// flex-auto: grow=1, shrink=1 - like flex-1 but respects content size
+	// flex-initial: grow=0, shrink=1 - doesn't grow but can shrink
+	// flex-none: grow=0, shrink=0 - fixed size
+	"flex-1":       {Option: "tui.WithFlexGrow(1), tui.WithFlexShrink(1)", NeedsImport: ""},
+	"flex-auto":    {Option: "tui.WithFlexGrow(1), tui.WithFlexShrink(1)", NeedsImport: ""},
+	"flex-initial": {Option: "tui.WithFlexGrow(0), tui.WithFlexShrink(1)", NeedsImport: ""},
+	"flex-none":    {Option: "tui.WithFlexGrow(0), tui.WithFlexShrink(0)", NeedsImport: ""},
+
+	// Legacy flex properties (keep for backwards compatibility)
 	"flex-grow":   {Option: "tui.WithFlexGrow(1)", NeedsImport: ""},
 	"flex-shrink": {Option: "tui.WithFlexShrink(1)", NeedsImport: ""},
 

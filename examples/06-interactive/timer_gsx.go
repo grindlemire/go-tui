@@ -13,10 +13,10 @@ import (
 type timer struct {
 	elapsed *tui.State[int]
 	running *tui.State[bool]
-	events  *Events[string]
+	events  *tui.Events[string]
 }
 
-func Timer(events *Events[string]) *timer {
+func Timer(events *tui.Events[string]) *timer {
 	return &timer{
 		elapsed: tui.NewState(0),
 		running: tui.NewState(true),
@@ -65,11 +65,13 @@ func (t *timer) Render() *tui.Element {
 		tui.WithPadding(1),
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
-		tui.WithFlexGrow(1.0),
+		tui.WithFlexGrow(1),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Timer"),
 		tui.WithTextGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextAlign(tui.TextAlignCenter),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
@@ -77,6 +79,7 @@ func (t *timer) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_3 := tui.New(
 		tui.WithText("Elapsed:"),
@@ -93,6 +96,7 @@ func (t *timer) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_6 := tui.New(
 		tui.WithText("Status:"),
@@ -113,15 +117,6 @@ func (t *timer) Render() *tui.Element {
 		__tui_5.AddChild(__tui_8)
 	}
 	__tui_0.AddChild(__tui_5)
-	__tui_9 := tui.New(
-		tui.WithFlexGrow(1.0),
-	)
-	__tui_0.AddChild(__tui_9)
-	__tui_10 := tui.New(
-		tui.WithText("[space] toggle [r] reset"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_0.AddChild(__tui_10)
 
 	return __tui_0
 }

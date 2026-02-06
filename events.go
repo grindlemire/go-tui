@@ -1,12 +1,9 @@
-package main
+package tui
 
-import (
-	"sync"
-
-	tui "github.com/grindlemire/go-tui"
-)
+import "sync"
 
 // Events is a simple event bus for cross-component communication.
+// It is generic over the event type T.
 type Events[T any] struct {
 	mu        sync.RWMutex
 	listeners []func(T)
@@ -17,7 +14,7 @@ func NewEvents[T any]() *Events[T] {
 	return &Events[T]{}
 }
 
-// Emit sends an event to all listeners.
+// Emit sends an event to all listeners and marks the UI dirty.
 func (e *Events[T]) Emit(event T) {
 	e.mu.RLock()
 	listeners := e.listeners
@@ -26,7 +23,7 @@ func (e *Events[T]) Emit(event T) {
 	for _, fn := range listeners {
 		fn(event)
 	}
-	tui.MarkDirty()
+	MarkDirty()
 }
 
 // Subscribe adds a listener for events.

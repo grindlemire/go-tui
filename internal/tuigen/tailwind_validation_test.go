@@ -97,17 +97,13 @@ func TestFindSimilarClass(t *testing.T) {
 			input:    "center",
 			expected: "text-center",
 		},
-		"grow to flex-grow": {
-			input:    "grow",
-			expected: "flex-grow",
-		},
-		"shrink to flex-shrink": {
-			input:    "shrink",
-			expected: "flex-shrink",
-		},
-		"no-grow to flex-grow-0": {
+		"no-grow to grow-0": {
 			input:    "no-grow",
-			expected: "flex-grow-0",
+			expected: "grow-0",
+		},
+		"no-shrink to shrink-0": {
+			input:    "no-shrink",
+			expected: "shrink-0",
 		},
 		"padding-top to pt-1": {
 			input:    "padding-top",

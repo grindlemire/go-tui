@@ -10,7 +10,7 @@ type eventInspector struct {
 	eventCount *tui.State[int]
 }
 
-func EventInspector(events *Events[string]) *eventInspector {
+func EventInspector(events *tui.Events[string]) *eventInspector {
 	e := &eventInspector{
 		lastEvent:  tui.NewState("(none)"),
 		eventCount: tui.NewState(0),
@@ -25,17 +25,15 @@ func EventInspector(events *Events[string]) *eventInspector {
 }
 
 templ (e *eventInspector) Render() {
-	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>
-		<span class="text-gradient-magenta-cyan font-bold">{"Event Inspector"}</span>
-		<div class="flex gap-1 items-center">
+	<div class="border-single p-1 flex-col gap-1 flex-grow justify-center">
+		<span class="text-gradient-magenta-cyan font-bold text-center">{"Event Inspector"}</span>
+		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Last:</span>
 			<span class="text-magenta font-bold">{e.lastEvent.Get()}</span>
 		</div>
-		<div class="flex gap-1 items-center">
+		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Count:</span>
 			<span class="text-cyan font-bold">{fmt.Sprintf("%d", e.eventCount.Get())}</span>
 		</div>
-		<div flexGrow={1.0}></div>
-		<span class="font-dim">{"events from all components"}</span>
 	</div>
 }

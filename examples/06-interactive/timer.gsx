@@ -9,10 +9,10 @@ import (
 type timer struct {
 	elapsed *tui.State[int]
 	running *tui.State[bool]
-	events  *Events[string]
+	events  *tui.Events[string]
 }
 
-func Timer(events *Events[string]) *timer {
+func Timer(events *tui.Events[string]) *timer {
 	return &timer{
 		elapsed: tui.NewState(0),
 		running: tui.NewState(true),
@@ -56,13 +56,13 @@ func formatTime(seconds int) string {
 }
 
 templ (t *timer) Render() {
-	<div class="border-single p-1 flex-col gap-1" flexGrow={1.0}>
-		<span class="text-gradient-blue-cyan font-bold">{"Timer"}</span>
-		<div class="flex gap-1 items-center">
+	<div class="border-single p-1 flex-col gap-1 grow justify-center">
+		<span class="text-gradient-blue-cyan font-bold text-center">{"Timer"}</span>
+		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Elapsed:</span>
 			<span class="text-blue font-bold">{formatTime(t.elapsed.Get())}</span>
 		</div>
-		<div class="flex gap-1 items-center">
+		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Status:</span>
 			@if t.running.Get() {
 				<span class="text-green font-bold">{"Running"}</span>
@@ -70,7 +70,5 @@ templ (t *timer) Render() {
 				<span class="text-red font-bold">{"Stopped"}</span>
 			}
 		</div>
-		<div flexGrow={1.0}></div>
-		<span class="font-dim">{"[space] toggle [r] reset"}</span>
 	</div>
 }

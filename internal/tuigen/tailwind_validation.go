@@ -37,10 +37,8 @@ var similarClasses = map[string]string{
 	"align-center":   "text-center",
 	"align-left":     "text-left",
 	"align-right":    "text-right",
-	"grow":           "flex-grow",
-	"shrink":         "flex-shrink",
-	"no-grow":        "flex-grow-0",
-	"no-shrink":      "flex-shrink-0",
+	"no-grow":        "grow-0",
+	"no-shrink":      "shrink-0",
 	"padding-top":    "pt-1",
 	"padding-bottom": "pb-1",
 	"padding-left":   "pl-1",
@@ -133,6 +131,9 @@ func getAllKnownClassNames() []string {
 		"min-h-1", "min-h-10", "max-h-50", "max-h-100",
 		"flex-grow-0", "flex-grow-1", "flex-grow-2",
 		"flex-shrink-0", "flex-shrink-1", "flex-shrink-2",
+		// Tailwind standard flex utilities
+		"grow", "grow-0", "shrink", "shrink-0",
+		"flex-1", "flex-auto", "flex-initial", "flex-none",
 	}
 	classes = append(classes, patternExamples...)
 
