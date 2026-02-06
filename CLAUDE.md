@@ -401,6 +401,34 @@ count.Set(count.Get() + 1)
 count.Bind(func(v int) { /* called on change */ })
 ```
 
+## Event Handling
+
+### Mouse Click Handling
+
+Use `HandleClicks` for automatic ref-based hit testing:
+
+```go
+func (c *counter) HandleMouse(me tui.MouseEvent) bool {
+    return tui.HandleClicks(me,
+        tui.Click(c.incrementBtn, c.increment),
+        tui.Click(c.decrementBtn, c.decrement),
+    )
+}
+```
+
+### Component Watchers
+
+Implement `WatcherProvider` for component-level timers/channels:
+
+```go
+func (t *timer) Watchers() []tui.Watcher {
+    return []tui.Watcher{
+        tui.OnTimer(time.Second, t.tick),
+        tui.NewChannelWatcher(t.dataChan, t.onData),
+    }
+}
+```
+
 ## Layout System
 
 The layout engine (`internal/layout`) implements CSS flexbox with:
