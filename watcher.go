@@ -61,7 +61,10 @@ func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct
 				// Capture val for closure
 				v := val
 				select {
-				case eventQueue <- func() { w.handler(v) }:
+				case eventQueue <- func() {
+					w.handler(v)
+					MarkDirty()
+				}:
 				case <-stopCh:
 					return
 				}
