@@ -272,6 +272,106 @@ func TestWatcher_HandlerCalledOnMainLoop(t *testing.T) {
 	}
 }
 
+func TestNewChannelWatcher(t *testing.T) {
+	ch := make(chan string, 1)
+	var received string
+
+	w := NewChannelWatcher(ch, func(s string) {
+		received = s
+	})
+
+	eventQueue := make(chan func(), 10)
+	stopCh := make(chan struct{})
+
+	w.Start(eventQueue, stopCh)
+	ch <- "hello"
+
+	// Give goroutine time to process
+	time.Sleep(10 * time.Millisecond)
+
+	// Drain event queue to execute handler
+	for len(eventQueue) > 0 {
+		fn := <-eventQueue
+		fn()
+	}
+
+	close(stopCh)
+
+	if received != "hello" {
+		t.Fatalf("expected 'hello', got '%s'", received)
+	}
+}
+
+func TestNewChannelWatcher_StopsOnStopCh(t *testing.T) {
+	ch := make(chan string, 10)
+	eventQueue := make(chan func(), 10)
+	stopCh := make(chan struct{})
+
+	var received []string
+	var mu sync.Mutex
+
+	w := NewChannelWatcher(ch, func(s string) {
+		mu.Lock()
+		received = append(received, s)
+		mu.Unlock()
+	})
+
+	w.Start(eventQueue, stopCh)
+
+	// Send one value
+	ch <- "first"
+	time.Sleep(20 * time.Millisecond)
+
+	// Close stop channel
+	close(stopCh)
+
+	// Try to send more values - they should not be processed
+	select {
+	case ch <- "second":
+	default:
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Process any queued events
+	for len(eventQueue) > 0 {
+		fn := <-eventQueue
+		fn()
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Should have received at most the first value
+	if len(received) > 1 {
+		t.Errorf("received %d values, want at most 1 (watcher should have stopped)", len(received))
+	}
+}
+
+func TestNewChannelWatcher_ExitsWhenChannelCloses(t *testing.T) {
+	ch := make(chan string)
+	eventQueue := make(chan func(), 10)
+	stopCh := make(chan struct{})
+
+	w := NewChannelWatcher(ch, func(s string) {
+		// Handler intentionally empty
+	})
+
+	w.Start(eventQueue, stopCh)
+
+	// Close the channel
+	close(ch)
+
+	// Give goroutine time to exit
+	time.Sleep(50 * time.Millisecond)
+
+	// The watcher goroutine should have exited - no way to test directly,
+	// but we can verify no events were enqueued
+	if len(eventQueue) > 0 {
+		t.Error("eventQueue should be empty after channel close")
+	}
+}
+
 func TestWatch_WithDifferentTypes(t *testing.T) {
 	type tc struct {
 		testFunc func(t *testing.T)

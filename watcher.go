@@ -14,10 +14,26 @@ type Watcher interface {
 	Start(eventQueue chan<- func(), stopCh <-chan struct{})
 }
 
-// channelWatcher watches a channel and calls handler for each value.
-type channelWatcher[T any] struct {
+// ChannelWatcher watches a channel and calls handler for each value.
+type ChannelWatcher[T any] struct {
 	ch      <-chan T
 	handler func(T)
+}
+
+// NewChannelWatcher creates a watcher that calls fn for each value received on ch.
+// The handler is called on the main event loop, not in a separate goroutine.
+//
+// Example:
+//
+//	dataCh := make(chan string)
+//	w := tui.NewChannelWatcher(dataCh, func(s string) {
+//	    // Handle received data
+//	})
+func NewChannelWatcher[T any](ch <-chan T, fn func(T)) *ChannelWatcher[T] {
+	return &ChannelWatcher[T]{
+		ch:      ch,
+		handler: fn,
+	}
 }
 
 // Watch creates a channel watcher. The handler is called on the main loop
@@ -29,10 +45,10 @@ type channelWatcher[T any] struct {
 //
 // Handlers don't return bool - mutations automatically mark dirty.
 func Watch[T any](ch <-chan T, handler func(T)) Watcher {
-	return &channelWatcher[T]{ch: ch, handler: handler}
+	return NewChannelWatcher(ch, handler)
 }
 
-func (w *channelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
+func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 	go func() {
 		for {
 			select {
