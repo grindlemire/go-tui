@@ -147,10 +147,14 @@ func (t *toggles) Render() *tui.Element {
 	}
 	__tui_0.AddChild(__tui_12)
 	__tui_17 := tui.New(
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_0.AddChild(__tui_17)
+	__tui_18 := tui.New(
 		tui.WithText("click or press 1/2/3"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_17)
+	__tui_0.AddChild(__tui_18)
 
 	return __tui_0
 }

@@ -70,7 +70,7 @@ templ (t *timer) Render() {
 				<span class="text-red font-bold">{"Stopped"}</span>
 			}
 		</div>
-		<span>{" "}</span>
+		<div flexGrow={1.0}></div>
 		<span class="font-dim">{"[space] toggle [r] reset"}</span>
 	</div>
 }

@@ -50,6 +50,8 @@ func (a *interactiveApp) Render() *tui.Element {
 	__tui_4 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
+		tui.WithAlign(tui.AlignStretch),
+		tui.WithFlexGrow(1.0),
 	)
 	__tui_5 := tui.Mount(a, 0, func() tui.Component {
 		return Counter(a.events)
@@ -63,6 +65,8 @@ func (a *interactiveApp) Render() *tui.Element {
 	__tui_7 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
+		tui.WithAlign(tui.AlignStretch),
+		tui.WithFlexGrow(1.0),
 	)
 	__tui_8 := tui.Mount(a, 2, func() tui.Component {
 		return Toggles(a.events)

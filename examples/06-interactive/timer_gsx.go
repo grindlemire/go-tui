@@ -114,7 +114,7 @@ func (t *timer) Render() *tui.Element {
 	}
 	__tui_0.AddChild(__tui_5)
 	__tui_9 := tui.New(
-		tui.WithText(" "),
+		tui.WithFlexGrow(1.0),
 	)
 	__tui_0.AddChild(__tui_9)
 	__tui_10 := tui.New(

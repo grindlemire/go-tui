@@ -129,10 +129,14 @@ func (c *counter) Render() *tui.Element {
 		__tui_0.AddChild(__tui_14)
 	}
 	__tui_15 := tui.New(
+		tui.WithFlexGrow(1.0),
+	)
+	__tui_0.AddChild(__tui_15)
+	__tui_16 := tui.New(
 		tui.WithText("click btns or +/-/0"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_15)
+	__tui_0.AddChild(__tui_16)
 
 	return __tui_0
 }

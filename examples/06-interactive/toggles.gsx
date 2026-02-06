@@ -82,6 +82,7 @@ templ (t *toggles) Render() {
 				<span class="text-yellow font-bold">Light</span>
 			}
 		</div>
+		<div flexGrow={1.0}></div>
 		<span class="font-dim">{"click or press 1/2/3"}</span>
 	</div>
 }

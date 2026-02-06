@@ -25,11 +25,11 @@ templ (a *interactiveApp) Render() {
 			<span class="text-gradient-cyan-magenta font-bold">{"Interactive Elements"}</span>
 			<span class="font-dim">{"[q] quit"}</span>
 		</div>
-		<div class="flex gap-1">
+		<div class="flex gap-1 items-stretch" flexGrow={1.0}>
 			@Counter(a.events)
 			@Timer(a.events)
 		</div>
-		<div class="flex gap-1">
+		<div class="flex gap-1 items-stretch" flexGrow={1.0}>
 			@Toggles(a.events)
 			@EventInspector(a.events)
 		</div>

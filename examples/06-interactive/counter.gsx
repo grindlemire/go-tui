@@ -74,6 +74,7 @@ templ (c *counter) Render() {
 		} @else {
 			<span class="text-blue font-bold">{"Zero"}</span>
 		}
+		<div flexGrow={1.0}></div>
 		<span class="font-dim">{"click btns or +/-/0"}</span>
 	</div>
 }

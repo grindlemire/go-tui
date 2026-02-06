@@ -75,7 +75,7 @@ func (e *eventInspector) Render() *tui.Element {
 	__tui_5.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_5)
 	__tui_8 := tui.New(
-		tui.WithText(" "),
+		tui.WithFlexGrow(1.0),
 	)
 	__tui_0.AddChild(__tui_8)
 	__tui_9 := tui.New(
