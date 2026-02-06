@@ -34,6 +34,7 @@ func (a *interactiveApp) Render() *tui.Element {
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithFlexShrink(0.0),
 	)
 	__tui_2 := tui.New(
 		tui.WithText("Interactive Elements"),
