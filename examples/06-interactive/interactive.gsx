@@ -21,7 +21,7 @@ func (a *interactiveApp) KeyMap() tui.KeyMap {
 
 templ (a *interactiveApp) Render() {
 	<div class="flex-col p-1 border-rounded gap-1">
-		<div class="flex justify-between">
+		<div class="flex justify-between" flexShrink={0.0}>
 			<span class="text-gradient-cyan-magenta font-bold">{"Interactive Elements"}</span>
 			<span class="font-dim">{"[q] quit"}</span>
 		</div>
