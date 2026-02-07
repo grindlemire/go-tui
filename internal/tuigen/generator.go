@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"strings"
 
 	"golang.org/x/tools/imports"
 )
@@ -85,8 +84,8 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	// Generate imports
 	g.generateImports(file.Imports)
 
-	// Track where the import section ends (first line after imports)
-	importEndLine := g.currentLine
+	// Track where content after imports starts (for source map adjustment)
+	firstContentLine := g.currentLine
 
 	// Generate top-level Go declarations (type, const, var)
 	for _, decl := range file.Decls {
@@ -109,69 +108,76 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	}
 
 	// For production: format and fix imports with goimports
-	preImportsOutput := g.buf.Bytes()
-	postImportsOutput, err := imports.Process(g.sourceFile, preImportsOutput, nil)
+	preOutput := g.buf.Bytes()
+	postOutput, err := imports.Process(g.sourceFile, preOutput, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Adjust source map for line shifts caused by goimports
-	g.adjustSourceMapForGoimports(preImportsOutput, postImportsOutput, importEndLine)
+	// Adjust source map for line shifts caused by goimports.
+	// Goimports only modifies the import section, so we calculate the shift
+	// by comparing line counts before and after.
+	g.adjustSourceMapForGoimports(preOutput, postOutput, firstContentLine)
 
-	return postImportsOutput, nil
+	return postOutput, nil
 }
 
-// adjustSourceMapForGoimports recalculates source map line numbers after goimports
-// modifies the import section. Goimports can add, remove, or reformat imports,
-// which shifts all subsequent line numbers.
-func (g *Generator) adjustSourceMapForGoimports(pre, post []byte, importEndLine int) {
-	// Count lines up to and including the import section in both versions
-	preImportLines := countLinesUntilImportEnd(pre)
-	postImportLines := countLinesUntilImportEnd(post)
+// adjustSourceMapForGoimports adjusts source map line numbers after goimports
+// modifies the import section. We find where imports end in both versions
+// and calculate the shift from that, since content after imports shifts
+// by the difference in import section sizes.
+func (g *Generator) adjustSourceMapForGoimports(pre, post []byte, firstContentLine int) {
+	// Find where content starts in the post-goimports output.
+	// This is the first non-blank line after the import block.
+	postContentStart := findFirstContentLineAfterImports(post)
 
-	// Calculate the shift (positive = goimports added lines, negative = removed lines)
-	lineShift := postImportLines - preImportLines
+	// The shift is how much the content start moved
+	lineShift := postContentStart - firstContentLine
 
 	if lineShift == 0 {
-		return // No adjustment needed
+		return
 	}
 
-	// Adjust all source map entries for lines after the import section
+	// Adjust all source map entries for lines at or after where content starts
 	for i := range g.sourceMap.Mappings {
-		if g.sourceMap.Mappings[i].GoLine >= importEndLine {
+		if g.sourceMap.Mappings[i].GoLine >= firstContentLine {
 			g.sourceMap.Mappings[i].GoLine += lineShift
 		}
 	}
 }
 
-// countLinesUntilImportEnd counts lines until the end of the import section.
-// It looks for the closing ")" of the import block or a single import statement.
-func countLinesUntilImportEnd(code []byte) int {
+// findFirstContentLineAfterImports finds the first non-blank line after the import block.
+func findFirstContentLineAfterImports(code []byte) int {
 	lines := bytes.Split(code, []byte("\n"))
 	inImportBlock := false
+	importBlockEnded := false
 
 	for i, line := range lines {
-		lineStr := string(bytes.TrimSpace(line))
+		trimmed := bytes.TrimSpace(line)
 
-		// Check for import block start
-		if strings.HasPrefix(lineStr, "import (") {
+		// Track import block
+		if bytes.HasPrefix(trimmed, []byte("import (")) {
 			inImportBlock = true
 			continue
 		}
-
-		// Check for import block end
-		if inImportBlock && lineStr == ")" {
-			return i + 1 // Return line after the closing paren
+		if inImportBlock && len(trimmed) == 1 && trimmed[0] == ')' {
+			inImportBlock = false
+			importBlockEnded = true
+			continue
+		}
+		// Handle single-line imports: import "path"
+		if bytes.HasPrefix(trimmed, []byte("import ")) && !bytes.HasPrefix(trimmed, []byte("import (")) {
+			importBlockEnded = true
+			continue
 		}
 
-		// Check for single-line import
-		if strings.HasPrefix(lineStr, "import ") && !strings.HasPrefix(lineStr, "import (") {
-			return i + 1 // Return line after the import
+		// After imports end, find first non-blank line
+		if importBlockEnded && len(trimmed) > 0 {
+			return i
 		}
 	}
 
-	// Fallback: return total lines if import section not found
-	return len(lines)
+	return len(lines) // Fallback if no content found
 }
 
 // GetSourceMap returns the source map generated during code generation.

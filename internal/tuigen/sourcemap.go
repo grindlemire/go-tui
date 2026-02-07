@@ -1,10 +1,5 @@
 package tuigen
 
-import (
-	"encoding/json"
-	"strings"
-)
-
 // SourceMap tracks position mappings between .gsx source and generated .go files.
 // All line numbers are 0-indexed.
 type SourceMap struct {
@@ -67,30 +62,3 @@ func (sm *SourceMap) GsxToGo(gsxLine, gsxCol int) (goLine, goCol int, found bool
 	return gsxLine, gsxCol, false
 }
 
-// ToJSON serializes the source map to JSON.
-func (sm *SourceMap) ToJSON() ([]byte, error) {
-	return json.MarshalIndent(sm, "", "  ")
-}
-
-// ParseSourceMap parses a source map from JSON.
-func ParseSourceMap(data []byte) (*SourceMap, error) {
-	var sm SourceMap
-	if err := json.Unmarshal(data, &sm); err != nil {
-		return nil, err
-	}
-	return &sm, nil
-}
-
-// SourceMapFileName returns the source map filename for a given generated file.
-// e.g., "counter_gsx.go" -> "counter_gsx.go.map"
-func SourceMapFileName(goFile string) string {
-	return goFile + ".map"
-}
-
-// countLines counts the number of lines in a string.
-func countLines(s string) int {
-	if s == "" {
-		return 0
-	}
-	return strings.Count(s, "\n") + 1
-}

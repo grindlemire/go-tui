@@ -372,12 +372,6 @@ func (s *Server) handleDidSave(params json.RawMessage) (any, *Error) {
 
 	log.Server("Document saved: %s", p.TextDocument.URI)
 
-	// Invalidate source map cache so it reloads from disk after regeneration
-	if s.sourceMapCache != nil {
-		s.sourceMapCache.Invalidate(p.TextDocument.URI)
-		log.Server("Invalidated source map cache for: %s", p.TextDocument.URI)
-	}
-
 	// If text is provided, update the document
 	if p.Text != nil {
 		doc := s.docs.Get(p.TextDocument.URI)

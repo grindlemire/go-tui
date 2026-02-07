@@ -63,36 +63,25 @@ func (g *generator) emitRefFromNodes(nodes []tuigen.Node, inLoop, inConditional 
 				continue
 			}
 			if n.RefExpr != nil {
-				refName := n.RefExpr.Code
-				// Strip receiver prefix (e.g., "c.decrementBtn" -> "decrementBtn")
-				// to generate valid Go variable declarations
-				if idx := strings.LastIndex(refName, "."); idx >= 0 {
-					refName = refName[idx+1:]
-				}
-				refType := "var %s *element.Element"
-				if inLoop {
-					if n.RefKey != nil {
-						refType = "var %s map[string]*element.Element"
-					} else {
-						refType = "var %s []*element.Element"
-					}
-				}
+				refExpr := n.RefExpr.Code
 
 				tuiLine := n.RefExpr.Position.Line - 1
-				tuiCol := n.RefExpr.Position.Column - 1
+				tuiCol := n.RefExpr.Position.Column
 
-				goVarStartCol := 1 + len("var ") // "\t" + "var "
+				// Emit "_ = c.decrementBtn" to validate the ref expression
+				// without creating an unused variable
+				goExprStartCol := 1 + 4 // "\t" + "_ = "
 				g.sourceMap.AddMapping(Mapping{
 					TuiLine: tuiLine,
 					TuiCol:  tuiCol,
 					GoLine:  g.goLine,
-					GoCol:   goVarStartCol,
-					Length:  len(refName),
+					GoCol:   goExprStartCol,
+					Length:  len(refExpr),
 				})
 				log.Generate("REF mapping: ref={%s} -> TuiLine=%d TuiCol=%d GoLine=%d",
-					refName, tuiLine, tuiCol, g.goLine)
+					refExpr, tuiLine, tuiCol, g.goLine)
 
-				g.writeLine(fmt.Sprintf("\t"+refType, refName))
+				g.writeLine(fmt.Sprintf("\t_ = %s", refExpr))
 			}
 			g.emitRefFromNodes(n.Children, inLoop, inConditional)
 		case *tuigen.ForLoop:

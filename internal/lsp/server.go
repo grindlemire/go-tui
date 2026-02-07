@@ -47,9 +47,6 @@ type Server struct {
 	goplsDiagnostics   map[string][]gopls.GoplsDiagnostic
 	goplsDiagnosticsMu sync.RWMutex
 
-	// Source map cache for disk-based source maps
-	sourceMapCache *SourceMapCache
-
 	// Server state
 	initialized bool
 	shutdown    bool
@@ -71,7 +68,6 @@ func NewServer(reader io.Reader, writer io.Writer) *Server {
 		workspaceASTs:    make(map[string]*tuigen.File),
 		virtualFiles:     gopls.NewVirtualFileCache(),
 		goplsDiagnostics: make(map[string][]gopls.GoplsDiagnostic),
-		sourceMapCache:   NewSourceMapCache(),
 		ctx:              ctx,
 		cancel:           cancel,
 	}

@@ -102,8 +102,15 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	}
 
 	// Calculate the position where params start in the Go line
-	// Format: "func Name(" then params
-	sigPrefix := fmt.Sprintf("func %s(", comp.Name)
+	// Format depends on whether this is a method or function
+	var sigPrefix string
+	if comp.Receiver != "" {
+		// Method: "func (c *counter) Name("
+		sigPrefix = fmt.Sprintf("func (%s) %s(", comp.Receiver, comp.Name)
+	} else {
+		// Function: "func Name("
+		sigPrefix = fmt.Sprintf("func %s(", comp.Name)
+	}
 	goParamStartCol := len(sigPrefix)
 
 	// Add mappings for each parameter
@@ -126,7 +133,12 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 		goParamStartCol += len(p.Name) + 1 + len(p.Type) + 2 // +1 for space, +2 for ", "
 	}
 
-	g.writeLine(fmt.Sprintf("func %s(%s) %s {", comp.Name, strings.Join(params, ", "), returnType))
+	// Write function/method signature
+	if comp.Receiver != "" {
+		g.writeLine(fmt.Sprintf("func (%s) %s(%s) %s {", comp.Receiver, comp.Name, strings.Join(params, ", "), returnType))
+	} else {
+		g.writeLine(fmt.Sprintf("func %s(%s) %s {", comp.Name, strings.Join(params, ", "), returnType))
+	}
 
 	// Emit state variable declarations so gopls understands state types.
 	// Scans component body GoCode nodes for tui.NewState(...) patterns and

@@ -59,9 +59,9 @@ func TestGenerateVirtualGo_RefSimple(t *testing.T) {
 
 	source, _ := GenerateVirtualGo(file)
 
-	// Simple ref should be *element.Element
-	if !strings.Contains(source, "var header *element.Element") {
-		t.Errorf("expected virtual Go to contain simple ref declaration, got:\n%s", source)
+	// Ref expression should be validated with _ = assignment
+	if !strings.Contains(source, "_ = header") {
+		t.Errorf("expected virtual Go to contain ref usage, got:\n%s", source)
 	}
 }
 
@@ -94,9 +94,9 @@ func TestGenerateVirtualGo_RefInLoop(t *testing.T) {
 
 	source, _ := GenerateVirtualGo(file)
 
-	// Loop ref should be []*element.Element
-	if !strings.Contains(source, "var items []*element.Element") {
-		t.Errorf("expected virtual Go to contain loop ref slice declaration, got:\n%s", source)
+	// Ref expression should be validated with _ = assignment
+	if !strings.Contains(source, "_ = items") {
+		t.Errorf("expected virtual Go to contain ref usage, got:\n%s", source)
 	}
 }
 
@@ -130,9 +130,9 @@ func TestGenerateVirtualGo_RefKeyed(t *testing.T) {
 
 	source, _ := GenerateVirtualGo(file)
 
-	// Keyed ref should be map[string]*element.Element
-	if !strings.Contains(source, "var users map[string]*element.Element") {
-		t.Errorf("expected virtual Go to contain keyed ref map declaration, got:\n%s", source)
+	// Ref expression should be validated with _ = assignment
+	if !strings.Contains(source, "_ = users") {
+		t.Errorf("expected virtual Go to contain ref usage, got:\n%s", source)
 	}
 }
 

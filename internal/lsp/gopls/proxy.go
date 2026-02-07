@@ -420,9 +420,16 @@ func (p *GoplsProxy) handleNotification(notif *Notification) {
 	// Translate diagnostics
 	var translated []GoplsDiagnostic
 	for _, diag := range params.Diagnostics {
-		// Skip "redeclared" errors which can happen with our generated code
-		if strings.Contains(diag.Message, "redeclared") {
-			log.Gopls("Skipping redeclared error: %s", diag.Message)
+		// Skip redeclaration errors caused by our virtual/generated file setup.
+		// These occur because gopls sees both the virtual file and real _gsx.go file.
+		// Filter when:
+		// 1. Message references a _gsx.go file path, OR
+		// 2. Message is "X redeclared in this block" (comes from generated file context)
+		isRedeclaration := strings.Contains(diag.Message, "redeclared") || strings.Contains(diag.Message, "already declared")
+		referencesGeneratedFile := strings.Contains(diag.Message, "_gsx.go:")
+		isBlockRedeclaration := strings.Contains(diag.Message, "redeclared in this block")
+		if isRedeclaration && (referencesGeneratedFile || isBlockRedeclaration) {
+			log.Gopls("Skipping redeclaration error: %s", diag.Message)
 			continue
 		}
 
