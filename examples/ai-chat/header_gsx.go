@@ -9,19 +9,15 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type HeaderView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+type header struct {
+	state *AppState
 }
 
-func (v HeaderView) GetRoot() tui.Renderable { return v.Root }
+func Header(state *AppState) *header {
+	return &header{state: state}
+}
 
-func (v HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func Header(state *AppState) HeaderView {
-	var view HeaderView
-	var watchers []tui.Watcher
-
+func (h *header) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
@@ -41,12 +37,12 @@ func Header(state *AppState) HeaderView {
 		tui.WithGap(2),
 	)
 	__tui_3 := tui.New(
-		tui.WithText(state.Model.Get()),
+		tui.WithText(h.state.Model.Get()),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_2.AddChild(__tui_3)
 	__tui_4 := tui.New(
-		tui.WithText(fmt.Sprintf("%d tokens", state.TotalTokens.Get())),
+		tui.WithText(fmt.Sprintf("%d tokens", h.state.TotalTokens.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_2.AddChild(__tui_4)
@@ -57,9 +53,5 @@ func Header(state *AppState) HeaderView {
 	__tui_2.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_2)
 
-	view = HeaderView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }

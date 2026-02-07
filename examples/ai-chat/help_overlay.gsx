@@ -2,7 +2,13 @@ package main
 
 import tui "github.com/grindlemire/go-tui"
 
-templ HelpOverlay() {
+type helpOverlay struct{}
+
+func HelpOverlay() *helpOverlay {
+	return &helpOverlay{}
+}
+
+templ (h *helpOverlay) Render() {
 	<div class="flex justify-center items-center" flexGrow={1}>
 		<div class="border-rounded border-cyan p-2" width={50}>
 			<div class="flex-col gap-1">

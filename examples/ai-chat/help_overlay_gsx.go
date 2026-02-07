@@ -7,19 +7,13 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type HelpOverlayView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
+type helpOverlay struct{}
+
+func HelpOverlay() *helpOverlay {
+	return &helpOverlay{}
 }
 
-func (v HelpOverlayView) GetRoot() tui.Renderable { return v.Root }
-
-func (v HelpOverlayView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func HelpOverlay() HelpOverlayView {
-	var view HelpOverlayView
-	var watchers []tui.Watcher
-
+func (h *helpOverlay) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
@@ -182,9 +176,5 @@ func HelpOverlay() HelpOverlayView {
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
 
-	view = HelpOverlayView{
-		Root:     __tui_0,
-		watchers: watchers,
-	}
-	return view
+	return __tui_0
 }
