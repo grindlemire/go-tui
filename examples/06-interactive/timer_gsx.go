@@ -67,6 +67,7 @@ func (t *timer) Render() *tui.Element {
 		tui.WithGap(1),
 		tui.WithFlexGrow(1),
 		tui.WithJustify(tui.JustifyCenter),
+		tui.WithWidthPercent(50.00),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Timer"),

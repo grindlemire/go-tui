@@ -5,13 +5,16 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
 type counter struct {
 	count        *tui.State[int]
+	pending      *tui.State[bool]
 	events       *tui.Events[string]
+	delayCh      chan int
 	decrementBtn *tui.Ref
 	incrementBtn *tui.Ref
 	resetBtn     *tui.Ref
@@ -20,7 +23,9 @@ type counter struct {
 func Counter(events *tui.Events[string]) *counter {
 	return &counter{
 		count:        tui.NewState(0),
+		pending:      tui.NewState(false),
 		events:       events,
+		delayCh:      make(chan int),
 		decrementBtn: tui.NewRef(),
 		incrementBtn: tui.NewRef(),
 		resetBtn:     tui.NewRef(),
@@ -33,7 +38,30 @@ func (c *counter) KeyMap() tui.KeyMap {
 		tui.OnRune('=', func(ke tui.KeyEvent) { c.increment() }),
 		tui.OnRune('-', func(ke tui.KeyEvent) { c.decrement() }),
 		tui.OnRune('0', func(ke tui.KeyEvent) { c.reset() }),
+		tui.OnRune('d', func(ke tui.KeyEvent) { c.delayedIncrement() }),
 	}
+}
+
+func (c *counter) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.Watch(c.delayCh, func(delta int) {
+			c.count.Set(c.count.Get() + delta)
+			c.pending.Set(false)
+			c.events.Emit("delayed +1")
+		}),
+	}
+}
+
+func (c *counter) delayedIncrement() {
+	if c.pending.Get() {
+		return // Already pending
+	}
+	c.pending.Set(true)
+	c.events.Emit("delay started")
+	go func() {
+		time.Sleep(1 * time.Second)
+		c.delayCh <- 1
+	}()
 }
 
 func (c *counter) HandleMouse(me tui.MouseEvent) bool {
@@ -67,6 +95,7 @@ func (c *counter) Render() *tui.Element {
 		tui.WithGap(1),
 		tui.WithFlexGrow(1),
 		tui.WithJustify(tui.JustifyCenter),
+		tui.WithWidthPercent(50.00),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Counter"),
@@ -113,27 +142,34 @@ func (c *counter) Render() *tui.Element {
 	__tui_10.AddChild(__tui_11)
 	__tui_5.AddChild(__tui_10)
 	__tui_0.AddChild(__tui_5)
-	if c.count.Get() > 0 {
+	if c.pending.Get() {
 		__tui_12 := tui.New(
+			tui.WithText("Pending..."),
+			tui.WithTextAlign(tui.TextAlignCenter),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
+		)
+		__tui_0.AddChild(__tui_12)
+	} else if c.count.Get() > 0 {
+		__tui_13 := tui.New(
 			tui.WithText("Positive"),
 			tui.WithTextAlign(tui.TextAlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
-		__tui_0.AddChild(__tui_12)
+		__tui_0.AddChild(__tui_13)
 	} else if c.count.Get() < 0 {
-		__tui_13 := tui.New(
+		__tui_14 := tui.New(
 			tui.WithText("Negative"),
 			tui.WithTextAlign(tui.TextAlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
-		__tui_0.AddChild(__tui_13)
+		__tui_0.AddChild(__tui_14)
 	} else {
-		__tui_14 := tui.New(
+		__tui_15 := tui.New(
 			tui.WithText("Zero"),
 			tui.WithTextAlign(tui.TextAlignCenter),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 		)
-		__tui_0.AddChild(__tui_14)
+		__tui_0.AddChild(__tui_15)
 	}
 
 	return __tui_0

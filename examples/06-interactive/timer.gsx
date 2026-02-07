@@ -56,7 +56,7 @@ func formatTime(seconds int) string {
 }
 
 templ (t *timer) Render() {
-	<div class="border-single p-1 flex-col gap-1 grow justify-center">
+	<div class="border-single p-1 flex-col gap-1 grow justify-center w-1/2">
 		<span class="text-gradient-blue-cyan font-bold text-center">{"Timer"}</span>
 		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Elapsed:</span>

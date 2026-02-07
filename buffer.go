@@ -1,5 +1,7 @@
 package tui
 
+import "strings"
+
 // Buffer is a double-buffered 2D grid of cells.
 // Writes go to the back buffer; Flush() computes the diff and swaps buffers.
 type Buffer struct {
@@ -461,6 +463,53 @@ func (b *Buffer) Diff() []CellChange {
 // Call this after flushing changes to the terminal.
 func (b *Buffer) Swap() {
 	copy(b.front, b.back)
+}
+
+// String renders the back buffer to a string for debugging.
+// Each row is separated by a newline. Continuation cells (from wide characters) are skipped.
+func (b *Buffer) String() string {
+	var sb strings.Builder
+	for y := 0; y < b.height; y++ {
+		for x := 0; x < b.width; x++ {
+			cell := b.back[y*b.width+x]
+			if cell.IsContinuation() {
+				continue // Skip continuation cells
+			}
+			if cell.Rune == 0 {
+				sb.WriteRune(' ')
+			} else {
+				sb.WriteRune(cell.Rune)
+			}
+		}
+		if y < b.height-1 {
+			sb.WriteRune('\n')
+		}
+	}
+	return sb.String()
+}
+
+// StringTrimmed returns the back buffer content with trailing spaces removed from each line.
+func (b *Buffer) StringTrimmed() string {
+	var sb strings.Builder
+	for y := 0; y < b.height; y++ {
+		var line strings.Builder
+		for x := 0; x < b.width; x++ {
+			cell := b.back[y*b.width+x]
+			if cell.IsContinuation() {
+				continue
+			}
+			if cell.Rune == 0 {
+				line.WriteRune(' ')
+			} else {
+				line.WriteRune(cell.Rune)
+			}
+		}
+		sb.WriteString(strings.TrimRight(line.String(), " "))
+		if y < b.height-1 {
+			sb.WriteRune('\n')
+		}
+	}
+	return sb.String()
 }
 
 // Resize changes the buffer dimensions, preserving content where possible.

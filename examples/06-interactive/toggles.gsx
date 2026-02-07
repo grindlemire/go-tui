@@ -56,7 +56,7 @@ func (t *toggles) toggleTheme() {
 }
 
 templ (t *toggles) Render() {
-	<div class="border-single p-1 flex-col gap-1 grow justify-center">
+	<div class="border-single p-1 flex-col gap-1 grow justify-center w-1/2">
 		<span class="text-gradient-green-cyan font-bold text-center">{"Toggles"}</span>
 		<div class="flex gap-1 items-center justify-center">
 			<button ref={t.soundBtn}>{"Sound  "}</button>

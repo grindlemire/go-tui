@@ -356,11 +356,12 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		runes := []rune(e.text)
 		curX := x
 		for i, r := range runes {
-			if curX >= buf.Width() {
+			// Clip to element's content rect (not just buffer width)
+			if curX >= contentRect.Right() {
 				break
 			}
 			width := RuneWidth(r)
-			if width == 2 && curX+1 >= buf.Width() {
+			if width == 2 && curX+1 >= contentRect.Right() {
 				break
 			}
 			style := ts
@@ -381,7 +382,8 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 			curX += width
 		}
 	} else {
-		buf.SetString(x, contentRect.Y, e.text, ts)
+		// Clip text to element's content rect
+		buf.SetStringClipped(x, contentRect.Y, e.text, ts, contentRect)
 	}
 }
 

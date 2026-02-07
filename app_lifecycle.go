@@ -19,6 +19,15 @@ func Stop() {
 	}
 }
 
+// SnapshotFrame returns the current frame as a string for debugging.
+// Returns an empty string if no app is running.
+func SnapshotFrame() string {
+	if currentApp != nil && currentApp.buffer != nil {
+		return currentApp.buffer.StringTrimmed()
+	}
+	return ""
+}
+
 // Close restores the terminal to its original state.
 // Must be called when the application exits.
 func (a *App) Close() error {

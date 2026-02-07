@@ -25,7 +25,7 @@ func EventInspector(events *tui.Events[string]) *eventInspector {
 }
 
 templ (e *eventInspector) Render() {
-	<div class="border-single p-1 flex-col gap-1 flex-grow justify-center">
+	<div class="border-single p-1 flex-col gap-1 flex-grow justify-center w-1/2">
 		<span class="text-gradient-magenta-cyan font-bold text-center">{"Event Inspector"}</span>
 		<div class="flex gap-1 items-center justify-center">
 			<span class="font-dim">Last:</span>
