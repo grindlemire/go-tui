@@ -28,6 +28,7 @@ type PublishDiagnosticsParams struct {
 // publishDiagnostics sends diagnostics for a document.
 // If a DiagnosticsProvider is registered, it delegates to the provider;
 // otherwise it falls back to inline conversion.
+// Gopls diagnostics are merged with parse diagnostics.
 func (s *Server) publishDiagnostics(doc *Document) {
 	if doc == nil {
 		return
@@ -56,6 +57,23 @@ func (s *Server) publishDiagnostics(doc *Document) {
 				Message:  e.Message,
 			})
 		}
+	}
+
+	// Add gopls diagnostics (type errors, undefined identifiers, etc.)
+	s.goplsDiagnosticsMu.RLock()
+	goplsDiags := s.goplsDiagnostics[doc.URI]
+	s.goplsDiagnosticsMu.RUnlock()
+
+	for _, gd := range goplsDiags {
+		diagnostics = append(diagnostics, Diagnostic{
+			Range: Range{
+				Start: Position{Line: gd.Range.Start.Line, Character: gd.Range.Start.Character},
+				End:   Position{Line: gd.Range.End.Line, Character: gd.Range.End.Character},
+			},
+			Severity: DiagnosticSeverity(gd.Severity),
+			Source:   gd.Source,
+			Message:  gd.Message,
+		})
 	}
 
 	params := PublishDiagnosticsParams{

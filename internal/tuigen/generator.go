@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"strings"
 
 	"golang.org/x/tools/imports"
 )
@@ -55,6 +56,10 @@ type Generator struct {
 
 	// SkipImports uses format.Source instead of imports.Process (faster for tests)
 	SkipImports bool
+
+	// Source map tracking
+	sourceMap   *SourceMap
+	currentLine int // current line in generated output (0-indexed)
 }
 
 // NewGenerator creates a new code generator.
@@ -68,6 +73,8 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	g.buf.Reset()
 	g.varCounter = 0
 	g.sourceFile = sourceFile
+	g.sourceMap = NewSourceMap(sourceFile)
+	g.currentLine = 0
 
 	// Generate header
 	g.generateHeader()
@@ -77,6 +84,9 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 
 	// Generate imports
 	g.generateImports(file.Imports)
+
+	// Track where the import section ends (first line after imports)
+	importEndLine := g.currentLine
 
 	// Generate top-level Go declarations (type, const, var)
 	for _, decl := range file.Decls {
@@ -99,7 +109,75 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	}
 
 	// For production: format and fix imports with goimports
-	return imports.Process(g.sourceFile, g.buf.Bytes(), nil)
+	preImportsOutput := g.buf.Bytes()
+	postImportsOutput, err := imports.Process(g.sourceFile, preImportsOutput, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Adjust source map for line shifts caused by goimports
+	g.adjustSourceMapForGoimports(preImportsOutput, postImportsOutput, importEndLine)
+
+	return postImportsOutput, nil
+}
+
+// adjustSourceMapForGoimports recalculates source map line numbers after goimports
+// modifies the import section. Goimports can add, remove, or reformat imports,
+// which shifts all subsequent line numbers.
+func (g *Generator) adjustSourceMapForGoimports(pre, post []byte, importEndLine int) {
+	// Count lines up to and including the import section in both versions
+	preImportLines := countLinesUntilImportEnd(pre)
+	postImportLines := countLinesUntilImportEnd(post)
+
+	// Calculate the shift (positive = goimports added lines, negative = removed lines)
+	lineShift := postImportLines - preImportLines
+
+	if lineShift == 0 {
+		return // No adjustment needed
+	}
+
+	// Adjust all source map entries for lines after the import section
+	for i := range g.sourceMap.Mappings {
+		if g.sourceMap.Mappings[i].GoLine >= importEndLine {
+			g.sourceMap.Mappings[i].GoLine += lineShift
+		}
+	}
+}
+
+// countLinesUntilImportEnd counts lines until the end of the import section.
+// It looks for the closing ")" of the import block or a single import statement.
+func countLinesUntilImportEnd(code []byte) int {
+	lines := bytes.Split(code, []byte("\n"))
+	inImportBlock := false
+
+	for i, line := range lines {
+		lineStr := string(bytes.TrimSpace(line))
+
+		// Check for import block start
+		if strings.HasPrefix(lineStr, "import (") {
+			inImportBlock = true
+			continue
+		}
+
+		// Check for import block end
+		if inImportBlock && lineStr == ")" {
+			return i + 1 // Return line after the closing paren
+		}
+
+		// Check for single-line import
+		if strings.HasPrefix(lineStr, "import ") && !strings.HasPrefix(lineStr, "import (") {
+			return i + 1 // Return line after the import
+		}
+	}
+
+	// Fallback: return total lines if import section not found
+	return len(lines)
+}
+
+// GetSourceMap returns the source map generated during code generation.
+// Must be called after Generate().
+func (g *Generator) GetSourceMap() *SourceMap {
+	return g.sourceMap
 }
 
 // generateHeader writes the "DO NOT EDIT" comment.
@@ -189,26 +267,41 @@ func (g *Generator) stateNameSet() map[string]bool {
 	return m
 }
 
-// write writes a string without indentation.
+// write writes a string without indentation and tracks line numbers.
 func (g *Generator) write(s string) {
 	g.buf.WriteString(s)
+	// Count newlines in the output
+	for _, c := range s {
+		if c == '\n' {
+			g.currentLine++
+		}
+	}
 }
 
-// writef writes a formatted string with indentation.
+// writef writes a formatted string with indentation and tracks line numbers.
 func (g *Generator) writef(format string, args ...interface{}) {
 	g.writeIndent()
-	fmt.Fprintf(&g.buf, format, args...)
+	s := fmt.Sprintf(format, args...)
+	g.buf.WriteString(s)
+	// Count newlines in the output
+	for _, c := range s {
+		if c == '\n' {
+			g.currentLine++
+		}
+	}
 }
 
-// writeln writes a line with indentation.
+// writeln writes a line with indentation and tracks line numbers.
 func (g *Generator) writeln(s string) {
 	if s == "" {
 		g.buf.WriteByte('\n')
+		g.currentLine++
 		return
 	}
 	g.writeIndent()
 	g.buf.WriteString(s)
 	g.buf.WriteByte('\n')
+	g.currentLine++
 }
 
 // writeIndent writes the current indentation.

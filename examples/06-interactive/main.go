@@ -13,7 +13,7 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../cmd/tui generate interactive.gsx
+//go:generate go run ../../cmd/tui generate .
 
 func main() {
 	app, err := tui.NewApp()

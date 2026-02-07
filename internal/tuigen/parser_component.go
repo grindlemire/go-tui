@@ -126,6 +126,13 @@ func (p *Parser) parseGoDecl() *GoDecl {
 	startPos := p.current.StartPos
 	kind := p.current.Literal // "type", "const", or "var"
 
+	// Advance past the keyword
+	p.advance()
+
+	// Check if this is a grouped declaration: var (...) or const (...)
+	// A grouped declaration has ( immediately after the keyword (possibly with whitespace)
+	isGrouped := p.current.Type == TokenLParen
+
 	// Track brace/paren depth to find end of declaration
 	braceDepth := 0
 	parenDepth := 0
@@ -149,7 +156,7 @@ func (p *Parser) parseGoDecl() *GoDecl {
 			parenDepth++
 		case TokenRParen:
 			parenDepth--
-			if braceDepth == 0 && parenDepth == 0 {
+			if isGrouped && braceDepth == 0 && parenDepth == 0 {
 				// End of grouped declaration: const (...) or var (...)
 				endPos := p.current.StartPos + 1
 				code := p.lexer.SourceRange(startPos, endPos)

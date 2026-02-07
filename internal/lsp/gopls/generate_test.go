@@ -136,6 +136,54 @@ func TestGenerateVirtualGo_RefKeyed(t *testing.T) {
 	}
 }
 
+func TestGenerateVirtualGo_GoDecl(t *testing.T) {
+	file := &tuigen.File{
+		Package: "main",
+		Imports: []tuigen.Import{
+			{Path: "github.com/grindlemire/go-tui", Alias: "tui"},
+		},
+		Decls: []*tuigen.GoDecl{
+			{
+				Kind:     "var",
+				Code:     "var _ tui.Component = (*counter)(nil)",
+				Position: tuigen.Position{Line: 5, Column: 1},
+			},
+		},
+		Components: []*tuigen.Component{
+			{
+				Name:       "Test",
+				Position:   tuigen.Position{Line: 7, Column: 1},
+				ReturnType: "*element.Element",
+				Body:       []tuigen.Node{},
+			},
+		},
+	}
+
+	source, sourceMap := GenerateVirtualGo(file)
+
+	// Verify GoDecl is emitted in virtual Go
+	if !strings.Contains(source, "var _ tui.Component = (*counter)(nil)") {
+		t.Errorf("expected virtual Go to contain var declaration, got:\n%s", source)
+	}
+
+	// Verify source map has a mapping for the declaration
+	if sourceMap == nil {
+		t.Fatal("expected non-nil source map")
+	}
+
+	// The GoDecl should appear after imports
+	importIdx := strings.Index(source, `tui "github.com/grindlemire/go-tui"`)
+	declIdx := strings.Index(source, "var _ tui.Component")
+	funcIdx := strings.Index(source, "func Test(")
+
+	if importIdx >= declIdx {
+		t.Errorf("expected import before decl")
+	}
+	if declIdx >= funcIdx {
+		t.Errorf("expected decl before func")
+	}
+}
+
 func TestGenerateVirtualGo_ExistingFunctionality(t *testing.T) {
 	// Verify existing functionality still works
 	file := &tuigen.File{
