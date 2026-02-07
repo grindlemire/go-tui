@@ -47,7 +47,7 @@ func (h *header) Render() *tui.Element {
 	)
 	__tui_2.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithText("Ctrl+? help"),
+		tui.WithText("? help"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_2.AddChild(__tui_5)

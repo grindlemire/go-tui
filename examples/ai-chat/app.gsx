@@ -41,6 +41,8 @@ func (c *chatApp) handleEvent(e ChatEvent) {
 		}
 	case "retry":
 		c.retryLast()
+	case "copy":
+		// Clipboard not available in terminal - event ignored
 	}
 }
 

@@ -303,12 +303,12 @@ func (s *settingsApp) Render() *tui.Element {
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
 	__tui_22 := tui.New(
-		tui.WithText("← creative"),
+		tui.WithText("← precise"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_21.AddChild(__tui_22)
 	__tui_23 := tui.New(
-		tui.WithText("precise →"),
+		tui.WithText("creative →"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_21.AddChild(__tui_23)
