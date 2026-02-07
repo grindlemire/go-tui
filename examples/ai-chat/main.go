@@ -8,7 +8,7 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../cmd/tui generate .
+// Generate with: tui generate . (from parent dir: go run ./cmd/tui generate ./examples/ai-chat/...)
 
 func main() {
 	providers := DetectProviders()
