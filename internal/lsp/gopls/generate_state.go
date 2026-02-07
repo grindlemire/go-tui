@@ -64,6 +64,11 @@ func (g *generator) emitRefFromNodes(nodes []tuigen.Node, inLoop, inConditional 
 			}
 			if n.RefExpr != nil {
 				refName := n.RefExpr.Code
+				// Strip receiver prefix (e.g., "c.decrementBtn" -> "decrementBtn")
+				// to generate valid Go variable declarations
+				if idx := strings.LastIndex(refName, "."); idx >= 0 {
+					refName = refName[idx+1:]
+				}
 				refType := "var %s *element.Element"
 				if inLoop {
 					if n.RefKey != nil {

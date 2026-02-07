@@ -187,5 +187,18 @@ func generateFile(inputPath, outputPath string) error {
 		return fmt.Errorf("writing file: %w", err)
 	}
 
+	// Write source map file
+	sourceMap := generator.GetSourceMap()
+	if sourceMap != nil {
+		sourceMapPath := tuigen.SourceMapFileName(outputPath)
+		sourceMapData, err := sourceMap.ToJSON()
+		if err != nil {
+			return fmt.Errorf("serializing source map: %w", err)
+		}
+		if err := os.WriteFile(sourceMapPath, sourceMapData, 0644); err != nil {
+			return fmt.Errorf("writing source map: %w", err)
+		}
+	}
+
 	return nil
 }

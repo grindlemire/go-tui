@@ -47,6 +47,18 @@ func resolveFromAST(ctx *CursorContext, file *tuigen.File) {
 		}
 	}
 
+	// Check if cursor is on a top-level declaration (var, type, const).
+	// These are passed to gopls for type resolution.
+	for _, decl := range file.Decls {
+		declLines := strings.Count(decl.Code, "\n") + 1
+		declEndLine := decl.Position.Line + declLines - 1
+		if line >= decl.Position.Line && line <= declEndLine {
+			ctx.Node = decl
+			ctx.NodeKind = NodeKindGoDecl
+			return
+		}
+	}
+
 	// Check if cursor is on a component declaration line (name or parameter).
 	// We check all components for exact line match first because it's a
 	// precise match regardless of component ordering.

@@ -43,6 +43,13 @@ type Server struct {
 	// Virtual file cache for gopls
 	virtualFiles *gopls.VirtualFileCache
 
+	// Gopls diagnostics per URI
+	goplsDiagnostics   map[string][]gopls.GoplsDiagnostic
+	goplsDiagnosticsMu sync.RWMutex
+
+	// Source map cache for disk-based source maps
+	sourceMapCache *SourceMapCache
+
 	// Server state
 	initialized bool
 	shutdown    bool
@@ -57,14 +64,16 @@ type Server struct {
 func NewServer(reader io.Reader, writer io.Writer) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &Server{
-		reader:        bufio.NewReader(reader),
-		writer:        writer,
-		docs:          NewDocumentManager(),
-		index:         NewComponentIndex(),
-		workspaceASTs: make(map[string]*tuigen.File),
-		virtualFiles:  gopls.NewVirtualFileCache(),
-		ctx:           ctx,
-		cancel:        cancel,
+		reader:           bufio.NewReader(reader),
+		writer:           writer,
+		docs:             NewDocumentManager(),
+		index:            NewComponentIndex(),
+		workspaceASTs:    make(map[string]*tuigen.File),
+		virtualFiles:     gopls.NewVirtualFileCache(),
+		goplsDiagnostics: make(map[string][]gopls.GoplsDiagnostic),
+		sourceMapCache:   NewSourceMapCache(),
+		ctx:              ctx,
+		cancel:           cancel,
 	}
 	// Create provider registry for all LSP feature providers.
 	registry := s.CreateProviderRegistry()
@@ -99,12 +108,48 @@ func (s *Server) InitGopls() error {
 	s.goplsProxy = proxy
 	log.Server("gopls proxy initialized successfully")
 
+	// Set up diagnostic callback to receive gopls diagnostics
+	proxy.SetDiagnosticCallback(s.handleGoplsDiagnostics)
+
+	// Set up source map lookup for position translation
+	proxy.SetSourceMapLookup(s.lookupSourceMap)
+
 	// Update virtual files for all already-open documents
 	for _, doc := range s.docs.All() {
 		s.UpdateVirtualFile(doc)
 	}
 
 	return nil
+}
+
+// lookupSourceMap returns a position translation function for the given .gsx URI.
+// Uses the in-memory virtual file source map, which is always up-to-date with the current document.
+func (s *Server) lookupSourceMap(gsxURI string) func(goLine, goCol int) (gsxLine, gsxCol int, found bool) {
+	// Use the virtual file cache (in-memory, always current)
+	cached := s.virtualFiles.Get(gsxURI)
+	if cached == nil || cached.SourceMap == nil {
+		log.Server("No virtual file source map for %s", gsxURI)
+		return nil
+	}
+
+	log.Server("Using in-memory source map for %s (%d mappings)", gsxURI, cached.SourceMap.Len())
+	return cached.SourceMap.GoToTui
+}
+
+// handleGoplsDiagnostics receives diagnostics from gopls and republishes them.
+func (s *Server) handleGoplsDiagnostics(uri string, diagnostics []gopls.GoplsDiagnostic) {
+	log.Server("Received %d gopls diagnostics for %s", len(diagnostics), uri)
+
+	// Store the gopls diagnostics
+	s.goplsDiagnosticsMu.Lock()
+	s.goplsDiagnostics[uri] = diagnostics
+	s.goplsDiagnosticsMu.Unlock()
+
+	// Republish diagnostics for this document
+	doc := s.docs.Get(uri)
+	if doc != nil {
+		s.publishDiagnostics(doc)
+	}
 }
 
 // ShutdownGopls shuts down the gopls proxy.

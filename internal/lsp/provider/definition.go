@@ -87,6 +87,12 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		if err == nil && len(locs) > 0 {
 			return locs, nil
 		}
+	case NodeKindGoDecl:
+		// Top-level var/type/const declarations delegate to gopls
+		locs, err := d.getGoplsDefinition(ctx)
+		if err == nil && len(locs) > 0 {
+			return locs, nil
+		}
 	}
 
 	// Gopls fallback for Go expressions not resolved by handlers above.

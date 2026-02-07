@@ -66,6 +66,12 @@ func (g *generator) generate(file *tuigen.File) string {
 		g.writeLine("")
 	}
 
+	// Generate top-level declarations (var, type, const) with source mapping
+	for _, decl := range file.Decls {
+		g.generateGoDecl(decl)
+		g.writeLine("")
+	}
+
 	// Generate a dummy function for each component to hold Go expressions
 	for _, comp := range file.Components {
 		g.generateComponent(comp)
@@ -420,6 +426,27 @@ func (g *generator) generateComponentCall(call *tuigen.ComponentCall, indent str
 
 	// Generate children
 	g.generateNodes(call.Children, len(indent)+1)
+}
+
+// generateGoDecl generates a top-level declaration (var, type, const) with source mapping.
+func (g *generator) generateGoDecl(decl *tuigen.GoDecl) {
+	code := decl.Code
+	lines := strings.Split(code, "\n")
+
+	tuiStartLine := decl.Position.Line - 1 // convert to 0-indexed
+	tuiStartCol := decl.Position.Column - 1
+
+	for i, line := range lines {
+		// Add mapping for each line of the declaration
+		g.sourceMap.AddMapping(Mapping{
+			TuiLine: tuiStartLine + i,
+			TuiCol:  tuiStartCol,
+			GoLine:  g.goLine,
+			GoCol:   0,
+			Length:  len(line),
+		})
+		g.writeLine(line)
+	}
 }
 
 // generateFunc generates a top-level function with source mapping.

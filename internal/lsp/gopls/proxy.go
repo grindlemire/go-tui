@@ -18,6 +18,22 @@ import (
 	"github.com/grindlemire/go-tui/internal/lsp/log"
 )
 
+// DiagnosticCallback is called when gopls publishes diagnostics.
+// The URI is the original .gsx file URI, and diagnostics have translated positions.
+type DiagnosticCallback func(uri string, diagnostics []GoplsDiagnostic)
+
+// SourceMapLookup is called to retrieve a source map for position translation.
+// Returns goLine, goCol -> gsxLine, gsxCol translation function, or nil if not found.
+type SourceMapLookup func(gsxURI string) func(goLine, goCol int) (gsxLine, gsxCol int, found bool)
+
+// GoplsDiagnostic represents a diagnostic from gopls with translated positions.
+type GoplsDiagnostic struct {
+	Range    Range  `json:"range"`
+	Severity int    `json:"severity"`
+	Message  string `json:"message"`
+	Source   string `json:"source"`
+}
+
 // GoplsProxy manages communication with a gopls subprocess.
 type GoplsProxy struct {
 	cmd    *exec.Cmd
@@ -38,6 +54,13 @@ type GoplsProxy struct {
 
 	// Root URI for the workspace
 	rootURI string
+
+	// Diagnostic callback
+	diagnosticCallback DiagnosticCallback
+	diagnosticMu       sync.RWMutex
+
+	// Source map lookup callback
+	sourceMapLookup SourceMapLookup
 
 	// Context for managing shutdown
 	ctx    context.Context
@@ -229,6 +252,18 @@ func (p *GoplsProxy) Initialize(rootURI string) error {
 	return nil
 }
 
+// SetDiagnosticCallback sets the callback for diagnostic notifications.
+func (p *GoplsProxy) SetDiagnosticCallback(cb DiagnosticCallback) {
+	p.diagnosticMu.Lock()
+	defer p.diagnosticMu.Unlock()
+	p.diagnosticCallback = cb
+}
+
+// SetSourceMapLookup sets the callback for source map lookup.
+func (p *GoplsProxy) SetSourceMapLookup(lookup SourceMapLookup) {
+	p.sourceMapLookup = lookup
+}
+
 // Shutdown shuts down the gopls server.
 func (p *GoplsProxy) Shutdown() error {
 	_, err := p.call("shutdown", nil)
@@ -268,6 +303,27 @@ func (p *GoplsProxy) send(req Request) error {
 	return nil
 }
 
+// Notification represents a JSON-RPC notification (no ID).
+type Notification struct {
+	JSONRPC string          `json:"jsonrpc"`
+	Method  string          `json:"method"`
+	Params  json.RawMessage `json:"params"`
+}
+
+// publishDiagnosticsParams represents gopls diagnostic notification params.
+type publishDiagnosticsParams struct {
+	URI         string            `json:"uri"`
+	Diagnostics []goplsDiagnostic `json:"diagnostics"`
+}
+
+// goplsDiagnostic is the raw diagnostic from gopls.
+type goplsDiagnostic struct {
+	Range    Range  `json:"range"`
+	Severity int    `json:"severity"`
+	Message  string `json:"message"`
+	Source   string `json:"source"`
+}
+
 // readResponses reads responses from gopls in a loop.
 func (p *GoplsProxy) readResponses() {
 	for {
@@ -285,13 +341,20 @@ func (p *GoplsProxy) readResponses() {
 
 		log.Gopls("Received: %s", string(msg))
 
+		// First try to parse as a notification (no ID field or ID=0)
+		var notif Notification
+		if err := json.Unmarshal(msg, &notif); err == nil && notif.Method != "" {
+			p.handleNotification(&notif)
+			continue
+		}
+
 		var resp Response
 		if err := json.Unmarshal(msg, &resp); err != nil {
 			log.Gopls("Error parsing response: %v", err)
 			continue
 		}
 
-		// If this is a notification (no ID), ignore it
+		// If this is a notification (no ID), skip
 		if resp.ID == 0 {
 			continue
 		}
@@ -302,6 +365,109 @@ func (p *GoplsProxy) readResponses() {
 			ch <- &resp
 		}
 		p.pendingMu.Unlock()
+	}
+}
+
+// handleNotification processes a notification from gopls.
+func (p *GoplsProxy) handleNotification(notif *Notification) {
+	log.Gopls("Received notification: method=%s", notif.Method)
+
+	if notif.Method != "textDocument/publishDiagnostics" {
+		return
+	}
+
+	var params publishDiagnosticsParams
+	if err := json.Unmarshal(notif.Params, &params); err != nil {
+		log.Gopls("Error parsing diagnostics params: %v", err)
+		return
+	}
+
+	log.Gopls("Diagnostics for URI=%s count=%d", params.URI, len(params.Diagnostics))
+	for i, d := range params.Diagnostics {
+		log.Gopls("  [%d] %s: %s", i, d.Range, d.Message)
+	}
+
+	// Determine the .gsx URI based on file type
+	var gsxURI string
+	var lineOffset int
+
+	if IsVirtualGoFile(params.URI) {
+		// Virtual file (counter_gsx_generated.go) - no goimports offset needed
+		gsxURI = GoURIToTuiURI(params.URI)
+		lineOffset = 0
+		log.Gopls("Virtual file diagnostics for %s", gsxURI)
+	} else if IsGeneratedGoFile(params.URI) {
+		// Real generated file (counter_gsx.go) - needs goimports offset
+		gsxURI = GeneratedGoURIToTuiURI(params.URI)
+		lineOffset = 1 // goimports adds 1 blank line between import groups
+		log.Gopls("Real file diagnostics for %s (offset=%d)", gsxURI, lineOffset)
+	} else {
+		log.Gopls("Skipping - not a .gsx-related file: %s", params.URI)
+		return
+	}
+	log.Gopls("Mapped to gsxURI=%s", gsxURI)
+
+	// Get source map lookup function
+	var translatePos func(goLine, goCol int) (gsxLine, gsxCol int, found bool)
+	if p.sourceMapLookup != nil {
+		translatePos = p.sourceMapLookup(gsxURI)
+	}
+	if translatePos == nil {
+		log.Gopls("No source map available for %s", gsxURI)
+		return
+	}
+
+	// Translate diagnostics
+	var translated []GoplsDiagnostic
+	for _, diag := range params.Diagnostics {
+		// Skip "redeclared" errors which can happen with our generated code
+		if strings.Contains(diag.Message, "redeclared") {
+			log.Gopls("Skipping redeclared error: %s", diag.Message)
+			continue
+		}
+
+		// Translate positions using source map
+		// For real files, goimports adds blank lines that shift positions
+		adjustedStartLine := diag.Range.Start.Line - lineOffset
+		if adjustedStartLine < 0 {
+			adjustedStartLine = 0
+		}
+		gsxStartLine, gsxStartCol, startFound := translatePos(adjustedStartLine, diag.Range.Start.Character)
+
+		adjustedEndLine := diag.Range.End.Line - lineOffset
+		if adjustedEndLine < 0 {
+			adjustedEndLine = 0
+		}
+		gsxEndLine, gsxEndCol, endFound := translatePos(adjustedEndLine, diag.Range.End.Character)
+
+		if !startFound || !endFound {
+			log.Gopls("Could not translate diagnostic position: line=%d col=%d msg=%s",
+				diag.Range.Start.Line, diag.Range.Start.Character, diag.Message)
+			continue
+		}
+
+		log.Gopls("Translated: go=%d:%d -> gsx=%d:%d msg=%s",
+			diag.Range.Start.Line, diag.Range.Start.Character,
+			gsxStartLine, gsxStartCol, diag.Message)
+
+		translated = append(translated, GoplsDiagnostic{
+			Range: Range{
+				Start: Position{Line: gsxStartLine, Character: gsxStartCol},
+				End:   Position{Line: gsxEndLine, Character: gsxEndCol},
+			},
+			Severity: diag.Severity,
+			Message:  diag.Message,
+			Source:   "gopls",
+		})
+	}
+
+	// Call the callback if registered
+	p.diagnosticMu.RLock()
+	cb := p.diagnosticCallback
+	p.diagnosticMu.RUnlock()
+
+	if cb != nil && len(translated) > 0 {
+		cb(gsxURI, translated)
 	}
 }
 
@@ -373,4 +539,18 @@ func GetVirtualFilePath(gsxPath string) string {
 		base = base + "_generated.go"
 	}
 	return filepath.Join(dir, base)
+}
+
+// IsGeneratedGoFile returns true if the URI is a real generated _gsx.go file (on disk).
+func IsGeneratedGoFile(uri string) bool {
+	// Match files like counter_gsx.go but NOT counter_gsx_generated.go (virtual)
+	return strings.HasSuffix(uri, "_gsx.go") && !strings.HasSuffix(uri, "_gsx_generated.go")
+}
+
+// GeneratedGoURIToTuiURI converts a real generated _gsx.go file URI to the .gsx file URI.
+func GeneratedGoURIToTuiURI(goURI string) string {
+	if strings.HasSuffix(goURI, "_gsx.go") {
+		return strings.TrimSuffix(goURI, "_gsx.go") + ".gsx"
+	}
+	return goURI
 }

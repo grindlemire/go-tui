@@ -59,6 +59,7 @@ const (
 	NodeKindStateAccess
 	NodeKindParameter
 	NodeKindFunction
+	NodeKindGoDecl // Top-level var, type, or const declaration
 	NodeKindComponentCall
 	NodeKindEventHandler
 	NodeKindText
@@ -94,6 +95,8 @@ func (k NodeKind) String() string {
 		return "Parameter"
 	case NodeKindFunction:
 		return "Function"
+	case NodeKindGoDecl:
+		return "GoDecl"
 	case NodeKindComponentCall:
 		return "ComponentCall"
 	case NodeKindEventHandler:

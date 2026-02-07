@@ -3,6 +3,7 @@ package tuigen
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // generateChildren generates code for element children.
@@ -104,12 +105,41 @@ func (g *Generator) generateGoCode(gc *GoCode) {
 
 // generateGoFunc generates a top-level Go function.
 func (g *Generator) generateGoFunc(fn *GoFunc) {
-	g.writef("%s\n\n", fn.Code)
+	g.generatePassthroughCode(fn.Code, fn.Position)
+	g.writeln("")
 }
 
 // generateGoDecl generates a top-level Go declaration (type, const, var).
 func (g *Generator) generateGoDecl(decl *GoDecl) {
-	g.writef("%s\n\n", decl.Code)
+	g.generatePassthroughCode(decl.Code, decl.Position)
+	g.writeln("")
+}
+
+// generatePassthroughCode generates code that is passed through from .gsx to .go
+// and records source map mappings for each line.
+func (g *Generator) generatePassthroughCode(code string, pos Position) {
+	lines := strings.Split(code, "\n")
+	// Convert to 0-indexed. We count newlines in the Code to determine the
+	// actual starting line, since Position.Line may point to inside the declaration.
+	codeLines := strings.Count(code, "\n") + 1
+	// gsxLine is where this code block ENDS, so start = end - count + 1
+	// But we use Position.Line as the start, just convert to 0-indexed
+	gsxLine := pos.Line - 1 // Convert to 0-indexed
+
+	for i, line := range lines {
+		// Record mapping for this line
+		if g.sourceMap != nil {
+			g.sourceMap.AddMapping(SourceMapping{
+				GoLine:  g.currentLine,
+				GoCol:   0,
+				GsxLine: gsxLine + i,
+				GsxCol:  0,
+				Length:  len(line),
+			})
+		}
+		g.writeln(line)
+	}
+	_ = codeLines // unused for now
 }
 
 // generateComponentCall generates code for a component call.
