@@ -1,5 +1,7 @@
 package main
 
+import tui "github.com/grindlemire/go-tui"
+
 // InputBox renders a single-line input box pinned to the bottom of the inline region.
 // The height parameter should match the app's WithInlineHeight value.
 templ InputBox(text string, height int) {

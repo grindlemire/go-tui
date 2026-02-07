@@ -95,6 +95,10 @@ func (a *App) PrintAboveln(format string, args ...any) {
 // Prints content that scrolls into terminal scrollback buffer, allowing
 // the user to scroll back through history with their terminal's scroll feature.
 // Must be called from the main event loop (via QueueUpdate).
+//
+// Note: The first N lines printed (where N = rows above widget) will push
+// blank lines into scrollback. This is a known limitation of the current
+// approach. After N lines, actual content starts appearing in scrollback.
 func (a *App) printAboveRaw(content string) {
 	if a.inlineStartRow < 1 {
 		return // No room above widget
@@ -102,28 +106,29 @@ func (a *App) printAboveRaw(content string) {
 
 	text := strings.TrimSuffix(content, "\n")
 
-	// To get content into terminal scrollback:
-	// 1. Use reverse index (ESC M) at top of screen to scroll down, creating
-	//    space at top - but this doesn't help us.
-	// 2. Actually, we need to scroll UP to push content into scrollback.
-	//
-	// The approach: position at the line just above widget and use
-	// scroll up (ESC[S) which scrolls the whole screen up, pushing
-	// the top line into scrollback. Then print our text.
-	//
-	// inlineStartRow is 0-indexed. Widget starts at ANSI row inlineStartRow+1.
+	// Use a scroll region to protect the widget at the bottom.
+	// ANSI escape sequences use 1-indexed rows.
+	// inlineStartRow is 0-indexed, so the widget occupies rows
+	// (inlineStartRow+1) through termHeight in ANSI terms.
 
 	var seq strings.Builder
-	// Scroll entire screen up by 1 line (top line goes to scrollback)
-	seq.WriteString("\033[1S")
-	// Move to the row just above widget (which is now blank after scroll)
+
+	// Set scroll region to exclude widget area (rows 1 to inlineStartRow)
+	seq.WriteString(fmt.Sprintf("\033[1;%dr", a.inlineStartRow))
+
+	// Move to bottom of scroll region (last row before widget)
 	seq.WriteString(fmt.Sprintf("\033[%d;1H", a.inlineStartRow))
-	// Print text
+
+	// Print text followed by newline
+	// The newline scrolls content up within the region, pushing top line to scrollback
 	seq.WriteString(text)
+	seq.WriteString("\n")
+
+	// Reset scroll region to full screen
+	seq.WriteString("\033[r")
 
 	a.terminal.WriteDirect([]byte(seq.String()))
 
-	// Force widget redraw (scroll affected it)
-	a.needsFullRedraw = true
+	// Mark dirty to ensure consistent state
 	MarkDirty()
 }
