@@ -36,17 +36,21 @@ func (m *messageView) HandleMouse(me tui.MouseEvent) bool {
 	)
 }
 
-func (m *messageView) borderClass() string {
+func (m *messageView) border() tui.BorderStyle {
+	return tui.BorderRounded
+}
+
+func (m *messageView) borderStyle() tui.Style {
 	if m.msg.Role == "assistant" {
 		if m.focused {
-			return "border-rounded border-cyan"
+			return tui.NewStyle().Foreground(tui.Cyan)
 		}
-		return "border-rounded border-blue"
+		return tui.NewStyle().Foreground(tui.Blue)
 	}
 	if m.focused {
-		return "border-rounded border-white"
+		return tui.NewStyle().Foreground(tui.White)
 	}
-	return "border-rounded"
+	return tui.NewStyle()
 }
 
 func (m *messageView) roleIcon() string {
@@ -56,18 +60,18 @@ func (m *messageView) roleIcon() string {
 	return ""
 }
 
-func (m *messageView) roleClass() string {
+func (m *messageView) roleTextStyle() tui.Style {
 	if m.msg.Role == "assistant" {
-		return "text-cyan font-bold"
+		return tui.NewStyle().Bold().Foreground(tui.Cyan)
 	}
-	return "text-white font-bold"
+	return tui.NewStyle().Bold().Foreground(tui.White)
 }
 
 templ (m *messageView) Render() {
-	<div class={m.borderClass()} padding={1} margin={1}>
+	<div border={m.border()} borderStyle={m.borderStyle()} padding={1} margin={1}>
 		<div class="flex-col gap-1">
 			<div class="flex justify-between">
-				<span class={m.roleClass()}>{m.roleIcon() + " " + m.msg.Role}</span>
+				<span textStyle={m.roleTextStyle()}>{m.roleIcon() + " " + m.msg.Role}</span>
 				<div class="flex gap-1">
 					@if m.msg.Duration > 0 {
 						<span class="font-dim">{fmt.Sprintf("%.1fs", m.msg.Duration.Seconds())}</span>

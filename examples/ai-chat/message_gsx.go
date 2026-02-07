@@ -40,17 +40,21 @@ func (m *messageView) HandleMouse(me tui.MouseEvent) bool {
 	)
 }
 
-func (m *messageView) borderClass() string {
+func (m *messageView) border() tui.BorderStyle {
+	return tui.BorderRounded
+}
+
+func (m *messageView) borderStyle() tui.Style {
 	if m.msg.Role == "assistant" {
 		if m.focused {
-			return "border-rounded border-cyan"
+			return tui.NewStyle().Foreground(tui.Cyan)
 		}
-		return "border-rounded border-blue"
+		return tui.NewStyle().Foreground(tui.Blue)
 	}
 	if m.focused {
-		return "border-rounded border-white"
+		return tui.NewStyle().Foreground(tui.White)
 	}
-	return "border-rounded"
+	return tui.NewStyle()
 }
 
 func (m *messageView) roleIcon() string {
@@ -60,15 +64,17 @@ func (m *messageView) roleIcon() string {
 	return ""
 }
 
-func (m *messageView) roleClass() string {
+func (m *messageView) roleTextStyle() tui.Style {
 	if m.msg.Role == "assistant" {
-		return "text-cyan font-bold"
+		return tui.NewStyle().Bold().Foreground(tui.Cyan)
 	}
-	return "text-white font-bold"
+	return tui.NewStyle().Bold().Foreground(tui.White)
 }
 
 func (m *messageView) Render() *tui.Element {
 	__tui_0 := tui.New(
+		tui.WithBorder(m.border()),
+		tui.WithBorderStyle(m.borderStyle()),
 		tui.WithPadding(1),
 		tui.WithMargin(1),
 	)
@@ -81,7 +87,8 @@ func (m *messageView) Render() *tui.Element {
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
 	__tui_3 := tui.New(
-		tui.WithText(m.roleIcon() + " " + m.msg.Role),
+		tui.WithText(m.roleIcon()+" "+m.msg.Role),
+		tui.WithTextStyle(m.roleTextStyle()),
 	)
 	__tui_2.AddChild(__tui_3)
 	__tui_4 := tui.New(
