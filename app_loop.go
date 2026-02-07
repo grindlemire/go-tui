@@ -10,9 +10,10 @@ import (
 // Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
 // Rendering occurs only when the dirty flag is set (by mutations).
 func (a *App) Run() error {
-	// Set current app for package-level Stop()
+	// Set current app for package-level Stop(), saving previous for nested apps
+	prevApp := currentApp
 	currentApp = a
-	defer func() { currentApp = nil }()
+	defer func() { currentApp = prevApp }()
 
 	// Handle Ctrl+C gracefully
 	sigCh := make(chan os.Signal, 1)
