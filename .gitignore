@@ -6,6 +6,8 @@ examples/*/*
 !examples/*/*.go
 !examples/*/*.gsx
 !examples/*/*.md
+!examples/ai-chat/go.mod
+!examples/ai-chat/go.sum
 
 debug.log
 
