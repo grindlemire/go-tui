@@ -59,7 +59,7 @@ type Viewable interface {
 
 // App manages the application lifecycle: terminal setup, event loop, and rendering.
 type App struct {
-	terminal        *ANSITerminal
+	terminal        Terminal
 	buffer          *Buffer
 	reader          EventReader
 	focus           *FocusManager
@@ -83,6 +83,11 @@ type App struct {
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow int // Terminal row where inline region starts (calculated at init)
+
+	// Dynamic alternate screen mode (for overlays like settings panels)
+	inAlternateScreen   bool // Currently in alternate screen overlay
+	savedInlineHeight   int  // Preserved inlineHeight when entering alternate
+	savedInlineStartRow int  // Preserved inlineStartRow when entering alternate
 
 	// Component model (mount system for struct components)
 	mounts        *mountState

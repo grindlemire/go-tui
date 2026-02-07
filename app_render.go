@@ -8,13 +8,17 @@ func (a *App) Render() {
 
 	// Determine the render height based on mode
 	renderHeight := termHeight
-	if a.inlineHeight > 0 {
+	if !a.inAlternateScreen && a.inlineHeight > 0 {
 		renderHeight = a.inlineHeight
 	}
 
 	// Ensure buffer matches expected size (handles rapid resize)
 	if a.buffer.Width() != width || a.buffer.Height() != renderHeight {
-		if a.inlineHeight > 0 {
+		if a.inAlternateScreen {
+			// Alternate screen mode: always use full-screen sizing
+			a.terminal.Clear()
+			a.buffer.Resize(width, termHeight)
+		} else if a.inlineHeight > 0 {
 			// Inline mode: update start row, resize buffer width only if needed
 			a.inlineStartRow = termHeight - a.inlineHeight
 			if a.buffer.Width() != width {
@@ -66,7 +70,7 @@ func (a *App) Render() {
 	}
 
 	// Flush to terminal (inline mode offsets Y coordinates)
-	if a.inlineHeight > 0 {
+	if !a.inAlternateScreen && a.inlineHeight > 0 {
 		a.renderInline()
 	} else if a.needsFullRedraw {
 		RenderFull(a.terminal, a.buffer)

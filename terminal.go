@@ -77,4 +77,8 @@ type Terminal interface {
 
 	// Caps returns the terminal's capabilities.
 	Caps() Capabilities
+
+	// WriteDirect writes raw bytes directly to the terminal.
+	// Use this for escape sequences that are not covered by other methods.
+	WriteDirect([]byte) (int, error)
 }

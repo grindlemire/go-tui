@@ -7,7 +7,10 @@ package tui
 func (a *App) Dispatch(event Event) bool {
 	// Handle ResizeEvent specially
 	if resize, ok := event.(ResizeEvent); ok {
-		if a.inlineHeight > 0 {
+		if a.inAlternateScreen {
+			// Alternate screen mode: always use full-screen sizing
+			a.buffer.Resize(resize.Width, resize.Height)
+		} else if a.inlineHeight > 0 {
 			// Inline mode: recalculate start row, keep buffer height fixed
 			a.inlineStartRow = resize.Height - a.inlineHeight
 			// Only resize buffer width if it changed

@@ -16,6 +16,10 @@ type MockTerminal struct {
 	inAltScreen   bool
 	mouseEnabled  bool
 	caps          Capabilities
+
+	// Transition counters for testing screen mode switches
+	altScreenEnterCount int
+	altScreenExitCount  int
 }
 
 // Ensure MockTerminal implements Terminal.
@@ -111,11 +115,13 @@ func (m *MockTerminal) ExitRawMode() error {
 // EnterAltScreen simulates entering the alternate screen buffer.
 func (m *MockTerminal) EnterAltScreen() {
 	m.inAltScreen = true
+	m.altScreenEnterCount++
 }
 
 // ExitAltScreen simulates exiting the alternate screen buffer.
 func (m *MockTerminal) ExitAltScreen() {
 	m.inAltScreen = false
+	m.altScreenExitCount++
 }
 
 // EnableMouse simulates enabling mouse event reporting.
@@ -131,6 +137,12 @@ func (m *MockTerminal) DisableMouse() {
 // Caps returns the terminal's capabilities.
 func (m *MockTerminal) Caps() Capabilities {
 	return m.caps
+}
+
+// WriteDirect is a no-op for the mock terminal.
+// In tests, raw escape sequences are not processed.
+func (m *MockTerminal) WriteDirect(b []byte) (int, error) {
+	return len(b), nil
 }
 
 // SetCaps sets the terminal's capabilities for testing.
@@ -216,6 +228,16 @@ func (m *MockTerminal) IsInAltScreen() bool {
 	return m.inAltScreen
 }
 
+// AltScreenEnterCount returns the number of times EnterAltScreen was called.
+func (m *MockTerminal) AltScreenEnterCount() int {
+	return m.altScreenEnterCount
+}
+
+// AltScreenExitCount returns the number of times ExitAltScreen was called.
+func (m *MockTerminal) AltScreenExitCount() int {
+	return m.altScreenExitCount
+}
+
 // IsMouseEnabled returns whether mouse event reporting is enabled.
 func (m *MockTerminal) IsMouseEnabled() bool {
 	return m.mouseEnabled
@@ -228,6 +250,8 @@ func (m *MockTerminal) Reset() {
 	m.inRawMode = false
 	m.inAltScreen = false
 	m.mouseEnabled = false
+	m.altScreenEnterCount = 0
+	m.altScreenExitCount = 0
 }
 
 // Resize changes the terminal dimensions, preserving content where possible.

@@ -45,7 +45,18 @@ func (a *App) Close() error {
 	}
 
 	// Handle screen cleanup based on mode
-	if a.inlineHeight > 0 {
+	if a.inAlternateScreen {
+		// Currently in alternate screen overlay: exit alternate screen first
+		a.terminal.ExitAltScreen()
+		// Then handle based on the original mode (before entering alternate)
+		if a.savedInlineHeight > 0 {
+			// Was inline mode: clear the inline area
+			a.terminal.SetCursor(0, a.savedInlineStartRow)
+			a.terminal.ClearToEnd()
+		}
+		// If savedInlineHeight == 0, we were in full-screen mode which means
+		// alternate screen was the normal state, so exiting it is sufficient
+	} else if a.inlineHeight > 0 {
 		// Inline mode: clear the widget area and position cursor for shell
 		a.terminal.SetCursor(0, a.inlineStartRow)
 		a.terminal.ClearToEnd()
