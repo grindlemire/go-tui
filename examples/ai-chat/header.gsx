@@ -19,7 +19,7 @@ templ (h *header) Render() {
 		<div class="flex gap-2">
 			<span class="font-dim">{h.state.Model.Get()}</span>
 			<span class="text-cyan">{fmt.Sprintf("%d tokens", h.state.TotalTokens.Get())}</span>
-			<span class="font-dim">{"Ctrl+? help"}</span>
+			<span class="font-dim">{"? help"}</span>
 		</div>
 	</div>
 }

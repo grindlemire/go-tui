@@ -215,8 +215,8 @@ templ (s *settingsApp) Render() {
 					<span class="text-cyan">{fmt.Sprintf("%.1f", s.state.Temperature.Get())}</span>
 				</div>
 				<div class="flex justify-between">
-					<span class="font-dim">{"← creative"}</span>
-					<span class="font-dim">{"precise →"}</span>
+					<span class="font-dim">{"← precise"}</span>
+					<span class="font-dim">{"creative →"}</span>
 				</div>
 			</div>
 		</div>
