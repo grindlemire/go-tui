@@ -11,26 +11,78 @@ import (
 )
 
 type streamingApp struct {
-	dataCh    <-chan string
-	lineCount *tui.State[int]
-	elapsed   *tui.State[int]
-	content   *tui.Ref
+	dataCh        <-chan string
+	lines         *tui.State[[]string]
+	scrollY       *tui.State[int]
+	stickToBottom *tui.State[bool]
+	elapsed       *tui.State[int]
+	content       *tui.Ref
 }
 
 func Streaming(dataCh <-chan string) *streamingApp {
 	return &streamingApp{
-		dataCh:    dataCh,
-		lineCount: tui.NewState(0),
-		elapsed:   tui.NewState(0),
-		content:   tui.NewRef(),
+		dataCh:        dataCh,
+		lines:         tui.NewState([]string{}),
+		scrollY:       tui.NewState(0),
+		stickToBottom: tui.NewState(true),
+		elapsed:       tui.NewState(0),
+		content:       tui.NewRef(),
 	}
+}
+
+func (s *streamingApp) scrollBy(delta int) {
+	el := s.content.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := s.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	s.scrollY.Set(newY)
+
+	// Update stickToBottom based on whether we're at bottom
+	s.stickToBottom.Set(newY >= maxY)
 }
 
 func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnKey(tui.KeyPageUp, func(ke tui.KeyEvent) { s.scrollBy(-10) }),
+		tui.OnKey(tui.KeyPageDown, func(ke tui.KeyEvent) { s.scrollBy(10) }),
+		tui.OnKey(tui.KeyHome, func(ke tui.KeyEvent) {
+			s.scrollY.Set(0)
+			s.stickToBottom.Set(false)
+		}),
+		tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) {
+			el := s.content.El()
+			if el != nil {
+				_, maxY := el.MaxScroll()
+				s.scrollY.Set(maxY)
+				s.stickToBottom.Set(true)
+			}
+		}),
 	}
+}
+
+func (s *streamingApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		s.scrollBy(-1)
+		return true
+	case tui.MouseWheelDown:
+		s.scrollBy(1)
+		return true
+	}
+	return false
 }
 
 func (s *streamingApp) Watchers() []tui.Watcher {
@@ -45,20 +97,23 @@ func (s *streamingApp) tick() {
 }
 
 func (s *streamingApp) addLine(line string) {
-	s.lineCount.Set(s.lineCount.Get() + 1)
+	// Append the line to our state
+	current := s.lines.Get()
+	s.lines.Set(append(current, line))
 
-	el := s.content.El()
-	stayAtBottom := el.IsAtBottom()
-
-	lineElem := tui.New(
-		tui.WithText(line),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
-	)
-	el.AddChild(lineElem)
-
-	if stayAtBottom {
-		el.ScrollToBottom()
+	// If stickToBottom, set scrollY to a very large value
+	// It will be clamped to maxY during layout
+	if s.stickToBottom.Get() {
+		s.scrollY.Set(999999)
 	}
+}
+
+func (s *streamingApp) getScrollY() int {
+	// If stickToBottom is true, return a large value that will be clamped
+	if s.stickToBottom.Get() {
+		return 999999
+	}
+	return s.scrollY.Get()
 }
 
 func (s *streamingApp) Render() *tui.Element {
@@ -88,43 +143,50 @@ func (s *streamingApp) Render() *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithFocusable(true),
+		tui.WithScrollOffset(0, s.getScrollY()),
 	)
 	s.content.Set(__tui_3)
+	for _, line := range s.lines.Get() {
+		__tui_4 := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
+		)
+		__tui_3.AddChild(__tui_4)
+	}
 	__tui_0.AddChild(__tui_3)
-	__tui_4 := tui.New(
+	__tui_5 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithFlexShrink(0),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_5 := tui.New(
+	__tui_6 := tui.New(
 		tui.WithText("Lines:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_4.AddChild(__tui_5)
-	__tui_6 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", s.lineCount.Get())),
+	__tui_5.AddChild(__tui_6)
+	__tui_7 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", len(s.lines.Get()))),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_4.AddChild(__tui_6)
-	__tui_7 := tui.New(
+	__tui_5.AddChild(__tui_7)
+	__tui_8 := tui.New(
 		tui.WithText("Elapsed:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_4.AddChild(__tui_7)
-	__tui_8 := tui.New(
+	__tui_5.AddChild(__tui_8)
+	__tui_9 := tui.New(
 		tui.WithText(fmt.Sprintf("%ds", s.elapsed.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_4.AddChild(__tui_8)
-	__tui_0.AddChild(__tui_4)
-	__tui_9 := tui.New(
-		tui.WithText("Arrow keys to scroll | [q] quit"),
+	__tui_5.AddChild(__tui_9)
+	__tui_0.AddChild(__tui_5)
+	__tui_10 := tui.New(
+		tui.WithText("↑↓/jk scroll | [q] quit"),
 		tui.WithFlexShrink(0),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_9)
+	__tui_0.AddChild(__tui_10)
 
 	return __tui_0
 }

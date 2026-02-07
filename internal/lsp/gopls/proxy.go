@@ -387,24 +387,23 @@ func (p *GoplsProxy) handleNotification(notif *Notification) {
 		log.Gopls("  [%d] %s: %s", i, d.Range, d.Message)
 	}
 
-	// Determine the .gsx URI based on file type
-	var gsxURI string
-	var lineOffset int
-
+	// Only process diagnostics from real generated files (_gsx.go)
+	// Skip virtual files (_gsx_generated.go) - they exist only for hover/completion
+	// and having both can confuse gopls with duplicate type definitions
 	if IsVirtualGoFile(params.URI) {
-		// Virtual file (counter_gsx_generated.go) - no goimports offset needed
-		gsxURI = GoURIToTuiURI(params.URI)
-		lineOffset = 0
-		log.Gopls("Virtual file diagnostics for %s", gsxURI)
-	} else if IsGeneratedGoFile(params.URI) {
-		// Real generated file (counter_gsx.go) - needs goimports offset
-		gsxURI = GeneratedGoURIToTuiURI(params.URI)
-		lineOffset = 1 // goimports adds 1 blank line between import groups
-		log.Gopls("Real file diagnostics for %s (offset=%d)", gsxURI, lineOffset)
-	} else {
-		log.Gopls("Skipping - not a .gsx-related file: %s", params.URI)
+		log.Gopls("Skipping virtual file diagnostics: %s", params.URI)
 		return
 	}
+
+	if !IsGeneratedGoFile(params.URI) {
+		log.Gopls("Skipping - not a generated _gsx.go file: %s", params.URI)
+		return
+	}
+
+	// Real generated file (counter_gsx.go) - needs goimports offset
+	gsxURI := GeneratedGoURIToTuiURI(params.URI)
+	lineOffset := 1 // goimports adds 1 blank line between import groups
+	log.Gopls("Real file diagnostics for %s (offset=%d)", gsxURI, lineOffset)
 	log.Gopls("Mapped to gsxURI=%s", gsxURI)
 
 	// Get source map lookup function
