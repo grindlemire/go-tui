@@ -8,12 +8,6 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-// deferredWatcher tracks a watcher to be attached after all elements are created.
-type deferredWatcher struct {
-	elementVar  string // The element variable to attach the watcher to
-	watcherExpr string // The watcher expression (e.g., "tui.Watch(dataCh, handler)")
-}
-
 // Generator transforms a validated AST into Go source code.
 type Generator struct {
 	buf        bytes.Buffer
@@ -23,13 +17,6 @@ type Generator struct {
 
 	// Refs tracking for current component
 	refs []RefInfo
-
-	// Watcher expressions for current component (onChannel/onTimer)
-	watchers []string
-
-	// Deferred watcher attachments (element var -> watcher expr)
-	// These are emitted after all elements are created so refs are valid
-	deferredWatchers []deferredWatcher
 
 	// Component calls with watchers that need aggregation
 	componentVars []string

@@ -11,19 +11,17 @@ import (
 
 type refsApp struct {
 	count        *tui.State[int]
-	counter      *tui.Ref
 	incrementBtn *tui.Ref
 	decrementBtn *tui.Ref
-	status       *tui.Ref
+	resetBtn     *tui.Ref
 }
 
 func Refs() *refsApp {
 	return &refsApp{
 		count:        tui.NewState(0),
-		counter:      tui.NewRef(),
 		incrementBtn: tui.NewRef(),
 		decrementBtn: tui.NewRef(),
-		status:       tui.NewRef(),
+		resetBtn:     tui.NewRef(),
 	}
 }
 
@@ -31,99 +29,128 @@ func (r *refsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) { r.increment() }),
+		tui.OnRune('=', func(ke tui.KeyEvent) { r.increment() }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { r.decrement() }),
+		tui.OnRune('0', func(ke tui.KeyEvent) { r.reset() }),
 	}
 }
 
 func (r *refsApp) HandleMouse(me tui.MouseEvent) bool {
-	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
-		if r.incrementBtn.El() != nil && r.incrementBtn.El().ContainsPoint(me.X, me.Y) {
-			r.count.Set(r.count.Get() + 1)
-			return true
-		}
-		if r.decrementBtn.El() != nil && r.decrementBtn.El().ContainsPoint(me.X, me.Y) {
-			r.count.Set(r.count.Get() - 1)
-			return true
-		}
+	return tui.HandleClicks(me,
+		tui.Click(r.incrementBtn, r.increment),
+		tui.Click(r.decrementBtn, r.decrement),
+		tui.Click(r.resetBtn, r.reset),
+	)
+}
+
+func (r *refsApp) increment() {
+	r.count.Set(r.count.Get() + 1)
+}
+
+func (r *refsApp) decrement() {
+	r.count.Set(r.count.Get() - 1)
+}
+
+func (r *refsApp) reset() {
+	r.count.Set(0)
+}
+
+func (r *refsApp) countStyle() tui.Style {
+	c := r.count.Get()
+	if c > 0 {
+		return tui.NewStyle().Bold().Foreground(tui.Green)
+	} else if c < 0 {
+		return tui.NewStyle().Bold().Foreground(tui.Red)
 	}
-	return false
+	return tui.NewStyle().Bold().Foreground(tui.Blue)
 }
 
 func (r *refsApp) Render() *tui.Element {
-	counter := r.counter
-	incrementBtn := r.incrementBtn
-	decrementBtn := r.decrementBtn
-	status := r.status
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithJustify(tui.JustifyCenter),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithHeightPercent(100.00),
 	)
 	__tui_1 := tui.New(
-		tui.WithText("Named Element References"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithText("Element References Demo"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
 		tui.WithHR(),
 		tui.WithBorder(tui.BorderSingle),
+		tui.WithWidthPercent(100.00),
 	)
 	__tui_0.AddChild(__tui_2)
 	__tui_3 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-	)
-	counter.Set(__tui_3)
-	__tui_4 := tui.New()
-	__tui_5 := tui.New(tui.WithText("Counter"))
-	__tui_4.AddChild(__tui_5)
-	__tui_6 := tui.New(tui.WithText(fmt.Sprintf("%d", r.count.Get())))
-	__tui_4.AddChild(__tui_6)
-	__tui_3.AddChild(__tui_4)
-	__tui_0.AddChild(__tui_3)
-	__tui_7 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithPadding(2),
+		tui.WithDirection(tui.Column),
+		tui.WithAlign(tui.AlignCenter),
 		tui.WithGap(1),
-		tui.WithWidthPercent(100.00),
+	)
+	__tui_4 := tui.New(
+		tui.WithText("Count"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_3.AddChild(__tui_4)
+	__tui_5 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", r.count.Get())),
+		tui.WithTextStyle(r.countStyle()),
+	)
+	__tui_3.AddChild(__tui_5)
+	__tui_0.AddChild(__tui_3)
+	__tui_6 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_8 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithTextAlign(tui.TextAlignCenter),
-		tui.WithPadding(1),
-		tui.WithWidth(10),
-		tui.WithHeight(5),
-	)
-	incrementBtn.Set(__tui_8)
-	__tui_9 := tui.New(tui.WithText(" + "))
-	__tui_8.AddChild(__tui_9)
+	__tui_7 := tui.New()
+	r.decrementBtn.Set(__tui_7)
+	__tui_8 := tui.New(tui.WithText(" - "))
 	__tui_7.AddChild(__tui_8)
-	__tui_10 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithTextAlign(tui.TextAlignCenter),
-		tui.WithPadding(1),
-		tui.WithWidth(10),
-		tui.WithHeight(5),
-	)
-	decrementBtn.Set(__tui_10)
-	__tui_11 := tui.New(tui.WithText(" - "))
-	__tui_10.AddChild(__tui_11)
-	__tui_7.AddChild(__tui_10)
-	__tui_0.AddChild(__tui_7)
-	__tui_12 := tui.New(
+	__tui_6.AddChild(__tui_7)
+	__tui_9 := tui.New()
+	r.resetBtn.Set(__tui_9)
+	__tui_10 := tui.New(tui.WithText(" 0 "))
+	__tui_9.AddChild(__tui_10)
+	__tui_6.AddChild(__tui_9)
+	__tui_11 := tui.New()
+	r.incrementBtn.Set(__tui_11)
+	__tui_12 := tui.New(tui.WithText(" + "))
+	__tui_11.AddChild(__tui_12)
+	__tui_6.AddChild(__tui_11)
+	__tui_0.AddChild(__tui_6)
+	if r.count.Get() > 0 {
+		__tui_13 := tui.New(
+			tui.WithText("Positive"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_0.AddChild(__tui_13)
+	} else if r.count.Get() < 0 {
+		__tui_14 := tui.New(
+			tui.WithText("Negative"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+		)
+		__tui_0.AddChild(__tui_14)
+	} else {
+		__tui_15 := tui.New(
+			tui.WithText("Zero"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
+		)
+		__tui_0.AddChild(__tui_15)
+	}
+	__tui_16 := tui.New(
+		tui.WithText("[+/-/0] keys or click buttons | [q] quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	status.Set(__tui_12)
-	__tui_13 := tui.New(
-		tui.WithText("Click buttons to update the counter"),
-	)
-	__tui_12.AddChild(__tui_13)
-	__tui_0.AddChild(__tui_12)
-	__tui_14 := tui.New(
-		tui.WithText("Press q to quit"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_0.AddChild(__tui_14)
+	__tui_0.AddChild(__tui_16)
 
 	return __tui_0
 }

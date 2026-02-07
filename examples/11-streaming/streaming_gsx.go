@@ -30,17 +30,13 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
-		// Custom j/k scrolling
-		tui.OnRune('j', func(ke tui.KeyEvent) {
-			if s.content.El() != nil {
-				s.content.El().ScrollBy(0, 1)
-			}
-		}),
-		tui.OnRune('k', func(ke tui.KeyEvent) {
-			if s.content.El() != nil {
-				s.content.El().ScrollBy(0, -1)
-			}
-		}),
+	}
+}
+
+func (s *streamingApp) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.OnTimer(time.Second, s.tick),
+		tui.Watch(s.dataCh, s.addLine),
 	}
 }
 
@@ -66,20 +62,24 @@ func (s *streamingApp) addLine(line string) {
 }
 
 func (s *streamingApp) Render() *tui.Element {
-	content := s.content
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(1),
+		tui.WithHeightPercent(100.00),
+		tui.WithBorder(tui.BorderRounded),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Streaming with Channels and Timers"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithFlexShrink(0),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
 		tui.WithHR(),
 		tui.WithBorder(tui.BorderSingle),
+		tui.WithFlexShrink(0),
 	)
 	__tui_0.AddChild(__tui_2)
 	__tui_3 := tui.New(
@@ -90,34 +90,41 @@ func (s *streamingApp) Render() *tui.Element {
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithFocusable(true),
 	)
-	content.Set(__tui_3)
+	s.content.Set(__tui_3)
 	__tui_0.AddChild(__tui_3)
 	__tui_4 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
+		tui.WithFlexShrink(0),
+		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_5 := tui.New()
-	__tui_6 := tui.New(tui.WithText("Lines:"))
-	__tui_5.AddChild(__tui_6)
-	__tui_7 := tui.New(tui.WithText(fmt.Sprintf("%d", s.lineCount.Get())))
-	__tui_5.AddChild(__tui_7)
-	__tui_4.AddChild(__tui_5)
-	__tui_8 := tui.New()
-	__tui_9 := tui.New(tui.WithText("Elapsed:"))
-	__tui_8.AddChild(__tui_9)
-	__tui_10 := tui.New(tui.WithText(fmt.Sprintf("%ds", s.elapsed.Get())))
-	__tui_8.AddChild(__tui_10)
-	__tui_4.AddChild(__tui_8)
-	__tui_0.AddChild(__tui_4)
-	__tui_11 := tui.New(
-		tui.WithText("Press q to quit, j/k to scroll"),
+	__tui_5 := tui.New(
+		tui.WithText("Lines:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_11)
-
-	// Attach watchers (deferred until refs are assigned)
-	__tui_0.AddWatcher(tui.OnTimer(time.Second, s.tick))
-	__tui_0.AddWatcher(tui.Watch(s.dataCh, s.addLine))
+	__tui_4.AddChild(__tui_5)
+	__tui_6 := tui.New(
+		tui.WithText(fmt.Sprintf("%d", s.lineCount.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	)
+	__tui_4.AddChild(__tui_6)
+	__tui_7 := tui.New(
+		tui.WithText("Elapsed:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_4.AddChild(__tui_7)
+	__tui_8 := tui.New(
+		tui.WithText(fmt.Sprintf("%ds", s.elapsed.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	)
+	__tui_4.AddChild(__tui_8)
+	__tui_0.AddChild(__tui_4)
+	__tui_9 := tui.New(
+		tui.WithText("Arrow keys to scroll | [q] quit"),
+		tui.WithFlexShrink(0),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_0.AddChild(__tui_9)
 
 	return __tui_0
 }

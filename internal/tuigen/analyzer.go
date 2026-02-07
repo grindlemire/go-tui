@@ -138,10 +138,6 @@ var knownAttributes = map[string]bool{
 	"onBlur":    true,
 	"focusable": true,
 
-	// Watchers
-	"onChannel": true,
-	"onTimer":   true,
-
 	// Scroll
 	"scrollable":          true,
 	"scrollOffset":        true,

@@ -119,16 +119,6 @@ var EventHandlers = map[string]*EventHandlerDef{
 		Description: "Called when the element loses focus.",
 		Signature:   "func()",
 	},
-	"onChannel": {
-		Name:        "onChannel",
-		Description: "Called when a message is received on the channel watcher.",
-		Signature:   "func()",
-	},
-	"onTimer": {
-		Name:        "onTimer",
-		Description: "Called on each timer tick.",
-		Signature:   "func()",
-	},
 }
 
 // VoidElements returns the set of elements that cannot have children.
@@ -272,13 +262,6 @@ func eventAttrs() []AttributeDef {
 	}
 }
 
-func watcherAttrs() []AttributeDef {
-	return []AttributeDef{
-		{Name: "onChannel", Type: "expression", Description: "Channel watcher for async updates", Category: "event"},
-		{Name: "onTimer", Type: "expression", Description: "Timer watcher for periodic updates", Category: "event"},
-	}
-}
-
 func scrollAttrs() []AttributeDef {
 	return []AttributeDef{
 		{Name: "scrollable", Type: "bool", Description: "Enable scrolling for overflow content", Category: "scroll"},
@@ -296,7 +279,6 @@ func containerAttrs() []AttributeDef {
 	attrs = append(attrs, spacingAttrs()...)
 	attrs = append(attrs, visualAttrs()...)
 	attrs = append(attrs, eventAttrs()...)
-	attrs = append(attrs, watcherAttrs()...)
 	attrs = append(attrs, scrollAttrs()...)
 	return attrs
 }

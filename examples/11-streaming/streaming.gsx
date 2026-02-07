@@ -26,17 +26,13 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
-		// Custom j/k scrolling
-		tui.OnRune('j', func(ke tui.KeyEvent) {
-			if s.content.El() != nil {
-				s.content.El().ScrollBy(0, 1)
-			}
-		}),
-		tui.OnRune('k', func(ke tui.KeyEvent) {
-			if s.content.El() != nil {
-				s.content.El().ScrollBy(0, -1)
-			}
-		}),
+	}
+}
+
+func (s *streamingApp) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.OnTimer(time.Second, s.tick),
+		tui.Watch(s.dataCh, s.addLine),
 	}
 }
 
@@ -62,22 +58,22 @@ func (s *streamingApp) addLine(line string) {
 }
 
 templ (s *streamingApp) Render() {
-	content := s.content
-	<div class="flex-col gap-1 p-1"
-	     onTimer={tui.OnTimer(time.Second, s.tick)}
-	     onChannel={tui.Watch(s.dataCh, s.addLine)}>
-		<span class="font-bold text-cyan">Streaming with Channels and Timers</span>
-		<hr class="border" />
+	<div class="flex-col gap-1 p-1 h-full border-rounded">
+		<span class="text-gradient-cyan-blue font-bold shrink-0">{"Streaming with Channels and Timers"}</span>
+		<hr class="border shrink-0" />
 
-		<div ref={content}
-		     class="border-single p-1 flex-col flex-grow overflow-y-scroll"
+		<div ref={s.content}
+		     class="border-single p-1 flex-col flex-grow"
+		     scrollable={tui.ScrollVertical}
 		     focusable={true}></div>
 
-		<div class="flex gap-2">
-			<span>Lines: {fmt.Sprintf("%d", s.lineCount.Get())}</span>
-			<span>Elapsed: {fmt.Sprintf("%ds", s.elapsed.Get())}</span>
+		<div class="flex gap-2 shrink-0 justify-center">
+			<span class="font-dim">{"Lines:"}</span>
+			<span class="text-cyan font-bold">{fmt.Sprintf("%d", s.lineCount.Get())}</span>
+			<span class="font-dim">{"Elapsed:"}</span>
+			<span class="text-cyan font-bold">{fmt.Sprintf("%ds", s.elapsed.Get())}</span>
 		</div>
 
-		<span class="font-dim">Press q to quit, j/k to scroll</span>
+		<span class="font-dim shrink-0">{"Arrow keys to scroll | [q] quit"}</span>
 	</div>
 }

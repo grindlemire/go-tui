@@ -32,15 +32,6 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 		g.writeln(")")
 	}
 
-	// Defer watcher attachment until after all elements are created
-	// This ensures ref pointers are resolved before handlers reference them
-	for _, watcher := range elemOpts.watchers {
-		g.deferredWatchers = append(g.deferredWatchers, deferredWatcher{
-			elementVar:  varName,
-			watcherExpr: watcher,
-		})
-	}
-
 	// Handle ref binding — emit the appropriate Set/Append/Put call
 	if elem.RefExpr != nil {
 		refName := elem.RefExpr.Code
@@ -69,10 +60,9 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 	return varName
 }
 
-// elementOptions holds options and watchers for an element.
+// elementOptions holds options for an element.
 type elementOptions struct {
-	options  []string
-	watchers []string
+	options []string
 }
 
 // buildElementOptions generates option expressions for an element.
@@ -109,15 +99,6 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 				result.options = append(result.options, twResult.Options...)
 				// Collect text style methods for combining later
 				classTextMethods = append(classTextMethods, twResult.TextMethods...)
-			}
-			continue
-		}
-
-		// Handle watcher attributes (onChannel, onTimer) - they create watchers, not element options
-		if watcherAttributes[attr.Name] {
-			watcherExpr := g.generateAttributeValue(attr.Value)
-			if watcherExpr != "" {
-				result.watchers = append(result.watchers, watcherExpr)
 			}
 			continue
 		}
@@ -185,13 +166,6 @@ func (g *Generator) extractTextContent(children []Node) string {
 var handlerAttributes = map[string]string{
 	"onFocus": "tui.WithOnFocus",
 	"onBlur":  "tui.WithOnBlur",
-}
-
-// watcherAttributes are special attributes that create watchers, not element options.
-// They are deferred and attached via AddWatcher after all elements are created.
-var watcherAttributes = map[string]bool{
-	"onChannel": true,
-	"onTimer":   true,
 }
 
 // attributeToOption maps DSL attribute names to tui.With* functions.

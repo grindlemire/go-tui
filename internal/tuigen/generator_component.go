@@ -10,8 +10,6 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.loopCounter = 0
 	g.mountIndex = 0
 	g.currentReceiver = ""
-	g.watchers = nil
-	g.deferredWatchers = nil
 	g.componentVars = nil
 	g.stateVars = nil
 	g.stateBindings = nil
@@ -64,15 +62,6 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			if rootVar == "" {
 				rootVar = varName
 			}
-		}
-	}
-
-	// Emit deferred watcher attachments (after all elements/refs are created)
-	if len(g.deferredWatchers) > 0 {
-		g.writeln("")
-		g.writeln("// Attach watchers (deferred until refs are assigned)")
-		for _, dw := range g.deferredWatchers {
-			g.writef("%s.AddWatcher(%s)\n", dw.elementVar, dw.watcherExpr)
 		}
 	}
 
@@ -166,24 +155,11 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 	}
 
 	// Emit watcher collection statements (collected during element generation)
-	if len(g.watchers) > 0 || len(g.componentVars) > 0 {
+	if len(g.componentVars) > 0 {
 		g.writeln("")
-		// Append watchers from onChannel/onTimer attributes
-		for _, watcher := range g.watchers {
-			g.writef("watchers = append(watchers, %s)\n", watcher)
-		}
 		// Aggregate watchers from child component calls
 		for _, compVar := range g.componentVars {
 			g.writef("watchers = append(watchers, %s.GetWatchers()...)\n", compVar)
-		}
-	}
-
-	// Emit deferred watcher attachments (after all elements/refs are created)
-	if len(g.deferredWatchers) > 0 {
-		g.writeln("")
-		g.writeln("// Attach watchers (deferred until refs are assigned)")
-		for _, dw := range g.deferredWatchers {
-			g.writef("%s.AddWatcher(%s)\n", dw.elementVar, dw.watcherExpr)
 		}
 	}
 

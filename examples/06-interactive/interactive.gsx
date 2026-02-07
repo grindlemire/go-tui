@@ -1,6 +1,9 @@
 package main
 
-import tui "github.com/grindlemire/go-tui"
+import (
+	"os"
+	tui "github.com/grindlemire/go-tui"
+)
 
 type interactiveApp struct {
 	events *tui.Events[string]

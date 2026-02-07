@@ -10,14 +10,12 @@ import (
 )
 
 type scrollableApp struct {
-	items   []string
-	content *tui.Ref
+	items []string
 }
 
 func Scrollable(items []string) *scrollableApp {
 	return &scrollableApp{
-		items:   items,
-		content: tui.NewRef(),
+		items: items,
 	}
 }
 
@@ -25,31 +23,21 @@ func (s *scrollableApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
-		// Custom j/k scrolling
-		tui.OnRune('j', func(ke tui.KeyEvent) {
-			if s.content.El() != nil {
-				s.content.El().ScrollBy(0, 1)
-			}
-		}),
-		tui.OnRune('k', func(ke tui.KeyEvent) {
-			if s.content.El() != nil {
-				s.content.El().ScrollBy(0, -1)
-			}
-		}),
 	}
 }
 
 func (s *scrollableApp) Render() *tui.Element {
-	content := s.content
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(1),
 		tui.WithHeightPercent(100.00),
+		tui.WithBorder(tui.BorderRounded),
 	)
 	__tui_1 := tui.New(
 		tui.WithText("Scrollable Content"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
@@ -60,12 +48,11 @@ func (s *scrollableApp) Render() *tui.Element {
 	__tui_3 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
-		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
+		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithFocusable(true),
 	)
-	content.Set(__tui_3)
 	for i, item := range s.items {
 		_ = i
 		__tui_4 := tui.New(
@@ -75,27 +62,9 @@ func (s *scrollableApp) Render() *tui.Element {
 	}
 	__tui_0.AddChild(__tui_3)
 	__tui_5 := tui.New(
-		tui.WithWidthPercent(100.00),
-		tui.WithGap(1),
-		tui.WithDirection(tui.Row),
-		tui.WithDirection(tui.Row),
+		tui.WithText("Arrow keys/Page Up/Down to scroll, q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_6 := tui.New(
-		tui.WithText("Use arrow keys or j"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_5.AddChild(__tui_6)
-	__tui_7 := tui.New(
-		tui.WithText("k to scroll"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_5.AddChild(__tui_7)
-	__tui_8 := tui.New(
-		tui.WithText("q to quit"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_5.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_5)
 
 	return __tui_0

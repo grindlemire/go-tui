@@ -21,14 +21,6 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string) {
 		g.writeln(")")
 	}
 
-	// Defer watcher attachment until after all elements are created
-	for _, watcher := range elemOpts.watchers {
-		g.deferredWatchers = append(g.deferredWatchers, deferredWatcher{
-			elementVar:  let.Name,
-			watcherExpr: watcher,
-		})
-	}
-
 	// Generate children for the let-bound element - skip if text element already has content in WithText
 	if !skipTextChildren(let.Element) {
 		g.generateChildren(let.Name, let.Element.Children)

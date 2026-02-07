@@ -7,19 +7,17 @@ import (
 
 type refsApp struct {
 	count        *tui.State[int]
-	counter      *tui.Ref
 	incrementBtn *tui.Ref
 	decrementBtn *tui.Ref
-	status       *tui.Ref
+	resetBtn     *tui.Ref
 }
 
 func Refs() *refsApp {
 	return &refsApp{
 		count:        tui.NewState(0),
-		counter:      tui.NewRef(),
 		incrementBtn: tui.NewRef(),
 		decrementBtn: tui.NewRef(),
-		status:       tui.NewRef(),
+		resetBtn:     tui.NewRef(),
 	}
 }
 
@@ -27,44 +25,63 @@ func (r *refsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) { r.increment() }),
+		tui.OnRune('=', func(ke tui.KeyEvent) { r.increment() }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { r.decrement() }),
+		tui.OnRune('0', func(ke tui.KeyEvent) { r.reset() }),
 	}
 }
 
 func (r *refsApp) HandleMouse(me tui.MouseEvent) bool {
-	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
-		if r.incrementBtn.El() != nil && r.incrementBtn.El().ContainsPoint(me.X, me.Y) {
-			r.count.Set(r.count.Get() + 1)
-			return true
-		}
-		if r.decrementBtn.El() != nil && r.decrementBtn.El().ContainsPoint(me.X, me.Y) {
-			r.count.Set(r.count.Get() - 1)
-			return true
-		}
+	return tui.HandleClicks(me,
+		tui.Click(r.incrementBtn, r.increment),
+		tui.Click(r.decrementBtn, r.decrement),
+		tui.Click(r.resetBtn, r.reset),
+	)
+}
+
+func (r *refsApp) increment() {
+	r.count.Set(r.count.Get() + 1)
+}
+
+func (r *refsApp) decrement() {
+	r.count.Set(r.count.Get() - 1)
+}
+
+func (r *refsApp) reset() {
+	r.count.Set(0)
+}
+
+func (r *refsApp) countStyle() tui.Style {
+	c := r.count.Get()
+	if c > 0 {
+		return tui.NewStyle().Bold().Foreground(tui.Green)
+	} else if c < 0 {
+		return tui.NewStyle().Bold().Foreground(tui.Red)
 	}
-	return false
+	return tui.NewStyle().Bold().Foreground(tui.Blue)
 }
 
 templ (r *refsApp) Render() {
-	counter := r.counter
-	incrementBtn := r.incrementBtn
-	decrementBtn := r.decrementBtn
-	status := r.status
-	<div class="flex-col gap-1 p-2 border-rounded">
-		<span class="font-bold text-cyan">Named Element References</span>
-		<hr class="border" />
-		<div ref={counter} class="border-single p-1">
-			<span>
-				Counter
-				{fmt.Sprintf("%d", r.count.Get())}
-			</span>
+	<div class="flex-col gap-1 p-2 border-rounded justify-center items-center h-full">
+		<span class="text-gradient-cyan-magenta font-bold">{"Element References Demo"}</span>
+		<hr class="border w-full" />
+		<div class="border-single p-2 flex-col items-center gap-1">
+			<span class="font-dim">{"Count"}</span>
+			<span textStyle={r.countStyle()}>{fmt.Sprintf("%d", r.count.Get())}</span>
 		</div>
-		<div class="flex gap-1 w-full justify-center">
-			<button ref={incrementBtn} class="border-single text-center p-1 w-10 h-5">{" + "}</button>
-			<button ref={decrementBtn} class="border-single text-center p-1 w-10 h-5">{" - "}</button>
+		<div class="flex gap-2 justify-center">
+			<button ref={r.decrementBtn}>{" - "}</button>
+			<button ref={r.resetBtn}>{" 0 "}</button>
+			<button ref={r.incrementBtn}>{" + "}</button>
 		</div>
-		<div ref={status} class="font-dim">
-			<span>Click buttons to update the counter</span>
-		</div>
-		<span class="font-dim">Press q to quit</span>
+		@if r.count.Get() > 0 {
+			<span class="text-green font-bold">{"Positive"}</span>
+		} @else @if r.count.Get() < 0 {
+			<span class="text-red font-bold">{"Negative"}</span>
+		} @else {
+			<span class="text-blue font-bold">{"Zero"}</span>
+		}
+		<span class="font-dim">{"[+/-/0] keys or click buttons | [q] quit"}</span>
 	</div>
 }
