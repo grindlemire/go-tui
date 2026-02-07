@@ -8,21 +8,23 @@ import (
 )
 
 type chatApp struct {
-	state       *AppState
-	events      *tui.Events[ChatEvent]
-	providers   map[string]Provider
-	showHelp    *tui.State[bool]
-	tokenCh     chan string
-	cancelFn    context.CancelFunc
+	state        *AppState
+	events       *tui.Events[ChatEvent]
+	providers    map[string]Provider
+	showHelp     *tui.State[bool]
+	showSettings *tui.State[bool]
+	tokenCh      chan string
+	cancelFn     context.CancelFunc
 }
 
 func ChatApp(state *AppState, providers map[string]Provider) *chatApp {
 	c := &chatApp{
-		state:     state,
-		events:    tui.NewEvents[ChatEvent](),
-		providers: providers,
-		showHelp:  tui.NewState(false),
-		tokenCh:   make(chan string, 100),
+		state:        state,
+		events:       tui.NewEvents[ChatEvent](),
+		providers:    providers,
+		showHelp:     tui.NewState(false),
+		showSettings: tui.NewState(false),
+		tokenCh:      make(chan string, 100),
 	}
 
 	// Subscribe to events
@@ -162,20 +164,11 @@ func (c *chatApp) handleToken(data string) {
 }
 
 func (c *chatApp) openSettings() {
-	result := settings.Show(
-		c.state.Provider.Get(),
-		c.state.Model.Get(),
-		c.state.Temperature.Get(),
-		c.state.SystemPrompt.Get(),
-		c.state.AvailableProviders,
-		c.state.ProviderModels,
-	)
-	if result.Saved {
-		c.state.Provider.Set(result.Provider)
-		c.state.Model.Set(result.Model)
-		c.state.Temperature.Set(result.Temperature)
-		c.state.SystemPrompt.Set(result.SystemPrompt)
-	}
+	c.showSettings.Set(true)
+}
+
+func (c *chatApp) closeSettings() {
+	c.showSettings.Set(false)
 }
 
 func (c *chatApp) KeyMap() tui.KeyMap {
@@ -211,19 +204,36 @@ func (c *chatApp) KeyMap() tui.KeyMap {
 	return km
 }
 
+// SettingsScreen creates the settings component for conditional rendering
+func SettingsScreen(c *chatApp) *settings.SettingsApp {
+	return settings.NewSettingsApp(
+		c.state.Provider,
+		c.state.Model,
+		c.state.Temperature,
+		c.state.SystemPrompt,
+		c.state.AvailableProviders,
+		c.state.ProviderModels,
+		c.closeSettings,
+	)
+}
+
 templ (c *chatApp) Render() {
 	<div class="flex-col h-full">
-		@Header(c.state)
-		@if c.showHelp.Get() {
-			@HelpOverlay()
+		@if c.showSettings.Get() {
+			@SettingsScreen(c)
 		} @else {
-			@MessageList(c.state, c.events)
+			@Header(c.state)
+			@if c.showHelp.Get() {
+				@HelpOverlay()
+			} @else {
+				@MessageList(c.state, c.events)
+			}
+			@if c.state.Error.Get() != "" {
+				<div class="border-rounded border-red p-1 m-1">
+					<span class="text-red">{" Error: " + c.state.Error.Get()}</span>
+				</div>
+			}
+			@InputBar(c.state, c.events)
 		}
-		@if c.state.Error.Get() != "" {
-			<div class="border-rounded border-red p-1 m-1">
-				<span class="text-red">{" Error: " + c.state.Error.Get()}</span>
-			</div>
-		}
-		@InputBar(c.state, c.events)
 	</div>
 }

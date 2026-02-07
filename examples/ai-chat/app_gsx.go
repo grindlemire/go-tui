@@ -12,21 +12,23 @@ import (
 )
 
 type chatApp struct {
-	state     *AppState
-	events    *tui.Events[ChatEvent]
-	providers map[string]Provider
-	showHelp  *tui.State[bool]
-	tokenCh   chan string
-	cancelFn  context.CancelFunc
+	state        *AppState
+	events       *tui.Events[ChatEvent]
+	providers    map[string]Provider
+	showHelp     *tui.State[bool]
+	showSettings *tui.State[bool]
+	tokenCh      chan string
+	cancelFn     context.CancelFunc
 }
 
 func ChatApp(state *AppState, providers map[string]Provider) *chatApp {
 	c := &chatApp{
-		state:     state,
-		events:    tui.NewEvents[ChatEvent](),
-		providers: providers,
-		showHelp:  tui.NewState(false),
-		tokenCh:   make(chan string, 100),
+		state:        state,
+		events:       tui.NewEvents[ChatEvent](),
+		providers:    providers,
+		showHelp:     tui.NewState(false),
+		showSettings: tui.NewState(false),
+		tokenCh:      make(chan string, 100),
 	}
 
 	// Subscribe to events
@@ -166,20 +168,11 @@ func (c *chatApp) handleToken(data string) {
 }
 
 func (c *chatApp) openSettings() {
-	result := settings.Show(
-		c.state.Provider.Get(),
-		c.state.Model.Get(),
-		c.state.Temperature.Get(),
-		c.state.SystemPrompt.Get(),
-		c.state.AvailableProviders,
-		c.state.ProviderModels,
-	)
-	if result.Saved {
-		c.state.Provider.Set(result.Provider)
-		c.state.Model.Set(result.Model)
-		c.state.Temperature.Set(result.Temperature)
-		c.state.SystemPrompt.Set(result.SystemPrompt)
-	}
+	c.showSettings.Set(true)
+}
+
+func (c *chatApp) closeSettings() {
+	c.showSettings.Set(false)
 }
 
 func (c *chatApp) KeyMap() tui.KeyMap {
@@ -215,44 +208,63 @@ func (c *chatApp) KeyMap() tui.KeyMap {
 	return km
 }
 
+func SettingsScreen(c *chatApp) *settings.SettingsApp {
+	return settings.NewSettingsApp(
+		c.state.Provider,
+		c.state.Model,
+		c.state.Temperature,
+		c.state.SystemPrompt,
+		c.state.AvailableProviders,
+		c.state.ProviderModels,
+		c.closeSettings,
+	)
+}
+
 func (c *chatApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithHeightPercent(100.00),
 	)
-	__tui_1 := tui.Mount(c, 0, func() tui.Component {
-		return Header(c.state)
-	})
-	__tui_0.AddChild(__tui_1)
-	if c.showHelp.Get() {
+	if c.showSettings.Get() {
+		__tui_1 := tui.Mount(c, 0, func() tui.Component {
+			return SettingsScreen(c)
+		})
+		__tui_0.AddChild(__tui_1)
+	} else {
 		__tui_2 := tui.Mount(c, 1, func() tui.Component {
-			return HelpOverlay()
+			return Header(c.state)
 		})
 		__tui_0.AddChild(__tui_2)
-	} else {
-		__tui_3 := tui.Mount(c, 2, func() tui.Component {
-			return MessageList(c.state, c.events)
+		if c.showHelp.Get() {
+			__tui_3 := tui.Mount(c, 2, func() tui.Component {
+				return HelpOverlay()
+			})
+			__tui_0.AddChild(__tui_3)
+		} else {
+			__tui_4 := tui.Mount(c, 3, func() tui.Component {
+				return MessageList(c.state, c.events)
+			})
+			__tui_0.AddChild(__tui_4)
+		}
+		if c.state.Error.Get() != "" {
+			__tui_5 := tui.New(
+				tui.WithBorder(tui.BorderRounded),
+				tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Red)),
+				tui.WithPadding(1),
+				tui.WithMargin(1),
+			)
+			__tui_6 := tui.New(
+				tui.WithText(" Error: "+c.state.Error.Get()),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
+			)
+			__tui_5.AddChild(__tui_6)
+			__tui_0.AddChild(__tui_5)
+		}
+		__tui_7 := tui.Mount(c, 4, func() tui.Component {
+			return InputBar(c.state, c.events)
 		})
-		__tui_0.AddChild(__tui_3)
+		__tui_0.AddChild(__tui_7)
 	}
-	if c.state.Error.Get() != "" {
-		__tui_4 := tui.New(
-			tui.WithBorder(tui.BorderRounded),
-			tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Red)),
-			tui.WithPadding(1),
-			tui.WithMargin(1),
-		)
-		__tui_5 := tui.New(
-			tui.WithText(" Error: "+c.state.Error.Get()),
-			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
-		)
-		__tui_4.AddChild(__tui_5)
-		__tui_0.AddChild(__tui_4)
-	}
-	__tui_6 := tui.Mount(c, 3, func() tui.Component {
-		return InputBar(c.state, c.events)
-	})
-	__tui_0.AddChild(__tui_6)
 
 	return __tui_0
 }
