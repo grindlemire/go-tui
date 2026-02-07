@@ -8,6 +8,7 @@ examples/*/*
 !examples/*/*.md
 !examples/ai-chat/go.mod
 !examples/ai-chat/go.sum
+!examples/ai-chat/settings/
 
 debug.log
 
