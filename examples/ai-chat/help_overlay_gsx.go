@@ -46,7 +46,7 @@ func (h *helpOverlay) Render() *tui.Element {
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
 	__tui_6 := tui.New(
-		tui.WithText("Ctrl+,"),
+		tui.WithText("Ctrl+S"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_5.AddChild(__tui_6)
@@ -60,7 +60,7 @@ func (h *helpOverlay) Render() *tui.Element {
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
 	__tui_9 := tui.New(
-		tui.WithText("Ctrl+?"),
+		tui.WithText("?"),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_8.AddChild(__tui_9)

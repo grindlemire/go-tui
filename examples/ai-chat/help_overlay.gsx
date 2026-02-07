@@ -15,11 +15,11 @@ templ (h *helpOverlay) Render() {
 				<span class="text-gradient-cyan-magenta font-bold text-center">{"Keyboard Shortcuts"}</span>
 				<hr />
 				<div class="flex justify-between">
-					<span class="font-bold">{"Ctrl+,"}</span>
+					<span class="font-bold">{"Ctrl+S"}</span>
 					<span>{"Open settings"}</span>
 				</div>
 				<div class="flex justify-between">
-					<span class="font-bold">{"Ctrl+?"}</span>
+					<span class="font-bold">{"?"}</span>
 					<span>{"Toggle this help"}</span>
 				</div>
 				<div class="flex justify-between">

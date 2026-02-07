@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 	tui "github.com/grindlemire/go-tui"
+	"github.com/grindlemire/go-tui/examples/ai-chat/settings"
 )
 
 type chatApp struct {
@@ -158,6 +159,23 @@ func (c *chatApp) handleToken(data string) {
 	}
 }
 
+func (c *chatApp) openSettings() {
+	result := settings.Show(
+		c.state.Provider.Get(),
+		c.state.Model.Get(),
+		c.state.Temperature.Get(),
+		c.state.SystemPrompt.Get(),
+		c.state.AvailableProviders,
+		c.state.ProviderModels,
+	)
+	if result.Saved {
+		c.state.Provider.Set(result.Provider)
+		c.state.Model.Set(result.Model)
+		c.state.Temperature.Set(result.Temperature)
+		c.state.SystemPrompt.Set(result.SystemPrompt)
+	}
+}
+
 func (c *chatApp) KeyMap() tui.KeyMap {
 	km := tui.KeyMap{
 		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) {
@@ -169,6 +187,9 @@ func (c *chatApp) KeyMap() tui.KeyMap {
 		}),
 		tui.OnKey(tui.KeyCtrlL, func(ke tui.KeyEvent) {
 			c.state.ClearMessages()
+		}),
+		tui.OnKey(tui.KeyCtrlS, func(ke tui.KeyEvent) {
+			c.openSettings()
 		}),
 		tui.OnRune('?', func(ke tui.KeyEvent) {
 			c.showHelp.Set(!c.showHelp.Get())
