@@ -40,6 +40,14 @@ type Generator struct {
 	// to emit tui.Mount(receiverVar, index, factory).
 	currentReceiver string
 
+	// loopIndexStack tracks loop index variable names for nested @for loops.
+	// Used by generateStructMount to generate unique mount indices per iteration.
+	loopIndexStack []string
+
+	// fileDecls stores the current file's GoDecl nodes for struct lookup.
+	// Used by generateUpdateProps to find struct definitions for method components.
+	fileDecls []*GoDecl
+
 	// SkipImports uses format.Source instead of imports.Process (faster for tests)
 	SkipImports bool
 
@@ -73,6 +81,9 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 
 	// Track where content after imports starts (for source map adjustment)
 	firstContentLine := g.currentLine
+
+	// Store file decls for struct lookup in generateUpdateProps
+	g.fileDecls = file.Decls
 
 	// Generate top-level Go declarations (type, const, var)
 	for _, decl := range file.Decls {
@@ -249,6 +260,45 @@ func (g *Generator) nextLoopVar() string {
 	name := fmt.Sprintf("__loop_%d", g.loopCounter)
 	g.loopCounter++
 	return name
+}
+
+// pushLoopIndex adds a loop index variable to the stack and returns the variable name to use.
+// If the loop has a usable index variable (not "" or "_"), uses it directly.
+// Otherwise, generates a synthetic index variable name.
+func (g *Generator) pushLoopIndex(loop *ForLoop) string {
+	var idxVar string
+	if loop.Index != "" && loop.Index != "_" {
+		idxVar = loop.Index
+	} else {
+		idxVar = fmt.Sprintf("__idx_%d", len(g.loopIndexStack))
+	}
+	g.loopIndexStack = append(g.loopIndexStack, idxVar)
+	return idxVar
+}
+
+// popLoopIndex removes the most recent loop index variable from the stack.
+func (g *Generator) popLoopIndex() {
+	if len(g.loopIndexStack) > 0 {
+		g.loopIndexStack = g.loopIndexStack[:len(g.loopIndexStack)-1]
+	}
+}
+
+// loopIndexExpr returns a Go expression for computing a unique mount index
+// based on the current loop context. Returns empty string if not in a loop.
+// The expression combines a static base index with runtime loop indices.
+func (g *Generator) loopIndexExpr(baseIndex int) string {
+	if len(g.loopIndexStack) == 0 {
+		return ""
+	}
+	// For a single loop level: baseIndex*1000000 + loopIdx
+	// For nested loops: combine all indices with large multipliers
+	// This ensures unique keys for each (component call site, loop iteration) combination
+	expr := fmt.Sprintf("%d", baseIndex)
+	multiplier := 1000000
+	for _, idxVar := range g.loopIndexStack {
+		expr = fmt.Sprintf("%s*%d+%s", expr, multiplier, idxVar)
+	}
+	return expr
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.

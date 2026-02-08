@@ -47,6 +47,11 @@ func (a *App) Render() {
 		a.root = el
 	}
 
+	// Re-read renderHeight in case SetInlineHeight was called during component render
+	if !a.inAlternateScreen && a.inlineHeight > 0 {
+		renderHeight = a.inlineHeight
+	}
+
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, renderHeight)

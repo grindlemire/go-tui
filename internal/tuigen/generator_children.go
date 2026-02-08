@@ -168,11 +168,20 @@ func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar
 // Returns the variable name holding the *tui.Element result.
 func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) string {
 	varName := g.nextVar()
-	index := g.mountIndex
+	baseIndex := g.mountIndex
 	g.mountIndex++
 
-	// Generate: varName := tui.Mount(receiverVar, index, func() tui.Component { return Name(args) })
-	g.writef("%s := tui.Mount(%s, %d, func() tui.Component {\n", varName, g.currentReceiver, index)
+	// Determine the mount index expression.
+	// If we're inside a loop, combine the static base index with runtime loop indices
+	// to ensure each iteration gets a unique mount key.
+	indexExpr := g.loopIndexExpr(baseIndex)
+	if indexExpr == "" {
+		// Not in a loop - use static index
+		indexExpr = fmt.Sprintf("%d", baseIndex)
+	}
+
+	// Generate: varName := tui.Mount(receiverVar, indexExpr, func() tui.Component { return Name(args) })
+	g.writef("%s := tui.Mount(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
 	g.indent++
 	if call.Args == "" {
 		g.writef("return %s()\n", call.Name)
@@ -266,18 +275,28 @@ func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar
 
 // generateForLoopForSlice generates a for loop that appends elements to a slice.
 func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
+	// Push the loop index variable for use in struct mount calls
+	idxVar := g.pushLoopIndex(loop)
+	defer g.popLoopIndex()
+
+	// Build loop header - may need to generate a synthetic index variable
 	var loopVars string
-	if loop.Index != "" {
+	if loop.Index != "" && loop.Index != "_" {
 		loopVars = fmt.Sprintf("%s, %s", loop.Index, loop.Value)
+	} else if loop.Index == "_" {
+		loopVars = fmt.Sprintf("%s, %s", idxVar, loop.Value)
 	} else {
-		loopVars = loop.Value
+		loopVars = fmt.Sprintf("%s, %s", idxVar, loop.Value)
 	}
 
 	g.writef("for %s := range %s {\n", loopVars, loop.Iterable)
 	g.indent++
 
+	// Silence unused variable warnings
 	if loop.Index != "" && loop.Index != "_" {
 		g.writef("_ = %s\n", loop.Index)
+	} else {
+		g.writef("_ = %s\n", idxVar)
 	}
 
 	for _, node := range loop.Body {

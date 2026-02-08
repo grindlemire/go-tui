@@ -17,7 +17,7 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../cmd/tui generate chat.gsx
+//go:generate go run ../../cmd/tui generate .
 
 const inlineHeight = 5
 

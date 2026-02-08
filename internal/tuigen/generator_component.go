@@ -1,5 +1,10 @@
 package tuigen
 
+import (
+	"regexp"
+	"strings"
+)
+
 // generateComponent generates a Go function from a component.
 // Dispatches to generateMethodComponent for method templs (has receiver)
 // or generateFunctionComponent for function templs (no receiver).
@@ -76,6 +81,9 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 	g.indent--
 	g.writeln("}")
 	g.writeln("")
+
+	// Generate UpdateProps method for prop updates on cached components
+	g.generateUpdateProps(comp, g.fileDecls)
 }
 
 // generateFunctionComponent generates a function component (existing behavior).
@@ -235,5 +243,148 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 
 	// Generate GetWatchers() method to implement tui.Viewable
 	g.writef("func (v %s) GetWatchers() []tui.Watcher { return v.watchers }\n", structName)
+	g.writeln("")
+}
+
+// StructField represents a parsed field from a struct definition.
+type StructField struct {
+	Name string
+	Type string
+}
+
+// parseStructFields extracts field names and types from a struct definition.
+// Input: "type foo struct {\n    field1 Type1\n    field2 Type2\n}"
+// Returns: [{Name: "field1", Type: "Type1"}, {Name: "field2", Type: "Type2"}]
+func parseStructFields(structCode string) []StructField {
+	var fields []StructField
+
+	// Find the struct body between { and }
+	start := strings.Index(structCode, "{")
+	end := strings.LastIndex(structCode, "}")
+	if start == -1 || end == -1 || start >= end {
+		return fields
+	}
+
+	body := structCode[start+1 : end]
+	lines := strings.Split(body, "\n")
+
+	// Pattern to match field declarations: name type or name, name2 type
+	// Handles: "field Type", "field *Type", "field Type // comment"
+	fieldPattern := regexp.MustCompile(`^\s*(\w+)\s+(\S+.*)$`)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+
+		// Remove trailing comments
+		if idx := strings.Index(line, "//"); idx != -1 {
+			line = strings.TrimSpace(line[:idx])
+		}
+
+		matches := fieldPattern.FindStringSubmatch(line)
+		if len(matches) >= 3 {
+			fields = append(fields, StructField{
+				Name: matches[1],
+				Type: strings.TrimSpace(matches[2]),
+			})
+		}
+	}
+
+	return fields
+}
+
+// isInternalStateType returns true if the type is an internal state type
+// that should NOT be updated via UpdateProps.
+func isInternalStateType(fieldType string) bool {
+	// These types are internal state that should be preserved across re-renders
+	internalTypes := []string{
+		"*tui.Ref",
+		"*tui.RefList",
+		"*tui.RefMap",
+		"*tui.State",
+		"tui.Ref",
+		"tui.RefList",
+		"tui.RefMap",
+		"tui.State",
+	}
+
+	for _, t := range internalTypes {
+		if strings.HasPrefix(fieldType, t) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// findStructDecl finds the struct declaration for a given type name in the file's declarations.
+func findStructDecl(decls []*GoDecl, typeName string) *GoDecl {
+	// Remove pointer prefix if present
+	typeName = strings.TrimPrefix(typeName, "*")
+
+	// Look for "type TypeName struct"
+	pattern := regexp.MustCompile(`type\s+` + regexp.QuoteMeta(typeName) + `\s+struct\s*\{`)
+
+	for _, decl := range decls {
+		if decl.Kind == "type" && pattern.MatchString(decl.Code) {
+			return decl
+		}
+	}
+	return nil
+}
+
+// generateUpdateProps generates an UpdateProps method for a method component.
+// This allows Mount to update cached component instances with fresh props.
+func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
+	// Find the struct declaration for this component's receiver type
+	structDecl := findStructDecl(decls, comp.ReceiverType)
+	if structDecl == nil {
+		return // No struct found, skip generating UpdateProps
+	}
+
+	// Parse the struct fields
+	fields := parseStructFields(structDecl.Code)
+	if len(fields) == 0 {
+		return
+	}
+
+	// Find prop fields (non-internal-state types)
+	var propFields []StructField
+	for _, f := range fields {
+		if !isInternalStateType(f.Type) {
+			propFields = append(propFields, f)
+		}
+	}
+
+	if len(propFields) == 0 {
+		return // No props to update
+	}
+
+	// Get the receiver type name without pointer
+	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
+
+	// Generate UpdateProps method
+	g.writef("func (%s) UpdateProps(fresh tui.Component) {\n", comp.Receiver)
+	g.indent++
+	g.writef("f, ok := fresh.(%s)\n", comp.ReceiverType)
+	g.writeln("if !ok {")
+	g.indent++
+	g.writeln("return")
+	g.indent--
+	g.writeln("}")
+
+	// Copy each prop field
+	for _, f := range propFields {
+		g.writef("%s.%s = f.%s\n", comp.ReceiverName, f.Name, f.Name)
+	}
+
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+
+	// Add a compile-time check that the type implements PropsUpdater
+	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
 	g.writeln("")
 }

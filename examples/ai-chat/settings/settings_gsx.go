@@ -49,7 +49,8 @@ func (s *SettingsApp) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	for _, p := range s.state.AvailableProviders {
+	for __idx_0, p := range s.state.AvailableProviders {
+		_ = __idx_0
 		if p == s.state.Provider.Get() {
 			__tui_7 := tui.New(
 				tui.WithText("● "+p),
@@ -85,7 +86,8 @@ func (s *SettingsApp) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	for _, m := range s.state.ProviderModels[s.state.Provider.Get()] {
+	for __idx_0, m := range s.state.ProviderModels[s.state.Provider.Get()] {
+		_ = __idx_0
 		if m == s.state.Model.Get() {
 			__tui_13 := tui.New(
 				tui.WithText("● "+m),

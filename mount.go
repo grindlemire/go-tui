@@ -1,5 +1,7 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/debug"
+
 // mountKey identifies a component instance by its parent and position.
 // Components at the same (parent, index) are considered the same instance
 // across renders and are reused from cache.
@@ -27,11 +29,21 @@ func newMountState() *mountState {
 	}
 }
 
+// PropsUpdater is an optional interface that components can implement
+// to receive updated props when re-rendered from cache. Mount will call
+// UpdateProps with a fresh instance containing the new props, allowing
+// the cached instance to copy the relevant fields.
+type PropsUpdater interface {
+	UpdateProps(fresh Component)
+}
+
 // Mount creates or retrieves a cached component instance and returns
 // its rendered element tree. Called by generated code from @Component() syntax.
 //
 // On first call: executes factory, caches instance, calls Init() if Initializer.
 // On subsequent calls: returns cached instance's Render() result.
+// If the cached instance implements PropsUpdater, UpdateProps is called
+// with a fresh instance to allow prop updates.
 // Mark-and-sweep: marks the key as active. Sweep after render cleans stale entries.
 func Mount(parent Component, index int, factory func() Component) *Element {
 	ms := currentApp.mounts
@@ -42,6 +54,7 @@ func Mount(parent Component, index int, factory func() Component) *Element {
 	if !cached {
 		instance = factory()
 		ms.cache[key] = instance
+		debug.Log("Mount: NEW component at index %d, type %T", index, instance)
 
 		// Call Init() if component implements Initializer
 		if init, ok := instance.(Initializer); ok {
@@ -49,6 +62,15 @@ func Mount(parent Component, index int, factory func() Component) *Element {
 			if cleanup != nil {
 				ms.cleanups[key] = cleanup
 			}
+		}
+	} else {
+		// Component is cached - check if it can receive updated props
+		if updater, ok := instance.(PropsUpdater); ok {
+			fresh := factory()
+			debug.Log("Mount: CACHED component at index %d, calling UpdateProps, type %T", index, instance)
+			updater.UpdateProps(fresh)
+		} else {
+			debug.Log("Mount: CACHED component at index %d, NO UpdateProps, type %T", index, instance)
 		}
 	}
 

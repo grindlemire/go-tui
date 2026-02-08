@@ -196,3 +196,20 @@ func (s *SettingsApp) tempBar() string {
 	}
 	return bar
 }
+
+// Run runs the settings as a standalone fullscreen app.
+// This blocks until the user closes settings.
+func Run(provider *tui.State[string], model *tui.State[string], temperature *tui.State[float64], systemPrompt *tui.State[string], availableProviders []string, providerModels map[string][]string) error {
+	app, err := tui.NewApp() // Fullscreen mode (no WithInlineHeight)
+	if err != nil {
+		return err
+	}
+	defer app.Close()
+
+	settings := NewSettingsApp(provider, model, temperature, systemPrompt, availableProviders, providerModels, func() {
+		tui.Stop() // Stop the settings app when closed
+	})
+
+	app.SetRoot(settings)
+	return app.Run()
+}

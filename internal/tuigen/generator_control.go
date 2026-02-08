@@ -50,20 +50,34 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 		}
 	}
 
-	// Build loop header
+	// Push the loop index variable for use in struct mount calls.
+	// This ensures each loop iteration gets a unique mount key.
+	idxVar := g.pushLoopIndex(loop)
+	defer g.popLoopIndex()
+
+	// Build loop header - may need to generate a synthetic index variable
 	var loopVars string
-	if loop.Index != "" {
+	if loop.Index != "" && loop.Index != "_" {
+		// User provided a usable index variable
 		loopVars = fmt.Sprintf("%s, %s", loop.Index, loop.Value)
+	} else if loop.Index == "_" {
+		// User explicitly ignored index, but we need one for mount keys
+		loopVars = fmt.Sprintf("%s, %s", idxVar, loop.Value)
 	} else {
-		loopVars = loop.Value
+		// No index in original, need to add one for mount keys
+		loopVars = fmt.Sprintf("%s, %s", idxVar, loop.Value)
 	}
 
 	g.writef("for %s := range %s {\n", loopVars, loop.Iterable)
 	g.indent++
 
-	// Silence unused variable warnings if index is not used
+	// Silence unused variable warnings if index is not used elsewhere
+	// (it will be used in mount calls, but Go doesn't know that at compile time
+	// if there are no struct component calls in the loop body)
 	if loop.Index != "" && loop.Index != "_" {
 		g.writef("_ = %s\n", loop.Index)
+	} else {
+		g.writef("_ = %s\n", idxVar)
 	}
 
 	// Generate loop body - now inside a loop context
