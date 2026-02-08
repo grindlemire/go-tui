@@ -107,9 +107,10 @@ func TestLexer_ComponentCall(t *testing.T) {
 			wantType:    TokenAtCall,
 			wantLiteral: "Header",
 		},
-		"lowercase still keyword error": {
-			input:    "@unknown",
-			wantType: TokenError,
+		"lowercase is component expr": {
+			input:       "@unknown",
+			wantType:    TokenAtExpr,
+			wantLiteral: "unknown",
 		},
 	}
 

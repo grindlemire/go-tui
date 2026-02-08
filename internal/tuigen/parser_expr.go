@@ -137,6 +137,21 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	return call
 }
 
+// parseComponentExpr parses @expr where expr is a Component field/variable.
+// The lexer has already captured the full expression (e.g., "c.textarea").
+func (p *Parser) parseComponentExpr() *ComponentExpr {
+	pos := p.position()
+
+	// Current token is TokenAtExpr with the expression as Literal
+	expr := p.current.Literal
+	p.advance()
+
+	return &ComponentExpr{
+		Expr:     expr,
+		Position: pos,
+	}
+}
+
 // parseGoExprOrChildrenSlot parses either a Go expression {expr} or children slot {children...}
 func (p *Parser) parseGoExprOrChildrenSlot() Node {
 	pos := p.position()

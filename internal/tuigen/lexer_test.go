@@ -423,11 +423,6 @@ func TestLexer_ErrorCases(t *testing.T) {
 			hasError:      true,
 			errorContains: "unterminated raw string",
 		},
-		"unknown @ keyword": {
-			input:         "@unknown",
-			hasError:      true,
-			errorContains: "unknown @ keyword",
-		},
 		"unclosed block comment": {
 			input:         "/* unclosed",
 			hasError:      true,

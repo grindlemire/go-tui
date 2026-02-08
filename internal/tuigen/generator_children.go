@@ -38,6 +38,8 @@ func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, 
 			g.writef("%s.AddChild(%s)\n", parentVar, c.Code)
 		case *ComponentCall:
 			g.generateComponentCallWithRefs(c, parentVar)
+		case *ComponentExpr:
+			g.generateComponentExpr(c, parentVar)
 		case *ChildrenSlot:
 			// Expand the children parameter
 			g.writeln("for _, __child := range children {")
@@ -87,6 +89,8 @@ func (g *Generator) generateBodyNodeWithRefs(node Node, parentVar string, inLoop
 		}
 	case *ComponentCall:
 		g.generateComponentCallWithRefs(n, parentVar)
+	case *ComponentExpr:
+		g.generateComponentExpr(n, parentVar)
 	case *ChildrenSlot:
 		if parentVar != "" {
 			g.writeln("for _, __child := range children {")
@@ -273,6 +277,16 @@ func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar
 	return varName
 }
 
+// generateComponentExpr generates code for a component expression like @c.textarea.
+// It calls .Render() on the expression and adds the result to the parent.
+func (g *Generator) generateComponentExpr(expr *ComponentExpr, parentVar string) {
+	varName := g.nextVar()
+	g.writef("%s := %s.Render()\n", varName, expr.Expr)
+	if parentVar != "" {
+		g.writef("%s.AddChild(%s)\n", parentVar, varName)
+	}
+}
+
 // generateForLoopForSlice generates a for loop that appends elements to a slice.
 func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 	// Push the loop index variable for use in struct mount calls
@@ -311,6 +325,10 @@ func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 			} else {
 				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
 			}
+		case *ComponentExpr:
+			elemVar := g.nextVar()
+			g.writef("%s := %s.Render()\n", elemVar, n.Expr)
+			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
@@ -348,6 +366,10 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 			} else {
 				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
 			}
+		case *ComponentExpr:
+			elemVar := g.nextVar()
+			g.writef("%s := %s.Render()\n", elemVar, n.Expr)
+			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
@@ -390,6 +412,10 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 				} else {
 					g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
 				}
+			case *ComponentExpr:
+				elemVar := g.nextVar()
+				g.writef("%s := %s.Render()\n", elemVar, n.Expr)
+				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 			case *LetBinding:
 				g.generateLetBinding(n, "")
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, n.Name)
