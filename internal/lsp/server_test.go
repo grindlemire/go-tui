@@ -203,7 +203,7 @@ templ Hello() {
 	<span>Hello</span>
 }
 `,
-			wantErrors: 2, // Parser generates multiple errors for this malformed input
+			wantErrors: 1, // Parser generates error for unexpected @expr at top level
 		},
 		"missing package": {
 			content: `templ Hello() {
@@ -289,7 +289,7 @@ templ Hello() {
 	<span>Hello</span>
 }
 `,
-			wantInitErrs:  2, // Parser generates multiple errors for this malformed input
+			wantInitErrs:  1, // Parser generates error for unexpected @expr at top level
 			wantFinalErrs: 0,
 		},
 		"introduce error": {
@@ -306,7 +306,7 @@ templ Hello() {
 }
 `,
 			wantInitErrs:  0,
-			wantFinalErrs: 2, // Parser generates multiple errors for this malformed input
+			wantFinalErrs: 1, // Parser generates error for unexpected @expr at top level
 		},
 	}
 

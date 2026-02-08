@@ -5,13 +5,12 @@ package main
 
 import (
 	tui "github.com/grindlemire/go-tui"
-	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 type chat struct {
 	app      *tui.App
 	width    int
-	textarea *TextArea
+	textarea *tui.TextArea
 }
 
 func Chat(app *tui.App, width int) *chat {
@@ -19,7 +18,13 @@ func Chat(app *tui.App, width int) *chat {
 		app:   app,
 		width: width,
 	}
-	c.textarea = NewTextArea(width-2, c.submit) // -2 for border
+	c.textarea = tui.NewTextArea(
+		tui.WithTextAreaWidth(width-2), // -2 for border
+		tui.WithTextAreaMaxHeight(8),
+		tui.WithTextAreaBorder(tui.BorderRounded),
+		tui.WithTextAreaPlaceholder("Type a message..."),
+		tui.WithTextAreaOnSubmit(c.submit),
+	)
 	return c
 }
 
@@ -45,38 +50,32 @@ func (c *chat) Watchers() []tui.Watcher {
 	return c.textarea.Watchers()
 }
 
-func (c *chat) totalHeight() int {
+func (c *chat) updateHeight() {
 	h := c.textarea.Height()
-	debug.Log("chat.totalHeight: textarea.Height()=%d", h)
-	if h < 1 {
-		h = 1
+	if h < 3 {
+		h = 3
 	}
-	// Total height including border
-	total := h + 2
-	if total < 3 {
-		total = 3
+	if h > 10 {
+		h = 10
 	}
-	if total > 10 {
-		total = 10
-	}
-	debug.Log("chat.totalHeight: calling SetInlineHeight(%d)", total)
-	c.app.SetInlineHeight(total)
-	return total
+	c.app.SetInlineHeight(h)
 }
 
 func (c *chat) Render() *tui.Element {
-	__tui_0 := tui.New(
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithDirection(tui.Column),
-		tui.WithHeight(c.totalHeight()),
-	)
-	for i, _ := range c.textarea.Lines() {
-		_ = i
-		__tui_1 := tui.New(
-			tui.WithText(c.textarea.LineWithCursor(i)),
-		)
-		__tui_0.AddChild(__tui_1)
-	}
+	c.updateHeight()
+	__tui_0 := c.textarea.Render()
 
 	return __tui_0
 }
+
+func (c *chat) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*chat)
+	if !ok {
+		return
+	}
+	c.app = f.app
+	c.width = f.width
+	c.textarea = f.textarea
+}
+
+var _ tui.PropsUpdater = (*chat)(nil)

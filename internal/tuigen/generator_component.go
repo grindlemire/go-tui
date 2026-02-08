@@ -67,6 +67,12 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			if rootVar == "" {
 				rootVar = varName
 			}
+		case *ComponentExpr:
+			varName := g.nextVar()
+			g.writef("%s := %s.Render()\n", varName, n.Expr)
+			if rootVar == "" {
+				rootVar = varName
+			}
 		}
 	}
 
@@ -158,6 +164,12 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 			if rootVar == "" {
 				rootVar = varName
 				rootIsComponent = true
+			}
+		case *ComponentExpr:
+			varName := g.nextVar()
+			g.writef("%s := %s.Render()\n", varName, n.Expr)
+			if rootVar == "" {
+				rootVar = varName
 			}
 		}
 	}

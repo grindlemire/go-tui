@@ -154,12 +154,19 @@ func (l *Lexer) readAtKeyword() Token {
 	case "else":
 		return l.makeToken(TokenAtElse, "@else")
 	default:
-		// Check if this is a component call (uppercase first letter)
 		if len(keyword) > 0 {
 			firstRune, _ := utf8.DecodeRuneInString(keyword)
 			if unicode.IsUpper(firstRune) {
+				// Uppercase: component function call @Header()
 				return l.makeToken(TokenAtCall, keyword)
 			}
+			// Lowercase: component expression @c.textarea (renders a Component)
+			// Continue reading the full expression (field access, etc.)
+			for l.ch == '.' || isLetter(l.ch) || isDigit(l.ch) {
+				l.readChar()
+			}
+			expr := l.source[startPos:l.pos]
+			return l.makeToken(TokenAtExpr, expr)
 		}
 		l.errors.AddErrorf(l.position(), "unknown @ keyword: @%s", keyword)
 		return l.makeToken(TokenError, "@"+keyword)

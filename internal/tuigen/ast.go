@@ -310,6 +310,20 @@ type ComponentCall struct {
 func (c *ComponentCall) node()        {}
 func (c *ComponentCall) Pos() Position { return c.Position }
 
+// ComponentExpr represents @expr where expr is a Component field/variable.
+// The expression's .Render() method is called to get the element.
+type ComponentExpr struct {
+	Expr            string // expression (e.g., "c.textarea", "myComponent")
+	Position        Position
+	BlankLineBefore bool // blank line before this node in source
+	// Comment fields
+	LeadingComments  *CommentGroup // Comments immediately before @expr
+	TrailingComments *CommentGroup // Comments on same line after expr
+}
+
+func (c *ComponentExpr) node()        {}
+func (c *ComponentExpr) Pos() Position { return c.Position }
+
 // ChildrenSlot represents {children...} placeholder in a component body
 type ChildrenSlot struct {
 	Position        Position

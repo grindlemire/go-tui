@@ -34,6 +34,7 @@ const (
 	TokenAtIf   // @if
 	TokenAtElse // @else
 	TokenAtCall // @ComponentName (uppercase, component call)
+	TokenAtExpr // @expr (lowercase, renders a Component field/variable)
 
 	// Literals
 	TokenIdent     // identifier
@@ -100,6 +101,7 @@ var tokenNames = map[TokenType]string{
 	TokenAtIf:        "@if",
 	TokenAtElse:      "@else",
 	TokenAtCall:      "@Call",
+	TokenAtExpr:      "@Expr",
 	TokenIdent:       "Ident",
 	TokenInt:         "Int",
 	TokenFloat:       "Float",

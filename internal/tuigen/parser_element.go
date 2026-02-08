@@ -100,6 +100,10 @@ func (p *Parser) parseBodyNode() Node {
 		if call := p.parseComponentCall(); call != nil {
 			return call
 		}
+	case TokenAtExpr:
+		if expr := p.parseComponentExpr(); expr != nil {
+			return expr
+		}
 	case TokenLBrace:
 		if node := p.parseGoExprOrChildrenSlot(); node != nil {
 			return node
@@ -382,6 +386,10 @@ func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 		case TokenAtCall:
 			if call := p.parseComponentCall(); call != nil {
 				child = call
+			}
+		case TokenAtExpr:
+			if expr := p.parseComponentExpr(); expr != nil {
+				child = expr
 			}
 		default:
 			// Coalesce consecutive text tokens into a single TextContent.

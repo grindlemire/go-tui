@@ -104,6 +104,8 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 			}
 		case *ComponentCall:
 			g.generateComponentCallWithRefs(n, parentVar)
+		case *ComponentExpr:
+			g.generateComponentExpr(n, parentVar)
 		case *ChildrenSlot:
 			if parentVar != "" {
 				g.writeln("for _, __child := range children {")
