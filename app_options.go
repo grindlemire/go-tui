@@ -72,11 +72,22 @@ func WithRoot(v any) AppOption {
 	}
 }
 
-// WithoutMouse disables mouse event reporting.
-// By default, mouse events are enabled.
+// WithMouse explicitly enables mouse event reporting.
+// Use this to enable mouse in inline mode (where it's disabled by default).
+func WithMouse() AppOption {
+	return func(a *App) error {
+		a.mouseEnabled = true
+		a.mouseExplicit = true
+		return nil
+	}
+}
+
+// WithoutMouse explicitly disables mouse event reporting.
+// Use this to disable mouse in full screen mode (where it's enabled by default).
 func WithoutMouse() AppOption {
 	return func(a *App) error {
 		a.mouseEnabled = false
+		a.mouseExplicit = true
 		return nil
 	}
 }
@@ -94,7 +105,11 @@ func WithCursor() AppOption {
 // The TUI manages only the bottom N rows of the terminal, allowing normal
 // terminal output above. Use PrintAbove() or PrintAboveln() to print
 // scrolling content above the widget.
-// In inline mode, alternate screen is not used, so terminal history is preserved.
+//
+// In inline mode:
+//   - Alternate screen is not used, so terminal history is preserved
+//   - Mouse events are disabled by default, allowing native terminal scrollback
+//   - Use WithMouse() to explicitly enable mouse if needed
 func WithInlineHeight(rows int) AppOption {
 	return func(a *App) error {
 		if rows < 1 {

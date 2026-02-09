@@ -24,7 +24,7 @@ func main() {
 	}
 	defer app.Close()
 
-	app.SetRoot(Chat(app, width))
+	app.SetRoot(Chat(width))
 
 	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

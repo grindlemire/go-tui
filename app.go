@@ -76,13 +76,15 @@ type App struct {
 	inputLatency   time.Duration // Polling timeout for event reader (default 50ms, -1 for blocking)
 	frameDuration  time.Duration // Duration per frame (default 16ms = 60fps)
 	eventQueueSize int           // Capacity of event queue (default 256, used during construction)
-	mouseEnabled   bool          // Whether mouse events are enabled (default true)
+	mouseEnabled   bool          // Whether mouse events are enabled
+	mouseExplicit  bool          // Whether mouse setting was explicitly configured
 	cursorVisible  bool          // Whether cursor is visible (default false)
 	pendingRoot    any           // Root to set after initialization (used by WithRoot)
 
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow int // Terminal row where inline region starts (calculated at init)
+	historyRows    int // Number of history area rows that contain actual content
 
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay
@@ -105,6 +107,11 @@ var currentApp *App
 // NewApp creates a new application with the terminal set up for TUI usage.
 // The terminal is put into raw mode and alternate screen mode (unless inline mode).
 // Options can be passed to configure the app (e.g., WithInputLatency, WithInlineHeight).
+//
+// Mouse behavior:
+//   - Full screen mode: mouse events enabled by default
+//   - Inline mode: mouse events disabled by default (preserves terminal scrollback)
+//   - Use WithMouse() or WithoutMouse() to explicitly override
 func NewApp(opts ...AppOption) (*App, error) {
 	// Create ANSITerminal from stdout/stdin
 	terminal, err := NewANSITerminal(os.Stdout, os.Stdin)
@@ -139,7 +146,6 @@ func NewApp(opts ...AppOption) (*App, error) {
 		inputLatency:   50 * time.Millisecond, // Default polling timeout
 		frameDuration:  16 * time.Millisecond, // Default ~60fps
 		eventQueueSize: 256,                   // Default queue size
-		mouseEnabled:   true,                  // Mouse enabled by default
 		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
 	}
@@ -152,6 +158,13 @@ func NewApp(opts ...AppOption) (*App, error) {
 			terminal.ExitRawMode()
 			return nil, err
 		}
+	}
+
+	// Default mouse behavior based on mode (if not explicitly configured)
+	if !app.mouseExplicit {
+		// Inline mode: disable mouse to preserve terminal scrollback
+		// Full screen mode: enable mouse for click/scroll handling
+		app.mouseEnabled = app.inlineHeight == 0
 	}
 
 	// Get terminal size
@@ -256,7 +269,6 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		inputLatency:   50 * time.Millisecond, // Default polling timeout
 		frameDuration:  16 * time.Millisecond, // Default ~60fps
 		eventQueueSize: 256,                   // Default queue size
-		mouseEnabled:   true,                  // Mouse enabled by default
 		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
 	}
@@ -269,6 +281,13 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 			terminal.ExitRawMode()
 			return nil, err
 		}
+	}
+
+	// Default mouse behavior based on mode (if not explicitly configured)
+	if !app.mouseExplicit {
+		// Inline mode: disable mouse to preserve terminal scrollback
+		// Full screen mode: enable mouse for click/scroll handling
+		app.mouseEnabled = app.inlineHeight == 0
 	}
 
 	// Get terminal size

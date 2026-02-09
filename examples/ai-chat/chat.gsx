@@ -5,19 +5,16 @@ import (
 )
 
 type chat struct {
-	app      *tui.App
 	width    int
 	textarea *tui.TextArea
 }
 
-func Chat(app *tui.App, width int) *chat {
+func Chat(width int) *chat {
 	c := &chat{
-		app:   app,
 		width: width,
 	}
 	c.textarea = tui.NewTextArea(
 		tui.WithTextAreaWidth(width-2), // -2 for border
-		tui.WithTextAreaMaxHeight(8),
 		tui.WithTextAreaBorder(tui.BorderRounded),
 		tui.WithTextAreaPlaceholder("Type a message..."),
 		tui.WithTextAreaOnSubmit(c.submit),
@@ -29,7 +26,7 @@ func (c *chat) submit(text string) {
 	if text == "" {
 		return
 	}
-	c.app.PrintAboveln("You: %s", text)
+	tui.PrintAboveln("You: %s", text)
 	c.textarea.Clear()
 }
 
@@ -52,10 +49,7 @@ func (c *chat) updateHeight() {
 	if h < 3 {
 		h = 3
 	}
-	if h > 10 {
-		h = 10
-	}
-	c.app.SetInlineHeight(h)
+	tui.SetInlineHeight(h)
 }
 
 templ (c *chat) Render() {
