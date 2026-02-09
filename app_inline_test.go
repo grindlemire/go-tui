@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -259,6 +260,90 @@ func TestSetInlineHeight_ShrinkThenGrow_NoBlankScrollback(t *testing.T) {
 	}
 }
 
+func TestSetInlineHeight_MultilineSubmitShrinkThenGrow_NoBlankScrollback(t *testing.T) {
+	// Simulates inline chat behavior with a multi-line submit:
+	// 1) input grows while typing
+	// 2) submit prints multiple lines above the widget
+	// 3) input clears (shrink)
+	// 4) typing starts again (grow)
+	//
+	// Growth after this cycle must not add blank scrollback rows.
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	// Phase 1: grow while composing multi-line input
+	app.SetInlineHeight(6)
+
+	// Phase 2: submit multi-line content (single print call with embedded newlines)
+	app.printAboveRaw("You: first line\nsecond line\nthird line\n")
+
+	// Phase 3: input clears, widget shrinks
+	app.SetInlineHeight(3)
+
+	// Phase 4: user starts typing again, widget grows
+	emu.scrollback = nil // isolate this phase
+	app.SetInlineHeight(6)
+
+	blanks := emu.BlankScrollbackCount()
+	if blanks > 0 {
+		t.Errorf("multiline submit grow-after-shrink: got %d blank scrollback lines, want 0\n%s",
+			blanks, emu.DumpState())
+	}
+}
+
+func TestSetInlineHeight_SubmitThenShrink_DoesNotSplitMultilineMessage(t *testing.T) {
+	// Reproduces the "blank block inserted inside one submitted multiline message":
+	// 1) input grows tall while composing
+	// 2) submit prints many lines with small history area
+	// 3) input clears and shrinks
+	//
+	// The submitted message lines should remain contiguous in terminal chronology.
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	// Grow to a tall widget (small history area)
+	app.SetInlineHeight(21) // history area is only 3 rows
+
+	lines := make([]string, 0, 20)
+	for i := 0; i < 20; i++ {
+		lines = append(lines, fmt.Sprintf("M2-%02d", i))
+	}
+	app.printAboveRaw(strings.Join(lines, "\n") + "\n")
+
+	// Simulate submit clear -> shrink
+	app.SetInlineHeight(3)
+
+	// Build terminal chronology: scrollback followed by visible history rows.
+	chronology := append([]string{}, emu.Scrollback()...)
+	for r := 0; r < app.inlineStartRow; r++ {
+		chronology = append(chronology, emu.ScreenRow(r))
+	}
+
+	// Locate each submitted line in chronology.
+	pos := make([]int, len(lines))
+	for i, want := range lines {
+		found := -1
+		for j, got := range chronology {
+			if got == want {
+				found = j
+				break
+			}
+		}
+		if found == -1 {
+			t.Fatalf("submitted line %q not found in chronology\n%s", want, emu.DumpState())
+		}
+		pos[i] = found
+	}
+
+	// Ensure no blank rows split the submitted sequence.
+	for i := 1; i < len(pos); i++ {
+		for j := pos[i-1] + 1; j < pos[i]; j++ {
+			if chronology[j] == "" {
+				t.Fatalf("blank line split submitted message between %q and %q\n%s",
+					lines[i-1], lines[i], emu.DumpState())
+			}
+		}
+	}
+}
+
 func TestSetInlineHeight_InlineHeightAndStartRowCorrect(t *testing.T) {
 	type tc struct {
 		termHeight  int
@@ -398,9 +483,9 @@ func TestEmulatorTerminal_ScrollRegionUp(t *testing.T) {
 
 	// Set scroll region to rows 1-3 (0-indexed), i.e. ANSI rows 1-4
 	// Then position cursor at bottom and emit \n to scroll
-	emu.WriteDirect([]byte("\033[1;4r"))  // scroll region rows 1-4 (ANSI 1-indexed)
-	emu.WriteDirect([]byte("\033[4;1H"))  // cursor to row 4 (ANSI 1-indexed) = row 3 (0-indexed)
-	emu.WriteDirect([]byte("\n"))         // scroll within region
+	emu.WriteDirect([]byte("\033[1;4r")) // scroll region rows 1-4 (ANSI 1-indexed)
+	emu.WriteDirect([]byte("\033[4;1H")) // cursor to row 4 (ANSI 1-indexed) = row 3 (0-indexed)
+	emu.WriteDirect([]byte("\n"))        // scroll within region
 
 	// Row 0 (outside region above) should be pushed to scrollback
 	// Actually wait — scrollTop=0, scrollBottom=3 (rows 0-3)

@@ -85,6 +85,9 @@ type App struct {
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow int // Terminal row where inline region starts (calculated at init)
 	historyRows    int // Number of history area rows that contain actual content
+	// historyTopAligned tracks where history content is packed:
+	// false = content packed at bottom (blanks at top), true = content packed at top (blanks at bottom).
+	historyTopAligned bool
 
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay
