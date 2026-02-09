@@ -163,28 +163,62 @@ func (a *App) SetInlineHeight(rows int) {
 	if rows > oldHeight {
 		// Growing: need to make room by shifting history up.
 		//
-		// Two-phase approach:
-		// Phase 1: Delete blank rows at top of history area using ANSI Delete Line.
-		//   DL removes lines without pushing them to scrollback — they just vanish.
-		//   Content below shifts up naturally to fill the gap.
-		// Phase 2: If growth exceeds blank space, scroll remaining content rows
-		//   into scrollback using a scroll region (these ARE preserved in scrollback).
+		// Strategy depends on history packing:
+		// - bottom-packed (default): consume top blanks first, then scroll content
+		// - top-packed (after shrink): consume bottom blanks by shrinking area; if
+		//   content overflows, scroll oldest rows into scrollback
 		a.clearWidgetArea(oldStartRow, oldHeight)
 		linesToScroll := rows - oldHeight
-		blankRows := oldStartRow - a.historyRows
 
-		if linesToScroll <= blankRows {
-			// Enough blank space — just delete blank rows, content shifts up
-			a.deleteBlankHistoryRows(linesToScroll, oldStartRow)
-		} else {
-			// Delete all blanks first, then scroll content for the rest
-			if blankRows > 0 {
-				a.deleteBlankHistoryRows(blankRows, oldStartRow)
+		if a.historyTopAligned {
+			blankRowsBottom := oldStartRow - a.historyRows
+			if linesToScroll > blankRowsBottom {
+				overflow := linesToScroll - blankRowsBottom
+				a.scrollHistoryUpRegion(overflow, 0, oldStartRow)
+				a.historyRows -= overflow
+				if a.historyRows < 0 {
+					a.historyRows = 0
+				}
 			}
-			remaining := linesToScroll - blankRows
-			// After deleting blanks, content starts at row 0
-			a.scrollHistoryUp(remaining, oldStartRow)
-			a.historyRows -= remaining
+
+			// Once history exactly fills the area, alignment is effectively neutral.
+			// Switch back to default bottom-packed mode for future operations.
+			if a.historyRows >= newStartRow {
+				a.historyRows = newStartRow
+				a.historyTopAligned = false
+			}
+		} else {
+			blankRows := oldStartRow - a.historyRows
+
+			if linesToScroll < blankRows {
+				// Enough blank rows at the top: consume only blanks without touching row 0.
+				// This keeps scrollback clean while preserving visible content.
+				topRow := blankRows - linesToScroll
+				a.scrollHistoryUpRegion(linesToScroll, topRow, oldStartRow)
+			} else {
+				// Need to remove all blank rows and some content rows.
+				// First, remove as many blanks as possible without touching row 0.
+				// Leave at most one blank at row 0, then scroll the remainder from row 0
+				// so only real content (plus at most one unavoidable blank) enters scrollback.
+				if blankRows > 1 {
+					a.scrollHistoryUpRegion(blankRows-1, 1, oldStartRow)
+				}
+
+				remaining := linesToScroll
+				if blankRows > 1 {
+					remaining -= (blankRows - 1)
+				}
+				a.scrollHistoryUpRegion(remaining, 0, oldStartRow)
+
+				// Content rows removed are growth minus true blank capacity.
+				contentRowsRemoved := linesToScroll - blankRows
+				if contentRowsRemoved > 0 {
+					a.historyRows -= contentRowsRemoved
+					if a.historyRows < 0 {
+						a.historyRows = 0
+					}
+				}
+			}
 		}
 	} else {
 		// Shrinking: We need to handle the "released" rows (the rows that were part of
@@ -193,16 +227,12 @@ func (a *App) SetInlineHeight(rows int) {
 		// The challenge: These rows are now in the history area. If we leave them blank,
 		// they'll scroll into the scrollback mixed with actual messages.
 		//
-		// Solution: Use Reverse Index to scroll content DOWN, which:
-		// 1. Inserts blank lines at the TOP of the screen
-		// 2. Pushes existing history DOWN to fill the released rows
-		// 3. The old widget blanks at the bottom fall off the screen
-		//
-		// This way, blanks are at the TOP and scroll into scrollback FIRST (before
-		// messages), appearing at the "oldest" end of scroll history.
+		// Keep current history rows where they are and let released rows become
+		// blanks at the bottom of the expanded history area. This preserves line
+		// chronology (important for multiline submits) instead of inserting a blank
+		// block between already-scrolled lines and still-visible lines.
 		a.clearWidgetArea(oldStartRow, oldHeight)
-		releasedRows := oldHeight - rows
-		a.scrollContentDown(releasedRows)
+		a.historyTopAligned = true
 	}
 
 	a.inlineHeight = rows
@@ -212,19 +242,27 @@ func (a *App) SetInlineHeight(rows int) {
 	debug.Log("SetInlineHeight: buffer resized, new inlineStartRow=%d, needsFullRedraw=true", a.inlineStartRow)
 }
 
-// scrollHistoryUp scrolls the history area up by n lines to make room for widget growth.
-// This uses a scroll region to push content into scrollback. The caller should ensure
-// blank rows have been removed first (via deleteBlankHistoryRows) so that only content
-// rows are pushed to scrollback.
-func (a *App) scrollHistoryUp(n int, oldStartRow int) {
-	if oldStartRow < 1 {
+// scrollHistoryUpRegion scrolls a history subregion up by n lines.
+// topRow is 0-indexed and inclusive; oldStartRow is the widget start row (0-indexed),
+// so the region bottom is oldStartRow-1.
+//
+// If topRow == 0, scrolled-off lines are pushed into terminal scrollback.
+// If topRow > 0, scrolled-off lines are discarded instead.
+func (a *App) scrollHistoryUpRegion(n int, topRow int, oldStartRow int) {
+	if oldStartRow < 1 || n < 1 {
+		return
+	}
+	if topRow < 0 {
+		topRow = 0
+	}
+	if topRow >= oldStartRow {
 		return
 	}
 
 	var seq strings.Builder
 
-	// Set scroll region to the history area (rows 1 to oldStartRow, 1-indexed)
-	seq.WriteString(fmt.Sprintf("\033[1;%dr", oldStartRow))
+	// Set scroll region to the requested history subregion (ANSI is 1-indexed).
+	seq.WriteString(fmt.Sprintf("\033[%d;%dr", topRow+1, oldStartRow))
 
 	// Move to bottom of scroll region and emit newlines to scroll up
 	seq.WriteString(fmt.Sprintf("\033[%d;1H", oldStartRow))
@@ -252,53 +290,6 @@ func (a *App) clearWidgetArea(startRow, height int) {
 	a.terminal.WriteDirect([]byte(seq.String()))
 }
 
-// deleteBlankHistoryRows removes n blank rows from the top of the history area
-// using ANSI Delete Line (CSI n M). Unlike scrolling, DL does NOT push deleted
-// lines into the terminal's scrollback buffer — they simply vanish. Content below
-// shifts up to fill the gap, and blank lines appear at the bottom of the scroll
-// region (just above the widget). This preserves visible content while making room
-// for widget growth.
-func (a *App) deleteBlankHistoryRows(n int, oldStartRow int) {
-	if oldStartRow < 1 || n < 1 {
-		return
-	}
-
-	var seq strings.Builder
-
-	// Set scroll region to the history area so DL doesn't affect widget rows
-	seq.WriteString(fmt.Sprintf("\033[1;%dr", oldStartRow))
-
-	// Move to top of history area and delete n lines
-	seq.WriteString("\033[1;1H")
-	seq.WriteString(fmt.Sprintf("\033[%dM", n))
-
-	// Reset scroll region to full screen
-	seq.WriteString("\033[r")
-
-	a.terminal.WriteDirect([]byte(seq.String()))
-}
-
-// scrollContentDown uses Reverse Index to scroll visible content down by n lines.
-// This inserts blank lines at the TOP of the screen and pushes content down.
-// Content at the bottom of the screen falls off (is lost).
-// Used when shrinking the widget to put blanks at top (where they'll scroll
-// into scrollback first) rather than at the bottom (where they'd be mixed with messages).
-func (a *App) scrollContentDown(n int) {
-	var seq strings.Builder
-
-	// Move cursor to the top row (row 1 in ANSI 1-indexed)
-	seq.WriteString("\033[1;1H")
-
-	// Use Reverse Index (ESC M) n times to scroll content down
-	// Each ESC M at the top of the screen inserts a blank line at row 1
-	// and pushes everything down by 1 (bottom row falls off)
-	for i := 0; i < n; i++ {
-		seq.WriteString("\033M")
-	}
-
-	a.terminal.WriteDirect([]byte(seq.String()))
-}
-
 // InlineHeight returns the current inline height (0 if not in inline mode).
 func (a *App) InlineHeight() int {
 	return a.inlineHeight
@@ -308,57 +299,67 @@ func (a *App) InlineHeight() int {
 // Prints content that scrolls into terminal scrollback buffer, allowing
 // the user to scroll back through history with their terminal's scroll feature.
 // Must be called from the main event loop (via QueueUpdate).
-//
-// The scroll-then-print order is important: when the widget shrinks, we use
-// Reverse Index to put blanks at the TOP of the visible area. The last history
-// line is now at the bottom of the scroll region. If we printed first, we'd
-// overwrite that line. By scrolling first, we push the top line (a blank from
-// shrinking, or an old message) to scrollback, then print our new message
-// over the blank line that appears at the bottom.
+// Supports both history packing modes:
+// - top-packed (blanks at bottom): fill blank rows first, then scroll when full
+// - bottom-packed (blanks at top): scroll first, then print at bottom
 func (a *App) printAboveRaw(content string) {
 	if a.inlineStartRow < 1 {
 		return // No room above widget
 	}
 
 	text := strings.TrimSuffix(content, "\n")
+	lines := strings.Split(text, "\n")
 
+	// Top-packed history mode (blanks at bottom): append directly into available
+	// blank rows before scrolling. This avoids introducing blank blocks between
+	// multiline submit lines when the widget just shrank.
+	if a.historyTopAligned {
+		var seq strings.Builder
+		for _, line := range lines {
+			if a.historyRows < a.inlineStartRow {
+				row := a.historyRows + 1 // ANSI 1-indexed
+				seq.WriteString(fmt.Sprintf("\033[%d;1H\033[2K", row))
+				seq.WriteString(line)
+				a.historyRows++
+				continue
+			}
+
+			seq.WriteString(fmt.Sprintf("\033[1;%dr", a.inlineStartRow))
+			seq.WriteString(fmt.Sprintf("\033[%d;1H", a.inlineStartRow))
+			seq.WriteString("\n")
+			seq.WriteString(fmt.Sprintf("\033[%d;1H\033[2K", a.inlineStartRow))
+			seq.WriteString(line)
+			seq.WriteString("\033[r")
+		}
+
+		a.terminal.WriteDirect([]byte(seq.String()))
+
+		if a.historyRows > a.inlineStartRow {
+			a.historyRows = a.inlineStartRow
+		}
+		if a.historyRows == a.inlineStartRow {
+			a.historyTopAligned = false
+		}
+
+		MarkDirty()
+		return
+	}
+
+	// Bottom-packed history mode (blanks at top): scroll then print at bottom.
 	// In raw terminal mode, \n (LF) only moves cursor down without returning
 	// to column 1. We need \r\n (CR+LF) to properly start each line at column 1.
 	text = strings.ReplaceAll(text, "\n", "\r\n")
 
-	// Use a scroll region to protect the widget at the bottom.
-	// ANSI escape sequences use 1-indexed rows.
-	// inlineStartRow is 0-indexed, so the widget occupies rows
-	// (inlineStartRow+1) through termHeight in ANSI terms.
-
 	var seq strings.Builder
-
-	// Set scroll region to exclude widget area (rows 1 to inlineStartRow)
 	seq.WriteString(fmt.Sprintf("\033[1;%dr", a.inlineStartRow))
-
-	// Move to bottom of scroll region (last row before widget)
 	seq.WriteString(fmt.Sprintf("\033[%d;1H", a.inlineStartRow))
-
-	// Scroll first, then print (scroll-then-print order)
-	// The newline scrolls content up within the region, pushing top line to scrollback
-	// This creates a blank line at the bottom of the scroll region
 	seq.WriteString("\n")
-
-	// Now print the text over the blank line that just appeared
-	// Move back to the bottom row (cursor is still there after newline in scroll region)
 	seq.WriteString(text)
-
-	// Reset scroll region to full screen
 	seq.WriteString("\033[r")
 
 	a.terminal.WriteDirect([]byte(seq.String()))
 
-	// Track content rows. Each \n in the original content is one displayed line.
-	lines := strings.Count(content, "\n")
-	if lines == 0 {
-		lines = 1
-	}
-	a.historyRows += lines
+	a.historyRows += len(lines)
 	if a.historyRows > a.inlineStartRow {
 		a.historyRows = a.inlineStartRow
 	}
