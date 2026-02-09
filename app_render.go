@@ -1,5 +1,7 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/debug"
+
 // Render clears the buffer, renders the element tree, and flushes to terminal.
 // If a resize occurred since the last render, this automatically performs a full
 // redraw to eliminate visual artifacts.
@@ -101,6 +103,8 @@ func (a *App) renderInline() {
 			}
 		}
 		// Clear only the inline region, not the whole screen
+		debug.Log("renderInline: fullRedraw — SetCursor(0, %d), ClearToEnd, flushing %dx%d cells at Y offset %d",
+			a.inlineStartRow, width, height, a.inlineStartRow)
 		a.terminal.SetCursor(0, a.inlineStartRow)
 		a.terminal.ClearToEnd()
 		a.needsFullRedraw = false

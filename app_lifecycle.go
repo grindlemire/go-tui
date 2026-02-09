@@ -21,6 +21,30 @@ func Stop() {
 	}
 }
 
+// PrintAbove prints content above the inline widget without a trailing newline.
+// Only works in inline mode. Safe to call even if no app is running.
+func PrintAbove(format string, args ...any) {
+	if currentApp != nil {
+		currentApp.PrintAbove(format, args...)
+	}
+}
+
+// PrintAboveln prints content with a trailing newline above the inline widget.
+// Only works in inline mode. Safe to call even if no app is running.
+func PrintAboveln(format string, args ...any) {
+	if currentApp != nil {
+		currentApp.PrintAboveln(format, args...)
+	}
+}
+
+// SetInlineHeight changes the inline widget height at runtime.
+// Only works in inline mode. Safe to call even if no app is running.
+func SetInlineHeight(rows int) {
+	if currentApp != nil {
+		currentApp.SetInlineHeight(rows)
+	}
+}
+
 // SnapshotFrame returns the current frame as a string for debugging.
 // Returns an empty string if no app is running.
 func SnapshotFrame() string {
@@ -137,10 +161,31 @@ func (a *App) SetInlineHeight(rows int) {
 	debug.Log("SetInlineHeight: changing from %d to %d (termHeight=%d, width=%d)", oldHeight, rows, termHeight, width)
 
 	if rows > oldHeight {
-		// Growing: clear old widget first, then scroll history up
+		// Growing: need to make room by shifting history up.
+		//
+		// Two-phase approach:
+		// Phase 1: Delete blank rows at top of history area using ANSI Delete Line.
+		//   DL removes lines without pushing them to scrollback — they just vanish.
+		//   Content below shifts up naturally to fill the gap.
+		// Phase 2: If growth exceeds blank space, scroll remaining content rows
+		//   into scrollback using a scroll region (these ARE preserved in scrollback).
 		a.clearWidgetArea(oldStartRow, oldHeight)
 		linesToScroll := rows - oldHeight
-		a.scrollHistoryUp(linesToScroll, oldStartRow)
+		blankRows := oldStartRow - a.historyRows
+
+		if linesToScroll <= blankRows {
+			// Enough blank space — just delete blank rows, content shifts up
+			a.deleteBlankHistoryRows(linesToScroll, oldStartRow)
+		} else {
+			// Delete all blanks first, then scroll content for the rest
+			if blankRows > 0 {
+				a.deleteBlankHistoryRows(blankRows, oldStartRow)
+			}
+			remaining := linesToScroll - blankRows
+			// After deleting blanks, content starts at row 0
+			a.scrollHistoryUp(remaining, oldStartRow)
+			a.historyRows -= remaining
+		}
 	} else {
 		// Shrinking: We need to handle the "released" rows (the rows that were part of
 		// the old widget but won't be part of the new smaller widget).
@@ -168,10 +213,12 @@ func (a *App) SetInlineHeight(rows int) {
 }
 
 // scrollHistoryUp scrolls the history area up by n lines to make room for widget growth.
-// This uses a scroll region to push content into scrollback.
+// This uses a scroll region to push content into scrollback. The caller should ensure
+// blank rows have been removed first (via deleteBlankHistoryRows) so that only content
+// rows are pushed to scrollback.
 func (a *App) scrollHistoryUp(n int, oldStartRow int) {
 	if oldStartRow < 1 {
-		return // No history area to scroll
+		return
 	}
 
 	var seq strings.Builder
@@ -205,15 +252,28 @@ func (a *App) clearWidgetArea(startRow, height int) {
 	a.terminal.WriteDirect([]byte(seq.String()))
 }
 
-// deleteLines removes n lines starting at startRow, shifting content below up.
-// This uses the ANSI Delete Line sequence to eliminate rows without leaving gaps.
-func (a *App) deleteLines(startRow, n int) {
+// deleteBlankHistoryRows removes n blank rows from the top of the history area
+// using ANSI Delete Line (CSI n M). Unlike scrolling, DL does NOT push deleted
+// lines into the terminal's scrollback buffer — they simply vanish. Content below
+// shifts up to fill the gap, and blank lines appear at the bottom of the scroll
+// region (just above the widget). This preserves visible content while making room
+// for widget growth.
+func (a *App) deleteBlankHistoryRows(n int, oldStartRow int) {
+	if oldStartRow < 1 || n < 1 {
+		return
+	}
+
 	var seq strings.Builder
 
-	// Move to the start row (1-indexed)
-	seq.WriteString(fmt.Sprintf("\033[%d;1H", startRow+1))
-	// Delete n lines - content below shifts up, blank lines appear at bottom
+	// Set scroll region to the history area so DL doesn't affect widget rows
+	seq.WriteString(fmt.Sprintf("\033[1;%dr", oldStartRow))
+
+	// Move to top of history area and delete n lines
+	seq.WriteString("\033[1;1H")
 	seq.WriteString(fmt.Sprintf("\033[%dM", n))
+
+	// Reset scroll region to full screen
+	seq.WriteString("\033[r")
 
 	a.terminal.WriteDirect([]byte(seq.String()))
 }
@@ -292,6 +352,16 @@ func (a *App) printAboveRaw(content string) {
 	seq.WriteString("\033[r")
 
 	a.terminal.WriteDirect([]byte(seq.String()))
+
+	// Track content rows. Each \n in the original content is one displayed line.
+	lines := strings.Count(content, "\n")
+	if lines == 0 {
+		lines = 1
+	}
+	a.historyRows += lines
+	if a.historyRows > a.inlineStartRow {
+		a.historyRows = a.inlineStartRow
+	}
 
 	// Mark dirty to ensure consistent state
 	MarkDirty()
