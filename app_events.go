@@ -13,9 +13,11 @@ func (a *App) Dispatch(event Event) bool {
 		} else if a.inlineHeight > 0 {
 			// Inline mode: recalculate start row, keep buffer height fixed
 			a.inlineStartRow = resize.Height - a.inlineHeight
+			widthChanged := a.buffer.Width() != resize.Width
 			// Only resize buffer width if it changed
-			if a.buffer.Width() != resize.Width {
+			if widthChanged {
 				a.buffer.Resize(resize.Width, a.inlineHeight)
+				a.invalidateInlineLayoutForWidthChange(a.inlineStartRow)
 			}
 		} else {
 			// Full screen mode: resize buffer to match terminal

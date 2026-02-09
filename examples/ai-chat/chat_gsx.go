@@ -29,8 +29,9 @@ func (c *chat) submit(text string) {
 	if text == "" {
 		return
 	}
-	tui.PrintAboveln("You: %s", text)
 	c.textarea.Clear()
+	c.updateHeight()
+	tui.PrintAboveln("You: %s", text)
 }
 
 func (c *chat) KeyMap() tui.KeyMap {

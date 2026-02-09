@@ -13,6 +13,7 @@ func (a *App) EnterAlternateScreen() error {
 	// Save current inline mode state for restoration
 	a.savedInlineHeight = a.inlineHeight
 	a.savedInlineStartRow = a.inlineStartRow
+	a.savedInlineLayout = a.inlineLayout
 
 	// Get terminal dimensions
 	width, height := a.terminal.Size()
@@ -58,6 +59,7 @@ func (a *App) ExitAlternateScreen() error {
 	// Restore inline mode state
 	a.inlineHeight = a.savedInlineHeight
 	a.inlineStartRow = a.savedInlineStartRow
+	a.inlineLayout = a.savedInlineLayout
 	a.inAlternateScreen = false
 
 	// Get terminal dimensions
@@ -67,6 +69,7 @@ func (a *App) ExitAlternateScreen() error {
 	if a.inlineHeight > 0 {
 		// Inline mode: recalculate start row, resize buffer to inline height
 		a.inlineStartRow = height - a.inlineHeight
+		a.inlineLayout.clamp(a.inlineStartRow)
 		a.buffer.Resize(width, a.inlineHeight)
 	} else {
 		// Was full-screen normal mode (started with alternate screen)

@@ -84,15 +84,14 @@ type App struct {
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow int // Terminal row where inline region starts (calculated at init)
-	historyRows    int // Number of history area rows that contain actual content
-	// historyTopAligned tracks where history content is packed:
-	// false = content packed at bottom (blanks at top), true = content packed at top (blanks at bottom).
-	historyTopAligned bool
+	inlineLayout   inlineLayoutState
+	inlineSession  *inlineSession
 
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay
 	savedInlineHeight   int  // Preserved inlineHeight when entering alternate
 	savedInlineStartRow int  // Preserved inlineStartRow when entering alternate
+	savedInlineLayout   inlineLayoutState
 
 	// Component model (mount system for struct components)
 	mounts        *mountState
@@ -188,6 +187,8 @@ func NewApp(opts ...AppOption) (*App, error) {
 
 		// Calculate where our inline region starts
 		app.inlineStartRow = termHeight - app.inlineHeight
+		app.inlineLayout = newInlineLayoutState(app.inlineStartRow)
+		app.inlineSession = newInlineSession(app.terminal)
 
 		// Create buffer sized for inline region only
 		app.buffer = NewBuffer(width, app.inlineHeight)
@@ -311,6 +312,8 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 
 		// Calculate where our inline region starts
 		app.inlineStartRow = termHeight - app.inlineHeight
+		app.inlineLayout = newInlineLayoutState(app.inlineStartRow)
+		app.inlineSession = newInlineSession(app.terminal)
 
 		// Create buffer sized for inline region only
 		app.buffer = NewBuffer(width, app.inlineHeight)

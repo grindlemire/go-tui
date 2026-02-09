@@ -17,6 +17,8 @@ func newInlineTestApp(termWidth, termHeight, inlineHeight int) (*App, *EmulatorT
 		terminal:       emu,
 		inlineHeight:   inlineHeight,
 		inlineStartRow: termHeight - inlineHeight,
+		inlineLayout:   newInlineLayoutState(termHeight - inlineHeight),
+		inlineSession:  newInlineSession(emu),
 		buffer:         NewBuffer(termWidth, inlineHeight),
 		focus:          NewFocusManager(),
 		reader:         NewMockEventReader(),
@@ -25,6 +27,17 @@ func newInlineTestApp(termWidth, termHeight, inlineHeight int) (*App, *EmulatorT
 	}
 
 	return app, emu
+}
+
+func runQueuedUpdates(a *App) {
+	for {
+		select {
+		case fn := <-a.eventQueue:
+			fn()
+		default:
+			return
+		}
+	}
 }
 
 func TestSetInlineHeight_GrowingWithNoHistory_NoBlankScrollback(t *testing.T) {
@@ -344,6 +357,38 @@ func TestSetInlineHeight_SubmitThenShrink_DoesNotSplitMultilineMessage(t *testin
 	}
 }
 
+func TestSetInlineHeight_SubmitShrinkThenAppend_KeepsChronology(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.SetInlineHeight(21) // tiny history area while composing
+	app.printAboveRaw("L1\nL2\nL3\nL4\nL5\n")
+	app.SetInlineHeight(3) // clear submit -> shrink
+	app.printAboveRaw("AFTER\n")
+
+	chronology := append([]string{}, emu.Scrollback()...)
+	for r := 0; r < app.inlineStartRow; r++ {
+		chronology = append(chronology, emu.ScreenRow(r))
+	}
+
+	lastL5 := -1
+	after := -1
+	for i, line := range chronology {
+		if line == "L5" {
+			lastL5 = i
+		}
+		if line == "AFTER" {
+			after = i
+		}
+	}
+
+	if lastL5 == -1 || after == -1 {
+		t.Fatalf("expected L5 and AFTER in chronology\n%s", emu.DumpState())
+	}
+	if after <= lastL5 {
+		t.Fatalf("AFTER should come after L5 in chronology\n%s", emu.DumpState())
+	}
+}
+
 func TestSetInlineHeight_InlineHeightAndStartRowCorrect(t *testing.T) {
 	type tc struct {
 		termHeight  int
@@ -417,7 +462,64 @@ func TestPrintAboveRaw_AddsToScreen(t *testing.T) {
 	}
 }
 
-func TestPrintAboveRaw_TracksHistoryRows(t *testing.T) {
+func TestPrintAboveRaw_HardWrapUsesVisualRows(t *testing.T) {
+	app, emu := newInlineTestApp(5, 10, 3)
+
+	app.printAboveRaw("abcdefghij\n")
+
+	if got := emu.ScreenRow(5); got != "abcde" {
+		t.Fatalf("row 5 = %q, want %q\n%s", got, "abcde", emu.DumpState())
+	}
+	if got := emu.ScreenRow(6); got != "fghij" {
+		t.Fatalf("row 6 = %q, want %q\n%s", got, "fghij", emu.DumpState())
+	}
+}
+
+func TestPrintAboveRaw_WideRuneWrapUsesRuneWidth(t *testing.T) {
+	app, emu := newInlineTestApp(4, 10, 3)
+
+	app.printAboveRaw("ab好cd\n")
+
+	if got := emu.ScreenRow(6); got != "cd" {
+		t.Fatalf("row 6 = %q, want %q\n%s", got, "cd", emu.DumpState())
+	}
+	if app.inlineLayout.visibleRows != 2 {
+		t.Fatalf("visibleRows = %d, want 2", app.inlineLayout.visibleRows)
+	}
+}
+
+func TestPrintAboveRaw_SanitizesANSISequences(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.printAboveRaw("safe \x1b[31mRED\x1b[0m text\n")
+
+	historyBottom := app.inlineStartRow - 1
+	if got := emu.ScreenRow(historyBottom); got != "safe RED text" {
+		t.Fatalf("history row = %q, want %q\n%s", got, "safe RED text", emu.DumpState())
+	}
+}
+
+func TestPrintAbove_SyncAndAsyncOrdering(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.PrintAboveln("sync-1")
+	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "sync-1" {
+		t.Fatalf("bottom history row = %q, want %q before async flush\n%s",
+			got, "sync-1", emu.DumpState())
+	}
+
+	app.PrintAbovelnAsync("async-2")
+	runQueuedUpdates(app)
+
+	if got := emu.ScreenRow(app.inlineStartRow - 2); got != "sync-1" {
+		t.Fatalf("row above bottom = %q, want %q\n%s", got, "sync-1", emu.DumpState())
+	}
+	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "async-2" {
+		t.Fatalf("bottom history row = %q, want %q\n%s", got, "async-2", emu.DumpState())
+	}
+}
+
+func TestPrintAboveRaw_TracksVisibleRows(t *testing.T) {
 	type tc struct {
 		prints    []string
 		wantCount int
@@ -450,23 +552,23 @@ func TestPrintAboveRaw_TracksHistoryRows(t *testing.T) {
 				app.printAboveRaw(content)
 			}
 
-			if app.historyRows != tt.wantCount {
-				t.Errorf("historyRows = %d, want %d", app.historyRows, tt.wantCount)
+			if app.inlineLayout.visibleRows != tt.wantCount {
+				t.Errorf("visibleRows = %d, want %d", app.inlineLayout.visibleRows, tt.wantCount)
 			}
 		})
 	}
 }
 
-func TestSetInlineHeight_HistoryRowsCapped(t *testing.T) {
+func TestSetInlineHeight_VisibleRowsCapped(t *testing.T) {
 	app, _ := newInlineTestApp(80, 24, 3)
 
 	for i := 0; i < 30; i++ {
 		app.printAboveRaw(fmt.Sprintf("line %d\n", i))
 	}
 
-	if app.historyRows > app.inlineStartRow {
-		t.Errorf("historyRows = %d, exceeds inlineStartRow = %d",
-			app.historyRows, app.inlineStartRow)
+	if app.inlineLayout.visibleRows > app.inlineStartRow {
+		t.Errorf("visibleRows = %d, exceeds inlineStartRow = %d",
+			app.inlineLayout.visibleRows, app.inlineStartRow)
 	}
 }
 

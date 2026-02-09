@@ -161,9 +161,9 @@ func TestApp_Render_ClearsNeedsFullRedrawFlag(t *testing.T) {
 
 func TestApp_Render_UsesFullRedrawWhenFlagSet(t *testing.T) {
 	type tc struct {
-		setFlag             bool
-		expectClearCount    int
-		description         string
+		setFlag          bool
+		expectClearCount int
+		description      string
 	}
 
 	tests := map[string]tc{
@@ -267,5 +267,47 @@ func TestApp_DispatchNonResizeEvent_DoesNotSetFlag(t *testing.T) {
 				t.Error("needsFullRedraw should still be false after non-resize event")
 			}
 		})
+	}
+}
+
+func TestApp_DispatchResizeEvent_InlineWidthChange_InvalidatesLayout(t *testing.T) {
+	app := &App{
+		focus:          NewFocusManager(),
+		buffer:         NewBuffer(80, 3),
+		inlineHeight:   3,
+		inlineStartRow: 21,
+		inlineLayout:   newInlineLayoutState(21),
+	}
+	app.inlineLayout.visibleRows = 2
+	app.inlineLayout.contentStartRow = 19
+
+	handled := app.Dispatch(ResizeEvent{Width: 100, Height: 24})
+	if !handled {
+		t.Fatal("Dispatch(ResizeEvent) should return true")
+	}
+
+	if app.inlineLayout.valid {
+		t.Fatalf("inline layout should be invalidated after width change: %+v", app.inlineLayout)
+	}
+}
+
+func TestApp_DispatchResizeEvent_InlineHeightChange_KeepsLayoutValid(t *testing.T) {
+	app := &App{
+		focus:          NewFocusManager(),
+		buffer:         NewBuffer(80, 3),
+		inlineHeight:   3,
+		inlineStartRow: 21,
+		inlineLayout:   newInlineLayoutState(21),
+	}
+	app.inlineLayout.visibleRows = 2
+	app.inlineLayout.contentStartRow = 19
+
+	handled := app.Dispatch(ResizeEvent{Width: 80, Height: 30})
+	if !handled {
+		t.Fatal("Dispatch(ResizeEvent) should return true")
+	}
+
+	if !app.inlineLayout.valid {
+		t.Fatalf("inline layout should remain valid when only height changes: %+v", app.inlineLayout)
 	}
 }

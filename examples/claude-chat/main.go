@@ -40,7 +40,7 @@ func main() {
 	go generateText(textCh)
 	go func() {
 		for text := range textCh {
-			app.PrintAboveln("%s", text)
+			app.PrintAbovelnAsync("%s", text)
 		}
 	}()
 
