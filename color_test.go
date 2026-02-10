@@ -20,10 +20,10 @@ func TestANSIColor(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"zero":    {idx: 0},
-		"one":     {idx: 1},
-		"mid":     {idx: 127},
-		"max":     {idx: 255},
+		"zero": {idx: 0},
+		"one":  {idx: 1},
+		"mid":  {idx: 127},
+		"max":  {idx: 255},
 	}
 
 	for name, tt := range tests {
@@ -48,12 +48,12 @@ func TestRGBColor(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"black":   {r: 0, g: 0, b: 0},
-		"white":   {r: 255, g: 255, b: 255},
-		"red":     {r: 255, g: 0, b: 0},
-		"green":   {r: 0, g: 255, b: 0},
-		"blue":    {r: 0, g: 0, b: 255},
-		"mixed":   {r: 128, g: 64, b: 32},
+		"black": {r: 0, g: 0, b: 0},
+		"white": {r: 255, g: 255, b: 255},
+		"red":   {r: 255, g: 0, b: 0},
+		"green": {r: 0, g: 255, b: 0},
+		"blue":  {r: 0, g: 0, b: 255},
+		"mixed": {r: 128, g: 64, b: 32},
 	}
 
 	for name, tt := range tests {
@@ -81,14 +81,14 @@ func TestHexColor_Valid6Digit(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"black":            {hex: "#000000", r: 0, g: 0, b: 0},
-		"white uppercase":  {hex: "#FFFFFF", r: 255, g: 255, b: 255},
-		"white lowercase":  {hex: "#ffffff", r: 255, g: 255, b: 255},
-		"red":              {hex: "#FF0000", r: 255, g: 0, b: 0},
-		"green":            {hex: "#00FF00", r: 0, g: 255, b: 0},
-		"blue":             {hex: "#0000FF", r: 0, g: 0, b: 255},
-		"mixed":            {hex: "#1A2B3C", r: 26, g: 43, b: 60},
-		"without hash":     {hex: "1A2B3C", r: 26, g: 43, b: 60},
+		"black":           {hex: "#000000", r: 0, g: 0, b: 0},
+		"white uppercase": {hex: "#FFFFFF", r: 255, g: 255, b: 255},
+		"white lowercase": {hex: "#ffffff", r: 255, g: 255, b: 255},
+		"red":             {hex: "#FF0000", r: 255, g: 0, b: 0},
+		"green":           {hex: "#00FF00", r: 0, g: 255, b: 0},
+		"blue":            {hex: "#0000FF", r: 0, g: 0, b: 255},
+		"mixed":           {hex: "#1A2B3C", r: 26, g: 43, b: 60},
+		"without hash":    {hex: "1A2B3C", r: 26, g: 43, b: 60},
 	}
 
 	for name, tt := range tests {
@@ -150,17 +150,17 @@ func TestHexColor_Invalid(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"empty":            {hex: ""},
-		"hash only":        {hex: "#"},
-		"one digit":        {hex: "#1"},
-		"two digits":       {hex: "#12"},
-		"four digits":      {hex: "#1234"},
-		"five digits":      {hex: "#12345"},
-		"seven digits":     {hex: "#1234567"},
-		"invalid 3 digit":  {hex: "#GGG"},
-		"invalid 6 digit":  {hex: "#GGGGGG"},
-		"partial invalid":  {hex: "#12345G"},
-		"not a color":      {hex: "not-a-color"},
+		"empty":           {hex: ""},
+		"hash only":       {hex: "#"},
+		"one digit":       {hex: "#1"},
+		"two digits":      {hex: "#12"},
+		"four digits":     {hex: "#1234"},
+		"five digits":     {hex: "#12345"},
+		"seven digits":    {hex: "#1234567"},
+		"invalid 3 digit": {hex: "#GGG"},
+		"invalid 6 digit": {hex: "#GGGGGG"},
+		"partial invalid": {hex: "#12345G"},
+		"not a color":     {hex: "not-a-color"},
 	}
 
 	for name, tt := range tests {
@@ -180,14 +180,14 @@ func TestColor_Equal(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"default == default":    {a: DefaultColor(), b: DefaultColor(), equal: true},
-		"ansi 0 == ansi 0":      {a: ANSIColor(0), b: ANSIColor(0), equal: true},
-		"ansi 0 != ansi 1":      {a: ANSIColor(0), b: ANSIColor(1), equal: false},
+		"default == default":     {a: DefaultColor(), b: DefaultColor(), equal: true},
+		"ansi 0 == ansi 0":       {a: ANSIColor(0), b: ANSIColor(0), equal: true},
+		"ansi 0 != ansi 1":       {a: ANSIColor(0), b: ANSIColor(1), equal: false},
 		"rgb black == rgb black": {a: RGBColor(0, 0, 0), b: RGBColor(0, 0, 0), equal: true},
-		"rgb != rgb different":  {a: RGBColor(0, 0, 0), b: RGBColor(1, 0, 0), equal: false},
-		"default != ansi":       {a: DefaultColor(), b: ANSIColor(0), equal: false},
-		"default != rgb":        {a: DefaultColor(), b: RGBColor(0, 0, 0), equal: false},
-		"ansi != rgb":           {a: ANSIColor(0), b: RGBColor(0, 0, 0), equal: false},
+		"rgb != rgb different":   {a: RGBColor(0, 0, 0), b: RGBColor(1, 0, 0), equal: false},
+		"default != ansi":        {a: DefaultColor(), b: ANSIColor(0), equal: false},
+		"default != rgb":         {a: DefaultColor(), b: RGBColor(0, 0, 0), equal: false},
+		"ansi != rgb":            {a: ANSIColor(0), b: RGBColor(0, 0, 0), equal: false},
 	}
 
 	for name, tt := range tests {
@@ -284,40 +284,38 @@ func TestColor_ToANSI(t *testing.T) {
 	}
 }
 
-func TestColor_ANSIPanicOnRGB(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Color.ANSI() on RGB color should panic")
-		}
-	}()
-	RGBColor(255, 0, 0).ANSI()
+func TestColor_AccessorsAreSafeOnWrongType(t *testing.T) {
+	if got := RGBColor(255, 0, 0).ANSI(); got != 0 {
+		t.Errorf("RGBColor(...).ANSI() = %d, want 0", got)
+	}
+	if got := DefaultColor().ANSI(); got != 0 {
+		t.Errorf("DefaultColor().ANSI() = %d, want 0", got)
+	}
+
+	r, g, b := ANSIColor(1).RGB()
+	if r != 0 || g != 0 || b != 0 {
+		t.Errorf("ANSIColor(...).RGB() = %d,%d,%d, want 0,0,0", r, g, b)
+	}
+	r, g, b = DefaultColor().RGB()
+	if r != 0 || g != 0 || b != 0 {
+		t.Errorf("DefaultColor().RGB() = %d,%d,%d, want 0,0,0", r, g, b)
+	}
 }
 
-func TestColor_ANSIPanicOnDefault(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Color.ANSI() on default color should panic")
-		}
-	}()
-	DefaultColor().ANSI()
-}
-
-func TestColor_RGBPanicOnANSI(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Color.RGB() on ANSI color should panic")
-		}
-	}()
-	ANSIColor(1).RGB()
-}
-
-func TestColor_RGBPanicOnDefault(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Color.RGB() on default color should panic")
-		}
-	}()
-	DefaultColor().RGB()
+func TestColor_TypedAccessors(t *testing.T) {
+	if _, ok := RGBColor(1, 2, 3).ANSIValue(); ok {
+		t.Error("ANSIValue() should report !ok for RGB color")
+	}
+	if idx, ok := ANSIColor(42).ANSIValue(); !ok || idx != 42 {
+		t.Errorf("ANSIValue() = (%d,%v), want (42,true)", idx, ok)
+	}
+	if _, _, _, ok := ANSIColor(1).RGBValue(); ok {
+		t.Error("RGBValue() should report !ok for ANSI color")
+	}
+	r, g, b, ok := RGBColor(1, 2, 3).RGBValue()
+	if !ok || r != 1 || g != 2 || b != 3 {
+		t.Errorf("RGBValue() = (%d,%d,%d,%v), want (1,2,3,true)", r, g, b, ok)
+	}
 }
 
 func TestPredefinedColors(t *testing.T) {
@@ -413,62 +411,62 @@ func TestColor_ToRGBValues(t *testing.T) {
 
 func TestColor_IsLight(t *testing.T) {
 	type tc struct {
-		color    Color
+		color     Color
 		wantLight bool
 	}
 
 	tests := map[string]tc{
 		"default is dark": {
-			color:    DefaultColor(),
+			color:     DefaultColor(),
 			wantLight: false,
 		},
 		"black is dark": {
-			color:    Black,
+			color:     Black,
 			wantLight: false,
 		},
 		"white is light": {
-			color:    White,
+			color:     White,
 			wantLight: true,
 		},
 		"bright white is light": {
-			color:    BrightWhite,
+			color:     BrightWhite,
 			wantLight: true,
 		},
 		"bright yellow is light": {
-			color:    BrightYellow,
+			color:     BrightYellow,
 			wantLight: true,
 		},
 		"red is dark": {
-			color:    Red,
+			color:     Red,
 			wantLight: false,
 		},
 		"blue is dark": {
-			color:    Blue,
+			color:     Blue,
 			wantLight: false,
 		},
 		"cyan is dark": {
-			color:    Cyan,
+			color:     Cyan,
 			wantLight: false,
 		},
 		"bright cyan is dark": {
 			// Bright cyan RGB(41, 184, 219) has luminance ~0.4, below 0.5 threshold
-			color:    BrightCyan,
+			color:     BrightCyan,
 			wantLight: false,
 		},
 		"RGB white is light": {
-			color:    RGBColor(255, 255, 255),
+			color:     RGBColor(255, 255, 255),
 			wantLight: true,
 		},
 		"RGB black is dark": {
-			color:    RGBColor(0, 0, 0),
+			color:     RGBColor(0, 0, 0),
 			wantLight: false,
 		},
 		"RGB light yellow is light": {
-			color:    RGBColor(255, 255, 200),
+			color:     RGBColor(255, 255, 200),
 			wantLight: true,
 		},
 		"RGB dark blue is dark": {
-			color:    RGBColor(20, 20, 60),
+			color:     RGBColor(20, 20, 60),
 			wantLight: false,
 		},
 	}
@@ -485,12 +483,12 @@ func TestColor_IsLight(t *testing.T) {
 
 func TestGradient_At(t *testing.T) {
 	type tc struct {
-		start    Color
-		end      Color
-		t        float64
-		wantR    uint8
-		wantG    uint8
-		wantB    uint8
+		start Color
+		end   Color
+		t     float64
+		wantR uint8
+		wantG uint8
+		wantB uint8
 	}
 
 	tests := map[string]tc{

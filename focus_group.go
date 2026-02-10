@@ -1,5 +1,7 @@
 package tui
 
+import "fmt"
+
 // FocusGroup manages Tab/Shift+Tab cycling between a set of components.
 // Each member is a *State[bool] that indicates whether that component is
 // "selected" (active). FocusGroup ensures mutual exclusion: exactly one
@@ -24,10 +26,10 @@ var _ KeyListener = (*FocusGroup)(nil)
 
 // NewFocusGroup creates a FocusGroup managing the given members.
 // The first member is initially active (set to true); all others are set to false.
-// Panics if called with fewer than 2 members.
-func NewFocusGroup(members ...*State[bool]) *FocusGroup {
+// Returns an error if called with fewer than 2 members.
+func NewFocusGroup(members ...*State[bool]) (*FocusGroup, error) {
 	if len(members) < 2 {
-		panic("FocusGroup requires at least 2 members")
+		return nil, fmt.Errorf("focus group requires at least 2 members")
 	}
 
 	// Initialize: first member active, rest inactive
@@ -38,7 +40,16 @@ func NewFocusGroup(members ...*State[bool]) *FocusGroup {
 	return &FocusGroup{
 		members: members,
 		current: 0,
+	}, nil
+}
+
+// MustNewFocusGroup creates a FocusGroup and panics on error.
+func MustNewFocusGroup(members ...*State[bool]) *FocusGroup {
+	fg, err := NewFocusGroup(members...)
+	if err != nil {
+		panic(err)
 	}
+	return fg
 }
 
 // Next deactivates the current member and activates the next one (wrapping).
