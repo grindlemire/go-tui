@@ -26,7 +26,7 @@ func main() {
 	}
 	defer app.Close()
 
-	app.SetRoot(Refs())
+	app.SetRootComponent(Refs())
 
 	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "App error: %v\n", err)

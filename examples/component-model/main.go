@@ -30,11 +30,9 @@ func main() {
 	}
 	defer app.Close()
 
-	// Create and set the root component. SetRoot accepts a Component
-	// and handles initial render, element tree construction, and component
-	// discovery. Child components are mounted automatically via tui.Mount()
-	// in each Render() call.
-	app.SetRoot(MyApp())
+	// Create and set the root component. Child components are mounted
+	// automatically via tui.Mount() in each Render() call.
+	app.SetRootComponent(MyApp())
 
 	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
