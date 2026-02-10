@@ -2,17 +2,6 @@ package tui
 
 import "unicode/utf8"
 
-// parseState represents the state of the escape sequence parser.
-type parseState int
-
-const (
-	stateGround   parseState = iota // Normal state, not in escape sequence
-	stateEscape                     // Got ESC (0x1b)
-	stateCSI                        // Got ESC [
-	stateCSIParam                   // Reading CSI parameters
-	stateSS3                        // Got ESC O
-)
-
 // parseInput parses buffered bytes into events.
 // Handles:
 // - Single printable characters -> KeyEvent{Key: KeyRune, Rune: r}

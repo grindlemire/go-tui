@@ -40,22 +40,3 @@ func RenderFull(term Terminal, buf *Buffer) {
 	}
 	buf.Swap()
 }
-
-// RenderRegion renders only a specific rectangular region of the buffer.
-// This is useful for partial updates when you know only a portion changed.
-//
-// Note: This still computes the diff, but only for cells within the region.
-func RenderRegion(term Terminal, buf *Buffer, region Rect) {
-	// Intersect with buffer bounds
-	bufRect := buf.Rect()
-	region = region.Intersect(bufRect)
-	if region.IsEmpty() {
-		return
-	}
-
-	// Collect changes within the region
-	// We can't use buf.Diff() directly since it returns all changes
-	// For efficiency, we'd need a more sophisticated buffer implementation
-	// For now, just use the regular Render which is already efficient
-	Render(term, buf)
-}

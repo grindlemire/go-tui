@@ -265,20 +265,20 @@ func TestBatch_SetOutsideBatchStillWorks(t *testing.T) {
 }
 
 func TestBatch_MarksDirty(t *testing.T) {
-	TestResetDirty()
+	resetDirty()
 	TestResetBatch()
 
 	s := NewState(0)
 
 	// Should not be dirty initially
-	if TestCheckAndClearDirty() {
+	if checkAndClearDirty() {
 		t.Error("should not be dirty before batch")
 	}
 
 	Batch(func() {
 		s.Set(1)
 		// Dirty should be marked immediately within batch
-		if !TestCheckAndClearDirty() {
+		if !checkAndClearDirty() {
 			t.Error("should be dirty after Set within batch")
 		}
 	})
