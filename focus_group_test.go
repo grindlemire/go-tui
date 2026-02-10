@@ -43,7 +43,10 @@ func TestFocusGroup_NextCyclesForward(t *testing.T) {
 			for i := range members {
 				members[i] = NewState(false)
 			}
-			fg := NewFocusGroup(members...)
+			fg, err := NewFocusGroup(members...)
+			if err != nil {
+				t.Fatalf("NewFocusGroup: %v", err)
+			}
 
 			for i := 0; i < tt.nextCalls; i++ {
 				fg.Next()
@@ -92,7 +95,10 @@ func TestFocusGroup_PrevCyclesBackward(t *testing.T) {
 			for i := range members {
 				members[i] = NewState(false)
 			}
-			fg := NewFocusGroup(members...)
+			fg, err := NewFocusGroup(members...)
+			if err != nil {
+				t.Fatalf("NewFocusGroup: %v", err)
+			}
 
 			for i := 0; i < tt.prevCalls; i++ {
 				fg.Prev()
@@ -109,7 +115,10 @@ func TestFocusGroup_MutualExclusion(t *testing.T) {
 	m0 := NewState(false)
 	m1 := NewState(false)
 	m2 := NewState(false)
-	fg := NewFocusGroup(m0, m1, m2)
+	fg, err := NewFocusGroup(m0, m1, m2)
+	if err != nil {
+		t.Fatalf("NewFocusGroup: %v", err)
+	}
 
 	// After construction, only first member should be active
 	assertMemberStates(t, "initial", []*State[bool]{m0, m1, m2}, 0)
@@ -131,7 +140,10 @@ func TestFocusGroup_InitialState(t *testing.T) {
 	m0 := NewState(false)
 	m1 := NewState(false)
 	m2 := NewState(false)
-	_ = NewFocusGroup(m0, m1, m2)
+	_, err := NewFocusGroup(m0, m1, m2)
+	if err != nil {
+		t.Fatalf("NewFocusGroup: %v", err)
+	}
 
 	// First member should be active, rest should be inactive
 	if !m0.Get() {
@@ -148,7 +160,10 @@ func TestFocusGroup_InitialState(t *testing.T) {
 func TestFocusGroup_KeyMap(t *testing.T) {
 	m0 := NewState(false)
 	m1 := NewState(false)
-	fg := NewFocusGroup(m0, m1)
+	fg, err := NewFocusGroup(m0, m1)
+	if err != nil {
+		t.Fatalf("NewFocusGroup: %v", err)
+	}
 
 	km := fg.KeyMap()
 	if km == nil {
@@ -185,7 +200,10 @@ func TestFocusGroup_KeyMapHandlersWork(t *testing.T) {
 	m0 := NewState(false)
 	m1 := NewState(false)
 	m2 := NewState(false)
-	fg := NewFocusGroup(m0, m1, m2)
+	fg, err := NewFocusGroup(m0, m1, m2)
+	if err != nil {
+		t.Fatalf("NewFocusGroup: %v", err)
+	}
 
 	km := fg.KeyMap()
 
@@ -198,23 +216,17 @@ func TestFocusGroup_KeyMapHandlersWork(t *testing.T) {
 	assertMemberStates(t, "after Shift+Tab", []*State[bool]{m0, m1, m2}, 0)
 }
 
-func TestFocusGroup_PanicWithFewerThanTwoMembers(t *testing.T) {
+func TestFocusGroup_ErrorWithFewerThanTwoMembers(t *testing.T) {
 	t.Run("zero members", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("expected panic with 0 members")
-			}
-		}()
-		NewFocusGroup()
+		if _, err := NewFocusGroup(); err == nil {
+			t.Error("expected error with 0 members")
+		}
 	})
 
 	t.Run("one member", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("expected panic with 1 member")
-			}
-		}()
-		NewFocusGroup(NewState(false))
+		if _, err := NewFocusGroup(NewState(false)); err == nil {
+			t.Error("expected error with 1 member")
+		}
 	})
 }
 
@@ -222,7 +234,10 @@ func TestFocusGroup_ShiftTabDoesNotTriggerNext(t *testing.T) {
 	m0 := NewState(false)
 	m1 := NewState(false)
 	m2 := NewState(false)
-	fg := NewFocusGroup(m0, m1, m2)
+	fg, err := NewFocusGroup(m0, m1, m2)
+	if err != nil {
+		t.Fatalf("NewFocusGroup: %v", err)
+	}
 
 	km := fg.KeyMap()
 

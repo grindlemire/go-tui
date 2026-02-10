@@ -126,21 +126,37 @@ func (c Color) IsDefault() bool {
 }
 
 // ANSI returns the ANSI palette index.
-// Panics if the color is not an ANSI color.
+// For non-ANSI colors, it returns 0.
 func (c Color) ANSI() uint8 {
 	if c.typ != ColorANSI {
-		panic("Color.ANSI() called on non-ANSI color")
+		return 0
 	}
 	return c.r
 }
 
 // RGB returns the red, green, and blue components.
-// Panics if the color is not an RGB color.
+// For non-RGB colors, it returns (0, 0, 0).
 func (c Color) RGB() (r, g, b uint8) {
 	if c.typ != ColorRGB {
-		panic("Color.RGB() called on non-RGB color")
+		return 0, 0, 0
 	}
 	return c.r, c.g, c.b
+}
+
+// ANSIValue returns the ANSI palette index and whether the color is ANSI.
+func (c Color) ANSIValue() (uint8, bool) {
+	if c.typ != ColorANSI {
+		return 0, false
+	}
+	return c.r, true
+}
+
+// RGBValue returns the RGB components and whether the color is RGB.
+func (c Color) RGBValue() (r, g, b uint8, ok bool) {
+	if c.typ != ColorRGB {
+		return 0, 0, 0, false
+	}
+	return c.r, c.g, c.b, true
 }
 
 // Equal returns true if both colors are identical.

@@ -48,7 +48,10 @@ type PropsUpdater interface {
 func Mount(parent Component, index int, factory func() Component) *Element {
 	app := DefaultApp()
 	if app == nil {
-		panic("tui.Mount requires a default app; call SetDefaultApp or run within App.Run")
+		instance := factory()
+		el := instance.Render()
+		el.component = instance
+		return el
 	}
 	ms := app.mounts
 	key := mountKey{parent: parent, index: index}
