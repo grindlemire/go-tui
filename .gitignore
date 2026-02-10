@@ -46,6 +46,13 @@ node_modules/
 out/
 **/*.vsix
 
+# Docusaurus docs site (generated artifacts only)
+docs/site/node_modules/
+docs/site/build/
+docs/site/.docusaurus/
+docs/site/.cache/
+docs/site/.vercel/
+
 # OS
 .DS_Store
 Thumbs.db
