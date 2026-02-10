@@ -1,4 +1,36 @@
 :root {
+  --gtui-highlight: #ffd400;
+  --gtui-highlight-soft: #fff1a6;
+
+  /* Use darker amber for readable light-mode links/buttons. */
+  --ifm-color-primary: #7a5a00;
+  --ifm-color-primary-dark: #664b00;
+  --ifm-color-primary-darker: #5c4300;
+  --ifm-color-primary-darkest: #4a3600;
+  --ifm-color-primary-light: #8f6a00;
+  --ifm-color-primary-lighter: #9b7300;
+  --ifm-color-primary-lightest: #b98900;
+
+  --ifm-background-color: #fffdf5;
+  --ifm-font-color-base: #1a1c22;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-footer-background-color: #1a1c22;
+  --ifm-link-hover-color: #5c4300;
+}
+
+[data-theme='light'] mark,
+[data-theme='light'] kbd {
+  background: var(--gtui-highlight-soft);
+  color: #2a2200;
+}
+
+[data-theme='light'] .menu__link--active,
+[data-theme='light'] .navbar__link:hover,
+[data-theme='light'] a:hover {
+  text-decoration-thickness: 2px;
+}
+
+[data-theme='dark'] {
   --ifm-color-primary: #ffd400;
   --ifm-color-primary-dark: #e6be00;
   --ifm-color-primary-darker: #d9b400;
@@ -7,19 +39,18 @@
   --ifm-color-primary-lighter: #ffde40;
   --ifm-color-primary-lightest: #ffe768;
 
-  --ifm-background-color: #fffdf5;
-  --ifm-font-color-base: #1a1c22;
-  --ifm-navbar-background-color: #ffffff;
-  --ifm-footer-background-color: #1a1c22;
-}
-
-[data-theme='dark'] {
   --ifm-background-color: #0b1020;
   --ifm-background-surface-color: #121a2e;
   --ifm-navbar-background-color: #10172a;
   --ifm-footer-background-color: #10172a;
   --ifm-font-color-base: #eaf0ff;
   --ifm-font-color-secondary: #a7b3cc;
+}
+
+[data-theme='dark'] mark,
+[data-theme='dark'] kbd {
+  background: rgba(255, 212, 0, 0.2);
+  color: #fff4c2;
 }
 
 [data-theme='dark'] a,
