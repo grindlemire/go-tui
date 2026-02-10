@@ -54,6 +54,24 @@ func TestInlineStartup_DefaultModeIsPreserveVisible(t *testing.T) {
 	}
 }
 
+func TestInlineStartup_DefaultMode_DoesNotClearVisibleViewport(t *testing.T) {
+	app, emu := newInlineTestApp(40, 10, 3)
+
+	for row := 0; row < 10; row++ {
+		emu.SetScreenRow(row, fmt.Sprintf("seed-%d", row))
+	}
+
+	// Leave inlineStartupMode unset (zero value). This should match preserve mode.
+	app.applyInlineStartupPolicy(10)
+
+	for row := 0; row < 10; row++ {
+		want := fmt.Sprintf("seed-%d", row)
+		if got := emu.ScreenRow(row); got != want {
+			t.Fatalf("row %d = %q, want %q\n%s", row, got, want, emu.DumpState())
+		}
+	}
+}
+
 func TestWithInlineStartupMode_ValidatesInput(t *testing.T) {
 	app := &App{}
 	if err := WithInlineStartupMode(InlineStartupSoftReset)(app); err != nil {
