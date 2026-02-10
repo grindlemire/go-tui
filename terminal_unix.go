@@ -8,6 +8,7 @@ import (
 
 // rawModeState stores the original terminal state for restoration.
 type rawModeState struct {
+	fd      int
 	termios unix.Termios
 }
 
@@ -20,7 +21,7 @@ func enableRawMode(fd int) (*rawModeState, error) {
 	}
 
 	// Save original state
-	state := &rawModeState{termios: *termios}
+	state := &rawModeState{fd: fd, termios: *termios}
 
 	// Modify for raw mode
 	// Turn off:
@@ -67,7 +68,7 @@ func disableRawMode(state *rawModeState) error {
 	}
 	// Note: We use TIOCSETA for immediate change
 	// TIOCSETAF would wait for output to drain and flush input
-	return unix.IoctlSetTermios(unix.Stdin, unix.TIOCSETA, &state.termios)
+	return unix.IoctlSetTermios(state.fd, unix.TIOCSETA, &state.termios)
 }
 
 // getTerminalSize returns the terminal dimensions.
