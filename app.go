@@ -69,8 +69,10 @@ type App struct {
 
 	// Event loop fields
 	eventQueue       chan func()
+	updateQueue      chan func()
 	stopCh           chan struct{}
 	stopped          bool
+	stopOnce         sync.Once
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 
 	// Configuration (set via options)
@@ -225,6 +227,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 
 	// Create event queue with configured size
 	app.eventQueue = make(chan func(), app.eventQueueSize)
+	app.updateQueue = make(chan func(), app.eventQueueSize)
 
 	// Apply terminal settings based on options
 	if app.mouseEnabled {
@@ -351,6 +354,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 
 	// Create event queue with configured size
 	app.eventQueue = make(chan func(), app.eventQueueSize)
+	app.updateQueue = make(chan func(), app.eventQueueSize)
 
 	// Apply terminal settings based on options
 	if app.mouseEnabled {
