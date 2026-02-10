@@ -200,25 +200,45 @@ func (s *SettingsApp) cycleSystemPrompt(dir int) {
 	s.SystemPrompt.Set(s.SystemPromptPresets[idx])
 }
 
+func (s *SettingsApp) sectionAccentColor(section int) tui.Color {
+	switch section {
+	case 0:
+		return tui.BrightCyan
+	case 1:
+		return tui.BrightBlue
+	case 2:
+		return tui.BrightYellow
+	default:
+		return tui.BrightGreen
+	}
+}
+
+func (s *SettingsApp) sectionBorder(section int) tui.BorderStyle {
+	if s.isFocused(section) {
+		return tui.BorderDouble
+	}
+	return tui.BorderRounded
+}
+
 func (s *SettingsApp) borderStyleForSection(section int) tui.Style {
 	if s.isFocused(section) {
-		return tui.NewStyle().Foreground(tui.BrightCyan)
+		return tui.NewStyle().Foreground(s.sectionAccentColor(section)).Bold()
 	}
 	return tui.NewStyle().Foreground(tui.BrightBlack)
 }
 
 func (s *SettingsApp) sectionTitleStyle(section int) tui.Style {
 	if s.isFocused(section) {
-		return tui.NewStyle().Bold().Foreground(tui.BrightCyan)
+		return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(section))
 	}
-	return tui.NewStyle().Bold().Foreground(tui.White)
+	return tui.NewStyle().Bold().Foreground(tui.BrightWhite)
 }
 
 func (s *SettingsApp) sectionValueStyle(section int) tui.Style {
 	if s.isFocused(section) {
-		return tui.NewStyle().Bold().Foreground(tui.Cyan)
+		return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(section))
 	}
-	return tui.NewStyle().Foreground(tui.White)
+	return tui.NewStyle().Foreground(tui.BrightWhite)
 }
 
 func (s *SettingsApp) isFocused(section int) bool {
@@ -242,7 +262,7 @@ func (s *SettingsApp) providerOptionLabel(provider string) string {
 func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
 	if provider == s.Provider.Get() {
 		if s.isFocused(0) {
-			return tui.NewStyle().Bold().Foreground(tui.BrightCyan)
+			return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(0))
 		}
 		return tui.NewStyle().Bold().Foreground(tui.Cyan)
 	}
@@ -504,22 +524,26 @@ func (s *SettingsApp) Render() *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexShrink(0),
+		tui.WithBorder(tui.BorderDouble),
+		tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithPadding(1),
 	)
 	__tui_2 := tui.New(
 		tui.WithText("AI Chat Settings"),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextGradient(tui.NewGradient(tui.BrightCyan, tui.BrightYellow).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText("Tab between fields, adjust with arrows or h/j/k/l"),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
+		tui.WithText("Control center for provider, model, temperature, and prompt"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 	)
 	__tui_1.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_1)
 	__tui_4 := tui.New(
 		tui.WithFlexShrink(0),
-		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorder(s.sectionBorder(0)),
 		tui.WithBorderStyle(s.borderStyleForSection(0)),
 	)
 	__tui_5 := tui.New(
@@ -537,7 +561,7 @@ func (s *SettingsApp) Render() *tui.Element {
 	__tui_6.AddChild(__tui_7)
 	__tui_8 := tui.New(
 		tui.WithText(s.providerSummary()),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
+		tui.WithTextStyle(s.sectionValueStyle(0)),
 	)
 	__tui_6.AddChild(__tui_8)
 	__tui_5.AddChild(__tui_6)
@@ -558,7 +582,8 @@ func (s *SettingsApp) Render() *tui.Element {
 	__tui_0.AddChild(__tui_4)
 	__tui_11 := tui.New(
 		tui.WithFlexShrink(0),
-		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorder(s.sectionBorder(1)),
 		tui.WithBorderStyle(s.borderStyleForSection(1)),
 	)
 	__tui_12 := tui.New(
@@ -584,7 +609,8 @@ func (s *SettingsApp) Render() *tui.Element {
 	__tui_0.AddChild(__tui_11)
 	__tui_16 := tui.New(
 		tui.WithFlexShrink(0),
-		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderGradient(tui.NewGradient(tui.Yellow, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorder(s.sectionBorder(2)),
 		tui.WithBorderStyle(s.borderStyleForSection(2)),
 	)
 	__tui_17 := tui.New(
@@ -608,13 +634,14 @@ func (s *SettingsApp) Render() *tui.Element {
 	__tui_17.AddChild(__tui_18)
 	__tui_21 := tui.New(
 		tui.WithText(s.tempBar()),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithTextGradient(tui.NewGradient(tui.Yellow, tui.Cyan).WithDirection(tui.GradientHorizontal)),
 	)
 	__tui_17.AddChild(__tui_21)
 	__tui_16.AddChild(__tui_17)
 	__tui_0.AddChild(__tui_16)
 	__tui_22 := tui.New(
-		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderGradient(tui.NewGradient(tui.Green, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+		tui.WithBorder(s.sectionBorder(3)),
 		tui.WithBorderStyle(s.borderStyleForSection(3)),
 		tui.WithFlexGrow(1),
 	)
@@ -652,6 +679,8 @@ func (s *SettingsApp) Render() *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexShrink(0),
+		tui.WithBorder(tui.BorderThick),
+		tui.WithBorderGradient(tui.NewGradient(tui.White, tui.Black).WithDirection(tui.GradientHorizontal)),
 	)
 	__tui_29 := tui.New(
 		tui.WithText("Tab: next section   arrows or h/j/k/l: change   Enter/Esc/Ctrl+S/q: close"),
@@ -660,7 +689,7 @@ func (s *SettingsApp) Render() *tui.Element {
 	__tui_28.AddChild(__tui_29)
 	__tui_30 := tui.New(
 		tui.WithText(s.activeSectionHint()),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 	)
 	__tui_28.AddChild(__tui_30)
 	__tui_0.AddChild(__tui_28)

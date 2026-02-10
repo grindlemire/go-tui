@@ -197,25 +197,45 @@ func (s *SettingsApp) cycleSystemPrompt(dir int) {
 	s.SystemPrompt.Set(s.SystemPromptPresets[idx])
 }
 
+func (s *SettingsApp) sectionAccentColor(section int) tui.Color {
+	switch section {
+	case 0:
+		return tui.BrightCyan
+	case 1:
+		return tui.BrightBlue
+	case 2:
+		return tui.BrightYellow
+	default:
+		return tui.BrightGreen
+	}
+}
+
+func (s *SettingsApp) sectionBorder(section int) tui.BorderStyle {
+	if s.isFocused(section) {
+		return tui.BorderDouble
+	}
+	return tui.BorderRounded
+}
+
 func (s *SettingsApp) borderStyleForSection(section int) tui.Style {
 	if s.isFocused(section) {
-		return tui.NewStyle().Foreground(tui.BrightCyan)
+		return tui.NewStyle().Foreground(s.sectionAccentColor(section)).Bold()
 	}
 	return tui.NewStyle().Foreground(tui.BrightBlack)
 }
 
 func (s *SettingsApp) sectionTitleStyle(section int) tui.Style {
 	if s.isFocused(section) {
-		return tui.NewStyle().Bold().Foreground(tui.BrightCyan)
+		return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(section))
 	}
-	return tui.NewStyle().Bold().Foreground(tui.White)
+	return tui.NewStyle().Bold().Foreground(tui.BrightWhite)
 }
 
 func (s *SettingsApp) sectionValueStyle(section int) tui.Style {
 	if s.isFocused(section) {
-		return tui.NewStyle().Bold().Foreground(tui.Cyan)
+		return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(section))
 	}
-	return tui.NewStyle().Foreground(tui.White)
+	return tui.NewStyle().Foreground(tui.BrightWhite)
 }
 
 func (s *SettingsApp) isFocused(section int) bool {
@@ -239,7 +259,7 @@ func (s *SettingsApp) providerOptionLabel(provider string) string {
 func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
 	if provider == s.Provider.Get() {
 		if s.isFocused(0) {
-			return tui.NewStyle().Bold().Foreground(tui.BrightCyan)
+			return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(0))
 		}
 		return tui.NewStyle().Bold().Foreground(tui.Cyan)
 	}
@@ -492,16 +512,16 @@ func wrapIndex(idx, length int) int {
 
 templ (s *SettingsApp) Render() {
 	<div class="flex-col h-full p-1 gap-0">
-		<div class="flex-col items-center shrink-0">
-			<span class="text-gradient-cyan-magenta font-bold">{"AI Chat Settings"}</span>
-			<span class="text-bright-black">{"Tab between fields, adjust with arrows or h/j/k/l"}</span>
+		<div class="flex-col items-center shrink-0 border-double border-gradient-cyan-blue p-1">
+			<span class="text-gradient-bright-cyan-bright-yellow font-bold">{"AI Chat Settings"}</span>
+			<span class="text-bright-cyan">{"Control center for provider, model, temperature, and prompt"}</span>
 		</div>
 
-		<div class="shrink-0" border={tui.BorderRounded} borderStyle={s.borderStyleForSection(0)}>
+		<div class="shrink-0 border-gradient-cyan-blue" border={s.sectionBorder(0)} borderStyle={s.borderStyleForSection(0)}>
 			<div class="flex-col">
 				<div class="flex justify-between items-center">
 					<span textStyle={s.sectionTitleStyle(0)}>{s.fieldLabel(0, "Provider")}</span>
-					<span class="text-bright-black">{s.providerSummary()}</span>
+					<span textStyle={s.sectionValueStyle(0)}>{s.providerSummary()}</span>
 				</div>
 
 				<div class="flex gap-2">
@@ -512,7 +532,7 @@ templ (s *SettingsApp) Render() {
 			</div>
 		</div>
 
-		<div class="shrink-0" border={tui.BorderRounded} borderStyle={s.borderStyleForSection(1)}>
+		<div class="shrink-0 border-gradient-blue-cyan" border={s.sectionBorder(1)} borderStyle={s.borderStyleForSection(1)}>
 			<div class="flex-col">
 				<div class="flex justify-between items-center">
 					<span textStyle={s.sectionTitleStyle(1)}>{s.fieldLabel(1, "Model")}</span>
@@ -521,18 +541,18 @@ templ (s *SettingsApp) Render() {
 			</div>
 		</div>
 
-		<div class="shrink-0" border={tui.BorderRounded} borderStyle={s.borderStyleForSection(2)}>
+		<div class="shrink-0 border-gradient-yellow-cyan" border={s.sectionBorder(2)} borderStyle={s.borderStyleForSection(2)}>
 			<div class="flex-col">
 				<div class="flex justify-between items-center">
 					<span textStyle={s.sectionTitleStyle(2)}>{s.fieldLabel(2, "Temperature")}</span>
 					<span textStyle={s.sectionValueStyle(2)}>{s.temperatureSummary()}</span>
 				</div>
 
-				<span class="text-cyan">{s.tempBar()}</span>
+				<span class="text-gradient-yellow-cyan">{s.tempBar()}</span>
 			</div>
 		</div>
 
-		<div border={tui.BorderRounded} borderStyle={s.borderStyleForSection(3)} flexGrow={1}>
+		<div class="border-gradient-green-cyan" border={s.sectionBorder(3)} borderStyle={s.borderStyleForSection(3)} flexGrow={1}>
 			<div class="flex-col gap-1">
 				<div class="flex justify-between items-center">
 					<span textStyle={s.sectionTitleStyle(3)}>{s.fieldLabel(3, "System Prompt")}</span>
@@ -545,9 +565,9 @@ templ (s *SettingsApp) Render() {
 			</div>
 		</div>
 
-		<div class="flex-col items-center shrink-0">
+		<div class="flex-col items-center shrink-0 border-thick border-gradient-white-black">
 			<span class="font-dim">{"Tab: next section   arrows or h/j/k/l: change   Enter/Esc/Ctrl+S/q: close"}</span>
-			<span class="text-bright-black">{s.activeSectionHint()}</span>
+			<span class="text-bright-cyan">{s.activeSectionHint()}</span>
 		</div>
 	</div>
 }
