@@ -206,7 +206,7 @@ templ (s *sidebar) Render() {
 	<div></div>
 }`,
 			wantContains: []string{
-				"func (s *sidebar) Render() *tui.Element {",
+				"func (s *sidebar) Render(app *tui.App) *tui.Element {",
 				"__tui_0 := tui.New()",
 				"return __tui_0",
 			},
@@ -228,7 +228,7 @@ templ (p *panel) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"func (p *panel) Render() *tui.Element {",
+				"func (p *panel) Render(app *tui.App) *tui.Element {",
 				"__tui_0 := tui.New(",
 				"return __tui_0",
 			},
@@ -248,8 +248,8 @@ templ (a *myApp) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"func (a *myApp) Render() *tui.Element {",
-				"tui.Mount(a, 0, func() tui.Component {",
+				"func (a *myApp) Render(app *tui.App) *tui.Element {",
+				"app.Mount(a, 0, func() tui.Component {",
 				"return Sidebar()",
 				"})",
 				"__tui_0.AddChild(",
@@ -273,11 +273,11 @@ templ (a *myApp) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"tui.Mount(a, 0, func() tui.Component {",
+				"app.Mount(a, 0, func() tui.Component {",
 				"return First()",
-				"tui.Mount(a, 1, func() tui.Component {",
+				"app.Mount(a, 1, func() tui.Component {",
 				"return Second()",
-				"tui.Mount(a, 2, func() tui.Component {",
+				"app.Mount(a, 2, func() tui.Component {",
 				"return Third()",
 			},
 		},
@@ -293,9 +293,9 @@ templ (a *myApp) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"tui.Mount(a, 0, func() tui.Component {",
+				"app.Mount(a, 0, func() tui.Component {",
 				"return Sidebar(a.query)",
-				"tui.Mount(a, 1, func() tui.Component {",
+				"app.Mount(a, 1, func() tui.Component {",
 				"return SearchInput(a.active, a.query)",
 			},
 		},
@@ -310,7 +310,7 @@ templ (s *sidebar) Render() {
 	}
 }`,
 			wantContains: []string{
-				"func (s *sidebar) Render() *tui.Element {",
+				"func (s *sidebar) Render(app *tui.App) *tui.Element {",
 				"if true {",
 			},
 		},
@@ -322,7 +322,7 @@ type empty struct{}
 templ (e *empty) Render() {
 }`,
 			wantContains: []string{
-				"func (e *empty) Render() *tui.Element {",
+				"func (e *empty) Render(app *tui.App) *tui.Element {",
 				"return nil",
 			},
 		},
@@ -492,7 +492,7 @@ templ (s *sidebar) Render() {
 				"return &sidebar{expanded: true}",
 				"func (s *sidebar) toggle()",
 				"s.expanded = !s.expanded",
-				"func (s *sidebar) Render() *tui.Element",
+				"func (s *sidebar) Render(app *tui.App) *tui.Element",
 				"return __tui_0",
 			},
 			wantNotContains: []string{
@@ -693,7 +693,7 @@ templ (p *panel) Render() {
 
 	code := string(output)
 	want := []string{
-		"func (p *panel) Render() *tui.Element {",
+		"func (p *panel) Render(app *tui.App) *tui.Element {",
 		"var __tui_0 *tui.Element",
 		"if p.show.Get() {",
 		"if __tui_0 == nil {",

@@ -26,19 +26,19 @@ func (g *Generator) generateComponent(comp *Component) {
 	}
 }
 
-// generateMethodComponent generates a Render() method on a struct receiver.
+// generateMethodComponent generates a Render(app *tui.App) method on a struct receiver.
 // Method components return *tui.Element directly — no view struct, no watcher
 // aggregation. The receiver variable is available for expressions in the template.
 //
 // Generated form:
 //
-//	func (s *sidebar) Render() *tui.Element { ... return __tui_0 }
+//	func (s *sidebar) Render(app *tui.App) *tui.Element { ... return __tui_0 }
 func (g *Generator) generateMethodComponent(comp *Component) {
 	g.currentReceiver = comp.ReceiverName
 	defer func() { g.currentReceiver = "" }()
 
-	// Method signature: func (recv) Render() *tui.Element
-	g.writef("func (%s) Render() *tui.Element {\n", comp.Receiver)
+	// Method signature: func (recv) Render(app *tui.App) *tui.Element
+	g.writef("func (%s) Render(app *tui.App) *tui.Element {\n", comp.Receiver)
 	g.indent++
 
 	// Track the root element variable name
@@ -77,7 +77,7 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()
-			g.writef("%s := %s.Render()\n", varName, n.Expr)
+			g.writef("%s := %s.Render(app)\n", varName, n.Expr)
 			if rootVar == "" {
 				rootVar = varName
 			}
@@ -183,7 +183,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()
-			g.writef("%s := %s.Render()\n", varName, n.Expr)
+			g.writef("%s := %s.Render(app)\n", varName, n.Expr)
 			if rootVar == "" {
 				rootVar = varName
 			}

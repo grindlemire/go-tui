@@ -31,11 +31,11 @@ func (a *myApp) KeyMap() tui.KeyMap {
 	return km
 }
 
-func (a *myApp) Render() *tui.Element {
+func (a *myApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Row),
 	)
-	__tui_1 := tui.Mount(a, 0, func() tui.Component {
+	__tui_1 := app.Mount(a, 0, func() tui.Component {
 		return Sidebar(a.query)
 	})
 	__tui_0.AddChild(__tui_1)
@@ -43,7 +43,7 @@ func (a *myApp) Render() *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 	)
-	__tui_3 := tui.Mount(a, 1, func() tui.Component {
+	__tui_3 := app.Mount(a, 1, func() tui.Component {
 		return SearchInput(a.searchActive, a.query)
 	})
 	__tui_2.AddChild(__tui_3)

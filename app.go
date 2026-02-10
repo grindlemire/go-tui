@@ -3,8 +3,8 @@ package tui
 import (
 	"fmt"
 	"os"
-	"sync"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -76,13 +76,13 @@ type App struct {
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 
 	// Configuration (set via options)
-	inputLatency   time.Duration // Polling timeout for event reader (default 50ms, -1 for blocking)
-	frameDuration  time.Duration // Duration per frame (default 16ms = 60fps)
-	eventQueueSize int           // Capacity of event queue (default 256, used during construction)
-	mouseEnabled   bool          // Whether mouse events are enabled
-	mouseExplicit  bool          // Whether mouse setting was explicitly configured
-	cursorVisible  bool          // Whether cursor is visible (default false)
-	pendingRootApply func(*App) // Root setter to run after initialization (used by WithRoot* options)
+	inputLatency     time.Duration // Polling timeout for event reader (default 50ms, -1 for blocking)
+	frameDuration    time.Duration // Duration per frame (default 16ms = 60fps)
+	eventQueueSize   int           // Capacity of event queue (default 256, used during construction)
+	mouseEnabled     bool          // Whether mouse events are enabled
+	mouseExplicit    bool          // Whether mouse setting was explicitly configured
+	cursorVisible    bool          // Whether cursor is visible (default false)
+	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
@@ -106,8 +106,8 @@ type App struct {
 	componentWatchersStarted bool
 
 	// Root-scoped watcher lifecycle.
-	rootStopCh     chan struct{}
-	rootWatcherCh  <-chan struct{}
+	rootStopCh    chan struct{}
+	rootWatcherCh <-chan struct{}
 }
 
 var (
@@ -416,7 +416,7 @@ func (a *App) SetRootView(view Viewable) {
 // SetRootComponent sets the root from a struct component.
 func (a *App) SetRootComponent(component Component) {
 	a.rootComponent = component
-	el := component.Render()
+	el := component.Render(a)
 	el.component = component
 	a.applyRoot(el)
 }

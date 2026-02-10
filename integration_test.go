@@ -30,17 +30,17 @@ func (r *intRoot) KeyMap() KeyMap {
 	return km
 }
 
-func (r *intRoot) Render() *Element {
+func (r *intRoot) Render(app *App) *Element {
 	root := New(WithDirection(Row))
 
 	// Mount sidebar at index 0
-	el0 := Mount(r, 0, func() Component {
+	el0 := app.Mount(r, 0, func() Component {
 		return newIntSidebar(r.query)
 	})
 	root.AddChild(el0)
 
 	// Conditionally mount search at index 1
-	el1 := Mount(r, 1, func() Component {
+	el1 := app.Mount(r, 1, func() Component {
 		return newIntSearch(r.searchActive, r.query)
 	})
 	root.AddChild(el1)
@@ -69,7 +69,7 @@ func (s *intSidebar) KeyMap() KeyMap {
 	}
 }
 
-func (s *intSidebar) Render() *Element {
+func (s *intSidebar) Render(app *App) *Element {
 	return New(WithText("sidebar"))
 }
 
@@ -98,7 +98,7 @@ func (s *intSearch) KeyMap() KeyMap {
 	}
 }
 
-func (s *intSearch) Render() *Element {
+func (s *intSearch) Render(app *App) *Element {
 	return New(WithText("search"))
 }
 
@@ -108,7 +108,7 @@ type intInitComponent struct {
 	cleanupCalls int
 }
 
-func (c *intInitComponent) Render() *Element { return New() }
+func (c *intInitComponent) Render(app *App) *Element { return New() }
 func (c *intInitComponent) Init() func() {
 	c.initCalled = true
 	return func() { c.cleanupCalls++ }
@@ -121,7 +121,7 @@ func TestIntegration_MountCachesAndDiscoverKeyMaps(t *testing.T) {
 	defer cleanup()
 
 	root := newIntRoot()
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	// Verify mount cached two child instances
@@ -150,7 +150,7 @@ func TestIntegration_DispatchBroadcastAndStopPropagation(t *testing.T) {
 	defer cleanup()
 
 	root := newIntRoot()
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	table, err := buildDispatchTable(el)
@@ -173,7 +173,7 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	root := newIntRoot()
 
 	// Initial render: search is inactive
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	table, err := buildDispatchTable(el)
@@ -188,7 +188,7 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	}
 
 	// Re-render (simulating dirty frame)
-	el = root.Render()
+	el = root.Render(DefaultApp())
 	el.component = root
 
 	// Rebuild dispatch table with new KeyMaps
@@ -230,7 +230,7 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	root.searchActive.Set(true)
 	root.query.Set("test")
 
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	table, err := buildDispatchTable(el)
@@ -249,7 +249,7 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	}
 
 	// Re-render: search should return nil KeyMap
-	el = root.Render()
+	el = root.Render(DefaultApp())
 	el.component = root
 
 	table, err = buildDispatchTable(el)
@@ -274,7 +274,7 @@ func TestIntegration_SweepCleansUnmountedComponents(t *testing.T) {
 	initComp := &intInitComponent{}
 
 	// Mount the component
-	Mount(parent, 0, func() Component { return initComp })
+	DefaultApp().Mount(parent, 0, func() Component { return initComp })
 
 	if !initComp.initCalled {
 		t.Fatal("Init should have been called on first mount")
@@ -302,7 +302,7 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 	root := newIntRoot()
 
 	// Initial render
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	// The query state is shared between root, sidebar, and search.
@@ -314,7 +314,7 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 	}
 
 	// Re-render and verify the shared state is accessible
-	el = root.Render()
+	el = root.Render(DefaultApp())
 	el.component = root
 
 	// walkComponents should find all 3 components
@@ -337,7 +337,7 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 	root := newIntRoot()
 
 	// Phase 1: searchActive=false
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	table1, err := buildDispatchTable(el)
@@ -348,7 +348,7 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 
 	// Phase 2: activate search
 	root.searchActive.Set(true)
-	el = root.Render()
+	el = root.Render(DefaultApp())
 	el.component = root
 
 	table2, err := buildDispatchTable(el)
@@ -377,7 +377,7 @@ func TestIntegration_CtrlBTogglesSidebar(t *testing.T) {
 	defer cleanup()
 
 	root := newIntRoot()
-	el := root.Render()
+	el := root.Render(DefaultApp())
 	el.component = root
 
 	table, err := buildDispatchTable(el)

@@ -50,7 +50,7 @@ func (k *keyboardApp) recordSpecial(name string) {
 	k.lastKey.Set(name)
 }
 
-func (k *keyboardApp) Render() *tui.Element {
+func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),

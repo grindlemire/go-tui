@@ -32,12 +32,12 @@ type Generator struct {
 	loopCounter int
 
 	// Mount index counter for struct component @Component() calls in method templs.
-	// Reset per method component. Assigns position indices to tui.Mount() calls.
+	// Reset per method component. Assigns position indices to app.Mount() calls.
 	mountIndex int
 
 	// currentReceiver is the receiver variable name for the current method templ.
 	// Set during generateMethodComponent, used by generateComponentCallWithRefs
-	// to emit tui.Mount(receiverVar, index, factory).
+	// to emit app.Mount(receiverVar, index, factory).
 	currentReceiver string
 
 	// loopIndexStack tracks loop index variable names for nested @for loops.

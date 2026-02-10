@@ -60,7 +60,7 @@ func (t *toggles) toggleTheme() {
 	t.events.Emit("toggle theme")
 }
 
-func (t *toggles) Render() *tui.Element {
+func (t *toggles) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),

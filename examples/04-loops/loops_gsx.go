@@ -48,7 +48,7 @@ func (l *loopsApp) prev() {
 	}
 }
 
-func (l *loopsApp) Render() *tui.Element {
+func (l *loopsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),

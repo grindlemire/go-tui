@@ -157,7 +157,7 @@ func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string)
 //
 // For struct component mounts (IsStructMount=true), generates:
 //
-//	tui.Mount(receiverVar, index, func() tui.Component { return Name(args) })
+//	app.Mount(receiverVar, index, func() tui.Component { return Name(args) })
 //
 // For function component calls (IsStructMount=false), generates the existing
 // view struct pattern: varName := Name(args)
@@ -168,7 +168,7 @@ func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar
 	return g.generateFunctionComponentCall(call, parentVar)
 }
 
-// generateStructMount generates a tui.Mount() call for struct components.
+// generateStructMount generates an app.Mount() call for struct components.
 // Returns the variable name holding the *tui.Element result.
 func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) string {
 	varName := g.nextVar()
@@ -184,8 +184,8 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 		indexExpr = fmt.Sprintf("%d", baseIndex)
 	}
 
-	// Generate: varName := tui.Mount(receiverVar, indexExpr, func() tui.Component { return Name(args) })
-	g.writef("%s := tui.Mount(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
+	// Generate: varName := app.Mount(receiverVar, indexExpr, func() tui.Component { return Name(args) })
+	g.writef("%s := app.Mount(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
 	g.indent++
 	if call.Args == "" {
 		g.writef("return %s()\n", call.Name)
@@ -281,7 +281,7 @@ func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar
 // It calls .Render() on the expression and adds the result to the parent.
 func (g *Generator) generateComponentExpr(expr *ComponentExpr, parentVar string) {
 	varName := g.nextVar()
-	g.writef("%s := %s.Render()\n", varName, expr.Expr)
+	g.writef("%s := %s.Render(app)\n", varName, expr.Expr)
 	if parentVar != "" {
 		g.writef("%s.AddChild(%s)\n", parentVar, varName)
 	}
@@ -327,7 +327,7 @@ func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 			}
 		case *ComponentExpr:
 			elemVar := g.nextVar()
-			g.writef("%s := %s.Render()\n", elemVar, n.Expr)
+			g.writef("%s := %s.Render(app)\n", elemVar, n.Expr)
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *LetBinding:
 			g.generateLetBinding(n, "")
@@ -368,7 +368,7 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 			}
 		case *ComponentExpr:
 			elemVar := g.nextVar()
-			g.writef("%s := %s.Render()\n", elemVar, n.Expr)
+			g.writef("%s := %s.Render(app)\n", elemVar, n.Expr)
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *LetBinding:
 			g.generateLetBinding(n, "")
@@ -414,7 +414,7 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 				}
 			case *ComponentExpr:
 				elemVar := g.nextVar()
-				g.writef("%s := %s.Render()\n", elemVar, n.Expr)
+				g.writef("%s := %s.Render(app)\n", elemVar, n.Expr)
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 			case *LetBinding:
 				g.generateLetBinding(n, "")

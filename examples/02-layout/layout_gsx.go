@@ -57,7 +57,7 @@ func (l *layoutApp) HandleMouse(me tui.MouseEvent) bool {
 	return false
 }
 
-func (l *layoutApp) Render() *tui.Element {
+func (l *layoutApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),

@@ -102,16 +102,16 @@ func (c *chat) updateHeight() {
 	tui.SetInlineHeight(h)
 }
 
-func (c *chat) Render() *tui.Element {
+func (c *chat) Render(app *tui.App) *tui.Element {
 	var __tui_0 *tui.Element
 	if c.showSettings.Get() {
-		__tui_1 := c.settingsView.Render()
+		__tui_1 := c.settingsView.Render(app)
 		if __tui_0 == nil {
 			__tui_0 = __tui_1
 		}
 	} else {
 		c.updateHeight()
-		__tui_2 := c.textarea.Render()
+		__tui_2 := c.textarea.Render(app)
 		if __tui_0 == nil {
 			__tui_0 = __tui_2
 		}

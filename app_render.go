@@ -41,7 +41,7 @@ func (a *App) Render() {
 	// This is the core of the reactivity cycle: state changes → dirty → re-render
 	// component → new element tree with updated state reads.
 	if a.rootComponent != nil {
-		el := a.rootComponent.Render()
+		el := a.rootComponent.Render(a)
 		el.component = a.rootComponent
 		a.root = el
 	}

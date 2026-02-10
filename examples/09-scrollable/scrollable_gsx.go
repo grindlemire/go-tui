@@ -26,7 +26,7 @@ func (s *scrollableApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (s *scrollableApp) Render() *tui.Element {
+func (s *scrollableApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),

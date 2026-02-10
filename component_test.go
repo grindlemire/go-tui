@@ -7,7 +7,7 @@ import (
 
 type mockWatcherProvider struct{}
 
-func (m *mockWatcherProvider) Render() *Element { return New() }
+func (m *mockWatcherProvider) Render(app *App) *Element { return New() }
 func (m *mockWatcherProvider) Watchers() []Watcher {
 	return []Watcher{
 		OnTimer(time.Second, func() {}),

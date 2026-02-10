@@ -9,8 +9,8 @@ type testWatcherComponent struct {
 	watchers []Watcher
 }
 
-func (t *testWatcherComponent) Render() *Element { return New() }
-func (t *testWatcherComponent) Watchers() []Watcher { return t.watchers }
+func (t *testWatcherComponent) Render(app *App) *Element { return New() }
+func (t *testWatcherComponent) Watchers() []Watcher      { return t.watchers }
 
 func TestCollectComponentWatchers(t *testing.T) {
 	type tc struct {
@@ -116,4 +116,4 @@ func TestCollectComponentWatchers(t *testing.T) {
 // simpleComponent implements Component but not WatcherProvider
 type simpleComponent struct{}
 
-func (s *simpleComponent) Render() *Element { return New() }
+func (s *simpleComponent) Render(app *App) *Element { return New() }

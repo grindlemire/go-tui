@@ -48,7 +48,7 @@ func (s *searchInput) deactivate(ke tui.KeyEvent) {
 	s.Query.Set("")
 }
 
-func (s *searchInput) Render() *tui.Element {
+func (s *searchInput) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New()
 	if s.Active.Get() {
 		__tui_1 := tui.New(

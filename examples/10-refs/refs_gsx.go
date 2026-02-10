@@ -66,7 +66,7 @@ func (r *refsApp) countStyle() tui.Style {
 	return tui.NewStyle().Bold().Foreground(tui.Blue)
 }
 
-func (r *refsApp) Render() *tui.Element {
+func (r *refsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),

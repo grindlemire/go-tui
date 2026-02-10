@@ -59,7 +59,7 @@ func formatTime(seconds int) string {
 	return fmt.Sprintf("%02d:%02d", m, s)
 }
 
-func (t *timer) Render() *tui.Element {
+func (t *timer) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),

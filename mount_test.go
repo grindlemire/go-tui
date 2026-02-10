@@ -9,7 +9,7 @@ type mockComponent struct {
 	renderCount int
 }
 
-func (m *mockComponent) Render() *Element {
+func (m *mockComponent) Render(app *App) *Element {
 	m.renderCount++
 	return New()
 }
@@ -21,7 +21,7 @@ type mockInitComponent struct {
 	cleanupCalls int
 }
 
-func (m *mockInitComponent) Render() *Element {
+func (m *mockInitComponent) Render(app *App) *Element {
 	m.renderCount++
 	return New()
 }
@@ -38,7 +38,7 @@ type mockInitNoCleanup struct {
 	initCalled bool
 }
 
-func (m *mockInitNoCleanup) Render() *Element {
+func (m *mockInitNoCleanup) Render(app *App) *Element {
 	return New()
 }
 
@@ -53,7 +53,7 @@ type mockParent struct {
 	id int
 }
 
-func (m *mockParent) Render() *Element {
+func (m *mockParent) Render(app *App) *Element {
 	return New()
 }
 
@@ -81,7 +81,7 @@ func TestMount_FirstCallCreatesInstance(t *testing.T) {
 	factoryCalls := 0
 	var created *mockComponent
 
-	el := Mount(parent, 0, func() Component {
+	el := DefaultApp().Mount(parent, 0, func() Component {
 		factoryCalls++
 		created = &mockComponent{}
 		return created
@@ -113,13 +113,13 @@ func TestMount_SubsequentCallReturnsCached(t *testing.T) {
 	instance := &mockComponent{}
 
 	// First mount
-	Mount(parent, 0, func() Component {
+	DefaultApp().Mount(parent, 0, func() Component {
 		factoryCalls++
 		return instance
 	})
 
 	// Second mount — same parent and index
-	el := Mount(parent, 0, func() Component {
+	el := DefaultApp().Mount(parent, 0, func() Component {
 		factoryCalls++
 		return &mockComponent{} // Would create a new one, but shouldn't be called
 	})
@@ -142,7 +142,7 @@ func TestMount_InitCalledOnFirstMount(t *testing.T) {
 	parent := &mockParent{}
 	instance := &mockInitComponent{}
 
-	Mount(parent, 0, func() Component {
+	DefaultApp().Mount(parent, 0, func() Component {
 		return instance
 	})
 
@@ -159,13 +159,13 @@ func TestMount_InitNotCalledOnSubsequentMount(t *testing.T) {
 	instance := &mockInitComponent{}
 
 	// First mount — triggers Init
-	Mount(parent, 0, func() Component {
+	DefaultApp().Mount(parent, 0, func() Component {
 		return instance
 	})
 	instance.initCalled = false // Reset flag
 
 	// Second mount — should NOT call Init again
-	Mount(parent, 0, func() Component {
+	DefaultApp().Mount(parent, 0, func() Component {
 		return instance
 	})
 
@@ -181,7 +181,7 @@ func TestMount_NilCleanupHandled(t *testing.T) {
 	parent := &mockParent{}
 	instance := &mockInitNoCleanup{}
 
-	Mount(parent, 0, func() Component {
+	DefaultApp().Mount(parent, 0, func() Component {
 		return instance
 	})
 
@@ -205,9 +205,9 @@ func TestMount_DifferentKeysIndependent(t *testing.T) {
 	instanceB := &mockComponent{}
 
 	// Mount at index 0
-	Mount(parent, 0, func() Component { return instanceA })
+	DefaultApp().Mount(parent, 0, func() Component { return instanceA })
 	// Mount at index 1
-	Mount(parent, 1, func() Component { return instanceB })
+	DefaultApp().Mount(parent, 1, func() Component { return instanceB })
 
 	if instanceA.renderCount != 1 {
 		t.Errorf("instanceA.renderCount = %d, want 1", instanceA.renderCount)
@@ -226,12 +226,12 @@ func TestMount_DifferentParentsIndependent(t *testing.T) {
 	factoryCalls := 0
 
 	// Mount with parentA at index 0
-	Mount(parentA, 0, func() Component {
+	DefaultApp().Mount(parentA, 0, func() Component {
 		factoryCalls++
 		return &mockComponent{}
 	})
 	// Mount with parentB at same index — different parent, so new instance
-	Mount(parentB, 0, func() Component {
+	DefaultApp().Mount(parentB, 0, func() Component {
 		factoryCalls++
 		return &mockComponent{}
 	})
@@ -249,7 +249,7 @@ func TestMountState_SweepCleansInactive(t *testing.T) {
 	instance := &mockInitComponent{}
 
 	// Mount to populate cache
-	Mount(parent, 0, func() Component { return instance })
+	DefaultApp().Mount(parent, 0, func() Component { return instance })
 
 	ms := DefaultApp().mounts
 
@@ -276,11 +276,11 @@ func TestMountState_SweepKeepsActive(t *testing.T) {
 	instance := &mockInitComponent{}
 
 	// Mount to populate cache and mark as active
-	Mount(parent, 0, func() Component { return instance })
+	DefaultApp().Mount(parent, 0, func() Component { return instance })
 
 	ms := DefaultApp().mounts
 
-	// Sweep — key was marked active by Mount(), so it should survive
+	// Sweep — key was marked active by DefaultApp().Mount(), so it should survive
 	ms.sweep()
 
 	if instance.cleanupCalls != 0 {
@@ -297,7 +297,7 @@ func TestMountState_SweepResetsActiveKeys(t *testing.T) {
 
 	parent := &mockParent{}
 
-	Mount(parent, 0, func() Component { return &mockComponent{} })
+	DefaultApp().Mount(parent, 0, func() Component { return &mockComponent{} })
 
 	ms := DefaultApp().mounts
 
@@ -321,8 +321,8 @@ func TestMountState_SweepMultipleComponents(t *testing.T) {
 	inactive := &mockInitComponent{}
 
 	// Mount both
-	Mount(parent, 0, func() Component { return active })
-	Mount(parent, 1, func() Component { return inactive })
+	DefaultApp().Mount(parent, 0, func() Component { return active })
+	DefaultApp().Mount(parent, 1, func() Component { return inactive })
 
 	ms := DefaultApp().mounts
 

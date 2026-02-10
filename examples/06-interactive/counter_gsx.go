@@ -94,7 +94,7 @@ func (c *counter) reset() {
 	c.events.Emit("reset")
 }
 
-func (c *counter) Render() *tui.Element {
+func (c *counter) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),

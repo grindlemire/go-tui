@@ -29,7 +29,7 @@ func (c *conditionalsApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (c *conditionalsApp) Render() *tui.Element {
+func (c *conditionalsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),

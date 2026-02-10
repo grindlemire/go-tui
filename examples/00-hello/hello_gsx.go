@@ -20,7 +20,7 @@ func (h *helloApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (h *helloApp) Render() *tui.Element {
+func (h *helloApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),

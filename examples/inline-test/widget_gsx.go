@@ -39,7 +39,7 @@ func (a *inlineApp) printLine() {
 	a.tuiApp.PrintAboveln("Line %d printed above the widget", a.counter)
 }
 
-func (a *inlineApp) Render() *tui.Element {
+func (a *inlineApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithHeight(a.height),

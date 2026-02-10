@@ -46,7 +46,7 @@ func (m *mockWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 
 type mockComponentRoot struct{}
 
-func (m *mockComponentRoot) Render() *Element { return New() }
+func (m *mockComponentRoot) Render(app *App) *Element { return New() }
 
 type stopAwareWatcher struct {
 	stopped chan struct{}

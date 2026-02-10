@@ -28,7 +28,7 @@ func EventInspector(events *tui.Events[string]) *eventInspector {
 	return e
 }
 
-func (e *eventInspector) Render() *tui.Element {
+func (e *eventInspector) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),

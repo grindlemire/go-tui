@@ -59,7 +59,7 @@ func (c *counterApp) tick() {
 	c.count.Set(c.count.Get() + 1)
 }
 
-func (c *counterApp) Render() *tui.Element {
+func (c *counterApp) Render(app *tui.App) *tui.Element {
 	incrementBtn := c.incrementBtn
 	decrementBtn := c.decrementBtn
 	__tui_0 := tui.New(

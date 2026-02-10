@@ -98,7 +98,7 @@ func (t *TextArea) Height() int {
 // --- Component Interface ---
 
 // Render returns the element tree for the text area.
-func (t *TextArea) Render() *Element {
+func (t *TextArea) Render(app *App) *Element {
 	lines := t.wrapText()
 	height := len(lines)
 	if height < 1 {

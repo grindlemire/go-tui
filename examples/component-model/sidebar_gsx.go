@@ -29,7 +29,7 @@ func (s *sidebar) toggle(ke tui.KeyEvent) {
 	s.expanded.Set(!s.expanded.Get())
 }
 
-func (s *sidebar) Render() *tui.Element {
+func (s *sidebar) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New()
 	if s.expanded.Get() {
 		__tui_1 := tui.New(

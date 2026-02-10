@@ -30,7 +30,7 @@ func (a *interactiveApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (a *interactiveApp) Render() *tui.Element {
+func (a *interactiveApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
@@ -62,11 +62,11 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithAlign(tui.AlignStretch),
 		tui.WithFlexGrow(1), tui.WithFlexShrink(1),
 	)
-	__tui_5 := tui.Mount(a, 0, func() tui.Component {
+	__tui_5 := app.Mount(a, 0, func() tui.Component {
 		return Counter(a.events)
 	})
 	__tui_4.AddChild(__tui_5)
-	__tui_6 := tui.Mount(a, 1, func() tui.Component {
+	__tui_6 := app.Mount(a, 1, func() tui.Component {
 		return Timer(a.events)
 	})
 	__tui_4.AddChild(__tui_6)
@@ -77,11 +77,11 @@ func (a *interactiveApp) Render() *tui.Element {
 		tui.WithAlign(tui.AlignStretch),
 		tui.WithFlexGrow(1), tui.WithFlexShrink(1),
 	)
-	__tui_8 := tui.Mount(a, 2, func() tui.Component {
+	__tui_8 := app.Mount(a, 2, func() tui.Component {
 		return Toggles(a.events)
 	})
 	__tui_7.AddChild(__tui_8)
-	__tui_9 := tui.Mount(a, 3, func() tui.Component {
+	__tui_9 := app.Mount(a, 3, func() tui.Component {
 		return EventInspector(a.events)
 	})
 	__tui_7.AddChild(__tui_9)

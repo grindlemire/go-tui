@@ -9,7 +9,7 @@ type mockKeyComponent struct {
 	keyMap KeyMap
 }
 
-func (m *mockKeyComponent) Render() *Element {
+func (m *mockKeyComponent) Render(app *App) *Element {
 	return New()
 }
 
@@ -20,7 +20,7 @@ func (m *mockKeyComponent) KeyMap() KeyMap {
 // mockNoKeyComponent implements Component but not KeyListener.
 type mockNoKeyComponent struct{}
 
-func (m *mockNoKeyComponent) Render() *Element {
+func (m *mockNoKeyComponent) Render(app *App) *Element {
 	return New()
 }
 

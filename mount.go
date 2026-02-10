@@ -45,14 +45,8 @@ type PropsUpdater interface {
 // If the cached instance implements PropsUpdater, UpdateProps is called
 // with a fresh instance to allow prop updates.
 // Mark-and-sweep: marks the key as active. Sweep after render cleans stale entries.
-func Mount(parent Component, index int, factory func() Component) *Element {
-	app := DefaultApp()
-	if app == nil {
-		instance := factory()
-		el := instance.Render()
-		el.component = instance
-		return el
-	}
+func (a *App) Mount(parent Component, index int, factory func() Component) *Element {
+	app := a
 	ms := app.mounts
 	key := mountKey{parent: parent, index: index}
 	ms.activeKeys[key] = true // Mark as active this render
@@ -82,7 +76,7 @@ func Mount(parent Component, index int, factory func() Component) *Element {
 	}
 
 	// Render the component and tag the element for framework discovery
-	el := instance.Render()
+	el := instance.Render(a)
 	el.component = instance
 	return el
 }

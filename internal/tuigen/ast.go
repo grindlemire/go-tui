@@ -52,7 +52,7 @@ func (g *CommentGroup) Text() string {
 type File struct {
 	Package    string
 	Imports    []Import
-	Decls      []*GoDecl    // top-level Go declarations (type, const, var)
+	Decls      []*GoDecl // top-level Go declarations (type, const, var)
 	Components []*Component
 	Funcs      []*GoFunc // top-level Go functions
 	Position   Position
@@ -61,7 +61,7 @@ type File struct {
 	OrphanComments  []*CommentGroup // Comments not attached to any node
 }
 
-func (f *File) node()        {}
+func (f *File) node()         {}
 func (f *File) Pos() Position { return f.Position }
 
 // Import represents a Go import statement.
@@ -73,7 +73,7 @@ type Import struct {
 	TrailingComments *CommentGroup // Inline comment on import line
 }
 
-func (i *Import) node()        {}
+func (i *Import) node()         {}
 func (i *Import) Pos() Position { return i.Position }
 
 // Component represents a @component definition.
@@ -94,7 +94,7 @@ type Component struct {
 	OrphanComments   []*CommentGroup // Comments in body not attached to any node
 }
 
-func (c *Component) node()        {}
+func (c *Component) node()         {}
 func (c *Component) Pos() Position { return c.Position }
 
 // Param represents a function parameter.
@@ -104,14 +104,14 @@ type Param struct {
 	Position Position
 }
 
-func (p *Param) node()        {}
+func (p *Param) node()         {}
 func (p *Param) Pos() Position { return p.Position }
 
 // Element represents an XML-like element: <tag attrs>children</tag> or <tag />
 type Element struct {
-	Tag     string
-	RefExpr *GoExpr // Expression from ref={expr} attribute (e.g., ref={content})
-	RefKey  *GoExpr // Key expression for map-based refs (e.g., key={item.ID})
+	Tag        string
+	RefExpr    *GoExpr // Expression from ref={expr} attribute (e.g., ref={content})
+	RefKey     *GoExpr // Key expression for map-based refs (e.g., key={item.ID})
 	Attributes []*Attribute
 	Children   []Node // Elements, GoExpr, TextContent, ForLoop, IfStmt, LetBinding
 	SelfClose  bool
@@ -120,14 +120,14 @@ type Element struct {
 	MultiLineAttrs        bool // attrs span multiple source lines
 	ClosingBracketNewLine bool // > or /> is on its own line (after last attr)
 	InlineChildren        bool // children are on same line as opening/closing tags
-	BlankLineBefore        bool // blank line before this node in source
+	BlankLineBefore       bool // blank line before this node in source
 	// Comment fields
 	LeadingComments  *CommentGroup   // Comments immediately before this element
 	TrailingComments *CommentGroup   // Comments on same line after this element
 	OrphanComments   []*CommentGroup // Comments in children not attached to any node
 }
 
-func (e *Element) node()        {}
+func (e *Element) node()         {}
 func (e *Element) Pos() Position { return e.Position }
 
 // Attribute represents a tag attribute: name=value or name={expr}
@@ -138,7 +138,7 @@ type Attribute struct {
 	ValuePosition Position // Position of the attribute value (start of value, after '=')
 }
 
-func (a *Attribute) node()        {}
+func (a *Attribute) node()         {}
 func (a *Attribute) Pos() Position { return a.Position }
 
 // GoExpr represents a Go expression embedded in {braces}.
@@ -151,7 +151,7 @@ type GoExpr struct {
 	TrailingComments *CommentGroup // Comments on same line after this expression
 }
 
-func (g *GoExpr) node()        {}
+func (g *GoExpr) node()         {}
 func (g *GoExpr) Pos() Position { return g.Position }
 
 // StringLit represents a string literal "...".
@@ -160,7 +160,7 @@ type StringLit struct {
 	Position Position
 }
 
-func (s *StringLit) node()        {}
+func (s *StringLit) node()         {}
 func (s *StringLit) Pos() Position { return s.Position }
 
 // IntLit represents an integer literal.
@@ -169,7 +169,7 @@ type IntLit struct {
 	Position Position
 }
 
-func (i *IntLit) node()        {}
+func (i *IntLit) node()         {}
 func (i *IntLit) Pos() Position { return i.Position }
 
 // FloatLit represents a floating-point literal.
@@ -178,7 +178,7 @@ type FloatLit struct {
 	Position Position
 }
 
-func (f *FloatLit) node()        {}
+func (f *FloatLit) node()         {}
 func (f *FloatLit) Pos() Position { return f.Position }
 
 // BoolLit represents a boolean literal (true/false).
@@ -187,7 +187,7 @@ type BoolLit struct {
 	Position Position
 }
 
-func (b *BoolLit) node()        {}
+func (b *BoolLit) node()         {}
 func (b *BoolLit) Pos() Position { return b.Position }
 
 // TextContent represents literal text content inside an element.
@@ -197,7 +197,7 @@ type TextContent struct {
 	BlankLineBefore bool // blank line before this node in source
 }
 
-func (t *TextContent) node()        {}
+func (t *TextContent) node()         {}
 func (t *TextContent) Pos() Position { return t.Position }
 
 // LetBinding represents @let name = <element>.
@@ -211,7 +211,7 @@ type LetBinding struct {
 	TrailingComments *CommentGroup // Comments on same line after element
 }
 
-func (l *LetBinding) node()        {}
+func (l *LetBinding) node()         {}
 func (l *LetBinding) Pos() Position { return l.Position }
 
 // ForLoop represents @for i, v := range items { ... }
@@ -228,7 +228,7 @@ type ForLoop struct {
 	OrphanComments   []*CommentGroup // Comments in body not attached to any node
 }
 
-func (f *ForLoop) node()        {}
+func (f *ForLoop) node()         {}
 func (f *ForLoop) Pos() Position { return f.Position }
 
 // IfStmt represents @if condition { ... } @else { ... }
@@ -244,7 +244,7 @@ type IfStmt struct {
 	OrphanComments   []*CommentGroup // Comments in body not attached to any node
 }
 
-func (i *IfStmt) node()        {}
+func (i *IfStmt) node()         {}
 func (i *IfStmt) Pos() Position { return i.Position }
 
 // GoCode represents a block of embedded Go code.
@@ -256,7 +256,7 @@ type GoCode struct {
 	TrailingComments *CommentGroup // Comments on same line after Go code
 }
 
-func (g *GoCode) node()        {}
+func (g *GoCode) node()         {}
 func (g *GoCode) Pos() Position { return g.Position }
 
 // GoFunc represents a top-level Go function definition in a .tui file.
@@ -268,7 +268,7 @@ type GoFunc struct {
 	TrailingComments *CommentGroup // Comments on same line after closing }
 }
 
-func (g *GoFunc) node()        {}
+func (g *GoFunc) node()         {}
 func (g *GoFunc) Pos() Position { return g.Position }
 
 // GoDecl represents a top-level Go declaration (type, const, var) in a .gsx file.
@@ -281,7 +281,7 @@ type GoDecl struct {
 	TrailingComments *CommentGroup // Comments on same line after declaration
 }
 
-func (g *GoDecl) node()        {}
+func (g *GoDecl) node()         {}
 func (g *GoDecl) Pos() Position { return g.Position }
 
 // RawGoExpr represents a raw Go expression that should be emitted as-is
@@ -291,7 +291,7 @@ type RawGoExpr struct {
 	Position Position
 }
 
-func (r *RawGoExpr) node()        {}
+func (r *RawGoExpr) node()         {}
 func (r *RawGoExpr) Pos() Position { return r.Position }
 
 // ComponentCall represents @ComponentName(args) { children }
@@ -299,7 +299,7 @@ type ComponentCall struct {
 	Name            string // component name (e.g., "Card", "Header")
 	Args            string // raw Go expression for arguments
 	Children        []Node // child elements (may be empty if no children block)
-	IsStructMount   bool   // true when inside a method templ (generates tui.Mount())
+	IsStructMount   bool   // true when inside a method templ (generates app.Mount())
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
@@ -307,7 +307,7 @@ type ComponentCall struct {
 	TrailingComments *CommentGroup // Comments on same line after )
 }
 
-func (c *ComponentCall) node()        {}
+func (c *ComponentCall) node()         {}
 func (c *ComponentCall) Pos() Position { return c.Position }
 
 // ComponentExpr represents @expr where expr is a Component field/variable.
@@ -321,7 +321,7 @@ type ComponentExpr struct {
 	TrailingComments *CommentGroup // Comments on same line after expr
 }
 
-func (c *ComponentExpr) node()        {}
+func (c *ComponentExpr) node()         {}
 func (c *ComponentExpr) Pos() Position { return c.Position }
 
 // ChildrenSlot represents {children...} placeholder in a component body
@@ -333,5 +333,5 @@ type ChildrenSlot struct {
 	TrailingComments *CommentGroup // Comments on same line after {children...}
 }
 
-func (c *ChildrenSlot) node()        {}
+func (c *ChildrenSlot) node()         {}
 func (c *ChildrenSlot) Pos() Position { return c.Position }

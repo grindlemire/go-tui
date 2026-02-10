@@ -513,7 +513,7 @@ func wrapIndex(idx, length int) int {
 	return idx
 }
 
-func (s *SettingsApp) Render() *tui.Element {
+func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithHeightPercent(100.00),

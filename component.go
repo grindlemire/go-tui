@@ -1,10 +1,10 @@
 package tui
 
 // Component is the base interface for struct components.
-// Any struct with a Render() method can be used as a component in the element tree.
+// Any struct with a Render(app *App) method can be used as a component in the element tree.
 // Components are instantiated by constructor functions and cached by the Mount system.
 type Component interface {
-	Render() *Element
+	Render(app *App) *Element
 }
 
 // KeyListener is implemented by components that handle keyboard input.

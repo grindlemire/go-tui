@@ -31,7 +31,7 @@ func main() {
 	defer app.Close()
 
 	// Create and set the root component. Child components are mounted
-	// automatically via tui.Mount() in each Render() call.
+	// automatically via app.Mount() in each Render() call.
 	app.SetRootComponent(MyApp())
 
 	if err := app.Run(); err != nil {
