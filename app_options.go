@@ -105,6 +105,8 @@ func WithCursor() AppOption {
 // The TUI manages only the bottom N rows of the terminal, allowing normal
 // terminal output above. Use PrintAbove() or PrintAboveln() to print
 // scrolling content above the widget.
+// For goroutine-safe queued writes, use QueuePrintAbove() /
+// QueuePrintAboveln().
 //
 // In inline mode:
 //   - Alternate screen is not used, so terminal history is preserved

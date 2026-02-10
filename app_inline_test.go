@@ -499,23 +499,34 @@ func TestPrintAboveRaw_SanitizesANSISequences(t *testing.T) {
 	}
 }
 
-func TestPrintAbove_SyncAndAsyncOrdering(t *testing.T) {
+func TestPrintAbove_SyncAndQueuedOrdering(t *testing.T) {
 	app, emu := newInlineTestApp(80, 24, 3)
 
 	app.PrintAboveln("sync-1")
 	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "sync-1" {
-		t.Fatalf("bottom history row = %q, want %q before async flush\n%s",
+		t.Fatalf("bottom history row = %q, want %q before queued flush\n%s",
 			got, "sync-1", emu.DumpState())
 	}
 
-	app.PrintAbovelnAsync("async-2")
+	app.QueuePrintAboveln("queued-2")
 	runQueuedUpdates(app)
 
 	if got := emu.ScreenRow(app.inlineStartRow - 2); got != "sync-1" {
 		t.Fatalf("row above bottom = %q, want %q\n%s", got, "sync-1", emu.DumpState())
 	}
-	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "async-2" {
-		t.Fatalf("bottom history row = %q, want %q\n%s", got, "async-2", emu.DumpState())
+	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "queued-2" {
+		t.Fatalf("bottom history row = %q, want %q\n%s", got, "queued-2", emu.DumpState())
+	}
+}
+
+func TestPrintAbove_AsyncAliasQueues(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.PrintAbovelnAsync("alias-async")
+	runQueuedUpdates(app)
+
+	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "alias-async" {
+		t.Fatalf("bottom history row = %q, want %q\n%s", got, "alias-async", emu.DumpState())
 	}
 }
 
@@ -583,15 +594,12 @@ func TestEmulatorTerminal_ScrollRegionUp(t *testing.T) {
 	emu.SetScreenRow(3, "row3")
 	emu.SetScreenRow(4, "row4")
 
-	// Set scroll region to rows 1-3 (0-indexed), i.e. ANSI rows 1-4
-	// Then position cursor at bottom and emit \n to scroll
+	// Set scroll region to ANSI rows 1-4 (0-indexed rows 0-3), then scroll once.
 	emu.WriteDirect([]byte("\033[1;4r")) // scroll region rows 1-4 (ANSI 1-indexed)
 	emu.WriteDirect([]byte("\033[4;1H")) // cursor to row 4 (ANSI 1-indexed) = row 3 (0-indexed)
 	emu.WriteDirect([]byte("\n"))        // scroll within region
 
-	// Row 0 (outside region above) should be pushed to scrollback
-	// Actually wait — scrollTop=0, scrollBottom=3 (rows 0-3)
-	// The scroll moves row 0 to scrollback, rows 1-3 shift up, row 3 becomes blank
+	// The scroll moves row 0 to scrollback, rows 1-3 shift up, and row 3 becomes blank.
 	if emu.ScreenRow(0) != "row1" {
 		t.Errorf("row 0 = %q, want %q", emu.ScreenRow(0), "row1")
 	}
