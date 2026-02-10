@@ -377,15 +377,22 @@ func (p *Parser) parseMethodTempl(pos Position) *Component {
 // parseParams parses function parameters.
 func (p *Parser) parseParams() []*Param {
 	var params []*Param
+	p.skipNewlines()
 
 	for p.current.Type != TokenRParen && p.current.Type != TokenEOF {
 		param := p.parseParam()
 		if param != nil {
 			params = append(params, param)
 		}
+		p.skipNewlines()
 
 		if p.current.Type == TokenComma {
 			p.advance()
+			p.skipNewlines()
+			// Allow trailing comma before ')'.
+			if p.current.Type == TokenRParen {
+				break
+			}
 		} else {
 			break
 		}

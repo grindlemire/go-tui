@@ -117,6 +117,31 @@ func TestParser_ImportDetails(t *testing.T) {
 	}
 }
 
+func TestParser_FunctionParamsMultilineWithTrailingComma(t *testing.T) {
+	input := `package x
+type SettingsApp struct{}
+
+func NewSettingsApp(
+	provider string,
+	model string,
+	onClose func(),
+) *SettingsApp {
+	return &SettingsApp{}
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(file.Funcs) != 1 {
+		t.Fatalf("expected 1 function, got %d", len(file.Funcs))
+	}
+}
+
 func TestParser_GoExpression(t *testing.T) {
 	input := `package x
 templ Test() {
