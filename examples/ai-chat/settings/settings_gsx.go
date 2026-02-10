@@ -5,37 +5,44 @@ package settings
 
 import (
 	"fmt"
+	"strings"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
 const (
-	numSections = 4
-	minTemp     = 0.0
-	maxTemp     = 1.0
+	numSections        = 4
+	minTemp            = 0.0
+	maxTemp            = 1.0
+	tempBarWidth       = 22
+	valuePreviewWidth  = 30
+	promptPreviewWidth = 48
+	promptPreviewLines = 2
 )
 
 type SettingsApp struct {
-	Provider           *tui.State[string]
-	Model              *tui.State[string]
-	Temperature        *tui.State[float64]
-	SystemPrompt       *tui.State[string]
-	AvailableProviders []string
-	ProviderModels     map[string][]string
-	FocusedSection     *tui.State[int]
-	onClose            func()
+	Provider            *tui.State[string]
+	Model               *tui.State[string]
+	Temperature         *tui.State[float64]
+	SystemPrompt        *tui.State[string]
+	SystemPromptPresets []string
+	AvailableProviders  []string
+	ProviderModels      map[string][]string
+	FocusedSection      *tui.State[int]
+	onClose             func()
 }
 
 func NewSettingsApp(provider *tui.State[string], model *tui.State[string], temperature *tui.State[float64], systemPrompt *tui.State[string], availableProviders []string, providerModels map[string][]string, onClose func()) *SettingsApp {
 	return &SettingsApp{
-		Provider:           provider,
-		Model:              model,
-		Temperature:        temperature,
-		SystemPrompt:       systemPrompt,
-		AvailableProviders: availableProviders,
-		ProviderModels:     providerModels,
-		FocusedSection:     tui.NewState(0),
-		onClose:            onClose,
+		Provider:            provider,
+		Model:               model,
+		Temperature:         temperature,
+		SystemPrompt:        systemPrompt,
+		SystemPromptPresets: buildSystemPromptPresets(systemPrompt.Get()),
+		AvailableProviders:  availableProviders,
+		ProviderModels:      providerModels,
+		FocusedSection:      tui.NewState(0),
+		onClose:             onClose,
 	}
 }
 
@@ -47,8 +54,12 @@ func (s *SettingsApp) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { s.nextSection() }),
 		tui.OnKeyStop(tui.KeyLeft, func(ke tui.KeyEvent) { s.handleLeft() }),
 		tui.OnKeyStop(tui.KeyRight, func(ke tui.KeyEvent) { s.handleRight() }),
+		tui.OnKeyStop(tui.KeyUp, func(ke tui.KeyEvent) { s.handleUp() }),
+		tui.OnKeyStop(tui.KeyDown, func(ke tui.KeyEvent) { s.handleDown() }),
 		tui.OnRune('h', func(ke tui.KeyEvent) { s.handleLeft() }),
 		tui.OnRune('l', func(ke tui.KeyEvent) { s.handleRight() }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.handleUp() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.handleDown() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { s.close() }),
 	}
 }
@@ -75,6 +86,8 @@ func (s *SettingsApp) handleLeft() {
 		s.cycleModel(-1)
 	case 2:
 		s.adjustTemp(-0.1)
+	case 3:
+		s.cycleSystemPrompt(-1)
 	}
 }
 
@@ -86,6 +99,34 @@ func (s *SettingsApp) handleRight() {
 		s.cycleModel(1)
 	case 2:
 		s.adjustTemp(0.1)
+	case 3:
+		s.cycleSystemPrompt(1)
+	}
+}
+
+func (s *SettingsApp) handleUp() {
+	switch s.FocusedSection.Get() {
+	case 0:
+		s.cycleProvider(-1)
+	case 1:
+		s.cycleModel(-1)
+	case 2:
+		s.adjustTemp(0.1)
+	case 3:
+		s.cycleSystemPrompt(-1)
+	}
+}
+
+func (s *SettingsApp) handleDown() {
+	switch s.FocusedSection.Get() {
+	case 0:
+		s.cycleProvider(1)
+	case 1:
+		s.cycleModel(1)
+	case 2:
+		s.adjustTemp(-0.1)
+	case 3:
+		s.cycleSystemPrompt(1)
 	}
 }
 
@@ -143,11 +184,303 @@ func (s *SettingsApp) adjustTemp(delta float64) {
 	s.Temperature.Set(t)
 }
 
-func (s *SettingsApp) borderStyleForSection(section int) tui.Style {
-	if s.FocusedSection.Get() == section {
-		return tui.NewStyle().Foreground(tui.Cyan)
+func (s *SettingsApp) cycleSystemPrompt(dir int) {
+	if len(s.SystemPromptPresets) == 0 {
+		return
 	}
-	return tui.NewStyle()
+
+	s.ensurePromptPresetRegistered()
+	current := s.SystemPrompt.Get()
+	idx := indexOfExact(s.SystemPromptPresets, current)
+	if idx < 0 {
+		return
+	}
+
+	idx = wrapIndex(idx+dir, len(s.SystemPromptPresets))
+	s.SystemPrompt.Set(s.SystemPromptPresets[idx])
+}
+
+func (s *SettingsApp) borderStyleForSection(section int) tui.Style {
+	if s.isFocused(section) {
+		return tui.NewStyle().Foreground(tui.BrightCyan)
+	}
+	return tui.NewStyle().Foreground(tui.BrightBlack)
+}
+
+func (s *SettingsApp) sectionTitleStyle(section int) tui.Style {
+	if s.isFocused(section) {
+		return tui.NewStyle().Bold().Foreground(tui.BrightCyan)
+	}
+	return tui.NewStyle().Bold().Foreground(tui.White)
+}
+
+func (s *SettingsApp) sectionValueStyle(section int) tui.Style {
+	if s.isFocused(section) {
+		return tui.NewStyle().Bold().Foreground(tui.Cyan)
+	}
+	return tui.NewStyle().Foreground(tui.White)
+}
+
+func (s *SettingsApp) isFocused(section int) bool {
+	return s.FocusedSection.Get() == section
+}
+
+func (s *SettingsApp) fieldLabel(section int, label string) string {
+	if s.isFocused(section) {
+		return "› " + label
+	}
+	return "  " + label
+}
+
+func (s *SettingsApp) providerOptionLabel(provider string) string {
+	if provider == s.Provider.Get() {
+		return "  ● " + provider
+	}
+	return "  ○ " + provider
+}
+
+func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
+	if provider == s.Provider.Get() {
+		if s.isFocused(0) {
+			return tui.NewStyle().Bold().Foreground(tui.BrightCyan)
+		}
+		return tui.NewStyle().Bold().Foreground(tui.Cyan)
+	}
+	return tui.NewStyle().Foreground(tui.White).Dim()
+}
+
+func (s *SettingsApp) providerSummary() string {
+	if len(s.AvailableProviders) == 0 {
+		return "none"
+	}
+
+	index := indexOf(s.AvailableProviders, s.Provider.Get()) + 1
+	return indexedSummary(s.Provider.Get(), index, len(s.AvailableProviders))
+}
+
+func (s *SettingsApp) modelSummary() string {
+	models := s.ProviderModels[s.Provider.Get()]
+	if len(models) == 0 {
+		return "none"
+	}
+
+	index := indexOf(models, s.Model.Get()) + 1
+	return indexedSummary(s.Model.Get(), index, len(models))
+}
+
+func (s *SettingsApp) temperatureSummary() string {
+	return fmt.Sprintf("%.1f  %s", s.Temperature.Get(), s.temperatureMode())
+}
+
+func (s *SettingsApp) promptPresetSummary() string {
+	if len(s.SystemPromptPresets) == 0 {
+		return "preset 0/0"
+	}
+
+	index := indexOfExact(s.SystemPromptPresets, s.SystemPrompt.Get())
+	if index < 0 {
+		return fmt.Sprintf("preset ?/%d", len(s.SystemPromptPresets))
+	}
+	return fmt.Sprintf("preset %d/%d", index+1, len(s.SystemPromptPresets))
+}
+
+func (s *SettingsApp) temperatureMode() string {
+	t := s.Temperature.Get()
+	switch {
+	case t <= 0.3:
+		return "precise"
+	case t < 0.8:
+		return "balanced"
+	default:
+		return "creative"
+	}
+}
+
+func (s *SettingsApp) activeSectionHint() string {
+	switch s.FocusedSection.Get() {
+	case 0:
+		return "Provider focus: ↑/↓ cycles providers"
+	case 1:
+		return "Model focus: ↑/↓ or ←/→ cycles models"
+	case 2:
+		return "Temperature focus: ↑ increases, ↓ decreases"
+	default:
+		return "System prompt focus: ↑/↓ cycles prompt presets"
+	}
+}
+
+func (s *SettingsApp) tempBar() string {
+	t := s.Temperature.Get()
+	pos := int(t*float64(tempBarWidth-1) + 0.5)
+	if pos < 0 {
+		pos = 0
+	}
+	if pos >= tempBarWidth {
+		pos = tempBarWidth - 1
+	}
+
+	var bar strings.Builder
+	bar.Grow(tempBarWidth * 3)
+	for i := 0; i < tempBarWidth; i++ {
+		if i == pos {
+			bar.WriteString("●")
+		} else {
+			bar.WriteString("━")
+		}
+	}
+	return bar.String()
+}
+
+func (s *SettingsApp) promptPreview() []string {
+	normalized := strings.ReplaceAll(s.SystemPrompt.Get(), "\n", " ")
+	normalized = strings.Join(strings.Fields(normalized), " ")
+	if normalized == "" {
+		return []string{"(empty)"}
+	}
+
+	lines := wrapWords(normalized, promptPreviewWidth)
+	if len(lines) <= promptPreviewLines {
+		return lines
+	}
+
+	clipped := append([]string{}, lines[:promptPreviewLines]...)
+	clipped[promptPreviewLines-1] = truncateRunes(clipped[promptPreviewLines-1], promptPreviewWidth-1) + "…"
+	return clipped
+}
+
+func wrapWords(text string, width int) []string {
+	if width <= 0 {
+		return nil
+	}
+
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return nil
+	}
+
+	lines := make([]string, 0, len(words))
+	current := ""
+
+	for _, word := range words {
+		for runeLen(word) > width {
+			if current != "" {
+				lines = append(lines, current)
+				current = ""
+			}
+
+			head, tail := splitAtRunes(word, width)
+			lines = append(lines, head)
+			word = tail
+		}
+
+		if current == "" {
+			current = word
+			continue
+		}
+
+		candidate := current + " " + word
+		if runeLen(candidate) <= width {
+			current = candidate
+			continue
+		}
+
+		lines = append(lines, current)
+		current = word
+	}
+
+	if current != "" {
+		lines = append(lines, current)
+	}
+
+	return lines
+}
+
+func splitAtRunes(text string, width int) (string, string) {
+	runes := []rune(text)
+	if len(runes) <= width {
+		return text, ""
+	}
+	return string(runes[:width]), string(runes[width:])
+}
+
+func buildSystemPromptPresets(current string) []string {
+	base := []string{
+		"You are a helpful assistant.",
+		"You are a concise assistant. Give practical steps and short explanations.",
+		"You are an expert coding assistant. Prioritize correctness, tradeoffs, and tests.",
+		"You are a creative collaborator. Offer multiple options before recommending one.",
+	}
+
+	presets := make([]string, 0, len(base)+1)
+	if strings.TrimSpace(current) != "" {
+		presets = append(presets, current)
+	}
+
+	for _, prompt := range base {
+		if indexOfExact(presets, prompt) >= 0 {
+			continue
+		}
+		presets = append(presets, prompt)
+	}
+
+	return presets
+}
+
+func indexedSummary(value string, index, total int) string {
+	suffix := fmt.Sprintf(" (%d/%d)", index, total)
+	valueWidth := valuePreviewWidth - runeLen(suffix)
+	if valueWidth < 1 {
+		valueWidth = 1
+	}
+	return truncateRunes(value, valueWidth) + suffix
+}
+
+func truncateRunes(text string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+
+	runes := []rune(text)
+	if len(runes) <= width {
+		return text
+	}
+	if width == 1 {
+		return "…"
+	}
+	return string(runes[:width-1]) + "…"
+}
+
+func runeLen(text string) int {
+	return len([]rune(text))
+}
+
+func (s *SettingsApp) ensurePromptPresetRegistered() {
+	current := s.SystemPrompt.Get()
+	if strings.TrimSpace(current) == "" {
+		return
+	}
+	if indexOfExact(s.SystemPromptPresets, current) >= 0 {
+		return
+	}
+	s.SystemPromptPresets = append([]string{current}, s.SystemPromptPresets...)
+}
+
+func indexOf(items []string, value string) int {
+	for i, item := range items {
+		if item == value {
+			return i
+		}
+	}
+	return 0
+}
+
+func indexOfExact(items []string, value string) int {
+	for i, item := range items {
+		if item == value {
+			return i
+		}
+	}
+	return -1
 }
 
 func wrapIndex(idx, length int) int {
@@ -160,194 +493,176 @@ func wrapIndex(idx, length int) int {
 	return idx
 }
 
-func (s *SettingsApp) tempBar() string {
-	t := s.Temperature.Get()
-	pos := int(t * 29)
-	bar := ""
-	for i := 0; i < 30; i++ {
-		if i == pos {
-			bar += "●"
-		} else {
-			bar += "━"
-		}
-	}
-	return bar
-}
-
 func (s *SettingsApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithHeightPercent(100.00),
-		tui.WithPadding(2),
-		tui.WithGap(2),
+		tui.WithPadding(1),
+		tui.WithGap(0),
 	)
 	__tui_1 := tui.New(
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithPadding(1),
-		tui.WithHeight(3),
-		tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifyCenter),
+		tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
+		tui.WithFlexShrink(0),
 	)
 	__tui_2 := tui.New(
-		tui.WithText("  Settings"),
+		tui.WithText("AI Chat Settings"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
-	__tui_0.AddChild(__tui_1)
 	__tui_3 := tui.New(
+		tui.WithText("Tab between fields, adjust with arrows or h/j/k/l"),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+	__tui_4 := tui.New(
+		tui.WithFlexShrink(0),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(s.borderStyleForSection(0)),
-		tui.WithPadding(1),
-	)
-	__tui_4 := tui.New(
-		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
 	)
 	__tui_5 := tui.New(
-		tui.WithText("Provider"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithDirection(tui.Column),
 	)
-	__tui_4.AddChild(__tui_5)
 	__tui_6 := tui.New(
 		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_7 := tui.New(
+		tui.WithText(s.fieldLabel(0, "Provider")),
+		tui.WithTextStyle(s.sectionTitleStyle(0)),
+	)
+	__tui_6.AddChild(__tui_7)
+	__tui_8 := tui.New(
+		tui.WithText(s.providerSummary()),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
+	)
+	__tui_6.AddChild(__tui_8)
+	__tui_5.AddChild(__tui_6)
+	__tui_9 := tui.New(
+		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	for __idx_0, p := range s.AvailableProviders {
+	for __idx_0, provider := range s.AvailableProviders {
 		_ = __idx_0
-		if p == s.Provider.Get() {
-			__tui_7 := tui.New(
-				tui.WithText("● "+p),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-			)
-			__tui_6.AddChild(__tui_7)
-		} else {
-			__tui_8 := tui.New(
-				tui.WithText("○ "+p),
-				tui.WithTextStyle(tui.NewStyle().Dim()),
-			)
-			__tui_6.AddChild(__tui_8)
-		}
+		__tui_10 := tui.New(
+			tui.WithText(s.providerOptionLabel(provider)),
+			tui.WithTextStyle(s.providerOptionStyle(provider)),
+		)
+		__tui_9.AddChild(__tui_10)
 	}
-	__tui_4.AddChild(__tui_6)
-	__tui_3.AddChild(__tui_4)
-	__tui_0.AddChild(__tui_3)
-	__tui_9 := tui.New(
+	__tui_5.AddChild(__tui_9)
+	__tui_4.AddChild(__tui_5)
+	__tui_0.AddChild(__tui_4)
+	__tui_11 := tui.New(
+		tui.WithFlexShrink(0),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(s.borderStyleForSection(1)),
-		tui.WithPadding(1),
 	)
-	__tui_10 := tui.New(
-		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
-	)
-	__tui_11 := tui.New(
-		tui.WithText("Model"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
-	)
-	__tui_10.AddChild(__tui_11)
 	__tui_12 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithGap(2),
+		tui.WithDirection(tui.Column),
 	)
-	for __idx_0, m := range s.ProviderModels[s.Provider.Get()] {
-		_ = __idx_0
-		if m == s.Model.Get() {
-			__tui_13 := tui.New(
-				tui.WithText("● "+m),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-			)
-			__tui_12.AddChild(__tui_13)
-		} else {
-			__tui_14 := tui.New(
-				tui.WithText("○ "+m),
-				tui.WithTextStyle(tui.NewStyle().Dim()),
-			)
-			__tui_12.AddChild(__tui_14)
-		}
-	}
-	__tui_10.AddChild(__tui_12)
-	__tui_9.AddChild(__tui_10)
-	__tui_0.AddChild(__tui_9)
+	__tui_13 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_14 := tui.New(
+		tui.WithText(s.fieldLabel(1, "Model")),
+		tui.WithTextStyle(s.sectionTitleStyle(1)),
+	)
+	__tui_13.AddChild(__tui_14)
 	__tui_15 := tui.New(
+		tui.WithText(s.modelSummary()),
+		tui.WithTextStyle(s.sectionValueStyle(1)),
+	)
+	__tui_13.AddChild(__tui_15)
+	__tui_12.AddChild(__tui_13)
+	__tui_11.AddChild(__tui_12)
+	__tui_0.AddChild(__tui_11)
+	__tui_16 := tui.New(
+		tui.WithFlexShrink(0),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(s.borderStyleForSection(2)),
-		tui.WithPadding(1),
-	)
-	__tui_16 := tui.New(
-		tui.WithDirection(tui.Column),
-		tui.WithGap(1),
 	)
 	__tui_17 := tui.New(
-		tui.WithText("Temperature"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithDirection(tui.Column),
 	)
-	__tui_16.AddChild(__tui_17)
 	__tui_18 := tui.New(
 		tui.WithDirection(tui.Row),
-		tui.WithGap(2),
+		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_19 := tui.New(
-		tui.WithText(s.tempBar()),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+		tui.WithText(s.fieldLabel(2, "Temperature")),
+		tui.WithTextStyle(s.sectionTitleStyle(2)),
 	)
 	__tui_18.AddChild(__tui_19)
 	__tui_20 := tui.New(
-		tui.WithText(fmt.Sprintf("%.1f", s.Temperature.Get())),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithText(s.temperatureSummary()),
+		tui.WithTextStyle(s.sectionValueStyle(2)),
 	)
 	__tui_18.AddChild(__tui_20)
-	__tui_16.AddChild(__tui_18)
+	__tui_17.AddChild(__tui_18)
 	__tui_21 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithText(s.tempBar()),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
+	__tui_17.AddChild(__tui_21)
+	__tui_16.AddChild(__tui_17)
+	__tui_0.AddChild(__tui_16)
 	__tui_22 := tui.New(
-		tui.WithText("← precise"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_21.AddChild(__tui_22)
-	__tui_23 := tui.New(
-		tui.WithText("creative →"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_21.AddChild(__tui_23)
-	__tui_16.AddChild(__tui_21)
-	__tui_15.AddChild(__tui_16)
-	__tui_0.AddChild(__tui_15)
-	__tui_24 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(s.borderStyleForSection(3)),
-		tui.WithPadding(1),
 		tui.WithFlexGrow(1),
 	)
-	__tui_25 := tui.New(
+	__tui_23 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 	)
-	__tui_26 := tui.New(
-		tui.WithText("System Prompt"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
-	)
-	__tui_25.AddChild(__tui_26)
-	__tui_27 := tui.New(
-		tui.WithText(s.SystemPrompt.Get()),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
-	)
-	__tui_25.AddChild(__tui_27)
-	__tui_24.AddChild(__tui_25)
-	__tui_0.AddChild(__tui_24)
-	__tui_28 := tui.New(
+	__tui_24 := tui.New(
 		tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifyCenter),
+		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_25 := tui.New(
+		tui.WithText(s.fieldLabel(3, "System Prompt")),
+		tui.WithTextStyle(s.sectionTitleStyle(3)),
+	)
+	__tui_24.AddChild(__tui_25)
+	__tui_26 := tui.New(
+		tui.WithText(s.promptPresetSummary()),
+		tui.WithTextStyle(s.sectionValueStyle(3)),
+	)
+	__tui_24.AddChild(__tui_26)
+	__tui_23.AddChild(__tui_24)
+	for __idx_0, line := range s.promptPreview() {
+		_ = __idx_0
+		__tui_27 := tui.New(
+			tui.WithText(line),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+		)
+		__tui_23.AddChild(__tui_27)
+	}
+	__tui_22.AddChild(__tui_23)
+	__tui_0.AddChild(__tui_22)
+	__tui_28 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithFlexShrink(0),
 	)
 	__tui_29 := tui.New(
-		tui.WithText("Tab: navigate  ←/→: select  Ctrl+S/Esc/Enter: close"),
+		tui.WithText("Tab: next section   arrows or h/j/k/l: change   Enter/Esc/Ctrl+S/q: close"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_28.AddChild(__tui_29)
+	__tui_30 := tui.New(
+		tui.WithText(s.activeSectionHint()),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
+	)
+	__tui_28.AddChild(__tui_30)
 	__tui_0.AddChild(__tui_28)
 
 	return __tui_0
@@ -358,6 +673,7 @@ func (s *SettingsApp) UpdateProps(fresh tui.Component) {
 	if !ok {
 		return
 	}
+	s.SystemPromptPresets = f.SystemPromptPresets
 	s.AvailableProviders = f.AvailableProviders
 	s.ProviderModels = f.ProviderModels
 	s.onClose = f.onClose
