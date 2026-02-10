@@ -2,26 +2,26 @@
   --gtui-highlight: #ffd400;
   --gtui-highlight-soft: #fff1a6;
 
-  /* Use darker amber for readable light-mode links/buttons. */
-  --ifm-color-primary: #7a5a00;
-  --ifm-color-primary-dark: #664b00;
-  --ifm-color-primary-darker: #5c4300;
-  --ifm-color-primary-darkest: #4a3600;
-  --ifm-color-primary-light: #8f6a00;
-  --ifm-color-primary-lighter: #9b7300;
-  --ifm-color-primary-lightest: #b98900;
+  /* Use vivid orange for readable, high-pop light-mode links/buttons. */
+  --ifm-color-primary: #ff6a00;
+  --ifm-color-primary-dark: #e65f00;
+  --ifm-color-primary-darker: #d95a00;
+  --ifm-color-primary-darkest: #b84c00;
+  --ifm-color-primary-light: #ff7b1f;
+  --ifm-color-primary-lighter: #ff8533;
+  --ifm-color-primary-lightest: #ffa45c;
 
   --ifm-background-color: #fffdf5;
   --ifm-font-color-base: #1a1c22;
   --ifm-navbar-background-color: #ffffff;
   --ifm-footer-background-color: #1a1c22;
-  --ifm-link-hover-color: #5c4300;
+  --ifm-link-hover-color: #cc5500;
 }
 
 [data-theme='light'] mark,
 [data-theme='light'] kbd {
   background: var(--gtui-highlight-soft);
-  color: #2a2200;
+  color: #2b1d00;
 }
 
 [data-theme='light'] .menu__link--active,

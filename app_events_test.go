@@ -44,6 +44,25 @@ func (m *mockWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 	close(m.startCalled)
 }
 
+type mockComponentRoot struct{}
+
+func (m *mockComponentRoot) Render() *Element { return New() }
+
+type stopAwareWatcher struct {
+	stopped chan struct{}
+}
+
+func newStopAwareWatcher() *stopAwareWatcher {
+	return &stopAwareWatcher{stopped: make(chan struct{}, 1)}
+}
+
+func (w *stopAwareWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
+	go func() {
+		<-stopCh
+		w.stopped <- struct{}{}
+	}()
+}
+
 func TestApp_SetRoot_WithViewable(t *testing.T) {
 	type tc struct {
 		name        string
@@ -184,5 +203,47 @@ func TestApp_Stop_IsIdempotent(t *testing.T) {
 	// Still stopped
 	if !app.stopped {
 		t.Error("stopped should still be true after second Stop() call")
+	}
+}
+
+func TestApp_SetRoot_ClearsRootComponentForRenderable(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		mounts:     newMountState(),
+	}
+
+	app.SetRootComponent(&mockComponentRoot{})
+	if app.rootComponent == nil {
+		t.Fatal("expected rootComponent to be set after SetRootComponent")
+	}
+
+	app.SetRoot(newMockRenderable())
+	if app.rootComponent != nil {
+		t.Fatal("expected rootComponent to be cleared after SetRoot")
+	}
+}
+
+func TestApp_SetRoot_StopsPreviousRootWatchers(t *testing.T) {
+	app := &App{
+		focus:      NewFocusManager(),
+		buffer:     NewBuffer(80, 24),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+		mounts:     newMountState(),
+	}
+
+	w1 := newStopAwareWatcher()
+	view1 := newMockViewable(newMockRenderable(), w1)
+	app.SetRootView(view1)
+
+	app.SetRoot(newMockRenderable())
+
+	select {
+	case <-w1.stopped:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("expected previous root watcher to be stopped")
 	}
 }
