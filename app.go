@@ -102,6 +102,10 @@ type App struct {
 	// Component watchers (from WatcherProvider components)
 	componentWatchers        []Watcher
 	componentWatchersStarted bool
+
+	// Root-scoped watcher lifecycle.
+	rootStopCh     chan struct{}
+	rootWatcherCh  <-chan struct{}
 }
 
 var (
@@ -169,6 +173,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
 	}
+	app.resetRootSession()
 
 	// Apply options (may modify defaults above, including inlineHeight)
 	for _, opt := range opts {
@@ -294,6 +299,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
 	}
+	app.resetRootSession()
 
 	// Apply options (may modify defaults above, including inlineHeight)
 	for _, opt := range opts {
@@ -399,7 +405,7 @@ func (a *App) SetRootView(view Viewable) {
 	root := view.GetRoot()
 	a.applyRoot(root)
 	for _, w := range view.GetWatchers() {
-		w.Start(a.eventQueue, a.stopCh)
+		w.Start(a.eventQueue, a.rootWatcherCh)
 	}
 }
 
@@ -412,7 +418,11 @@ func (a *App) SetRootComponent(component Component) {
 }
 
 func (a *App) applyRoot(root Renderable) {
+	a.resetRootSession()
 	a.root = root
+	if root == nil {
+		return
+	}
 
 	// If root supports focus discovery, set up auto-registration
 	if walker, ok := root.(focusableTreeWalker); ok {
@@ -430,9 +440,34 @@ func (a *App) applyRoot(root Renderable) {
 	// If root supports watcher discovery, start all watchers in the tree
 	if walker, ok := root.(watcherTreeWalker); ok {
 		walker.WalkWatchers(func(w Watcher) {
-			w.Start(a.eventQueue, a.stopCh)
+			w.Start(a.eventQueue, a.rootWatcherCh)
 		})
 	}
+}
+
+func (a *App) resetRootSession() {
+	if a.rootStopCh != nil {
+		close(a.rootStopCh)
+	}
+	a.rootStopCh = make(chan struct{})
+	a.rootWatcherCh = mergeStopChannels(a.stopCh, a.rootStopCh)
+	a.focus = NewFocusManager()
+	a.dispatchTable = nil
+	a.mounts = newMountState()
+	a.componentWatchers = nil
+	a.componentWatchersStarted = false
+}
+
+func mergeStopChannels(ch1, ch2 <-chan struct{}) <-chan struct{} {
+	merged := make(chan struct{})
+	go func() {
+		select {
+		case <-ch1:
+		case <-ch2:
+		}
+		close(merged)
+	}()
+	return merged
 }
 
 // SetGlobalKeyHandler sets a handler that runs before dispatching to focused element.
