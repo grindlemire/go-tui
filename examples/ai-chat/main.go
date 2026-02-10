@@ -17,6 +17,7 @@ func main() {
 
 	app, err := tui.NewApp(
 		tui.WithInlineHeight(3), // Start with 3, will grow as needed
+		tui.WithInlineStartupMode(tui.InlineStartupPreserveVisible),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

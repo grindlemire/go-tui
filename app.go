@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -88,10 +87,11 @@ type App struct {
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
-	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
-	inlineStartRow int // Terminal row where inline region starts (calculated at init)
-	inlineLayout   inlineLayoutState
-	inlineSession  *inlineSession
+	inlineHeight      int               // Number of rows for inline widget (0 = full screen mode)
+	inlineStartRow    int               // Terminal row where inline region starts (calculated at init)
+	inlineStartupMode InlineStartupMode // Startup behavior for inline viewport ownership
+	inlineLayout      inlineLayoutState
+	inlineSession     *inlineSession
 
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay
@@ -201,33 +201,8 @@ func NewApp(opts ...AppOption) (*App, error) {
 	// Get terminal size
 	width, termHeight := terminal.Size()
 
-	// Set up screen mode based on inline configuration
-	if app.inlineHeight > 0 {
-		// Inline mode: don't use alternate screen, reserve space at bottom
-		// Clamp inline height to terminal height
-		if app.inlineHeight > termHeight {
-			app.inlineHeight = termHeight
-		}
-
-		// Print newlines to reserve space for the widget at the bottom
-		fmt.Print(strings.Repeat("\n", app.inlineHeight))
-		// Move cursor back up to the start of our region
-		fmt.Printf("\033[%dA", app.inlineHeight)
-
-		// Calculate where our inline region starts
-		app.inlineStartRow = termHeight - app.inlineHeight
-		app.inlineLayout = newInlineLayoutState(app.inlineStartRow)
-		app.inlineSession = newInlineSession(app.terminal)
-
-		// Create buffer sized for inline region only
-		app.buffer = NewBuffer(width, app.inlineHeight)
-	} else {
-		// Full screen mode: use alternate screen
-		terminal.EnterAltScreen()
-
-		// Create buffer for full terminal
-		app.buffer = NewBuffer(width, termHeight)
-	}
+	// Set up screen mode based on inline configuration.
+	app.setupInitialScreen(width, termHeight)
 
 	// Create event queue with configured size
 	app.eventQueue = make(chan func(), app.eventQueueSize)
@@ -329,33 +304,8 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	// Get terminal size
 	width, termHeight := terminal.Size()
 
-	// Set up screen mode based on inline configuration
-	if app.inlineHeight > 0 {
-		// Inline mode: don't use alternate screen, reserve space at bottom
-		// Clamp inline height to terminal height
-		if app.inlineHeight > termHeight {
-			app.inlineHeight = termHeight
-		}
-
-		// Print newlines to reserve space for the widget at the bottom
-		fmt.Print(strings.Repeat("\n", app.inlineHeight))
-		// Move cursor back up to the start of our region
-		fmt.Printf("\033[%dA", app.inlineHeight)
-
-		// Calculate where our inline region starts
-		app.inlineStartRow = termHeight - app.inlineHeight
-		app.inlineLayout = newInlineLayoutState(app.inlineStartRow)
-		app.inlineSession = newInlineSession(app.terminal)
-
-		// Create buffer sized for inline region only
-		app.buffer = NewBuffer(width, app.inlineHeight)
-	} else {
-		// Full screen mode: use alternate screen
-		terminal.EnterAltScreen()
-
-		// Create buffer for full terminal
-		app.buffer = NewBuffer(width, termHeight)
-	}
+	// Set up screen mode based on inline configuration.
+	app.setupInitialScreen(width, termHeight)
 
 	// Create event queue with configured size
 	app.eventQueue = make(chan func(), app.eventQueueSize)

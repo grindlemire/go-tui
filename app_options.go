@@ -8,6 +8,25 @@ import (
 // AppOption is a functional option for configuring an App.
 type AppOption func(*App) error
 
+// InlineStartupMode controls how inline mode initializes the visible terminal
+// viewport when an app starts.
+type InlineStartupMode int
+
+const (
+	// InlineStartupPreserveVisible keeps existing visible rows on launch.
+	// Unknown history is modeled conservatively so stale rows drain naturally as
+	// new PrintAbove/PrintAboveln content is appended.
+	InlineStartupPreserveVisible InlineStartupMode = iota
+
+	// InlineStartupFreshViewport clears the visible viewport immediately.
+	// Existing visible rows are discarded rather than pushed into scrollback.
+	InlineStartupFreshViewport
+
+	// InlineStartupSoftReset clears the visible viewport by pushing rows upward
+	// via newline flow, preserving previous visible rows in scrollback.
+	InlineStartupSoftReset
+)
+
 // WithInputLatency sets the polling timeout for the event reader.
 // Default is 50ms. Use InputLatencyBlocking (-1) for blocking mode.
 // A value of 0 is not allowed and will return an error.
@@ -128,6 +147,7 @@ func WithCursor() AppOption {
 //   - Alternate screen is not used, so terminal history is preserved
 //   - Mouse events are disabled by default, allowing native terminal scrollback
 //   - Use WithMouse() to explicitly enable mouse if needed
+//   - Startup behavior can be configured with WithInlineStartupMode()
 func WithInlineHeight(rows int) AppOption {
 	return func(a *App) error {
 		if rows < 1 {
@@ -135,5 +155,19 @@ func WithInlineHeight(rows int) AppOption {
 		}
 		a.inlineHeight = rows
 		return nil
+	}
+}
+
+// WithInlineStartupMode configures how inline mode handles existing visible
+// terminal content at app startup.
+func WithInlineStartupMode(mode InlineStartupMode) AppOption {
+	return func(a *App) error {
+		switch mode {
+		case InlineStartupPreserveVisible, InlineStartupFreshViewport, InlineStartupSoftReset:
+			a.inlineStartupMode = mode
+			return nil
+		default:
+			return fmt.Errorf("invalid inline startup mode: %d", mode)
+		}
 	}
 }

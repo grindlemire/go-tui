@@ -40,6 +40,131 @@ func runQueuedUpdates(a *App) {
 	}
 }
 
+func newInlineStartupPolicyApp(termWidth, termHeight, inlineHeight int, mode InlineStartupMode) (*App, *EmulatorTerminal) {
+	app, emu := newInlineTestApp(termWidth, termHeight, inlineHeight)
+	app.inlineStartupMode = mode
+	return app, emu
+}
+
+func TestInlineStartup_DefaultModeIsPreserveVisible(t *testing.T) {
+	var app App
+	if app.inlineStartupMode != InlineStartupPreserveVisible {
+		t.Fatalf("default inlineStartupMode = %d, want %d",
+			app.inlineStartupMode, InlineStartupPreserveVisible)
+	}
+}
+
+func TestWithInlineStartupMode_ValidatesInput(t *testing.T) {
+	app := &App{}
+	if err := WithInlineStartupMode(InlineStartupSoftReset)(app); err != nil {
+		t.Fatalf("expected valid mode to be accepted, got error: %v", err)
+	}
+	if app.inlineStartupMode != InlineStartupSoftReset {
+		t.Fatalf("inlineStartupMode = %d, want %d", app.inlineStartupMode, InlineStartupSoftReset)
+	}
+
+	if err := WithInlineStartupMode(InlineStartupMode(999))(app); err == nil {
+		t.Fatalf("expected invalid mode to return an error")
+	}
+}
+
+func TestInlineStartup_PreserveVisible_UsesConservativeLayout(t *testing.T) {
+	app, _ := newInlineStartupPolicyApp(40, 10, 3, InlineStartupPreserveVisible)
+
+	app.applyInlineStartupPolicy(10)
+
+	if app.inlineLayout.valid {
+		t.Fatalf("preserve mode should leave inline layout invalid for conservative append behavior")
+	}
+}
+
+func TestInlineStartup_PreserveVisible_AppendsDrainFromRowZero(t *testing.T) {
+	app, emu := newInlineStartupPolicyApp(40, 10, 3, InlineStartupPreserveVisible)
+
+	for row := 0; row < app.inlineStartRow; row++ {
+		emu.SetScreenRow(row, fmt.Sprintf("old-%d", row))
+	}
+
+	app.applyInlineStartupPolicy(10)
+	app.printAboveRaw("new-line\n")
+
+	scrollback := emu.Scrollback()
+	if len(scrollback) != 1 || scrollback[0] != "old-0" {
+		t.Fatalf("scrollback = %v, want [old-0]\n%s", scrollback, emu.DumpState())
+	}
+
+	historyBottom := app.inlineStartRow - 1
+	if got := emu.ScreenRow(historyBottom); got != "new-line" {
+		t.Fatalf("bottom history row = %q, want %q\n%s", got, "new-line", emu.DumpState())
+	}
+}
+
+func TestInlineStartup_FreshViewport_ClearsVisibleWithoutScrollbackWipe(t *testing.T) {
+	app, emu := newInlineStartupPolicyApp(40, 10, 3, InlineStartupFreshViewport)
+
+	for row := 0; row < 10; row++ {
+		emu.SetScreenRow(row, fmt.Sprintf("seed-%d", row))
+	}
+
+	app.applyInlineStartupPolicy(10)
+
+	for row := 0; row < 10; row++ {
+		if got := emu.ScreenRow(row); got != "" {
+			t.Fatalf("row %d = %q, want blank\n%s", row, got, emu.DumpState())
+		}
+	}
+	if len(emu.Scrollback()) != 0 {
+		t.Fatalf("fresh viewport should not push lines into scrollback, got %v\n%s",
+			emu.Scrollback(), emu.DumpState())
+	}
+	if !app.inlineLayout.valid {
+		t.Fatalf("fresh viewport should initialize inline layout as valid empty state")
+	}
+}
+
+func TestInlineStartup_SoftReset_PushesViewportIntoScrollback(t *testing.T) {
+	app, emu := newInlineStartupPolicyApp(40, 10, 3, InlineStartupSoftReset)
+
+	for row := 0; row < 10; row++ {
+		emu.SetScreenRow(row, fmt.Sprintf("seed-%d", row))
+	}
+
+	app.applyInlineStartupPolicy(10)
+
+	if got := len(emu.Scrollback()); got != 10 {
+		t.Fatalf("scrollback lines = %d, want 10\n%s", got, emu.DumpState())
+	}
+	if emu.Scrollback()[0] != "seed-0" {
+		t.Fatalf("first scrollback line = %q, want %q\n%s", emu.Scrollback()[0], "seed-0", emu.DumpState())
+	}
+	for row := 0; row < 10; row++ {
+		if got := emu.ScreenRow(row); got != "" {
+			t.Fatalf("row %d = %q, want blank after soft reset\n%s", row, got, emu.DumpState())
+		}
+	}
+	if !app.inlineLayout.valid {
+		t.Fatalf("soft reset should initialize inline layout as valid empty state")
+	}
+}
+
+func TestInlineStartup_FirstRenderIsFullRedraw(t *testing.T) {
+	emu := NewEmulatorTerminal(40, 10)
+	app := &App{
+		terminal:          emu,
+		inlineHeight:      3,
+		inlineStartupMode: InlineStartupPreserveVisible,
+	}
+
+	app.setupInlineScreen(40, 10)
+
+	if !app.needsFullRedraw {
+		t.Fatalf("inline startup should force first frame full redraw")
+	}
+	if app.buffer == nil || app.buffer.Height() != 3 {
+		t.Fatalf("buffer height = %d, want 3", app.buffer.Height())
+	}
+}
+
 func TestSetInlineHeight_GrowingWithNoHistory_NoBlankScrollback(t *testing.T) {
 	type tc struct {
 		startHeight int
