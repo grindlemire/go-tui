@@ -168,7 +168,7 @@ func TestIntegration_DispatchBroadcastAndStopPropagation(t *testing.T) {
 func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	TestResetDirty()
+	resetDirty()
 
 	root := newIntRoot()
 
@@ -222,7 +222,7 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	TestResetDirty()
+	resetDirty()
 
 	root := newIntRoot()
 
@@ -297,7 +297,7 @@ func TestIntegration_SweepCleansUnmountedComponents(t *testing.T) {
 func TestIntegration_SharedStatePropagation(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	TestResetDirty()
+	resetDirty()
 
 	root := newIntRoot()
 
@@ -332,7 +332,7 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	TestResetDirty()
+	resetDirty()
 
 	root := newIntRoot()
 

@@ -280,7 +280,7 @@ func TestState_BindingCanCallGet(t *testing.T) {
 
 func TestState_SetWithZeroBindings(t *testing.T) {
 	// Ensure Set works even with no bindings
-	TestResetDirty()
+	resetDirty()
 
 	s := NewState(0)
 	s.Set(42) // Should not panic
@@ -290,7 +290,7 @@ func TestState_SetWithZeroBindings(t *testing.T) {
 	}
 
 	// Should still mark dirty
-	if !TestCheckAndClearDirty() {
+	if !checkAndClearDirty() {
 		t.Error("should be dirty after Set() even with no bindings")
 	}
 }

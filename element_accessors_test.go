@@ -123,7 +123,7 @@ func TestElement_RemoveAllChildren(t *testing.T) {
 	// Clear dirty flag to test that RemoveAllChildren marks dirty
 	parent.dirty = false
 	MarkDirty() // Reset global dirty
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	parent.RemoveAllChildren()
 
@@ -161,21 +161,21 @@ func TestElement_RemoveAllChildren_Empty(t *testing.T) {
 
 func TestElement_MarkDirty_SetsGlobalDirtyFlag(t *testing.T) {
 	// Reset global dirty flag
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	e := New()
 	e.dirty = false // Clear local dirty flag
 
 	e.MarkDirty()
 
-	if !TestCheckAndClearDirty() {
+	if !checkAndClearDirty() {
 		t.Error("MarkDirty should set the global dirty flag")
 	}
 }
 
 func TestElement_ScrollBy_MarksDirty(t *testing.T) {
 	// Reset global dirty flag
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	e := New(
 		WithHeight(10),
@@ -193,46 +193,46 @@ func TestElement_ScrollBy_MarksDirty(t *testing.T) {
 
 	// Clear dirty flags
 	e.dirty = false
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	e.ScrollBy(0, 5)
 
-	if !TestCheckAndClearDirty() {
+	if !checkAndClearDirty() {
 		t.Error("ScrollBy should mark the global dirty flag")
 	}
 }
 
 func TestElement_SetText_MarksDirty(t *testing.T) {
 	// Reset global dirty flag
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	e := New(WithText("hello"))
 
 	// Clear dirty flags
 	e.dirty = false
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	e.SetText("world")
 
-	if !TestCheckAndClearDirty() {
+	if !checkAndClearDirty() {
 		t.Error("SetText should mark the global dirty flag")
 	}
 }
 
 func TestElement_AddChild_MarksDirty(t *testing.T) {
 	// Reset global dirty flag
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	parent := New()
 
 	// Clear dirty flags
 	parent.dirty = false
-	_ = TestCheckAndClearDirty()
+	_ = checkAndClearDirty()
 
 	child := New()
 	parent.AddChild(child)
 
-	if !TestCheckAndClearDirty() {
+	if !checkAndClearDirty() {
 		t.Error("AddChild should mark the global dirty flag")
 	}
 }

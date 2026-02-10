@@ -62,16 +62,6 @@ func NewANSITerminalWithCaps(out io.Writer, in io.Reader, caps Capabilities) *AN
 	return t
 }
 
-// defaultCapabilities returns conservative default capabilities.
-func defaultCapabilities() Capabilities {
-	return Capabilities{
-		Colors:    Color16,
-		Unicode:   true,
-		TrueColor: false,
-		AltScreen: true,
-	}
-}
-
 // Size returns the terminal dimensions.
 // Returns a default of 80x24 if the size cannot be determined.
 func (t *ANSITerminal) Size() (width, height int) {
