@@ -11,14 +11,8 @@ func (a *App) Dispatch(event Event) bool {
 			// Alternate screen mode: always use full-screen sizing
 			a.buffer.Resize(resize.Width, resize.Height)
 		} else if a.inlineHeight > 0 {
-			// Inline mode: recalculate start row, keep buffer height fixed
-			a.inlineStartRow = resize.Height - a.inlineHeight
-			widthChanged := a.buffer.Width() != resize.Width
-			// Only resize buffer width if it changed
-			if widthChanged {
-				a.buffer.Resize(resize.Width, a.inlineHeight)
-				a.invalidateInlineLayoutForWidthChange(a.inlineStartRow)
-			}
+			// Inline mode: keep buffer height fixed to inlineHeight.
+			a.syncInlineGeometryOnResize(resize.Width, resize.Height)
 		} else {
 			// Full screen mode: resize buffer to match terminal
 			a.buffer.Resize(resize.Width, resize.Height)
@@ -121,4 +115,14 @@ func (a *App) readInputEvents() {
 			a.Dispatch(ev)
 		}
 	}
+}
+
+func (a *App) syncInlineGeometryOnResize(width, termHeight int) {
+	a.inlineStartRow = termHeight - a.inlineHeight
+	if a.buffer.Width() == width {
+		return
+	}
+
+	a.buffer.Resize(width, a.inlineHeight)
+	a.invalidateInlineLayoutForWidthChange(a.inlineStartRow)
 }

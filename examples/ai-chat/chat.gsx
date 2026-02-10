@@ -1,8 +1,6 @@
 package main
 
-import (
-	tui "github.com/grindlemire/go-tui"
-)
+import tui "github.com/grindlemire/go-tui"
 
 type chat struct {
 	width    int

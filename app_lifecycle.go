@@ -28,11 +28,12 @@ func PrintAbove(format string, args ...any) {
 	}
 }
 
-// PrintAboveAsync prints content above the inline widget without a trailing newline.
-// This variant is goroutine-safe and queues work onto the app event loop.
-func PrintAboveAsync(format string, args ...any) {
+// QueuePrintAbove queues content to print above the inline widget without a
+// trailing newline.
+// This variant is goroutine-safe and executes on the app event loop.
+func QueuePrintAbove(format string, args ...any) {
 	if currentApp != nil {
-		currentApp.PrintAboveAsync(format, args...)
+		currentApp.QueuePrintAbove(format, args...)
 	}
 }
 
@@ -44,12 +45,27 @@ func PrintAboveln(format string, args ...any) {
 	}
 }
 
-// PrintAbovelnAsync prints content with a trailing newline above the inline widget.
-// This variant is goroutine-safe and queues work onto the app event loop.
-func PrintAbovelnAsync(format string, args ...any) {
+// QueuePrintAboveln queues content with a trailing newline above the inline
+// widget.
+// This variant is goroutine-safe and executes on the app event loop.
+func QueuePrintAboveln(format string, args ...any) {
 	if currentApp != nil {
-		currentApp.PrintAbovelnAsync(format, args...)
+		currentApp.QueuePrintAboveln(format, args...)
 	}
+}
+
+// PrintAboveAsync queues content above the inline widget without a trailing
+// newline.
+// Deprecated: use QueuePrintAbove.
+func PrintAboveAsync(format string, args ...any) {
+	QueuePrintAbove(format, args...)
+}
+
+// PrintAbovelnAsync queues content with a trailing newline above the inline
+// widget.
+// Deprecated: use QueuePrintAboveln.
+func PrintAbovelnAsync(format string, args ...any) {
+	QueuePrintAboveln(format, args...)
 }
 
 // SetInlineHeight changes the inline widget height at runtime.
@@ -121,46 +137,62 @@ func (a *App) Close() error {
 // Only works in inline mode (WithInlineHeight). In full-screen mode, this is a no-op.
 // Must be called from the app's main loop.
 func (a *App) PrintAbove(format string, args ...any) {
-	if a.inlineHeight == 0 {
-		return
-	}
-	content := fmt.Sprintf(format, args...)
-	a.printAboveRaw(content)
+	a.printAboveFormatted(false, false, format, args...)
 }
 
-// PrintAboveAsync prints content above the inline widget without a trailing newline.
+// QueuePrintAbove queues content to print above the inline widget without a
+// trailing newline.
 // Safe to call from any goroutine.
-func (a *App) PrintAboveAsync(format string, args ...any) {
-	if a.inlineHeight == 0 {
-		return
-	}
-	content := fmt.Sprintf(format, args...)
-	a.QueueUpdate(func() {
-		a.printAboveRaw(content)
-	})
+func (a *App) QueuePrintAbove(format string, args ...any) {
+	a.printAboveFormatted(true, false, format, args...)
 }
 
 // PrintAboveln prints content with a trailing newline that scrolls up above the inline widget.
 // Only works in inline mode (WithInlineHeight). In full-screen mode, this is a no-op.
 // Must be called from the app's main loop.
 func (a *App) PrintAboveln(format string, args ...any) {
-	if a.inlineHeight == 0 {
-		return
-	}
-	content := fmt.Sprintf(format, args...) + "\n"
-	a.printAboveRaw(content)
+	a.printAboveFormatted(false, true, format, args...)
 }
 
-// PrintAbovelnAsync prints content with a trailing newline that scrolls up above the inline widget.
+// QueuePrintAboveln queues content with a trailing newline that scrolls up
+// above the inline widget.
 // Safe to call from any goroutine.
+func (a *App) QueuePrintAboveln(format string, args ...any) {
+	a.printAboveFormatted(true, true, format, args...)
+}
+
+// PrintAboveAsync queues content above the inline widget without a trailing
+// newline.
+// Deprecated: use QueuePrintAbove.
+func (a *App) PrintAboveAsync(format string, args ...any) {
+	a.QueuePrintAbove(format, args...)
+}
+
+// PrintAbovelnAsync queues content with a trailing newline that scrolls up
+// above the inline widget.
+// Deprecated: use QueuePrintAboveln.
 func (a *App) PrintAbovelnAsync(format string, args ...any) {
+	a.QueuePrintAboveln(format, args...)
+}
+
+func (a *App) printAboveFormatted(async, trailingNewline bool, format string, args ...any) {
 	if a.inlineHeight == 0 {
 		return
 	}
-	content := fmt.Sprintf(format, args...) + "\n"
-	a.QueueUpdate(func() {
-		a.printAboveRaw(content)
-	})
+
+	content := fmt.Sprintf(format, args...)
+	if trailingNewline {
+		content += "\n"
+	}
+
+	if async {
+		a.QueueUpdate(func() {
+			a.printAboveRaw(content)
+		})
+		return
+	}
+
+	a.printAboveRaw(content)
 }
 
 // SetInlineHeight changes the inline widget height at runtime.

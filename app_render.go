@@ -21,13 +21,8 @@ func (a *App) Render() {
 			a.terminal.Clear()
 			a.buffer.Resize(width, termHeight)
 		} else if a.inlineHeight > 0 {
-			// Inline mode: update start row, resize buffer width only if needed
-			a.inlineStartRow = termHeight - a.inlineHeight
-			widthChanged := a.buffer.Width() != width
-			if widthChanged {
-				a.buffer.Resize(width, a.inlineHeight)
-				a.invalidateInlineLayoutForWidthChange(a.inlineStartRow)
-			}
+			// Inline mode: keep buffer height fixed to inlineHeight.
+			a.syncInlineGeometryOnResize(width, termHeight)
 		} else {
 			// Full screen mode: clear terminal and resize buffer
 			a.terminal.Clear()

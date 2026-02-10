@@ -14,7 +14,7 @@ func inlineAppendWriteLine(seq *strings.Builder, row int, text string) {
 }
 
 func inlineAppendScrollUp(seq *strings.Builder, topRow, bottomRow, n int) {
-	if n < 1 || topRow < 0 || bottomRow < 0 || topRow >= bottomRow+1 {
+	if n < 1 || topRow < 0 || bottomRow < 0 || topRow > bottomRow {
 		return
 	}
 	seq.WriteString(fmt.Sprintf("\033[%d;%dr", topRow+1, bottomRow+1))
