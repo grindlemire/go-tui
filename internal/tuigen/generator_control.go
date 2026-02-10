@@ -173,6 +173,90 @@ func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoo
 	}
 }
 
+// generateIfStmtToRoot generates an @if statement where rendered element output
+// should assign to the component root variable. This is used for top-level
+// control flow in method/function components where no parent element exists.
+func (g *Generator) generateIfStmtToRoot(stmt *IfStmt, rootVar string, inLoop bool) {
+	g.writef("if %s {\n", stmt.Condition)
+	g.indent++
+	g.generateNodesToRoot(stmt.Then, rootVar, inLoop)
+	g.indent--
+
+	if len(stmt.Else) > 0 {
+		g.write("} else ")
+		if len(stmt.Else) == 1 {
+			if elseIf, ok := stmt.Else[0].(*IfStmt); ok {
+				g.generateIfStmtToRoot(elseIf, rootVar, inLoop)
+				return
+			}
+		}
+
+		g.writeln("{")
+		g.indent++
+		g.generateNodesToRoot(stmt.Else, rootVar, inLoop)
+		g.indent--
+		g.writeln("}")
+	} else {
+		g.writeln("}")
+	}
+}
+
+// generateForLoopToRoot emits a top-level @for as a synthetic container root.
+// Without a parent element there is no legal way to emit multiple siblings.
+func (g *Generator) generateForLoopToRoot(loop *ForLoop, rootVar string, inLoop bool) {
+	loopRoot := g.nextVar()
+	g.writef("%s := tui.New()\n", loopRoot)
+	g.generateForLoopWithRefs(loop, loopRoot, inLoop, false)
+	g.writef("if %s == nil {\n", rootVar)
+	g.indent++
+	g.writef("%s = %s\n", rootVar, loopRoot)
+	g.indent--
+	g.writeln("}")
+}
+
+// generateNodesToRoot emits nodes and assigns the first rendered element in the
+// sequence to rootVar, preserving existing first-root behavior.
+func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop bool) {
+	for _, node := range nodes {
+		switch n := node.(type) {
+		case *Element:
+			varName := g.generateElementWithRefs(n, "", inLoop, true)
+			g.assignIfNil(rootVar, varName)
+		case *ComponentCall:
+			varName := g.generateComponentCallWithRefs(n, "")
+			if n.IsStructMount {
+				g.assignIfNil(rootVar, varName)
+			} else {
+				g.assignIfNil(rootVar, varName+".Root")
+			}
+		case *ComponentExpr:
+			varName := g.nextVar()
+			g.writef("%s := %s.Render()\n", varName, n.Expr)
+			g.assignIfNil(rootVar, varName)
+		case *IfStmt:
+			g.generateIfStmtToRoot(n, rootVar, inLoop)
+		case *ForLoop:
+			g.generateForLoopToRoot(n, rootVar, inLoop)
+		case *LetBinding:
+			g.generateLetBinding(n, "")
+		case *GoCode:
+			g.generateGoCode(n)
+		case *GoExpr:
+			g.writef("%s\n", n.Code)
+		case *ChildrenSlot:
+			// children slots are only valid in function components with parent containers.
+		}
+	}
+}
+
+func (g *Generator) assignIfNil(rootVar, value string) {
+	g.writef("if %s == nil {\n", rootVar)
+	g.indent++
+	g.writef("%s = %s\n", rootVar, value)
+	g.indent--
+	g.writeln("}")
+}
+
 // generateReactiveIfStmt generates a reactive @if block that rebuilds when state changes.
 // It creates a wrapper element, an update closure, and state bindings.
 func (g *Generator) generateReactiveIfStmt(stmt *IfStmt, parentVar string, deps []string) {

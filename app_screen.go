@@ -1,5 +1,32 @@
 package tui
 
+// EnterAlternateScreen switches the currently running app to alternate screen mode.
+// Safe to call even if no app is running.
+func EnterAlternateScreen() error {
+	if currentApp == nil {
+		return nil
+	}
+	return currentApp.EnterAlternateScreen()
+}
+
+// ExitAlternateScreen returns the currently running app to its previous screen mode.
+// Safe to call even if no app is running.
+func ExitAlternateScreen() error {
+	if currentApp == nil {
+		return nil
+	}
+	return currentApp.ExitAlternateScreen()
+}
+
+// IsInAlternateScreen reports whether the currently running app is in alternate
+// screen mode. Returns false when no app is running.
+func IsInAlternateScreen() bool {
+	if currentApp == nil {
+		return false
+	}
+	return currentApp.IsInAlternateScreen()
+}
+
 // EnterAlternateScreen switches to alternate screen mode for full-screen UI.
 // The current scrollback position is preserved and will be restored on exit.
 // Use this for overlays like settings panels that should not affect terminal history.

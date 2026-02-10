@@ -55,9 +55,17 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 		case *LetBinding:
 			g.generateLetBinding(n, "")
 		case *ForLoop:
-			g.generateForLoopWithRefs(n, "", false, false)
+			if rootVar == "" {
+				rootVar = g.nextVar()
+				g.writef("var %s *tui.Element\n", rootVar)
+			}
+			g.generateForLoopToRoot(n, rootVar, false)
 		case *IfStmt:
-			g.generateIfStmtWithRefs(n, "", false)
+			if rootVar == "" {
+				rootVar = g.nextVar()
+				g.writef("var %s *tui.Element\n", rootVar)
+			}
+			g.generateIfStmtToRoot(n, rootVar, false)
 		case *GoCode:
 			g.generateGoCode(n)
 		case *GoExpr:
@@ -151,9 +159,17 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 			// They are NOT the root element unless explicitly used
 			g.generateLetBinding(n, "")
 		case *ForLoop:
-			g.generateForLoopWithRefs(n, "", false, false)
+			if rootVar == "" {
+				rootVar = g.nextVar()
+				g.writef("var %s *tui.Element\n", rootVar)
+			}
+			g.generateForLoopToRoot(n, rootVar, false)
 		case *IfStmt:
-			g.generateIfStmtWithRefs(n, "", false)
+			if rootVar == "" {
+				rootVar = g.nextVar()
+				g.writef("var %s *tui.Element\n", rootVar)
+			}
+			g.generateIfStmtToRoot(n, rootVar, false)
 		case *GoCode:
 			g.generateGoCode(n)
 		case *GoExpr:

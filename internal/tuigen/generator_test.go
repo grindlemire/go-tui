@@ -671,3 +671,43 @@ templ Multi() {
 		})
 	}
 }
+
+func TestGenerator_MethodComponent_TopLevelIfProducesRoot(t *testing.T) {
+	input := `package x
+type panel struct {
+	show *tui.State[bool]
+}
+
+templ (p *panel) Render() {
+	@if p.show.Get() {
+		<span>{"on"}</span>
+	} @else {
+		<span>{"off"}</span>
+	}
+}`
+
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+	want := []string{
+		"func (p *panel) Render() *tui.Element {",
+		"var __tui_0 *tui.Element",
+		"if p.show.Get() {",
+		"if __tui_0 == nil {",
+		"__tui_0 = __tui_1",
+		"__tui_0 = __tui_2",
+		"return __tui_0",
+	}
+	for _, s := range want {
+		if !strings.Contains(code, s) {
+			t.Errorf("output missing expected string: %q\nGot:\n%s", s, code)
+		}
+	}
+
+	if strings.Contains(code, "return nil") {
+		t.Errorf("output contains unexpected return nil\nGot:\n%s", code)
+	}
+}

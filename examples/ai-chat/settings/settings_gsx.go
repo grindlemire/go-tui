@@ -9,6 +9,171 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+const (
+	numSections = 4
+	minTemp     = 0.0
+	maxTemp     = 1.0
+)
+
+type SettingsApp struct {
+	Provider           *tui.State[string]
+	Model              *tui.State[string]
+	Temperature        *tui.State[float64]
+	SystemPrompt       *tui.State[string]
+	AvailableProviders []string
+	ProviderModels     map[string][]string
+	FocusedSection     *tui.State[int]
+	onClose            func()
+}
+
+func NewSettingsApp(provider *tui.State[string], model *tui.State[string], temperature *tui.State[float64], systemPrompt *tui.State[string], availableProviders []string, providerModels map[string][]string, onClose func()) *SettingsApp {
+	return &SettingsApp{
+		Provider:           provider,
+		Model:              model,
+		Temperature:        temperature,
+		SystemPrompt:       systemPrompt,
+		AvailableProviders: availableProviders,
+		ProviderModels:     providerModels,
+		FocusedSection:     tui.NewState(0),
+		onClose:            onClose,
+	}
+}
+
+func (s *SettingsApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyCtrlS, func(ke tui.KeyEvent) { s.close() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { s.close() }),
+		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { s.close() }),
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { s.nextSection() }),
+		tui.OnKeyStop(tui.KeyLeft, func(ke tui.KeyEvent) { s.handleLeft() }),
+		tui.OnKeyStop(tui.KeyRight, func(ke tui.KeyEvent) { s.handleRight() }),
+		tui.OnRune('h', func(ke tui.KeyEvent) { s.handleLeft() }),
+		tui.OnRune('l', func(ke tui.KeyEvent) { s.handleRight() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { s.close() }),
+	}
+}
+
+func (s *SettingsApp) close() {
+	if s.onClose != nil {
+		s.onClose()
+	}
+}
+
+func (s *SettingsApp) nextSection() {
+	next := s.FocusedSection.Get() + 1
+	if next >= numSections {
+		next = 0
+	}
+	s.FocusedSection.Set(next)
+}
+
+func (s *SettingsApp) handleLeft() {
+	switch s.FocusedSection.Get() {
+	case 0:
+		s.cycleProvider(-1)
+	case 1:
+		s.cycleModel(-1)
+	case 2:
+		s.adjustTemp(-0.1)
+	}
+}
+
+func (s *SettingsApp) handleRight() {
+	switch s.FocusedSection.Get() {
+	case 0:
+		s.cycleProvider(1)
+	case 1:
+		s.cycleModel(1)
+	case 2:
+		s.adjustTemp(0.1)
+	}
+}
+
+func (s *SettingsApp) cycleProvider(dir int) {
+	if len(s.AvailableProviders) == 0 {
+		return
+	}
+
+	current := s.Provider.Get()
+	idx := 0
+	for i, p := range s.AvailableProviders {
+		if p == current {
+			idx = i
+			break
+		}
+	}
+
+	idx = wrapIndex(idx+dir, len(s.AvailableProviders))
+	nextProvider := s.AvailableProviders[idx]
+	s.Provider.Set(nextProvider)
+
+	models := s.ProviderModels[nextProvider]
+	if len(models) > 0 {
+		s.Model.Set(models[0])
+	}
+}
+
+func (s *SettingsApp) cycleModel(dir int) {
+	models := s.ProviderModels[s.Provider.Get()]
+	if len(models) == 0 {
+		return
+	}
+
+	current := s.Model.Get()
+	idx := 0
+	for i, m := range models {
+		if m == current {
+			idx = i
+			break
+		}
+	}
+
+	idx = wrapIndex(idx+dir, len(models))
+	s.Model.Set(models[idx])
+}
+
+func (s *SettingsApp) adjustTemp(delta float64) {
+	t := s.Temperature.Get() + delta
+	if t < minTemp {
+		t = minTemp
+	}
+	if t > maxTemp {
+		t = maxTemp
+	}
+	s.Temperature.Set(t)
+}
+
+func (s *SettingsApp) borderStyleForSection(section int) tui.Style {
+	if s.FocusedSection.Get() == section {
+		return tui.NewStyle().Foreground(tui.Cyan)
+	}
+	return tui.NewStyle()
+}
+
+func wrapIndex(idx, length int) int {
+	for idx < 0 {
+		idx += length
+	}
+	for idx >= length {
+		idx -= length
+	}
+	return idx
+}
+
+func (s *SettingsApp) tempBar() string {
+	t := s.Temperature.Get()
+	pos := int(t * 29)
+	bar := ""
+	for i := 0; i < 30; i++ {
+		if i == pos {
+			bar += "●"
+		} else {
+			bar += "━"
+		}
+	}
+	return bar
+}
+
 func (s *SettingsApp) Render() *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
@@ -49,9 +214,9 @@ func (s *SettingsApp) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	for __idx_0, p := range s.state.AvailableProviders {
+	for __idx_0, p := range s.AvailableProviders {
 		_ = __idx_0
-		if p == s.state.Provider.Get() {
+		if p == s.Provider.Get() {
 			__tui_7 := tui.New(
 				tui.WithText("● "+p),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
@@ -86,9 +251,9 @@ func (s *SettingsApp) Render() *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	for __idx_0, m := range s.state.ProviderModels[s.state.Provider.Get()] {
+	for __idx_0, m := range s.ProviderModels[s.Provider.Get()] {
 		_ = __idx_0
-		if m == s.state.Model.Get() {
+		if m == s.Model.Get() {
 			__tui_13 := tui.New(
 				tui.WithText("● "+m),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
@@ -130,7 +295,7 @@ func (s *SettingsApp) Render() *tui.Element {
 	)
 	__tui_18.AddChild(__tui_19)
 	__tui_20 := tui.New(
-		tui.WithText(fmt.Sprintf("%.1f", s.state.Temperature.Get())),
+		tui.WithText(fmt.Sprintf("%.1f", s.Temperature.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_18.AddChild(__tui_20)
@@ -168,7 +333,7 @@ func (s *SettingsApp) Render() *tui.Element {
 	)
 	__tui_25.AddChild(__tui_26)
 	__tui_27 := tui.New(
-		tui.WithText(s.state.SystemPrompt.Get()),
+		tui.WithText(s.SystemPrompt.Get()),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 	)
 	__tui_25.AddChild(__tui_27)
@@ -177,36 +342,25 @@ func (s *SettingsApp) Render() *tui.Element {
 	__tui_28 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
-		tui.WithGap(2),
 	)
 	__tui_29 := tui.New(
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		tui.WithPadding(1),
-	)
-	s.saveBtn.Set(__tui_29)
-	__tui_30 := tui.New(tui.WithText("  Save  "))
-	__tui_29.AddChild(__tui_30)
-	__tui_28.AddChild(__tui_29)
-	__tui_31 := tui.New(
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithPadding(1),
-	)
-	s.cancelBtn.Set(__tui_31)
-	__tui_32 := tui.New(tui.WithText("  Cancel  "))
-	__tui_31.AddChild(__tui_32)
-	__tui_28.AddChild(__tui_31)
-	__tui_0.AddChild(__tui_28)
-	__tui_33 := tui.New(
-		tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifyCenter),
-	)
-	__tui_34 := tui.New(
-		tui.WithText("Tab: navigate  ←/→: select  Enter: save  Esc: cancel"),
+		tui.WithText("Tab: navigate  ←/→: select  Ctrl+S/Esc/Enter: close"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_33.AddChild(__tui_34)
-	__tui_0.AddChild(__tui_33)
+	__tui_28.AddChild(__tui_29)
+	__tui_0.AddChild(__tui_28)
 
 	return __tui_0
 }
+
+func (s *SettingsApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*SettingsApp)
+	if !ok {
+		return
+	}
+	s.AvailableProviders = f.AvailableProviders
+	s.ProviderModels = f.ProviderModels
+	s.onClose = f.onClose
+}
+
+var _ tui.PropsUpdater = (*SettingsApp)(nil)
