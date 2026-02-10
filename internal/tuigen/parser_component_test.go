@@ -53,6 +53,17 @@ templ View(elem *element.Element) {
 			wantName:   "View",
 			wantParams: 1,
 		},
+		"multiline with trailing comma": {
+			input: `package x
+templ View(
+	name string,
+	count int,
+) {
+	<span>Hello</span>
+}`,
+			wantName:   "View",
+			wantParams: 2,
+		},
 	}
 
 	for name, tt := range tests {

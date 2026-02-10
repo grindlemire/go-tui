@@ -3,7 +3,6 @@ package settings
 import (
 	"fmt"
 	"strings"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -29,7 +28,15 @@ type SettingsApp struct {
 	onClose            func()
 }
 
-func NewSettingsApp(provider *tui.State[string], model *tui.State[string], temperature *tui.State[float64], systemPrompt *tui.State[string], availableProviders []string, providerModels map[string][]string, onClose func()) *SettingsApp {
+func NewSettingsApp(
+	provider *tui.State[string], 
+	model *tui.State[string], 
+	temperature *tui.State[float64], 
+	systemPrompt *tui.State[string], 
+	availableProviders []string, 
+	providerModels map[string][]string, 
+	onClose func(),
+	) *SettingsApp {
 	return &SettingsApp{
 		Provider:            provider,
 		Model:               model,
