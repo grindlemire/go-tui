@@ -43,6 +43,7 @@ func (a *App) Render() {
 	if a.rootComponent != nil {
 		el := a.rootComponent.Render(a)
 		el.component = a.rootComponent
+		el.setAppRecursive(a)
 		a.root = el
 	}
 
@@ -67,7 +68,7 @@ func (a *App) Render() {
 		if root, ok := a.root.(*Element); ok {
 			a.componentWatchers = collectComponentWatchers(root)
 			for _, w := range a.componentWatchers {
-				w.Start(a.eventQueue, a.rootWatcherCh)
+				w.Start(a.eventQueue, a.rootWatcherCh, a)
 			}
 		}
 		a.componentWatchersStarted = true

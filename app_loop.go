@@ -57,7 +57,7 @@ func (a *App) Run() error {
 
 	render:
 		// Always render if dirty
-		if checkAndClearDirty() {
+		if a.checkAndClearDirty() {
 			a.Render()
 			a.rebuildDispatchTable()
 		}

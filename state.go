@@ -42,9 +42,10 @@ type batchContext struct {
 	pendingOrder []uint64          // order in which bindings were first triggered
 }
 
-// batchCtx is the package-level batch context.
-var batchCtx = batchContext{
-	pending: make(map[uint64]func()),
+func newBatchContext() batchContext {
+	return batchContext{
+		pending: make(map[uint64]func()),
+	}
 }
 
 // globalBindingID is a global counter for generating unique binding IDs.
@@ -57,6 +58,7 @@ type State[T any] struct {
 	mu       sync.RWMutex
 	value    T
 	bindings []*binding[T]
+	app      *App
 }
 
 // binding represents a registered callback that fires when state changes.
@@ -79,7 +81,19 @@ type Unbind func()
 //	name := tui.NewState("hello")      // State[string]
 //	items := tui.NewState([]string{})  // State[[]string]
 func NewState[T any](initial T) *State[T] {
-	return &State[T]{value: initial}
+	app := DefaultApp()
+	if app == nil {
+		panic("tui.NewState requires a default app; call SetDefaultApp or use NewStateForApp")
+	}
+	return NewStateForApp(app, initial)
+}
+
+// NewStateForApp creates a state bound to the provided app.
+func NewStateForApp[T any](app *App, initial T) *State[T] {
+	if app == nil {
+		panic("tui: nil app in NewState")
+	}
+	return &State[T]{value: initial, app: app}
 }
 
 // Get returns the current value. Thread-safe for reading from any goroutine.
@@ -98,6 +112,7 @@ func (s *State[T]) Get() T {
 // If called within a Batch(), binding execution is deferred until the
 // batch completes.
 func (s *State[T]) Set(v T) {
+	app := s.resolveApp()
 	debug.Log("State.Set: setting value to %v", v)
 	s.mu.Lock()
 	s.value = v
@@ -113,12 +128,16 @@ func (s *State[T]) Set(v T) {
 	s.bindings = activeBindings
 	s.mu.Unlock()
 
-	// Mark dirty using existing atomic flag
-	MarkDirty()
+	// Mark dirty on the owning app.
+	app.MarkDirty()
 
 	// Check if we're in a batch
-	batchCtx.mu.Lock()
-	isBatching := batchCtx.depth > 0
+	batch := &app.batch
+	batch.mu.Lock()
+	if batch.pending == nil {
+		batch.pending = make(map[uint64]func())
+	}
+	isBatching := batch.depth > 0
 	if isBatching {
 		// Defer binding execution - store closures keyed by binding ID
 		// Later Set() calls to same binding ID will overwrite with new value
@@ -127,14 +146,14 @@ func (s *State[T]) Set(v T) {
 			bindingID := b.id
 			bindingFn := b.fn
 			capturedValue := v
-			if _, exists := batchCtx.pending[bindingID]; !exists {
+			if _, exists := batch.pending[bindingID]; !exists {
 				// First time seeing this binding, track its order
-				batchCtx.pendingOrder = append(batchCtx.pendingOrder, bindingID)
+				batch.pendingOrder = append(batch.pendingOrder, bindingID)
 			}
-			batchCtx.pending[bindingID] = func() { bindingFn(capturedValue) }
+			batch.pending[bindingID] = func() { bindingFn(capturedValue) }
 		}
 	}
-	batchCtx.mu.Unlock()
+	batch.mu.Unlock()
 
 	// Execute bindings immediately if not batching
 	if !isBatching {
@@ -186,6 +205,25 @@ func (s *State[T]) Bind(fn func(T)) Unbind {
 	}
 }
 
+func (s *State[T]) resolveApp() *App {
+	s.mu.RLock()
+	app := s.app
+	s.mu.RUnlock()
+	if app != nil {
+		return app
+	}
+	app = DefaultApp()
+	if app == nil {
+		panic("tui.State used without app context; use NewStateForApp or SetDefaultApp")
+	}
+	s.mu.Lock()
+	if s.app == nil {
+		s.app = app
+	}
+	s.mu.Unlock()
+	return app
+}
+
 // Batch executes fn and defers all binding callbacks until fn returns.
 // Use this when updating multiple states to avoid redundant element updates.
 //
@@ -210,27 +248,43 @@ func (s *State[T]) Bind(fn func(T)) Unbind {
 //	})
 //	// Bindings fire once here, not three times
 func Batch(fn func()) {
-	batchCtx.mu.Lock()
-	batchCtx.depth++
-	batchCtx.mu.Unlock()
+	app := DefaultApp()
+	if app == nil {
+		panic("tui.Batch requires a default app; call SetDefaultApp or use app.Batch")
+	}
+	app.Batch(fn)
+}
+
+// Batch executes fn using this app's batch context.
+func (a *App) Batch(fn func()) {
+	if a == nil {
+		panic("tui: nil app in Batch")
+	}
+	batch := &a.batch
+	batch.mu.Lock()
+	if batch.pending == nil {
+		batch.pending = make(map[uint64]func())
+	}
+	batch.depth++
+	batch.mu.Unlock()
 
 	defer func() {
-		batchCtx.mu.Lock()
-		batchCtx.depth--
-		shouldExecute := batchCtx.depth == 0 && len(batchCtx.pending) > 0
+		batch.mu.Lock()
+		batch.depth--
+		shouldExecute := batch.depth == 0 && len(batch.pending) > 0
 		var pendingCallbacks []func()
 		if shouldExecute {
 			// Collect callbacks in the order they were first triggered
-			pendingCallbacks = make([]func(), 0, len(batchCtx.pendingOrder))
-			for _, id := range batchCtx.pendingOrder {
-				if callback, exists := batchCtx.pending[id]; exists {
+			pendingCallbacks = make([]func(), 0, len(batch.pendingOrder))
+			for _, id := range batch.pendingOrder {
+				if callback, exists := batch.pending[id]; exists {
 					pendingCallbacks = append(pendingCallbacks, callback)
 				}
 			}
-			batchCtx.pending = make(map[uint64]func())
-			batchCtx.pendingOrder = nil
+			batch.pending = make(map[uint64]func())
+			batch.pendingOrder = nil
 		}
-		batchCtx.mu.Unlock()
+		batch.mu.Unlock()
 
 		// Execute callbacks outside the lock
 		if shouldExecute {
@@ -246,9 +300,21 @@ func Batch(fn func()) {
 // TestResetBatch resets the batch context state for testing.
 // Only use this in test code.
 func TestResetBatch() {
-	batchCtx.mu.Lock()
-	batchCtx.depth = 0
-	batchCtx.pending = make(map[uint64]func())
-	batchCtx.pendingOrder = nil
-	batchCtx.mu.Unlock()
+	app := DefaultApp()
+	if app == nil {
+		panic("tui.TestResetBatch requires a default app")
+	}
+	app.TestResetBatch()
+}
+
+// TestResetBatch resets this app's batch state for tests.
+func (a *App) TestResetBatch() {
+	if a == nil {
+		panic("tui: nil app in TestResetBatch")
+	}
+	a.batch.mu.Lock()
+	a.batch.depth = 0
+	a.batch.pending = make(map[uint64]func())
+	a.batch.pendingOrder = nil
+	a.batch.mu.Unlock()
 }

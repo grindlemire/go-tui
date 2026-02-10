@@ -256,7 +256,7 @@ func (a *App) printAboveRaw(content string) {
 	a.inlineSession.appendText(&a.inlineLayout, a.inlineStartRow, width, content)
 
 	// Mark dirty to ensure consistent state
-	MarkDirty()
+	a.MarkDirty()
 }
 
 func (a *App) ensureInlineSession() {

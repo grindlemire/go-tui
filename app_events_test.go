@@ -37,7 +37,7 @@ func newMockWatcher() *mockWatcher {
 	}
 }
 
-func (m *mockWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
+func (m *mockWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App) {
 	m.started = true
 	m.eventQueue = eventQueue
 	m.stopCh = stopCh
@@ -56,7 +56,7 @@ func newStopAwareWatcher() *stopAwareWatcher {
 	return &stopAwareWatcher{stopped: make(chan struct{}, 1)}
 }
 
-func (w *stopAwareWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
+func (w *stopAwareWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App) {
 	go func() {
 		<-stopCh
 		w.stopped <- struct{}{}

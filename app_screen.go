@@ -70,7 +70,7 @@ func (a *App) EnterAlternateScreen() error {
 		a.root.MarkDirty()
 	}
 	a.needsFullRedraw = true
-	MarkDirty()
+	a.MarkDirty()
 
 	return nil
 }
@@ -113,7 +113,7 @@ func (a *App) ExitAlternateScreen() error {
 		a.root.MarkDirty()
 	}
 	a.needsFullRedraw = true
-	MarkDirty()
+	a.MarkDirty()
 
 	return nil
 }

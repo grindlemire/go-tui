@@ -39,6 +39,7 @@ type Element struct {
 	// Tree structure (single source of truth)
 	children []*Element
 	parent   *Element
+	app      *App
 
 	// Layout properties
 	style  LayoutStyle

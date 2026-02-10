@@ -7,6 +7,7 @@ package tui
 func (e *Element) AddChild(children ...*Element) {
 	for _, child := range children {
 		child.parent = e
+		child.setAppRecursive(e.app)
 		e.children = append(e.children, child)
 		e.notifyChildAdded(child)
 	}
@@ -42,6 +43,7 @@ func (e *Element) RemoveChild(child *Element) bool {
 			e.children[i] = e.children[len(e.children)-1]
 			e.children = e.children[:len(e.children)-1]
 			child.parent = nil
+			child.setAppRecursive(nil)
 			e.MarkDirty()
 			return true
 		}
@@ -54,6 +56,7 @@ func (e *Element) RemoveChild(child *Element) bool {
 func (e *Element) RemoveAllChildren() {
 	for _, child := range e.children {
 		child.parent = nil
+		child.setAppRecursive(nil)
 	}
 	e.children = nil
 	e.MarkDirty()
@@ -67,4 +70,14 @@ func (e *Element) Children() []*Element {
 // Parent returns the parent element, or nil if this is the root.
 func (e *Element) Parent() *Element {
 	return e.parent
+}
+
+func (e *Element) setAppRecursive(app *App) {
+	if e == nil {
+		return
+	}
+	e.app = app
+	for _, child := range e.children {
+		child.setAppRecursive(app)
+	}
 }

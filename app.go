@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -66,6 +67,8 @@ type App struct {
 	focus           *FocusManager
 	root            Renderable
 	needsFullRedraw bool // Set after resize, cleared after RenderFull
+	dirty           atomic.Bool
+	batch           batchContext
 
 	// Event loop fields
 	eventQueue       chan func()
@@ -174,6 +177,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 		eventQueueSize: 256,                   // Default queue size
 		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
+		batch:          newBatchContext(),
 	}
 	app.resetRootSession()
 
@@ -301,6 +305,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		eventQueueSize: 256,                   // Default queue size
 		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
+		batch:          newBatchContext(),
 	}
 	app.resetRootSession()
 
@@ -409,7 +414,7 @@ func (a *App) SetRootView(view Viewable) {
 	root := view.GetRoot()
 	a.applyRoot(root)
 	for _, w := range view.GetWatchers() {
-		w.Start(a.eventQueue, a.rootWatcherCh)
+		w.Start(a.eventQueue, a.rootWatcherCh, a)
 	}
 }
 
@@ -426,6 +431,9 @@ func (a *App) applyRoot(root Renderable) {
 	a.root = root
 	if root == nil {
 		return
+	}
+	if el, ok := root.(*Element); ok {
+		el.setAppRecursive(a)
 	}
 
 	// If root supports focus discovery, set up auto-registration
@@ -444,7 +452,7 @@ func (a *App) applyRoot(root Renderable) {
 	// If root supports watcher discovery, start all watchers in the tree
 	if walker, ok := root.(watcherTreeWalker); ok {
 		walker.WalkWatchers(func(w Watcher) {
-			w.Start(a.eventQueue, a.rootWatcherCh)
+			w.Start(a.eventQueue, a.rootWatcherCh, a)
 		})
 	}
 }

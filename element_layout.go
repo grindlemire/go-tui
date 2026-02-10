@@ -152,11 +152,19 @@ func (e *Element) ContentRect() Rect {
 }
 
 // MarkDirty marks this Element and ancestors as needing recalculation.
-// Also marks the global dirty flag so the app knows to re-render.
+// Also marks the owning app as dirty so the app knows to re-render.
 func (e *Element) MarkDirty() {
 	for elem := e; elem != nil && !elem.dirty; elem = elem.parent {
 		elem.dirty = true
 	}
-	// Signal to the app that UI needs re-rendering
-	MarkDirty()
+	// Signal to the owning app that UI needs re-rendering.
+	if e.app != nil {
+		e.app.MarkDirty()
+		return
+	}
+	if app := DefaultApp(); app != nil {
+		app.MarkDirty()
+		return
+	}
+	panic("tui.Element.MarkDirty requires app context; ensure element is attached to an app")
 }
