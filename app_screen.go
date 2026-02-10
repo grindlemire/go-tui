@@ -3,28 +3,31 @@ package tui
 // EnterAlternateScreen switches the currently running app to alternate screen mode.
 // Safe to call even if no app is running.
 func EnterAlternateScreen() error {
-	if currentApp == nil {
+	app := DefaultApp()
+	if app == nil {
 		return nil
 	}
-	return currentApp.EnterAlternateScreen()
+	return app.EnterAlternateScreen()
 }
 
 // ExitAlternateScreen returns the currently running app to its previous screen mode.
 // Safe to call even if no app is running.
 func ExitAlternateScreen() error {
-	if currentApp == nil {
+	app := DefaultApp()
+	if app == nil {
 		return nil
 	}
-	return currentApp.ExitAlternateScreen()
+	return app.ExitAlternateScreen()
 }
 
 // IsInAlternateScreen reports whether the currently running app is in alternate
 // screen mode. Returns false when no app is running.
 func IsInAlternateScreen() bool {
-	if currentApp == nil {
+	app := DefaultApp()
+	if app == nil {
 		return false
 	}
-	return currentApp.IsInAlternateScreen()
+	return app.IsInAlternateScreen()
 }
 
 // EnterAlternateScreen switches to alternate screen mode for full-screen UI.

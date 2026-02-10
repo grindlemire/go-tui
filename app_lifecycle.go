@@ -15,16 +15,16 @@ func Quit() {
 // that allows stopping the app from event handlers without needing a direct reference.
 // It is safe to call even if no app is running.
 func Stop() {
-	if currentApp != nil {
-		currentApp.Stop()
+	if app := DefaultApp(); app != nil {
+		app.Stop()
 	}
 }
 
 // PrintAbove prints content above the inline widget without a trailing newline.
 // Only works in inline mode. Safe to call even if no app is running.
 func PrintAbove(format string, args ...any) {
-	if currentApp != nil {
-		currentApp.PrintAbove(format, args...)
+	if app := DefaultApp(); app != nil {
+		app.PrintAbove(format, args...)
 	}
 }
 
@@ -32,16 +32,16 @@ func PrintAbove(format string, args ...any) {
 // trailing newline.
 // This variant is goroutine-safe and executes on the app event loop.
 func QueuePrintAbove(format string, args ...any) {
-	if currentApp != nil {
-		currentApp.QueuePrintAbove(format, args...)
+	if app := DefaultApp(); app != nil {
+		app.QueuePrintAbove(format, args...)
 	}
 }
 
 // PrintAboveln prints content with a trailing newline above the inline widget.
 // Only works in inline mode. Safe to call even if no app is running.
 func PrintAboveln(format string, args ...any) {
-	if currentApp != nil {
-		currentApp.PrintAboveln(format, args...)
+	if app := DefaultApp(); app != nil {
+		app.PrintAboveln(format, args...)
 	}
 }
 
@@ -49,8 +49,8 @@ func PrintAboveln(format string, args ...any) {
 // widget.
 // This variant is goroutine-safe and executes on the app event loop.
 func QueuePrintAboveln(format string, args ...any) {
-	if currentApp != nil {
-		currentApp.QueuePrintAboveln(format, args...)
+	if app := DefaultApp(); app != nil {
+		app.QueuePrintAboveln(format, args...)
 	}
 }
 
@@ -71,16 +71,16 @@ func PrintAbovelnAsync(format string, args ...any) {
 // SetInlineHeight changes the inline widget height at runtime.
 // Only works in inline mode. Safe to call even if no app is running.
 func SetInlineHeight(rows int) {
-	if currentApp != nil {
-		currentApp.SetInlineHeight(rows)
+	if app := DefaultApp(); app != nil {
+		app.SetInlineHeight(rows)
 	}
 }
 
 // SnapshotFrame returns the current frame as a string for debugging.
 // Returns an empty string if no app is running.
 func SnapshotFrame() string {
-	if currentApp != nil && currentApp.buffer != nil {
-		return currentApp.buffer.StringTrimmed()
+	if app := DefaultApp(); app != nil && app.buffer != nil {
+		return app.buffer.StringTrimmed()
 	}
 	return ""
 }

@@ -59,15 +59,15 @@ func (m *mockParent) Render() *Element {
 
 // --- Helpers ---
 
-// setupTestMountState sets up currentApp with a fresh mountState for testing.
+// setupTestMountState sets up DefaultApp with a fresh mountState for testing.
 // Returns a cleanup function to restore the previous state.
 func setupTestMountState() func() {
-	prev := currentApp
-	currentApp = &App{
+	prev := DefaultApp()
+	SetDefaultApp(&App{
 		mounts: newMountState(),
-	}
+	})
 	return func() {
-		currentApp = prev
+		SetDefaultApp(prev)
 	}
 }
 
@@ -190,7 +190,7 @@ func TestMount_NilCleanupHandled(t *testing.T) {
 	}
 
 	// Sweep should not panic when cleanup is nil
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 	// Don't mark key as active so sweep removes it
 	ms.activeKeys = make(map[mountKey]bool)
 	ms.sweep() // Should not panic
@@ -251,7 +251,7 @@ func TestMountState_SweepCleansInactive(t *testing.T) {
 	// Mount to populate cache
 	Mount(parent, 0, func() Component { return instance })
 
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 
 	// Simulate a render where this component is NOT active
 	ms.activeKeys = make(map[mountKey]bool) // Nothing active
@@ -278,7 +278,7 @@ func TestMountState_SweepKeepsActive(t *testing.T) {
 	// Mount to populate cache and mark as active
 	Mount(parent, 0, func() Component { return instance })
 
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 
 	// Sweep — key was marked active by Mount(), so it should survive
 	ms.sweep()
@@ -299,7 +299,7 @@ func TestMountState_SweepResetsActiveKeys(t *testing.T) {
 
 	Mount(parent, 0, func() Component { return &mockComponent{} })
 
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 
 	if len(ms.activeKeys) != 1 {
 		t.Fatalf("activeKeys has %d entries before sweep, want 1", len(ms.activeKeys))
@@ -324,7 +324,7 @@ func TestMountState_SweepMultipleComponents(t *testing.T) {
 	Mount(parent, 0, func() Component { return active })
 	Mount(parent, 1, func() Component { return inactive })
 
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 
 	// Simulate next render where only index 0 is active
 	ms.activeKeys = make(map[mountKey]bool)

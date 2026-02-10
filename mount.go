@@ -11,7 +11,7 @@ type mountKey struct {
 }
 
 // mountState is per-App state for component instance caching.
-// Stored on the App struct, accessed via currentApp during render.
+// Stored on the App struct, accessed via DefaultApp() during render.
 // Uses mark-and-sweep: each render marks active keys, then sweep
 // cleans up unmounted components.
 type mountState struct {
@@ -46,7 +46,11 @@ type PropsUpdater interface {
 // with a fresh instance to allow prop updates.
 // Mark-and-sweep: marks the key as active. Sweep after render cleans stale entries.
 func Mount(parent Component, index int, factory func() Component) *Element {
-	ms := currentApp.mounts
+	app := DefaultApp()
+	if app == nil {
+		panic("tui.Mount requires a default app; call SetDefaultApp or run within App.Run")
+	}
+	ms := app.mounts
 	key := mountKey{parent: parent, index: index}
 	ms.activeKeys[key] = true // Mark as active this render
 

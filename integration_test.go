@@ -125,7 +125,7 @@ func TestIntegration_MountCachesAndDiscoverKeyMaps(t *testing.T) {
 	el.component = root
 
 	// Verify mount cached two child instances
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 	if len(ms.cache) != 2 {
 		t.Fatalf("mount cache has %d entries, want 2", len(ms.cache))
 	}
@@ -280,7 +280,7 @@ func TestIntegration_SweepCleansUnmountedComponents(t *testing.T) {
 		t.Fatal("Init should have been called on first mount")
 	}
 
-	ms := currentApp.mounts
+	ms := DefaultApp().mounts
 
 	// Simulate a render where the component is not active (e.g., removed by @if)
 	ms.activeKeys = make(map[mountKey]bool)

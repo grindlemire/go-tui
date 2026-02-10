@@ -1,9 +1,48 @@
 :root {
-  --ifm-color-primary: #0b6cff;
-  --ifm-color-primary-dark: #0a61e6;
-  --ifm-color-primary-darker: #095bd8;
-  --ifm-color-primary-darkest: #074bae;
-  --ifm-color-primary-light: #277eff;
-  --ifm-color-primary-lighter: #3587ff;
-  --ifm-color-primary-lightest: #5da1ff;
+  --ifm-color-primary: #ffd400;
+  --ifm-color-primary-dark: #e6be00;
+  --ifm-color-primary-darker: #d9b400;
+  --ifm-color-primary-darkest: #ccaa00;
+  --ifm-color-primary-light: #ffda26;
+  --ifm-color-primary-lighter: #ffde40;
+  --ifm-color-primary-lightest: #ffe768;
+
+  --ifm-background-color: #fffdf5;
+  --ifm-font-color-base: #1a1c22;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-footer-background-color: #1a1c22;
+}
+
+[data-theme='dark'] {
+  --ifm-background-color: #0b1020;
+  --ifm-background-surface-color: #121a2e;
+  --ifm-navbar-background-color: #10172a;
+  --ifm-footer-background-color: #10172a;
+  --ifm-font-color-base: #eaf0ff;
+  --ifm-font-color-secondary: #a7b3cc;
+}
+
+[data-theme='dark'] a,
+[data-theme='dark'] .navbar__link:hover,
+[data-theme='dark'] .menu__link--active,
+[data-theme='dark'] .pagination-nav__link:hover,
+[data-theme='dark'] .button.button--primary {
+  text-shadow: 0 0 10px rgba(255, 212, 0, 0.35);
+}
+
+[data-theme='dark'] .button.button--primary,
+[data-theme='dark'] .navbar__link:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 212, 0, 0.35),
+    0 0 18px rgba(255, 212, 0, 0.28),
+    0 0 42px rgba(255, 212, 0, 0.16);
+}
+
+[data-theme='dark'] .hero,
+[data-theme='dark'] main {
+  background-image: radial-gradient(
+    circle at 20% 0%,
+    rgba(255, 212, 0, 0.06),
+    rgba(255, 212, 0, 0) 35%
+  );
 }
