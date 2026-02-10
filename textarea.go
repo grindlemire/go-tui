@@ -3,6 +3,7 @@ package tui
 import (
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // TextArea is a multi-line text input with word wrapping and cursor management.
@@ -69,7 +70,7 @@ func (t *TextArea) Text() string {
 // SetText sets the text and moves cursor to end.
 func (t *TextArea) SetText(s string) {
 	t.text.Set(s)
-	t.cursorPos.Set(len(s))
+	t.cursorPos.Set(utf8.RuneCountInString(s))
 }
 
 // Clear clears the text area.
@@ -241,42 +242,42 @@ func (t *TextArea) Watchers() []Watcher {
 
 // insertChar inserts a character at the cursor position.
 func (t *TextArea) insertChar(ke KeyEvent) {
-	text := t.text.Get()
-	pos := t.cursorPos.Get()
-	newText := text[:pos] + string(ke.Rune) + text[pos:]
-	t.text.Set(newText)
+	runes := []rune(t.text.Get())
+	pos := t.clampCursorPos()
+	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
+	t.text.Set(string(newRunes))
 	t.cursorPos.Set(pos + 1)
 	t.blink.Set(true)
 }
 
 // insertNewline inserts a newline character at the cursor position.
 func (t *TextArea) insertNewline(ke KeyEvent) {
-	text := t.text.Get()
-	pos := t.cursorPos.Get()
-	newText := text[:pos] + "\n" + text[pos:]
-	t.text.Set(newText)
+	runes := []rune(t.text.Get())
+	pos := t.clampCursorPos()
+	newRunes := append(runes[:pos], append([]rune{'\n'}, runes[pos:]...)...)
+	t.text.Set(string(newRunes))
 	t.cursorPos.Set(pos + 1)
 	t.blink.Set(true)
 }
 
 // backspace deletes the character before the cursor.
 func (t *TextArea) backspace(ke KeyEvent) {
-	text := t.text.Get()
-	pos := t.cursorPos.Get()
+	runes := []rune(t.text.Get())
+	pos := t.clampCursorPos()
 	if pos > 0 {
-		newText := text[:pos-1] + text[pos:]
-		t.text.Set(newText)
+		newRunes := append(runes[:pos-1], runes[pos:]...)
+		t.text.Set(string(newRunes))
 		t.cursorPos.Set(pos - 1)
 	}
 }
 
 // delete deletes the character at the cursor.
 func (t *TextArea) delete(ke KeyEvent) {
-	text := t.text.Get()
-	pos := t.cursorPos.Get()
-	if pos < len(text) {
-		newText := text[:pos] + text[pos+1:]
-		t.text.Set(newText)
+	runes := []rune(t.text.Get())
+	pos := t.clampCursorPos()
+	if pos < len(runes) {
+		newRunes := append(runes[:pos], runes[pos+1:]...)
+		t.text.Set(string(newRunes))
 	}
 }
 
@@ -292,7 +293,7 @@ func (t *TextArea) moveLeft(ke KeyEvent) {
 // moveRight moves cursor right.
 func (t *TextArea) moveRight(ke KeyEvent) {
 	pos := t.cursorPos.Get()
-	if pos < len(t.text.Get()) {
+	if pos < utf8.RuneCountInString(t.text.Get()) {
 		t.cursorPos.Set(pos + 1)
 		t.blink.Set(true)
 	}
@@ -304,8 +305,9 @@ func (t *TextArea) moveUp(ke KeyEvent) {
 	row, col := t.cursorRowCol(lines)
 	if row > 0 {
 		prevLine := lines[row-1]
-		if col > len(prevLine) {
-			col = len(prevLine)
+		prevLen := utf8.RuneCountInString(prevLine)
+		if col > prevLen {
+			col = prevLen
 		}
 		t.cursorPos.Set(t.posFromRowCol(lines, row-1, col))
 		t.blink.Set(true)
@@ -318,8 +320,9 @@ func (t *TextArea) moveDown(ke KeyEvent) {
 	row, col := t.cursorRowCol(lines)
 	if row < len(lines)-1 {
 		nextLine := lines[row+1]
-		if col > len(nextLine) {
-			col = len(nextLine)
+		nextLen := utf8.RuneCountInString(nextLine)
+		if col > nextLen {
+			col = nextLen
 		}
 		t.cursorPos.Set(t.posFromRowCol(lines, row+1, col))
 		t.blink.Set(true)
@@ -338,7 +341,7 @@ func (t *TextArea) moveHome(ke KeyEvent) {
 func (t *TextArea) moveEnd(ke KeyEvent) {
 	lines := t.wrapText()
 	row, _ := t.cursorRowCol(lines)
-	t.cursorPos.Set(t.posFromRowCol(lines, row, len(lines[row])))
+	t.cursorPos.Set(t.posFromRowCol(lines, row, utf8.RuneCountInString(lines[row])))
 	t.blink.Set(true)
 }
 
@@ -370,15 +373,15 @@ func (t *TextArea) wrapText() []string {
 		}
 
 		// Wrap this paragraph to width
-		var currentLine strings.Builder
+		currentLine := make([]rune, 0)
 		for _, r := range para {
-			if t.width > 0 && currentLine.Len() >= t.width {
-				lines = append(lines, currentLine.String())
-				currentLine.Reset()
+			if t.width > 0 && len(currentLine) >= t.width {
+				lines = append(lines, string(currentLine))
+				currentLine = currentLine[:0]
 			}
-			currentLine.WriteRune(r)
+			currentLine = append(currentLine, r)
 		}
-		lines = append(lines, currentLine.String())
+		lines = append(lines, string(currentLine))
 	}
 
 	return lines
@@ -387,20 +390,21 @@ func (t *TextArea) wrapText() []string {
 // cursorRowCol returns the row and column of the cursor.
 func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	text := t.text.Get()
-	pos := t.cursorPos.Get()
+	pos := t.clampCursorPos()
+	textRunes := []rune(text)
 
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
 
-	for i := 0; i < len(text) && i < pos; i++ {
-		if text[i] == '\n' {
+	for i := 0; i < len(textRunes) && i < pos; i++ {
+		if textRunes[i] == '\n' {
 			currentRow++
 			currentCol = 0
 			lineIdx++
 		} else {
 			currentCol++
-			if t.width > 0 && lineIdx < len(lines) && currentCol > len(lines[lineIdx]) {
+			if t.width > 0 && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
 				currentRow++
 				currentCol = 1
 				lineIdx++
@@ -414,17 +418,18 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 // posFromRowCol converts row/col back to absolute position.
 func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	text := t.text.Get()
+	textRunes := []rune(text)
 
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
 
-	for i := 0; i < len(text); i++ {
+	for i := 0; i < len(textRunes); i++ {
 		if currentRow == targetRow && currentCol == targetCol {
 			return i
 		}
 
-		if text[i] == '\n' {
+		if textRunes[i] == '\n' {
 			if currentRow == targetRow {
 				return i
 			}
@@ -433,7 +438,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 			lineIdx++
 		} else {
 			currentCol++
-			if t.width > 0 && lineIdx < len(lines) && currentCol > len(lines[lineIdx]) {
+			if t.width > 0 && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
 				if currentRow == targetRow {
 					return i
 				}
@@ -444,7 +449,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 		}
 	}
 
-	return len(text)
+	return len(textRunes)
 }
 
 // lineWithCursor returns a line with the cursor character inserted.
@@ -462,14 +467,31 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 		if !t.blink.Get() {
 			cursor = " "
 		}
-		if col >= len(line) {
+		runes := []rune(line)
+		if col >= len(runes) {
 			return line + cursor
 		}
-		return line[:col] + cursor + line[col:]
+		withCursor := append(runes[:col], append([]rune{t.cursorRune}, runes[col:]...)...)
+		if !t.blink.Get() {
+			withCursor[col] = ' '
+		}
+		return string(withCursor)
 	}
 
 	if line == "" {
 		return " "
 	}
 	return line
+}
+
+func (t *TextArea) clampCursorPos() int {
+	pos := t.cursorPos.Get()
+	if pos < 0 {
+		return 0
+	}
+	max := utf8.RuneCountInString(t.text.Get())
+	if pos > max {
+		return max
+	}
+	return pos
 }
