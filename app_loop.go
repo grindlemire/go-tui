@@ -36,7 +36,7 @@ func (a *App) Run() error {
 	a.rebuildDispatchTable()
 
 	// Frame-based loop with configurable frame timing
-	for !a.stopped {
+	for {
 		frameStart := time.Now()
 
 		// Process events for up to half the frame budget (non-blocking)
@@ -44,6 +44,8 @@ func (a *App) Run() error {
 		for time.Now().Before(eventDeadline) {
 			select {
 			case handler := <-a.eventQueue:
+				handler()
+			case handler := <-a.updateQueue:
 				handler()
 			case <-a.stopCh:
 				return nil
@@ -78,30 +80,51 @@ func (a *App) Run() error {
 // Watchers receive the stop signal via stopCh and exit their goroutines.
 // Stop is idempotent - multiple calls are safe.
 func (a *App) Stop() {
-	if a.stopped {
-		return // Already stopped
-	}
-	a.stopped = true
+	a.stopOnce.Do(func() {
+		a.stopped = true
 
-	// Interrupt blocking reader before closing stopCh to wake it up
-	if interruptible, ok := a.reader.(InterruptibleReader); ok {
-		interruptible.Interrupt()
-	}
+		// Interrupt blocking reader before closing stopCh to wake it up
+		if interruptible, ok := a.reader.(InterruptibleReader); ok {
+			interruptible.Interrupt()
+		}
 
-	// Signal all watcher goroutines to stop
-	close(a.stopCh)
+		// Signal all watcher goroutines to stop
+		close(a.stopCh)
+	})
 }
 
 // QueueUpdate enqueues a function to run on the main loop.
 // Safe to call from any goroutine. Use this for background thread safety.
 func (a *App) QueueUpdate(fn func()) {
-	select {
-	case a.eventQueue <- fn:
-	case <-a.stopCh:
-		// App is stopping, ignore update
-	default:
-		// Queue full - this shouldn't happen with reasonable buffer size
-		// Could log a warning here
+	if fn == nil {
+		return
+	}
+	if a.updateQueue == nil {
+		// Back-compat path for tests/mocks that construct App manually.
+		select {
+		case a.eventQueue <- fn:
+		case <-a.stopCh:
+		default:
+		}
+		return
+	}
+
+	// Bounded queue: drop oldest background update when full.
+	// Input/watcher events use eventQueue and are lossless.
+	for {
+		select {
+		case a.updateQueue <- fn:
+			return
+		case <-a.stopCh:
+			return
+		default:
+			select {
+			case <-a.updateQueue:
+			case <-a.stopCh:
+				return
+			default:
+			}
+		}
 	}
 }
 

@@ -10,6 +10,7 @@ func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
 		focus:      NewFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
+		updateQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
 		stopped:    false,
 	}
@@ -21,7 +22,7 @@ func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
 
 	// Read from queue and execute
 	select {
-	case fn := <-app.eventQueue:
+	case fn := <-app.updateQueue:
 		fn()
 		if !executed {
 			t.Error("Queued function was not executed correctly")
@@ -36,6 +37,7 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 		focus:      NewFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
+		updateQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
 		stopped:    false,
 	}
@@ -56,7 +58,7 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 	go func() {
 		for i := 0; i < 10; i++ {
 			select {
-			case fn := <-app.eventQueue:
+			case fn := <-app.updateQueue:
 				fn()
 			case <-time.After(100 * time.Millisecond):
 				return
@@ -72,6 +74,31 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 		}
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("Timed out waiting for goroutines to complete")
+	}
+}
+
+func TestApp_QueueUpdate_DropsOldestWhenFull(t *testing.T) {
+	app := &App{
+		focus:       NewFocusManager(),
+		buffer:      NewBuffer(80, 24),
+		eventQueue:  make(chan func(), 4),
+		updateQueue: make(chan func(), 1),
+		stopCh:      make(chan struct{}),
+	}
+
+	seen := make([]int, 0, 2)
+	app.QueueUpdate(func() { seen = append(seen, 1) })
+	app.QueueUpdate(func() { seen = append(seen, 2) })
+
+	select {
+	case fn := <-app.updateQueue:
+		fn()
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("expected queued update")
+	}
+
+	if len(seen) != 1 || seen[0] != 2 {
+		t.Fatalf("expected only newest update to run, got %v", seen)
 	}
 }
 
