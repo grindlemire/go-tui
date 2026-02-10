@@ -23,7 +23,7 @@ func main() {
 	}
 	defer app.Close()
 
-	app.SetRoot(Layout())
+	app.SetRootComponent(Layout())
 
 	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "App error: %v\n", err)

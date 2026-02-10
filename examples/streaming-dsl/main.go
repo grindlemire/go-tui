@@ -35,7 +35,7 @@ func main() {
 
 	// Create app with all configuration via options
 	app, err := tui.NewApp(
-		tui.WithRoot(view),
+		tui.WithRootView(view),
 		tui.WithGlobalKeyHandler(func(e tui.KeyEvent) bool {
 			if e.Rune == 'q' || e.Key == tui.KeyEscape {
 				tui.Stop()

@@ -23,7 +23,7 @@ func main() {
 	}
 	defer tuiApp.Close()
 
-	tuiApp.SetRoot(InlineApp(tuiApp, inlineHeight))
+	tuiApp.SetRootComponent(InlineApp(tuiApp, inlineHeight))
 
 	if err := tuiApp.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

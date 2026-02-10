@@ -85,7 +85,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 			}
 
 			view := newMockViewable(root, watchers...)
-			app.SetRoot(view)
+			app.SetRootView(view)
 
 			// Verify root was set
 			if tt.expectRoot && app.Root() != root {

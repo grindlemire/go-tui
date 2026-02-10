@@ -80,7 +80,7 @@ type App struct {
 	mouseEnabled   bool          // Whether mouse events are enabled
 	mouseExplicit  bool          // Whether mouse setting was explicitly configured
 	cursorVisible  bool          // Whether cursor is visible (default false)
-	pendingRoot    any           // Root to set after initialization (used by WithRoot)
+	pendingRootApply func(*App) // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight   int // Number of rows for inline widget (0 = full screen mode)
@@ -253,10 +253,10 @@ func NewApp(opts ...AppOption) (*App, error) {
 	// (Component.Render may call Mount).
 	SetDefaultApp(app)
 
-	// Set pending root if provided via WithRoot option
-	if app.pendingRoot != nil {
-		app.SetRoot(app.pendingRoot)
-		app.pendingRoot = nil
+	// Set pending root if provided via WithRoot* option.
+	if app.pendingRootApply != nil {
+		app.pendingRootApply(app)
+		app.pendingRootApply = nil
 	}
 
 	return app, nil
@@ -378,45 +378,40 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	// (Component.Render may call Mount).
 	SetDefaultApp(app)
 
-	// Set pending root if provided via WithRoot option
-	if app.pendingRoot != nil {
-		app.SetRoot(app.pendingRoot)
-		app.pendingRoot = nil
+	// Set pending root if provided via WithRoot* option.
+	if app.pendingRootApply != nil {
+		app.pendingRootApply(app)
+		app.pendingRootApply = nil
 	}
 
 	return app, nil
 }
 
-// SetRoot sets the root view for rendering. Accepts:
-//   - A view struct implementing Viewable (extracts Root, starts watchers)
-//   - A raw Renderable (element.Element)
-//
-// If the root supports focus discovery, focusable elements are auto-registered.
-// If the root supports watcher discovery, watchers are auto-started.
-func (a *App) SetRoot(v any) {
-	var root Renderable
+// SetRoot sets the root renderable for rendering.
+func (a *App) SetRoot(root Renderable) {
+	a.rootComponent = nil
+	a.applyRoot(root)
+}
 
-	switch view := v.(type) {
-	case Component:
-		// Struct component: render to get element tree, tag root for discovery.
-		// Store as rootComponent so Run() re-renders the component each frame.
-		a.rootComponent = view
-		el := view.Render()
-		el.component = view
-		root = el
-	case Viewable:
-		root = view.GetRoot()
-		// Start all watchers collected during component construction
-		for _, w := range view.GetWatchers() {
-			w.Start(a.eventQueue, a.stopCh)
-		}
-	case Renderable:
-		root = view
-	default:
-		// Invalid type - ignore
-		return
+// SetRootView sets the root from a Viewable and starts its watchers.
+func (a *App) SetRootView(view Viewable) {
+	a.rootComponent = nil
+	root := view.GetRoot()
+	a.applyRoot(root)
+	for _, w := range view.GetWatchers() {
+		w.Start(a.eventQueue, a.stopCh)
 	}
+}
 
+// SetRootComponent sets the root from a struct component.
+func (a *App) SetRootComponent(component Component) {
+	a.rootComponent = component
+	el := component.Render()
+	el.component = component
+	a.applyRoot(el)
+}
+
+func (a *App) applyRoot(root Renderable) {
 	a.root = root
 
 	// If root supports focus discovery, set up auto-registration

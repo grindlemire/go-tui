@@ -32,7 +32,7 @@ func main() {
 	}
 	defer app.Close()
 
-	app.SetRoot(Streaming(dataCh))
+	app.SetRootComponent(Streaming(dataCh))
 
 	go produce(dataCh, app.StopCh())
 

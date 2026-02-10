@@ -58,16 +58,32 @@ func WithGlobalKeyHandler(fn func(KeyEvent) bool) AppOption {
 	}
 }
 
-// WithRoot sets the root for rendering. Accepts:
-//   - A Component (struct component with Render() method)
-//   - A Viewable (view struct from function components)
-//   - A Renderable (raw element)
-//
-// The root is set after the app is fully initialized.
-// Uses the same type dispatch as SetRoot.
-func WithRoot(v any) AppOption {
+// WithRoot sets the renderable root after app initialization.
+func WithRoot(root Renderable) AppOption {
 	return func(a *App) error {
-		a.pendingRoot = v
+		a.pendingRootApply = func(app *App) {
+			app.SetRoot(root)
+		}
+		return nil
+	}
+}
+
+// WithRootView sets a Viewable root after app initialization.
+func WithRootView(view Viewable) AppOption {
+	return func(a *App) error {
+		a.pendingRootApply = func(app *App) {
+			app.SetRootView(view)
+		}
+		return nil
+	}
+}
+
+// WithRootComponent sets a Component root after app initialization.
+func WithRootComponent(component Component) AppOption {
+	return func(a *App) error {
+		a.pendingRootApply = func(app *App) {
+			app.SetRootComponent(component)
+		}
 		return nil
 	}
 }
