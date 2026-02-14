@@ -121,3 +121,13 @@ func (t *timer) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (t *timer) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*timer)
+	if !ok {
+		return
+	}
+	t.events = f.events
+}
+
+var _ tui.PropsUpdater = (*timer)(nil)

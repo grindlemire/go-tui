@@ -6,11 +6,6 @@ import (
 	"github.com/grindlemire/go-tui/internal/debug"
 )
 
-// Quit stops the currently running app. This is an alias for Stop().
-func Quit() {
-	Stop()
-}
-
 // Stop stops the currently running app. This is a package-level convenience function
 // that allows stopping the app from event handlers without needing a direct reference.
 // It is safe to call even if no app is running.

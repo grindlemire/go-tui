@@ -1,6 +1,6 @@
 package tui
 
-// Render efficiently renders the buffer to the terminal.
+// Render the buffer to the terminal.
 // It computes the diff between front and back buffers, flushes only
 // the changed cells, and then swaps the buffers.
 //

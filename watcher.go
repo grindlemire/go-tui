@@ -38,16 +38,11 @@ func NewChannelWatcher[T any](ch <-chan T, fn func(T)) *ChannelWatcher[T] {
 
 // Watch creates a channel watcher. The handler is called on the main loop
 // whenever data arrives on the channel.
-//
-// Usage in .tui file:
-//
-//	onChannel={tui.Watch(dataCh, handleData(lines))}
-//
-// Handlers don't return bool - mutations automatically mark dirty.
 func Watch[T any](ch <-chan T, handler func(T)) Watcher {
 	return NewChannelWatcher(ch, handler)
 }
 
+// Start the watcher.
 func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App) {
 	go func() {
 		for {
@@ -81,16 +76,11 @@ type timerWatcher struct {
 
 // OnTimer creates a timer watcher that fires at the given interval.
 // The handler is called on the main loop.
-//
-// Usage in .tui file:
-//
-//	onTimer={tui.OnTimer(time.Second, tick(elapsed))}
-//
-// Handlers don't return bool - mutations automatically mark dirty.
 func OnTimer(interval time.Duration, handler func()) Watcher {
 	return &timerWatcher{interval: interval, handler: handler}
 }
 
+// Start the watcher.
 func (w *timerWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App) {
 	go func() {
 		debug.Log("timerWatcher started")

@@ -5,7 +5,7 @@ import (
 	"unicode/utf8"
 )
 
-// escBuilder efficiently builds ANSI escape sequences.
+// escBuilder builds ANSI escape sequences.
 // It uses a pre-allocated buffer to minimize allocations.
 type escBuilder struct {
 	buf []byte

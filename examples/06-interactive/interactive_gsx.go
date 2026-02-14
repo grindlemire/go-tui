@@ -89,3 +89,13 @@ func (a *interactiveApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (a *interactiveApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*interactiveApp)
+	if !ok {
+		return
+	}
+	a.events = f.events
+}
+
+var _ tui.PropsUpdater = (*interactiveApp)(nil)

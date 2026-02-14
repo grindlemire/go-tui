@@ -72,8 +72,6 @@ func (a *App) Run() error {
 			}
 		}
 	}
-
-	return nil
 }
 
 // Stop signals the Run loop to exit gracefully and stops all watchers.

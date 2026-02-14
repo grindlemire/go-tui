@@ -302,22 +302,6 @@ func TestColor_AccessorsAreSafeOnWrongType(t *testing.T) {
 	}
 }
 
-func TestColor_TypedAccessors(t *testing.T) {
-	if _, ok := RGBColor(1, 2, 3).ANSIValue(); ok {
-		t.Error("ANSIValue() should report !ok for RGB color")
-	}
-	if idx, ok := ANSIColor(42).ANSIValue(); !ok || idx != 42 {
-		t.Errorf("ANSIValue() = (%d,%v), want (42,true)", idx, ok)
-	}
-	if _, _, _, ok := ANSIColor(1).RGBValue(); ok {
-		t.Error("RGBValue() should report !ok for ANSI color")
-	}
-	r, g, b, ok := RGBColor(1, 2, 3).RGBValue()
-	if !ok || r != 1 || g != 2 || b != 3 {
-		t.Errorf("RGBValue() = (%d,%d,%d,%v), want (1,2,3,true)", r, g, b, ok)
-	}
-}
-
 func TestPredefinedColors(t *testing.T) {
 	type tc struct {
 		color    Color

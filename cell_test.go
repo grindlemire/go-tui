@@ -221,11 +221,11 @@ func TestRuneWidth_ASCII(t *testing.T) {
 func TestRuneWidth_CJK(t *testing.T) {
 	// CJK characters should be width 2
 	cjkChars := []rune{
-		'你', '好', '中', '文',  // Chinese
-		'日', '本', '語',       // Japanese kanji
-		'あ', 'い', 'う',       // Hiragana
-		'ア', 'イ', 'ウ',       // Katakana
-		'한', '글',            // Korean Hangul
+		'你', '好', '中', '文', // Chinese
+		'日', '本', '語', // Japanese kanji
+		'あ', 'い', 'う', // Hiragana
+		'ア', 'イ', 'ウ', // Katakana
+		'한', '글', // Korean Hangul
 	}
 
 	for _, r := range cjkChars {
@@ -266,10 +266,10 @@ func TestRuneWidth_BoxDrawing(t *testing.T) {
 func TestRuneWidth_Latin(t *testing.T) {
 	// Extended Latin characters should be width 1
 	latinChars := []rune{
-		'é', 'è', 'ê', 'ë',  // French accents
-		'ñ', 'ü', 'ö', 'ä',  // Spanish/German
-		'ø', 'æ', 'å',       // Nordic
-		'ß',                 // German eszett
+		'é', 'è', 'ê', 'ë', // French accents
+		'ñ', 'ü', 'ö', 'ä', // Spanish/German
+		'ø', 'æ', 'å', // Nordic
+		'ß', // German eszett
 	}
 
 	for _, r := range latinChars {
@@ -282,13 +282,60 @@ func TestRuneWidth_Latin(t *testing.T) {
 func TestRuneWidth_Fullwidth(t *testing.T) {
 	// Fullwidth ASCII variants should be width 2
 	fullwidthChars := []rune{
-		'Ａ', 'Ｂ', 'Ｃ',  // Fullwidth Latin
-		'０', '１', '２',  // Fullwidth digits
+		'Ａ', 'Ｂ', 'Ｃ', // Fullwidth Latin
+		'０', '１', '２', // Fullwidth digits
 	}
 
 	for _, r := range fullwidthChars {
 		if w := RuneWidth(r); w != 2 {
 			t.Errorf("RuneWidth(%q U+%04X) = %d, want 2", r, r, w)
+		}
+	}
+}
+
+func TestRuneWidth_RegionalIndicators(t *testing.T) {
+	// Regional indicator symbols are used for flag emoji and are rendered wide.
+	indicators := []rune{
+		'\U0001F1FA', // REGIONAL INDICATOR SYMBOL LETTER U
+		'\U0001F1F8', // REGIONAL INDICATOR SYMBOL LETTER S
+		'\U0001F1EF', // REGIONAL INDICATOR SYMBOL LETTER J
+		'\U0001F1F5', // REGIONAL INDICATOR SYMBOL LETTER P
+	}
+
+	for _, r := range indicators {
+		if w := RuneWidth(r); w != 2 {
+			t.Errorf("RuneWidth(%q U+%04X) = %d, want 2", r, r, w)
+		}
+	}
+}
+
+func TestRuneWidth_CJKCompatibilityForms(t *testing.T) {
+	// Vertical presentation and compatibility punctuation are wide.
+	chars := []rune{
+		'\uFE10', // PRESENTATION FORM FOR VERTICAL COMMA
+		'\uFE31', // PRESENTATION FORM FOR VERTICAL EM DASH
+		'\uFE44', // PRESENTATION FORM FOR VERTICAL RIGHT WHITE CORNER BRACKET
+	}
+
+	for _, r := range chars {
+		if w := RuneWidth(r); w != 2 {
+			t.Errorf("RuneWidth(%q U+%04X) = %d, want 2", r, r, w)
+		}
+	}
+}
+
+func TestRuneWidth_ZeroWidthCategoriesFallback(t *testing.T) {
+	// These are logically zero-width, but this buffer reserves width 0 for
+	// continuation cells only, so they remain width 1.
+	chars := []rune{
+		'\u0301', // COMBINING ACUTE ACCENT
+		'\u200D', // ZERO WIDTH JOINER
+		'\uFE0F', // VARIATION SELECTOR-16
+	}
+
+	for _, r := range chars {
+		if w := RuneWidth(r); w != 1 {
+			t.Errorf("RuneWidth(%q U+%04X) = %d, want 1", r, r, w)
 		}
 	}
 }
