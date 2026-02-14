@@ -11,7 +11,7 @@ type mountKey struct {
 }
 
 // mountState is per-App state for component instance caching.
-// Stored on the App struct, accessed via DefaultApp() during render.
+// Stored on the App struct, accessed via the explicit *App reference during render.
 // Uses mark-and-sweep: each render marks active keys, then sweep
 // cleans up unmounted components.
 type mountState struct {

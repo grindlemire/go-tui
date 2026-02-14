@@ -7,9 +7,10 @@ import (
 // === Batch Tests ===
 
 func TestBatch_DefersBindingExecution(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	var lastValue int
@@ -18,7 +19,7 @@ func TestBatch_DefersBindingExecution(t *testing.T) {
 		lastValue = v
 	})
 
-	Batch(func() {
+	testApp.Batch(func() {
 		// Binding should not be called during batch
 		s.Set(42)
 		if callCount != 0 {
@@ -36,9 +37,10 @@ func TestBatch_DefersBindingExecution(t *testing.T) {
 }
 
 func TestBatch_MultipleSetsToSameState(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	var receivedValues []int
@@ -47,7 +49,7 @@ func TestBatch_MultipleSetsToSameState(t *testing.T) {
 		receivedValues = append(receivedValues, v)
 	})
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(1)
 		s.Set(2)
 		s.Set(3) // final value
@@ -63,16 +65,17 @@ func TestBatch_MultipleSetsToSameState(t *testing.T) {
 }
 
 func TestBatch_FinalValueReceived(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState("initial")
+	s.BindApp(testApp)
 
 	var receivedValue string
 	s.Bind(func(v string) {
 		receivedValue = v
 	})
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set("first")
 		s.Set("second")
 		s.Set("final")
@@ -84,10 +87,12 @@ func TestBatch_FinalValueReceived(t *testing.T) {
 }
 
 func TestBatch_MultipleDifferentStates(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s1 := NewState(0)
+	s1.BindApp(testApp)
 	s2 := NewState("")
+	s2.BindApp(testApp)
 
 	var s1CallCount, s2CallCount int
 	var s1Value int
@@ -102,7 +107,7 @@ func TestBatch_MultipleDifferentStates(t *testing.T) {
 		s2Value = v
 	})
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s1.Set(42)
 		s2.Set("hello")
 	})
@@ -123,9 +128,10 @@ func TestBatch_MultipleDifferentStates(t *testing.T) {
 }
 
 func TestBatch_NestedBatches(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	var lastValue int
@@ -134,15 +140,15 @@ func TestBatch_NestedBatches(t *testing.T) {
 		lastValue = v
 	})
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(1)
 
 		// Nested batch
-		Batch(func() {
+		testApp.Batch(func() {
 			s.Set(2)
 
 			// Further nested
-			Batch(func() {
+			testApp.Batch(func() {
 				s.Set(3)
 			})
 
@@ -168,18 +174,19 @@ func TestBatch_NestedBatches(t *testing.T) {
 }
 
 func TestBatch_DeduplicationByBindingID(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	// This test verifies that deduplication uses binding IDs, not function
 	// pointer comparison. Multiple bindings on the same state should each
 	// fire once, even if they have the same function signature.
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var binding1Count, binding2Count int
 	s.Bind(func(v int) { binding1Count++ })
 	s.Bind(func(v int) { binding2Count++ })
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(1)
 		s.Set(2)
 		s.Set(3)
@@ -195,19 +202,20 @@ func TestBatch_DeduplicationByBindingID(t *testing.T) {
 }
 
 func TestBatch_NoSetsDoesntError(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	// Batch with no Set calls should not error
-	Batch(func() {
+	testApp.Batch(func() {
 		// do nothing
 	})
 	// Test passes if no panic occurs
 }
 
 func TestBatch_EmptyPendingAfterExecution(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	s.Bind(func(v int) {
@@ -215,7 +223,7 @@ func TestBatch_EmptyPendingAfterExecution(t *testing.T) {
 	})
 
 	// First batch
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(1)
 	})
 
@@ -224,7 +232,7 @@ func TestBatch_EmptyPendingAfterExecution(t *testing.T) {
 	}
 
 	// Second batch - should work independently
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(2)
 	})
 
@@ -234,9 +242,10 @@ func TestBatch_EmptyPendingAfterExecution(t *testing.T) {
 }
 
 func TestBatch_SetOutsideBatchStillWorks(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	s.Bind(func(v int) {
@@ -250,7 +259,7 @@ func TestBatch_SetOutsideBatchStillWorks(t *testing.T) {
 	}
 
 	// Batch should also work
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(2)
 	})
 	if callCount != 2 {
@@ -265,36 +274,38 @@ func TestBatch_SetOutsideBatchStillWorks(t *testing.T) {
 }
 
 func TestBatch_MarksDirty(t *testing.T) {
-	resetDirty()
-	TestResetBatch()
+	testApp.resetDirty()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	// Should not be dirty initially
-	if checkAndClearDirty() {
+	if testApp.checkAndClearDirty() {
 		t.Error("should not be dirty before batch")
 	}
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(1)
 		// Dirty should be marked immediately within batch
-		if !checkAndClearDirty() {
+		if !testApp.checkAndClearDirty() {
 			t.Error("should be dirty after Set within batch")
 		}
 	})
 }
 
 func TestBatch_MultipleBindingsPerState(t *testing.T) {
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var values1, values2, values3 []int
 	s.Bind(func(v int) { values1 = append(values1, v) })
 	s.Bind(func(v int) { values2 = append(values2, v) })
 	s.Bind(func(v int) { values3 = append(values3, v) })
 
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(10)
 		s.Set(20)
 		s.Set(30)
@@ -316,9 +327,10 @@ func TestBatch_MultipleBindingsPerState(t *testing.T) {
 func TestBatch_PanicRecovery(t *testing.T) {
 	// Test that if fn panics, the batch state is properly cleaned up
 	// and subsequent batches work correctly.
-	TestResetBatch()
+	testApp.TestResetBatch()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	s.Bind(func(v int) {
@@ -332,7 +344,7 @@ func TestBatch_PanicRecovery(t *testing.T) {
 				t.Error("expected panic did not occur")
 			}
 		}()
-		Batch(func() {
+		testApp.Batch(func() {
 			s.Set(1)
 			panic("test panic")
 		})
@@ -340,7 +352,7 @@ func TestBatch_PanicRecovery(t *testing.T) {
 
 	// After panic, batch depth should be reset to 0
 	// A subsequent batch should work correctly
-	Batch(func() {
+	testApp.Batch(func() {
 		s.Set(2)
 	})
 

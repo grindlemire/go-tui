@@ -6,76 +6,10 @@ import (
 	"github.com/grindlemire/go-tui/internal/debug"
 )
 
-// Stop stops the currently running app. This is a package-level convenience function
-// that allows stopping the app from event handlers without needing a direct reference.
-// It is safe to call even if no app is running.
-func Stop() {
-	if app := DefaultApp(); app != nil {
-		app.Stop()
-	}
-}
-
-// PrintAbove prints content above the inline widget without a trailing newline.
-// Only works in inline mode. Safe to call even if no app is running.
-func PrintAbove(format string, args ...any) {
-	if app := DefaultApp(); app != nil {
-		app.PrintAbove(format, args...)
-	}
-}
-
-// QueuePrintAbove queues content to print above the inline widget without a
-// trailing newline.
-// This variant is goroutine-safe and executes on the app event loop.
-func QueuePrintAbove(format string, args ...any) {
-	if app := DefaultApp(); app != nil {
-		app.QueuePrintAbove(format, args...)
-	}
-}
-
-// PrintAboveln prints content with a trailing newline above the inline widget.
-// Only works in inline mode. Safe to call even if no app is running.
-func PrintAboveln(format string, args ...any) {
-	if app := DefaultApp(); app != nil {
-		app.PrintAboveln(format, args...)
-	}
-}
-
-// QueuePrintAboveln queues content with a trailing newline above the inline
-// widget.
-// This variant is goroutine-safe and executes on the app event loop.
-func QueuePrintAboveln(format string, args ...any) {
-	if app := DefaultApp(); app != nil {
-		app.QueuePrintAboveln(format, args...)
-	}
-}
-
-// PrintAboveAsync queues content above the inline widget without a trailing
-// newline.
-// Deprecated: use QueuePrintAbove.
-func PrintAboveAsync(format string, args ...any) {
-	QueuePrintAbove(format, args...)
-}
-
-// PrintAbovelnAsync queues content with a trailing newline above the inline
-// widget.
-// Deprecated: use QueuePrintAboveln.
-func PrintAbovelnAsync(format string, args ...any) {
-	QueuePrintAboveln(format, args...)
-}
-
-// SetInlineHeight changes the inline widget height at runtime.
-// Only works in inline mode. Safe to call even if no app is running.
-func SetInlineHeight(rows int) {
-	if app := DefaultApp(); app != nil {
-		app.SetInlineHeight(rows)
-	}
-}
-
 // SnapshotFrame returns the current frame as a string for debugging.
-// Returns an empty string if no app is running.
-func SnapshotFrame() string {
-	if app := DefaultApp(); app != nil && app.buffer != nil {
-		return app.buffer.StringTrimmed()
+func (a *App) SnapshotFrame() string {
+	if a.buffer != nil {
+		return a.buffer.StringTrimmed()
 	}
 	return ""
 }

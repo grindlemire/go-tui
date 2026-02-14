@@ -6,6 +6,26 @@ import (
 	"strings"
 )
 
+// DetectEventsVars scans a component for tui.NewEvents declarations.
+// It returns a list of all detected events variables.
+func (a *Analyzer) DetectEventsVars(comp *Component) []EventsVar {
+	var eventsVars []EventsVar
+	for _, node := range comp.Body {
+		if goCode, ok := node.(*GoCode); ok {
+			matches := eventsNewEventsRegex.FindAllStringSubmatch(goCode.Code, -1)
+			for _, match := range matches {
+				if len(match) >= 2 {
+					eventsVars = append(eventsVars, EventsVar{
+						Name:     match[1],
+						Position: goCode.Position,
+					})
+				}
+			}
+		}
+	}
+	return eventsVars
+}
+
 // DetectStateVars scans a component for tui.NewState declarations and state parameters.
 // It returns a list of all detected state variables.
 func (a *Analyzer) DetectStateVars(comp *Component) []StateVar {

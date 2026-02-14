@@ -18,7 +18,14 @@ type KeyEvent struct {
 
 	// Mod contains modifier flags (Ctrl, Alt, Shift).
 	Mod Modifier
+
+	// app is the App that dispatched this event. Set by the event loop.
+	app *App
 }
+
+// App returns the App that dispatched this event.
+// Use this in key handlers to call app methods like Stop(), PrintAbove(), etc.
+func (e KeyEvent) App() *App { return e.app }
 
 func (KeyEvent) isEvent() {}
 
@@ -102,6 +109,12 @@ type MouseEvent struct {
 	Y int
 	// Mod contains modifier flags (Ctrl, Alt, Shift).
 	Mod Modifier
+
+	// app is the App that dispatched this event. Set by the event loop.
+	app *App
 }
+
+// App returns the App that dispatched this event.
+func (e MouseEvent) App() *App { return e.app }
 
 func (MouseEvent) isEvent() {}

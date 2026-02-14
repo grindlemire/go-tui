@@ -122,8 +122,8 @@ func TestElement_RemoveAllChildren(t *testing.T) {
 
 	// Clear dirty flag to test that RemoveAllChildren marks dirty
 	parent.dirty = false
-	MarkDirty() // Reset global dirty
-	_ = checkAndClearDirty()
+	testApp.MarkDirty() // Reset global dirty
+	_ = testApp.checkAndClearDirty()
 
 	parent.RemoveAllChildren()
 
@@ -161,27 +161,29 @@ func TestElement_RemoveAllChildren_Empty(t *testing.T) {
 
 func TestElement_MarkDirty_SetsGlobalDirtyFlag(t *testing.T) {
 	// Reset global dirty flag
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	e := New()
+	e.app = testApp
 	e.dirty = false // Clear local dirty flag
 
 	e.MarkDirty()
 
-	if !checkAndClearDirty() {
+	if !testApp.checkAndClearDirty() {
 		t.Error("MarkDirty should set the global dirty flag")
 	}
 }
 
 func TestElement_ScrollBy_MarksDirty(t *testing.T) {
 	// Reset global dirty flag
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	e := New(
 		WithHeight(10),
 		WithScrollable(ScrollVertical),
 		WithDirection(Column),
 	)
+	e.app = testApp
 	// Set up content that exceeds viewport
 	for i := 0; i < 20; i++ {
 		e.AddChild(New(WithHeight(1)))
@@ -193,46 +195,48 @@ func TestElement_ScrollBy_MarksDirty(t *testing.T) {
 
 	// Clear dirty flags
 	e.dirty = false
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	e.ScrollBy(0, 5)
 
-	if !checkAndClearDirty() {
+	if !testApp.checkAndClearDirty() {
 		t.Error("ScrollBy should mark the global dirty flag")
 	}
 }
 
 func TestElement_SetText_MarksDirty(t *testing.T) {
 	// Reset global dirty flag
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	e := New(WithText("hello"))
+	e.app = testApp
 
 	// Clear dirty flags
 	e.dirty = false
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	e.SetText("world")
 
-	if !checkAndClearDirty() {
+	if !testApp.checkAndClearDirty() {
 		t.Error("SetText should mark the global dirty flag")
 	}
 }
 
 func TestElement_AddChild_MarksDirty(t *testing.T) {
 	// Reset global dirty flag
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	parent := New()
+	parent.app = testApp
 
 	// Clear dirty flags
 	parent.dirty = false
-	_ = checkAndClearDirty()
+	_ = testApp.checkAndClearDirty()
 
 	child := New()
 	parent.AddChild(child)
 
-	if !checkAndClearDirty() {
+	if !testApp.checkAndClearDirty() {
 		t.Error("AddChild should mark the global dirty flag")
 	}
 }

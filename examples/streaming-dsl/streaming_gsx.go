@@ -38,12 +38,21 @@ func addLine(lineCount *tui.State[int], content *tui.Ref) func(string) {
 type StreamAppView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
+	bindApp  func(*tui.App)
 	Content  *tui.Element
 }
 
 func (v StreamAppView) GetRoot() tui.Renderable { return v.Root }
 
 func (v StreamAppView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v StreamAppView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+var _ tui.AppBinder = StreamAppView{}
 
 func StreamApp(dataCh <-chan string) StreamAppView {
 	var view StreamAppView
@@ -105,9 +114,15 @@ func StreamApp(dataCh <-chan string) StreamAppView {
 	lineCount.Bind(func(_ int) { __update___tui_5() })
 	elapsed.Bind(func(_ int) { __update___tui_5() })
 
+	__bindApp := func(app *tui.App) {
+		lineCount.BindApp(app)
+		elapsed.BindApp(app)
+	}
+
 	view = StreamAppView{
 		Root:     __tui_0,
 		watchers: watchers,
+		bindApp:  __bindApp,
 		Content:  content.El(),
 	}
 	return view

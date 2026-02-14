@@ -157,14 +157,9 @@ func (e *Element) MarkDirty() {
 	for elem := e; elem != nil && !elem.dirty; elem = elem.parent {
 		elem.dirty = true
 	}
-	// Signal to the owning app that UI needs re-rendering.
 	if e.app != nil {
 		e.app.MarkDirty()
-		return
 	}
-	if app := DefaultApp(); app != nil {
-		app.MarkDirty()
-		return
-	}
-	panic("tui.Element.MarkDirty requires app context; ensure element is attached to an app")
+	// nil app: element-level dirty flags are set; app-level dirty
+	// will be set when the element is attached via setAppRecursive.
 }

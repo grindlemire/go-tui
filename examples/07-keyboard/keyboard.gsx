@@ -19,8 +19,8 @@ func Keyboard() *keyboardApp {
 
 func (k *keyboardApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRunes(func(ke tui.KeyEvent) {
 			k.keyCount.Set(k.keyCount.Get() + 1)
 			k.lastKey.Set(fmt.Sprintf("'%c' (rune)", ke.Rune))

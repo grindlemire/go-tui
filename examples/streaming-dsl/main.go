@@ -38,7 +38,7 @@ func main() {
 		tui.WithRootView(view),
 		tui.WithGlobalKeyHandler(func(e tui.KeyEvent) bool {
 			if e.Rune == 'q' || e.Key == tui.KeyEscape {
-				tui.Stop()
+				e.App().Stop()
 				return true
 			}
 			return false

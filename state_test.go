@@ -88,9 +88,10 @@ func TestState_Get(t *testing.T) {
 
 func TestState_Set(t *testing.T) {
 	// Reset dirty flag before test
-	resetDirty()
+	testApp.resetDirty()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 	s.Set(42)
 
 	if got := s.Get(); got != 42 {
@@ -100,19 +101,20 @@ func TestState_Set(t *testing.T) {
 
 func TestState_Set_MarksDirty(t *testing.T) {
 	// Reset dirty flag before test
-	resetDirty()
+	testApp.resetDirty()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	// Should not be dirty initially
-	if checkAndClearDirty() {
+	if testApp.checkAndClearDirty() {
 		t.Error("should not be dirty before Set()")
 	}
 
 	s.Set(1)
 
 	// Should be dirty after Set
-	if !checkAndClearDirty() {
+	if !testApp.checkAndClearDirty() {
 		t.Error("should be dirty after Set()")
 	}
 }

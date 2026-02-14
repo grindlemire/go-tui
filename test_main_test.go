@@ -5,9 +5,12 @@ import (
 	"testing"
 )
 
+// testApp is a lightweight App used by all unit tests.
+// It is created in TestMain before any tests run.
+var testApp *App
+
 func TestMain(m *testing.M) {
-	prev := DefaultApp()
-	testApp := &App{
+	testApp = &App{
 		stopCh:      make(chan struct{}),
 		eventQueue:  make(chan func(), 1),
 		updateQueue: make(chan func(), 1),
@@ -15,8 +18,5 @@ func TestMain(m *testing.M) {
 		mounts:      newMountState(),
 		batch:       newBatchContext(),
 	}
-	SetDefaultApp(testApp)
-	code := m.Run()
-	SetDefaultApp(prev)
-	os.Exit(code)
+	os.Exit(m.Run())
 }

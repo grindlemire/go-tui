@@ -19,6 +19,7 @@ func itemStyle(idx, selected int) string {
 type RefsDemoView struct {
 	Root      *tui.Element
 	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
 	Header    *tui.Element
 	Content   *tui.Element
 	ItemRefs  []*tui.Element
@@ -29,6 +30,14 @@ type RefsDemoView struct {
 func (v RefsDemoView) GetRoot() tui.Renderable { return v.Root }
 
 func (v RefsDemoView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v RefsDemoView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+var _ tui.AppBinder = RefsDemoView{}
 
 func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 	var view RefsDemoView
@@ -121,9 +130,13 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 	__tui_8.AddChild(__tui_10)
 	__tui_0.AddChild(__tui_8)
 
+	__bindApp := func(app *tui.App) {
+	}
+
 	view = RefsDemoView{
 		Root:      __tui_0,
 		watchers:  watchers,
+		bindApp:   __bindApp,
 		Header:    header.El(),
 		Content:   content.El(),
 		ItemRefs:  itemRefs.All(),
@@ -136,12 +149,21 @@ func RefsDemo(items []string, showWarning bool, selectedIdx int) RefsDemoView {
 type KeyedRefsDemoView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
+	bindApp  func(*tui.App)
 	UserRefs []*tui.Element
 }
 
 func (v KeyedRefsDemoView) GetRoot() tui.Renderable { return v.Root }
 
 func (v KeyedRefsDemoView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v KeyedRefsDemoView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+var _ tui.AppBinder = KeyedRefsDemoView{}
 
 func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 	var view KeyedRefsDemoView
@@ -200,9 +222,13 @@ func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 	__tui_6.AddChild(__tui_7)
 	__tui_0.AddChild(__tui_6)
 
+	__bindApp := func(app *tui.App) {
+	}
+
 	view = KeyedRefsDemoView{
 		Root:     __tui_0,
 		watchers: watchers,
+		bindApp:  __bindApp,
 		UserRefs: userRefs.All(),
 	}
 	return view

@@ -9,10 +9,19 @@ import (
 )
 
 type chat struct {
+	app          *tui.App
 	width        int
 	textarea     *tui.TextArea
 	showSettings *tui.State[bool]
 	settingsView *settings.SettingsApp
+}
+
+var _ tui.AppBinder = (*chat)(nil)
+
+func (c *chat) BindApp(app *tui.App) {
+	c.app = app
+	c.showSettings.BindApp(app)
+	c.textarea.BindApp(app)
 }
 
 func Chat(width int) *chat {
@@ -57,26 +66,26 @@ func (c *chat) submit(text string) {
 	}
 	c.textarea.Clear()
 	c.updateHeight()
-	tui.PrintAboveln("You: %s", text)
+	c.app.PrintAboveln("You: %s", text)
 }
 
 func (c *chat) toggleSettings() {
 	if c.showSettings.Get() {
-		_ = tui.ExitAlternateScreen()
+		_ = c.app.ExitAlternateScreen()
 		c.showSettings.Set(false)
 		c.updateHeight()
 		return
 	}
 
 	c.showSettings.Set(true)
-	_ = tui.EnterAlternateScreen()
+	_ = c.app.EnterAlternateScreen()
 }
 
 func (c *chat) KeyMap() tui.KeyMap {
 	if c.showSettings.Get() {
 		km := c.settingsView.KeyMap()
 		km = append(km,
-			tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { tui.Stop() }),
+			tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		)
 		return km
 	}
@@ -84,8 +93,8 @@ func (c *chat) KeyMap() tui.KeyMap {
 	km := c.textarea.KeyMap()
 	km = append(km,
 		tui.OnKeyStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { c.toggleSettings() }),
-		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	)
 	return km
 }
@@ -99,7 +108,7 @@ func (c *chat) updateHeight() {
 	if h < 3 {
 		h = 3
 	}
-	tui.SetInlineHeight(h)
+	c.app.SetInlineHeight(h)
 }
 
 func (c *chat) Render(app *tui.App) *tui.Element {
@@ -125,17 +134,10 @@ func (c *chat) UpdateProps(fresh tui.Component) {
 	if !ok {
 		return
 	}
+	c.app = f.app
 	c.width = f.width
 	c.textarea = f.textarea
 	c.settingsView = f.settingsView
 }
 
 var _ tui.PropsUpdater = (*chat)(nil)
-
-func (c *chat) BindApp(app *tui.App) {
-	if c.showSettings != nil {
-		c.showSettings.BindApp(app)
-	}
-}
-
-var _ tui.AppBinder = (*chat)(nil)

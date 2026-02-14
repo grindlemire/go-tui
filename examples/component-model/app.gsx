@@ -16,7 +16,7 @@ func MyApp() *myApp {
 
 func (a *myApp) KeyMap() tui.KeyMap {
 	km := tui.KeyMap{
-		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 	if !a.searchActive.Get() {
 		km = append(km, tui.OnRune('/', func(ke tui.KeyEvent) {

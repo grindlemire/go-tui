@@ -12,11 +12,20 @@ import (
 type CounterUIView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
+	bindApp  func(*tui.App)
 }
 
 func (v CounterUIView) GetRoot() tui.Renderable { return v.Root }
 
 func (v CounterUIView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v CounterUIView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+var _ tui.AppBinder = CounterUIView{}
 
 func CounterUI(count int) CounterUIView {
 	var view CounterUIView
@@ -80,9 +89,13 @@ func CounterUI(count int) CounterUIView {
 	__tui_8.AddChild(__tui_9)
 	__tui_0.AddChild(__tui_8)
 
+	__bindApp := func(app *tui.App) {
+	}
+
 	view = CounterUIView{
 		Root:     __tui_0,
 		watchers: watchers,
+		bindApp:  __bindApp,
 	}
 	return view
 }

@@ -10,11 +10,20 @@ import (
 type InputBoxView struct {
 	Root     *tui.Element
 	watchers []tui.Watcher
+	bindApp  func(*tui.App)
 }
 
 func (v InputBoxView) GetRoot() tui.Renderable { return v.Root }
 
 func (v InputBoxView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v InputBoxView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+var _ tui.AppBinder = InputBoxView{}
 
 func InputBox(text string, height int) InputBoxView {
 	var view InputBoxView
@@ -35,9 +44,13 @@ func InputBox(text string, height int) InputBoxView {
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
 
+	__bindApp := func(app *tui.App) {
+	}
+
 	view = InputBoxView{
 		Root:     __tui_0,
 		watchers: watchers,
+		bindApp:  __bindApp,
 	}
 	return view
 }

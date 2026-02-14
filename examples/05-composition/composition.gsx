@@ -10,13 +10,13 @@ func App() *compositionApp {
 
 func (a *compositionApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
 
 // Render demonstrates component composition using helper functions
-func (a *compositionApp) Render() *tui.Element {
+func (a *compositionApp) Render(_ *tui.App) *tui.Element {
 	root := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
