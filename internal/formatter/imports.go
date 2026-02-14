@@ -11,7 +11,7 @@ import (
 // fixImports generates Go code from the AST, runs goimports to resolve
 // missing imports, then updates the AST with the corrected imports.
 func fixImports(file *tuigen.File, filename string) error {
-	// Convert .tui filename to .go for goimports resolution
+	// Convert .gsx filename to .go for goimports resolution
 	goFilename := filename
 	if strings.HasSuffix(goFilename, ".tui") {
 		goFilename = strings.TrimSuffix(goFilename, ".tui") + "_tui.go"

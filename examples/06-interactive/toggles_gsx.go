@@ -155,3 +155,13 @@ func (t *toggles) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (t *toggles) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*toggles)
+	if !ok {
+		return
+	}
+	t.events = f.events
+}
+
+var _ tui.PropsUpdater = (*toggles)(nil)

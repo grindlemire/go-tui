@@ -48,7 +48,7 @@ func (g *CommentGroup) Text() string {
 	return strings.Join(lines, "\n")
 }
 
-// File represents a complete .tui source file.
+// File represents a complete .gsx source file.
 type File struct {
 	Package    string
 	Imports    []Import
@@ -259,7 +259,7 @@ type GoCode struct {
 func (g *GoCode) node()         {}
 func (g *GoCode) Pos() Position { return g.Position }
 
-// GoFunc represents a top-level Go function definition in a .tui file.
+// GoFunc represents a top-level Go function definition in a .gsx file.
 type GoFunc struct {
 	Code     string // the entire function definition
 	Position Position

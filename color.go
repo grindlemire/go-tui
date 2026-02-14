@@ -143,22 +143,6 @@ func (c Color) RGB() (r, g, b uint8) {
 	return c.r, c.g, c.b
 }
 
-// ANSIValue returns the ANSI palette index and whether the color is ANSI.
-func (c Color) ANSIValue() (uint8, bool) {
-	if c.typ != ColorANSI {
-		return 0, false
-	}
-	return c.r, true
-}
-
-// RGBValue returns the RGB components and whether the color is RGB.
-func (c Color) RGBValue() (r, g, b uint8, ok bool) {
-	if c.typ != ColorRGB {
-		return 0, 0, 0, false
-	}
-	return c.r, c.g, c.b, true
-}
-
 // Equal returns true if both colors are identical.
 func (c Color) Equal(other Color) bool {
 	if c.typ != other.typ {

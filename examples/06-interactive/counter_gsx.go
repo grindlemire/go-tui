@@ -181,3 +181,14 @@ func (c *counter) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (c *counter) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*counter)
+	if !ok {
+		return
+	}
+	c.events = f.events
+	c.delayCh = f.delayCh
+}
+
+var _ tui.PropsUpdater = (*counter)(nil)

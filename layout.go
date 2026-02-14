@@ -37,15 +37,6 @@ const (
 // Value represents a dimension value (fixed, percent, or auto).
 type Value = layout.Value
 
-// Unit specifies how a Value is interpreted.
-type Unit = layout.Unit
-
-const (
-	UnitAuto    = layout.UnitAuto
-	UnitFixed   = layout.UnitFixed
-	UnitPercent = layout.UnitPercent
-)
-
 // LayoutStyle holds the layout properties for a node.
 type LayoutStyle = layout.Style
 

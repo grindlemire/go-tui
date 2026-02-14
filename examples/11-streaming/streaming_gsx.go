@@ -146,7 +146,8 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 		tui.WithScrollOffset(0, s.getScrollY()),
 	)
 	s.content.Set(__tui_3)
-	for _, line := range s.lines.Get() {
+	for __idx_0, line := range s.lines.Get() {
+		_ = __idx_0
 		__tui_4 := tui.New(
 			tui.WithText(line),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
@@ -190,3 +191,13 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (s *streamingApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*streamingApp)
+	if !ok {
+		return
+	}
+	s.dataCh = f.dataCh
+}
+
+var _ tui.PropsUpdater = (*streamingApp)(nil)

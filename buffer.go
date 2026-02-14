@@ -247,7 +247,7 @@ func (b *Buffer) SetStringClipped(x, y int, s string, style Style, clipRect Rect
 	return totalWidth
 }
 
-// Fill fills a rectangle with the given rune and style.
+// Fill a rectangle with the given rune and style.
 // Handles wide characters appropriately.
 func (b *Buffer) Fill(rect Rect, r rune, style Style) {
 	// Intersect with buffer bounds
