@@ -33,7 +33,7 @@ func TestWatch_ReceivesChannelValues(t *testing.T) {
 	}
 
 	watcher := Watch(ch, handler)
-	watcher.Start(eventQueue, stopCh, &App{})
+	watcher.Start(eventQueue, stopCh)
 
 	// Send values to channel
 	ch <- "hello"
@@ -74,7 +74,7 @@ func TestWatch_ExitsWhenChannelCloses(t *testing.T) {
 	}
 
 	watcher := Watch(ch, handler)
-	watcher.Start(eventQueue, stopCh, &App{})
+	watcher.Start(eventQueue, stopCh)
 
 	// Close the channel
 	close(ch)
@@ -103,7 +103,7 @@ func TestWatch_ExitsWhenStopChCloses(t *testing.T) {
 	}
 
 	watcher := Watch(ch, handler)
-	watcher.Start(eventQueue, stopCh, &App{})
+	watcher.Start(eventQueue, stopCh)
 
 	// Send one value
 	ch <- "first"
@@ -159,7 +159,7 @@ func TestOnTimer_FiresAtInterval(t *testing.T) {
 	}
 
 	watcher := OnTimer(20*time.Millisecond, handler)
-	watcher.Start(eventQueue, stopCh, &App{})
+	watcher.Start(eventQueue, stopCh)
 
 	// Wait for a few ticks
 	time.Sleep(70 * time.Millisecond)
@@ -192,7 +192,7 @@ func TestOnTimer_ExitsWhenStopChCloses(t *testing.T) {
 	}
 
 	watcher := OnTimer(10*time.Millisecond, handler)
-	watcher.Start(eventQueue, stopCh, &App{})
+	watcher.Start(eventQueue, stopCh)
 
 	// Let it tick once or twice and process events
 	time.Sleep(25 * time.Millisecond)
@@ -243,7 +243,7 @@ func TestWatcher_HandlerCalledOnMainLoop(t *testing.T) {
 	}
 
 	watcher := Watch(ch, handler)
-	watcher.Start(eventQueue, stopCh, &App{})
+	watcher.Start(eventQueue, stopCh)
 
 	ch <- 42
 
@@ -283,7 +283,7 @@ func TestNewChannelWatcher(t *testing.T) {
 	eventQueue := make(chan func(), 10)
 	stopCh := make(chan struct{})
 
-	w.Start(eventQueue, stopCh, &App{})
+	w.Start(eventQueue, stopCh)
 	ch <- "hello"
 
 	// Give goroutine time to process
@@ -316,7 +316,7 @@ func TestNewChannelWatcher_StopsOnStopCh(t *testing.T) {
 		mu.Unlock()
 	})
 
-	w.Start(eventQueue, stopCh, &App{})
+	w.Start(eventQueue, stopCh)
 
 	// Send one value
 	ch <- "first"
@@ -357,7 +357,7 @@ func TestNewChannelWatcher_ExitsWhenChannelCloses(t *testing.T) {
 		// Handler intentionally empty
 	})
 
-	w.Start(eventQueue, stopCh, &App{})
+	w.Start(eventQueue, stopCh)
 
 	// Close the channel
 	close(ch)
@@ -387,7 +387,7 @@ func TestWatch_WithDifferentTypes(t *testing.T) {
 
 				var received string
 				watcher := Watch(ch, func(s string) { received = s })
-				watcher.Start(eventQueue, stopCh, &App{})
+				watcher.Start(eventQueue, stopCh)
 
 				ch <- "test"
 				time.Sleep(20 * time.Millisecond)
@@ -407,7 +407,7 @@ func TestWatch_WithDifferentTypes(t *testing.T) {
 
 				var received int
 				watcher := Watch(ch, func(i int) { received = i })
-				watcher.Start(eventQueue, stopCh, &App{})
+				watcher.Start(eventQueue, stopCh)
 
 				ch <- 42
 				time.Sleep(20 * time.Millisecond)
@@ -432,7 +432,7 @@ func TestWatch_WithDifferentTypes(t *testing.T) {
 
 				var received data
 				watcher := Watch(ch, func(d data) { received = d })
-				watcher.Start(eventQueue, stopCh, &App{})
+				watcher.Start(eventQueue, stopCh)
 
 				ch <- data{Name: "test", Value: 123}
 				time.Sleep(20 * time.Millisecond)

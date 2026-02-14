@@ -339,7 +339,7 @@ func (a *App) SetRootView(view Viewable) {
 	root := view.GetRoot()
 	a.applyRoot(root)
 	for _, w := range view.GetWatchers() {
-		w.Start(a.eventQueue, a.rootWatcherCh, a)
+		w.Start(a.eventQueue, a.rootWatcherCh)
 	}
 }
 
@@ -381,7 +381,7 @@ func (a *App) applyRoot(root Renderable) {
 	// If root supports watcher discovery, start all watchers in the tree
 	if walker, ok := root.(watcherTreeWalker); ok {
 		walker.WalkWatchers(func(w Watcher) {
-			w.Start(a.eventQueue, a.rootWatcherCh, a)
+			w.Start(a.eventQueue, a.rootWatcherCh)
 		})
 	}
 }
