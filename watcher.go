@@ -11,7 +11,7 @@ import (
 type Watcher interface {
 	// Start begins the watcher goroutine. Called by App.SetRoot().
 	// The eventQueue channel and stopCh are provided by the App.
-	Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App)
+	Start(eventQueue chan<- func(), stopCh <-chan struct{})
 }
 
 // ChannelWatcher watches a channel and calls handler for each value.
@@ -43,7 +43,7 @@ func Watch[T any](ch <-chan T, handler func(T)) Watcher {
 }
 
 // Start the watcher.
-func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App) {
+func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 	go func() {
 		for {
 			select {
@@ -58,7 +58,6 @@ func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct
 				select {
 				case eventQueue <- func() {
 					w.handler(v)
-					app.MarkDirty()
 				}:
 				case <-stopCh:
 					return
@@ -81,7 +80,7 @@ func OnTimer(interval time.Duration, handler func()) Watcher {
 }
 
 // Start the watcher.
-func (w *timerWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}, app *App) {
+func (w *timerWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 	go func() {
 		debug.Log("timerWatcher started")
 		ticker := time.NewTicker(w.interval)
