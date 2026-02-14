@@ -192,3 +192,17 @@ func (c *counter) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*counter)(nil)
+
+func (c *counter) BindApp(app *tui.App) {
+	if c.count != nil {
+		c.count.BindApp(app)
+	}
+	if c.pending != nil {
+		c.pending.BindApp(app)
+	}
+	if c.events != nil {
+		c.events.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*counter)(nil)

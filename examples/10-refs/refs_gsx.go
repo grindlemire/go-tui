@@ -154,3 +154,11 @@ func (r *refsApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (r *refsApp) BindApp(app *tui.App) {
+	if r.count != nil {
+		r.count.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*refsApp)(nil)

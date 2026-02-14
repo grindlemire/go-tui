@@ -20,7 +20,7 @@ func (a *compositionApp) KeyMap() tui.KeyMap {
 	}
 }
 
-func (a *compositionApp) Render(app *tui.App) *tui.Element {
+func (a *compositionApp) Render() *tui.Element {
 	root := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),

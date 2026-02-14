@@ -108,3 +108,14 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (k *keyboardApp) BindApp(app *tui.App) {
+	if k.lastKey != nil {
+		k.lastKey.BindApp(app)
+	}
+	if k.keyCount != nil {
+		k.keyCount.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*keyboardApp)(nil)

@@ -73,7 +73,9 @@ type binding[T any] struct {
 type Unbind func()
 
 // NewState creates a new state with the given initial value.
-// The type T is inferred from the initial value.
+// The state is created unbound — it will be bound to an App later via
+// BindApp (called by generated code during mount) or via the resolveApp
+// fallback to DefaultApp on first Set().
 //
 // Example:
 //
@@ -81,19 +83,26 @@ type Unbind func()
 //	name := tui.NewState("hello")      // State[string]
 //	items := tui.NewState([]string{})  // State[[]string]
 func NewState[T any](initial T) *State[T] {
-	app := DefaultApp()
-	if app == nil {
-		panic("tui.NewState requires a default app; call SetDefaultApp or use NewStateForApp")
-	}
-	return NewStateForApp(app, initial)
+	return &State[T]{value: initial}
 }
 
 // NewStateForApp creates a state bound to the provided app.
 func NewStateForApp[T any](app *App, initial T) *State[T] {
 	if app == nil {
-		panic("tui: nil app in NewState")
+		panic("tui: nil app in NewStateForApp")
 	}
 	return &State[T]{value: initial, app: app}
+}
+
+// BindApp binds this state to the given app for dirty-marking and batching.
+// Panics if app is nil. Idempotent for the same app; overwrites if different.
+func (s *State[T]) BindApp(app *App) {
+	if app == nil {
+		panic("tui: nil app in State.BindApp")
+	}
+	s.mu.Lock()
+	s.app = app
+	s.mu.Unlock()
 }
 
 // Get returns the current value. Thread-safe for reading from any goroutine.

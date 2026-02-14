@@ -171,3 +171,21 @@ func (l *loopsApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (l *loopsApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*loopsApp)
+	if !ok {
+		return
+	}
+	l.items = f.items
+}
+
+var _ tui.PropsUpdater = (*loopsApp)(nil)
+
+func (l *loopsApp) BindApp(app *tui.App) {
+	if l.selected != nil {
+		l.selected.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*loopsApp)(nil)

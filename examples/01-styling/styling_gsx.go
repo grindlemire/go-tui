@@ -836,3 +836,11 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (s *stylingApp) BindApp(app *tui.App) {
+	if s.scrollY != nil {
+		s.scrollY.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*stylingApp)(nil)

@@ -151,3 +151,11 @@ func (c *conditionalsApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (c *conditionalsApp) BindApp(app *tui.App) {
+	if c.count != nil {
+		c.count.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*conditionalsApp)(nil)

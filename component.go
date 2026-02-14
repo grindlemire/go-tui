@@ -36,3 +36,11 @@ type Initializer interface {
 type WatcherProvider interface {
 	Watchers() []Watcher
 }
+
+// AppBinder is implemented by components that contain State or Events fields
+// needing an App reference. Generated code emits BindApp methods that
+// delegate to each field's BindApp. The mount system calls BindApp
+// automatically — users never call it directly.
+type AppBinder interface {
+	BindApp(app *App)
+}

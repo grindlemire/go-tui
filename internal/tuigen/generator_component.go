@@ -98,6 +98,9 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 
 	// Generate UpdateProps method for prop updates on cached components
 	g.generateUpdateProps(comp, g.fileDecls)
+
+	// Generate BindApp method for app binding on State/Events fields
+	g.generateBindApp(comp, g.fileDecls)
 }
 
 // generateFunctionComponent generates a function component (existing behavior).
@@ -414,5 +417,69 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 
 	// Add a compile-time check that the type implements PropsUpdater
 	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
+	g.writeln("")
+}
+
+// isAppBindableType returns true if the field type has a BindApp method
+// (i.e., *tui.State[...] or *tui.Events[...]).
+func isAppBindableType(fieldType string) bool {
+	bindableTypes := []string{
+		"*tui.State[",
+		"*tui.Events[",
+	}
+	for _, t := range bindableTypes {
+		if strings.HasPrefix(fieldType, t) {
+			return true
+		}
+	}
+	return false
+}
+
+// generateBindApp generates a BindApp method for a method component.
+// This allows the mount system to bind the app to State/Events fields.
+func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
+	// Find the struct declaration for this component's receiver type
+	structDecl := findStructDecl(decls, comp.ReceiverType)
+	if structDecl == nil {
+		return
+	}
+
+	// Parse the struct fields
+	fields := parseStructFields(structDecl.Code)
+	if len(fields) == 0 {
+		return
+	}
+
+	// Find fields that need BindApp
+	var bindableFields []StructField
+	for _, f := range fields {
+		if isAppBindableType(f.Type) {
+			bindableFields = append(bindableFields, f)
+		}
+	}
+
+	if len(bindableFields) == 0 {
+		return
+	}
+
+	// Get the receiver type name without pointer
+	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
+
+	// Generate BindApp method with nil checks
+	g.writef("func (%s) BindApp(app *tui.App) {\n", comp.Receiver)
+	g.indent++
+	for _, f := range bindableFields {
+		g.writef("if %s.%s != nil {\n", comp.ReceiverName, f.Name)
+		g.indent++
+		g.writef("%s.%s.BindApp(app)\n", comp.ReceiverName, f.Name)
+		g.indent--
+		g.writeln("}")
+	}
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+
+	// Add a compile-time check that the type implements AppBinder
+	g.writef("var _ tui.AppBinder = (*%s)(nil)\n", typeName)
 	g.writeln("")
 }

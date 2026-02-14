@@ -57,6 +57,11 @@ func (a *App) Mount(parent Component, index int, factory func() Component) *Elem
 		ms.cache[key] = instance
 		debug.Log("Mount: NEW component at index %d, type %T", index, instance)
 
+		// Bind app before Init so state/events are wired up
+		if binder, ok := instance.(AppBinder); ok {
+			binder.BindApp(app)
+		}
+
 		// Call Init() if component implements Initializer
 		if init, ok := instance.(Initializer); ok {
 			cleanup := init.Init()
@@ -72,6 +77,10 @@ func (a *App) Mount(parent Component, index int, factory func() Component) *Elem
 			updater.UpdateProps(fresh)
 		} else {
 			debug.Log("Mount: CACHED component at index %d, NO UpdateProps, type %T", index, instance)
+		}
+		// Rebind after props update — fresh Events fields may be unbound
+		if binder, ok := instance.(AppBinder); ok {
+			binder.BindApp(app)
 		}
 	}
 

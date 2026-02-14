@@ -165,3 +165,20 @@ func (t *toggles) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*toggles)(nil)
+
+func (t *toggles) BindApp(app *tui.App) {
+	if t.sound != nil {
+		t.sound.BindApp(app)
+	}
+	if t.notify != nil {
+		t.notify.BindApp(app)
+	}
+	if t.dark != nil {
+		t.dark.BindApp(app)
+	}
+	if t.events != nil {
+		t.events.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*toggles)(nil)

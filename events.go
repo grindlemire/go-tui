@@ -11,20 +11,30 @@ type Events[T any] struct {
 }
 
 // NewEvents creates a new event bus.
+// The bus is created unbound — it will be bound to an App later via
+// BindApp (called by generated code during mount) or via the resolveApp
+// fallback to DefaultApp on first Emit().
 func NewEvents[T any]() *Events[T] {
-	app := DefaultApp()
-	if app == nil {
-		panic("tui.NewEvents requires a default app; call SetDefaultApp or use NewEventsForApp")
-	}
-	return NewEventsForApp[T](app)
+	return &Events[T]{}
 }
 
 // NewEventsForApp creates an event bus bound to the provided app.
 func NewEventsForApp[T any](app *App) *Events[T] {
 	if app == nil {
-		panic("tui: nil app in NewEvents")
+		panic("tui: nil app in NewEventsForApp")
 	}
 	return &Events[T]{app: app}
+}
+
+// BindApp binds this event bus to the given app for dirty-marking.
+// Panics if app is nil. Idempotent for the same app; overwrites if different.
+func (e *Events[T]) BindApp(app *App) {
+	if app == nil {
+		panic("tui: nil app in Events.BindApp")
+	}
+	e.mu.Lock()
+	e.app = app
+	e.mu.Unlock()
 }
 
 // Emit sends an event to all listeners and marks the UI dirty.

@@ -74,3 +74,14 @@ func (s *searchInput) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (s *searchInput) BindApp(app *tui.App) {
+	if s.Active != nil {
+		s.Active.BindApp(app)
+	}
+	if s.Query != nil {
+		s.Query.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*searchInput)(nil)

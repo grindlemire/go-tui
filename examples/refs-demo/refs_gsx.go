@@ -179,7 +179,8 @@ func KeyedRefsDemo(users []User) KeyedRefsDemoView {
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.White)),
 	)
 	__tui_3.AddChild(__tui_4)
-	for _, user := range users {
+	for __idx_0, user := range users {
+		_ = __idx_0
 		__tui_5 := tui.New(
 			tui.WithText(fmt.Sprintf("[%s] %s", user.ID, user.Name)),
 		)

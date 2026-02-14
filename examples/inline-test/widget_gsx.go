@@ -51,3 +51,15 @@ func (a *inlineApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (a *inlineApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*inlineApp)
+	if !ok {
+		return
+	}
+	a.tuiApp = f.tuiApp
+	a.counter = f.counter
+	a.height = f.height
+}
+
+var _ tui.PropsUpdater = (*inlineApp)(nil)

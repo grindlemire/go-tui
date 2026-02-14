@@ -61,3 +61,14 @@ func (s *sidebar) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (s *sidebar) BindApp(app *tui.App) {
+	if s.Query != nil {
+		s.Query.BindApp(app)
+	}
+	if s.expanded != nil {
+		s.expanded.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*sidebar)(nil)

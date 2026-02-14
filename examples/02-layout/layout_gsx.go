@@ -1290,3 +1290,11 @@ func (l *layoutApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (l *layoutApp) BindApp(app *tui.App) {
+	if l.scrollY != nil {
+		l.scrollY.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*layoutApp)(nil)

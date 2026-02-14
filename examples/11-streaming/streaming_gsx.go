@@ -201,3 +201,20 @@ func (s *streamingApp) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*streamingApp)(nil)
+
+func (s *streamingApp) BindApp(app *tui.App) {
+	if s.lines != nil {
+		s.lines.BindApp(app)
+	}
+	if s.scrollY != nil {
+		s.scrollY.BindApp(app)
+	}
+	if s.stickToBottom != nil {
+		s.stickToBottom.BindApp(app)
+	}
+	if s.elapsed != nil {
+		s.elapsed.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*streamingApp)(nil)

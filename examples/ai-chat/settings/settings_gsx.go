@@ -32,7 +32,15 @@ type SettingsApp struct {
 	onClose             func()
 }
 
-func NewSettingsApp(provider *tui.State[string], model *tui.State[string], temperature *tui.State[float64], systemPrompt *tui.State[string], availableProviders []string, providerModels map[string][]string, onClose func()) *SettingsApp {
+func NewSettingsApp(
+	provider *tui.State[string],
+	model *tui.State[string],
+	temperature *tui.State[float64],
+	systemPrompt *tui.State[string],
+	availableProviders []string,
+	providerModels map[string][]string,
+	onClose func(),
+) *SettingsApp {
 	return &SettingsApp{
 		Provider:            provider,
 		Model:               model,
@@ -709,3 +717,23 @@ func (s *SettingsApp) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*SettingsApp)(nil)
+
+func (s *SettingsApp) BindApp(app *tui.App) {
+	if s.Provider != nil {
+		s.Provider.BindApp(app)
+	}
+	if s.Model != nil {
+		s.Model.BindApp(app)
+	}
+	if s.Temperature != nil {
+		s.Temperature.BindApp(app)
+	}
+	if s.SystemPrompt != nil {
+		s.SystemPrompt.BindApp(app)
+	}
+	if s.FocusedSection != nil {
+		s.FocusedSection.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*SettingsApp)(nil)

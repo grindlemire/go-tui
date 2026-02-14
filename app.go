@@ -370,6 +370,9 @@ func (a *App) SetRootView(view Viewable) {
 
 // SetRootComponent sets the root from a struct component.
 func (a *App) SetRootComponent(component Component) {
+	if binder, ok := component.(AppBinder); ok {
+		binder.BindApp(a)
+	}
 	a.rootComponent = component
 	el := component.Render(a)
 	el.component = component

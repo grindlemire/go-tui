@@ -69,3 +69,13 @@ func (s *scrollableApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (s *scrollableApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*scrollableApp)
+	if !ok {
+		return
+	}
+	s.items = f.items
+}
+
+var _ tui.PropsUpdater = (*scrollableApp)(nil)

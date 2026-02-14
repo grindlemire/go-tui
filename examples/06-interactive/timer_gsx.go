@@ -131,3 +131,17 @@ func (t *timer) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*timer)(nil)
+
+func (t *timer) BindApp(app *tui.App) {
+	if t.elapsed != nil {
+		t.elapsed.BindApp(app)
+	}
+	if t.running != nil {
+		t.running.BindApp(app)
+	}
+	if t.events != nil {
+		t.events.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*timer)(nil)

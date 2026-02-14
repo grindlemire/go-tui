@@ -131,3 +131,11 @@ func (c *chat) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*chat)(nil)
+
+func (c *chat) BindApp(app *tui.App) {
+	if c.showSettings != nil {
+		c.showSettings.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*chat)(nil)

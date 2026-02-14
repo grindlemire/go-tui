@@ -99,3 +99,11 @@ func (a *interactiveApp) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*interactiveApp)(nil)
+
+func (a *interactiveApp) BindApp(app *tui.App) {
+	if a.events != nil {
+		a.events.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*interactiveApp)(nil)

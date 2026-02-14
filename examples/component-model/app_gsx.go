@@ -60,3 +60,14 @@ func (a *myApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (a *myApp) BindApp(app *tui.App) {
+	if a.searchActive != nil {
+		a.searchActive.BindApp(app)
+	}
+	if a.query != nil {
+		a.query.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*myApp)(nil)

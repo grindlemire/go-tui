@@ -82,3 +82,14 @@ func (e *eventInspector) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+func (e *eventInspector) BindApp(app *tui.App) {
+	if e.lastEvent != nil {
+		e.lastEvent.BindApp(app)
+	}
+	if e.eventCount != nil {
+		e.eventCount.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*eventInspector)(nil)
