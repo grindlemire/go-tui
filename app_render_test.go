@@ -219,7 +219,7 @@ func TestApp_GlobalKeyHandler_PassesEvent(t *testing.T) {
 
 func TestApp_EventBatching(t *testing.T) {
 	// Reset dirty flag for clean test
-	resetDirty()
+	testApp.resetDirty()
 
 	mockReader := NewMockEventReader()
 
@@ -244,7 +244,7 @@ func TestApp_EventBatching(t *testing.T) {
 	// Queue multiple events that mark dirty
 	for i := 0; i < 5; i++ {
 		app.eventQueue <- func() {
-			MarkDirty()
+			testApp.MarkDirty()
 		}
 	}
 
@@ -269,7 +269,7 @@ drain:
 	}
 
 	// Only check dirty once, clear it
-	if checkAndClearDirty() {
+	if testApp.checkAndClearDirty() {
 		// Would call Render() here in the real loop
 		renderCount++ // Simulated render
 	}

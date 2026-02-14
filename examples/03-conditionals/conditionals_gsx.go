@@ -21,8 +21,8 @@ func Conditionals() *conditionalsApp {
 
 func (c *conditionalsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('+', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
 		tui.OnRune('-', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() - 1) }),
 		tui.OnRune('r', func(ke tui.KeyEvent) { c.count.Set(0) }),

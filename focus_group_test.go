@@ -41,7 +41,9 @@ func TestFocusGroup_NextCyclesForward(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			members := make([]*State[bool], tt.numMembers)
 			for i := range members {
-				members[i] = NewState(false)
+				s := NewState(false)
+				s.BindApp(testApp)
+				members[i] = s
 			}
 			fg, err := NewFocusGroup(members...)
 			if err != nil {
@@ -93,7 +95,9 @@ func TestFocusGroup_PrevCyclesBackward(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			members := make([]*State[bool], tt.numMembers)
 			for i := range members {
-				members[i] = NewState(false)
+				s := NewState(false)
+				s.BindApp(testApp)
+				members[i] = s
 			}
 			fg, err := NewFocusGroup(members...)
 			if err != nil {
@@ -113,8 +117,11 @@ func TestFocusGroup_PrevCyclesBackward(t *testing.T) {
 
 func TestFocusGroup_MutualExclusion(t *testing.T) {
 	m0 := NewState(false)
+	m0.BindApp(testApp)
 	m1 := NewState(false)
+	m1.BindApp(testApp)
 	m2 := NewState(false)
+	m2.BindApp(testApp)
 	fg, err := NewFocusGroup(m0, m1, m2)
 	if err != nil {
 		t.Fatalf("NewFocusGroup: %v", err)
@@ -198,8 +205,11 @@ func TestFocusGroup_KeyMap(t *testing.T) {
 
 func TestFocusGroup_KeyMapHandlersWork(t *testing.T) {
 	m0 := NewState(false)
+	m0.BindApp(testApp)
 	m1 := NewState(false)
+	m1.BindApp(testApp)
 	m2 := NewState(false)
+	m2.BindApp(testApp)
 	fg, err := NewFocusGroup(m0, m1, m2)
 	if err != nil {
 		t.Fatalf("NewFocusGroup: %v", err)
@@ -232,8 +242,11 @@ func TestFocusGroup_ErrorWithFewerThanTwoMembers(t *testing.T) {
 
 func TestFocusGroup_ShiftTabDoesNotTriggerNext(t *testing.T) {
 	m0 := NewState(false)
+	m0.BindApp(testApp)
 	m1 := NewState(false)
+	m1.BindApp(testApp)
 	m2 := NewState(false)
+	m2.BindApp(testApp)
 	fg, err := NewFocusGroup(m0, m1, m2)
 	if err != nil {
 		t.Fatalf("NewFocusGroup: %v", err)

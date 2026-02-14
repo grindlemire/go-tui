@@ -113,26 +113,6 @@ type App struct {
 	rootWatcherCh <-chan struct{}
 }
 
-var (
-	defaultAppMu sync.RWMutex
-	defaultApp   *App
-)
-
-// DefaultApp returns the process-wide default app used by package-level helpers.
-func DefaultApp() *App {
-	defaultAppMu.RLock()
-	defer defaultAppMu.RUnlock()
-	return defaultApp
-}
-
-// SetDefaultApp sets the process-wide default app used by package-level helpers.
-// Passing nil clears the default app.
-func SetDefaultApp(app *App) {
-	defaultAppMu.Lock()
-	defaultApp = app
-	defaultAppMu.Unlock()
-}
-
 // NewApp creates a new application with the terminal set up for TUI usage.
 // The terminal is put into raw mode and alternate screen mode (unless inline mode).
 // Options can be passed to configure the app (e.g., WithInputLatency, WithInlineHeight).
@@ -236,10 +216,6 @@ func NewApp(opts ...AppOption) (*App, error) {
 		}
 	}
 
-	// Set the default app so Mount() works during SetRoot
-	// (Component.Render may call Mount).
-	SetDefaultApp(app)
-
 	// Set pending root if provided via WithRoot* option.
 	if app.pendingRootApply != nil {
 		app.pendingRootApply(app)
@@ -339,10 +315,6 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		}
 	}
 
-	// Set the default app so Mount() works during SetRoot
-	// (Component.Render may call Mount).
-	SetDefaultApp(app)
-
 	// Set pending root if provided via WithRoot* option.
 	if app.pendingRootApply != nil {
 		app.pendingRootApply(app)
@@ -361,6 +333,9 @@ func (a *App) SetRoot(root Renderable) {
 // SetRootView sets the root from a Viewable and starts its watchers.
 func (a *App) SetRootView(view Viewable) {
 	a.rootComponent = nil
+	if binder, ok := view.(AppBinder); ok {
+		binder.BindApp(a)
+	}
 	root := view.GetRoot()
 	a.applyRoot(root)
 	for _, w := range view.GetWatchers() {
@@ -388,6 +363,7 @@ func (a *App) applyRoot(root Renderable) {
 	if el, ok := root.(*Element); ok {
 		el.setAppRecursive(a)
 	}
+	a.MarkDirty()
 
 	// If root supports focus discovery, set up auto-registration
 	if walker, ok := root.(focusableTreeWalker); ok {

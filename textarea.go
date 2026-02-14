@@ -33,7 +33,16 @@ var (
 	_ KeyListener     = (*TextArea)(nil)
 	_ WatcherProvider = (*TextArea)(nil)
 	_ Focusable       = (*TextArea)(nil)
+	_ AppBinder       = (*TextArea)(nil)
 )
+
+// BindApp binds this TextArea's internal States to the given app.
+func (t *TextArea) BindApp(app *App) {
+	t.text.BindApp(app)
+	t.cursorPos.BindApp(app)
+	t.blink.BindApp(app)
+	t.focused.BindApp(app)
+}
 
 // NewTextArea creates a new multi-line text input.
 func NewTextArea(opts ...TextAreaOption) *TextArea {

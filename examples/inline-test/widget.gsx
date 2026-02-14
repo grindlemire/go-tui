@@ -24,8 +24,8 @@ func InlineApp(tuiApp *tui.App, height int) *inlineApp {
 func (a *inlineApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRuneStop('p', func(ke tui.KeyEvent) { a.printLine() }),
-		tui.OnRuneStop('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
 

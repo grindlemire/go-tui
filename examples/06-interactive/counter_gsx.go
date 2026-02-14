@@ -188,7 +188,6 @@ func (c *counter) UpdateProps(fresh tui.Component) {
 		return
 	}
 	c.events = f.events
-	c.delayCh = f.delayCh
 }
 
 var _ tui.PropsUpdater = (*counter)(nil)

@@ -4,6 +4,7 @@ import "testing"
 
 func TestTextArea_SetText_UsesRuneCursorPosition(t *testing.T) {
 	ta := NewTextArea()
+	ta.BindApp(testApp)
 	ta.SetText("a界")
 
 	if got := ta.cursorPos.Get(); got != 2 {
@@ -13,6 +14,7 @@ func TestTextArea_SetText_UsesRuneCursorPosition(t *testing.T) {
 
 func TestTextArea_Edit_MultibyteRunes(t *testing.T) {
 	ta := NewTextArea()
+	ta.BindApp(testApp)
 	ta.SetText("a界")
 	ta.cursorPos.Set(1)
 
@@ -34,6 +36,7 @@ func TestTextArea_Edit_MultibyteRunes(t *testing.T) {
 
 func TestTextArea_MoveRight_UsesRuneLength(t *testing.T) {
 	ta := NewTextArea()
+	ta.BindApp(testApp)
 	ta.SetText("é界")
 	ta.cursorPos.Set(0)
 

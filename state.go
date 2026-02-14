@@ -21,7 +21,7 @@
 // Use Batch() to coalesce multiple Set() calls and avoid redundant binding
 // execution:
 //
-//	tui.Batch(func() {
+//	app.Batch(func() {
 //	    firstName.Set("Bob")
 //	    lastName.Set("Smith")
 //	})  // Bindings fire once here, not twice
@@ -74,8 +74,7 @@ type Unbind func()
 
 // NewState creates a new state with the given initial value.
 // The state is created unbound — it will be bound to an App later via
-// BindApp (called by generated code during mount) or via the resolveApp
-// fallback to DefaultApp on first Set().
+// BindApp (called by generated code during mount).
 //
 // Example:
 //
@@ -105,6 +104,16 @@ func (s *State[T]) BindApp(app *App) {
 	s.mu.Unlock()
 }
 
+// setDirect sets the value without requiring an app.
+// No dirty marking, no bindings, no batching.
+// Used by framework code for construction-time initialization
+// when no app is bound yet and none of those effects are needed.
+func (s *State[T]) setDirect(v T) {
+	s.mu.Lock()
+	s.value = v
+	s.mu.Unlock()
+}
+
 // Get returns the current value. Thread-safe for reading from any goroutine.
 func (s *State[T]) Get() T {
 	s.mu.RLock()
@@ -121,7 +130,6 @@ func (s *State[T]) Get() T {
 // If called within a Batch(), binding execution is deferred until the
 // batch completes.
 func (s *State[T]) Set(v T) {
-	app := s.resolveApp()
 	debug.Log("State.Set: setting value to %v", v)
 	s.mu.Lock()
 	s.value = v
@@ -135,7 +143,17 @@ func (s *State[T]) Set(v T) {
 	}
 	// Replace bindings slice with only active bindings (cleanup)
 	s.bindings = activeBindings
+	app := s.app
 	s.mu.Unlock()
+
+	// Construction-time Set before app binding: keep value + bindings behavior,
+	// but skip dirty marking and batching because no app context exists yet.
+	if app == nil {
+		for _, b := range activeBindings {
+			b.fn(v)
+		}
+		return
+	}
 
 	// Mark dirty on the owning app.
 	app.MarkDirty()
@@ -221,47 +239,7 @@ func (s *State[T]) resolveApp() *App {
 	if app != nil {
 		return app
 	}
-	app = DefaultApp()
-	if app == nil {
-		panic("tui.State used without app context; use NewStateForApp or SetDefaultApp")
-	}
-	s.mu.Lock()
-	if s.app == nil {
-		s.app = app
-	}
-	s.mu.Unlock()
-	return app
-}
-
-// Batch executes fn and defers all binding callbacks until fn returns.
-// Use this when updating multiple states to avoid redundant element updates.
-//
-// When the same binding is triggered multiple times during a batch,
-// it only executes once with the final value.
-//
-// Bindings are executed in the order they were first triggered during the batch.
-// This provides deterministic ordering for bindings across different states.
-//
-// Nested Batch calls are supported - bindings only fire when the outermost
-// Batch completes.
-//
-// If fn panics, the batch state is properly cleaned up before the panic
-// propagates.
-//
-// Example:
-//
-//	tui.Batch(func() {
-//	    firstName.Set("Bob")
-//	    lastName.Set("Smith")
-//	    age.Set(30)
-//	})
-//	// Bindings fire once here, not three times
-func Batch(fn func()) {
-	app := DefaultApp()
-	if app == nil {
-		panic("tui.Batch requires a default app; call SetDefaultApp or use app.Batch")
-	}
-	app.Batch(fn)
+	panic("tui.State used without app context; call BindApp or use NewStateForApp")
 }
 
 // Batch executes fn using this app's batch context.
@@ -304,16 +282,6 @@ func (a *App) Batch(fn func()) {
 	}()
 
 	fn()
-}
-
-// TestResetBatch resets the batch context state for testing.
-// Only use this in test code.
-func TestResetBatch() {
-	app := DefaultApp()
-	if app == nil {
-		panic("tui.TestResetBatch requires a default app")
-	}
-	app.TestResetBatch()
 }
 
 // TestResetBatch resets this app's batch state for tests.

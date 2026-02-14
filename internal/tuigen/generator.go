@@ -25,6 +25,9 @@ type Generator struct {
 	stateVars     []StateVar
 	stateBindings []StateBinding
 
+	// Events tracking for current component (for BindApp generation)
+	eventsVars []EventsVar
+
 	// Conditional counter for reactive @if wrapper elements (__cond_0, __cond_1, etc.)
 	condCounter int
 
@@ -47,6 +50,10 @@ type Generator struct {
 	// fileDecls stores the current file's GoDecl nodes for struct lookup.
 	// Used by generateUpdateProps to find struct definitions for method components.
 	fileDecls []*GoDecl
+
+	// fileFuncs stores the current file's top-level Go functions/methods.
+	// Used to detect user-defined BindApp methods and avoid duplicate generation.
+	fileFuncs []*GoFunc
 
 	// SkipImports uses format.Source instead of imports.Process (faster for tests)
 	SkipImports bool
@@ -84,6 +91,7 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 
 	// Store file decls for struct lookup in generateUpdateProps
 	g.fileDecls = file.Decls
+	g.fileFuncs = file.Funcs
 
 	// Generate top-level Go declarations (type, const, var)
 	for _, decl := range file.Decls {

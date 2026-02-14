@@ -32,9 +32,10 @@ func NewFocusGroup(members ...*State[bool]) (*FocusGroup, error) {
 		return nil, fmt.Errorf("focus group requires at least 2 members")
 	}
 
-	// Initialize: first member active, rest inactive
+	// Initialize: first member active, rest inactive.
+	// Use setDirect because no app is bound yet during construction.
 	for i, m := range members {
-		m.Set(i == 0)
+		m.setDirect(i == 0)
 	}
 
 	return &FocusGroup{

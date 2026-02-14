@@ -18,6 +18,7 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.componentVars = nil
 	g.stateVars = nil
 	g.stateBindings = nil
+	g.eventsVars = nil
 
 	if comp.Receiver != "" {
 		g.generateMethodComponent(comp)
@@ -110,8 +111,9 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 	analyzer := NewAnalyzer()
 	g.refs = analyzer.CollectRefs(comp)
 
-	// Detect state variables and bindings
+	// Detect state variables, events variables, and bindings
 	g.stateVars = analyzer.DetectStateVars(comp)
+	g.eventsVars = analyzer.DetectEventsVars(comp)
 	g.stateBindings = analyzer.DetectStateBindings(comp, g.stateVars)
 
 	// Generate view struct for this component (always generated)
@@ -205,6 +207,9 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 	// Generate state bindings (reactive updates)
 	g.generateStateBindings()
 
+	// Generate bindApp closure capturing local state, events, and child views
+	g.generateBindAppClosure()
+
 	// Populate view struct before returning
 	g.writeln("")
 	g.writef("view = %s{\n", structName)
@@ -219,6 +224,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 		g.writeln("Root: nil,")
 	}
 	g.writeln("watchers: watchers,")
+	g.writeln("bindApp: __bindApp,")
 	for _, ref := range g.refs {
 		// View struct exposes *tui.Element (not ref types)
 		switch ref.RefKind {
@@ -248,6 +254,7 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.indent++
 	g.writeln("Root     *tui.Element")
 	g.writeln("watchers []tui.Watcher")
+	g.writeln("bindApp  func(*tui.App)")
 
 	for _, ref := range refs {
 		switch ref.RefKind {
@@ -274,6 +281,20 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 
 	// Generate GetWatchers() method to implement tui.Viewable
 	g.writef("func (v %s) GetWatchers() []tui.Watcher { return v.watchers }\n", structName)
+	g.writeln("")
+
+	// Generate BindApp method to implement tui.AppBinder
+	g.writef("func (v %s) BindApp(app *tui.App) {\n", structName)
+	g.indent++
+	g.writeln("if v.bindApp != nil {")
+	g.indent++
+	g.writeln("v.bindApp(app)")
+	g.indent--
+	g.writeln("}")
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+	g.writef("var _ tui.AppBinder = %s{}\n", structName)
 	g.writeln("")
 }
 
@@ -347,6 +368,17 @@ func isInternalStateType(fieldType string) bool {
 		}
 	}
 
+	// Channels and functions are runtime state, not props.
+	// Copying them in UpdateProps breaks watchers subscribed to the original channel.
+	if strings.HasPrefix(fieldType, "chan ") ||
+		strings.HasPrefix(fieldType, "<-chan ") ||
+		strings.HasPrefix(fieldType, "chan<-") ||
+		fieldType == "chan" ||
+		strings.HasPrefix(fieldType, "func(") ||
+		fieldType == "func" {
+		return true
+	}
+
 	return false
 }
 
@@ -364,6 +396,25 @@ func findStructDecl(decls []*GoDecl, typeName string) *GoDecl {
 		}
 	}
 	return nil
+}
+
+// hasUserBindAppMethod returns true when the source file already declares a
+// BindApp method on the receiver type.
+func hasUserBindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
+	typeName := strings.TrimPrefix(receiverType, "*")
+	pattern := regexp.MustCompile(`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*BindApp\s*\(`)
+
+	for _, decl := range decls {
+		if decl.Kind == "func" && pattern.MatchString(decl.Code) {
+			return true
+		}
+	}
+	for _, fn := range funcs {
+		if pattern.MatchString(fn.Code) {
+			return true
+		}
+	}
+	return false
 }
 
 // generateUpdateProps generates an UpdateProps method for a method component.
@@ -426,6 +477,7 @@ func isAppBindableType(fieldType string) bool {
 	bindableTypes := []string{
 		"*tui.State[",
 		"*tui.Events[",
+		"*tui.TextArea",
 	}
 	for _, t := range bindableTypes {
 		if strings.HasPrefix(fieldType, t) {
@@ -438,6 +490,10 @@ func isAppBindableType(fieldType string) bool {
 // generateBindApp generates a BindApp method for a method component.
 // This allows the mount system to bind the app to State/Events fields.
 func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
+	if hasUserBindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+		return
+	}
+
 	// Find the struct declaration for this component's receiver type
 	structDecl := findStructDecl(decls, comp.ReceiverType)
 	if structDecl == nil {
@@ -482,4 +538,38 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// Add a compile-time check that the type implements AppBinder
 	g.writef("var _ tui.AppBinder = (*%s)(nil)\n", typeName)
 	g.writeln("")
+}
+
+// generateBindAppClosure emits a __bindApp closure for function components.
+// The closure captures local state vars, events vars, and child component views,
+// binding them all to the app when called.
+func (g *Generator) generateBindAppClosure() {
+	g.writeln("")
+	g.writeln("__bindApp := func(app *tui.App) {")
+	g.indent++
+
+	// Bind local state variables
+	for _, sv := range g.stateVars {
+		if sv.IsParameter {
+			continue // Parameters are already bound by the caller
+		}
+		g.writef("%s.BindApp(app)\n", sv.Name)
+	}
+
+	// Bind local events variables
+	for _, ev := range g.eventsVars {
+		g.writef("%s.BindApp(app)\n", ev.Name)
+	}
+
+	// Bind child function component views (they implement AppBinder)
+	for _, compVar := range g.componentVars {
+		g.writef("if binder, ok := interface{}(%s).(tui.AppBinder); ok {\n", compVar)
+		g.indent++
+		g.writeln("binder.BindApp(app)")
+		g.indent--
+		g.writeln("}")
+	}
+
+	g.indent--
+	g.writeln("}")
 }

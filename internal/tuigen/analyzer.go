@@ -14,6 +14,12 @@ type StateVar struct {
 	Position    Position // Position of the declaration
 }
 
+// EventsVar tracks information about an events variable declaration.
+type EventsVar struct {
+	Name     string   // Variable name (e.g., "events")
+	Position Position // Position of the declaration
+}
+
 // StateBinding tracks a binding between state variables and an element.
 type StateBinding struct {
 	StateVars   []string // State variables referenced in expression
@@ -23,7 +29,6 @@ type StateBinding struct {
 	Expr        string   // The expression (e.g., "fmt.Sprintf(...)")
 	ExplicitDeps bool    // True if deps={...} was used
 }
-
 
 // RefKind describes how a ref should be generated.
 type RefKind int
@@ -162,6 +167,10 @@ var knownAttributes = map[string]bool{
 // stateNewStateRegex matches tui.NewState(...) declarations.
 // It captures the variable name and the initializer expression.
 var stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewState\((.+)\)`)
+
+// eventsNewEventsRegex matches tui.NewEvents() and tui.NewEvents[T]() declarations.
+// It captures the variable name.
+var eventsNewEventsRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewEvents(?:\[.+\])?\(\)`)
 
 // stateGetRegex matches state.Get() calls to detect state usage in expressions.
 // This pattern handles:

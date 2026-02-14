@@ -50,8 +50,8 @@ func (s *streamingApp) scrollBy(delta int) {
 
 func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
 		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),

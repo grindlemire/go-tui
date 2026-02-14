@@ -27,8 +27,8 @@ func Refs() *refsApp {
 
 func (r *refsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('+', func(ke tui.KeyEvent) { r.increment() }),
 		tui.OnRune('=', func(ke tui.KeyEvent) { r.increment() }),
 		tui.OnRune('-', func(ke tui.KeyEvent) { r.decrement() }),

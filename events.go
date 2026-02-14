@@ -12,8 +12,7 @@ type Events[T any] struct {
 
 // NewEvents creates a new event bus.
 // The bus is created unbound — it will be bound to an App later via
-// BindApp (called by generated code during mount) or via the resolveApp
-// fallback to DefaultApp on first Emit().
+// BindApp (called by generated code during mount).
 func NewEvents[T any]() *Events[T] {
 	return &Events[T]{}
 }
@@ -64,14 +63,5 @@ func (e *Events[T]) resolveApp() *App {
 	if app != nil {
 		return app
 	}
-	app = DefaultApp()
-	if app == nil {
-		panic("tui.Events used without app context; use NewEventsForApp or SetDefaultApp")
-	}
-	e.mu.Lock()
-	if e.app == nil {
-		e.app = app
-	}
-	e.mu.Unlock()
-	return app
+	panic("tui.Events used without app context; call BindApp or use NewEventsForApp")
 }

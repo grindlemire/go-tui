@@ -31,16 +31,23 @@ func (a *App) Dispatch(event Event) bool {
 
 	// Handle MouseEvent by hit-testing to find the element under the cursor
 	if mouse, ok := event.(MouseEvent); ok {
+		mouse.app = a
 		if a.root == nil {
 			return false
 		}
 		// Check if root supports hit-testing
 		if hitTester, ok := a.root.(mouseHitTester); ok {
 			if target := hitTester.ElementAtPoint(mouse.X, mouse.Y); target != nil {
-				return target.HandleEvent(event)
+				return target.HandleEvent(mouse)
 			}
 		}
 		return false
+	}
+
+	// Inject app on key events reaching Dispatch directly
+	if ke, ok := event.(KeyEvent); ok {
+		ke.app = a
+		return a.focus.Dispatch(ke)
 	}
 
 	// Delegate to FocusManager for other events
@@ -87,6 +94,7 @@ func (a *App) readInputEvents() {
 
 		a.eventQueue <- func() {
 			if keyEvent, isKey := ev.(KeyEvent); isKey {
+				keyEvent.app = a
 				// Component model path: use broadcast dispatch table exclusively.
 				// globalKeyHandler is skipped — components use KeyMap() instead.
 				if a.dispatchTable != nil {
@@ -102,16 +110,20 @@ func (a *App) readInputEvents() {
 						return // Event consumed by global handler
 					}
 				}
+				a.Dispatch(keyEvent)
+				return
 			}
 			// Component model path for mouse events: dispatch to MouseListener
 			// components before falling through to element hit-testing.
 			if mouseEvent, isMouse := ev.(MouseEvent); isMouse {
+				mouseEvent.app = a
 				if a.dispatchMouseToComponents(mouseEvent) {
 					return
 				}
+				a.Dispatch(mouseEvent)
+				return
 			}
-			// Non-key events (mouse, resize) and fallback for key events
-			// without a dispatch table still go through App.Dispatch.
+			// Non-key events (resize) go through App.Dispatch.
 			a.Dispatch(ev)
 		}
 	}

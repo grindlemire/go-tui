@@ -4,6 +4,10 @@ import "testing"
 
 // --- Integration test components ---
 
+var _ AppBinder = (*intRoot)(nil)
+var _ AppBinder = (*intSidebar)(nil)
+var _ AppBinder = (*intSearch)(nil)
+
 // intRoot is a root component that mounts two children.
 // Its KeyMap changes based on the searchActive state.
 type intRoot struct {
@@ -48,6 +52,11 @@ func (r *intRoot) Render(app *App) *Element {
 	return root
 }
 
+func (r *intRoot) BindApp(app *App) {
+	r.searchActive.BindApp(app)
+	r.query.BindApp(app)
+}
+
 // intSidebar is a child component with a KeyCtrlB binding.
 type intSidebar struct {
 	query    *State[string]
@@ -71,6 +80,11 @@ func (s *intSidebar) KeyMap() KeyMap {
 
 func (s *intSidebar) Render(app *App) *Element {
 	return New(WithText("sidebar"))
+}
+
+func (s *intSidebar) BindApp(app *App) {
+	s.query.BindApp(app)
+	s.expanded.BindApp(app)
 }
 
 // intSearch is a child component with conditional stop-propagation bindings.
@@ -102,6 +116,11 @@ func (s *intSearch) Render(app *App) *Element {
 	return New(WithText("search"))
 }
 
+func (s *intSearch) BindApp(app *App) {
+	s.active.BindApp(app)
+	s.query.BindApp(app)
+}
+
 // intInitComponent tracks Init/cleanup lifecycle.
 type intInitComponent struct {
 	initCalled   bool
@@ -121,11 +140,11 @@ func TestIntegration_MountCachesAndDiscoverKeyMaps(t *testing.T) {
 	defer cleanup()
 
 	root := newIntRoot()
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	// Verify mount cached two child instances
-	ms := DefaultApp().mounts
+	ms := testApp.mounts
 	if len(ms.cache) != 2 {
 		t.Fatalf("mount cache has %d entries, want 2", len(ms.cache))
 	}
@@ -150,7 +169,7 @@ func TestIntegration_DispatchBroadcastAndStopPropagation(t *testing.T) {
 	defer cleanup()
 
 	root := newIntRoot()
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	table, err := buildDispatchTable(el)
@@ -168,12 +187,12 @@ func TestIntegration_DispatchBroadcastAndStopPropagation(t *testing.T) {
 func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	resetDirty()
+	testApp.resetDirty()
 
 	root := newIntRoot()
 
 	// Initial render: search is inactive
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	table, err := buildDispatchTable(el)
@@ -188,7 +207,7 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	}
 
 	// Re-render (simulating dirty frame)
-	el = root.Render(DefaultApp())
+	el = root.Render(testApp)
 	el.component = root
 
 	// Rebuild dispatch table with new KeyMaps
@@ -222,15 +241,16 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	resetDirty()
+	testApp.resetDirty()
 
 	root := newIntRoot()
+	root.BindApp(testApp)
 
 	// Activate search
 	root.searchActive.Set(true)
 	root.query.Set("test")
 
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	table, err := buildDispatchTable(el)
@@ -249,7 +269,7 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	}
 
 	// Re-render: search should return nil KeyMap
-	el = root.Render(DefaultApp())
+	el = root.Render(testApp)
 	el.component = root
 
 	table, err = buildDispatchTable(el)
@@ -274,13 +294,13 @@ func TestIntegration_SweepCleansUnmountedComponents(t *testing.T) {
 	initComp := &intInitComponent{}
 
 	// Mount the component
-	DefaultApp().Mount(parent, 0, func() Component { return initComp })
+	testApp.Mount(parent, 0, func() Component { return initComp })
 
 	if !initComp.initCalled {
 		t.Fatal("Init should have been called on first mount")
 	}
 
-	ms := DefaultApp().mounts
+	ms := testApp.mounts
 
 	// Simulate a render where the component is not active (e.g., removed by @if)
 	ms.activeKeys = make(map[mountKey]bool)
@@ -297,12 +317,12 @@ func TestIntegration_SweepCleansUnmountedComponents(t *testing.T) {
 func TestIntegration_SharedStatePropagation(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	resetDirty()
+	testApp.resetDirty()
 
 	root := newIntRoot()
 
 	// Initial render
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	// The query state is shared between root, sidebar, and search.
@@ -314,7 +334,7 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 	}
 
 	// Re-render and verify the shared state is accessible
-	el = root.Render(DefaultApp())
+	el = root.Render(testApp)
 	el.component = root
 
 	// walkComponents should find all 3 components
@@ -332,12 +352,12 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 	cleanup := setupTestMountState()
 	defer cleanup()
-	resetDirty()
+	testApp.resetDirty()
 
 	root := newIntRoot()
 
 	// Phase 1: searchActive=false
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	table1, err := buildDispatchTable(el)
@@ -348,7 +368,7 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 
 	// Phase 2: activate search
 	root.searchActive.Set(true)
-	el = root.Render(DefaultApp())
+	el = root.Render(testApp)
 	el.component = root
 
 	table2, err := buildDispatchTable(el)
@@ -377,7 +397,7 @@ func TestIntegration_CtrlBTogglesSidebar(t *testing.T) {
 	defer cleanup()
 
 	root := newIntRoot()
-	el := root.Render(DefaultApp())
+	el := root.Render(testApp)
 	el.component = root
 
 	table, err := buildDispatchTable(el)

@@ -19,8 +19,8 @@ func Loops(items []string) *loopsApp {
 
 func (l *loopsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { tui.Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { tui.Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('j', func(ke tui.KeyEvent) { l.next() }),
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { l.next() }),
 		tui.OnRune('k', func(ke tui.KeyEvent) { l.prev() }),

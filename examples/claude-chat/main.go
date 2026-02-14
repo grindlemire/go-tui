@@ -71,7 +71,7 @@ func main() {
 			return false
 		}
 		render()
-		tui.MarkDirty()
+		app.MarkDirty()
 		return true
 	})
 

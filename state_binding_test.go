@@ -8,6 +8,7 @@ import (
 
 func TestState_Set_CallsBindings(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var called bool
 	var receivedValue int
@@ -28,6 +29,7 @@ func TestState_Set_CallsBindings(t *testing.T) {
 
 func TestState_Update(t *testing.T) {
 	s := NewState(10)
+	s.BindApp(testApp)
 
 	s.Update(func(v int) int { return v + 5 })
 
@@ -38,6 +40,7 @@ func TestState_Update(t *testing.T) {
 
 func TestState_Update_CallsBindings(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var receivedValue int
 	s.Bind(func(v int) {
@@ -53,6 +56,7 @@ func TestState_Update_CallsBindings(t *testing.T) {
 
 func TestState_Bind(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	s.Bind(func(v int) {
@@ -79,6 +83,7 @@ func TestState_Bind(t *testing.T) {
 
 func TestState_Bind_ReceivesNewValue(t *testing.T) {
 	s := NewState("initial")
+	s.BindApp(testApp)
 
 	var values []string
 	s.Bind(func(v string) {
@@ -103,6 +108,7 @@ func TestState_Bind_ReceivesNewValue(t *testing.T) {
 
 func TestState_Unbind(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	unbind := s.Bind(func(v int) {
@@ -134,6 +140,7 @@ func TestState_Unbind(t *testing.T) {
 
 func TestState_MultipleBindings(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callOrder []int
 	s.Bind(func(v int) { callOrder = append(callOrder, 1) })
@@ -155,6 +162,7 @@ func TestState_MultipleBindings(t *testing.T) {
 
 func TestState_UnbindSpecificBinding(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var calls []int
 	s.Bind(func(v int) { calls = append(calls, 1) })
@@ -211,6 +219,7 @@ func TestState_ConcurrentGetDuringSet(t *testing.T) {
 	// Test that concurrent Get() calls are safe while Set() is being called.
 	// This verifies the RWMutex properly handles read/write contention.
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var wg sync.WaitGroup
 	const numReaders = 50
@@ -263,6 +272,7 @@ func TestState_BindingCanCallGet(t *testing.T) {
 	// This tests that binding execution happens outside the lock,
 	// so calling Get() inside a binding doesn't deadlock.
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var gotValue int
 	s.Bind(func(v int) {
@@ -280,9 +290,10 @@ func TestState_BindingCanCallGet(t *testing.T) {
 
 func TestState_SetWithZeroBindings(t *testing.T) {
 	// Ensure Set works even with no bindings
-	resetDirty()
+	testApp.resetDirty()
 
 	s := NewState(0)
+	s.BindApp(testApp)
 	s.Set(42) // Should not panic
 
 	if got := s.Get(); got != 42 {
@@ -290,13 +301,14 @@ func TestState_SetWithZeroBindings(t *testing.T) {
 	}
 
 	// Should still mark dirty
-	if !checkAndClearDirty() {
+	if !testApp.checkAndClearDirty() {
 		t.Error("should be dirty after Set() even with no bindings")
 	}
 }
 
 func TestState_UnbindIdempotent(t *testing.T) {
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	var callCount int
 	unbind := s.Bind(func(v int) {
@@ -319,6 +331,7 @@ func TestState_InactiveBindingsCleanup(t *testing.T) {
 	// Test that inactive bindings are cleaned up during Set()
 	// to prevent memory leaks
 	s := NewState(0)
+	s.BindApp(testApp)
 
 	// Add several bindings
 	unbind1 := s.Bind(func(v int) {})
