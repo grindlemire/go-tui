@@ -14,7 +14,7 @@ module.exports = grammar({
   // this by preferring the longer match (state_declaration) when both apply.
   // This is intentional: inside a component body, `x := tui.NewState(0)` should
   // parse as a state_declaration, not as an expression.
-  conflicts: ($) => [[$.state_declaration, $._expression]],
+  conflicts: ($) => [[$.state_declaration, $._expression], [$.func_type]],
 
   rules: {
     source_file: ($) =>
@@ -103,14 +103,14 @@ module.exports = grammar({
     pointer_type: ($) => seq("*", $.type_expression),
     // Map type: map[K]V
     map_type: ($) => seq("map", "[", $.type_expression, "]", $.type_expression),
-    // Function type: func(), func(T), func(T1, T2)
-    // Return types are omitted to avoid ambiguity with struct field boundaries.
+    // Function type: func(), func(T), func(T1, T2) R, func() (R1, R2)
     func_type: ($) =>
       seq(
         "func",
         "(",
         optional(seq($.type_expression, repeat(seq(",", $.type_expression)))),
         ")",
+        optional($.return_type),
       ),
     // Generic type: Type[T] or pkg.Type[T]
     generic_type: ($) =>
@@ -343,6 +343,18 @@ module.exports = grammar({
     true: ($) => "true",
     false: ($) => "false",
 
+    // Return type: single type or tuple (T1, T2)
+    return_type: ($) =>
+      choice(
+        $.type_expression,
+        seq(
+          "(",
+          $.type_expression,
+          repeat(seq(",", $.type_expression)),
+          ")",
+        ),
+      ),
+
     // Function declarations: supports both regular and method forms
     //   func name(params) returnType { body }
     //   func (recv) name(params) returnType { body }
@@ -352,7 +364,7 @@ module.exports = grammar({
           "func",
           field("name", $.identifier),
           field("parameters", $.parameter_list),
-          optional(field("return_type", $.type_expression)),
+          optional(field("return_type", $.return_type)),
           field("body", $.function_body),
         ),
         seq(
@@ -360,7 +372,7 @@ module.exports = grammar({
           field("receiver", $.receiver),
           field("name", $.identifier),
           field("parameters", $.parameter_list),
-          optional(field("return_type", $.type_expression)),
+          optional(field("return_type", $.return_type)),
           field("body", $.function_body),
         ),
       ),

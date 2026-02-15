@@ -532,6 +532,10 @@
       "required": false,
       "types": [
         {
+          "type": "return_type",
+          "named": true
+        },
+        {
           "type": "type_expression",
           "named": true
         }
@@ -602,7 +606,7 @@
         "required": false,
         "types": [
           {
-            "type": "type_expression",
+            "type": "return_type",
             "named": true
           }
         ]
@@ -1141,6 +1145,21 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "return_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "type_expression",
+          "named": true
+        }
+      ]
     }
   },
   {

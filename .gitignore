@@ -46,7 +46,9 @@ node_modules/
 out/
 **/*.vsix
 
-# Docusaurus docs site (generated artifacts only)
+# Docs site
+docs/node_modules/
+docs/dist/
 docs/site/node_modules/
 docs/site/build/
 docs/site/.docusaurus/

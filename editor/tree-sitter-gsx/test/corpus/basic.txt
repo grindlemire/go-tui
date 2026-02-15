@@ -492,3 +492,176 @@ templ Card() {
             name: (identifier)
             value: (string))
           (identifier))))))
+
+================================================================================
+Map type in struct field
+================================================================================
+
+type Config struct {
+	Models map[string][]string
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_struct_declaration
+    name: (identifier)
+    body: (struct_body
+      (struct_field
+        name: (identifier)
+        type: (type_expression
+          (map_type
+            (type_expression
+              (identifier))
+            (type_expression
+              (slice_type
+                (type_expression
+                  (identifier))))))))))
+
+================================================================================
+Func type in struct field
+================================================================================
+
+type Handler struct {
+	onClose func()
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_struct_declaration
+    name: (identifier)
+    body: (struct_body
+      (struct_field
+        name: (identifier)
+        type: (type_expression
+          (func_type))))))
+
+================================================================================
+Multiline parameters with trailing comma
+================================================================================
+
+func Create(
+	name string,
+	items []string,
+	lookup map[string][]string,
+	callback func(),
+) {
+	return
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (identifier)))
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (slice_type
+            (type_expression
+              (identifier)))))
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (map_type
+            (type_expression
+              (identifier))
+            (type_expression
+              (slice_type
+                (type_expression
+                  (identifier)))))))
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (func_type))))
+    body: (function_body
+      (go_code_content))))
+
+================================================================================
+Tuple return type
+================================================================================
+
+func split(s string) (string, string) {
+	return s, s
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (identifier))))
+    return_type: (return_type
+      (type_expression
+        (identifier))
+      (type_expression
+        (identifier)))
+    body: (function_body
+      (go_code_content))))
+
+================================================================================
+Func type in struct field with single return
+================================================================================
+
+type HandlerWithResult struct {
+	onClose func() string
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_struct_declaration
+    name: (identifier)
+    body: (struct_body
+      (struct_field
+        name: (identifier)
+        type: (type_expression
+          (func_type
+            (return_type
+              (type_expression
+                (identifier)))))))))
+
+================================================================================
+Func type in params with returns
+================================================================================
+
+func CreateWithCallbacks(cb func() string, mk func(int) (bool, error)) {
+	return
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (func_type
+            (return_type
+              (type_expression
+                (identifier))))))
+      (parameter
+        name: (identifier)
+        type: (type_expression
+          (func_type
+            (type_expression
+              (identifier))
+            (return_type
+              (type_expression
+                (identifier))
+              (type_expression
+                (identifier)))))))
+    body: (function_body
+      (go_code_content))))
