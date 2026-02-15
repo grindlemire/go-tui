@@ -18,10 +18,13 @@ func (e *Element) LayoutStyle() LayoutStyle {
 }
 
 // LayoutChildren returns the children to be laid out.
+// Hidden children are excluded from layout.
 func (e *Element) LayoutChildren() []Layoutable {
-	result := make([]Layoutable, len(e.children))
-	for i, child := range e.children {
-		result[i] = child
+	result := make([]Layoutable, 0, len(e.children))
+	for _, child := range e.children {
+		if !child.hidden {
+			result = append(result, child)
+		}
 	}
 	return result
 }
@@ -94,8 +97,12 @@ func (e *Element) IntrinsicSize() (width, height int) {
 	// Compute intrinsic size from children
 	isRow := e.style.Direction == Row
 	var intrinsicW, intrinsicH int
+	visibleIdx := 0
 
-	for i, child := range e.children {
+	for _, child := range e.children {
+		if child.hidden {
+			continue
+		}
 		childW, childH := child.IntrinsicSize()
 		childStyle := child.LayoutStyle()
 		marginH := childStyle.Margin.Horizontal()
@@ -113,14 +120,15 @@ func (e *Element) IntrinsicSize() (width, height int) {
 			intrinsicH += childH + marginV
 		}
 
-		// Add gap between children (not before first)
-		if i > 0 {
+		// Add gap between visible children (not before first)
+		if visibleIdx > 0 {
 			if isRow {
 				intrinsicW += e.style.Gap
 			} else {
 				intrinsicH += e.style.Gap
 			}
 		}
+		visibleIdx++
 	}
 
 	// Add padding

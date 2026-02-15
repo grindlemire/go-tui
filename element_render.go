@@ -43,6 +43,10 @@ func RenderTree(buf *Buffer, root *Element) {
 
 // renderElement renders a single element and recurses to its children.
 func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
+	if e.hidden {
+		return
+	}
+
 	// Call pre-render hook for custom update logic (polling, animations, etc.)
 	if e.onUpdate != nil {
 		e.onUpdate()
@@ -103,9 +107,14 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 		bg:        bg,
 	}
 
-	// 5. Render children (with scroll handling if scrollable)
+	// 5. Render children (with scroll handling if scrollable, or clipping if overflow-hidden)
 	if e.IsScrollable() {
 		renderScrollableChildren(buf, e, childInherited)
+	} else if e.overflow == OverflowHidden {
+		clipRect := e.ContentRect()
+		for _, child := range e.children {
+			renderClippedElement(buf, child, clipRect, 0, 0, clipRect.X, clipRect.Y, childInherited)
+		}
 	} else {
 		for _, child := range e.children {
 			renderElement(buf, child, childInherited)
@@ -139,6 +148,10 @@ func renderScrollableChildren(buf *Buffer, e *Element, childInherited inheritedS
 
 // renderClippedElement renders an element with scroll offset and clipping.
 func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrollY, viewportX, viewportY int, inherited inheritedStyle) {
+	if e.hidden {
+		return
+	}
+
 	childRect := e.Rect()
 
 	// Translate from content space to screen space
@@ -203,6 +216,17 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			textY += 1
 		}
 
+		// Apply truncation if enabled
+		displayText := e.text
+		if e.truncate {
+			// Compute available width for text within this element
+			availTextWidth := childRect.Width - e.style.Padding.Horizontal()
+			if e.border != BorderNone {
+				availTextWidth -= 2
+			}
+			displayText = truncateText(displayText, availTextWidth)
+		}
+
 		if textY >= clipRect.Y && textY < clipRect.Bottom() {
 			ts := textStyle
 			// Merge background color into text style so text preserves the background
@@ -214,7 +238,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			// (e.g. gradient backgrounds painted by a parent) and apply clipping.
 			needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
 			if needPerCell {
-				runes := []rune(e.text)
+				runes := []rune(displayText)
 				if len(runes) > 0 {
 					curX := textX
 					for i, r := range runes {
@@ -250,7 +274,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 					}
 				}
 			} else {
-				buf.SetStringClipped(textX, textY, e.text, ts, clipRect)
+				buf.SetStringClipped(textX, textY, displayText, ts, clipRect)
 			}
 		}
 	}
@@ -312,6 +336,29 @@ func renderVerticalScrollbar(buf *Buffer, e *Element) {
 	}
 }
 
+// truncateText truncates a string to fit within maxWidth terminal cells,
+// replacing the overflow with an ellipsis character (…).
+func truncateText(text string, maxWidth int) string {
+	if maxWidth <= 0 {
+		return ""
+	}
+	textWidth := stringWidth(text)
+	if textWidth <= maxWidth {
+		return text
+	}
+	// Need to truncate: fit as many runes as possible + ellipsis (1 cell wide)
+	runes := []rune(text)
+	curWidth := 0
+	for i, r := range runes {
+		w := RuneWidth(r)
+		if curWidth+w+1 > maxWidth { // +1 for ellipsis
+			return string(runes[:i]) + "…"
+		}
+		curWidth += w
+	}
+	return text
+}
+
 // renderTextContent draws the text content within the element's content rect.
 //
 // When the element width equals text width (intrinsic sizing), the text is drawn
@@ -328,7 +375,13 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		return
 	}
 
-	textWidth := stringWidth(e.text)
+	// Apply truncation if enabled
+	displayText := e.text
+	if e.truncate {
+		displayText = truncateText(displayText, contentRect.Width)
+	}
+
+	textWidth := stringWidth(displayText)
 	x := contentRect.X
 
 	// Only apply text-level alignment if element is wider than text content
@@ -353,7 +406,7 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 	// the buffer. This preserves gradient backgrounds painted by a parent element.
 	needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
 	if needPerCell {
-		runes := []rune(e.text)
+		runes := []rune(displayText)
 		curX := x
 		for i, r := range runes {
 			// Clip to element's content rect (not just buffer width)
@@ -383,7 +436,7 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		}
 	} else {
 		// Clip text to element's content rect
-		buf.SetStringClipped(x, contentRect.Y, e.text, ts, contentRect)
+		buf.SetStringClipped(x, contentRect.Y, displayText, ts, contentRect)
 	}
 }
 

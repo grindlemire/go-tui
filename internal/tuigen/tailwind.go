@@ -1,6 +1,7 @@
 package tuigen
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -286,6 +287,42 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 		return TailwindMapping{Option: "tui.WithFlexShrink(" + strconv.Itoa(n) + ")"}, true
 	}
 
+	// Arbitrary hex color patterns (must be checked before gradients)
+	if matches := textHexPattern.FindStringSubmatch(class); matches != nil {
+		r, g, b, ok := parseHexToRGB(matches[1])
+		if ok {
+			return TailwindMapping{IsTextStyle: true, TextMethod: fmt.Sprintf("Foreground(tui.RGBColor(%d, %d, %d))", r, g, b), NeedsImport: "tui"}, true
+		}
+	}
+
+	if matches := bgHexPattern.FindStringSubmatch(class); matches != nil {
+		r, g, b, ok := parseHexToRGB(matches[1])
+		if ok {
+			return TailwindMapping{Option: fmt.Sprintf("tui.WithBackground(tui.NewStyle().Background(tui.RGBColor(%d, %d, %d)))", r, g, b), NeedsImport: "tui"}, true
+		}
+	}
+
+	if matches := borderHexPattern.FindStringSubmatch(class); matches != nil {
+		r, g, b, ok := parseHexToRGB(matches[1])
+		if ok {
+			return TailwindMapping{Option: fmt.Sprintf("tui.WithBorderStyle(tui.NewStyle().Foreground(tui.RGBColor(%d, %d, %d)))", r, g, b), NeedsImport: "tui"}, true
+		}
+	}
+
+	if matches := scrollbarHexPattern.FindStringSubmatch(class); matches != nil {
+		r, g, b, ok := parseHexToRGB(matches[1])
+		if ok {
+			return TailwindMapping{Option: fmt.Sprintf("tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.RGBColor(%d, %d, %d)))", r, g, b), NeedsImport: "tui"}, true
+		}
+	}
+
+	if matches := scrollbarThumbHexPattern.FindStringSubmatch(class); matches != nil {
+		r, g, b, ok := parseHexToRGB(matches[1])
+		if ok {
+			return TailwindMapping{Option: fmt.Sprintf("tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.RGBColor(%d, %d, %d)))", r, g, b), NeedsImport: "tui"}, true
+		}
+	}
+
 	// Gradient patterns
 	if matches := textGradientPattern.FindStringSubmatch(class); matches != nil {
 		var startColorName, endColorName string
@@ -540,6 +577,30 @@ func ParseTailwindClasses(classes string) TailwindParseResult {
 	}
 
 	return result
+}
+
+// parseHexToRGB parses a 3 or 6 digit hex color string to RGB components.
+func parseHexToRGB(hex string) (r, g, b uint8, ok bool) {
+	if len(hex) == 3 {
+		// Expand shorthand: "abc" -> "aabbcc"
+		hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
+	}
+	if len(hex) != 6 {
+		return 0, 0, 0, false
+	}
+	rv, err := strconv.ParseUint(hex[0:2], 16, 8)
+	if err != nil {
+		return 0, 0, 0, false
+	}
+	gv, err := strconv.ParseUint(hex[2:4], 16, 8)
+	if err != nil {
+		return 0, 0, 0, false
+	}
+	bv, err := strconv.ParseUint(hex[4:6], 16, 8)
+	if err != nil {
+		return 0, 0, 0, false
+	}
+	return uint8(rv), uint8(gv), uint8(bv), true
 }
 
 // BuildTextStyleOption builds the combined text style option from accumulated methods

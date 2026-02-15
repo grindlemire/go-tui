@@ -11,6 +11,9 @@ func (e *Element) SetOnFocusableAdded(fn func(Focusable)) {
 // WalkFocusables calls fn for each focusable element in the tree.
 // This is used by App to discover existing focusable elements.
 func (e *Element) WalkFocusables(fn func(Focusable)) {
+	if e.hidden {
+		return
+	}
 	if e.IsFocusable() {
 		fn(e)
 	}
@@ -43,6 +46,9 @@ func (e *Element) Watchers() []Watcher {
 // WalkWatchers calls fn for each watcher in the element tree.
 // This is used by App.SetRoot to discover and start all watchers.
 func (e *Element) WalkWatchers(fn func(Watcher)) {
+	if e.hidden {
+		return
+	}
 	for _, w := range e.watchers {
 		fn(w)
 	}
@@ -57,6 +63,9 @@ func (e *Element) WalkWatchers(fn func(Watcher)) {
 // Returns nil if no element contains the point.
 // Children are checked in reverse order since last child renders on top.
 func (e *Element) ElementAt(x, y int) *Element {
+	if e.hidden {
+		return nil
+	}
 	bounds := e.Rect()
 	if !bounds.Contains(x, y) {
 		return nil

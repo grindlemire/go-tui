@@ -524,6 +524,21 @@
     }
   },
   {
+    "type": "func_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "type_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "function_body",
     "named": true,
     "fields": {},
@@ -916,6 +931,21 @@
     }
   },
   {
+    "type": "map_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "type_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "nested_braces",
     "named": true,
     "fields": {},
@@ -1066,15 +1096,7 @@
       "required": true,
       "types": [
         {
-          "type": "generic_type",
-          "named": true
-        },
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "qualified_type",
+          "type": "type_expression",
           "named": true
         }
       ]
@@ -1321,11 +1343,19 @@
       "required": true,
       "types": [
         {
+          "type": "func_type",
+          "named": true
+        },
+        {
           "type": "generic_type",
           "named": true
         },
         {
           "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "map_type",
           "named": true
         },
         {
@@ -1495,6 +1525,10 @@
   },
   {
     "type": "import",
+    "named": false
+  },
+  {
+    "type": "map",
     "named": false
   },
   {
