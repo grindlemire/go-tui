@@ -33,6 +33,16 @@ const (
 	ScrollBoth
 )
 
+// OverflowMode specifies how an element handles content that exceeds its bounds.
+type OverflowMode int
+
+const (
+	// OverflowVisible allows content to render outside the element's bounds (default).
+	OverflowVisible OverflowMode = iota
+	// OverflowHidden clips content at the element's bounds without scrollbars.
+	OverflowHidden
+)
+
 // Element is a layout container with visual properties.
 // It implements Layoutable and owns its children directly.
 type Element struct {
@@ -56,6 +66,7 @@ type Element struct {
 	textStyle    Style
 	textStyleSet bool // true if textStyle was explicitly configured (false = inherit from parent)
 	textAlign    TextAlign
+	truncate     bool
 
 	// Focus properties
 	focusable bool
@@ -84,6 +95,12 @@ type Element struct {
 
 	// HR properties
 	hr bool // true if this element is a horizontal rule
+
+	// Visibility
+	hidden bool
+
+	// Overflow clipping
+	overflow OverflowMode
 
 	// Gradient properties (nil = no gradient, use solid color)
 	textGradient   *Gradient

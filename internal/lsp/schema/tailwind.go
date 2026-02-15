@@ -129,6 +129,18 @@ var staticClassDocs = map[string]string{
 	"overflow-y-scroll": "Enable vertical scrolling for overflow content.",
 	"overflow-x-scroll": "Enable horizontal scrolling for overflow content.",
 
+	// Overflow
+	"overflow-hidden": "Clip children that overflow the element's bounds (no scrollbars).",
+
+	// Focus
+	"focusable": "Make this element focusable (can receive keyboard events).",
+
+	// Visibility
+	"hidden": "Hide element from layout and rendering.",
+
+	// Text overflow
+	"truncate": "Truncate text with ellipsis (\u2026) when it overflows the element width.",
+
 	// Gradients
 	"text-gradient-red-blue":     "Apply a horizontal gradient to text from red to blue.",
 	"bg-gradient-red-blue":        "Apply a horizontal gradient to background from red to blue.",
@@ -157,6 +169,10 @@ var paramPatterns = []paramPattern{
 	{prefix: "mb-", docFmt: "Set bottom margin to %s."},
 	{prefix: "ml-", docFmt: "Set left margin to %s."},
 	{prefix: "mr-", docFmt: "Set right margin to %s."},
+
+	// Scrollbar styling (check before generic border/text patterns)
+	{prefix: "scrollbar-thumb-", docFmt: "Set scrollbar thumb color to **%s**."},
+	{prefix: "scrollbar-", docFmt: "Set scrollbar track color to **%s**."},
 
 	// Gradients (check before generic text/bg/border patterns)
 	{prefix: "text-gradient-", docFmt: "Apply a gradient to text from **%s** to another color. Use format: text-gradient-COLOR1-COLOR2[-DIRECTION] where DIRECTION is h (horizontal, default), v (vertical), dd (diagonal down), or du (diagonal up)."},
@@ -315,6 +331,31 @@ var AllClasses = []TailwindClassDef{
 	{Name: "overflow-scroll", Description: "Enable scrolling for overflow content", Category: "scroll"},
 	{Name: "overflow-y-scroll", Description: "Enable vertical scrolling", Category: "scroll"},
 	{Name: "overflow-x-scroll", Description: "Enable horizontal scrolling", Category: "scroll"},
+
+	// Overflow
+	{Name: "overflow-hidden", Description: "Clip children without scrollbars", Category: "layout"},
+
+	// Focus
+	{Name: "focusable", Description: "Make element focusable", Category: "layout"},
+
+	// Visibility
+	{Name: "hidden", Description: "Hide element from layout and rendering", Category: "layout"},
+
+	// Text overflow
+	{Name: "truncate", Description: "Truncate text with ellipsis on overflow", Category: "typography"},
+
+	// Hex colors (examples)
+	{Name: "text-[#ff0000]", Description: "Set text color to hex #ff0000", Category: "visual"},
+	{Name: "bg-[#00ff00]", Description: "Set background to hex #00ff00", Category: "visual"},
+	{Name: "border-[#0000ff]", Description: "Set border color to hex #0000ff", Category: "visual"},
+
+	// Scrollbar styling
+	{Name: "scrollbar-red", Description: "Set scrollbar track color to red", Category: "visual"},
+	{Name: "scrollbar-cyan", Description: "Set scrollbar track color to cyan", Category: "visual"},
+	{Name: "scrollbar-thumb-red", Description: "Set scrollbar thumb color to red", Category: "visual"},
+	{Name: "scrollbar-thumb-cyan", Description: "Set scrollbar thumb color to cyan", Category: "visual"},
+	{Name: "scrollbar-[#ff6600]", Description: "Set scrollbar track color to hex", Category: "visual"},
+	{Name: "scrollbar-thumb-[#ff6600]", Description: "Set scrollbar thumb color to hex", Category: "visual"},
 
 	// Gradients
 	{Name: "text-gradient-red-blue", Description: "Apply horizontal gradient to text from red to blue", Category: "visual"},

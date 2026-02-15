@@ -135,6 +135,54 @@ var tailwindClasses = map[string]TailwindMapping{
 	"overflow-scroll":   {Option: "tui.WithScrollable(tui.ScrollBoth)", NeedsImport: ""},
 	"overflow-y-scroll": {Option: "tui.WithScrollable(tui.ScrollVertical)", NeedsImport: ""},
 	"overflow-x-scroll": {Option: "tui.WithScrollable(tui.ScrollHorizontal)", NeedsImport: ""},
+
+	// Focus
+	"focusable": {Option: "tui.WithFocusable(true)", NeedsImport: ""},
+
+	// Visibility
+	"hidden": {Option: "tui.WithHidden(true)", NeedsImport: ""},
+
+	// Overflow
+	"overflow-hidden": {Option: "tui.WithOverflow(tui.OverflowHidden)", NeedsImport: "tui"},
+
+	// Text overflow
+	"truncate": {Option: "tui.WithTruncate(true)", NeedsImport: ""},
+
+	// Scrollbar track colors
+	"scrollbar-red":     {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Red))", NeedsImport: "tui"},
+	"scrollbar-green":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Green))", NeedsImport: "tui"},
+	"scrollbar-blue":    {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Blue))", NeedsImport: "tui"},
+	"scrollbar-cyan":    {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Cyan))", NeedsImport: "tui"},
+	"scrollbar-magenta": {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Magenta))", NeedsImport: "tui"},
+	"scrollbar-yellow":  {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Yellow))", NeedsImport: "tui"},
+	"scrollbar-white":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.White))", NeedsImport: "tui"},
+	"scrollbar-black":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Black))", NeedsImport: "tui"},
+	"scrollbar-bright-red":     {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightRed))", NeedsImport: "tui"},
+	"scrollbar-bright-green":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightGreen))", NeedsImport: "tui"},
+	"scrollbar-bright-blue":    {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightBlue))", NeedsImport: "tui"},
+	"scrollbar-bright-cyan":    {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightCyan))", NeedsImport: "tui"},
+	"scrollbar-bright-magenta": {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightMagenta))", NeedsImport: "tui"},
+	"scrollbar-bright-yellow":  {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightYellow))", NeedsImport: "tui"},
+	"scrollbar-bright-white":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightWhite))", NeedsImport: "tui"},
+	"scrollbar-bright-black":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightBlack))", NeedsImport: "tui"},
+
+	// Scrollbar thumb colors
+	"scrollbar-thumb-red":     {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Red))", NeedsImport: "tui"},
+	"scrollbar-thumb-green":   {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Green))", NeedsImport: "tui"},
+	"scrollbar-thumb-blue":    {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Blue))", NeedsImport: "tui"},
+	"scrollbar-thumb-cyan":    {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Cyan))", NeedsImport: "tui"},
+	"scrollbar-thumb-magenta": {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Magenta))", NeedsImport: "tui"},
+	"scrollbar-thumb-yellow":  {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Yellow))", NeedsImport: "tui"},
+	"scrollbar-thumb-white":   {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.White))", NeedsImport: "tui"},
+	"scrollbar-thumb-black":   {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.Black))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-red":     {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightRed))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-green":   {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightGreen))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-blue":    {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightBlue))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-cyan":    {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightCyan))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-magenta": {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightMagenta))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-yellow":  {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightYellow))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-white":   {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightWhite))", NeedsImport: "tui"},
+	"scrollbar-thumb-bright-black":   {Option: "tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightBlack))", NeedsImport: "tui"},
 }
 
 // Regex patterns for dynamic classes
@@ -182,4 +230,11 @@ var (
 	textGradientPattern   = regexp.MustCompile(`^text-gradient-([\w-]+)-([\w-]+?)(?:-(h|v|dd|du))$|^text-gradient-([\w-]+)-([\w-]+)$`)
 	bgGradientPattern     = regexp.MustCompile(`^bg-gradient-([\w-]+)-([\w-]+?)(?:-(h|v|dd|du))$|^bg-gradient-([\w-]+)-([\w-]+)$`)
 	borderGradientPattern = regexp.MustCompile(`^border-gradient-([\w-]+)-([\w-]+?)(?:-(h|v|dd|du))$|^border-gradient-([\w-]+)-([\w-]+)$`)
+
+	// Arbitrary hex color patterns
+	textHexPattern         = regexp.MustCompile(`^text-\[#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
+	bgHexPattern           = regexp.MustCompile(`^bg-\[#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
+	borderHexPattern       = regexp.MustCompile(`^border-\[#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
+	scrollbarHexPattern      = regexp.MustCompile(`^scrollbar-\[#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
+	scrollbarThumbHexPattern = regexp.MustCompile(`^scrollbar-thumb-\[#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
 )

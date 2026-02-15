@@ -288,6 +288,33 @@ func WithHR() Option {
 	}
 }
 
+// --- Truncate Options ---
+
+// WithTruncate enables text truncation with ellipsis when text overflows.
+func WithTruncate(truncate bool) Option {
+	return func(e *Element) {
+		e.truncate = truncate
+	}
+}
+
+// --- Hidden Options ---
+
+// WithHidden sets whether this element is excluded from layout and rendering.
+func WithHidden(hidden bool) Option {
+	return func(e *Element) {
+		e.hidden = hidden
+	}
+}
+
+// --- Overflow Options ---
+
+// WithOverflow sets how the element handles content that exceeds its bounds.
+func WithOverflow(mode OverflowMode) Option {
+	return func(e *Element) {
+		e.overflow = mode
+	}
+}
+
 // --- OnUpdate Hook Options ---
 
 // WithOnUpdate sets a function called before each render.

@@ -78,6 +78,45 @@ func (e *Element) SetTextAlign(align TextAlign) {
 	e.textAlign = align
 }
 
+// --- Truncate API ---
+
+// Truncate returns whether text truncation is enabled.
+func (e *Element) Truncate() bool {
+	return e.truncate
+}
+
+// SetTruncate sets whether text should be truncated with ellipsis on overflow.
+func (e *Element) SetTruncate(truncate bool) {
+	e.truncate = truncate
+	e.MarkDirty()
+}
+
+// --- Hidden API ---
+
+// Hidden returns whether this element is hidden.
+func (e *Element) Hidden() bool {
+	return e.hidden
+}
+
+// SetHidden sets whether this element is excluded from layout and rendering.
+func (e *Element) SetHidden(hidden bool) {
+	e.hidden = hidden
+	e.MarkDirty()
+}
+
+// --- Overflow API ---
+
+// Overflow returns the overflow mode.
+func (e *Element) Overflow() OverflowMode {
+	return e.overflow
+}
+
+// SetOverflow sets the overflow mode.
+func (e *Element) SetOverflow(mode OverflowMode) {
+	e.overflow = mode
+	e.MarkDirty()
+}
+
 // stringWidth returns the display width of a string in terminal cells.
 func stringWidth(s string) int {
 	width := 0

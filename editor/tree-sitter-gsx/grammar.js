@@ -76,7 +76,13 @@ module.exports = grammar({
       ),
 
     parameter_list: ($) =>
-      seq("(", optional(seq($.parameter, repeat(seq(",", $.parameter)))), ")"),
+      seq(
+        "(",
+        optional(
+          seq($.parameter, repeat(seq(",", $.parameter)), optional(",")),
+        ),
+        ")",
+      ),
 
     parameter: ($) =>
       seq(field("name", $.identifier), field("type", $.type_expression)),
@@ -88,12 +94,24 @@ module.exports = grammar({
         $.slice_type,
         $.pointer_type,
         $.generic_type,
+        $.map_type,
+        $.func_type,
       ),
 
     qualified_type: ($) => seq($.identifier, ".", $.identifier),
     slice_type: ($) => seq("[", "]", $.type_expression),
-    pointer_type: ($) =>
-      seq("*", choice($.identifier, $.qualified_type, $.generic_type)),
+    pointer_type: ($) => seq("*", $.type_expression),
+    // Map type: map[K]V
+    map_type: ($) => seq("map", "[", $.type_expression, "]", $.type_expression),
+    // Function type: func(), func(T), func(T1, T2)
+    // Return types are omitted to avoid ambiguity with struct field boundaries.
+    func_type: ($) =>
+      seq(
+        "func",
+        "(",
+        optional(seq($.type_expression, repeat(seq(",", $.type_expression)))),
+        ")",
+      ),
     // Generic type: Type[T] or pkg.Type[T]
     generic_type: ($) =>
       seq(

@@ -213,5 +213,46 @@ func AllTailwindClasses() []TailwindClassInfo {
 	}
 	classes = append(classes, scrollClasses...)
 
+	// Focus classes
+	focusClasses := []TailwindClassInfo{
+		{Name: "focusable", Category: "layout", Description: "Make element focusable", Example: `<div class="focusable">`},
+	}
+	classes = append(classes, focusClasses...)
+
+	// Visibility classes
+	visibilityClasses := []TailwindClassInfo{
+		{Name: "hidden", Category: "layout", Description: "Hide element from layout and rendering", Example: `<div class="hidden">`},
+	}
+	classes = append(classes, visibilityClasses...)
+
+	// Overflow classes
+	overflowClasses := []TailwindClassInfo{
+		{Name: "overflow-hidden", Category: "layout", Description: "Clip children without scrollbars", Example: `<div class="overflow-hidden">`},
+	}
+	classes = append(classes, overflowClasses...)
+
+	// Text overflow classes
+	truncateClasses := []TailwindClassInfo{
+		{Name: "truncate", Category: "typography", Description: "Truncate text with ellipsis on overflow", Example: `<span class="truncate w-20">Long text here...</span>`},
+	}
+	classes = append(classes, truncateClasses...)
+
+	// Hex color classes (examples)
+	hexColorClasses := []TailwindClassInfo{
+		{Name: "text-[#ff0000]", Category: "visual", Description: "Set text color to hex #ff0000", Example: `<span class="text-[#ff0000]">Red</span>`},
+		{Name: "bg-[#00ff00]", Category: "visual", Description: "Set background color to hex #00ff00", Example: `<div class="bg-[#00ff00]">`},
+		{Name: "border-[#0000ff]", Category: "visual", Description: "Set border color to hex #0000ff", Example: `<div class="border border-[#0000ff]">`},
+	}
+	classes = append(classes, hexColorClasses...)
+
+	// Scrollbar styling classes
+	scrollbarClasses := []TailwindClassInfo{
+		{Name: "scrollbar-red", Category: "visual", Description: "Set scrollbar track color to red", Example: `<div class="overflow-y-scroll scrollbar-red">`},
+		{Name: "scrollbar-thumb-cyan", Category: "visual", Description: "Set scrollbar thumb color to cyan", Example: `<div class="overflow-y-scroll scrollbar-thumb-cyan">`},
+		{Name: "scrollbar-[#ff6600]", Category: "visual", Description: "Set scrollbar track color to hex", Example: `<div class="overflow-y-scroll scrollbar-[#ff6600]">`},
+		{Name: "scrollbar-thumb-[#ff6600]", Category: "visual", Description: "Set scrollbar thumb color to hex", Example: `<div class="overflow-y-scroll scrollbar-thumb-[#ff6600]">`},
+	}
+	classes = append(classes, scrollbarClasses...)
+
 	return classes
 }
