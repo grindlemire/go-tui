@@ -33,19 +33,52 @@ func (l *loopsApp) KeyMap() tui.KeyMap {
 }
 
 func (l *loopsApp) next() {
-	if l.selected.Get() < len(l.items)-1 {
-		l.selected.Set(l.selected.Get() + 1)
-	} else {
-		l.selected.Set(0)
+	itemCount := len(l.items)
+	if itemCount == 0 {
+		return
 	}
+	l.selected.Update(func(current int) int {
+		if current < 0 || current >= itemCount-1 {
+			return 0
+		}
+		return current + 1
+	})
 }
 
 func (l *loopsApp) prev() {
-	if l.selected.Get() > 0 {
-		l.selected.Set(l.selected.Get() - 1)
-	} else {
-		l.selected.Set(len(l.items) - 1)
+	itemCount := len(l.items)
+	if itemCount == 0 {
+		return
 	}
+	l.selected.Update(func(current int) int {
+		if current <= 0 || current >= itemCount {
+			return itemCount - 1
+		}
+		return current - 1
+	})
+}
+
+func (l *loopsApp) selectedIndex() int {
+	itemCount := len(l.items)
+	if itemCount == 0 {
+		return -1
+	}
+	index := l.selected.Get()
+	if index < 0 {
+		return 0
+	}
+	if index >= itemCount {
+		return itemCount - 1
+	}
+	return index
+}
+
+func (l *loopsApp) selectedItem() string {
+	index := l.selectedIndex()
+	if index < 0 {
+		return ""
+	}
+	return l.items[index]
 }
 
 func (l *loopsApp) Render(app *tui.App) *tui.Element {
@@ -65,7 +98,7 @@ func (l *loopsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText(fmt.Sprintf("Item %d/%d", l.selected.Get()+1, len(l.items))),
+		tui.WithText(fmt.Sprintf("Item %d/%d", l.selectedIndex()+1, len(l.items))),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -87,7 +120,7 @@ func (l *loopsApp) Render(app *tui.App) *tui.Element {
 	__tui_5.AddChild(__tui_6)
 	for i, item := range l.items {
 		_ = i
-		if i == l.selected.Get() {
+		if i == l.selectedIndex() {
 			__tui_7 := tui.New(
 				tui.WithText(item),
 				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
@@ -115,7 +148,7 @@ func (l *loopsApp) Render(app *tui.App) *tui.Element {
 	__tui_9.AddChild(__tui_10)
 	for i, item := range l.items {
 		_ = i
-		if i == l.selected.Get() {
+		if i == l.selectedIndex() {
 			__tui_11 := tui.New(
 				tui.WithText(fmt.Sprintf("%d. %s", i+1, item)),
 				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
@@ -141,33 +174,51 @@ func (l *loopsApp) Render(app *tui.App) *tui.Element {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_13.AddChild(__tui_14)
-	__tui_15 := tui.New(
-		tui.WithText(l.items[l.selected.Get()]),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-	)
-	__tui_13.AddChild(__tui_15)
-	__tui_16 := tui.New(
-		tui.WithText(fmt.Sprintf("Index: %d", l.selected.Get())),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_13.AddChild(__tui_16)
-	__tui_17 := tui.New(
-		tui.WithText(fmt.Sprintf("Length: %d chars", len(l.items[l.selected.Get()]))),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_13.AddChild(__tui_17)
+	if len(l.items) == 0 {
+		__tui_15 := tui.New(
+			tui.WithText("(no items)"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
+		)
+		__tui_13.AddChild(__tui_15)
+		__tui_16 := tui.New(
+			tui.WithText("Index: n/a"),
+			tui.WithTextStyle(tui.NewStyle().Dim()),
+		)
+		__tui_13.AddChild(__tui_16)
+		__tui_17 := tui.New(
+			tui.WithText("Length: n/a"),
+			tui.WithTextStyle(tui.NewStyle().Dim()),
+		)
+		__tui_13.AddChild(__tui_17)
+	} else {
+		__tui_18 := tui.New(
+			tui.WithText(l.selectedItem()),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_13.AddChild(__tui_18)
+		__tui_19 := tui.New(
+			tui.WithText(fmt.Sprintf("Index: %d", l.selectedIndex())),
+			tui.WithTextStyle(tui.NewStyle().Dim()),
+		)
+		__tui_13.AddChild(__tui_19)
+		__tui_20 := tui.New(
+			tui.WithText(fmt.Sprintf("Length: %d chars", len(l.selectedItem()))),
+			tui.WithTextStyle(tui.NewStyle().Dim()),
+		)
+		__tui_13.AddChild(__tui_20)
+	}
 	__tui_4.AddChild(__tui_13)
 	__tui_0.AddChild(__tui_4)
-	__tui_18 := tui.New(
+	__tui_21 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_19 := tui.New(
+	__tui_22 := tui.New(
 		tui.WithText("[j/k] navigate  [q] quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_18.AddChild(__tui_19)
-	__tui_0.AddChild(__tui_18)
+	__tui_21.AddChild(__tui_22)
+	__tui_0.AddChild(__tui_21)
 
 	return __tui_0
 }

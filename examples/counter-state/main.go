@@ -1,9 +1,13 @@
-// Package main demonstrates using reactive state bindings with components.
-// The counter value updates automatically when state changes.
+// Package main demonstrates reactive state with a simple counter.
+//
+// This example shows:
+//   - State[T] for reactive values that trigger re-renders on change
+//   - KeyMap for keyboard bindings
+//   - HandleClicks for ref-based mouse hit testing
+//   - Refs for button click detection
 //
 // To build and run:
 //
-//	cd examples/counter-state
 //	go run ../../cmd/tui generate counter.gsx
 //	go run .
 package main

@@ -22,6 +22,7 @@ func (c *chat) BindApp(app *tui.App) {
 	c.app = app
 	c.showSettings.BindApp(app)
 	c.textarea.BindApp(app)
+	c.settingsView.BindApp(app)
 }
 
 func Chat(width int) *chat {

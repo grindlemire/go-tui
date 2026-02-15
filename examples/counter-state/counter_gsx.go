@@ -5,10 +5,8 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	tui "github.com/grindlemire/go-tui"
-	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 type counterApp struct {
@@ -27,41 +25,30 @@ func Counter() *counterApp {
 
 func (c *counterApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
+		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('+', func(ke tui.KeyEvent) {
-			debug.Log("increment via KeyMap")
-			c.count.Set(c.count.Get() + 1)
-		}),
-		tui.OnRune('-', func(ke tui.KeyEvent) {
-			c.count.Set(c.count.Get() - 1)
-		}),
+		tui.OnRune('+', func(ke tui.KeyEvent) { c.increment() }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { c.decrement() }),
 	}
 }
 
 func (c *counterApp) HandleMouse(me tui.MouseEvent) bool {
-	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
-		if c.incrementBtn.El() != nil && c.incrementBtn.El().ContainsPoint(me.X, me.Y) {
-			debug.Log("increment via HandleMouse")
-			c.count.Set(c.count.Get() + 1)
-			return true
-		}
-		if c.decrementBtn.El() != nil && c.decrementBtn.El().ContainsPoint(me.X, me.Y) {
-			c.count.Set(c.count.Get() - 1)
-			return true
-		}
-	}
-	return false
+	return tui.HandleClicks(me,
+		tui.Click(c.incrementBtn, c.increment),
+		tui.Click(c.decrementBtn, c.decrement),
+	)
 }
 
-func (c *counterApp) tick() {
-	debug.Log("tick callback called")
+func (c *counterApp) increment() {
 	c.count.Set(c.count.Get() + 1)
 }
 
+func (c *counterApp) decrement() {
+	c.count.Set(c.count.Get() - 1)
+}
+
 func (c *counterApp) Render(app *tui.App) *tui.Element {
-	incrementBtn := c.incrementBtn
-	decrementBtn := c.decrementBtn
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -81,7 +68,6 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
 		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
 	)
 	__tui_1.AddChild(__tui_3)
 	__tui_4 := tui.New(
@@ -95,39 +81,39 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 	__tui_1.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_1)
 	__tui_6 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
-	)
-	__tui_0.AddChild(__tui_6)
-	__tui_7 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_8 := tui.New()
-	incrementBtn.Set(__tui_8)
-	__tui_9 := tui.New(tui.WithText(" + "))
-	__tui_8.AddChild(__tui_9)
+	__tui_7 := tui.New()
+	c.incrementBtn.Set(__tui_7)
+	__tui_8 := tui.New(tui.WithText(" + "))
 	__tui_7.AddChild(__tui_8)
-	__tui_10 := tui.New()
-	decrementBtn.Set(__tui_10)
-	__tui_11 := tui.New(tui.WithText(" - "))
-	__tui_10.AddChild(__tui_11)
-	__tui_7.AddChild(__tui_10)
-	__tui_0.AddChild(__tui_7)
-	__tui_12 := tui.New(
+	__tui_6.AddChild(__tui_7)
+	__tui_9 := tui.New()
+	c.decrementBtn.Set(__tui_9)
+	__tui_10 := tui.New(tui.WithText(" - "))
+	__tui_9.AddChild(__tui_10)
+	__tui_6.AddChild(__tui_9)
+	__tui_0.AddChild(__tui_6)
+	__tui_11 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_13 := tui.New(
+	__tui_12 := tui.New(
 		tui.WithText("Press +/- or q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_12.AddChild(__tui_13)
-	__tui_0.AddChild(__tui_12)
-
-	// Attach watchers (deferred until refs are assigned)
-	__tui_0.AddWatcher(tui.OnTimer(time.Second, c.tick))
+	__tui_11.AddChild(__tui_12)
+	__tui_0.AddChild(__tui_11)
 
 	return __tui_0
 }
+
+func (c *counterApp) BindApp(app *tui.App) {
+	if c.count != nil {
+		c.count.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*counterApp)(nil)

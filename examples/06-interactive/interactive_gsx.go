@@ -4,8 +4,6 @@
 package main
 
 import (
-	"os"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -23,10 +21,6 @@ func (a *interactiveApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('p', func(ke tui.KeyEvent) {
-			frame := ke.App().SnapshotFrame()
-			os.WriteFile("debug-frame.txt", []byte(frame), 0644)
-		}),
 	}
 }
 
@@ -50,7 +44,7 @@ func (a *interactiveApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText("[+/-/0/d] counter  [space/r] timer  [1/2/3] toggles  [p] print  [q] quit"),
+		tui.WithText("[+/-/0/d] counter  [space/r] timer  [1/2/3] toggles  [q] quit"),
 		tui.WithMinWidth(0),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)

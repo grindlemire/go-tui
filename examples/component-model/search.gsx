@@ -3,16 +3,16 @@ package main
 import tui "github.com/grindlemire/go-tui"
 
 type searchInput struct {
-	Active *tui.State[bool]
-	Query  *tui.State[string]
+	active *tui.State[bool]
+	query  *tui.State[string]
 }
 
 func SearchInput(active *tui.State[bool], query *tui.State[string]) *searchInput {
-	return &searchInput{Active: active, Query: query}
+	return &searchInput{active: active, query: query}
 }
 
 func (s *searchInput) KeyMap() tui.KeyMap {
-	if !s.Active.Get() {
+	if !s.active.Get() {
 		return nil
 	}
 	return tui.KeyMap{
@@ -24,31 +24,31 @@ func (s *searchInput) KeyMap() tui.KeyMap {
 }
 
 func (s *searchInput) appendChar(ke tui.KeyEvent) {
-	s.Query.Set(s.Query.Get() + string(ke.Rune))
+	s.query.Set(s.query.Get() + string(ke.Rune))
 }
 
 func (s *searchInput) deleteChar(ke tui.KeyEvent) {
-	q := s.Query.Get()
+	q := s.query.Get()
 	if len(q) > 0 {
-		s.Query.Set(q[:len(q)-1])
+		s.query.Set(q[:len(q)-1])
 	}
 }
 
 func (s *searchInput) submit(ke tui.KeyEvent) {
-	s.Active.Set(false)
+	s.active.Set(false)
 }
 
 func (s *searchInput) deactivate(ke tui.KeyEvent) {
-	s.Active.Set(false)
-	s.Query.Set("")
+	s.active.Set(false)
+	s.query.Set("")
 }
 
 templ (s *searchInput) Render() {
 	<div>
-		@if s.Active.Get() {
+		@if s.active.Get() {
 			<div class="border-rounded p-1">
 				<span class="text-cyan">Search: </span>
-				<span>{s.Query.Get()}</span>
+				<span>{s.query.Get()}</span>
 				<span class="font-dim">|</span>
 			</div>
 		}

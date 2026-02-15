@@ -16,11 +16,11 @@ type counter struct {
 	resetBtn     *tui.Ref
 }
 
-var(
-	_ tui.Component = (*counter)(nil)
+var (
+	_ tui.Component       = (*counter)(nil)
 	_ tui.WatcherProvider = (*counter)(nil)
-	_ tui.MouseListener = (*counter)(nil)
-	_ tui.KeyListener = (*counter)(nil)
+	_ tui.MouseListener   = (*counter)(nil)
+	_ tui.KeyListener     = (*counter)(nil)
 )
 
 func Counter(events *tui.Events[string]) *counter {

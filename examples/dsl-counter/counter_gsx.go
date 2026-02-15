@@ -9,32 +9,33 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type CounterUIView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+type counterApp struct {
+	count *tui.State[int]
 }
 
-func (v CounterUIView) GetRoot() tui.Renderable { return v.Root }
-
-func (v CounterUIView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func (v CounterUIView) BindApp(app *tui.App) {
-	if v.bindApp != nil {
-		v.bindApp(app)
+func Counter() *counterApp {
+	return &counterApp{
+		count: tui.NewState(0),
 	}
 }
 
-var _ tui.AppBinder = CounterUIView{}
+func (c *counterApp) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
+		tui.OnRune('=', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() - 1) }),
+	}
+}
 
-func CounterUI(count int) CounterUIView {
-	var view CounterUIView
-	var watchers []tui.Watcher
-
+func (c *counterApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_1 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
@@ -44,58 +45,42 @@ func CounterUI(count int) CounterUIView {
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_2 := tui.New(
-		tui.WithBackground(tui.NewStyle().Background(tui.Red)),
-		tui.WithWidthPercent(100.00),
-		tui.WithHeight(1),
-	)
-	__tui_3 := tui.New(
-		tui.WithText("Counter Examples"),
-		tui.WithTextAlign(tui.TextAlignCenter),
-		tui.WithWidthPercent(100.00),
+		tui.WithText("Counter"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
-	__tui_2.AddChild(__tui_3)
 	__tui_1.AddChild(__tui_2)
-	__tui_4 := tui.New(
+	__tui_3 := tui.New(
 		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Red)),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_4 := tui.New(
+		tui.WithText("Count:"),
 	)
 	__tui_1.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithText("Count:"),
-	)
-	__tui_1.AddChild(__tui_5)
-	__tui_6 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", count)),
+		tui.WithText(fmt.Sprintf("%d", c.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
-	__tui_1.AddChild(__tui_6)
+	__tui_1.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_1)
-	__tui_7 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
-	)
-	__tui_0.AddChild(__tui_7)
-	__tui_8 := tui.New(
+	__tui_6 := tui.New(
 		tui.WithDirection(tui.Row),
-		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_9 := tui.New(
+	__tui_7 := tui.New(
 		tui.WithText("Press +/- to change, q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_8.AddChild(__tui_9)
-	__tui_0.AddChild(__tui_8)
+	__tui_6.AddChild(__tui_7)
+	__tui_0.AddChild(__tui_6)
 
-	__bindApp := func(app *tui.App) {
-	}
-
-	view = CounterUIView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
-	}
-	return view
+	return __tui_0
 }
+
+func (c *counterApp) BindApp(app *tui.App) {
+	if c.count != nil {
+		c.count.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*counterApp)(nil)

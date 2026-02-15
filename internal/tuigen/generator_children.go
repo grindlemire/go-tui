@@ -285,6 +285,10 @@ func (g *Generator) generateComponentExpr(expr *ComponentExpr, parentVar string)
 	if parentVar != "" {
 		g.writef("%s.AddChild(%s)\n", parentVar, varName)
 	}
+
+	// Track receiver field accesses for BindApp generation in method components.
+	// e.g., @c.settingsView → track "settingsView" so generateBindApp can bind it.
+	g.trackComponentExprField(expr.Expr)
 }
 
 // generateForLoopForSlice generates a for loop that appends elements to a slice.

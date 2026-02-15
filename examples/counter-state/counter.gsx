@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
-	"github.com/grindlemire/go-tui/internal/debug"
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -23,53 +21,40 @@ func Counter() *counterApp {
 
 func (c *counterApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
+		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('+', func(ke tui.KeyEvent) {
-			debug.Log("increment via KeyMap")
-			c.count.Set(c.count.Get() + 1)
-		}),
-		tui.OnRune('-', func(ke tui.KeyEvent) {
-			c.count.Set(c.count.Get() - 1)
-		}),
+		tui.OnRune('+', func(ke tui.KeyEvent) { c.increment() }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { c.decrement() }),
 	}
 }
 
 func (c *counterApp) HandleMouse(me tui.MouseEvent) bool {
-	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
-		if c.incrementBtn.El() != nil && c.incrementBtn.El().ContainsPoint(me.X, me.Y) {
-			debug.Log("increment via HandleMouse")
-			c.count.Set(c.count.Get() + 1)
-			return true
-		}
-		if c.decrementBtn.El() != nil && c.decrementBtn.El().ContainsPoint(me.X, me.Y) {
-			c.count.Set(c.count.Get() - 1)
-			return true
-		}
-	}
-	return false
+	return tui.HandleClicks(me,
+		tui.Click(c.incrementBtn, c.increment),
+		tui.Click(c.decrementBtn, c.decrement),
+	)
 }
 
-func (c *counterApp) tick() {
-	debug.Log("tick callback called")
+func (c *counterApp) increment() {
 	c.count.Set(c.count.Get() + 1)
 }
 
+func (c *counterApp) decrement() {
+	c.count.Set(c.count.Get() - 1)
+}
+
 templ (c *counterApp) Render() {
-	incrementBtn := c.incrementBtn
-	decrementBtn := c.decrementBtn
-	<div class="flex-col gap-1 p-2"
-	     onTimer={tui.OnTimer(time.Second, c.tick)}>
+	<div class="flex-col gap-1 p-2">
 		<div class="border-rounded p-1 flex-col items-center justify-center">
 			<span class="font-bold text-cyan">Reactive Counter</span>
-			<hr class="border" />
-			<span>{"Count:"}</span>
+			<hr />
+			<span>Count:</span>
 			<span class="font-bold text-blue">{fmt.Sprintf("%d", c.count.Get())}</span>
 		</div>
-		<br />
 		<div class="flex gap-1 justify-center">
-			<button ref={incrementBtn}>{" + "}</button>
-			<button ref={decrementBtn}>{" - "}</button>
+			<button ref={c.incrementBtn}>{" + "}</button>
+			<button ref={c.decrementBtn}>{" - "}</button>
 		</div>
 		<div class="flex justify-center">
 			<span class="font-dim">{"Press +/- or q to quit"}</span>

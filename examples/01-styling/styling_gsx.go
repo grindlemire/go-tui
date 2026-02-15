@@ -72,7 +72,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_2 := tui.New(
 		tui.WithText("Text Styles"),
@@ -128,7 +127,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_13 := tui.New(
 		tui.WithText("Text Colors"),
@@ -184,7 +182,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_24 := tui.New(
 		tui.WithText("Bright Text Colors"),
@@ -240,7 +237,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_35 := tui.New(
 		tui.WithText("Background Colors"),
@@ -296,7 +292,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_46 := tui.New(
 		tui.WithText("Bright Background Colors"),
@@ -352,7 +347,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_57 := tui.New(
 		tui.WithText("Combined Foreground+Background"),
@@ -403,7 +397,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_66 := tui.New(
 		tui.WithText("Border Styles"),
@@ -456,7 +449,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_78 := tui.New(
 		tui.WithText("Colored Borders"),
@@ -549,7 +541,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_98 := tui.New(
 		tui.WithText("Text Gradients"),
@@ -630,7 +621,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_114 := tui.New(
 		tui.WithText("Background Gradients"),
@@ -726,7 +716,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_134 := tui.New(
 		tui.WithText("Border Gradients"),
@@ -787,7 +776,6 @@ func (s *stylingApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Column),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.White)),
 		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(0),
 	)
 	__tui_146 := tui.New(
 		tui.WithText("Combined Gradients"),

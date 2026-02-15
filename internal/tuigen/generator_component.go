@@ -16,6 +16,7 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.mountIndex = 0
 	g.currentReceiver = ""
 	g.componentVars = nil
+	g.componentExprFields = nil
 	g.stateVars = nil
 	g.stateBindings = nil
 	g.eventsVars = nil
@@ -82,6 +83,7 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			if rootVar == "" {
 				rootVar = varName
 			}
+			g.trackComponentExprField(n.Expr)
 		}
 	}
 
@@ -506,7 +508,7 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 		return
 	}
 
-	// Find fields that need BindApp
+	// Find fields that need BindApp (known types like State, Events, TextArea)
 	var bindableFields []StructField
 	for _, f := range fields {
 		if isAppBindableType(f.Type) {
@@ -514,7 +516,25 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 		}
 	}
 
-	if len(bindableFields) == 0 {
+	// Find component expression fields that may implement AppBinder.
+	// These are fields used as @receiver.field in the template (e.g., @c.settingsView).
+	// Since the generator can't do full type checking, we use a runtime type assertion.
+	componentExprFieldSet := make(map[string]bool)
+	for _, name := range g.componentExprFields {
+		componentExprFieldSet[name] = true
+	}
+	// Remove fields already in bindableFields to avoid duplicate binding
+	for _, f := range bindableFields {
+		delete(componentExprFieldSet, f.Name)
+	}
+	var componentBindFields []string
+	for _, f := range fields {
+		if componentExprFieldSet[f.Name] {
+			componentBindFields = append(componentBindFields, f.Name)
+		}
+	}
+
+	if len(bindableFields) == 0 && len(componentBindFields) == 0 {
 		return
 	}
 
@@ -531,6 +551,14 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 		g.indent--
 		g.writeln("}")
 	}
+	// Bind component expression fields via type assertion
+	for _, name := range componentBindFields {
+		g.writef("if binder, ok := any(%s.%s).(tui.AppBinder); ok {\n", comp.ReceiverName, name)
+		g.indent++
+		g.writeln("binder.BindApp(app)")
+		g.indent--
+		g.writeln("}")
+	}
 	g.indent--
 	g.writeln("}")
 	g.writeln("")
@@ -538,6 +566,31 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// Add a compile-time check that the type implements AppBinder
 	g.writef("var _ tui.AppBinder = (*%s)(nil)\n", typeName)
 	g.writeln("")
+}
+
+// trackComponentExprField extracts and tracks receiver field names from
+// component expressions (e.g., "c.settingsView" → tracks "settingsView").
+// Only tracks when inside a method component (currentReceiver is set).
+func (g *Generator) trackComponentExprField(expr string) {
+	if g.currentReceiver == "" {
+		return
+	}
+	prefix := g.currentReceiver + "."
+	if !strings.HasPrefix(expr, prefix) {
+		return
+	}
+	fieldName := expr[len(prefix):]
+	// Only track simple field names (no further dots or method calls)
+	if strings.ContainsAny(fieldName, ".()") {
+		return
+	}
+	// Avoid duplicates
+	for _, existing := range g.componentExprFields {
+		if existing == fieldName {
+			return
+		}
+	}
+	g.componentExprFields = append(g.componentExprFields, fieldName)
 }
 
 // generateBindAppClosure emits a __bindApp closure for function components.

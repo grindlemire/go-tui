@@ -23,7 +23,7 @@ func Keyboard() *keyboardApp {
 
 func (k *keyboardApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRunes(func(ke tui.KeyEvent) {
 			k.keyCount.Set(k.keyCount.Get() + 1)
@@ -101,7 +101,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_9)
 	__tui_10 := tui.New(
-		tui.WithText("Press any key to see it displayed, q to quit"),
+		tui.WithText("Press any key to see it displayed, q or Esc to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_10)

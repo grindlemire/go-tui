@@ -23,10 +23,22 @@ func (c *conditionalsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('+', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
-		tui.OnRune('-', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() - 1) }),
-		tui.OnRune('r', func(ke tui.KeyEvent) { c.count.Set(0) }),
+		tui.OnRune('+', func(ke tui.KeyEvent) { c.increment() }),
+		tui.OnRune('-', func(ke tui.KeyEvent) { c.decrement() }),
+		tui.OnRune('r', func(ke tui.KeyEvent) { c.reset() }),
 	}
+}
+
+func (c *conditionalsApp) increment() {
+	c.count.Update(func(v int) int { return v + 1 })
+}
+
+func (c *conditionalsApp) decrement() {
+	c.count.Update(func(v int) int { return v - 1 })
+}
+
+func (c *conditionalsApp) reset() {
+	c.count.Set(0)
 }
 
 func (c *conditionalsApp) Render(app *tui.App) *tui.Element {

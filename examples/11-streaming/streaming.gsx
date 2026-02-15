@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"time"
 	tui "github.com/grindlemire/go-tui"
 )
@@ -59,12 +60,8 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 			s.stickToBottom.Set(false)
 		}),
 		tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) {
-			el := s.content.El()
-			if el != nil {
-				_, maxY := el.MaxScroll()
-				s.scrollY.Set(maxY)
-				s.stickToBottom.Set(true)
-			}
+			s.scrollY.Set(math.MaxInt)
+			s.stickToBottom.Set(true)
 		}),
 	}
 }
@@ -93,23 +90,14 @@ func (s *streamingApp) tick() {
 }
 
 func (s *streamingApp) addLine(line string) {
-	// Append the line to our state
 	current := s.lines.Get()
 	s.lines.Set(append(current, line))
 
-	// If stickToBottom, set scrollY to a very large value
-	// It will be clamped to maxY during layout
+	// Keep scroll pinned to bottom as new lines arrive.
+	// math.MaxInt is clamped to maxY during layout.
 	if s.stickToBottom.Get() {
-		s.scrollY.Set(999999)
+		s.scrollY.Set(math.MaxInt)
 	}
-}
-
-func (s *streamingApp) getScrollY() int {
-	// If stickToBottom is true, return a large value that will be clamped
-	if s.stickToBottom.Get() {
-		return 999999
-	}
-	return s.scrollY.Get()
 }
 
 templ (s *streamingApp) Render() {
@@ -120,7 +108,7 @@ templ (s *streamingApp) Render() {
 			ref={s.content}
 			class="border-single p-1 flex-col flex-grow"
 			scrollable={tui.ScrollVertical}
-			scrollOffset={0, s.getScrollY()}>
+			scrollOffset={0, s.scrollY.Get()}>
 			@for _, line := range s.lines.Get() {
 				<span class="text-green">{line}</span>
 			}

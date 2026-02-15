@@ -19,7 +19,7 @@ func Keyboard() *keyboardApp {
 
 func (k *keyboardApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRunes(func(ke tui.KeyEvent) {
 			k.keyCount.Set(k.keyCount.Get() + 1)
@@ -49,7 +49,7 @@ func (k *keyboardApp) recordSpecial(name string) {
 templ (k *keyboardApp) Render() {
 	<div class="flex-col gap-1 p-2 border-rounded">
 		<span class="font-bold text-cyan">Keyboard Events</span>
-		<hr class="border" />
+		<hr class="border-single" />
 
 		<div class="flex gap-2">
 			<span>Last key pressed:</span>
@@ -62,6 +62,6 @@ templ (k *keyboardApp) Render() {
 		</div>
 
 		<br />
-		<span class="font-dim">Press any key to see it displayed, q to quit</span>
+		<span class="font-dim">Press any key to see it displayed, q or Esc to quit</span>
 	</div>
 }

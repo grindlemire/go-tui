@@ -2,9 +2,9 @@
 //
 // This shows:
 // - Struct components with KeyMap-based key handling
-// - onChannel={tui.Watch(ch, handler)} for channel watchers
-// - onTimer={tui.OnTimer(duration, handler)} for timer watchers
-// - Refs for imperative access to elements
+// - Watchers() method for channel and timer integration
+// - Refs for imperative scroll control
+// - Sticky-scroll (auto-follow) behavior
 //
 // To build and run:
 //
