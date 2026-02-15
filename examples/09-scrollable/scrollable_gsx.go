@@ -10,20 +10,55 @@ import (
 )
 
 type scrollableApp struct {
-	items []string
+	items   []string
+	scrollY *tui.State[int]
+	content *tui.Ref
 }
 
 func Scrollable(items []string) *scrollableApp {
 	return &scrollableApp{
-		items: items,
+		items:   items,
+		scrollY: tui.NewState(0),
+		content: tui.NewRef(),
 	}
+}
+
+func (s *scrollableApp) scrollBy(delta int) {
+	el := s.content.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := s.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	s.scrollY.Set(newY)
 }
 
 func (s *scrollableApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
 	}
+}
+
+func (s *scrollableApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		s.scrollBy(-1)
+		return true
+	case tui.MouseWheelDown:
+		s.scrollBy(1)
+		return true
+	}
+	return false
 }
 
 func (s *scrollableApp) Render(app *tui.App) *tui.Element {
@@ -51,8 +86,9 @@ func (s *scrollableApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithFocusable(true),
+		tui.WithScrollOffset(0, s.scrollY.Get()),
 	)
+	s.content.Set(__tui_3)
 	for i, item := range s.items {
 		_ = i
 		__tui_4 := tui.New(
@@ -62,7 +98,7 @@ func (s *scrollableApp) Render(app *tui.App) *tui.Element {
 	}
 	__tui_0.AddChild(__tui_3)
 	__tui_5 := tui.New(
-		tui.WithText("Arrow keys/Page Up/Down to scroll, q to quit"),
+		tui.WithText("j/k or arrow keys to scroll, q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_5)
@@ -79,3 +115,11 @@ func (s *scrollableApp) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*scrollableApp)(nil)
+
+func (s *scrollableApp) BindApp(app *tui.App) {
+	if s.scrollY != nil {
+		s.scrollY.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*scrollableApp)(nil)

@@ -713,7 +713,6 @@ func (s *SettingsApp) UpdateProps(fresh tui.Component) {
 	s.SystemPromptPresets = f.SystemPromptPresets
 	s.AvailableProviders = f.AvailableProviders
 	s.ProviderModels = f.ProviderModels
-	s.onClose = f.onClose
 }
 
 var _ tui.PropsUpdater = (*SettingsApp)(nil)

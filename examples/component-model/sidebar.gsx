@@ -3,13 +3,13 @@ package main
 import tui "github.com/grindlemire/go-tui"
 
 type sidebar struct {
-	Query    *tui.State[string]
+	query    *tui.State[string]
 	expanded *tui.State[bool]
 }
 
 func Sidebar(query *tui.State[string]) *sidebar {
 	return &sidebar{
-		Query:    query,
+		query:    query,
 		expanded: tui.NewState(true),
 	}
 }
@@ -29,8 +29,8 @@ templ (s *sidebar) Render() {
 		@if s.expanded.Get() {
 			<div class="flex-col border-single p-1" width={30}>
 				<span class="font-bold">Sidebar</span>
-				@if s.Query.Get() != "" {
-					<span>Filtering: {s.Query.Get()}</span>
+				@if s.query.Get() != "" {
+					<span>Filtering: {s.query.Get()}</span>
 				}
 				<span class="font-dim">Ctrl+B to toggle</span>
 			</div>

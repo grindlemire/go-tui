@@ -16,6 +16,12 @@ type timer struct {
 	events  *tui.Events[string]
 }
 
+var (
+	_ tui.Component       = (*timer)(nil)
+	_ tui.WatcherProvider = (*timer)(nil)
+	_ tui.KeyListener     = (*timer)(nil)
+)
+
 func Timer(events *tui.Events[string]) *timer {
 	return &timer{
 		elapsed: tui.NewState(0),

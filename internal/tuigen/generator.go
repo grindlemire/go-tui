@@ -28,6 +28,11 @@ type Generator struct {
 	// Events tracking for current component (for BindApp generation)
 	eventsVars []EventsVar
 
+	// componentExprFields tracks receiver field names used as component expressions
+	// (e.g., "settingsView" from @c.settingsView) in method components.
+	// These fields need BindApp calls in the generated BindApp method.
+	componentExprFields []string
+
 	// Conditional counter for reactive @if wrapper elements (__cond_0, __cond_1, etc.)
 	condCounter int
 

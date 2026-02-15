@@ -8,16 +8,16 @@ import (
 )
 
 type searchInput struct {
-	Active *tui.State[bool]
-	Query  *tui.State[string]
+	active *tui.State[bool]
+	query  *tui.State[string]
 }
 
 func SearchInput(active *tui.State[bool], query *tui.State[string]) *searchInput {
-	return &searchInput{Active: active, Query: query}
+	return &searchInput{active: active, query: query}
 }
 
 func (s *searchInput) KeyMap() tui.KeyMap {
-	if !s.Active.Get() {
+	if !s.active.Get() {
 		return nil
 	}
 	return tui.KeyMap{
@@ -29,28 +29,28 @@ func (s *searchInput) KeyMap() tui.KeyMap {
 }
 
 func (s *searchInput) appendChar(ke tui.KeyEvent) {
-	s.Query.Set(s.Query.Get() + string(ke.Rune))
+	s.query.Set(s.query.Get() + string(ke.Rune))
 }
 
 func (s *searchInput) deleteChar(ke tui.KeyEvent) {
-	q := s.Query.Get()
+	q := s.query.Get()
 	if len(q) > 0 {
-		s.Query.Set(q[:len(q)-1])
+		s.query.Set(q[:len(q)-1])
 	}
 }
 
 func (s *searchInput) submit(ke tui.KeyEvent) {
-	s.Active.Set(false)
+	s.active.Set(false)
 }
 
 func (s *searchInput) deactivate(ke tui.KeyEvent) {
-	s.Active.Set(false)
-	s.Query.Set("")
+	s.active.Set(false)
+	s.query.Set("")
 }
 
 func (s *searchInput) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New()
-	if s.Active.Get() {
+	if s.active.Get() {
 		__tui_1 := tui.New(
 			tui.WithBorder(tui.BorderRounded),
 			tui.WithPadding(1),
@@ -61,7 +61,7 @@ func (s *searchInput) Render(app *tui.App) *tui.Element {
 		)
 		__tui_1.AddChild(__tui_2)
 		__tui_3 := tui.New(
-			tui.WithText(s.Query.Get()),
+			tui.WithText(s.query.Get()),
 		)
 		__tui_1.AddChild(__tui_3)
 		__tui_4 := tui.New(
@@ -76,11 +76,11 @@ func (s *searchInput) Render(app *tui.App) *tui.Element {
 }
 
 func (s *searchInput) BindApp(app *tui.App) {
-	if s.Active != nil {
-		s.Active.BindApp(app)
+	if s.active != nil {
+		s.active.BindApp(app)
 	}
-	if s.Query != nil {
-		s.Query.BindApp(app)
+	if s.query != nil {
+		s.query.BindApp(app)
 	}
 }
 

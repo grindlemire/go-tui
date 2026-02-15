@@ -233,6 +233,7 @@ func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop boo
 			varName := g.nextVar()
 			g.writef("%s := %s.Render(app)\n", varName, n.Expr)
 			g.assignIfNil(rootVar, varName)
+			g.trackComponentExprField(n.Expr)
 		case *IfStmt:
 			g.generateIfStmtToRoot(n, rootVar, inLoop)
 		case *ForLoop:

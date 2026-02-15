@@ -60,7 +60,7 @@ templ (s *stylingApp) Render() {
 		scrollOffset={0, s.scrollY.Get()}
 	>
 		// Text Styles
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Text Styles</span>
 			<div class="flex-row gap-1">
 				<span class="font-bold">Bold text</span>
@@ -74,7 +74,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Text Colors
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Text Colors</span>
 			<div class="flex-row gap-1">
 				<span class="text-red">Red</span>
@@ -88,7 +88,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Bright Text Colors
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Bright Text Colors</span>
 			<div class="flex-row gap-1">
 				<span class="text-bright-red">Red</span>
@@ -102,7 +102,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Background Colors
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Background Colors</span>
 			<div class="flex-row gap-1">
 				<span class="bg-red">Red</span>
@@ -116,7 +116,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Bright Background Colors
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Bright Background Colors</span>
 			<div class="flex-row gap-1">
 				<span class="bg-bright-red">Red</span>
@@ -130,7 +130,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Combined Foreground+Background
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Combined Foreground+Background</span>
 			<div class="flex-row gap-1">
 				<span class="text-white bg-red">Error</span>
@@ -142,7 +142,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Border Styles
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Border Styles</span>
 			<div class="flex-row gap-1">
 				<div class="border-single">
@@ -161,7 +161,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Colored Borders
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Colored Borders</span>
 			<div class="flex-row gap-1">
 				<div class="border-rounded border-red">
@@ -192,7 +192,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Text Gradients
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Text Gradients</span>
 			<div class="flex-col gap-1">
 				<div class="flex-row gap-1">
@@ -214,7 +214,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Background Gradients
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Background Gradients</span>
 			<div class="flex-col gap-1">
 				<div class="flex-row gap-1">
@@ -246,7 +246,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Border Gradients
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Border Gradients</span>
 			<div class="flex-row gap-1">
 				<div class="border-rounded border-gradient-red-blue p-1">
@@ -265,7 +265,7 @@ templ (s *stylingApp) Render() {
 		</div>
 		<hr />
 		// Combined Gradients
-		<div class="flex-col border-white border-single p-0">
+		<div class="flex-col border-white border-single">
 			<span class="font-bold">Combined Gradients</span>
 			<div class="flex-col gap-1">
 				<div class="bg-gradient-red-blue border-gradient-yellow-red border-rounded p-1">

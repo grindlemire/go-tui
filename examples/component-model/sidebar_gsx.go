@@ -8,13 +8,13 @@ import (
 )
 
 type sidebar struct {
-	Query    *tui.State[string]
+	query    *tui.State[string]
 	expanded *tui.State[bool]
 }
 
 func Sidebar(query *tui.State[string]) *sidebar {
 	return &sidebar{
-		Query:    query,
+		query:    query,
 		expanded: tui.NewState(true),
 	}
 }
@@ -43,11 +43,11 @@ func (s *sidebar) Render(app *tui.App) *tui.Element {
 			tui.WithTextStyle(tui.NewStyle().Bold()),
 		)
 		__tui_1.AddChild(__tui_2)
-		if s.Query.Get() != "" {
+		if s.query.Get() != "" {
 			__tui_3 := tui.New()
 			__tui_4 := tui.New(tui.WithText("Filtering:"))
 			__tui_3.AddChild(__tui_4)
-			__tui_5 := tui.New(tui.WithText(s.Query.Get()))
+			__tui_5 := tui.New(tui.WithText(s.query.Get()))
 			__tui_3.AddChild(__tui_5)
 			__tui_1.AddChild(__tui_3)
 		}
@@ -63,8 +63,8 @@ func (s *sidebar) Render(app *tui.App) *tui.Element {
 }
 
 func (s *sidebar) BindApp(app *tui.App) {
-	if s.Query != nil {
-		s.Query.BindApp(app)
+	if s.query != nil {
+		s.query.BindApp(app)
 	}
 	if s.expanded != nil {
 		s.expanded.BindApp(app)

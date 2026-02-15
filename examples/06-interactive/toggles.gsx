@@ -12,6 +12,12 @@ type toggles struct {
 	themeBtn  *tui.Ref
 }
 
+var (
+	_ tui.Component     = (*toggles)(nil)
+	_ tui.MouseListener = (*toggles)(nil)
+	_ tui.KeyListener   = (*toggles)(nil)
+)
+
 func Toggles(events *tui.Events[string]) *toggles {
 	return &toggles{
 		sound:     tui.NewState(true),
