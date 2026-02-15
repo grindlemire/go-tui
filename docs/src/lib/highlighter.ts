@@ -1,5 +1,8 @@
-import { createHighlighter, type Highlighter } from "shiki";
-import type { ThemeRegistrationRaw } from "shiki";
+import { createHighlighterCore, type HighlighterCore } from "shiki/core";
+import type { ThemeRegistrationRaw } from "shiki/core";
+import { createOnigurumaEngine } from "shiki/engine/oniguruma";
+import goLang from "@shikijs/langs/go";
+import shellLang from "@shikijs/langs/shellscript";
 import gsxGrammar from "../../../editor/vscode/syntaxes/gsx.tmLanguage.json";
 
 const darkTheme: ThemeRegistrationRaw = {
@@ -220,24 +223,21 @@ const lightTheme: ThemeRegistrationRaw = {
   ],
 };
 
-let highlighterInstance: Highlighter | null = null;
-let highlighterPromise: Promise<Highlighter> | null = null;
+let highlighterInstance: HighlighterCore | null = null;
+let highlighterPromise: Promise<HighlighterCore> | null = null;
 
-export async function getHighlighter(): Promise<Highlighter> {
+export async function getHighlighter(): Promise<HighlighterCore> {
   if (highlighterInstance) return highlighterInstance;
   if (highlighterPromise) return highlighterPromise;
 
-  highlighterPromise = createHighlighter({
+  highlighterPromise = createHighlighterCore({
     themes: [darkTheme, lightTheme],
     langs: [
-      {
-        ...(gsxGrammar as Parameters<Highlighter["loadLanguage"]>[0]),
-        name: "gsx",
-      },
-      "go",
-      "shellscript",
-      "bash",
+      gsxGrammar as unknown as Parameters<HighlighterCore["loadLanguage"]>[0],
+      goLang,
+      shellLang,
     ],
+    engine: createOnigurumaEngine(import("shiki/wasm")),
   }).then((h) => {
     highlighterInstance = h;
     return h;
@@ -254,7 +254,7 @@ export function highlight(
   if (!highlighterInstance) return "";
   const themeName = theme === "dark" ? "go-tui-dark" : "go-tui-light";
   const supportedLang =
-    lang === "shell" || lang === "sh" ? "bash" : lang === "gsx" ? "gsx" : lang;
+    lang === "shell" || lang === "sh" || lang === "bash" ? "shellscript" : lang;
 
   try {
     return highlighterInstance.codeToHtml(code, {
