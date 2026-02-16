@@ -1,33 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="gsx-title">
-  <title id="gsx-title">.gsx file format icon</title>
-  <!-- .gsx file icon — document shape with Monokai dark cells for "gsx" -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="v1-title">
+  <title id="v1-title">.gsx file icon — stacked blocks</title>
+  <!-- Pure pixel-art "gsx" — bold block letters with offset shadow.
+       Grid: 5 rows × 5px pitch, 4px block height. 18px wide per letter, 5px gaps.
+       G at x=0, S at x=23, X at x=46. Rows at y=20,25,30,35,40.
+       g = pink #f92672, s = green #a6e22e, x = cyan #66d9ef
+       Shadow: offset +2,+2, width-1, height=3, 35% opacity. -->
 
-  <!-- Document body -->
-  <path d="M12,4 L42,4 L52,14 L52,60 L12,60 Z" fill="#272822"/>
-  <path d="M12,4 L42,4 L52,14 L52,60 L12,60 Z" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <!-- ═══ Shadow layer ═══ -->
 
-  <!-- Dog-ear fold -->
-  <path d="M42,4 L42,14 L52,14" fill="#3e3d32"/>
-  <path d="M42,4 L42,14 L52,14" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <!-- G shadow -->
+  <g fill="#f92672" opacity="0.35">
+    <rect x="6"  y="22" width="13" height="3"/>
+    <rect x="2"  y="27" width="4"  height="3"/>
+    <rect x="2"  y="32" width="4"  height="3"/><rect x="11" y="32" width="8" height="3"/>
+    <rect x="2"  y="37" width="4"  height="3"/><rect x="15" y="37" width="4" height="3"/>
+    <rect x="6"  y="42" width="13" height="3"/>
+  </g>
 
-  <!-- Content lines (faint, above the cells) -->
-  <rect x="18" y="20" width="20" height="2" rx="1" fill="#66d9ef" opacity="0.2"/>
-  <rect x="18" y="25" width="14" height="2" rx="1" fill="#f92672" opacity="0.15"/>
-  <rect x="18" y="30" width="24" height="2" rx="1" fill="#a6e22e" opacity="0.15"/>
+  <!-- S shadow -->
+  <g fill="#a6e22e" opacity="0.35">
+    <rect x="29" y="22" width="13" height="3"/>
+    <rect x="25" y="27" width="4"  height="3"/>
+    <rect x="29" y="32" width="9"  height="3"/>
+    <rect x="38" y="37" width="4"  height="3"/>
+    <rect x="25" y="42" width="13" height="3"/>
+  </g>
 
-  <!-- "gsx" label in Monokai dark cells at bottom -->
-  <!-- g cell -->
-  <rect x="14" y="40" width="12" height="14" rx="2" fill="#272822"/>
-  <rect x="14" y="40" width="12" height="14" rx="2" fill="none" stroke="#49483e" stroke-width="1"/>
-  <text x="20" y="51" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="10" font-weight="700" fill="#f92672" text-anchor="middle">g</text>
+  <!-- X shadow -->
+  <g fill="#66d9ef" opacity="0.35">
+    <rect x="48" y="22" width="4" height="3"/><rect x="61" y="22" width="3" height="3"/>
+    <rect x="51" y="27" width="4" height="3"/><rect x="58" y="27" width="4" height="3"/>
+    <rect x="54" y="32" width="5" height="3"/>
+    <rect x="51" y="37" width="4" height="3"/><rect x="58" y="37" width="4" height="3"/>
+    <rect x="48" y="42" width="4" height="3"/><rect x="61" y="42" width="3" height="3"/>
+  </g>
 
-  <!-- s cell -->
-  <rect x="27" y="40" width="12" height="14" rx="2" fill="#272822"/>
-  <rect x="27" y="40" width="12" height="14" rx="2" fill="none" stroke="#49483e" stroke-width="1"/>
-  <text x="33" y="51" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="10" font-weight="700" fill="#a6e22e" text-anchor="middle">s</text>
+  <!-- ███ Main layer ███ -->
 
-  <!-- x cell -->
-  <rect x="40" y="40" width="12" height="14" rx="2" fill="#272822"/>
-  <rect x="40" y="40" width="12" height="14" rx="2" fill="none" stroke="#49483e" stroke-width="1"/>
-  <text x="46" y="51" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="10" font-weight="700" fill="#66d9ef" text-anchor="middle">x</text>
+  <!-- G main — top bar, left arm, shelf, right arm, bottom bar -->
+  <g fill="#f92672">
+    <rect x="4"  y="20" width="14" height="4"/>
+    <rect x="0"  y="25" width="5"  height="4"/>
+    <rect x="0"  y="30" width="5"  height="4"/><rect x="9"  y="30" width="9" height="4"/>
+    <rect x="0"  y="35" width="5"  height="4"/><rect x="13" y="35" width="5" height="4"/>
+    <rect x="4"  y="40" width="14" height="4"/>
+  </g>
+
+  <!-- S main — top bar (right-biased), left arm, middle bar, right arm, bottom bar (left-biased) -->
+  <g fill="#a6e22e">
+    <rect x="27" y="20" width="14" height="4"/>
+    <rect x="23" y="25" width="5"  height="4"/>
+    <rect x="27" y="30" width="10" height="4"/>
+    <rect x="36" y="35" width="5"  height="4"/>
+    <rect x="23" y="40" width="14" height="4"/>
+  </g>
+
+  <!-- X main — converging diagonal arms to center -->
+  <g fill="#66d9ef">
+    <rect x="46" y="20" width="5" height="4"/><rect x="59" y="20" width="5" height="4"/>
+    <rect x="49" y="25" width="5" height="4"/><rect x="56" y="25" width="5" height="4"/>
+    <rect x="52" y="30" width="6" height="4"/>
+    <rect x="49" y="35" width="5" height="4"/><rect x="56" y="35" width="5" height="4"/>
+    <rect x="46" y="40" width="5" height="4"/><rect x="59" y="40" width="5" height="4"/>
+  </g>
 </svg>

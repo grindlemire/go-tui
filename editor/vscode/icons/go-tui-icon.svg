@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect x="1" y="4" width="14" height="24" rx="3" fill="#272822"/>
-  <rect x="1" y="4" width="14" height="24" rx="3" fill="none" stroke="#49483e" stroke-width="1.5"/>
-  <text x="8" y="22" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="16" font-weight="700" fill="#f92672" text-anchor="middle">g</text>
-  <rect x="17" y="4" width="14" height="24" rx="3" fill="#272822"/>
-  <rect x="17" y="4" width="14" height="24" rx="3" fill="none" stroke="#49483e" stroke-width="1.5"/>
-  <text x="24" y="22" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="16" font-weight="700" fill="#66d9ef" text-anchor="middle">t</text>
-</svg>

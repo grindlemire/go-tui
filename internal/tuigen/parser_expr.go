@@ -191,7 +191,7 @@ func (p *Parser) parseGoExprOrChildrenSlot() Node {
 // user-facing text like "Use j/k to scroll, q to quit".
 func isTextToken(typ TokenType) bool {
 	switch typ {
-	case TokenIdent, TokenInt, TokenFloat:
+	case TokenIdent, TokenInt, TokenFloat, TokenSymbol:
 		return true
 	// Punctuation commonly found in text
 	case TokenComma, TokenSlash, TokenDot, TokenColon, TokenSemicolon:

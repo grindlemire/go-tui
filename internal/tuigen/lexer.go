@@ -261,10 +261,10 @@ func (l *Lexer) Next() Token {
 			return l.readNumber()
 		}
 
-		// Unknown character
+		// Unknown character - treat as symbol for text content
+		// (e.g., Unicode arrows, emoji, etc.)
 		ch := l.ch
 		l.readChar()
-		l.errors.AddErrorf(l.position(), "unexpected character %q", ch)
-		return l.makeToken(TokenError, string(ch))
+		return l.makeToken(TokenSymbol, string(ch))
 	}
 }

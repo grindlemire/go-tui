@@ -1,8 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect x="1" y="4" width="14" height="24" rx="3" fill="#272822"/>
-  <rect x="1" y="4" width="14" height="24" rx="3" fill="none" stroke="#49483e" stroke-width="1.5"/>
-  <text x="8" y="22" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="16" font-weight="700" fill="#f92672" text-anchor="middle">g</text>
-  <rect x="17" y="4" width="14" height="24" rx="3" fill="#272822"/>
-  <rect x="17" y="4" width="14" height="24" rx="3" fill="none" stroke="#49483e" stroke-width="1.5"/>
-  <text x="24" y="22" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="16" font-weight="700" fill="#66d9ef" text-anchor="middle">t</text>
+  <title>go-tui favicon</title>
+  <!-- g shadow -->
+  <g fill="#f92672" opacity="0.35">
+    <rect x="8" y="6" width="7" height="3"/>
+    <rect x="3" y="11" width="5" height="3"/>
+    <rect x="3" y="16" width="5" height="3"/><rect x="13" y="16" width="5" height="3"/>
+    <rect x="8" y="21" width="7" height="3"/>
+    <rect x="8" y="26" width="7" height="3"/>
+  </g>
+  <!-- t shadow -->
+  <g fill="#66d9ef" opacity="0.35">
+    <rect x="19" y="6" width="12" height="3"/>
+    <rect x="24" y="11" width="5" height="3"/>
+    <rect x="24" y="16" width="5" height="3"/>
+    <rect x="24" y="21" width="5" height="3"/>
+    <rect x="24" y="26" width="5" height="3"/>
+  </g>
+  <!-- g main -->
+  <g fill="#f92672">
+    <rect x="6" y="4" width="9" height="4"/>
+    <rect x="1" y="9" width="4" height="4"/>
+    <rect x="1" y="14" width="4" height="4"/><rect x="11" y="14" width="4" height="4"/>
+    <rect x="1" y="19" width="4" height="4"/><rect x="11" y="19" width="4" height="4"/>
+    <rect x="6" y="24" width="9" height="4"/>
+  </g>
+  <!-- t main -->
+  <g fill="#66d9ef">
+    <rect x="17" y="4" width="14" height="4"/>
+    <rect x="22" y="9" width="4" height="4"/>
+    <rect x="22" y="14" width="4" height="4"/>
+    <rect x="22" y="19" width="4" height="4"/>
+    <rect x="22" y="24" width="4" height="4"/>
+  </g>
 </svg>

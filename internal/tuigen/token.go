@@ -43,6 +43,7 @@ const (
 	TokenString    // string literal: "..."
 	TokenRawString // raw string literal: `...`
 	TokenRune      // rune literal: 'x'
+	TokenSymbol    // arbitrary Unicode symbol/character (for text content)
 
 	// Operators and Punctuation
 	TokenLParen      // (
@@ -108,6 +109,7 @@ var tokenNames = map[TokenType]string{
 	TokenString:      "String",
 	TokenRawString:   "RawString",
 	TokenRune:        "Rune",
+	TokenSymbol:      "Symbol",
 	TokenLParen:      "(",
 	TokenRParen:      ")",
 	TokenLBrace:      "{",

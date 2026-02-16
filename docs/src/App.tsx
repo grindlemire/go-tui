@@ -6,6 +6,12 @@ import { loadGuide, loadReference } from "./lib/markdown.ts";
 import { getHighlighter, highlight } from "./lib/highlighter.ts";
 import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
+import V1StatusDashboard from "./variations/V1StatusDashboard.tsx";
+import V2CounterApp from "./variations/V2CounterApp.tsx";
+import V3TaskList from "./variations/V3TaskList.tsx";
+import V4SystemMonitor from "./variations/V4SystemMonitor.tsx";
+import V5ChatLog from "./variations/V5ChatLog.tsx";
+import CodeShowcase from "./variations/CodeShowcase.tsx";
 
 /* ─── Global Styles ─── */
 
@@ -1691,6 +1697,42 @@ function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Scroll so the next section's label + heading are visible below the nav
+  const scrollToNextSection = () => {
+    const navHeight = 48; // h-12
+    const sections = document.querySelectorAll<HTMLElement>("section:has(> h2)");
+    const scrollY = window.scrollY;
+    for (const s of sections) {
+      const top = s.getBoundingClientRect().top + scrollY - navHeight;
+      if (top > scrollY + 20) {
+        window.scrollTo({ top, behavior: "smooth" });
+        return;
+      }
+    }
+    // Already past last section — scroll to bottom
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  };
+
+  // Desktop: Enter/Space scrolls to next section heading
+  useEffect(() => {
+    const isMobile = () => window.matchMedia("(max-width: 639px)").matches;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isMobile()) return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        scrollToNextSection();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Interactive prompt state
+  const [promptInput, setPromptInput] = useState("");
+  const promptRef = useRef<HTMLInputElement>(null);
 
   return (
     <Page hideNavUntilScroll>
@@ -1993,6 +2035,46 @@ function HomePage() {
                   </div>
                 </div>
 
+                {/* Interactive prompt — desktop only */}
+                <div
+                  className="tl hidden sm:flex items-center mt-6 text-[13px] cursor-text"
+                  style={{ animationDelay: "1120ms" }}
+                  onClick={() => promptRef.current?.focus()}
+                >
+                  <span style={{ color: t.secondary }}>$</span>
+                  <span className="ml-2 relative flex-1">
+                    <input
+                      ref={promptRef}
+                      type="text"
+                      value={promptInput}
+                      onChange={(e) => setPromptInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          scrollToNextSection();
+                          setPromptInput("");
+                        }
+                      }}
+                      className="bg-transparent border-none outline-none font-['Fira_Code',monospace] text-[13px] w-full caret-transparent"
+                      style={{ color: t.heading, padding: 0, margin: 0 }}
+                      spellCheck={false}
+                      autoComplete="off"
+                    />
+                    {/* Blinking block cursor */}
+                    <span
+                      className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
+                      style={{
+                        left: `${promptInput.length}ch`,
+                        width: "0.6ch",
+                        height: "1.15em",
+                        background: t.secondary,
+                        animation: "blink 1s step-end infinite",
+                      }}
+                    />
+                  </span>
+                </div>
+
               </div>
             </div>
 
@@ -2002,7 +2084,7 @@ function HomePage() {
               style={{ animation: "scrollBounce 2s ease-in-out infinite" }}
             >
               <span className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase" style={{ color: t.textDim }}>
-                scroll
+                scroll<span className="hidden sm:inline"> (enter/space)</span>
               </span>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={t.textDim} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 6l4 4 4-4" />
@@ -2012,90 +2094,29 @@ function HomePage() {
 
           <Divider />
 
-          {/* Quick Example */}
+          {/* How it works — Interactive Code Showcase */}
           <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
             <div
               className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
               style={{ color: t.accentDim }}
             >
-              quick start
+              how it works
             </div>
             <h2
               className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
               style={{ color: t.heading }}
             >
-              How it works
+              One file, everything you need
             </h2>
             <p
-              className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
+              className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
               style={{ color: t.textMuted }}
             >
-              .gsx templates compile to Go via tui generate. The generated code is what runs.
+              A .gsx file defines your component: state, events, watchers, and
+              template in one place. Click a feature or hover an annotation to
+              explore each piece.
             </p>
-
-            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <div
-                  className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2"
-                  style={{ color: t.textDim }}
-                >
-                  <span style={{ color: t.accentDim }}>01</span>
-                  define
-                </div>
-                <CodeBlock
-                  title="dashboard.gsx"
-                  language="gsx"
-                  code={`templ Dashboard() {
-  <div class="flex-col h-full">
-    <div class="border-single p-1">
-      <span class="font-bold text-cyan">
-        Dashboard
-      </span>
-    </div>
-    <div class="flex grow gap-2 p-1">
-      @Sidebar()
-      @MainContent()
-    </div>
-  </div>
-}`}
-                />
-              </div>
-              <div>
-                <div
-                  className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2"
-                  style={{ color: t.textDim }}
-                >
-                  <span style={{ color: t.secondaryDim }}>02</span>
-                  run
-                </div>
-                <CodeBlock
-                  title="main.go"
-                  language="go"
-                  code={`package main
-
-import (
-  "fmt"
-  "os"
-  tui "github.com/grindlemire/go-tui"
-)
-
-func main() {
-  app, err := tui.NewApp(
-    tui.WithRootComponent(Dashboard()),
-  )
-  if err != nil {
-    fmt.Fprintf(os.Stderr, "%v\\n", err)
-    os.Exit(1)
-  }
-  defer app.Close()
-  if err := app.Run(); err != nil {
-    fmt.Fprintf(os.Stderr, "%v\\n", err)
-    os.Exit(1)
-  }
-}`}
-                />
-              </div>
-            </div>
+            <CodeShowcase />
           </section>
 
           <Divider />
@@ -2651,6 +2672,12 @@ export default function Design2() {
         <Route path="/guide/:slug" element={<GuidePage />} />
         <Route path="/reference" element={<ReferenceRedirect />} />
         <Route path="/reference/:slug" element={<ReferencePage />} />
+        <Route path="/v1" element={<V1StatusDashboard />} />
+        <Route path="/v2" element={<V2CounterApp />} />
+        <Route path="/v3" element={<V3TaskList />} />
+        <Route path="/v4" element={<V4SystemMonitor />} />
+        <Route path="/v5" element={<V5ChatLog />} />
+        <Route path="/code" element={<CodeShowcase />} />
       </Routes>
     </ThemeContext.Provider>
   );
