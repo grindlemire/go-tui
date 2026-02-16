@@ -1,28 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 64" width="310" height="64" role="img" aria-labelledby="c17al-title">
-  <title id="c17al-title">go-tui logo — Monokai dark cells on light background</title>
-  <!-- Same dark cells on a light page — the cells carry their own dark background -->
+  <title id="c17al-title">go-tui logo — light cells for light background</title>
 
-  <rect x="4" y="10" width="42" height="44" rx="4" fill="#272822"/>
-  <rect x="4" y="10" width="42" height="44" rx="4" fill="none" stroke="#3e3d32" stroke-width="1"/>
-  <text x="25" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#f92672" text-anchor="middle">g</text>
+  <rect x="4" y="10" width="42" height="44" rx="4" fill="#f5f5f1"/>
+  <rect x="4" y="10" width="42" height="44" rx="4" fill="none" stroke="#d8d8d0" stroke-width="1"/>
+  <text x="25" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#d42568" text-anchor="middle">g</text>
 
-  <rect x="50" y="10" width="42" height="44" rx="4" fill="#272822"/>
-  <rect x="50" y="10" width="42" height="44" rx="4" fill="none" stroke="#3e3d32" stroke-width="1"/>
-  <text x="71" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#f92672" text-anchor="middle">o</text>
+  <rect x="50" y="10" width="42" height="44" rx="4" fill="#f5f5f1"/>
+  <rect x="50" y="10" width="42" height="44" rx="4" fill="none" stroke="#d8d8d0" stroke-width="1"/>
+  <text x="71" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#d42568" text-anchor="middle">o</text>
 
-  <rect x="96" y="10" width="42" height="44" rx="4" fill="#272822"/>
-  <rect x="96" y="10" width="42" height="44" rx="4" fill="none" stroke="#3e3d32" stroke-width="1"/>
-  <text x="117" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="400" fill="#a6e22e" text-anchor="middle">-</text>
+  <rect x="96" y="10" width="42" height="44" rx="4" fill="#f5f5f1"/>
+  <rect x="96" y="10" width="42" height="44" rx="4" fill="none" stroke="#d8d8d0" stroke-width="1"/>
+  <text x="117" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="400" fill="#638b0c" text-anchor="middle">-</text>
 
-  <rect x="142" y="10" width="42" height="44" rx="4" fill="#272822"/>
-  <rect x="142" y="10" width="42" height="44" rx="4" fill="none" stroke="#3e3d32" stroke-width="1"/>
-  <text x="163" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#66d9ef" text-anchor="middle">t</text>
+  <rect x="142" y="10" width="42" height="44" rx="4" fill="#f5f5f1"/>
+  <rect x="142" y="10" width="42" height="44" rx="4" fill="none" stroke="#d8d8d0" stroke-width="1"/>
+  <text x="163" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#2f9eb8" text-anchor="middle">t</text>
 
-  <rect x="188" y="10" width="42" height="44" rx="4" fill="#272822"/>
-  <rect x="188" y="10" width="42" height="44" rx="4" fill="none" stroke="#3e3d32" stroke-width="1"/>
-  <text x="209" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#66d9ef" text-anchor="middle">u</text>
+  <rect x="188" y="10" width="42" height="44" rx="4" fill="#f5f5f1"/>
+  <rect x="188" y="10" width="42" height="44" rx="4" fill="none" stroke="#d8d8d0" stroke-width="1"/>
+  <text x="209" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#2f9eb8" text-anchor="middle">u</text>
 
-  <rect x="234" y="10" width="42" height="44" rx="4" fill="#272822"/>
-  <rect x="234" y="10" width="42" height="44" rx="4" fill="none" stroke="#3e3d32" stroke-width="1"/>
-  <text x="255" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#66d9ef" text-anchor="middle">i</text>
+  <rect x="234" y="10" width="42" height="44" rx="4" fill="#f5f5f1"/>
+  <rect x="234" y="10" width="42" height="44" rx="4" fill="none" stroke="#d8d8d0" stroke-width="1"/>
+  <text x="255" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#2f9eb8" text-anchor="middle">i</text>
 </svg>
