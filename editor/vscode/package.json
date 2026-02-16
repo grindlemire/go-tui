@@ -37,6 +37,10 @@
         "extensions": [
           ".gsx"
         ],
+        "icon": {
+          "light": "./icons/gsx-file-light.svg",
+          "dark": "./icons/gsx-file-dark.svg"
+        },
         "configuration": "./language-configuration.json"
       }
     ],

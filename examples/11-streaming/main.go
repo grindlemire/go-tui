@@ -1,10 +1,4 @@
-// Package main demonstrates streaming data with channels and timers.
-//
-// This shows:
-// - Struct components with KeyMap-based key handling
-// - Watchers() method for channel and timer integration
-// - Refs for imperative scroll control
-// - Sticky-scroll (auto-follow) behavior
+// Package main demonstrates streaming data with channels and auto-scroll.
 //
 // To build and run:
 //
@@ -14,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -25,14 +20,14 @@ import (
 func main() {
 	dataCh := make(chan string, 100)
 
-	app, err := tui.NewApp()
+	app, err := tui.NewApp(
+		tui.WithRootComponent(Streaming(dataCh)),
+	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
 		os.Exit(1)
 	}
 	defer app.Close()
-
-	app.SetRootComponent(Streaming(dataCh))
 
 	go produce(dataCh, app.StopCh())
 
@@ -45,34 +40,39 @@ func main() {
 func produce(ch chan<- string, stopCh <-chan struct{}) {
 	defer close(ch)
 
-	messages := []string{
-		"Starting up...",
-		"Loading configuration...",
-		"Connecting to services...",
-		"Ready!",
-	}
+	metrics := []string{"cpu", "mem", "net", "disk", "io"}
 
-	for _, msg := range messages {
+	for {
 		select {
 		case <-stopCh:
 			return
-		case ch <- fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), msg):
+		default:
 		}
-		time.Sleep(300 * time.Millisecond)
-	}
 
-	for i := 1; i <= 50; i++ {
+		metric := metrics[rand.Intn(len(metrics))]
+		value := rand.Intn(100)
+		ts := time.Now().Format("15:04:05.000")
+
+		var line string
+		switch metric {
+		case "cpu":
+			line = fmt.Sprintf("[%s] cpu:  %d%%", ts, value)
+		case "mem":
+			line = fmt.Sprintf("[%s] mem:  %.1fG", ts, float64(value)/10.0)
+		case "net":
+			line = fmt.Sprintf("[%s] net:  %d req/s", ts, value*5)
+		case "disk":
+			line = fmt.Sprintf("[%s] disk: %d%% used", ts, 40+value/2)
+		case "io":
+			line = fmt.Sprintf("[%s] io:   %d MB/s", ts, value*2)
+		}
+
 		select {
 		case <-stopCh:
 			return
-		case ch <- fmt.Sprintf("[%s] Processing item %d...", time.Now().Format("15:04:05"), i):
+		case ch <- line:
 		}
-		time.Sleep(200 * time.Millisecond)
-	}
 
-	select {
-	case <-stopCh:
-		return
-	case ch <- fmt.Sprintf("[%s] Done!", time.Now().Format("15:04:05")):
+		time.Sleep(time.Duration(100+rand.Intn(400)) * time.Millisecond)
 	}
 }

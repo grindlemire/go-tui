@@ -285,6 +285,11 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.writef("func (v %s) GetWatchers() []tui.Watcher { return v.watchers }\n", structName)
 	g.writeln("")
 
+	// Generate Render() method to implement tui.Component
+	// This allows function templs to be used in app.Mount() from method templs
+	g.writef("func (v %s) Render(app *tui.App) *tui.Element { return v.Root }\n", structName)
+	g.writeln("")
+
 	// Generate BindApp method to implement tui.AppBinder
 	g.writef("func (v %s) BindApp(app *tui.App) {\n", structName)
 	g.indent++

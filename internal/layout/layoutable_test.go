@@ -382,11 +382,11 @@ func TestDefaultStyle(t *testing.T) {
 	if !style.Height.IsAuto() {
 		t.Error("DefaultStyle Height should be Auto")
 	}
-	if style.MinWidth != Fixed(0) {
-		t.Errorf("DefaultStyle MinWidth = %+v, want Fixed(0)", style.MinWidth)
+	if !style.MinWidth.IsAuto() {
+		t.Errorf("DefaultStyle MinWidth should be Auto, got %+v", style.MinWidth)
 	}
-	if style.MinHeight != Fixed(0) {
-		t.Errorf("DefaultStyle MinHeight = %+v, want Fixed(0)", style.MinHeight)
+	if !style.MinHeight.IsAuto() {
+		t.Errorf("DefaultStyle MinHeight should be Auto, got %+v", style.MinHeight)
 	}
 	if !style.MaxWidth.IsAuto() {
 		t.Error("DefaultStyle MaxWidth should be Auto")

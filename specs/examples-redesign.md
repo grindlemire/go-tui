@@ -2,9 +2,9 @@
 
 ## Overview
 
-Redesign the go-tui examples into a clean 13-example progressive tutorial. Phases 1-13 each create one example; Phase 0 is cleanup and Phase 14 is final verification.
+Redesign the go-tui examples into a clean 14-example progressive tutorial. Phases 1-14 each create one example; Phase 0 is cleanup and Phase 15 is final verification.
 
-Run **Phase 0: Cleanup Old Examples** first. After Phase 0 is complete, Phases 1-13 are independent and can be executed in any order by different agents.
+Run **Phase 0: Cleanup Old Examples** first. After Phase 0 is complete, Phases 1-14 are independent and can be executed in any order by different agents.
 
 ## Framework Context (for all phases)
 
@@ -268,11 +268,9 @@ Use `gcommit -m "message"` for all commits.
 **Delete these that get renamed/merged**:
 - `examples/component-model/`
 - `examples/dashboard/`
+- `examples/ai-chat/` — will be recreated as `examples/14-ai-chat/`
 
-**Keep as-is**:
-- `examples/ai-chat/` — real-world showcase, not part of tutorial sequence
-
-**Verification**: `ls examples/` should show only `ai-chat/` remaining.
+**Verification**: `ls examples/` should show an empty directory (all old examples removed).
 
 ---
 
@@ -1063,7 +1061,128 @@ go run ./examples/13-dashboard/   # visual: metrics fluctuate, sparkline updates
 
 ---
 
-## Phase 14: Final Verification
+## Phase 14: 14-ai-chat
+
+**Goal**: Real-world production app pattern — TextArea widget, inline mode, alternate screen switching, AppBinder, multi-screen navigation with settings modal.
+
+**Directory**: `examples/14-ai-chat/` (move from `examples/ai-chat/`)
+**Files to create**: `chat.gsx`, `settings/settings.gsx`, `main.go`
+**Package name**: `main` (chat), `settings` (settings subpackage)
+
+### Visual Design
+
+**Chat screen (inline mode)** — occupies bottom 3+ rows of terminal, grows with input:
+```
+╭───────────────────────────────────────────────────────────╮
+│  Type a message...                                        │
+│                                                  Ctrl+S ⚙ │
+╰───────────────────────────────────────────────────────────╯
+```
+
+Messages print above the widget via `PrintAboveln()`:
+```
+You: Hello, how are you?
+AI: I'm doing great! How can I help you today?
+╭───────────────────────────────────────────────────────────╮
+│  Tell me about Go                                         │
+│                                                  Ctrl+S ⚙ │
+╰───────────────────────────────────────────────────────────╯
+```
+
+**Settings screen (alternate screen)** — full-screen settings panel:
+```
+╭─ Settings ───────────────────────────────────────────────╮
+│                                                           │
+│  ╭─ Provider ────────────────╮                           │
+│  │  ◀  OpenAI  ▶             │  ← focused: border-double │
+│  ╰───────────────────────────╯                           │
+│  ╭─ Model ───────────────────╮                           │
+│  │  ◀  gpt-4.1-mini  ▶      │                           │
+│  ╰───────────────────────────╯                           │
+│  ╭─ Temperature ─────────────╮                           │
+│  │  ━━━━━━━●━━━━━━  0.7     │                           │
+│  ╰───────────────────────────╯                           │
+│  ╭─ System Prompt ───────────╮                           │
+│  │  You are a helpful        │                           │
+│  │  assistant that...        │                           │
+│  ╰───────────────────────────╯                           │
+│                                                           │
+│  Tab: next section  ←/→ adjust  Ctrl+S: back to chat    │
+╰──────────────────────────────────────────────────────────╯
+```
+
+### Requirements
+
+**chat.gsx** — `chat` struct:
+  - `app *tui.App` (bound via AppBinder)
+  - `textarea *tui.TextArea`
+  - `showSettings *tui.State[bool]`
+  - `settingsView *settings.SettingsApp`
+- Implements `tui.AppBinder`:
+  ```go
+  func (c *chat) BindApp(app *tui.App) {
+      c.app = app
+      c.showSettings.BindApp(app)
+      c.textarea.BindApp(app)
+      c.settingsView.BindApp(app)
+  }
+  ```
+- Constructor `Chat()`: creates textarea with `tui.NewTextArea(tui.WithTextAreaPlaceholder("Type a message..."), tui.WithTextAreaOnSubmit(c.submit))`, creates settings view, init showSettings=false
+- `submit(text string)`: prints "You: {text}" above widget via `app.PrintAboveln()`, then prints a simulated AI response
+- `toggleSettings()`: toggles `showSettings`, calls `app.EnterAlternateScreen()` or `app.ExitAlternateScreen()`
+- `Render` templ: `@if c.showSettings.Get()` → render settings view, `@else` → render textarea with border
+- `KeyMap()`: context-aware — when settings showing, delegate to settings KeyMap + Ctrl+S to close; when chat, Ctrl+S to open settings, Escape to quit
+- `Watchers()`: delegates to settings if it has watchers
+
+**settings/settings.gsx** — `SettingsApp` struct:
+  - `provider *tui.State[string]` (cycles: "openai", "anthropic", "google")
+  - `model *tui.State[string]` (maps to available models per provider)
+  - `temperature *tui.State[float64]` (0.0-1.0, step 0.1)
+  - `systemPrompt *tui.State[string]` (cycles through presets)
+  - `focusedSection *tui.State[int]` (0-3 for the 4 sections)
+  - `AvailableProviders []string`
+  - `ProviderModels map[string][]string`
+  - `SystemPrompts []string` (preset prompts)
+- Constructor: init all states with defaults
+- `KeyMap()`:
+  - `Tab` → next section (wraps)
+  - `Shift+Tab` / `KeyUp` → prev section
+  - `KeyDown` → next section
+  - `KeyLeft` / `h` → previous value for current section (cycle provider, model, decrease temp, prev prompt)
+  - `KeyRight` / `l` → next value for current section
+- Methods:
+  - `cycleProvider(delta int)`, `cycleModel(delta int)`, `adjustTemp(delta float64)`, `cycleSystemPrompt(delta int)`
+  - `tempBar() string` — visual temperature bar using ━ and ● characters
+  - `promptPreview() string` — word-wrapped preview of current system prompt, truncated to 3 lines
+  - `sectionBorder(idx int) tui.BorderStyle` — returns `BorderDouble` if focused, `BorderRounded` otherwise
+  - `sectionBorderClass(idx int) string` — returns border color class: section 0=cyan, 1=blue, 2=yellow, 3=green
+- `Render` templ:
+  - Outer: `border-rounded border-cyan p-2 flex-col gap-2 h-full`
+  - Title: `text-gradient-cyan-magenta font-bold text-center` "Settings"
+  - Four section panels, each with dynamic border style and color based on focus
+  - Provider: shows `◀ name ▶` with arrows
+  - Model: shows `◀ name ▶` with arrows
+  - Temperature: visual bar `━━━━━━━●━━━━━━ 0.7`
+  - System Prompt: wrapped preview text
+  - Decorative gradient borders on outer container: `border-gradient-cyan-magenta`
+  - Hint bar at bottom
+
+**main.go**:
+  - Detect terminal height with `golang.org/x/term`
+  - `tui.NewApp(tui.WithRootComponent(Chat()), tui.WithInlineHeight(3))`
+  - Run, handle errors
+
+### Verification
+
+```bash
+go run ./cmd/tui generate ./examples/14-ai-chat/...
+go build ./examples/14-ai-chat/
+go run ./examples/14-ai-chat/   # visual: inline chat, type and submit, Ctrl+S opens settings, settings navigate
+```
+
+---
+
+## Phase 15: Final Verification
 
 **Goal**: Generate all code, build everything, run tests.
 
@@ -1087,6 +1206,7 @@ go build ./examples/10-timers-and-watchers/
 go build ./examples/11-streaming/
 go build ./examples/12-multi-component/
 go build ./examples/13-dashboard/
+go build ./examples/14-ai-chat/
 
 # Run project tests
 go test ./...

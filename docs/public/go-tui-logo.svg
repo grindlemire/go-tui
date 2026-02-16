@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 64" width="310" height="64" role="img" aria-labelledby="c17a-title">
+  <title id="c17a-title">go-tui logo — Monokai dark cells</title>
+  <!-- 17A: Every cell has the Monokai dark olive background (#272822) -->
+  <!-- Letters use syntax-highlight colors: go=pink (keyword), -=green, tui=cyan (type) -->
+  <!-- Border is the Monokai gutter color. Feels like a code editor. -->
+
+  <!-- g cell -->
+  <rect x="4" y="10" width="42" height="44" rx="4" fill="#272822"/>
+  <rect x="4" y="10" width="42" height="44" rx="4" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <text x="25" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#f92672" text-anchor="middle">g</text>
+
+  <!-- o cell -->
+  <rect x="50" y="10" width="42" height="44" rx="4" fill="#272822"/>
+  <rect x="50" y="10" width="42" height="44" rx="4" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <text x="71" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#f92672" text-anchor="middle">o</text>
+
+  <!-- hyphen cell -->
+  <rect x="96" y="10" width="42" height="44" rx="4" fill="#272822"/>
+  <rect x="96" y="10" width="42" height="44" rx="4" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <text x="117" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="400" fill="#a6e22e" text-anchor="middle">-</text>
+
+  <!-- t cell -->
+  <rect x="142" y="10" width="42" height="44" rx="4" fill="#272822"/>
+  <rect x="142" y="10" width="42" height="44" rx="4" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <text x="163" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#66d9ef" text-anchor="middle">t</text>
+
+  <!-- u cell -->
+  <rect x="188" y="10" width="42" height="44" rx="4" fill="#272822"/>
+  <rect x="188" y="10" width="42" height="44" rx="4" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <text x="209" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#66d9ef" text-anchor="middle">u</text>
+
+  <!-- i cell -->
+  <rect x="234" y="10" width="42" height="44" rx="4" fill="#272822"/>
+  <rect x="234" y="10" width="42" height="44" rx="4" fill="none" stroke="#49483e" stroke-width="1.5"/>
+  <text x="255" y="42" font-family="'Fira Code','SF Mono','Consolas',monospace" font-size="28" font-weight="700" fill="#66d9ef" text-anchor="middle">i</text>
+</svg>

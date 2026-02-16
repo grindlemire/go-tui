@@ -1,32 +1,32 @@
 export const projectInfo = {
   name: "go-tui",
-  tagline: "Declarative Terminal UI Framework for Go",
+  tagline: "Reactive Terminal UIs in Go",
   description:
-    "Build beautiful terminal user interfaces with a templ-like syntax, pure Go flexbox layout, and reactive state management. No CGO required.",
+    "A Go framework for terminal UIs. Define layout in .gsx templates with HTML-like syntax, compile to type-safe Go. Flexbox positioning, reactive state, no CGO.",
   installCmd: "go get github.com/grindlemire/go-tui",
   features: [
     {
       title: "Declarative Syntax",
       description:
-        "Define UIs in .gsx files with familiar HTML-like elements and Tailwind-style classes. Compiles to type-safe Go code.",
+        ".gsx templates use HTML-like elements and Tailwind-style classes. The compiler outputs type-safe Go. No runtime reflection, no magic strings.",
       icon: "code",
     },
     {
       title: "Pure Go Flexbox",
       description:
-        "Full flexbox layout engine with row/column directions, justify, align, gap, padding, margin \u2014 all in pure Go with zero CGO.",
+        "Row, column, justify, align, gap, padding, margin \u2014 real flexbox layout without manual coordinate math. Pure Go, zero CGO.",
       icon: "layout",
     },
     {
       title: "Reactive State",
       description:
-        "Generic State[T] type with automatic dirty-flag propagation. Bind callbacks, batch updates, and trigger re-renders on change.",
+        "Generic State[T] re-renders automatically on change. Bind callbacks and batch updates.",
       icon: "zap",
     },
     {
       title: "Component System",
       description:
-        "Composable components with parameters, refs, watchers, and keyboard/mouse event handling. Full component lifecycle.",
+        "Components accept parameters, refs, and watchers. Keyboard and mouse events are handled per-component.",
       icon: "box",
     },
     {
@@ -38,7 +38,7 @@ export const projectInfo = {
     {
       title: "Minimal Dependencies",
       description:
-        "Only depends on golang.org/x/{mod,sync,sys,tools}. No heavy frameworks, no CGO, no external C libraries.",
+        "Only golang.org/x standard libraries. No heavy frameworks, no CGO, no external C libraries. Builds fast, audits clean.",
       icon: "package",
     },
   ],

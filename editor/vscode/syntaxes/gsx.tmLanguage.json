@@ -8,7 +8,12 @@
     { "include": "#import-declaration" },
     { "include": "#component-declaration" },
     { "include": "#go-declaration" },
-    { "include": "#function-declaration" }
+    { "include": "#function-declaration" },
+    { "include": "#control-keywords" },
+    { "include": "#component-call" },
+    { "include": "#element" },
+    { "include": "#go-expression-block" },
+    { "include": "#strings" }
   ],
   "repository": {
     "comments": {
