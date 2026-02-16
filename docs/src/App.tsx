@@ -6,11 +6,6 @@ import { loadGuide, loadReference } from "./lib/markdown.ts";
 import { getHighlighter, highlight } from "./lib/highlighter.ts";
 import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
-import V1StatusDashboard from "./variations/V1StatusDashboard.tsx";
-import V2CounterApp from "./variations/V2CounterApp.tsx";
-import V3TaskList from "./variations/V3TaskList.tsx";
-import V4SystemMonitor from "./variations/V4SystemMonitor.tsx";
-import V5ChatLog from "./variations/V5ChatLog.tsx";
 import CodeShowcase from "./variations/CodeShowcase.tsx";
 
 /* ─── Global Styles ─── */
@@ -2672,11 +2667,6 @@ export default function Design2() {
         <Route path="/guide/:slug" element={<GuidePage />} />
         <Route path="/reference" element={<ReferenceRedirect />} />
         <Route path="/reference/:slug" element={<ReferencePage />} />
-        <Route path="/v1" element={<V1StatusDashboard />} />
-        <Route path="/v2" element={<V2CounterApp />} />
-        <Route path="/v3" element={<V3TaskList />} />
-        <Route path="/v4" element={<V4SystemMonitor />} />
-        <Route path="/v5" element={<V5ChatLog />} />
         <Route path="/code" element={<CodeShowcase />} />
       </Routes>
     </ThemeContext.Provider>
