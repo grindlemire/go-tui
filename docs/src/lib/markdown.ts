@@ -47,7 +47,7 @@ function loadPages(files: Record<string, string>): ContentPage[] {
   return pages.sort((a, b) => a.order - b.order);
 }
 
-const guideFiles = import.meta.glob("../content/guide/*.md", {
+const guideFiles = import.meta.glob("../content/guides/*.md", {
   query: "?raw",
   import: "default",
   eager: true,

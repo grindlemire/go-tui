@@ -117,9 +117,19 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 	}
 
 	// Phase 3: Apply min/max constraints
+	// When MinWidth/MinHeight is Auto, use intrinsic size as the floor.
+	// This matches CSS flexbox behavior where min-width:auto / min-height:auto
+	// prevents items from shrinking below their content size.
 	for i, child := range children {
 		childStyle := child.LayoutStyle()
-		minMain := resolveMinMain(childStyle, isRow, mainSize)
+		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
+		var intrinsicMain int
+		if isRow {
+			intrinsicMain = childIntrinsicW
+		} else {
+			intrinsicMain = childIntrinsicH
+		}
+		minMain := resolveMinMain(childStyle, isRow, mainSize, intrinsicMain)
 		maxMain := resolveMaxMain(childStyle, isRow, mainSize)
 		items[i].mainSize = clampFlex(items[i].mainSize, minMain, maxMain)
 	}
@@ -306,11 +316,13 @@ func calculateAlignOffset(align Align, crossSize, itemSize int) float64 {
 }
 
 // resolveMinMain resolves the minimum size constraint for the main axis.
-func resolveMinMain(style Style, isRow bool, available int) int {
+// When the min value is Auto, uses the child's intrinsic size as the minimum,
+// matching CSS flexbox min-width:auto / min-height:auto behavior.
+func resolveMinMain(style Style, isRow bool, available int, intrinsic int) int {
 	if isRow {
-		return style.MinWidth.Resolve(available, 0)
+		return style.MinWidth.Resolve(available, intrinsic)
 	}
-	return style.MinHeight.Resolve(available, 0)
+	return style.MinHeight.Resolve(available, intrinsic)
 }
 
 // resolveMaxMain resolves the maximum size constraint for the main axis.

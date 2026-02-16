@@ -61,8 +61,8 @@ func DefaultStyle() Style {
 	return Style{
 		Width:      Auto(),
 		Height:     Auto(),
-		MinWidth:   Fixed(0),
-		MinHeight:  Fixed(0),
+		MinWidth:   Auto(), // auto = intrinsic size (matches CSS flexbox min-width: auto)
+		MinHeight:  Auto(), // auto = intrinsic size (matches CSS flexbox min-height: auto)
 		MaxWidth:   Auto(), // No maximum
 		MaxHeight:  Auto(), // No maximum
 		Direction:  Row,

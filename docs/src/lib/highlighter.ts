@@ -9,13 +9,13 @@ const darkTheme: ThemeRegistrationRaw = {
   name: "go-tui-dark",
   type: "dark",
   colors: {
-    "editor.background": "#06061a",
-    "editor.foreground": "#c0c8e0",
+    "editor.background": "#23241e",
+    "editor.foreground": "#f8f8f2",
   },
   tokenColors: [
     {
       scope: ["comment", "comment.line", "comment.block"],
-      settings: { foreground: "#3a4060" },
+      settings: { foreground: "#75715e" },
     },
     {
       scope: [
@@ -27,27 +27,27 @@ const darkTheme: ThemeRegistrationRaw = {
         "keyword.other.import",
         "keyword.other.type",
       ],
-      settings: { foreground: "#ff00ff" },
+      settings: { foreground: "#f92672" },
     },
     {
       scope: ["string", "string.quoted"],
-      settings: { foreground: "#39ff14" },
+      settings: { foreground: "#e6db74" },
     },
     {
       scope: ["constant.numeric", "constant.language"],
-      settings: { foreground: "#39ff14" },
+      settings: { foreground: "#ae81ff" },
     },
     {
       scope: ["constant.other.placeholder"],
-      settings: { foreground: "#00aaaa" },
+      settings: { foreground: "#ae81ff" },
     },
     {
       scope: ["constant.character.escape"],
-      settings: { foreground: "#00aaaa" },
+      settings: { foreground: "#ae81ff" },
     },
     {
       scope: ["entity.name.tag"],
-      settings: { foreground: "#00ffff" },
+      settings: { foreground: "#f92672" },
     },
     {
       scope: [
@@ -55,61 +55,61 @@ const darkTheme: ThemeRegistrationRaw = {
         "entity.name.function.component",
         "support.function.builtin",
       ],
-      settings: { foreground: "#00ffff" },
+      settings: { foreground: "#a6e22e" },
     },
     {
       scope: ["entity.name.type"],
-      settings: { foreground: "#00ffff" },
+      settings: { foreground: "#66d9ef" },
     },
     {
       scope: ["entity.other.attribute-name"],
-      settings: { foreground: "#ff00ff" },
+      settings: { foreground: "#a6e22e" },
     },
     {
       scope: ["variable.parameter"],
-      settings: { foreground: "#c0c8e0" },
+      settings: { foreground: "#fd971f" },
     },
     {
       scope: ["punctuation.definition.component-call"],
-      settings: { foreground: "#ff00ff" },
+      settings: { foreground: "#f92672" },
     },
     {
       scope: [
         "entity.name.function.component-call",
       ],
-      settings: { foreground: "#00ffff" },
+      settings: { foreground: "#a6e22e" },
     },
     {
       scope: ["keyword.operator"],
-      settings: { foreground: "#606888" },
+      settings: { foreground: "#f92672" },
     },
     {
       scope: ["variable.other"],
-      settings: { foreground: "#c0c8e0" },
+      settings: { foreground: "#f8f8f2" },
     },
     {
       scope: ["punctuation.definition.tag"],
-      settings: { foreground: "#606888" },
+      settings: { foreground: "#f8f8f2" },
     },
     {
       scope: ["punctuation.separator"],
-      settings: { foreground: "#606888" },
+      settings: { foreground: "#f8f8f2" },
     },
     {
       scope: ["punctuation.definition.block"],
-      settings: { foreground: "#606888" },
+      settings: { foreground: "#f8f8f2" },
     },
     {
       scope: ["entity.name.package"],
-      settings: { foreground: "#c0c8e0" },
+      settings: { foreground: "#f8f8f2" },
     },
     {
       scope: ["entity.name.import"],
-      settings: { foreground: "#c0c8e0" },
+      settings: { foreground: "#f8f8f2" },
     },
     {
       scope: ["variable.other.ref"],
-      settings: { foreground: "#c0c8e0" },
+      settings: { foreground: "#f8f8f2" },
     },
   ],
 };
@@ -118,13 +118,13 @@ const lightTheme: ThemeRegistrationRaw = {
   name: "go-tui-light",
   type: "light",
   colors: {
-    "editor.background": "#f8fafc",
-    "editor.foreground": "#2a2a4e",
+    "editor.background": "#f5f5f1",
+    "editor.foreground": "#49483e",
   },
   tokenColors: [
     {
       scope: ["comment", "comment.line", "comment.block"],
-      settings: { foreground: "#8a8aaa" },
+      settings: { foreground: "#a6a68a" },
     },
     {
       scope: [
@@ -136,27 +136,27 @@ const lightTheme: ThemeRegistrationRaw = {
         "keyword.other.import",
         "keyword.other.type",
       ],
-      settings: { foreground: "#aa00aa" },
+      settings: { foreground: "#d42568" },
     },
     {
       scope: ["string", "string.quoted"],
-      settings: { foreground: "#1a8a0a" },
+      settings: { foreground: "#998a00" },
     },
     {
       scope: ["constant.numeric", "constant.language"],
-      settings: { foreground: "#1a8a0a" },
+      settings: { foreground: "#6e5dc6" },
     },
     {
       scope: ["constant.other.placeholder"],
-      settings: { foreground: "#006688" },
+      settings: { foreground: "#6e5dc6" },
     },
     {
       scope: ["constant.character.escape"],
-      settings: { foreground: "#006688" },
+      settings: { foreground: "#6e5dc6" },
     },
     {
       scope: ["entity.name.tag"],
-      settings: { foreground: "#0088aa" },
+      settings: { foreground: "#d42568" },
     },
     {
       scope: [
@@ -164,61 +164,61 @@ const lightTheme: ThemeRegistrationRaw = {
         "entity.name.function.component",
         "support.function.builtin",
       ],
-      settings: { foreground: "#0088aa" },
+      settings: { foreground: "#638b0c" },
     },
     {
       scope: ["entity.name.type"],
-      settings: { foreground: "#0088aa" },
+      settings: { foreground: "#2f9eb8" },
     },
     {
       scope: ["entity.other.attribute-name"],
-      settings: { foreground: "#aa00aa" },
+      settings: { foreground: "#638b0c" },
     },
     {
       scope: ["variable.parameter"],
-      settings: { foreground: "#2a2a4e" },
+      settings: { foreground: "#b65a0d" },
     },
     {
       scope: ["punctuation.definition.component-call"],
-      settings: { foreground: "#aa00aa" },
+      settings: { foreground: "#d42568" },
     },
     {
       scope: [
         "entity.name.function.component-call",
       ],
-      settings: { foreground: "#0088aa" },
+      settings: { foreground: "#638b0c" },
     },
     {
       scope: ["keyword.operator"],
-      settings: { foreground: "#5a5a7e" },
+      settings: { foreground: "#d42568" },
     },
     {
       scope: ["variable.other"],
-      settings: { foreground: "#2a2a4e" },
+      settings: { foreground: "#49483e" },
     },
     {
       scope: ["punctuation.definition.tag"],
-      settings: { foreground: "#5a5a7e" },
+      settings: { foreground: "#49483e" },
     },
     {
       scope: ["punctuation.separator"],
-      settings: { foreground: "#5a5a7e" },
+      settings: { foreground: "#49483e" },
     },
     {
       scope: ["punctuation.definition.block"],
-      settings: { foreground: "#5a5a7e" },
+      settings: { foreground: "#49483e" },
     },
     {
       scope: ["entity.name.package"],
-      settings: { foreground: "#2a2a4e" },
+      settings: { foreground: "#49483e" },
     },
     {
       scope: ["entity.name.import"],
-      settings: { foreground: "#2a2a4e" },
+      settings: { foreground: "#49483e" },
     },
     {
       scope: ["variable.other.ref"],
-      settings: { foreground: "#2a2a4e" },
+      settings: { foreground: "#49483e" },
     },
   ],
 };
@@ -233,7 +233,10 @@ export async function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise = createHighlighterCore({
     themes: [darkTheme, lightTheme],
     langs: [
-      gsxGrammar as unknown as Parameters<HighlighterCore["loadLanguage"]>[0],
+      {
+        ...gsxGrammar,
+        name: "gsx",
+      } as unknown as Parameters<HighlighterCore["loadLanguage"]>[0],
       goLang,
       shellLang,
     ],

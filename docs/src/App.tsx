@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
 import { projectInfo, tailwindClasses } from "./content/projectInfo.ts";
 import { loadGuide, loadReference } from "./lib/markdown.ts";
 import { getHighlighter, highlight } from "./lib/highlighter.ts";
 import Markdown from "./components/Markdown.tsx";
+import TableOfContents from "./components/TableOfContents.tsx";
 
 /* ─── Global Styles ─── */
 
@@ -12,13 +13,6 @@ function GlobalStyles() {
   return (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-
-      .neon-glow {
-        text-shadow: 0 0 7px #00ffff, 0 0 20px #00ffff44, 0 0 40px #00ffff22;
-      }
-      .light-theme .neon-glow {
-        text-shadow: none;
-      }
 
       @keyframes blink {
         0%, 100% { opacity: 1; }
@@ -37,99 +31,86 @@ function GlobalStyles() {
         width: 6px;
         height: 6px;
       }
+      @keyframes scanDrift {
+        from { background-position: 0 0; }
+        to { background-position: 0 80px; }
+      }
+
       .custom-scroll::-webkit-scrollbar-track {
         background: transparent;
       }
       .custom-scroll::-webkit-scrollbar-thumb {
-        background: #1a1a3a;
+        background: #49483e;
         border-radius: 3px;
       }
       .custom-scroll::-webkit-scrollbar-thumb:hover {
-        background: #2a2a5a;
+        background: #75715e;
       }
 
       .neon-select ::selection {
-        background: #00ffff22;
-        color: #00ffff;
+        background: #66d9ef33;
+        color: #66d9ef;
       }
       .light-theme .neon-select ::selection {
-        background: #0088aa22;
-        color: #0088aa;
+        background: #2f9eb833;
+        color: #2f9eb8;
+      }
+
+      @keyframes syntaxPulse {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.4); }
+      }
+      .syntax-active-token {
+        animation: syntaxPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes comparisonReveal {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .comparison-row-animate {
+        animation: comparisonReveal 0.3s ease-out both;
+      }
+
+      @keyframes cellReveal {
+        from { opacity: 0; transform: translateY(8px) scale(0.92); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
     `}</style>
   );
 }
 
-/* ─── Matrix Rain (hero only, subtle) ─── */
+/* ─── Page Background (scan lines + glow) ─── */
 
-function MatrixRain({ theme }: { theme: Theme }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789{}[]<>";
-    const fontSize = 14;
-    let columns: number;
-    let drops: number[];
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      columns = Math.floor(canvas.width / fontSize);
-      drops = Array(columns)
-        .fill(0)
-        .map(() => Math.random() * -100);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-
-    const draw = () => {
-      const fadeColor =
-        theme === "dark"
-          ? "rgba(5, 5, 16, 0.06)"
-          : "rgba(240, 244, 248, 0.08)";
-      ctx.fillStyle = fadeColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const charColor = theme === "dark" ? "#00ffff" : "#0088aa";
-      ctx.fillStyle = charColor;
-      ctx.font = `${fontSize}px 'Fira Code', monospace`;
-      ctx.globalAlpha = theme === "dark" ? 0.08 : 0.04;
-
-      for (let i = 0; i < columns; i++) {
-        const char = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
-
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.985) {
-          drops[i] = 0;
-        }
-        drops[i] += 0.3 + Math.random() * 0.2;
-      }
-
-      ctx.globalAlpha = 1;
-      animId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(animId);
-    };
-  }, [theme]);
+function PageBackground({ theme }: { theme: Theme }) {
+  const isDark = theme === "dark";
+  const lineAlpha = isDark ? "0.025" : "0.018";
+  const lineRgb = isDark ? "248,248,242" : "39,40,34";
+  const glowColor = isDark
+    ? "rgba(166,226,46,0.03)"
+    : "rgba(212,37,104,0.02)";
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-      style={{ opacity: theme === "dark" ? 0.5 : 0.3 }}
-    />
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      {/* Scan lines */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(${lineRgb},${lineAlpha}) 3px, rgba(${lineRgb},${lineAlpha}) 4px)`,
+          animation: "scanDrift 12s linear infinite",
+        }}
+      />
+      {/* Warm radial glow */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at 25% 40%, ${glowColor} 0%, transparent 55%)`,
+        }}
+      />
+    </div>
   );
 }
 
@@ -156,6 +137,32 @@ function useTypingEffect(text: string, speed = 45) {
   }, [text, speed]);
 
   return { displayed, done };
+}
+
+/* ─── Word Cell (logo-style Monokai cell per word) ─── */
+
+function WordCell({ text, color, delay = 0 }: { text: string; color: string; delay?: number }) {
+  const { theme } = useTheme();
+  const borderColor = theme === "dark" ? "#49483e" : "#3e3d32";
+
+  return (
+    <span
+      className="inline-flex items-center font-['Fira_Code',monospace] font-bold
+        text-2xl px-2.5 py-1 rounded-md
+        sm:text-4xl sm:px-3.5 sm:py-1.5 sm:rounded-lg
+        md:text-5xl md:px-4 md:py-2 md:rounded-lg"
+      style={{
+        background: "#272822",
+        border: `1.5px solid ${borderColor}`,
+        color,
+        animation: "cellReveal 0.45s ease-out both",
+        animationDelay: `${delay}ms`,
+        letterSpacing: "-0.02em",
+      }}
+    >
+      {text}
+    </span>
+  );
 }
 
 /* ─── Nav ─── */
@@ -189,28 +196,20 @@ function Nav() {
       style={{
         background:
           theme === "dark"
-            ? "rgba(5, 5, 16, 0.9)"
-            : "rgba(240, 244, 248, 0.92)",
+            ? "rgba(39, 40, 34, 0.92)"
+            : "rgba(250, 250, 248, 0.92)",
         borderBottom: `1px solid ${t.border}`,
       }}
     >
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
         <Link
           to="/"
-          className="font-['Fira_Code',monospace] text-sm font-bold tracking-tight flex items-center gap-1"
-          style={{
-            color: t.accent,
-            textShadow: theme === "dark" ? t.accentGlowSubtle : "none",
-          }}
+          className="flex items-center"
         >
-          go-tui
-          <span
-            className="inline-block w-1.5 h-4 ml-0.5"
-            style={{
-              background: t.accent,
-              animation: "blink 1s step-end infinite",
-              opacity: 0.6,
-            }}
+          <img
+            src={theme === "dark" ? "/go-tui-logo.svg" : "/go-tui-logo-light-bg.svg"}
+            alt="go-tui"
+            style={{ height: 32 }}
           />
         </Link>
 
@@ -227,12 +226,11 @@ function Nav() {
                   color: active ? t.accent : t.textMuted,
                   background: active
                     ? theme === "dark"
-                      ? "#00ffff0a"
-                      : "#0088aa0a"
+                      ? "#66d9ef0a"
+                      : "#2f9eb80a"
                     : "transparent",
-                  border: `1px solid ${active ? (theme === "dark" ? "#00ffff33" : "#0088aa33") : "transparent"}`,
-                  textShadow:
-                    active && theme === "dark" ? t.accentGlowSubtle : "none",
+                  border: `1px solid ${active ? (theme === "dark" ? "#66d9ef33" : "#2f9eb833") : "transparent"}`,
+                  textShadow: "none",
                 }}
                 onMouseEnter={(e) => {
                   if (!active) e.currentTarget.style.color = t.accent;
@@ -251,13 +249,60 @@ function Nav() {
             style={{ width: 1, height: 20, background: t.border }}
           />
 
+          <a
+            href="https://pkg.go.dev/github.com/grindlemire/go-tui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-['Fira_Code',monospace] text-[10px] px-2 py-1 rounded transition-all duration-200"
+            style={{
+              color: t.secondary,
+              background: `${t.secondary}0a`,
+              border: `1px solid ${t.secondary}22`,
+            }}
+            title="v0.1.0 — view on pkg.go.dev"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = `${t.secondary}55`;
+              e.currentTarget.style.background = `${t.secondary}14`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = `${t.secondary}22`;
+              e.currentTarget.style.background = `${t.secondary}0a`;
+            }}
+          >
+            v0.1.0
+          </a>
+
+          <a
+            href="https://github.com/grindlemire/go-tui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 rounded transition-all duration-200 flex items-center"
+            style={{
+              color: t.textMuted,
+              border: `1px solid transparent`,
+            }}
+            title="View on GitHub — open source"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = t.accent;
+              e.currentTarget.style.borderColor = t.border;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = t.textMuted;
+              e.currentTarget.style.borderColor = "transparent";
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-label="GitHub">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+          </a>
+
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="font-['Fira_Code',monospace] text-xs p-1.5 rounded transition-all duration-300"
             style={{
               color: theme === "dark" ? t.secondary : t.tertiary,
               background: "transparent",
-              border: `1px solid ${theme === "dark" ? "#39ff1433" : "#aa00aa33"}`,
+              border: `1px solid ${t.border}`,
               cursor: "pointer",
               lineHeight: 1,
             }}
@@ -271,13 +316,25 @@ function Nav() {
 
         {/* Mobile hamburger */}
         <div className="flex sm:hidden items-center gap-2">
+          <a
+            href="https://github.com/grindlemire/go-tui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 rounded flex items-center"
+            style={{ color: t.textMuted }}
+            title="View on GitHub"
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-label="GitHub">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+          </a>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="font-['Fira_Code',monospace] text-[10px] p-1.5 rounded"
             style={{
               color: theme === "dark" ? t.secondary : t.tertiary,
               background: "transparent",
-              border: `1px solid ${theme === "dark" ? "#39ff1433" : "#aa00aa33"}`,
+              border: `1px solid ${t.border}`,
               cursor: "pointer",
             }}
           >
@@ -306,8 +363,8 @@ function Nav() {
             borderTop: `1px solid ${t.border}`,
             background:
               theme === "dark"
-                ? "rgba(5, 5, 16, 0.95)"
-                : "rgba(240, 244, 248, 0.98)",
+                ? "rgba(39, 40, 34, 0.95)"
+                : "rgba(250, 250, 248, 0.98)",
           }}
         >
           {links.map((link) => {
@@ -321,8 +378,8 @@ function Nav() {
                   color: active ? t.accent : t.textMuted,
                   background: active
                     ? theme === "dark"
-                      ? "#00ffff0a"
-                      : "#0088aa0a"
+                      ? "#66d9ef0a"
+                      : "#2f9eb80a"
                     : "transparent",
                 }}
               >
@@ -330,9 +387,75 @@ function Nav() {
               </Link>
             );
           })}
+          <div
+            className="h-px my-1"
+            style={{ background: t.border }}
+          />
+          <a
+            href="https://pkg.go.dev/github.com/grindlemire/go-tui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-['Fira_Code',monospace] text-sm px-3 py-2 rounded flex items-center gap-2"
+            style={{ color: t.textMuted }}
+          >
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded"
+              style={{
+                color: t.secondary,
+                background: `${t.secondary}0a`,
+                border: `1px solid ${t.secondary}22`,
+              }}
+            >
+              v0.1.0
+            </span>
+            pkg.go.dev
+          </a>
         </div>
       )}
     </nav>
+  );
+}
+
+/* ─── Copy Button ─── */
+
+function CopyButton({ text }: { text: string }) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="p-1 rounded transition-all duration-200"
+      style={{
+        color: copied ? t.secondary : t.textDim,
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        if (!copied) e.currentTarget.style.color = t.accent;
+      }}
+      onMouseLeave={(e) => {
+        if (!copied) e.currentTarget.style.color = t.textDim;
+      }}
+      title={copied ? "Copied!" : "Copy code"}
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
   );
 }
 
@@ -397,14 +520,17 @@ function CodeBlock({
             </span>
           )}
         </div>
-        {language && (
-          <span
-            className="font-['Fira_Code',monospace] text-[10px]"
-            style={{ color: t.accentDim }}
-          >
-            {language}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {language && (
+            <span
+              className="font-['Fira_Code',monospace] text-[10px]"
+              style={{ color: t.accentDim }}
+            >
+              {language}
+            </span>
+          )}
+          <CopyButton text={code} />
+        </div>
       </div>
       <div className="px-4 py-3.5 overflow-x-auto custom-scroll">
         {html ? (
@@ -466,6 +592,9 @@ function TerminalBlock({
         <span className="text-[10px] ml-2" style={{ color: t.textDim }}>
           {title}
         </span>
+        <div className="ml-auto">
+          <CopyButton text={command} />
+        </div>
       </div>
       <div className="px-4 py-3.5 flex items-center gap-2 text-[13px] sm:text-[14px] overflow-x-auto custom-scroll">
         <span style={{ color: t.secondary }}>$</span>
@@ -475,70 +604,356 @@ function TerminalBlock({
   );
 }
 
-/* ─── Feature Card ─── */
+/* ─── Editor Simulation (DX Section) ─── */
 
-function FeatureCard({
-  feature,
-  index,
+function EditorSimulation({
+  activeFeature,
+  onSetFeature,
+  pausedRef,
 }: {
-  feature: { title: string; description: string; icon: string };
-  index: number;
+  activeFeature: number;
+  onSetFeature: (i: number) => void;
+  pausedRef: React.RefObject<boolean>;
 }) {
   const { theme } = useTheme();
   const t = palette[theme];
-  const [hovered, setHovered] = useState(false);
+  const [showCompletions, setShowCompletions] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [highlightLine, setHighlightLine] = useState<number | null>(null);
+  const [showFormatted, setShowFormatted] = useState(false);
 
-  const iconMap: Record<string, string> = {
-    code: "</>",
-    layout: "[=]",
-    zap: "/!/",
-    box: "[ ]",
-    edit: " ~ ",
-    package: "{..}",
-  };
+  const fmtColor = theme === "dark" ? "#ae81ff" : "#7c5cb8";
+  const features = [
+    { id: "syntax", label: "syntax highlighting", icon: "\u2726", color: t.accent },
+    { id: "completions", label: "completions", icon: "\u00bb", color: t.secondary },
+    { id: "diagnostics", label: "diagnostics", icon: "\u26a0", color: t.tertiary },
+    { id: "goto", label: "go-to-definition", icon: "\u2192", color: theme === "dark" ? "#e6db74" : "#998a00" },
+    { id: "format", label: "auto-format", icon: "\u2261", color: fmtColor },
+  ];
 
-  const neonColors = [t.accent, t.secondary, t.tertiary];
-  const color = neonColors[index % 3];
+  useEffect(() => {
+    setShowCompletions(false);
+    setShowDiagnostic(false);
+    setHighlightLine(null);
+    setShowFormatted(false);
+
+    const timer = setTimeout(() => {
+      if (activeFeature === 1) setShowCompletions(true);
+      if (activeFeature === 2) setShowDiagnostic(true);
+      if (activeFeature === 3) setHighlightLine(10);
+      if (activeFeature === 4) setShowFormatted(true);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [activeFeature]);
+
+  const editorLines = [
+    { num: 1, tokens: [{ text: "package", color: t.codeKeyword }, { text: " dashboard", color: t.text }] },
+    { num: 2, tokens: [{ text: "", color: t.text }] },
+    { num: 3, tokens: [{ text: "import", color: t.codeKeyword }, { text: " (", color: t.codePunct }] },
+    { num: 4, tokens: [{ text: '  "fmt"', color: t.codeString }] },
+    { num: 5, tokens: [{ text: ")", color: t.codePunct }] },
+    { num: 6, tokens: [{ text: "", color: t.text }] },
+    { num: 7, tokens: [{ text: "templ", color: t.codeKeyword }, { text: " ", color: t.text }, { text: "Dashboard", color: t.codeFunc }, { text: "(", color: t.codePunct }, { text: "title ", color: t.text }, { text: "string", color: t.codeKeyword }, { text: ") {", color: t.codePunct }] },
+    { num: 8, tokens: [{ text: '  <', color: t.codePunct }, { text: 'div', color: t.codeKeyword }, { text: ' class=', color: t.codePunct }, { text: '"flex-col h-full"', color: t.codeString }, { text: '>', color: t.codePunct }] },
+    { num: 9, tokens: [{ text: "    @", color: t.codeDirective }, { text: "Header", color: t.codeFunc }, { text: "(title)", color: t.codePunct }] },
+    { num: 10, tokens: [{ text: "    @", color: t.codeDirective }, { text: "Sidebar", color: t.codeFunc }, { text: "()", color: t.codePunct }] },
+    { num: 11, tokens: [{ text: "    @", color: t.codeDirective }, { text: "MainContent", color: t.codeFunc }, { text: "()", color: t.codePunct }] },
+    { num: 12, tokens: [{ text: "  </", color: t.codePunct }, { text: "div", color: t.codeKeyword }, { text: ">", color: t.codePunct }] },
+    { num: 13, tokens: [{ text: "}", color: t.codePunct }] },
+    { num: 14, tokens: [{ text: "", color: t.text }] },
+    { num: 15, tokens: [{ text: "templ", color: t.codeKeyword }, { text: " ", color: t.text }, { text: "Header", color: t.codeFunc }, { text: "(", color: t.codePunct }, { text: "title ", color: t.text }, { text: "string", color: t.codeKeyword }, { text: ") {", color: t.codePunct }] },
+    { num: 16, tokens: [{ text: '  <', color: t.codePunct }, { text: 'div', color: t.codeKeyword }, { text: ' class=', color: t.codePunct }, { text: '"border-single p-1"', color: t.codeString }, { text: '>', color: t.codePunct }] },
+    { num: 17, tokens: [{ text: '    <', color: t.codePunct }, { text: 'span', color: t.codeKeyword }, { text: ' class=', color: t.codePunct }, { text: '"font-bold text-cyan"', color: t.codeString }, { text: '>', color: t.codePunct }] },
+    { num: 18, tokens: [{ text: "      {", color: t.codePunct }, { text: "fmt", color: t.text }, { text: ".", color: t.codePunct }, { text: "Sprintf", color: t.codeFunc }, { text: "(", color: t.codePunct }, { text: '"%s"', color: t.codeString }, { text: ", title)", color: t.codePunct }, { text: "}", color: t.codePunct }] },
+    { num: 19, tokens: [{ text: "    </", color: t.codePunct }, { text: "span", color: t.codeKeyword }, { text: ">", color: t.codePunct }] },
+    { num: 20, tokens: [{ text: "  </", color: t.codePunct }, { text: "div", color: t.codeKeyword }, { text: ">", color: t.codePunct }] },
+    { num: 21, tokens: [{ text: "}", color: t.codePunct }] },
+  ];
+
+  // Lines with bad indentation (for the format demo)
+  // Only certain lines differ — we track which line nums changed
+  const fmtChangedLines = new Set([9, 10, 11, 17, 18, 19]);
+  const messyLines: typeof editorLines = editorLines.map((line) => {
+    if (line.num === 9) return { num: 9, tokens: [{ text: "  @", color: t.codeDirective }, { text: "Header", color: t.codeFunc }, { text: "(title)", color: t.codePunct }] };
+    if (line.num === 10) return { num: 10, tokens: [{ text: "      @", color: t.codeDirective }, { text: "Sidebar", color: t.codeFunc }, { text: "()", color: t.codePunct }] };
+    if (line.num === 11) return { num: 11, tokens: [{ text: "   @", color: t.codeDirective }, { text: "MainContent", color: t.codeFunc }, { text: "()", color: t.codePunct }] };
+    if (line.num === 17) return { num: 17, tokens: [{ text: "  <", color: t.codePunct }, { text: "span", color: t.codeKeyword }, { text: " class=", color: t.codePunct }, { text: '"font-bold text-cyan"', color: t.codeString }, { text: ">", color: t.codePunct }] };
+    if (line.num === 18) return { num: 18, tokens: [{ text: "        {", color: t.codePunct }, { text: "fmt", color: t.text }, { text: ".", color: t.codePunct }, { text: "Sprintf", color: t.codeFunc }, { text: "(", color: t.codePunct }, { text: '"%s"', color: t.codeString }, { text: ", title)", color: t.codePunct }, { text: "}", color: t.codePunct }] };
+    if (line.num === 19) return { num: 19, tokens: [{ text: "      </", color: t.codePunct }, { text: "span", color: t.codeKeyword }, { text: ">", color: t.codePunct }] };
+    return line;
+  });
+
+  const completionItems = [
+    { label: "Sidebar", detail: "() *Element" },
+    { label: "SearchBar", detail: "(query string) *Element" },
+    { label: "StatusLine", detail: "() *Element" },
+  ];
 
   return (
     <div
-      className="rounded-lg p-5 transition-all duration-300"
+      className="rounded-lg overflow-hidden"
       style={{
-        background: t.bgCard,
-        border: `1px solid ${hovered ? color : t.border}`,
-        boxShadow:
-          hovered && theme === "dark"
-            ? `0 0 18px ${color}33, 0 0 40px ${color}11`
-            : theme === "dark"
-              ? "0 0 5px #00000044"
-              : "0 1px 3px rgba(0,0,0,0.06)",
+        background: t.bgCode,
+        border: `1px solid ${t.border}`,
+        boxShadow: theme === "dark"
+          ? "0 4px 24px rgba(0,0,0,0.4)"
+          : "0 2px 12px rgba(0,0,0,0.08)",
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
     >
+      {/* Editor title bar */}
       <div
-        className="font-['Fira_Code',monospace] text-sm mb-3 inline-block px-2.5 py-1 rounded"
+        className="flex items-center justify-between px-4 py-2"
+        style={{ borderBottom: `1px solid ${t.border}` }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ff5f57" }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#febc2e" }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#28c840" }} />
+          </div>
+          <span className="font-['Fira_Code',monospace] text-[10px] ml-2" style={{ color: t.textDim }}>
+            dashboard.gsx
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="font-['Fira_Code',monospace] text-[9px] px-1.5 py-0.5 rounded"
+            style={{
+              color: t.secondary,
+              background: `${t.secondary}12`,
+              border: `1px solid ${t.secondary}25`,
+            }}
+          >
+            LSP
+          </span>
+          <span
+            className="font-['Fira_Code',monospace] text-[9px] px-1.5 py-0.5 rounded"
+            style={{
+              color: t.accent,
+              background: `${t.accent}12`,
+              border: `1px solid ${t.accent}25`,
+            }}
+          >
+            tree-sitter
+          </span>
+        </div>
+      </div>
+
+      {/* Feature selector tabs */}
+      <div
+        className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto custom-scroll"
         style={{
-          color: color,
-          background: `${color}0a`,
-          textShadow:
-            hovered && theme === "dark" ? `0 0 5px ${color}88` : "none",
+          borderBottom: `1px solid ${t.border}`,
+          background: theme === "dark" ? "#1e1f1a" : "#eeeee8",
         }}
       >
-        {iconMap[feature.icon] || ">>>"}
+        {features.map((f, i) => (
+          <button
+            key={f.id}
+            onClick={() => onSetFeature(i)}
+            className="font-['Fira_Code',monospace] text-[10px] sm:text-[11px] px-2.5 py-1 rounded transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0"
+            style={{
+              color: activeFeature === i ? f.color : t.textDim,
+              background: activeFeature === i ? `${f.color}10` : "transparent",
+              border: `1px solid ${activeFeature === i ? `${f.color}30` : "transparent"}`,
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ fontSize: "9px" }}>{f.icon}</span>
+            {f.label}
+          </button>
+        ))}
       </div>
-      <h3
-        className="font-['IBM_Plex_Sans',sans-serif] font-semibold text-[15px] mb-2"
-        style={{ color: t.heading }}
+
+      {/* Editor body */}
+      <div className="relative px-0 py-3 font-['Fira_Code',monospace] text-[11px] sm:text-[12px] leading-[1.8] overflow-x-auto custom-scroll">
+        {(activeFeature === 4 && !showFormatted ? messyLines : editorLines).map((line) => {
+          const isGotoTarget = activeFeature === 3 && highlightLine === line.num;
+          const hasDiagnostic = activeFeature === 2 && showDiagnostic && line.num === 10;
+          const isFmtChanged = activeFeature === 4 && showFormatted && fmtChangedLines.has(line.num);
+
+          return (
+            <div
+              key={line.num}
+              className="flex transition-all duration-300"
+              style={{
+                background: isGotoTarget
+                  ? `${features[3].color}10`
+                  : hasDiagnostic
+                    ? `${t.tertiary}08`
+                    : isFmtChanged
+                      ? `${fmtColor}08`
+                      : "transparent",
+                borderLeft: isGotoTarget
+                  ? `2px solid ${features[3].color}`
+                  : isFmtChanged
+                    ? `2px solid ${fmtColor}`
+                    : "2px solid transparent",
+              }}
+            >
+              <span
+                className="inline-block w-8 sm:w-10 text-right pr-3 sm:pr-4 select-none shrink-0"
+                style={{ color: t.textDim, opacity: 0.5 }}
+              >
+                {line.num}
+              </span>
+              <span className="whitespace-pre">
+                {line.tokens.map((tok, j) => {
+                  const isSyntaxHighlighted = activeFeature === 0
+                    && tok.text.trim().length > 0
+                    && tok.color !== t.text
+                    && tok.color !== t.codePunct;
+                  return (
+                    <span
+                      key={j}
+                      className={isSyntaxHighlighted ? "syntax-active-token" : ""}
+                      style={{
+                        color: tok.color,
+                        animationDelay: isSyntaxHighlighted ? `${j * 120}ms` : undefined,
+                      }}
+                    >{tok.text}</span>
+                  );
+                })}
+              </span>
+              {hasDiagnostic && (
+                <span className="ml-4 text-[10px] flex items-center gap-1.5" style={{ color: t.tertiary }}>
+                  <span className="opacity-80">undefined: Sidebar</span>
+                </span>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Completions popup */}
+        {activeFeature === 1 && showCompletions && (
+          <div
+            className="absolute rounded-md overflow-hidden"
+            style={{
+              top: "calc(1.8em * 10 + 12px)",
+              left: "calc(10px + 8ch)",
+              background: theme === "dark" ? "#3e3d32" : "#ffffff",
+              border: `1px solid ${t.border}`,
+              boxShadow: theme === "dark"
+                ? "0 4px 16px rgba(0,0,0,0.5)"
+                : "0 4px 16px rgba(0,0,0,0.12)",
+              zIndex: 10,
+              animation: "fadeInUp 0.2s ease-out forwards",
+              minWidth: "220px",
+            }}
+          >
+            {completionItems.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 px-2.5 py-1.5 text-[11px]"
+                style={{
+                  background: i === 0 ? `${t.accent}15` : "transparent",
+                  borderLeft: i === 0 ? `2px solid ${t.accent}` : "2px solid transparent",
+                }}
+              >
+                <span
+                  className="px-1 py-0.5 rounded text-[9px]"
+                  style={{ background: `${t.secondary}18`, color: t.secondary }}
+                >
+                  C
+                </span>
+                <span style={{ color: i === 0 ? t.accent : t.text }}>{item.label}</span>
+                <span className="ml-auto" style={{ color: t.textDim, fontSize: "10px" }}>
+                  {item.detail}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Status bar */}
+      <div
+        className="flex items-center justify-between px-4 py-1.5 font-['Fira_Code',monospace] text-[10px]"
+        style={{
+          borderTop: `1px solid ${t.border}`,
+          background: theme === "dark" ? "#1e1f1a" : "#eeeee8",
+        }}
       >
-        {feature.title}
-      </h3>
-      <p
-        className="font-['IBM_Plex_Sans',sans-serif] text-[13px] leading-relaxed"
+        <div className="flex items-center gap-3">
+          <span style={{ color: t.textDim }}>Ln 10, Col 5</span>
+          <span style={{ color: t.textDim }}>GSX</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {activeFeature === 2 && showDiagnostic && (
+            <span className="flex items-center gap-1" style={{ color: t.tertiary }}>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                <circle cx="5" cy="5" r="4" />
+              </svg>
+              1 error
+            </span>
+          )}
+          {activeFeature === 4 && showFormatted && (
+            <span className="flex items-center gap-1" style={{ color: fmtColor }}>
+              6 lines formatted
+            </span>
+          )}
+          <span style={{ color: t.secondary }}>tui lsp</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── DX Capability Row ─── */
+
+function DxCapability({
+  title,
+  description,
+  color,
+  delay,
+  active,
+  onHover,
+  onLeave,
+}: {
+  title: string;
+  description: string;
+  color: string;
+  delay: number;
+  active?: boolean;
+  onHover?: () => void;
+  onLeave?: () => void;
+}) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const highlighted = active ?? false;
+
+  return (
+    <div
+      className="py-3 px-4 rounded-lg transition-all duration-200 cursor-default"
+      style={{
+        background: highlighted ? `${color}06` : "transparent",
+        borderLeft: `2px solid ${highlighted ? color : "transparent"}`,
+        animation: `fadeInUp 0.4s ease-out ${delay}ms both`,
+      }}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <div
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ background: color }}
+        />
+        <div
+          className="font-['Fira_Code',monospace] text-[13px] font-medium"
+          style={{ color: t.heading }}
+        >
+          {title}
+        </div>
+      </div>
+      <div
+        className="text-[12px] sm:text-[13px] leading-relaxed pl-3.5"
         style={{ color: t.textMuted }}
       >
-        {feature.description}
-      </p>
+        {description}
+      </div>
     </div>
   );
 }
@@ -555,7 +970,7 @@ function Divider() {
         style={{
           background:
             theme === "dark"
-              ? "linear-gradient(to right, transparent, #00ffff18, #ff00ff18, transparent)"
+              ? "linear-gradient(to right, transparent, #66d9ef18, #f9267218, transparent)"
               : `linear-gradient(to right, transparent, ${t.border}, transparent)`,
         }}
       />
@@ -579,7 +994,7 @@ function Footer() {
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-['Fira_Code',monospace] text-[11px]">
           <span style={{ color: t.textDim }}>
-            go-tui &mdash; declarative terminal UI for Go
+            go-tui &mdash; reactive terminal UIs in Go
           </span>
           <a
             href="https://github.com/grindlemire/go-tui"
@@ -605,7 +1020,7 @@ function Page({ children }: { children: React.ReactNode }) {
   const t = palette[theme];
   return (
     <div
-      className={`${theme === "dark" ? "dark-theme" : "light-theme"} neon-select`}
+      className={`${theme === "dark" ? "dark-theme" : "light-theme"} neon-select overflow-x-clip`}
       style={{
         background: t.bg,
         color: t.text,
@@ -620,6 +1035,520 @@ function Page({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ─── Comparison Section ─── */
+
+type CellValue = { summary: string; detail: string };
+type ComparisonFeature = {
+  label: string;
+  values: Record<string, CellValue>;
+};
+
+const comparisonLibraries = ["go-tui", "Bubble Tea", "tview", "gocui"] as const;
+
+const comparisonFeatures: ComparisonFeature[] = [
+  {
+    label: "Approach",
+    values: {
+      "go-tui": {
+        summary: "Declarative .gsx templates",
+        detail: ".gsx files use HTML-like syntax with Tailwind-style classes and compile to type-safe Go via tui generate",
+      },
+      "Bubble Tea": {
+        summary: "Elm architecture",
+        detail: "Functional Model → Update → View cycle. State is immutable, messages drive updates, View returns a string",
+      },
+      tview: {
+        summary: "Imperative widget toolkit",
+        detail: "OOP style — create widget objects, configure via methods, compose in layout containers. Implements the Primitive interface",
+      },
+      gocui: {
+        summary: "View manager",
+        detail: "Create named rectangular views with absolute coordinates. Views implement io.ReadWriter for content",
+      },
+    },
+  },
+  {
+    label: "Layout",
+    values: {
+      "go-tui": {
+        summary: "CSS flexbox",
+        detail: "Full flexbox: grow, shrink, justify, align, gap, padding, margin, min/max constraints, percentage and auto sizing",
+      },
+      "Bubble Tea": {
+        summary: "String joins via lipgloss",
+        detail: "lipgloss provides box model styling (padding, margin, borders) and JoinHorizontal/JoinVertical for composition. No flexbox — open issue since 2023",
+      },
+      tview: {
+        summary: "Basic Flex and Grid",
+        detail: "Flex supports direction and proportional sizing. Grid adds row/column spans. Neither has gap, justify-content, or align-items",
+      },
+      gocui: {
+        summary: "Manual coordinates",
+        detail: "Views positioned with absolute (x0, y0, x1, y1) coordinates in a Layout function. Responsive sizing requires manual calculation",
+      },
+    },
+  },
+  {
+    label: "Widgets",
+    values: {
+      "go-tui": {
+        summary: "HTML-style primitives",
+        detail: "Built-in elements: div, span, p, ul, li, button, input, table, progress, hr, br. Composable via .gsx components",
+      },
+      "Bubble Tea": {
+        summary: "14+ via Bubbles",
+        detail: "Separate Bubbles library: text input, text area, viewport, list, table, spinner, progress, file picker, paginator, help, and more",
+      },
+      tview: {
+        summary: "16+ built-in",
+        detail: "Richest widget set: TextView, TextArea, Table, TreeView, List, Form, Modal, InputField, DropDown, Checkbox, Button, Image, and more",
+      },
+      gocui: {
+        summary: "Views only",
+        detail: "No pre-built widgets. Views provide text I/O and keybindings — widgets like tables or lists must be built from scratch",
+      },
+    },
+  },
+  {
+    label: "State",
+    values: {
+      "go-tui": {
+        summary: "Reactive State[T]",
+        detail: "Generic State[T] with Bind() callbacks triggers re-render on change. Batch() coalesces multiple updates. Global dirty tracking",
+      },
+      "Bubble Tea": {
+        summary: "Elm update cycle",
+        detail: "Messages flow through Update() which returns a new model and optional commands. Predictable data flow, but requires message routing boilerplate for nested components",
+      },
+      tview: {
+        summary: "Manual redraw",
+        detail: "Mutate widget state directly via setter methods, then call app.Draw() or app.QueueUpdateDraw() for thread-safe re-rendering",
+      },
+      gocui: {
+        summary: "Manual redraw",
+        detail: "Write content to views via io.Writer. The Layout() manager function is called each iteration to reposition views",
+      },
+    },
+  },
+  {
+    label: "Inline mode",
+    values: {
+      "go-tui": {
+        summary: "Supported",
+        detail: "Enabled via WithInlineHeight(). PrintAbove() outputs to scrollback above the widget",
+      },
+      "Bubble Tea": {
+        summary: "Default mode",
+        detail: "Inline is the default — fullscreen requires opting in with tea.WithAltScreen(). Supports tea.Println() for output above",
+      },
+      tview: {
+        summary: "Fullscreen only",
+        detail: "Architectural limitation — tcell takes over the entire screen. No inline rendering support",
+      },
+      gocui: {
+        summary: "Fullscreen only",
+        detail: "Same tcell limitation. The GUI manager controls the full terminal screen",
+      },
+    },
+  },
+  {
+    label: "Mouse",
+    values: {
+      "go-tui": {
+        summary: "SGR mode + ref hit testing",
+        detail: "SGR extended mouse protocol. HandleClicks() provides automatic ref-based hit testing for named elements",
+      },
+      "Bubble Tea": {
+        summary: "SGR mode + modifiers",
+        detail: "SGR extended mouse with click, release, wheel, motion events. v2 splits into typed MouseClickMsg, MouseWheelMsg, etc.",
+      },
+      tview: {
+        summary: "Click, drag, wheel",
+        detail: "Opt-in via EnableMouse(). Supports click, double-click, drag, and wheel events through tcell",
+      },
+      gocui: {
+        summary: "Click + motion",
+        detail: "Mouse support in awesome-gocui fork. Click, motion, and modifier key detection",
+      },
+    },
+  },
+  {
+    label: "Tooling",
+    values: {
+      "go-tui": {
+        summary: "LSP + formatter + tree-sitter",
+        detail: "Custom language server for .gsx files with completions, hover, go-to-definition, and diagnostics. Formatter and tree-sitter grammar included. Generated Go code uses standard gopls",
+      },
+      "Bubble Tea": {
+        summary: "Standard Go (gopls)",
+        detail: "All code is plain Go — full gopls support out of the box. No additional tooling needed or available",
+      },
+      tview: {
+        summary: "Standard Go (gopls)",
+        detail: "Plain Go code with full gopls support. No domain-specific tooling",
+      },
+      gocui: {
+        summary: "Standard Go (gopls)",
+        detail: "Plain Go code with full gopls support. No domain-specific tooling",
+      },
+    },
+  },
+  {
+    label: "Build",
+    values: {
+      "go-tui": {
+        summary: "tui generate + go build",
+        detail: "Requires running tui generate to compile .gsx templates to Go before go build. Extra step in the build chain",
+      },
+      "Bubble Tea": {
+        summary: "Standard go build",
+        detail: "No code generation or extra build steps. Standard Go compilation",
+      },
+      tview: {
+        summary: "Standard go build",
+        detail: "No code generation or extra build steps. Standard Go compilation",
+      },
+      gocui: {
+        summary: "Standard go build",
+        detail: "No code generation or extra build steps. Standard Go compilation",
+      },
+    },
+  },
+];
+
+/* ─── Cell Tooltip ─── */
+
+function ExpandableCell({
+  summary,
+  detail,
+  textColor,
+}: {
+  summary: string;
+  detail: string;
+  textColor: string;
+}) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      className="cursor-default"
+    >
+      <span
+        className="font-['Fira_Code',monospace] text-[11px] leading-snug"
+        style={{
+          color: textColor,
+          borderBottom: `1px dashed ${t.textMuted}60`,
+          paddingBottom: 1,
+        }}
+      >
+        {summary}
+      </span>
+      <div
+        className="overflow-hidden transition-all duration-200 ease-out"
+        style={{
+          maxHeight: expanded ? 80 : 0,
+          opacity: expanded ? 1 : 0,
+          marginTop: expanded ? 4 : 0,
+        }}
+      >
+        <div
+          className="font-['IBM_Plex_Sans',sans-serif] text-[11px] leading-relaxed"
+          style={{ color: t.textMuted }}
+        >
+          {detail}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComparisonSection() {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
+  const [visible, setVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  const goTuiColIdx = 0;
+  const accentTint = theme === "dark" ? `${t.accent}14` : `${t.accent}0c`;
+  const accentTintHover = theme === "dark" ? `${t.accent}22` : `${t.accent}16`;
+  const headerTint = theme === "dark" ? `${t.accent}1a` : `${t.accent}10`;
+
+  // Assign a subtle color per library for the header pill
+  const libColors: Record<string, string> = {
+    "go-tui": t.accent,
+    "Bubble Tea": t.secondary,
+    tview: theme === "dark" ? "#e6db74" : "#998a00",
+    gocui: t.tertiary,
+  };
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12"
+    >
+      <div
+        className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
+        style={{ color: t.accentDim }}
+      >
+        landscape
+      </div>
+      <h2
+        className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
+        style={{ color: t.heading }}
+      >
+        Go TUI libraries
+      </h2>
+      <p
+        className="text-[14px] sm:text-[15px] mb-3 max-w-[640px]"
+        style={{ color: t.textMuted }}
+      >
+        Each library makes different trade-offs. tcell is excluded because it is a
+        low-level terminal abstraction (used internally by tview and gocui), not a
+        UI framework.
+      </p>
+      <p
+        className="text-[13px] mb-8 sm:mb-10 max-w-[640px]"
+        style={{ color: t.textDim }}
+      >
+        go-tui is pure Go with zero CGO. tview and gocui depend on tcell, which can optionally use CGO.
+      </p>
+
+      {/* Desktop table */}
+      <div className="hidden lg:block overflow-x-auto custom-scroll">
+        <div
+          className="rounded-lg overflow-hidden"
+          style={{
+            border: `1px solid ${t.border}`,
+            background: t.bgCard,
+            boxShadow:
+              theme === "dark"
+                ? "0 2px 12px rgba(0,0,0,0.4)"
+                : "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          {/* Header */}
+          <div
+            className="grid items-end gap-0"
+            style={{
+              gridTemplateColumns: "140px repeat(4, 1fr)",
+              borderBottom: `1px solid ${t.border}`,
+              background: theme === "dark" ? "#23241e" : "#f5f5f1",
+            }}
+          >
+            <div
+              className="px-4 py-4 font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase"
+              style={{ color: t.textDim }}
+            />
+            {comparisonLibraries.map((lib, colIdx) => {
+              const isGoTui = colIdx === goTuiColIdx;
+              const isHovered = hoveredCol === colIdx;
+              const color = libColors[lib];
+              return (
+                <div
+                  key={lib}
+                  className="px-4 py-4 text-center transition-colors duration-150"
+                  style={{
+                    background: isGoTui
+                      ? isHovered ? accentTintHover : headerTint
+                      : isHovered ? t.bgTertiary : "transparent",
+                    borderLeft: `1px solid ${t.border}`,
+                  }}
+                  onMouseEnter={() => setHoveredCol(colIdx)}
+                  onMouseLeave={() => setHoveredCol(null)}
+                >
+                  <div
+                    className="font-['Fira_Code',monospace] text-[12px] font-semibold"
+                    style={{ color: isGoTui ? t.accent : t.heading }}
+                  >
+                    {lib}
+                  </div>
+                  <div
+                    className="mt-1.5 mx-auto h-[2px] rounded-full transition-all duration-300"
+                    style={{
+                      width: isHovered || isGoTui ? "60%" : "0%",
+                      background: color,
+                      opacity: isHovered || isGoTui ? 1 : 0,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Rows */}
+          {comparisonFeatures.map((feature, rowIdx) => {
+            const isEvenRow = rowIdx % 2 === 0;
+            const stripeBg = isEvenRow
+              ? "transparent"
+              : theme === "dark" ? "rgba(255,255,255,0.012)" : "rgba(0,0,0,0.012)";
+
+            return (
+              <div
+                key={feature.label}
+                className={`grid items-stretch gap-0 transition-colors duration-100 ${visible ? "comparison-row-animate" : "opacity-0"}`}
+                style={{
+                  gridTemplateColumns: "140px repeat(4, 1fr)",
+                  borderBottom:
+                    rowIdx < comparisonFeatures.length - 1
+                      ? `1px solid ${t.border}`
+                      : "none",
+                  background:
+                    hoveredRow === rowIdx ? t.bgTertiary : stripeBg,
+                  animationDelay: visible ? `${rowIdx * 40}ms` : "0ms",
+                }}
+                onMouseEnter={() => setHoveredRow(rowIdx)}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
+                <div className="px-4 py-3.5 flex items-start">
+                  <div
+                    className="font-['Fira_Code',monospace] text-[11px] font-semibold"
+                    style={{ color: t.text }}
+                  >
+                    {feature.label}
+                  </div>
+                </div>
+                {comparisonLibraries.map((lib, colIdx) => {
+                  const isGoTui = colIdx === goTuiColIdx;
+                  const isColHovered = hoveredCol === colIdx;
+                  const val = feature.values[lib];
+                  return (
+                    <div
+                      key={lib}
+                      className="px-4 py-3.5 transition-colors duration-150"
+                      style={{
+                        borderLeft: isGoTui
+                          ? `1px solid ${t.accent}30`
+                          : `1px solid ${t.border}`,
+                        borderRight: isGoTui && colIdx < comparisonLibraries.length - 1
+                          ? `1px solid ${t.accent}30`
+                          : undefined,
+                        background: isGoTui
+                          ? isColHovered ? accentTintHover : accentTint
+                          : isColHovered ? `${t.bgTertiary}80` : "transparent",
+                      }}
+                      onMouseEnter={() => setHoveredCol(colIdx)}
+                      onMouseLeave={() => setHoveredCol(null)}
+                    >
+                      <ExpandableCell
+                        summary={val.summary}
+                        detail={val.detail}
+                        textColor={isGoTui ? t.accent : t.text}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mobile / tablet: card per library */}
+      <div className="lg:hidden flex flex-col gap-5">
+        {comparisonLibraries.map((lib, libIdx) => {
+          const isGoTui = libIdx === goTuiColIdx;
+          const color = libColors[lib];
+          return (
+            <div
+              key={lib}
+              className={`rounded-lg overflow-hidden ${visible ? "comparison-row-animate" : "opacity-0"}`}
+              style={{
+                border: `1px solid ${isGoTui ? `${t.accent}55` : t.border}`,
+                background: t.bgCard,
+                animationDelay: visible ? `${libIdx * 60}ms` : "0ms",
+                boxShadow: isGoTui && theme === "dark"
+                  ? `0 0 12px ${t.accent}08`
+                  : undefined,
+              }}
+            >
+              <div
+                className="px-4 py-3 flex items-center gap-3"
+                style={{
+                  borderBottom: `1px solid ${isGoTui ? `${t.accent}55` : t.border}`,
+                  background: isGoTui
+                    ? theme === "dark" ? `${t.accent}0a` : `${t.accent}08`
+                    : theme === "dark" ? "#23241e" : "#f5f5f1",
+                }}
+              >
+                <div
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: color }}
+                />
+                <div
+                  className="font-['Fira_Code',monospace] text-[13px] font-semibold"
+                  style={{ color: isGoTui ? t.accent : t.heading }}
+                >
+                  {lib}
+                </div>
+              </div>
+              <div className="px-4 py-2">
+                {comparisonFeatures.map((feature, fIdx) => {
+                  const val = feature.values[lib];
+                  return (
+                    <div
+                      key={feature.label}
+                      className="py-2.5"
+                      style={{
+                        borderBottom:
+                          fIdx < comparisonFeatures.length - 1
+                            ? `1px solid ${t.border}33`
+                            : "none",
+                      }}
+                    >
+                      <div className="flex items-baseline gap-2 mb-0.5">
+                        <div
+                          className="font-['Fira_Code',monospace] text-[10px] uppercase tracking-wider shrink-0"
+                          style={{ color: t.textDim }}
+                        >
+                          {feature.label}
+                        </div>
+                        <div
+                          className="font-['Fira_Code',monospace] text-[11px]"
+                          style={{ color: t.text }}
+                        >
+                          {val.summary}
+                        </div>
+                      </div>
+                      <div
+                        className="font-['IBM_Plex_Sans',sans-serif] text-[11px] leading-relaxed"
+                        style={{ color: t.textDim }}
+                      >
+                        {val.detail}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 /* ============================================================
    Pages
    ============================================================ */
@@ -627,35 +1556,55 @@ function Page({ children }: { children: React.ReactNode }) {
 function HomePage() {
   const { theme } = useTheme();
   const t = palette[theme];
-  const { displayed, done } = useTypingEffect(projectInfo.tagline, 40);
+
+  // Shared DX feature state — editor + capability list both read/write this
+  const [dxFeature, setDxFeature] = useState(0);
+  const dxPausedRef = useRef(false);
+
+  // Auto-cycle when not paused
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!dxPausedRef.current) {
+        setDxFeature((prev) => (prev + 1) % 5);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   return (
     <Page>
+      <div className="relative">
+      <PageBackground theme={theme} />
+      <div className="relative z-10">
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <MatrixRain theme={theme} />
-        <div className="relative z-10 max-w-[1100px] mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-20 sm:pb-28">
-          <h1 className="font-['IBM_Plex_Sans',sans-serif] text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] max-w-[720px]">
+      <section>
+        <div className="relative max-w-[1100px] mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-20 sm:pb-28">
+          <h1 className="max-w-[820px]" aria-label="Reactive Terminal UIs in Go">
             <span
-              className={theme === "dark" ? "neon-glow" : ""}
-              style={{ color: t.accent }}
+              className="block font-['IBM_Plex_Sans',sans-serif] text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-3 sm:mb-4 md:mb-5"
+              style={{ color: t.heading, animation: "fadeInUp 0.5s ease-out both" }}
             >
-              {displayed}
+              Reactive
             </span>
-            {!done && (
+            <span className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-3.5 mb-3 sm:mb-4 md:mb-5" aria-hidden="true">
+              <WordCell text="Terminal" color={t.accent} delay={200} />
+              <WordCell text="UIs" color={t.secondary} delay={350} />
+            </span>
+            <span className="flex items-center gap-2 sm:gap-3 md:gap-3.5 flex-wrap" aria-hidden="true">
               <span
-                className="inline-block w-2 sm:w-3 h-8 sm:h-12 ml-1 align-middle"
-                style={{
-                  background: t.accent,
-                  animation: "blink 0.7s step-end infinite",
-                }}
-              />
-            )}
+                className="font-['IBM_Plex_Sans',sans-serif] text-xl sm:text-3xl md:text-4xl font-light tracking-tight"
+                style={{ color: t.textMuted, animation: "fadeInUp 0.5s ease-out 500ms both" }}
+              >
+                in
+              </span>
+              <WordCell text="Go" color={t.tertiary} delay={600} />
+            </span>
           </h1>
 
           <p
             className="text-base sm:text-lg mt-6 sm:mt-8 max-w-[560px] leading-relaxed"
-            style={{ color: t.textMuted }}
+            style={{ color: t.text }}
           >
             {projectInfo.description}
           </p>
@@ -665,17 +1614,17 @@ function HomePage() {
               to="/guide"
               className="font-['Fira_Code',monospace] inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-sm rounded transition-all duration-200"
               style={{
-                background: theme === "dark" ? "#00ffff10" : t.accent,
-                color: theme === "dark" ? t.accent : "#ffffff",
-                border: `1px solid ${theme === "dark" ? "#00ffff44" : t.accent}`,
+                background: t.accent,
+                color: theme === "dark" ? "#272822" : "#ffffff",
+                border: `1px solid ${t.accent}`,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background =
-                  theme === "dark" ? "#00ffff20" : t.accentDim;
+                e.currentTarget.style.background = t.accentDim;
+                e.currentTarget.style.borderColor = t.accentDim;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background =
-                  theme === "dark" ? "#00ffff10" : t.accent;
+                e.currentTarget.style.background = t.accent;
+                e.currentTarget.style.borderColor = t.accent;
               }}
             >
               get started
@@ -688,9 +1637,8 @@ function HomePage() {
                 border: `1px solid ${t.border}`,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = t.accent;
-                e.currentTarget.style.borderColor =
-                  theme === "dark" ? "#00ffff44" : t.accent;
+                e.currentTarget.style.color = t.text;
+                e.currentTarget.style.borderColor = t.textMuted;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = t.textMuted;
@@ -721,14 +1669,13 @@ function HomePage() {
           className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
           style={{ color: t.heading }}
         >
-          Write .gsx, run Go
+          How it works
         </h2>
         <p
           className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
           style={{ color: t.textMuted }}
         >
-          Define your UI in .gsx files with HTML-like syntax and Tailwind-style
-          classes. It compiles to type-safe Go.
+          .gsx templates compile to Go via tui generate. The generated code is what runs.
         </p>
 
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
@@ -778,14 +1725,18 @@ import (
 )
 
 func main() {
-  app, err := tui.NewApp()
+  app, err := tui.NewApp(
+    tui.WithRootComponent(Dashboard()),
+  )
   if err != nil {
     fmt.Fprintf(os.Stderr, "%v\\n", err)
     os.Exit(1)
   }
   defer app.Close()
-  app.SetRootComponent(Dashboard())
-  app.Run()
+  if err := app.Run(); err != nil {
+    fmt.Fprintf(os.Stderr, "%v\\n", err)
+    os.Exit(1)
+  }
 }`}
             />
           </div>
@@ -794,26 +1745,79 @@ func main() {
 
       <Divider />
 
-      {/* Features */}
+      {/* Developer Experience */}
       <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
-        <div
-          className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
-          style={{ color: t.tertiaryDim }}
-        >
-          features
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase"
+            style={{ color: t.tertiaryDim }}
+          >
+            developer experience
+          </div>
+          <div
+            className="h-px flex-1"
+            style={{
+              background: theme === "dark"
+                ? "linear-gradient(to right, #f9267218, transparent)"
+                : `linear-gradient(to right, ${t.border}, transparent)`,
+            }}
+          />
         </div>
         <h2
-          className="text-2xl sm:text-3xl font-bold tracking-tight mb-8 sm:mb-12"
+          className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
           style={{ color: t.heading }}
         >
-          What's in the box
+          First-class editor support
         </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {projectInfo.features.map((feature, i) => (
-            <FeatureCard key={i} feature={feature} index={i} />
-          ))}
+        <p
+          className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
+          style={{ color: t.textMuted }}
+        >
+          .gsx files ship with a full language server, tree-sitter grammar, and built-in formatter.
+          Real IDE features, not just syntax coloring.
+        </p>
+
+        <div className="grid lg:grid-cols-[1fr_340px] gap-6 sm:gap-8 items-stretch">
+          {/* Editor simulation */}
+          <EditorSimulation
+            activeFeature={dxFeature}
+            onSetFeature={(i) => { setDxFeature(i); dxPausedRef.current = true; }}
+            pausedRef={dxPausedRef}
+          />
+
+          {/* Capabilities list — stretches to match editor height */}
+          <div className="flex flex-col justify-between">
+            {([
+              { title: "Syntax highlighting", description: "Tree-sitter grammar for accurate tokenization. Keywords, elements, Go expressions, and Tailwind classes all get distinct coloring.", color: t.accent, editorIdx: 0 },
+              { title: "Intelligent completions", description: "The LSP resolves your project's components and suggests them with type signatures as you type.", color: t.secondary, editorIdx: 1 },
+              { title: "Inline diagnostics", description: "Undefined components, invalid attributes, and type mismatches surface in your editor before you compile.", color: t.tertiary, editorIdx: 2 },
+              { title: "Go-to-definition", description: "Jump from a component call to its definition across .gsx files and into Go code via the gopls proxy.", color: theme === "dark" ? "#e6db74" : "#998a00", editorIdx: 3 },
+              { title: "Auto-formatting", description: "Consistent indentation, attribute alignment, and import management. Run on save or via the CLI.", color: theme === "dark" ? "#ae81ff" : "#7c5cb8", editorIdx: 4 },
+            ] as const).map((cap, i) => (
+              <DxCapability
+                key={cap.title}
+                title={cap.title}
+                description={cap.description}
+                color={cap.color}
+                delay={i * 60}
+                active={dxFeature === cap.editorIdx}
+                onHover={() => {
+                  dxPausedRef.current = true;
+                  setDxFeature(cap.editorIdx);
+                }}
+                onLeave={() => {
+                  dxPausedRef.current = false;
+                }}
+              />
+            ))}
+          </div>
         </div>
       </section>
+
+      <Divider />
+
+      {/* Comparison */}
+      <ComparisonSection />
 
       <Divider />
 
@@ -835,8 +1839,8 @@ func main() {
           className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
           style={{ color: t.textMuted }}
         >
-          Style your terminal UI with familiar utility classes that compile to
-          type-safe Go options.
+          Utility classes for layout, borders, colors, and text. Each one
+          compiles to a Go option.
         </p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
@@ -877,22 +1881,204 @@ func main() {
           view all &rarr;
         </Link>
       </section>
+      </div>
+      </div>
     </Page>
+  );
+}
+
+/* ─── Prev / Next Navigation ─── */
+
+function PrevNextNav({
+  pages,
+  activeIndex,
+  basePath,
+}: {
+  pages: { slug: string; title: string }[];
+  activeIndex: number;
+  basePath: string;
+}) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+
+  return (
+    <div
+      className="mt-10 sm:mt-12 pt-6 sm:pt-8 flex justify-between"
+      style={{ borderTop: `1px solid ${t.border}` }}
+    >
+      {activeIndex > 0 ? (
+        <Link
+          to={`${basePath}/${pages[activeIndex - 1].slug}`}
+          className="font-['Fira_Code',monospace] text-xs sm:text-sm transition-colors duration-200"
+          style={{
+            color: t.textMuted,
+            textDecoration: "none",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = t.textMuted)}
+        >
+          &larr; {pages[activeIndex - 1].title}
+        </Link>
+      ) : (
+        <div />
+      )}
+      {activeIndex < pages.length - 1 ? (
+        <Link
+          to={`${basePath}/${pages[activeIndex + 1].slug}`}
+          className="font-['Fira_Code',monospace] text-xs sm:text-sm transition-colors duration-200"
+          style={{
+            color: t.textMuted,
+            textDecoration: "none",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = t.textMuted)}
+        >
+          {pages[activeIndex + 1].title} &rarr;
+        </Link>
+      ) : (
+        <div />
+      )}
+    </div>
+  );
+}
+
+/* ─── Mobile Page Picker ─── */
+
+function MobilePicker({
+  pages,
+  activeIndex,
+  onSelect,
+}: {
+  pages: { slug: string; title: string }[];
+  activeIndex: number;
+  onSelect: (index: number) => void;
+}) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="md:hidden mb-6 sm:mb-8 relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="font-['Fira_Code',monospace] w-full rounded-lg px-4 py-3 text-[13px] text-left flex items-center justify-between gap-2"
+        style={{
+          background: t.bgSecondary,
+          color: t.text,
+          border: `1px solid ${t.border}`,
+        }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded shrink-0"
+            style={{
+              background: `${t.accent}15`,
+              color: t.accent,
+              border: `1px solid ${t.accent}30`,
+            }}
+          >
+            {String(activeIndex + 1).padStart(2, "0")}
+          </span>
+          <span className="truncate">{pages[activeIndex].title}</span>
+        </div>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          className="shrink-0 transition-transform duration-200"
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            color: t.textDim,
+          }}
+        >
+          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div
+            className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-40"
+            style={{
+              background: t.bgSecondary,
+              border: `1px solid ${t.border}`,
+              boxShadow: theme === "dark"
+                ? "0 8px 24px rgba(0,0,0,0.5)"
+                : "0 8px 24px rgba(0,0,0,0.12)",
+            }}
+          >
+            {pages.map((page, i) => {
+              const active = i === activeIndex;
+              return (
+                <button
+                  key={page.slug}
+                  onClick={() => {
+                    onSelect(i);
+                    setOpen(false);
+                  }}
+                  className="font-['Fira_Code',monospace] w-full text-left px-4 py-2.5 text-[12px] flex items-center gap-2.5 transition-colors duration-100"
+                  style={{
+                    color: active ? t.accent : t.textMuted,
+                    background: active
+                      ? `${t.accent}0a`
+                      : "transparent",
+                    borderBottom: i < pages.length - 1 ? `1px solid ${t.border}` : "none",
+                  }}
+                >
+                  <span
+                    className="text-[10px] w-5 text-center shrink-0"
+                    style={{ color: active ? t.accent : t.textDim }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {page.title}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
 /* ─── Guide Page ─── */
 
+function GuideRedirect() {
+  const pages = loadGuide();
+  if (pages.length === 0) return null;
+  return <Navigate to={`/guide/${pages[0].slug}`} replace />;
+}
+
 function GuidePage() {
   const { theme } = useTheme();
   const t = palette[theme];
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const pages = loadGuide();
-  const [activeSection, setActiveSection] = useState(0);
+  const activeSection = Math.max(0, pages.findIndex((p) => p.slug === slug));
+
+  // Deep link: scroll to hash target on mount / page change
+  useEffect(() => {
+    const hash = location.hash.replace("#", "");
+    if (!hash) return;
+    // Wait for markdown to render
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [slug, location.hash]);
 
   return (
     <Page>
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
+      <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
         <h1
           className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
           style={{ color: t.heading }}
@@ -900,98 +2086,69 @@ function GuidePage() {
           Guide
         </h1>
 
-        {/* Tabs — scrollable on mobile */}
-        <div
-          className="flex gap-1 mb-8 sm:mb-10 overflow-x-auto custom-scroll pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
-          style={{ borderBottom: `1px solid ${t.border}` }}
-        >
-          {pages.map((page, i) => {
-            const active = activeSection === i;
-            return (
-              <button
-                key={page.slug}
-                onClick={() => setActiveSection(i)}
-                className="font-['Fira_Code',monospace] text-[11px] sm:text-xs px-3 sm:px-4 py-2 whitespace-nowrap transition-all duration-200"
-                style={{
-                  color: active ? t.accent : t.textMuted,
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: `2px solid ${active ? t.accent : "transparent"}`,
-                  marginBottom: -1,
-                  cursor: "pointer",
-                  textShadow:
-                    active && theme === "dark" ? t.accentGlowSubtle : "none",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.color = t.accent;
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.color = t.textMuted;
-                }}
+        <div className="flex gap-8 sm:gap-10">
+          {/* Desktop Sidebar */}
+          <div className="w-48 shrink-0 hidden md:block">
+            <div className="sticky top-16">
+              <div
+                className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-4"
+                style={{ color: t.textDim }}
               >
-                {page.title}
-              </button>
-            );
-          })}
-        </div>
+                chapters
+              </div>
 
-        {/* Content */}
-        <div className="max-w-[780px] fade-in" key={activeSection}>
-          <h2
-            className="text-2xl sm:text-3xl font-bold tracking-tight mb-6 sm:mb-8"
-            style={{ color: t.heading }}
-          >
-            {pages[activeSection].title}
-          </h2>
+              {pages.map((page, i) => {
+                const active = activeSection === i;
+                return (
+                  <Link
+                    key={page.slug}
+                    to={`/guide/${page.slug}`}
+                    className="block w-full text-left font-['Fira_Code',monospace] text-[12px] py-1.5 px-3 rounded transition-all duration-200"
+                    style={{
+                      color: active ? t.accent : t.textMuted,
+                      background: active
+                        ? theme === "dark"
+                          ? "#66d9ef0d"
+                          : "#2f9eb80d"
+                        : "transparent",
+                      textDecoration: "none",
+                      borderLeft: `2px solid ${active ? t.accent : "transparent"}`,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) e.currentTarget.style.color = t.accent;
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) e.currentTarget.style.color = t.textMuted;
+                    }}
+                  >
+                    {page.title}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
 
-          <Markdown content={pages[activeSection].body} />
-        </div>
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            <MobilePicker
+              pages={pages}
+              activeIndex={activeSection}
+              onSelect={(i) => navigate(`/guide/${pages[i].slug}`)}
+            />
 
-        {/* Prev / Next */}
-        <div
-          className="mt-10 sm:mt-12 pt-6 sm:pt-8 flex justify-between"
-          style={{ borderTop: `1px solid ${t.border}` }}
-        >
-          {activeSection > 0 ? (
-            <button
-              onClick={() => setActiveSection(activeSection - 1)}
-              className="font-['Fira_Code',monospace] text-xs sm:text-sm transition-colors duration-200"
-              style={{
-                color: t.textMuted,
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = t.textMuted)
-              }
-            >
-              &larr; {pages[activeSection - 1].title}
-            </button>
-          ) : (
-            <div />
-          )}
-          {activeSection < pages.length - 1 ? (
-            <button
-              onClick={() => setActiveSection(activeSection + 1)}
-              className="font-['Fira_Code',monospace] text-xs sm:text-sm transition-colors duration-200"
-              style={{
-                color: t.textMuted,
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = t.textMuted)
-              }
-            >
-              {pages[activeSection + 1].title} &rarr;
-            </button>
-          ) : (
-            <div />
-          )}
+            <div className="fade-in" key={slug}>
+              <Markdown content={pages[activeSection].body} />
+            </div>
+
+            <PrevNextNav
+              pages={pages}
+              activeIndex={activeSection}
+              basePath="/guide"
+            />
+          </div>
+
+          {/* On-page TOC */}
+          <TableOfContents content={pages[activeSection].body} key={`toc-${slug}`} />
         </div>
       </div>
     </Page>
@@ -1000,16 +2157,38 @@ function GuidePage() {
 
 /* ─── Reference Page ─── */
 
+function ReferenceRedirect() {
+  const pages = loadReference();
+  if (pages.length === 0) return null;
+  return <Navigate to={`/reference/${pages[0].slug}`} replace />;
+}
+
 function ReferencePage() {
   const { theme } = useTheme();
   const t = palette[theme];
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const pages = loadReference();
-  const [activeCategory, setActiveCategory] = useState(0);
+  const activeCategory = Math.max(0, pages.findIndex((p) => p.slug === slug));
+
+  // Deep link: scroll to hash target on mount / page change
+  useEffect(() => {
+    const hash = location.hash.replace("#", "");
+    if (!hash) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [slug, location.hash]);
 
   return (
     <Page>
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
+      <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
         <h1
           className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
           style={{ color: t.heading }}
@@ -1033,24 +2212,23 @@ function ReferencePage() {
                 const isTailwind = page.slug === "tailwind-classes";
                 const activeColor = isTailwind ? t.secondary : t.accent;
                 return (
-                  <button
+                  <Link
                     key={page.slug}
-                    onClick={() => setActiveCategory(i)}
+                    to={`/reference/${page.slug}`}
                     className="block w-full text-left font-['Fira_Code',monospace] text-[12px] py-1.5 px-3 rounded transition-all duration-200"
                     style={{
                       color: active ? activeColor : t.textMuted,
                       background: active
                         ? isTailwind
                           ? theme === "dark"
-                            ? "#39ff1408"
-                            : "#1a8a0a08"
+                            ? "#a6e22e08"
+                            : "#638b0c08"
                           : theme === "dark"
-                            ? "#00ffff08"
-                            : "#0088aa08"
+                            ? "#66d9ef0d"
+                            : "#2f9eb80d"
                         : "transparent",
-                      border: "none",
+                      textDecoration: "none",
                       borderLeft: `2px solid ${active ? activeColor : "transparent"}`,
-                      cursor: "pointer",
                       textShadow:
                         active && theme === "dark" && !isTailwind
                           ? t.accentGlowSubtle
@@ -1064,7 +2242,7 @@ function ReferencePage() {
                     }}
                   >
                     {page.title}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -1072,37 +2250,25 @@ function ReferencePage() {
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
-            {/* Mobile category picker */}
-            <div className="md:hidden mb-6 sm:mb-8">
-              <select
-                value={activeCategory}
-                onChange={(e) => setActiveCategory(Number(e.target.value))}
-                className="font-['Fira_Code',monospace] w-full rounded px-3 py-2 text-sm"
-                style={{
-                  background: t.bgCard,
-                  color: t.text,
-                  border: `1px solid ${t.border}`,
-                }}
-              >
-                {pages.map((page, i) => (
-                  <option key={page.slug} value={i}>
-                    {page.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <MobilePicker
+              pages={pages}
+              activeIndex={activeCategory}
+              onSelect={(i) => navigate(`/reference/${pages[i].slug}`)}
+            />
 
-            <div className="fade-in" key={activeCategory}>
-              <h2
-                className="text-2xl sm:text-3xl font-bold tracking-tight mb-6 sm:mb-8"
-                style={{ color: t.heading }}
-              >
-                {pages[activeCategory].title}
-              </h2>
-
+            <div className="fade-in" key={slug}>
               <Markdown content={pages[activeCategory].body} />
             </div>
+
+            <PrevNextNav
+              pages={pages}
+              activeIndex={activeCategory}
+              basePath="/reference"
+            />
           </div>
+
+          {/* On-page TOC */}
+          <TableOfContents content={pages[activeCategory].body} key={`toc-${slug}`} />
         </div>
       </div>
     </Page>
@@ -1119,8 +2285,10 @@ export default function Design2() {
       <GlobalStyles />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/guide" element={<GuidePage />} />
-        <Route path="/reference" element={<ReferencePage />} />
+        <Route path="/guide" element={<GuideRedirect />} />
+        <Route path="/guide/:slug" element={<GuidePage />} />
+        <Route path="/reference" element={<ReferenceRedirect />} />
+        <Route path="/reference/:slug" element={<ReferencePage />} />
       </Routes>
     </ThemeContext.Provider>
   );

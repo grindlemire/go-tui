@@ -44,8 +44,6 @@ func (s *streamingApp) scrollBy(delta int) {
 		newY = maxY
 	}
 	s.scrollY.Set(newY)
-
-	// Update stickToBottom based on whether we're at bottom
 	s.stickToBottom.Set(newY >= maxY)
 }
 
@@ -53,10 +51,10 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
 		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
-		tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
-		tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
 		tui.OnKey(tui.KeyPageUp, func(ke tui.KeyEvent) { s.scrollBy(-10) }),
 		tui.OnKey(tui.KeyPageDown, func(ke tui.KeyEvent) { s.scrollBy(10) }),
 		tui.OnKey(tui.KeyHome, func(ke tui.KeyEvent) {
@@ -66,6 +64,14 @@ func (s *streamingApp) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) {
 			s.scrollY.Set(math.MaxInt)
 			s.stickToBottom.Set(true)
+		}),
+		tui.OnRune(' ', func(ke tui.KeyEvent) {
+			if s.stickToBottom.Get() {
+				s.stickToBottom.Set(false)
+			} else {
+				s.scrollY.Set(math.MaxInt)
+				s.stickToBottom.Set(true)
+			}
 		}),
 	}
 }
@@ -96,12 +102,35 @@ func (s *streamingApp) tick() {
 func (s *streamingApp) addLine(line string) {
 	current := s.lines.Get()
 	s.lines.Set(append(current, line))
-
-	// Keep scroll pinned to bottom as new lines arrive.
-	// math.MaxInt is clamped to maxY during layout.
 	if s.stickToBottom.Get() {
 		s.scrollY.Set(math.MaxInt)
 	}
+}
+
+func lineColor(line string) string {
+	if len(line) < 20 {
+		return ""
+	}
+	// Color based on metric type
+	for i := 0; i < len(line)-3; i++ {
+		sub := line[i : i+3]
+		if sub == "cpu" {
+			return "text-cyan"
+		}
+		if sub == "mem" {
+			return "text-magenta"
+		}
+		if sub == "net" {
+			return "text-green"
+		}
+		if sub == "dis" {
+			return "text-yellow"
+		}
+		if sub == "io:" {
+			return "text-blue"
+		}
+	}
+	return ""
 }
 
 func (s *streamingApp) Render(app *tui.App) *tui.Element {
@@ -111,71 +140,85 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 		tui.WithPadding(1),
 		tui.WithHeightPercent(100.00),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_1 := tui.New(
-		tui.WithText("Streaming with Channels and Timers"),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithFlexShrink(0),
+	)
+	__tui_2 := tui.New(
+		tui.WithText("Live Stream"),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithFlexShrink(0),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithHR(),
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithFlexShrink(0),
-	)
-	__tui_0.AddChild(__tui_2)
+	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
+		tui.WithText(fmt.Sprintf("%d lines", len(s.lines.Get()))),
+		tui.WithMinWidth(0),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+	__tui_4 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithScrollOffset(0, s.scrollY.Get()),
 	)
-	s.content.Set(__tui_3)
+	s.content.Set(__tui_4)
 	for __idx_0, line := range s.lines.Get() {
 		_ = __idx_0
-		__tui_4 := tui.New(
+		__tui_5 := tui.New(
 			tui.WithText(line),
-			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
-		__tui_3.AddChild(__tui_4)
+		__tui_4.AddChild(__tui_5)
 	}
-	__tui_0.AddChild(__tui_3)
-	__tui_5 := tui.New(
+	__tui_0.AddChild(__tui_4)
+	__tui_6 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithFlexShrink(0),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_6 := tui.New(
-		tui.WithText("Lines:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_5.AddChild(__tui_6)
 	__tui_7 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", len(s.lines.Get()))),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-	)
-	__tui_5.AddChild(__tui_7)
-	__tui_8 := tui.New(
 		tui.WithText("Elapsed:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_5.AddChild(__tui_8)
-	__tui_9 := tui.New(
+	__tui_6.AddChild(__tui_7)
+	__tui_8 := tui.New(
 		tui.WithText(fmt.Sprintf("%ds", s.elapsed.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_5.AddChild(__tui_9)
-	__tui_0.AddChild(__tui_5)
-	__tui_10 := tui.New(
-		tui.WithText("↑↓/jk scroll | [q] quit"),
+	__tui_6.AddChild(__tui_8)
+	__tui_9 := tui.New(
+		tui.WithText("Auto-scroll:"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_6.AddChild(__tui_9)
+	if s.stickToBottom.Get() {
+		__tui_10 := tui.New(
+			tui.WithText("ON"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+		)
+		__tui_6.AddChild(__tui_10)
+	} else {
+		__tui_11 := tui.New(
+			tui.WithText("OFF"),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
+		)
+		__tui_6.AddChild(__tui_11)
+	}
+	__tui_0.AddChild(__tui_6)
+	__tui_12 := tui.New(
+		tui.WithText("j/k scroll|Space toggle auto-scroll|q quit"),
 		tui.WithFlexShrink(0),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_10)
+	__tui_0.AddChild(__tui_12)
 
 	return __tui_0
 }

@@ -184,13 +184,63 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 		indexExpr = fmt.Sprintf("%d", baseIndex)
 	}
 
+	// Build children slice if the component call has children
+	childrenVar := ""
+	if len(call.Children) > 0 {
+		childrenVar = varName + "_children"
+		g.writef("%s := []*tui.Element{}\n", childrenVar)
+
+		for _, child := range call.Children {
+			switch c := child.(type) {
+			case *Element:
+				elemVar := g.generateElement(c, "")
+				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
+			case *ComponentCall:
+				innerVar := g.generateComponentCallWithRefs(c, "")
+				if c.IsStructMount {
+					g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, innerVar)
+				} else {
+					g.writef("%s = append(%s, %s.Root)\n", childrenVar, childrenVar, innerVar)
+				}
+			case *LetBinding:
+				g.generateLetBinding(c, "")
+				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, c.Name)
+			case *ForLoop:
+				g.generateForLoopForSlice(c, childrenVar)
+			case *IfStmt:
+				g.generateIfStmtForSlice(c, childrenVar)
+			case *GoExpr:
+				elemVar := g.nextVar()
+				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, c.Code)
+				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
+			case *TextContent:
+				elemVar := g.nextVar()
+				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, strconv.Quote(c.Text))
+				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
+			case *RawGoExpr:
+				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, c.Code)
+			}
+		}
+	}
+
 	// Generate: varName := app.Mount(receiverVar, indexExpr, func() tui.Component { return Name(args) })
 	g.writef("%s := app.Mount(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
 	g.indent++
-	if call.Args == "" {
+
+	// Build the argument list, appending children if present
+	args := call.Args
+	if childrenVar != "" {
+		if args == "" {
+			args = childrenVar
+		} else {
+			args = args + ", " + childrenVar
+		}
+	}
+
+	if args == "" {
 		g.writef("return %s()\n", call.Name)
 	} else {
-		g.writef("return %s(%s)\n", call.Name, call.Args)
+		g.writef("return %s(%s)\n", call.Name, args)
 	}
 	g.indent--
 	g.writeln("})")

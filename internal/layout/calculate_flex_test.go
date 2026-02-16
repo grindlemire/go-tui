@@ -71,15 +71,18 @@ func TestCalculate_FlexShrink(t *testing.T) {
 	parent.style.Height = Fixed(50)
 	parent.style.Direction = Row
 
-	// Two children that are too wide for the container
+	// Two children that are too wide for the container.
+	// Set MinWidth=0 to allow shrinking below intrinsic size (like CSS min-width: 0).
 	child1 := newTestNode(DefaultStyle())
 	child1.style.Width = Fixed(80)
 	child1.style.Height = Fixed(50)
+	child1.style.MinWidth = Fixed(0)
 	child1.style.FlexShrink = 1
 
 	child2 := newTestNode(DefaultStyle())
 	child2.style.Width = Fixed(80)
 	child2.style.Height = Fixed(50)
+	child2.style.MinWidth = Fixed(0)
 	child2.style.FlexShrink = 1
 
 	parent.AddChild(child1, child2)
@@ -101,15 +104,18 @@ func TestCalculate_FlexShrink_ProportionalDistribution(t *testing.T) {
 	parent.style.Height = Fixed(50)
 	parent.style.Direction = Row
 
-	// Two children that are too wide for the container
+	// Two children that are too wide for the container.
+	// Set MinWidth=0 to allow shrinking below intrinsic size.
 	child1 := newTestNode(DefaultStyle())
 	child1.style.Width = Fixed(80)
 	child1.style.Height = Fixed(50)
+	child1.style.MinWidth = Fixed(0)
 	child1.style.FlexShrink = 1 // Will shrink less
 
 	child2 := newTestNode(DefaultStyle())
 	child2.style.Width = Fixed(80)
 	child2.style.Height = Fixed(50)
+	child2.style.MinWidth = Fixed(0)
 	child2.style.FlexShrink = 3 // Will shrink more
 
 	parent.AddChild(child1, child2)
