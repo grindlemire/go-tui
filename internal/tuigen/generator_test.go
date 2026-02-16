@@ -21,10 +21,10 @@ templ Empty() {
 				"type EmptyView struct",
 				"Root     *tui.Element",
 				"watchers []tui.Watcher",
-				"func Empty() EmptyView",
+				"func Empty() *EmptyView",
 				"var view EmptyView",
 				"var watchers []tui.Watcher",
-				"return view",
+				"return &view",
 			},
 		},
 		"component with single element": {
@@ -34,7 +34,7 @@ templ Header() {
 }`,
 			wantContains: []string{
 				"type HeaderView struct",
-				"func Header() HeaderView",
+				"func Header() *HeaderView",
 				"__tui_0 := tui.New()",
 				"Root:     __tui_0",
 			},
@@ -45,7 +45,7 @@ templ Greeting(name string, count int) {
 	<span>Hello</span>
 }`,
 			wantContains: []string{
-				"func Greeting(name string, count int) GreetingView",
+				"func Greeting(name string, count int) *GreetingView",
 				"type GreetingView struct",
 			},
 		},
@@ -105,7 +105,7 @@ templ Layout() {
 		t.Error("missing Root assignment to outer element")
 	}
 
-	if !strings.Contains(code, "return view") {
+	if !strings.Contains(code, "return &view") {
 		t.Error("missing return view statement")
 	}
 }
@@ -214,7 +214,7 @@ templ (s *sidebar) Render() {
 				"View struct",
 				"var view",
 				"var watchers",
-				"return view",
+				"return &view",
 			},
 		},
 		"method templ with nested elements": {
@@ -367,15 +367,15 @@ templ Parent() {
 	</div>
 }`,
 			wantContains: []string{
-				"func Parent() ParentView",
+				"func Parent() *ParentView",
 				"type ParentView struct",
 				`__tui_1 := Header("title")`,
 				"__tui_0.AddChild(__tui_1.Root)",
-				"return view",
+				"return &view",
 			},
 			wantNotContains: []string{
 				"tui.Mount",
-				"tui.Component",
+				"func() tui.Component", // no mount factory closure
 			},
 		},
 	}
@@ -425,7 +425,7 @@ templ Header() {
 				"type sidebar struct",
 				"Query    string",
 				"expanded bool",
-				"func Header() HeaderView",
+				"func Header() *HeaderView",
 			},
 		},
 		"constructor method passes through": {

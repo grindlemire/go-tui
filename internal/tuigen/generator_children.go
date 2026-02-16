@@ -161,11 +161,24 @@ func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string)
 //
 // For function component calls (IsStructMount=false), generates the existing
 // view struct pattern: varName := Name(args)
+//
+// Function templs defined in the same file are always called directly (not mounted),
+// even when inside a method templ. They are stateless views — calling them fresh
+// each render ensures updated props. Cross-package function templs that are unknown
+// to the generator still get mounted, but their view types have UpdateProps so the
+// mount system can refresh them.
 func (g *Generator) generateComponentCallWithRefs(call *ComponentCall, parentVar string) string {
-	if call.IsStructMount {
+	if call.IsStructMount && !g.functionTempls[call.Name] {
 		return g.generateStructMount(call, parentVar)
 	}
 	return g.generateFunctionComponentCall(call, parentVar)
+}
+
+// returnsElement reports whether a ComponentCall produces a *tui.Element directly
+// (true for actual struct mounts) vs a view struct that needs .Root (false for
+// function templs, even when IsStructMount is set by parser context).
+func (g *Generator) returnsElement(call *ComponentCall) bool {
+	return call.IsStructMount && !g.functionTempls[call.Name]
 }
 
 // generateStructMount generates an app.Mount() call for struct components.
@@ -197,7 +210,7 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
 			case *ComponentCall:
 				innerVar := g.generateComponentCallWithRefs(c, "")
-				if c.IsStructMount {
+				if g.returnsElement(c) {
 					g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, innerVar)
 				} else {
 					g.writef("%s = append(%s, %s.Root)\n", childrenVar, childrenVar, innerVar)
@@ -278,7 +291,7 @@ func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
 			case *ComponentCall:
 				innerVar := g.generateComponentCallWithRefs(c, "")
-				if c.IsStructMount {
+				if g.returnsElement(c) {
 					// Struct mount returns *tui.Element directly
 					g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, innerVar)
 				} else {
@@ -374,7 +387,7 @@ func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *ComponentCall:
 			callVar := g.generateComponentCallWithRefs(n, "")
-			if n.IsStructMount {
+			if g.returnsElement(n) {
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
 			} else {
 				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
@@ -415,7 +428,7 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		case *ComponentCall:
 			callVar := g.generateComponentCallWithRefs(n, "")
-			if n.IsStructMount {
+			if g.returnsElement(n) {
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
 			} else {
 				g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)
@@ -461,7 +474,7 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 			case *ComponentCall:
 				callVar := g.generateComponentCallWithRefs(n, "")
-				if n.IsStructMount {
+				if g.returnsElement(n) {
 					g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, callVar)
 				} else {
 					g.writef("%s = append(%s, %s.Root)\n", sliceVar, sliceVar, callVar)

@@ -77,94 +77,66 @@ func (a *componentsApp) Render(app *tui.App) *tui.Element {
 		tui.WithPadding(2),
 		tui.WithGap(2),
 	)
-	__tui_1 := app.Mount(a, 0, func() tui.Component {
-		return Header("Component Showcase")
-	})
-	__tui_0.AddChild(__tui_1)
+	__tui_1 := Header("Component Showcase")
+	__tui_0.AddChild(__tui_1.Root)
 	__tui_2 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_3 := app.Mount(a, 1, func() tui.Component {
-		return UserCard("Alice", "Engineer", true)
-	})
-	__tui_2.AddChild(__tui_3)
-	__tui_4 := app.Mount(a, 2, func() tui.Component {
-		return UserCard("Bob", "Designer", false)
-	})
-	__tui_2.AddChild(__tui_4)
-	__tui_5 := app.Mount(a, 3, func() tui.Component {
-		return UserCard("Carol", "Manager", true)
-	})
-	__tui_2.AddChild(__tui_5)
+	__tui_3 := UserCard("Alice", "Engineer", true)
+	__tui_2.AddChild(__tui_3.Root)
+	__tui_4 := UserCard("Bob", "Designer", false)
+	__tui_2.AddChild(__tui_4.Root)
+	__tui_5 := UserCard("Carol", "Manager", true)
+	__tui_2.AddChild(__tui_5.Root)
 	__tui_0.AddChild(__tui_2)
 	__tui_6 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_7_children := []*tui.Element{}
-	__tui_8 := app.Mount(a, 5, func() tui.Component {
-		return StatusLine("Version:", "1.2.0")
-	})
-	__tui_7_children = append(__tui_7_children, __tui_8)
-	__tui_9 := app.Mount(a, 6, func() tui.Component {
-		return StatusLine("Uptime:", "3d 14h")
-	})
-	__tui_7_children = append(__tui_7_children, __tui_9)
-	__tui_10 := app.Mount(a, 7, func() tui.Component {
-		return StatusLine("Memory:", "1.2 GB")
-	})
-	__tui_7_children = append(__tui_7_children, __tui_10)
-	__tui_7 := app.Mount(a, 4, func() tui.Component {
-		return Card("System Info", __tui_7_children)
-	})
-	__tui_6.AddChild(__tui_7)
-	__tui_11_children := []*tui.Element{}
-	__tui_12 := app.Mount(a, 9, func() tui.Component {
-		return StatusLine("Theme:", "Dark")
-	})
-	__tui_11_children = append(__tui_11_children, __tui_12)
-	__tui_13 := app.Mount(a, 10, func() tui.Component {
-		return StatusLine("Notify:", "On")
-	})
-	__tui_11_children = append(__tui_11_children, __tui_13)
-	__tui_14 := tui.New(
+	__tui_8_children := []*tui.Element{}
+	__tui_9 := StatusLine("Version:", "1.2.0")
+	__tui_8_children = append(__tui_8_children, __tui_9.Root)
+	__tui_10 := StatusLine("Uptime:", "3d 14h")
+	__tui_8_children = append(__tui_8_children, __tui_10.Root)
+	__tui_11 := StatusLine("Memory:", "1.2 GB")
+	__tui_8_children = append(__tui_8_children, __tui_11.Root)
+	__tui_7 := Card("System Info", __tui_8_children)
+	__tui_6.AddChild(__tui_7.Root)
+	__tui_13_children := []*tui.Element{}
+	__tui_14 := StatusLine("Theme:", "Dark")
+	__tui_13_children = append(__tui_13_children, __tui_14.Root)
+	__tui_15 := StatusLine("Notify:", "On")
+	__tui_13_children = append(__tui_13_children, __tui_15.Root)
+	__tui_16 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_15 := tui.New(
+	__tui_17 := tui.New(
 		tui.WithText("Tags:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_14.AddChild(__tui_15)
-	__tui_16 := app.Mount(a, 11, func() tui.Component {
-		return Badge("New", "text-green")
-	})
-	__tui_14.AddChild(__tui_16)
-	__tui_17 := app.Mount(a, 12, func() tui.Component {
-		return Badge("v1.0", "text-cyan")
-	})
-	__tui_14.AddChild(__tui_17)
-	__tui_11_children = append(__tui_11_children, __tui_14)
-	__tui_11 := app.Mount(a, 8, func() tui.Component {
-		return Card("Configuration", __tui_11_children)
-	})
-	__tui_6.AddChild(__tui_11)
+	__tui_16.AddChild(__tui_17)
+	__tui_18 := Badge("New", "text-green")
+	__tui_16.AddChild(__tui_18.Root)
+	__tui_19 := Badge("v1.0", "text-cyan")
+	__tui_16.AddChild(__tui_19.Root)
+	__tui_13_children = append(__tui_13_children, __tui_16)
+	__tui_12 := Card("Configuration", __tui_13_children)
+	__tui_6.AddChild(__tui_12.Root)
 	__tui_0.AddChild(__tui_6)
-	__tui_18 := app.Mount(a, 13, func() tui.Component {
-		return StatusBar()
-	})
-	__tui_0.AddChild(__tui_18)
-	__tui_19 := tui.New(
+	__tui_20 := StatusBar()
+	__tui_0.AddChild(__tui_20.Root)
+	__tui_21 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_20 := tui.New(
+	__tui_22 := tui.New(
 		tui.WithText("j/k scroll|q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_19.AddChild(__tui_20)
-	__tui_0.AddChild(__tui_19)
+	__tui_21.AddChild(__tui_22)
+	__tui_0.AddChild(__tui_21)
 
 	return __tui_0
 }
@@ -183,21 +155,33 @@ type CardView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v CardView) GetRoot() tui.Renderable { return v.Root }
+func (v *CardView) GetRoot() tui.Renderable { return v.Root }
 
-func (v CardView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *CardView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v CardView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *CardView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v CardView) BindApp(app *tui.App) {
+func (v *CardView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = CardView{}
+func (v *CardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*CardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func Card(title string, children []*tui.Element) CardView {
+var _ tui.AppBinder = (*CardView)(nil)
+
+var _ tui.PropsUpdater = (*CardView)(nil)
+
+func Card(title string, children []*tui.Element) *CardView {
 	var view CardView
 	var watchers []tui.Watcher
 
@@ -238,7 +222,7 @@ func Card(title string, children []*tui.Element) CardView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 type BadgeView struct {
@@ -247,21 +231,33 @@ type BadgeView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v BadgeView) GetRoot() tui.Renderable { return v.Root }
+func (v *BadgeView) GetRoot() tui.Renderable { return v.Root }
 
-func (v BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v BadgeView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *BadgeView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v BadgeView) BindApp(app *tui.App) {
+func (v *BadgeView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = BadgeView{}
+func (v *BadgeView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*BadgeView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func Badge(label string, color string) BadgeView {
+var _ tui.AppBinder = (*BadgeView)(nil)
+
+var _ tui.PropsUpdater = (*BadgeView)(nil)
+
+func Badge(label string, color string) *BadgeView {
 	var view BadgeView
 	var watchers []tui.Watcher
 
@@ -277,7 +273,7 @@ func Badge(label string, color string) BadgeView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 type HeaderView struct {
@@ -286,21 +282,33 @@ type HeaderView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v HeaderView) GetRoot() tui.Renderable { return v.Root }
+func (v *HeaderView) GetRoot() tui.Renderable { return v.Root }
 
-func (v HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v HeaderView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *HeaderView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v HeaderView) BindApp(app *tui.App) {
+func (v *HeaderView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = HeaderView{}
+func (v *HeaderView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*HeaderView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func Header(title string) HeaderView {
+var _ tui.AppBinder = (*HeaderView)(nil)
+
+var _ tui.PropsUpdater = (*HeaderView)(nil)
+
+func Header(title string) *HeaderView {
 	var view HeaderView
 	var watchers []tui.Watcher
 
@@ -326,7 +334,7 @@ func Header(title string) HeaderView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 type StatusLineView struct {
@@ -335,21 +343,33 @@ type StatusLineView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v StatusLineView) GetRoot() tui.Renderable { return v.Root }
+func (v *StatusLineView) GetRoot() tui.Renderable { return v.Root }
 
-func (v StatusLineView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *StatusLineView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v StatusLineView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *StatusLineView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v StatusLineView) BindApp(app *tui.App) {
+func (v *StatusLineView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = StatusLineView{}
+func (v *StatusLineView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*StatusLineView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func StatusLine(label string, value string) StatusLineView {
+var _ tui.AppBinder = (*StatusLineView)(nil)
+
+var _ tui.PropsUpdater = (*StatusLineView)(nil)
+
+func StatusLine(label string, value string) *StatusLineView {
 	var view StatusLineView
 	var watchers []tui.Watcher
 
@@ -376,7 +396,7 @@ func StatusLine(label string, value string) StatusLineView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 type UserCardView struct {
@@ -385,21 +405,33 @@ type UserCardView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v UserCardView) GetRoot() tui.Renderable { return v.Root }
+func (v *UserCardView) GetRoot() tui.Renderable { return v.Root }
 
-func (v UserCardView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *UserCardView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v UserCardView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *UserCardView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v UserCardView) BindApp(app *tui.App) {
+func (v *UserCardView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = UserCardView{}
+func (v *UserCardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*UserCardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func UserCard(name string, role string, online bool) UserCardView {
+var _ tui.AppBinder = (*UserCardView)(nil)
+
+var _ tui.PropsUpdater = (*UserCardView)(nil)
+
+func UserCard(name string, role string, online bool) *UserCardView {
 	var view UserCardView
 	var watchers []tui.Watcher
 
@@ -430,7 +462,7 @@ func UserCard(name string, role string, online bool) UserCardView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 type StatusBarView struct {
@@ -439,21 +471,33 @@ type StatusBarView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v StatusBarView) GetRoot() tui.Renderable { return v.Root }
+func (v *StatusBarView) GetRoot() tui.Renderable { return v.Root }
 
-func (v StatusBarView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *StatusBarView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v StatusBarView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *StatusBarView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v StatusBarView) BindApp(app *tui.App) {
+func (v *StatusBarView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = StatusBarView{}
+func (v *StatusBarView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*StatusBarView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func StatusBar() StatusBarView {
+var _ tui.AppBinder = (*StatusBarView)(nil)
+
+var _ tui.PropsUpdater = (*StatusBarView)(nil)
+
+func StatusBar() *StatusBarView {
 	var view StatusBarView
 	var watchers []tui.Watcher
 
@@ -502,5 +546,5 @@ func StatusBar() StatusBarView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }

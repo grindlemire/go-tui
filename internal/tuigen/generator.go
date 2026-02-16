@@ -66,6 +66,11 @@ type Generator struct {
 	// Source map tracking
 	sourceMap   *SourceMap
 	currentLine int // current line in generated output (0-indexed)
+
+	// functionTempls tracks function templ names (no receiver) in the current file.
+	// Used to avoid mounting function templs via app.Mount() from method templs —
+	// they should be called directly since they're stateless view functions.
+	functionTempls map[string]bool
 }
 
 // NewGenerator creates a new code generator.
@@ -97,6 +102,15 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	// Store file decls for struct lookup in generateUpdateProps
 	g.fileDecls = file.Decls
 	g.fileFuncs = file.Funcs
+
+	// Build function templ lookup so method templs can call them directly
+	// instead of mounting them via app.Mount() (which would cache stale views).
+	g.functionTempls = make(map[string]bool)
+	for _, comp := range file.Components {
+		if comp.Receiver == "" {
+			g.functionTempls[comp.Name] = true
+		}
+	}
 
 	// Generate top-level Go declarations (type, const, var)
 	for _, decl := range file.Decls {
