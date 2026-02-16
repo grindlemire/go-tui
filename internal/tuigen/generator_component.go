@@ -137,7 +137,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 		}
 		g.write("children []*tui.Element")
 	}
-	g.writef(") %s {\n", structName)
+	g.writef(") *%s {\n", structName)
 	g.indent++
 
 	// Pre-declare view variable so closures can capture it
@@ -241,7 +241,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 	g.indent--
 	g.writeln("}")
 
-	g.writeln("return view")
+	g.writeln("return &view")
 
 	g.indent--
 	g.writeln("}")
@@ -277,21 +277,23 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.writeln("}")
 	g.writeln("")
 
+	// All methods use pointer receivers so the mount system can store and
+	// mutate cached *XxxView instances via UpdateProps.
+
 	// Generate GetRoot() method to implement tui.Viewable
-	g.writef("func (v %s) GetRoot() tui.Renderable { return v.Root }\n", structName)
+	g.writef("func (v *%s) GetRoot() tui.Renderable { return v.Root }\n", structName)
 	g.writeln("")
 
 	// Generate GetWatchers() method to implement tui.Viewable
-	g.writef("func (v %s) GetWatchers() []tui.Watcher { return v.watchers }\n", structName)
+	g.writef("func (v *%s) GetWatchers() []tui.Watcher { return v.watchers }\n", structName)
 	g.writeln("")
 
 	// Generate Render() method to implement tui.Component
-	// This allows function templs to be used in app.Mount() from method templs
-	g.writef("func (v %s) Render(app *tui.App) *tui.Element { return v.Root }\n", structName)
+	g.writef("func (v *%s) Render(app *tui.App) *tui.Element { return v.Root }\n", structName)
 	g.writeln("")
 
 	// Generate BindApp method to implement tui.AppBinder
-	g.writef("func (v %s) BindApp(app *tui.App) {\n", structName)
+	g.writef("func (v *%s) BindApp(app *tui.App) {\n", structName)
 	g.indent++
 	g.writeln("if v.bindApp != nil {")
 	g.indent++
@@ -301,7 +303,30 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.indent--
 	g.writeln("}")
 	g.writeln("")
-	g.writef("var _ tui.AppBinder = %s{}\n", structName)
+
+	// Generate UpdateProps method so the mount system can refresh cached views
+	// with new props when cross-package function templs are mounted.
+	g.writef("func (v *%s) UpdateProps(fresh tui.Component) {\n", structName)
+	g.indent++
+	g.writef("f, ok := fresh.(*%s)\n", structName)
+	g.writeln("if !ok {")
+	g.indent++
+	g.writeln("return")
+	g.indent--
+	g.writeln("}")
+	g.writeln("v.Root = f.Root")
+	g.writeln("v.watchers = f.watchers")
+	g.writeln("v.bindApp = f.bindApp")
+	for _, ref := range refs {
+		g.writef("v.%s = f.%s\n", ref.ExportName, ref.ExportName)
+	}
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+
+	g.writef("var _ tui.AppBinder = (*%s)(nil)\n", structName)
+	g.writeln("")
+	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", structName)
 	g.writeln("")
 }
 

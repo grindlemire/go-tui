@@ -224,7 +224,7 @@ func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop boo
 			g.assignIfNil(rootVar, varName)
 		case *ComponentCall:
 			varName := g.generateComponentCallWithRefs(n, "")
-			if n.IsStructMount {
+			if g.returnsElement(n) {
 				g.assignIfNil(rootVar, varName)
 			} else {
 				g.assignIfNil(rootVar, varName+".Root")

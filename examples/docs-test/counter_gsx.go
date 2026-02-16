@@ -55,21 +55,33 @@ type BadgeView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v BadgeView) GetRoot() tui.Renderable { return v.Root }
+func (v *BadgeView) GetRoot() tui.Renderable { return v.Root }
 
-func (v BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v BadgeView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *BadgeView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v BadgeView) BindApp(app *tui.App) {
+func (v *BadgeView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = BadgeView{}
+func (v *BadgeView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*BadgeView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func Badge(label string, value string, color string) BadgeView {
+var _ tui.AppBinder = (*BadgeView)(nil)
+
+var _ tui.PropsUpdater = (*BadgeView)(nil)
+
+func Badge(label string, value string, color string) *BadgeView {
 	var view BadgeView
 	var watchers []tui.Watcher
 
@@ -95,7 +107,7 @@ func Badge(label string, value string, color string) BadgeView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 type CardView struct {
@@ -104,21 +116,33 @@ type CardView struct {
 	bindApp  func(*tui.App)
 }
 
-func (v CardView) GetRoot() tui.Renderable { return v.Root }
+func (v *CardView) GetRoot() tui.Renderable { return v.Root }
 
-func (v CardView) GetWatchers() []tui.Watcher { return v.watchers }
+func (v *CardView) GetWatchers() []tui.Watcher { return v.watchers }
 
-func (v CardView) Render(app *tui.App) *tui.Element { return v.Root }
+func (v *CardView) Render(app *tui.App) *tui.Element { return v.Root }
 
-func (v CardView) BindApp(app *tui.App) {
+func (v *CardView) BindApp(app *tui.App) {
 	if v.bindApp != nil {
 		v.bindApp(app)
 	}
 }
 
-var _ tui.AppBinder = CardView{}
+func (v *CardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*CardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+}
 
-func Card(title string, children []*tui.Element) CardView {
+var _ tui.AppBinder = (*CardView)(nil)
+
+var _ tui.PropsUpdater = (*CardView)(nil)
+
+func Card(title string, children []*tui.Element) *CardView {
 	var view CardView
 	var watchers []tui.Watcher
 
@@ -150,7 +174,7 @@ func Card(title string, children []*tui.Element) CardView {
 		watchers: watchers,
 		bindApp:  __bindApp,
 	}
-	return view
+	return &view
 }
 
 func (c *counterApp) Render(app *tui.App) *tui.Element {
@@ -169,10 +193,8 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
 	__tui_1.AddChild(__tui_2)
-	__tui_3 := app.Mount(c, 0, func() tui.Component {
-		return Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
-	})
-	__tui_1.AddChild(__tui_3)
+	__tui_3 := Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
+	__tui_1.AddChild(__tui_3.Root)
 	__tui_0.AddChild(__tui_1)
 	__tui_4 := tui.New(
 		tui.WithHR(),
@@ -182,53 +204,49 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_6_children := []*tui.Element{}
-	__tui_7 := tui.New(
+	__tui_7_children := []*tui.Element{}
+	__tui_8 := tui.New(
 		tui.WithText(fmt.Sprintf("%d", c.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	c.display.Set(__tui_7)
-	__tui_6_children = append(__tui_6_children, __tui_7)
-	__tui_6 := app.Mount(c, 1, func() tui.Component {
-		return Card("Count", __tui_6_children)
-	})
-	__tui_5.AddChild(__tui_6)
-	__tui_8_children := []*tui.Element{}
+	c.display.Set(__tui_8)
+	__tui_7_children = append(__tui_7_children, __tui_8)
+	__tui_6 := Card("Count", __tui_7_children)
+	__tui_5.AddChild(__tui_6.Root)
+	__tui_10_children := []*tui.Element{}
 	if c.count.Get() > 0 {
-		__tui_9 := tui.New(
+		__tui_11 := tui.New(
 			tui.WithText("Positive"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
-		__tui_8_children = append(__tui_8_children, __tui_9)
+		__tui_10_children = append(__tui_10_children, __tui_11)
 	} else if c.count.Get() < 0 {
-		__tui_10 := tui.New(
+		__tui_12 := tui.New(
 			tui.WithText("Negative"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
-		__tui_8_children = append(__tui_8_children, __tui_10)
+		__tui_10_children = append(__tui_10_children, __tui_12)
 	} else {
-		__tui_11 := tui.New(
+		__tui_13 := tui.New(
 			tui.WithText("Zero"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 		)
-		__tui_8_children = append(__tui_8_children, __tui_11)
+		__tui_10_children = append(__tui_10_children, __tui_13)
 	}
-	__tui_8 := app.Mount(c, 2, func() tui.Component {
-		return Card("Status", __tui_8_children)
-	})
-	__tui_5.AddChild(__tui_8)
+	__tui_9 := Card("Status", __tui_10_children)
+	__tui_5.AddChild(__tui_9.Root)
 	__tui_0.AddChild(__tui_5)
-	__tui_12 := tui.New(
+	__tui_14 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_13 := tui.New(
+	__tui_15 := tui.New(
 		tui.WithText("+/-count·r reset·q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_12.AddChild(__tui_13)
-	__tui_0.AddChild(__tui_12)
+	__tui_14.AddChild(__tui_15)
+	__tui_0.AddChild(__tui_14)
 
 	return __tui_0
 }
