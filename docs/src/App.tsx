@@ -73,8 +73,36 @@ function GlobalStyles() {
       }
 
       @keyframes cellReveal {
-        from { opacity: 0; transform: translateY(8px) scale(0.92); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes lineIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .tl {
+        opacity: 0;
+        animation: lineIn 0.3s ease-out forwards;
+      }
+
+      @keyframes scrollBounce {
+        0%, 100% { transform: translateY(0); opacity: 0.6; }
+        50% { transform: translateY(6px); opacity: 1; }
+      }
+
+      @keyframes navSlideDown {
+        from { transform: translateY(-100%); }
+        to { transform: translateY(0); }
+      }
+
+      *, *::before, *::after {
+        transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
+      }
+      /* Don't let theme transition interfere with existing animations */
+      .tl, [style*="animation"] {
+        transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
       }
     `}</style>
   );
@@ -167,16 +195,28 @@ function WordCell({ text, color, delay = 0 }: { text: string; color: string; del
 
 /* ─── Nav ─── */
 
-function Nav() {
+function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
   const { theme, setTheme } = useTheme();
   const t = palette[theme];
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navVisible, setNavVisible] = useState(!hideUntilScroll);
 
   // Close mobile menu on navigation
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  // Show nav after scrolling past hero
+  useEffect(() => {
+    if (!hideUntilScroll) { setNavVisible(true); return; }
+    const onScroll = () => {
+      setNavVisible(window.scrollY > window.innerHeight * 0.4);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [hideUntilScroll]);
 
   const isActive = (path: string) => {
     if (path === "/")
@@ -192,13 +232,16 @@ function Nav() {
 
   return (
     <nav
-      className="sticky top-0 z-40 backdrop-blur-md"
+      className={`${hideUntilScroll ? "fixed" : "sticky"} top-0 left-0 right-0 z-40 backdrop-blur-md`}
       style={{
         background:
           theme === "dark"
             ? "rgba(39, 40, 34, 0.92)"
             : "rgba(250, 250, 248, 0.92)",
         borderBottom: `1px solid ${t.border}`,
+        transform: navVisible ? "translateY(0)" : "translateY(-100%)",
+        transition: "transform 0.3s ease-out",
+        pointerEvents: navVisible ? "auto" : "none",
       }}
     >
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
@@ -292,7 +335,7 @@ function Nav() {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-label="GitHub">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
             </svg>
           </a>
 
@@ -325,7 +368,7 @@ function Nav() {
             title="View on GitHub"
           >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-label="GitHub">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
             </svg>
           </a>
           <button
@@ -1015,7 +1058,7 @@ function Footer() {
 
 /* ─── Page Wrapper ─── */
 
-function Page({ children }: { children: React.ReactNode }) {
+function Page({ children, hideNavUntilScroll = false }: { children: React.ReactNode; hideNavUntilScroll?: boolean }) {
   const { theme } = useTheme();
   const t = palette[theme];
   return (
@@ -1028,7 +1071,7 @@ function Page({ children }: { children: React.ReactNode }) {
         fontFamily: "'IBM Plex Sans', sans-serif",
       }}
     >
-      <Nav />
+      <Nav hideUntilScroll={hideNavUntilScroll} />
       {children}
       <Footer />
     </div>
@@ -1216,50 +1259,85 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
 ];
 
-/* ─── Cell Tooltip ─── */
+/* ─── Comparison Row Detail Panel ─── */
 
-function ExpandableCell({
-  summary,
-  detail,
-  textColor,
+function ComparisonDetailPanel({
+  feature,
+  expanded,
+  libColors,
 }: {
-  summary: string;
-  detail: string;
-  textColor: string;
+  feature: ComparisonFeature;
+  expanded: boolean;
+  libColors: Record<string, string>;
 }) {
   const { theme } = useTheme();
   const t = palette[theme];
-  const [expanded, setExpanded] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+
+  useEffect(() => {
+    if (!panelRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setMeasuredHeight(entry.contentRect.height);
+      }
+    });
+    ro.observe(panelRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <div
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      className="cursor-default"
+      className="overflow-hidden"
+      style={{
+        maxHeight: expanded ? measuredHeight + 1 : 0,
+        opacity: expanded ? 1 : 0,
+        transition: "max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease",
+      }}
     >
-      <span
-        className="font-['Fira_Code',monospace] text-[11px] leading-snug"
-        style={{
-          color: textColor,
-          borderBottom: `1px dashed ${t.textMuted}60`,
-          paddingBottom: 1,
-        }}
-      >
-        {summary}
-      </span>
-      <div
-        className="overflow-hidden transition-all duration-200 ease-out"
-        style={{
-          maxHeight: expanded ? 80 : 0,
-          opacity: expanded ? 1 : 0,
-          marginTop: expanded ? 4 : 0,
-        }}
-      >
+      <div ref={panelRef}>
         <div
-          className="font-['IBM_Plex_Sans',sans-serif] text-[11px] leading-relaxed"
-          style={{ color: t.textMuted }}
+          className="grid gap-0"
+          style={{
+            gridTemplateColumns: "140px repeat(4, 1fr)",
+            borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}`,
+            background: theme === "dark" ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.02)",
+          }}
         >
-          {detail}
+          {/* Label cell — empty spacer */}
+          <div className="px-4 py-3" />
+          {comparisonLibraries.map((lib, colIdx) => {
+            const isGoTui = colIdx === 0;
+            const color = libColors[lib];
+            return (
+              <div
+                key={lib}
+                className="px-4 py-3"
+                style={{
+                  borderLeft: `1px solid ${isGoTui ? `${t.accent}20` : `${t.border}60`}`,
+                }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div
+                    className="w-[5px] h-[5px] rounded-full shrink-0"
+                    style={{ background: color, opacity: 0.7 }}
+                  />
+                  <div
+                    className="font-['Fira_Code',monospace] text-[9px] tracking-[0.1em] uppercase"
+                    style={{ color: t.textDim }}
+                  >
+                    {lib}
+                  </div>
+                </div>
+                <div
+                  className="font-['IBM_Plex_Sans',sans-serif] text-[11.5px] leading-[1.55]"
+                  style={{ color: t.textMuted }}
+                >
+                  {feature.values[lib].detail}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1270,16 +1348,13 @@ function ComparisonSection() {
   const { theme } = useTheme();
   const t = palette[theme];
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
-  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [visible, setVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
   const goTuiColIdx = 0;
   const accentTint = theme === "dark" ? `${t.accent}14` : `${t.accent}0c`;
-  const accentTintHover = theme === "dark" ? `${t.accent}22` : `${t.accent}16`;
-  const headerTint = theme === "dark" ? `${t.accent}1a` : `${t.accent}10`;
 
-  // Assign a subtle color per library for the header pill
   const libColors: Record<string, string> = {
     "go-tui": t.accent,
     "Bubble Tea": t.secondary,
@@ -1329,10 +1404,16 @@ function ComparisonSection() {
         UI framework.
       </p>
       <p
-        className="text-[13px] mb-8 sm:mb-10 max-w-[640px]"
+        className="text-[13px] mb-2 max-w-[640px]"
         style={{ color: t.textDim }}
       >
         go-tui is pure Go with zero CGO. tview and gocui depend on tcell, which can optionally use CGO.
+      </p>
+      <p
+        className="text-[11px] mb-8 sm:mb-10 max-w-[640px] font-['Fira_Code',monospace]"
+        style={{ color: t.textDim, opacity: 0.6 }}
+      >
+        Click any row to expand details
       </p>
 
       {/* Desktop table */}
@@ -1344,8 +1425,8 @@ function ComparisonSection() {
             background: t.bgCard,
             boxShadow:
               theme === "dark"
-                ? "0 2px 12px rgba(0,0,0,0.4)"
-                : "0 1px 4px rgba(0,0,0,0.06)",
+                ? "0 2px 16px rgba(0,0,0,0.5)"
+                : "0 1px 6px rgba(0,0,0,0.07)",
           }}
         >
           {/* Header */}
@@ -1363,20 +1444,17 @@ function ComparisonSection() {
             />
             {comparisonLibraries.map((lib, colIdx) => {
               const isGoTui = colIdx === goTuiColIdx;
-              const isHovered = hoveredCol === colIdx;
               const color = libColors[lib];
               return (
                 <div
                   key={lib}
-                  className="px-4 py-4 text-center transition-colors duration-150"
+                  className="px-4 py-4 text-center"
                   style={{
                     background: isGoTui
-                      ? isHovered ? accentTintHover : headerTint
-                      : isHovered ? t.bgTertiary : "transparent",
+                      ? theme === "dark" ? `${t.accent}1a` : `${t.accent}10`
+                      : "transparent",
                     borderLeft: `1px solid ${t.border}`,
                   }}
-                  onMouseEnter={() => setHoveredCol(colIdx)}
-                  onMouseLeave={() => setHoveredCol(null)}
                 >
                   <div
                     className="font-['Fira_Code',monospace] text-[12px] font-semibold"
@@ -1385,11 +1463,12 @@ function ComparisonSection() {
                     {lib}
                   </div>
                   <div
-                    className="mt-1.5 mx-auto h-[2px] rounded-full transition-all duration-300"
+                    className="mt-1.5 mx-auto h-[2px] rounded-full"
                     style={{
-                      width: isHovered || isGoTui ? "60%" : "0%",
+                      width: isGoTui ? "60%" : "0%",
                       background: color,
-                      opacity: isHovered || isGoTui ? 1 : 0,
+                      opacity: isGoTui ? 1 : 0,
+                      transition: "width 0.3s ease, opacity 0.3s ease",
                     }}
                   />
                 </div>
@@ -1399,6 +1478,8 @@ function ComparisonSection() {
 
           {/* Rows */}
           {comparisonFeatures.map((feature, rowIdx) => {
+            const isExpanded = expandedRow === rowIdx;
+            const isHovered = hoveredRow === rowIdx;
             const isEvenRow = rowIdx % 2 === 0;
             const stripeBg = isEvenRow
               ? "transparent"
@@ -1407,58 +1488,97 @@ function ComparisonSection() {
             return (
               <div
                 key={feature.label}
-                className={`grid items-stretch gap-0 transition-colors duration-100 ${visible ? "comparison-row-animate" : "opacity-0"}`}
+                className={visible ? "comparison-row-animate" : "opacity-0"}
                 style={{
-                  gridTemplateColumns: "140px repeat(4, 1fr)",
                   borderBottom:
                     rowIdx < comparisonFeatures.length - 1
                       ? `1px solid ${t.border}`
                       : "none",
-                  background:
-                    hoveredRow === rowIdx ? t.bgTertiary : stripeBg,
-                  animationDelay: visible ? `${rowIdx * 40}ms` : "0ms",
+                  animationDelay: visible ? `${rowIdx * 50}ms` : "0ms",
                 }}
-                onMouseEnter={() => setHoveredRow(rowIdx)}
-                onMouseLeave={() => setHoveredRow(null)}
               >
-                <div className="px-4 py-3.5 flex items-start">
-                  <div
-                    className="font-['Fira_Code',monospace] text-[11px] font-semibold"
-                    style={{ color: t.text }}
-                  >
-                    {feature.label}
-                  </div>
-                </div>
-                {comparisonLibraries.map((lib, colIdx) => {
-                  const isGoTui = colIdx === goTuiColIdx;
-                  const isColHovered = hoveredCol === colIdx;
-                  const val = feature.values[lib];
-                  return (
-                    <div
-                      key={lib}
-                      className="px-4 py-3.5 transition-colors duration-150"
+                {/* Summary row — fixed height, no reflow */}
+                <div
+                  className="grid items-stretch gap-0 cursor-pointer select-none"
+                  style={{
+                    gridTemplateColumns: "140px repeat(4, 1fr)",
+                    background: isExpanded
+                      ? theme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"
+                      : isHovered
+                        ? theme === "dark" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)"
+                        : stripeBg,
+                    transition: "background 0.15s ease",
+                  }}
+                  onClick={() =>
+                    setExpandedRow(isExpanded ? null : rowIdx)
+                  }
+                  onMouseEnter={() => setHoveredRow(rowIdx)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  <div className="px-4 py-3.5 flex items-center gap-2">
+                    <svg
+                      width="8"
+                      height="8"
+                      viewBox="0 0 8 8"
+                      className="shrink-0"
                       style={{
-                        borderLeft: isGoTui
-                          ? `1px solid ${t.accent}30`
-                          : `1px solid ${t.border}`,
-                        borderRight: isGoTui && colIdx < comparisonLibraries.length - 1
-                          ? `1px solid ${t.accent}30`
-                          : undefined,
-                        background: isGoTui
-                          ? isColHovered ? accentTintHover : accentTint
-                          : isColHovered ? `${t.bgTertiary}80` : "transparent",
+                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                        transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                        opacity: isHovered || isExpanded ? 0.8 : 0.3,
                       }}
-                      onMouseEnter={() => setHoveredCol(colIdx)}
-                      onMouseLeave={() => setHoveredCol(null)}
                     >
-                      <ExpandableCell
-                        summary={val.summary}
-                        detail={val.detail}
-                        textColor={isGoTui ? t.accent : t.text}
+                      <path
+                        d="M2 1L6 4L2 7"
+                        fill="none"
+                        stroke={t.textMuted}
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
+                    </svg>
+                    <div
+                      className="font-['Fira_Code',monospace] text-[11px] font-semibold"
+                      style={{ color: t.text }}
+                    >
+                      {feature.label}
                     </div>
-                  );
-                })}
+                  </div>
+                  {comparisonLibraries.map((lib, colIdx) => {
+                    const isGoTui = colIdx === goTuiColIdx;
+                    const val = feature.values[lib];
+                    return (
+                      <div
+                        key={lib}
+                        className="px-4 py-3.5"
+                        style={{
+                          borderLeft: isGoTui
+                            ? `1px solid ${t.accent}30`
+                            : `1px solid ${t.border}`,
+                          borderRight: isGoTui && colIdx < comparisonLibraries.length - 1
+                            ? `1px solid ${t.accent}30`
+                            : undefined,
+                          background: isGoTui ? accentTint : "transparent",
+                        }}
+                      >
+                        <span
+                          className="font-['Fira_Code',monospace] text-[11px] leading-snug"
+                          style={{
+                            color: isGoTui ? t.accent : t.text,
+                          }}
+                        >
+                          {val.summary}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Detail panel — slides open, no reflow */}
+                <ComparisonDetailPanel
+                  feature={feature}
+                  expanded={isExpanded}
+                  libColors={libColors}
+                />
               </div>
             );
           })}
@@ -1554,7 +1674,7 @@ function ComparisonSection() {
    ============================================================ */
 
 function HomePage() {
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const t = palette[theme];
 
   // Shared DX feature state — editor + capability list both read/write this
@@ -1573,124 +1693,359 @@ function HomePage() {
 
 
   return (
-    <Page>
+    <Page hideNavUntilScroll>
       <div className="relative">
-      <PageBackground theme={theme} />
-      <div className="relative z-10">
-      {/* Hero */}
-      <section>
-        <div className="relative max-w-[1100px] mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-20 sm:pb-28">
-          <h1 className="max-w-[820px]" aria-label="Reactive Terminal UIs in Go">
-            <span
-              className="block font-['IBM_Plex_Sans',sans-serif] text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-3 sm:mb-4 md:mb-5"
-              style={{ color: t.heading, animation: "fadeInUp 0.5s ease-out both" }}
-            >
-              Reactive
-            </span>
-            <span className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-3.5 mb-3 sm:mb-4 md:mb-5" aria-hidden="true">
-              <WordCell text="Terminal" color={t.accent} delay={200} />
-              <WordCell text="UIs" color={t.secondary} delay={350} />
-            </span>
-            <span className="flex items-center gap-2 sm:gap-3 md:gap-3.5 flex-wrap" aria-hidden="true">
-              <span
-                className="font-['IBM_Plex_Sans',sans-serif] text-xl sm:text-3xl md:text-4xl font-light tracking-tight"
-                style={{ color: t.textMuted, animation: "fadeInUp 0.5s ease-out 500ms both" }}
-              >
-                in
-              </span>
-              <WordCell text="Go" color={t.tertiary} delay={600} />
-            </span>
-          </h1>
-
-          <p
-            className="text-base sm:text-lg mt-6 sm:mt-8 max-w-[560px] leading-relaxed"
-            style={{ color: t.text }}
-          >
-            {projectInfo.description}
-          </p>
-
-          <div className="mt-8 sm:mt-10 flex items-center gap-3 sm:gap-4 flex-wrap">
-            <Link
-              to="/guide"
-              className="font-['Fira_Code',monospace] inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-sm rounded transition-all duration-200"
-              style={{
-                background: t.accent,
-                color: theme === "dark" ? "#272822" : "#ffffff",
-                border: `1px solid ${t.accent}`,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = t.accentDim;
-                e.currentTarget.style.borderColor = t.accentDim;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = t.accent;
-                e.currentTarget.style.borderColor = t.accent;
-              }}
-            >
-              get started
-            </Link>
-            <Link
-              to="/reference"
-              className="font-['Fira_Code',monospace] inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-sm rounded transition-all duration-200"
-              style={{
-                color: t.textMuted,
-                border: `1px solid ${t.border}`,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = t.text;
-                e.currentTarget.style.borderColor = t.textMuted;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = t.textMuted;
-                e.currentTarget.style.borderColor = t.border;
-              }}
-            >
-              api reference
-            </Link>
-          </div>
-
-          <div className="mt-8 sm:mt-10 max-w-[600px]">
-            <TerminalBlock command={projectInfo.installCmd} />
-          </div>
-        </div>
-      </section>
-
-      <Divider />
-
-      {/* Quick Example */}
-      <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
-        <div
-          className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
-          style={{ color: t.accentDim }}
-        >
-          quick start
-        </div>
-        <h2
-          className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
-          style={{ color: t.heading }}
-        >
-          How it works
-        </h2>
-        <p
-          className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
-          style={{ color: t.textMuted }}
-        >
-          .gsx templates compile to Go via tui generate. The generated code is what runs.
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-          <div>
+        <PageBackground theme={theme} />
+        <div className="relative z-10">
+          {/* Hero — Man Page Terminal */}
+          <section className="relative" style={{ minHeight: "100vh" }}>
+            {/* Subtle top-right controls */}
             <div
-              className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2"
-              style={{ color: t.textDim }}
+              className="tl absolute top-0 right-0 z-20 flex items-center gap-2 font-['Fira_Code',monospace]"
+              style={{
+                padding: "16px 20px",
+                animationDelay: "800ms",
+                fontSize: "10px",
+                opacity: 0.6,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.6"; }}
             >
-              <span style={{ color: t.accentDim }}>01</span>
-              define
+              <a
+                href="https://pkg.go.dev/github.com/grindlemire/go-tui"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors duration-200"
+                style={{ color: t.textDim }}
+                title="v0.1.0 — view on pkg.go.dev"
+                onMouseEnter={(e) => { e.currentTarget.style.color = t.secondary; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
+              >
+                v0.1.0
+              </a>
+              <span style={{ color: t.textDim }}>·</span>
+              <a
+                href="https://github.com/grindlemire/go-tui"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center transition-colors duration-200"
+                style={{ color: t.textDim }}
+                title="View on GitHub"
+                onMouseEnter={(e) => { e.currentTarget.style.color = t.accent; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-label="GitHub">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+              </a>
+              <span style={{ color: t.textDim }}>·</span>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="transition-colors duration-200"
+                style={{
+                  color: t.textDim,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  font: "inherit",
+                  fontSize: "inherit",
+                  padding: 0,
+                }}
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                onMouseEnter={(e) => { e.currentTarget.style.color = theme === "dark" ? t.secondary : t.tertiary; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
+              >
+                {theme === "dark" ? "light" : "dark"}
+              </button>
             </div>
-            <CodeBlock
-              title="dashboard.gsx"
-              language="gsx"
-              code={`templ Dashboard() {
+
+            <div
+              className="flex flex-col"
+              style={{
+                minHeight: "100vh",
+                background: theme === "dark" ? "#1e1f1a" : "#f0f0ec",
+              }}
+            >
+              {/* Terminal body */}
+              <div
+                className="flex-1 overflow-auto font-['Fira_Code',monospace] text-[13px] leading-[1.6]"
+                style={{ padding: "24px 32px" }}
+              >
+                {/* Prompt line */}
+                <div className="tl mb-4 text-[13px]" style={{ animationDelay: "50ms" }}>
+                  <span style={{ color: t.secondary }}>$</span>{" "}
+                  <span style={{ color: t.heading }}>man tui</span>
+                </div>
+
+                {/* ASCII Art — REACTIVE */}
+                {[
+                  " ██████╗ ███████╗ █████╗  ██████╗████████╗██╗██╗   ██╗███████╗",
+                  " ██╔══██╗██╔════╝██╔══██╗██╔════╝╚══██╔══╝██║██║   ██║██╔════╝",
+                  " ██████╔╝█████╗  ███████║██║        ██║   ██║██║   ██║█████╗",
+                  " ██╔══██╗██╔══╝  ██╔══██║██║        ██║   ██║╚██╗ ██╔╝██╔══╝",
+                  " ██║  ██║███████╗██║  ██║╚██████╗   ██║   ██║ ╚████╔╝ ███████╗",
+                  " ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝   ╚═╝   ╚═╝  ╚═══╝  ╚══════╝",
+                ].map((line, i) => (
+                  <div
+                    key={`r${i}`}
+                    className="tl whitespace-pre leading-[1.15] overflow-hidden"
+                    style={{
+                      animationDelay: `${120 + i * 20}ms`,
+                      color: t.heading,
+                      fontSize: "clamp(7px, 1.15vw, 13px)",
+                      letterSpacing: 0,
+                    }}
+                  >
+                    {line}
+                  </div>
+                ))}
+
+                <div className="tl h-[2px]" style={{ animationDelay: "250ms" }} />
+
+                {/* ASCII Art — TERMINAL */}
+                {[
+                  " ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗",
+                  " ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║",
+                  "    ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║",
+                  "    ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║",
+                  "    ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗",
+                  "    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝",
+                ].map((line, i) => (
+                  <div
+                    key={`t${i}`}
+                    className="tl whitespace-pre leading-[1.15] overflow-hidden"
+                    style={{
+                      animationDelay: `${270 + i * 20}ms`,
+                      color: t.accent,
+                      fontSize: "clamp(7px, 1.15vw, 13px)",
+                      letterSpacing: 0,
+                    }}
+                  >
+                    {line}
+                  </div>
+                ))}
+
+                <div className="tl h-[2px]" style={{ animationDelay: "400ms" }} />
+
+                {/* ASCII Art — UIs  in  Go — "s" and "in" as regular text */}
+                <div
+                  className="tl flex items-end gap-0"
+                  style={{ animationDelay: "420ms" }}
+                >
+                  {/* UI block letters */}
+                  <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
+                    {[
+                      " ██╗   ██╗██╗",
+                      " ██║   ██║██║",
+                      " ██║   ██║██║",
+                      " ██║   ██║██║",
+                      " ╚██████╔╝██║",
+                      "  ╚═════╝ ╚═╝",
+                    ].map((line, i) => (
+                      <div key={`u${i}`} style={{ color: t.secondary }}>{line}</div>
+                    ))}
+                  </div>
+                  {/* "s" as regular text, quarter height of block letters */}
+                  <span
+                    className="font-['Fira_Code',monospace] font-bold self-end"
+                    style={{
+                      color: t.secondary,
+                      fontSize: "clamp(14px, 2.3vw, 26px)",
+                      lineHeight: 1,
+                      paddingBottom: "clamp(1px, 0.15vw, 2px)",
+                    }}
+                  >
+                    s
+                  </span>
+                  {/* "in" as regular text, larger */}
+                  <span
+                    className="font-['Fira_Code',monospace] font-light"
+                    style={{
+                      color: t.textDim,
+                      fontSize: "clamp(20px, 3.5vw, 40px)",
+                      lineHeight: 1,
+                      padding: "0 clamp(8px, 1.5vw, 18px)",
+                      paddingBottom: "clamp(0px, 0.1vw, 1px)",
+                    }}
+                  >
+                    in
+                  </span>
+                  {/* Go block letters */}
+                  <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
+                    {[
+                      " ██████╗  ██████╗",
+                      "██╔════╝ ██╔═══██╗",
+                      "██║  ███╗██║   ██║",
+                      "██║   ██║██║   ██║",
+                      "╚██████╔╝╚██████╔╝",
+                      " ╚═════╝  ╚═════╝",
+                    ].map((line, i) => (
+                      <div key={`g${i}`} style={{ color: t.tertiary }}>{line}</div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Man page sections */}
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "580ms" }}>
+                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>NAME</div>
+                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
+                    <span className="font-semibold" style={{ color: t.heading }}>go-tui</span>
+                    {" "}&mdash; reactive terminal UI framework for{" "}
+                    <span
+                      className="inline-block text-[10px] px-2 py-[2px] rounded-[3px] font-bold"
+                      style={{
+                        color: t.tertiary,
+                        background: theme === "dark" ? "rgba(249,38,114,0.1)" : "rgba(212,37,104,0.08)",
+                        border: `1px solid ${theme === "dark" ? "rgba(249,38,114,0.25)" : "rgba(212,37,104,0.2)"}`,
+                      }}
+                    >
+                      Go
+                    </span>
+                  </div>
+                </div>
+
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "670ms" }}>
+                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SYNOPSIS</div>
+                  <div className="pl-5 mt-1 leading-[1.7] whitespace-pre" style={{ color: t.textMuted }}>
+                    <span style={{ color: t.secondary }}>$</span> go get github.com/grindlemire/go-tui{"\n"}
+                    <span style={{ color: t.secondary }}>$</span> tui generate ./...
+                  </div>
+                </div>
+
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "760ms" }}>
+                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>DESCRIPTION</div>
+                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
+                    <span style={{ color: t.secondary }}>.gsx files</span> mix Go and HTML-like templates in one place,
+                    then compile to <span style={{ color: t.tertiary }}>type-safe Go</span>.{" "} Use{" "}
+                    <span style={{ color: t.accent }}>Flexbox layout</span>,{" "}
+                    <span style={{ color: theme === "dark" ? "#ae81ff" : "#7c5cb8" }}>reactive state</span>,
+                    and composable components.
+                  </div>
+                </div>
+
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "850ms" }}>
+                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>FEATURES</div>
+                  <div className="pl-5 mt-1 leading-[1.7] grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-[2px] max-w-[560px]" style={{ color: t.textMuted }}>
+                    <span>&bull; .gsx &rarr; Go compiler</span>
+                    <span>&bull; Flexbox layout engine</span>
+                    <span>&bull; Reactive State[T]</span>
+                    <span>&bull; Component system</span>
+                    <span>&bull; LSP + tree-sitter</span>
+                    <span>&bull; Double-buffered render</span>
+                    <span>&bull; Mouse + keyboard</span>
+                    <span>&bull; Inline &amp; fullscreen</span>
+                  </div>
+                </div>
+
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "940ms" }}>
+                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SEE ALSO</div>
+                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
+                    {[
+                      { label: "tui-getting-started(7)", href: "/guide", external: false },
+                      { label: "tui-api(3)", href: "/reference", external: false },
+                      { label: "tui-examples(7)", href: "https://github.com/grindlemire/go-tui/tree/main/examples", external: true },
+                      { label: "github(1)", href: "https://github.com/grindlemire/go-tui", external: true },
+                    ].map((link, i, arr) => (
+                      <span key={link.label}>
+                        {link.external ? (
+                          <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="transition-all duration-150"
+                            style={{
+                              color: t.accent,
+                              textDecoration: "underline",
+                              textUnderlineOffset: "3px",
+                              textDecorationColor: theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = t.accent)}
+                            onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)")}
+                          >
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link
+                            to={link.href}
+                            className="transition-all duration-150"
+                            style={{
+                              color: t.accent,
+                              textDecoration: "underline",
+                              textUnderlineOffset: "3px",
+                              textDecorationColor: theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = t.accent)}
+                            onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)")}
+                          >
+                            {link.label}
+                          </Link>
+                        )}
+                        {i < arr.length - 1 && ",  "}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "1030ms" }}>
+                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>AUTHORS</div>
+                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textDim }}>
+                    grindlemire &lt;github.com/grindlemire/go-tui&gt;
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Scroll indicator */}
+            <div
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+              style={{ animation: "scrollBounce 2s ease-in-out infinite" }}
+            >
+              <span className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase" style={{ color: t.textDim }}>
+                scroll
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={t.textDim} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </div>
+          </section>
+
+          <Divider />
+
+          {/* Quick Example */}
+          <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
+            <div
+              className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
+              style={{ color: t.accentDim }}
+            >
+              quick start
+            </div>
+            <h2
+              className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
+              style={{ color: t.heading }}
+            >
+              How it works
+            </h2>
+            <p
+              className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
+              style={{ color: t.textMuted }}
+            >
+              .gsx templates compile to Go via tui generate. The generated code is what runs.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <div
+                  className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2"
+                  style={{ color: t.textDim }}
+                >
+                  <span style={{ color: t.accentDim }}>01</span>
+                  define
+                </div>
+                <CodeBlock
+                  title="dashboard.gsx"
+                  language="gsx"
+                  code={`templ Dashboard() {
   <div class="flex-col h-full">
     <div class="border-single p-1">
       <span class="font-bold text-cyan">
@@ -1703,20 +2058,20 @@ function HomePage() {
     </div>
   </div>
 }`}
-            />
-          </div>
-          <div>
-            <div
-              className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2"
-              style={{ color: t.textDim }}
-            >
-              <span style={{ color: t.secondaryDim }}>02</span>
-              run
-            </div>
-            <CodeBlock
-              title="main.go"
-              language="go"
-              code={`package main
+                />
+              </div>
+              <div>
+                <div
+                  className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2"
+                  style={{ color: t.textDim }}
+                >
+                  <span style={{ color: t.secondaryDim }}>02</span>
+                  run
+                </div>
+                <CodeBlock
+                  title="main.go"
+                  language="go"
+                  code={`package main
 
 import (
   "fmt"
@@ -1738,150 +2093,150 @@ func main() {
     os.Exit(1)
   }
 }`}
-            />
-          </div>
-        </div>
-      </section>
+                />
+              </div>
+            </div>
+          </section>
 
-      <Divider />
+          <Divider />
 
-      {/* Developer Experience */}
-      <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase"
-            style={{ color: t.tertiaryDim }}
-          >
-            developer experience
-          </div>
-          <div
-            className="h-px flex-1"
-            style={{
-              background: theme === "dark"
-                ? "linear-gradient(to right, #f9267218, transparent)"
-                : `linear-gradient(to right, ${t.border}, transparent)`,
-            }}
-          />
-        </div>
-        <h2
-          className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
-          style={{ color: t.heading }}
-        >
-          First-class editor support
-        </h2>
-        <p
-          className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
-          style={{ color: t.textMuted }}
-        >
-          .gsx files ship with a full language server, tree-sitter grammar, and built-in formatter.
-          Real IDE features, not just syntax coloring.
-        </p>
-
-        <div className="grid lg:grid-cols-[1fr_340px] gap-6 sm:gap-8 items-stretch">
-          {/* Editor simulation */}
-          <EditorSimulation
-            activeFeature={dxFeature}
-            onSetFeature={(i) => { setDxFeature(i); dxPausedRef.current = true; }}
-            pausedRef={dxPausedRef}
-          />
-
-          {/* Capabilities list — stretches to match editor height */}
-          <div className="flex flex-col justify-between">
-            {([
-              { title: "Syntax highlighting", description: "Tree-sitter grammar for accurate tokenization. Keywords, elements, Go expressions, and Tailwind classes all get distinct coloring.", color: t.accent, editorIdx: 0 },
-              { title: "Intelligent completions", description: "The LSP resolves your project's components and suggests them with type signatures as you type.", color: t.secondary, editorIdx: 1 },
-              { title: "Inline diagnostics", description: "Undefined components, invalid attributes, and type mismatches surface in your editor before you compile.", color: t.tertiary, editorIdx: 2 },
-              { title: "Go-to-definition", description: "Jump from a component call to its definition across .gsx files and into Go code via the gopls proxy.", color: theme === "dark" ? "#e6db74" : "#998a00", editorIdx: 3 },
-              { title: "Auto-formatting", description: "Consistent indentation, attribute alignment, and import management. Run on save or via the CLI.", color: theme === "dark" ? "#ae81ff" : "#7c5cb8", editorIdx: 4 },
-            ] as const).map((cap, i) => (
-              <DxCapability
-                key={cap.title}
-                title={cap.title}
-                description={cap.description}
-                color={cap.color}
-                delay={i * 60}
-                active={dxFeature === cap.editorIdx}
-                onHover={() => {
-                  dxPausedRef.current = true;
-                  setDxFeature(cap.editorIdx);
-                }}
-                onLeave={() => {
-                  dxPausedRef.current = false;
+          {/* Developer Experience */}
+          <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase"
+                style={{ color: t.tertiaryDim }}
+              >
+                developer experience
+              </div>
+              <div
+                className="h-px flex-1"
+                style={{
+                  background: theme === "dark"
+                    ? "linear-gradient(to right, #f9267218, transparent)"
+                    : `linear-gradient(to right, ${t.border}, transparent)`,
                 }}
               />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <Divider />
-
-      {/* Comparison */}
-      <ComparisonSection />
-
-      <Divider />
-
-      {/* Tailwind Preview */}
-      <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
-        <div
-          className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
-          style={{ color: t.secondaryDim }}
-        >
-          styling
-        </div>
-        <h2
-          className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
-          style={{ color: t.heading }}
-        >
-          Tailwind-style classes
-        </h2>
-        <p
-          className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
-          style={{ color: t.textMuted }}
-        >
-          Utility classes for layout, borders, colors, and text. Each one
-          compiles to a Go option.
-        </p>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
-          {tailwindClasses.slice(0, 18).map((tc, i) => (
-            <div
-              key={i}
-              className="flex items-baseline gap-3 py-2.5 transition-colors duration-150"
-              style={{ borderBottom: `1px solid ${t.border}` }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = t.bgTertiary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              <code
-                className="font-['Fira_Code',monospace] text-[12px] shrink-0"
-                style={{ color: t.accent }}
-              >
-                {tc.class}
-              </code>
-              <span
-                className="text-[11px] truncate"
-                style={{ color: t.textDim }}
-              >
-                {tc.description}
-              </span>
             </div>
-          ))}
+            <h2
+              className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
+              style={{ color: t.heading }}
+            >
+              First-class editor support
+            </h2>
+            <p
+              className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
+              style={{ color: t.textMuted }}
+            >
+              .gsx files ship with a full language server, tree-sitter grammar, and built-in formatter.
+              Real IDE features, not just syntax coloring.
+            </p>
+
+            <div className="grid lg:grid-cols-[1fr_340px] gap-6 sm:gap-8 items-stretch">
+              {/* Editor simulation */}
+              <EditorSimulation
+                activeFeature={dxFeature}
+                onSetFeature={(i) => { setDxFeature(i); dxPausedRef.current = true; }}
+                pausedRef={dxPausedRef}
+              />
+
+              {/* Capabilities list — stretches to match editor height */}
+              <div className="flex flex-col justify-between">
+                {([
+                  { title: "Syntax highlighting", description: "Tree-sitter grammar for accurate tokenization. Keywords, elements, Go expressions, and Tailwind classes all get distinct coloring.", color: t.accent, editorIdx: 0 },
+                  { title: "Intelligent completions", description: "The LSP resolves your project's components and suggests them with type signatures as you type.", color: t.secondary, editorIdx: 1 },
+                  { title: "Inline diagnostics", description: "Undefined components, invalid attributes, and type mismatches surface in your editor before you compile.", color: t.tertiary, editorIdx: 2 },
+                  { title: "Go-to-definition", description: "Jump from a component call to its definition across .gsx files and into Go code via the gopls proxy.", color: theme === "dark" ? "#e6db74" : "#998a00", editorIdx: 3 },
+                  { title: "Auto-formatting", description: "Consistent indentation, attribute alignment, and import management. Run on save or via the CLI.", color: theme === "dark" ? "#ae81ff" : "#7c5cb8", editorIdx: 4 },
+                ] as const).map((cap, i) => (
+                  <DxCapability
+                    key={cap.title}
+                    title={cap.title}
+                    description={cap.description}
+                    color={cap.color}
+                    delay={i * 60}
+                    active={dxFeature === cap.editorIdx}
+                    onHover={() => {
+                      dxPausedRef.current = true;
+                      setDxFeature(cap.editorIdx);
+                    }}
+                    onLeave={() => {
+                      dxPausedRef.current = false;
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <Divider />
+
+          {/* Comparison */}
+          <ComparisonSection />
+
+          <Divider />
+
+          {/* Tailwind Preview */}
+          <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
+            <div
+              className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
+              style={{ color: t.secondaryDim }}
+            >
+              styling
+            </div>
+            <h2
+              className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
+              style={{ color: t.heading }}
+            >
+              Tailwind-style classes
+            </h2>
+            <p
+              className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
+              style={{ color: t.textMuted }}
+            >
+              Utility classes for layout, borders, colors, and text. Each one
+              compiles to a Go option.
+            </p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
+              {tailwindClasses.slice(0, 18).map((tc, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline gap-3 py-2.5 transition-colors duration-150"
+                  style={{ borderBottom: `1px solid ${t.border}` }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = t.bgTertiary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <code
+                    className="font-['Fira_Code',monospace] text-[12px] shrink-0"
+                    style={{ color: t.accent }}
+                  >
+                    {tc.class}
+                  </code>
+                  <span
+                    className="text-[11px] truncate"
+                    style={{ color: t.textDim }}
+                  >
+                    {tc.description}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Link
+              to="/reference"
+              className="font-['Fira_Code',monospace] inline-flex items-center gap-2 mt-6 sm:mt-8 text-sm transition-colors duration-200"
+              style={{ color: t.textMuted }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = t.textMuted)}
+            >
+              view all &rarr;
+            </Link>
+          </section>
         </div>
-        <Link
-          to="/reference"
-          className="font-['Fira_Code',monospace] inline-flex items-center gap-2 mt-6 sm:mt-8 text-sm transition-colors duration-200"
-          style={{ color: t.textMuted }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = t.textMuted)}
-        >
-          view all &rarr;
-        </Link>
-      </section>
-      </div>
       </div>
     </Page>
   );
@@ -2278,7 +2633,14 @@ function ReferencePage() {
 /* ─── Main Export ─── */
 
 export default function Design2() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    const saved = localStorage.getItem("go-tui-theme");
+    return saved === "light" || saved === "dark" ? saved : "dark";
+  });
+  const setTheme = (t: Theme) => {
+    localStorage.setItem("go-tui-theme", t);
+    setThemeState(t);
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
