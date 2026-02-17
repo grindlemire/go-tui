@@ -47,7 +47,7 @@ func TestApp_SetRootAndRoot(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// Create a mock app (we can't test NewApp without a real terminal)
 			app := &App{
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 				buffer: NewBuffer(80, 24),
 			}
 
@@ -67,13 +67,14 @@ func TestApp_SetRootAndRoot(t *testing.T) {
 	}
 }
 
-func TestApp_Focus(t *testing.T) {
+func TestApp_FocusedNoElements(t *testing.T) {
 	app := &App{
-		focus: NewFocusManager(),
+		focus: newFocusManager(),
 	}
 
-	if app.Focus() == nil {
-		t.Error("Focus() should return a non-nil FocusManager")
+	// With no focusable elements registered, Focused() should return nil
+	if app.Focused() != nil {
+		t.Error("Focused() should return nil when no elements are registered")
 	}
 }
 
@@ -114,7 +115,7 @@ func TestApp_DispatchResizeEvent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			buffer := NewBuffer(tt.initialWidth, tt.initialHeight)
 			app := &App{
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 				buffer: buffer,
 			}
 
@@ -173,7 +174,7 @@ func TestApp_DispatchKeyEvent(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			focus := NewFocusManager()
+			focus := newFocusManager()
 
 			if tt.hasFocused {
 				mock := newMockFocusable("a", true)
@@ -204,7 +205,7 @@ func TestApp_RenderWithMockRoot(t *testing.T) {
 	app := &App{
 		terminal: nil, // We can't use a real ANSITerminal in tests
 		buffer:   buffer,
-		focus:    NewFocusManager(),
+		focus:    newFocusManager(),
 	}
 
 	// Create a mock renderable

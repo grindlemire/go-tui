@@ -7,7 +7,7 @@ type dispatchEntry struct {
 	pattern  KeyPattern
 	handler  func(KeyEvent)
 	stop     bool
-	position int // DFS order index from tree walk
+	position int // BFS order index from tree walk
 }
 
 // dispatchTable holds all handlers in a single tree-ordered list.

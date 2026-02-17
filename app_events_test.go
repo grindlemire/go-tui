@@ -88,7 +88,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			app := &App{
-				focus:      NewFocusManager(),
+				focus:      newFocusManager(),
 				buffer:     NewBuffer(80, 24),
 				eventQueue: make(chan func(), 256),
 				stopCh:     make(chan struct{}),
@@ -126,7 +126,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 
 func TestApp_SetRoot_WithRawRenderable(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
@@ -145,7 +145,7 @@ func TestApp_Run_EventLoopLogic(t *testing.T) {
 	// We simulate what Run() does: process events from eventQueue, check dirty, etc.
 
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
@@ -183,7 +183,7 @@ func TestApp_Run_EventLoopLogic(t *testing.T) {
 
 func TestApp_Stop_IsIdempotent(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
@@ -208,7 +208,7 @@ func TestApp_Stop_IsIdempotent(t *testing.T) {
 
 func TestApp_SetRoot_ClearsRootComponentForRenderable(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
@@ -228,7 +228,7 @@ func TestApp_SetRoot_ClearsRootComponentForRenderable(t *testing.T) {
 
 func TestApp_SetRoot_StopsPreviousRootWatchers(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),

@@ -1,0 +1,784 @@
+# Building a Dashboard
+
+## What We're Building
+
+We're going to build a live metrics dashboard -- CPU, memory, and disk gauges, a network sparkline, and a streaming event feed -- all updating in real time. It pulls in concepts from most of the previous guides.
+
+Concepts used:
+
+- **State** ([Guide 05](05-state.md)): reactive `State[T]` for metrics, sparkline data, and event lists
+- **Components** ([Guide 06](06-components.md)): a struct component with constructor and render method
+- **Events** ([Guide 07](07-events.md)): `KeyMap` for quit bindings
+- **Watchers** ([Guide 09](09-watchers.md)): `OnTimer` for metric animation and `Watch` for channel-based event streaming
+- **Styling** ([Guide 03](03-styling.md)): gradients, conditional color classes, borders
+- **Layout** ([Guide 04](04-layout.md)): nested flex containers, gap, grow, padding
+
+## Project Setup
+
+Create a new directory and initialize the module:
+
+```bash
+mkdir dashboard && cd dashboard
+go mod init dashboard
+go get github.com/grindlemire/go-tui
+```
+
+You'll create two files:
+
+- `dashboard.gsx` -- the component and all its logic
+- `main.go` -- the entry point that wires everything up
+
+## Layout Skeleton
+
+Start with the outer structure. The dashboard is a vertical stack inside a bordered container, with sections for the title, metrics, network chart, events, and a key hint at the bottom.
+
+Create `dashboard.gsx`:
+
+```gsx
+package main
+
+import (
+    "fmt"
+    tui "github.com/grindlemire/go-tui"
+)
+
+type dashboardApp struct {
+}
+
+func Dashboard() *dashboardApp {
+    return &dashboardApp{}
+}
+
+func (d *dashboardApp) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+    }
+}
+
+templ (d *dashboardApp) Render() {
+    <div class="flex-col p-1 gap-1 h-full border-rounded border-cyan">
+        <div class="flex justify-center shrink-0">
+            <span class="text-gradient-cyan-magenta font-bold">Dashboard</span>
+        </div>
+
+        // Metrics will go here
+
+        // Network will go here
+
+        // Events will go here
+
+        <div class="flex justify-center shrink-0">
+            <span class="font-dim">q to quit</span>
+        </div>
+    </div>
+}
+```
+
+And `main.go`:
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+
+    tui "github.com/grindlemire/go-tui"
+)
+
+func main() {
+    app, err := tui.NewApp(
+        tui.WithRootComponent(Dashboard()),
+    )
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    if err := app.Run(); err != nil {
+        fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+
+Generate and run to check that the skeleton renders:
+
+```bash
+tui generate ./...
+go run .
+```
+
+You should see a bordered box with "Dashboard" centered at the top and "q to quit" at the bottom. Press `q` or Escape to exit.
+
+A few things to notice about the layout:
+
+- The outer `<div>` uses `flex-col` to stack children vertically, with `h-full` to fill the terminal and `border-rounded border-cyan` for the outer frame.
+- `shrink-0` on the title and hint bar prevents them from collapsing when the terminal is small. The content sections between them will flex to fill the remaining space.
+- `justify-center` on the title and hint containers centers their text horizontally.
+
+## Adding Metrics
+
+Now add reactive state for three gauges: CPU, memory, and disk. Each is a `State[int]` representing a percentage.
+
+Update the struct and constructor:
+
+```gsx
+type dashboardApp struct {
+    cpu  *tui.State[int]
+    mem  *tui.State[int]
+    disk *tui.State[int]
+}
+
+func Dashboard() *dashboardApp {
+    return &dashboardApp{
+        cpu:  tui.NewState(45),
+        mem:  tui.NewState(62),
+        disk: tui.NewState(38),
+    }
+}
+```
+
+Add two helper functions that convert a percentage into a visual bar and a color class. These are regular Go functions, not components:
+
+```gsx
+func metricBar(value, max int) string {
+    width := 20
+    filled := value * width / max
+    bar := ""
+    for i := 0; i < width; i++ {
+        if i < filled {
+            bar += "█"
+        } else {
+            bar += "░"
+        }
+    }
+    return bar
+}
+
+func metricColor(value int) string {
+    if value >= 80 {
+        return "text-red font-bold"
+    }
+    if value >= 60 {
+        return "text-yellow"
+    }
+    return "text-green"
+}
+```
+
+`metricBar` builds a 20-character bar using filled (`█`) and empty (`░`) block characters. `metricColor` returns a class string that shifts from green to yellow to red as the value rises. Because `class` accepts Go expressions, you can return different class strings based on state.
+
+Now add the metric panels to the render method, replacing the `// Metrics will go here` comment:
+
+```gsx
+// Metric gauges
+<div class="flex gap-1 shrink-0">
+    <div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+        <span class="text-gradient-cyan-magenta font-bold">CPU</span>
+        <span class={metricColor(d.cpu.Get())}>{metricBar(d.cpu.Get(), 100)}</span>
+        <span class={metricColor(d.cpu.Get()) + " font-bold"}>{fmt.Sprintf("%d%%", d.cpu.Get())}</span>
+    </div>
+    <div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+        <span class="text-gradient-cyan-magenta font-bold">Memory</span>
+        <span class={metricColor(d.mem.Get())}>{metricBar(d.mem.Get(), 100)}</span>
+        <span class={metricColor(d.mem.Get()) + " font-bold"}>{fmt.Sprintf("%d%%", d.mem.Get())}</span>
+    </div>
+    <div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+        <span class="text-gradient-cyan-magenta font-bold">Disk</span>
+        <span class={metricColor(d.disk.Get())}>{metricBar(d.disk.Get(), 100)}</span>
+        <span class={metricColor(d.disk.Get()) + " font-bold"}>{fmt.Sprintf("%d%%", d.disk.Get())}</span>
+    </div>
+</div>
+```
+
+Each gauge is a `flex-col` container with a title, bar, and percentage label. The three panels sit side-by-side in a `flex` (horizontal) row, each with `flexGrow={1.0}` so they share the available width equally. The `border-rounded` on each panel gives them individual frames.
+
+Run `tui generate ./...` and `go run .` to see the three gauges. They display static values for now.
+
+### Animating the Metrics
+
+To make the gauges move, add a timer watcher. Import `"math/rand"` and `"time"`, then implement `WatcherProvider`:
+
+```gsx
+import (
+    "fmt"
+    "math/rand"
+    "time"
+    tui "github.com/grindlemire/go-tui"
+)
+```
+
+```go
+func (d *dashboardApp) Watchers() []tui.Watcher {
+    return []tui.Watcher{
+        tui.OnTimer(500*time.Millisecond, d.updateMetrics),
+    }
+}
+
+func (d *dashboardApp) updateMetrics() {
+    d.cpu.Set(clampVal(d.cpu.Get()+rand.Intn(11)-5, 5, 95))
+    d.mem.Set(clampVal(d.mem.Get()+rand.Intn(7)-3, 20, 90))
+    d.disk.Set(clampVal(d.disk.Get()+rand.Intn(3)-1, 20, 80))
+}
+
+func clampVal(v, min, max int) int {
+    if v < min {
+        return min
+    }
+    if v > max {
+        return max
+    }
+    return v
+}
+```
+
+`OnTimer` fires `updateMetrics` every 500 milliseconds. Each call nudges the metric values by a random amount, clamped to stay within bounds. Because `Set` marks the state as dirty, the framework re-renders automatically after each update. The `clampVal` helper keeps values from wandering out of range.
+
+Regenerate and run. The bars should shift every half second, with colors changing as values cross the 60% and 80% thresholds.
+
+## Network Sparkline
+
+The network section shows a scrolling sparkline for inbound and outbound traffic. Add state for the current rates and the sparkline data arrays:
+
+```gsx
+type dashboardApp struct {
+    cpu      *tui.State[int]
+    mem      *tui.State[int]
+    disk     *tui.State[int]
+    netIn    *tui.State[int]
+    netOut   *tui.State[int]
+    sparkIn  *tui.State[[]int]
+    sparkOut *tui.State[[]int]
+}
+
+func Dashboard() *dashboardApp {
+    return &dashboardApp{
+        cpu:      tui.NewState(45),
+        mem:      tui.NewState(62),
+        disk:     tui.NewState(38),
+        netIn:    tui.NewState(142),
+        netOut:   tui.NewState(89),
+        sparkIn:  tui.NewState([]int{3, 5, 4, 6, 7, 5, 4, 3, 5, 6, 7, 8, 6, 5, 4, 3, 5, 6, 7, 5}),
+        sparkOut: tui.NewState([]int{2, 3, 4, 3, 5, 4, 3, 2, 3, 4, 5, 6, 4, 3, 2, 3, 4, 5, 4, 3}),
+    }
+}
+```
+
+The sparkline data is a fixed-length slice of integers. Each value maps to a Unicode block character that represents the height of that data point. Add the `sparkline` helper:
+
+```gsx
+func sparkline(data []int) string {
+    blocks := []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
+    maxVal := 1
+    for _, v := range data {
+        if v > maxVal {
+            maxVal = v
+        }
+    }
+    s := ""
+    for _, v := range data {
+        idx := v * 7 / maxVal
+        if idx > 7 {
+            idx = 7
+        }
+        s += string(blocks[idx])
+    }
+    return s
+}
+```
+
+This normalizes values against the current maximum, so the sparkline always uses the full vertical range of the block characters (`▁` through `█`).
+
+Add the network panel to the render method, replacing `// Network will go here`:
+
+```gsx
+// Network Traffic
+<div class="flex-col border-rounded p-1 gap-1">
+    <span class="text-gradient-cyan-magenta font-bold">Network Traffic</span>
+    <div class="flex gap-1">
+        <span class="font-dim">In: </span>
+        <span class="text-cyan">{sparkline(d.sparkIn.Get())}</span>
+    </div>
+    <div class="flex gap-1">
+        <span class="font-dim">Out:</span>
+        <span class="text-magenta">{sparkline(d.sparkOut.Get())}</span>
+    </div>
+    <div class="flex gap-2">
+        <span class="text-cyan font-bold">{fmt.Sprintf("In: %d MB/s", d.netIn.Get())}</span>
+        <span class="text-magenta font-bold">{fmt.Sprintf("Out: %d MB/s", d.netOut.Get())}</span>
+    </div>
+</div>
+```
+
+Update `updateMetrics` to include the network values and shift the sparkline data:
+
+```go
+func (d *dashboardApp) updateMetrics() {
+    d.cpu.Set(clampVal(d.cpu.Get()+rand.Intn(11)-5, 5, 95))
+    d.mem.Set(clampVal(d.mem.Get()+rand.Intn(7)-3, 20, 90))
+    d.disk.Set(clampVal(d.disk.Get()+rand.Intn(3)-1, 20, 80))
+    d.netIn.Set(clampVal(d.netIn.Get()+rand.Intn(41)-20, 50, 300))
+    d.netOut.Set(clampVal(d.netOut.Get()+rand.Intn(31)-15, 30, 200))
+
+    // Shift sparkline data left and append new point
+    inData := d.sparkIn.Get()
+    inData = append(inData[1:], d.netIn.Get()/30)
+    d.sparkIn.Set(inData)
+
+    outData := d.sparkOut.Get()
+    outData = append(outData[1:], d.netOut.Get()/30)
+    d.sparkOut.Set(outData)
+}
+```
+
+Each tick drops the oldest data point (`inData[1:]`) and appends the latest value scaled down to the sparkline range. This creates a scrolling chart effect.
+
+## Event Feed
+
+The event feed receives messages from outside the component through a Go channel, using the `Watch` watcher to pipe goroutine-produced data into the UI.
+
+Add the channel field and event state to the struct:
+
+```gsx
+type dashboardApp struct {
+    cpu      *tui.State[int]
+    mem      *tui.State[int]
+    disk     *tui.State[int]
+    netIn    *tui.State[int]
+    netOut   *tui.State[int]
+    sparkIn  *tui.State[[]int]
+    sparkOut *tui.State[[]int]
+    events   *tui.State[[]string]
+    eventCh  <-chan string
+}
+
+func Dashboard(eventCh <-chan string) *dashboardApp {
+    return &dashboardApp{
+        cpu:      tui.NewState(45),
+        mem:      tui.NewState(62),
+        disk:     tui.NewState(38),
+        netIn:    tui.NewState(142),
+        netOut:   tui.NewState(89),
+        sparkIn:  tui.NewState([]int{3, 5, 4, 6, 7, 5, 4, 3, 5, 6, 7, 8, 6, 5, 4, 3, 5, 6, 7, 5}),
+        sparkOut: tui.NewState([]int{2, 3, 4, 3, 5, 4, 3, 2, 3, 4, 5, 6, 4, 3, 2, 3, 4, 5, 4, 3}),
+        events:   tui.NewState([]string{}),
+        eventCh:  eventCh,
+    }
+}
+```
+
+The constructor now takes an `eventCh` parameter. The channel is receive-only (`<-chan string`) inside the component -- the producer runs elsewhere.
+
+Add a `Watch` call alongside the timer in `Watchers`:
+
+```go
+func (d *dashboardApp) Watchers() []tui.Watcher {
+    return []tui.Watcher{
+        tui.OnTimer(500*time.Millisecond, d.updateMetrics),
+        tui.Watch(d.eventCh, d.addEvent),
+    }
+}
+```
+
+`Watch` receives from the channel and calls `addEvent` on the UI thread for each value. No manual synchronization needed.
+
+Add the handler that timestamps and stores events:
+
+```go
+func (d *dashboardApp) addEvent(event string) {
+    current := d.events.Get()
+    ts := time.Now().Format("15:04:05")
+    entry := fmt.Sprintf("%s  %s", ts, event)
+    current = append(current, entry)
+    if len(current) > 6 {
+        current = current[len(current)-6:]
+    }
+    d.events.Set(current)
+}
+```
+
+This keeps only the last 6 events so the list doesn't grow unbounded.
+
+Add the events panel to the render method, replacing `// Events will go here`:
+
+```gsx
+// Recent Events
+<div class="flex-col border-rounded p-1 gap-1 flex-grow">
+    <span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
+    @for _, event := range d.events.Get() {
+        <span class="text-green">{event}</span>
+    }
+    @if len(d.events.Get()) == 0 {
+        <span class="font-dim">Waiting for events...</span>
+    }
+</div>
+```
+
+The `flex-grow` class makes this section expand to fill whatever vertical space the metrics and network panels don't use. The `@for` loop renders each event, and the `@if` block shows a placeholder when the list is empty.
+
+### The Event Producer
+
+Now update `main.go` to create the channel, start a producer goroutine, and pass the channel to the component:
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+
+    tui "github.com/grindlemire/go-tui"
+)
+
+func main() {
+    eventCh := make(chan string, 100)
+
+    app, err := tui.NewApp(
+        tui.WithRootComponent(Dashboard(eventCh)),
+    )
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    go produceEvents(eventCh, app.StopCh())
+
+    if err := app.Run(); err != nil {
+        fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+
+The `produceEvents` function lives in `dashboard.gsx` alongside the component. It sends random events at 2-5 second intervals and respects the stop channel so it shuts down cleanly:
+
+```go
+func produceEvents(ch chan<- string, stopCh <-chan struct{}) {
+    defer close(ch)
+    events := []string{
+        "Deploy completed",
+        "Health check passed",
+        "New connection from 10.0.0.5",
+        "Cache invalidated",
+        "Backup complete",
+        "Certificate renewed",
+        "Config reloaded",
+        "Scale up: 3 replicas",
+        "Alert cleared: cpu",
+        "Metrics exported",
+    }
+    for {
+        delay := time.Duration(2000+rand.Intn(3000)) * time.Millisecond
+        select {
+        case <-stopCh:
+            return
+        case <-time.After(delay):
+        }
+        event := events[rand.Intn(len(events))]
+        select {
+        case <-stopCh:
+            return
+        case ch <- event:
+        }
+    }
+}
+```
+
+Two things to note about the goroutine pattern:
+
+- `app.StopCh()` returns a channel that closes when the app exits. Using it in `select` ensures the goroutine doesn't leak.
+- The buffered channel (`make(chan string, 100)`) prevents the producer from blocking if the UI falls behind.
+
+## Polish
+
+The dashboard already has gradient titles (`text-gradient-cyan-magenta`) and colored borders. A few things worth calling out:
+
+The `metricColor` function returns different class strings depending on the value -- green below 60%, yellow below 80%, red and bold above. You can use this pattern anywhere: write a function that returns a class string, and pass it to `class={}`.
+
+Each panel gets its own `border-rounded` frame for visual separation, and `gap-1` between sections plus `p-1` padding inside panels keeps everything readable.
+
+## Full Code
+
+Here's the complete `dashboard.gsx`:
+
+```gsx
+package main
+
+import (
+    "fmt"
+    "math/rand"
+    "time"
+    tui "github.com/grindlemire/go-tui"
+)
+
+type dashboardApp struct {
+    cpu      *tui.State[int]
+    mem      *tui.State[int]
+    disk     *tui.State[int]
+    netIn    *tui.State[int]
+    netOut   *tui.State[int]
+    sparkIn  *tui.State[[]int]
+    sparkOut *tui.State[[]int]
+    events   *tui.State[[]string]
+    eventCh  <-chan string
+}
+
+func Dashboard(eventCh <-chan string) *dashboardApp {
+    return &dashboardApp{
+        cpu:      tui.NewState(45),
+        mem:      tui.NewState(62),
+        disk:     tui.NewState(38),
+        netIn:    tui.NewState(142),
+        netOut:   tui.NewState(89),
+        sparkIn:  tui.NewState([]int{3, 5, 4, 6, 7, 5, 4, 3, 5, 6, 7, 8, 6, 5, 4, 3, 5, 6, 7, 5}),
+        sparkOut: tui.NewState([]int{2, 3, 4, 3, 5, 4, 3, 2, 3, 4, 5, 6, 4, 3, 2, 3, 4, 5, 4, 3}),
+        events:   tui.NewState([]string{}),
+        eventCh:  eventCh,
+    }
+}
+
+func (d *dashboardApp) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+    }
+}
+
+func (d *dashboardApp) Watchers() []tui.Watcher {
+    return []tui.Watcher{
+        tui.OnTimer(500*time.Millisecond, d.updateMetrics),
+        tui.Watch(d.eventCh, d.addEvent),
+    }
+}
+
+func (d *dashboardApp) updateMetrics() {
+    d.cpu.Set(clampVal(d.cpu.Get()+rand.Intn(11)-5, 5, 95))
+    d.mem.Set(clampVal(d.mem.Get()+rand.Intn(7)-3, 20, 90))
+    d.disk.Set(clampVal(d.disk.Get()+rand.Intn(3)-1, 20, 80))
+    d.netIn.Set(clampVal(d.netIn.Get()+rand.Intn(41)-20, 50, 300))
+    d.netOut.Set(clampVal(d.netOut.Get()+rand.Intn(31)-15, 30, 200))
+
+    inData := d.sparkIn.Get()
+    inData = append(inData[1:], d.netIn.Get()/30)
+    d.sparkIn.Set(inData)
+
+    outData := d.sparkOut.Get()
+    outData = append(outData[1:], d.netOut.Get()/30)
+    d.sparkOut.Set(outData)
+}
+
+func (d *dashboardApp) addEvent(event string) {
+    current := d.events.Get()
+    ts := time.Now().Format("15:04:05")
+    entry := fmt.Sprintf("%s  %s", ts, event)
+    current = append(current, entry)
+    if len(current) > 6 {
+        current = current[len(current)-6:]
+    }
+    d.events.Set(current)
+}
+
+func clampVal(v, min, max int) int {
+    if v < min {
+        return min
+    }
+    if v > max {
+        return max
+    }
+    return v
+}
+
+func metricBar(value, max int) string {
+    width := 20
+    filled := value * width / max
+    bar := ""
+    for i := 0; i < width; i++ {
+        if i < filled {
+            bar += "█"
+        } else {
+            bar += "░"
+        }
+    }
+    return bar
+}
+
+func metricColor(value int) string {
+    if value >= 80 {
+        return "text-red font-bold"
+    }
+    if value >= 60 {
+        return "text-yellow"
+    }
+    return "text-green"
+}
+
+func sparkline(data []int) string {
+    blocks := []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
+    maxVal := 1
+    for _, v := range data {
+        if v > maxVal {
+            maxVal = v
+        }
+    }
+    s := ""
+    for _, v := range data {
+        idx := v * 7 / maxVal
+        if idx > 7 {
+            idx = 7
+        }
+        s += string(blocks[idx])
+    }
+    return s
+}
+
+func produceEvents(ch chan<- string, stopCh <-chan struct{}) {
+    defer close(ch)
+    events := []string{
+        "Deploy completed",
+        "Health check passed",
+        "New connection from 10.0.0.5",
+        "Cache invalidated",
+        "Backup complete",
+        "Certificate renewed",
+        "Config reloaded",
+        "Scale up: 3 replicas",
+        "Alert cleared: cpu",
+        "Metrics exported",
+    }
+    for {
+        delay := time.Duration(2000+rand.Intn(3000)) * time.Millisecond
+        select {
+        case <-stopCh:
+            return
+        case <-time.After(delay):
+        }
+        event := events[rand.Intn(len(events))]
+        select {
+        case <-stopCh:
+            return
+        case ch <- event:
+        }
+    }
+}
+
+templ (d *dashboardApp) Render() {
+    <div class="flex-col p-1 gap-1 h-full border-rounded border-cyan">
+        <div class="flex justify-center shrink-0">
+            <span class="text-gradient-cyan-magenta font-bold">Dashboard</span>
+        </div>
+
+        // Metric gauges
+        <div class="flex gap-1 shrink-0">
+            <div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+                <span class="text-gradient-cyan-magenta font-bold">CPU</span>
+                <span class={metricColor(d.cpu.Get())}>{metricBar(d.cpu.Get(), 100)}</span>
+                <span class={metricColor(d.cpu.Get()) + " font-bold"}>{fmt.Sprintf("%d%%", d.cpu.Get())}</span>
+            </div>
+            <div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+                <span class="text-gradient-cyan-magenta font-bold">Memory</span>
+                <span class={metricColor(d.mem.Get())}>{metricBar(d.mem.Get(), 100)}</span>
+                <span class={metricColor(d.mem.Get()) + " font-bold"}>{fmt.Sprintf("%d%%", d.mem.Get())}</span>
+            </div>
+            <div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+                <span class="text-gradient-cyan-magenta font-bold">Disk</span>
+                <span class={metricColor(d.disk.Get())}>{metricBar(d.disk.Get(), 100)}</span>
+                <span class={metricColor(d.disk.Get()) + " font-bold"}>{fmt.Sprintf("%d%%", d.disk.Get())}</span>
+            </div>
+        </div>
+
+        // Network Traffic
+        <div class="flex-col border-rounded p-1 gap-1">
+            <span class="text-gradient-cyan-magenta font-bold">Network Traffic</span>
+            <div class="flex gap-1">
+                <span class="font-dim">In: </span>
+                <span class="text-cyan">{sparkline(d.sparkIn.Get())}</span>
+            </div>
+            <div class="flex gap-1">
+                <span class="font-dim">Out:</span>
+                <span class="text-magenta">{sparkline(d.sparkOut.Get())}</span>
+            </div>
+            <div class="flex gap-2">
+                <span class="text-cyan font-bold">{fmt.Sprintf("In: %d MB/s", d.netIn.Get())}</span>
+                <span class="text-magenta font-bold">{fmt.Sprintf("Out: %d MB/s", d.netOut.Get())}</span>
+            </div>
+        </div>
+
+        // Recent Events
+        <div class="flex-col border-rounded p-1 gap-1 flex-grow">
+            <span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
+            @for _, event := range d.events.Get() {
+                <span class="text-green">{event}</span>
+            }
+            @if len(d.events.Get()) == 0 {
+                <span class="font-dim">Waiting for events...</span>
+            }
+        </div>
+
+        <div class="flex justify-center shrink-0">
+            <span class="font-dim">q to quit</span>
+        </div>
+    </div>
+}
+```
+
+And the complete `main.go`:
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+
+    tui "github.com/grindlemire/go-tui"
+)
+
+func main() {
+    eventCh := make(chan string, 100)
+
+    app, err := tui.NewApp(
+        tui.WithRootComponent(Dashboard(eventCh)),
+    )
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    go produceEvents(eventCh, app.StopCh())
+
+    if err := app.Run(); err != nil {
+        fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+
+Generate and run:
+
+```bash
+tui generate ./...
+go run .
+```
+
+## Next Steps
+
+That covers it. Here are some ways you could extend the dashboard:
+
+- Add mouse support with `tui.WithMouse()` and clickable panels that expand when clicked ([Events Guide](07-events.md))
+- Make the event feed scrollable for longer histories ([Scrolling Guide](08-scrolling.md))
+- Add focus navigation between panels with Tab/Shift-Tab ([Focus Guide](13-focus.md))
+- Split the dashboard into multiple `.gsx` files with separate components for each panel ([Multi-Component Guide](11-multi-component.md))
+- Add an alternate screen settings overlay ([Inline Mode Guide](12-inline-mode.md))
+
+For full API details on any type used in this guide:
+
+- [App Reference](../reference/app.md) -- App creation and lifecycle
+- [State Reference](../reference/state.md) -- Reactive state and event bus
+- [Events Reference](../reference/events.md) -- Key and mouse event types
+- [Watchers Reference](../reference/watchers.md) -- Timer and channel watchers
+- [Styling Reference](../reference/styling.md) -- Colors, gradients, and text styles

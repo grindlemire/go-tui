@@ -7,7 +7,7 @@ import (
 
 func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		updateQueue: make(chan func(), 256),
@@ -34,7 +34,7 @@ func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
 
 func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		updateQueue: make(chan func(), 256),
@@ -79,7 +79,7 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 
 func TestApp_QueueUpdate_DropsOldestWhenFull(t *testing.T) {
 	app := &App{
-		focus:       NewFocusManager(),
+		focus:       newFocusManager(),
 		buffer:      NewBuffer(80, 24),
 		eventQueue:  make(chan func(), 4),
 		updateQueue: make(chan func(), 1),
@@ -104,7 +104,7 @@ func TestApp_QueueUpdate_DropsOldestWhenFull(t *testing.T) {
 
 func TestApp_SetGlobalKeyHandler(t *testing.T) {
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
@@ -139,7 +139,7 @@ func TestApp_GlobalKeyHandler_ConsumesEvent(t *testing.T) {
 	focusable.handled = false
 
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		reader:     mockReader,
 		eventQueue: make(chan func(), 256),
@@ -181,7 +181,7 @@ func TestApp_GlobalKeyHandler_PassesEvent(t *testing.T) {
 	focusable.handled = true
 
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
@@ -232,7 +232,7 @@ func TestApp_EventBatching(t *testing.T) {
 	}
 
 	app := &App{
-		focus:      NewFocusManager(),
+		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		reader:     mockReader,
 		root:       mockRend,

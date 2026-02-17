@@ -48,7 +48,7 @@ func TestIntegration_MockReaderToFocusManager(t *testing.T) {
 			elemB.handled = true
 
 			// Create FocusManager with elements
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			fm.Register(elemA)
 			fm.Register(elemB)
 
@@ -128,7 +128,7 @@ func TestIntegration_ResizeEventUpdatesBuffer(t *testing.T) {
 			buffer := NewBuffer(tt.initialWidth, tt.initialHeight)
 			app := &App{
 				buffer: buffer,
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 			}
 
 			// Create resize event
@@ -160,7 +160,7 @@ func TestIntegration_EventDispatchToMultipleFocusables(t *testing.T) {
 	elem3 := newMockFocusable("elem3", true)
 	elem3.handled = true
 
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(elem1)
 	fm.Register(elem2)
 	fm.Register(elem3)
@@ -218,7 +218,7 @@ func TestIntegration_FocusCycleWithNonFocusable(t *testing.T) {
 	elem4 := newMockFocusable("elem4", false) // Not focusable
 	elem5 := newMockFocusable("elem5", true)
 
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(elem1)
 	fm.Register(elem2)
 	fm.Register(elem3)
@@ -262,7 +262,7 @@ func TestIntegration_EventReaderWithFocusManager(t *testing.T) {
 	reader := NewMockEventReader(events...)
 	elem := newMockFocusable("input", true)
 	elem.handled = true
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(elem)
 
 	// Process all events
@@ -294,7 +294,7 @@ func TestIntegration_UnhandledEventPropagation(t *testing.T) {
 	elem := newMockFocusable("elem", true)
 	elem.handled = false // Element doesn't handle events
 
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(elem)
 
 	event := KeyEvent{Key: KeyEnter}

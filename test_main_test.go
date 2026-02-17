@@ -14,7 +14,7 @@ func TestMain(m *testing.M) {
 		stopCh:      make(chan struct{}),
 		eventQueue:  make(chan func(), 1),
 		updateQueue: make(chan func(), 1),
-		focus:       NewFocusManager(),
+		focus:       newFocusManager(),
 		mounts:      newMountState(),
 		batch:       newBatchContext(),
 	}

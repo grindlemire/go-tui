@@ -76,6 +76,10 @@ func rangeLabel(count int) string {
 }
 
 func (s *stateApp) Render(app *tui.App) *tui.Element {
+	spanCount := tui.New(
+		tui.WithText(fmt.Sprintf("%d", s.count.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+	)
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
@@ -111,158 +115,154 @@ func (s *stateApp) Render(app *tui.App) *tui.Element {
 		tui.WithHeight(1),
 	)
 	__tui_3.AddChild(__tui_5)
+	__tui_3.AddChild(spanCount)
 	__tui_6 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", s.count.Get())),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-	)
-	__tui_3.AddChild(__tui_6)
-	__tui_7 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_8 := tui.New(
+	__tui_7 := tui.New(
 		tui.WithText("+"),
 		tui.WithPaddingTRBL(0, 1, 0, 1),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_7.AddChild(__tui_8)
-	__tui_9 := tui.New(
+	__tui_6.AddChild(__tui_7)
+	__tui_8 := tui.New(
 		tui.WithText("-"),
 		tui.WithPaddingTRBL(0, 1, 0, 1),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_7.AddChild(__tui_9)
-	__tui_10 := tui.New(
+	__tui_6.AddChild(__tui_8)
+	__tui_9 := tui.New(
 		tui.WithText("r"),
 		tui.WithPaddingTRBL(0, 1, 0, 1),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_7.AddChild(__tui_10)
-	__tui_3.AddChild(__tui_7)
+	__tui_6.AddChild(__tui_9)
+	__tui_3.AddChild(__tui_6)
 	__tui_2.AddChild(__tui_3)
-	__tui_11 := tui.New(
+	__tui_10 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 		tui.WithFlexGrow(2.0),
 	)
-	__tui_12 := tui.New(
+	__tui_11 := tui.New(
 		tui.WithText("Status"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_11.AddChild(__tui_12)
-	__tui_13 := tui.New(
+	__tui_10.AddChild(__tui_11)
+	__tui_12 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_14 := tui.New(
+	__tui_13 := tui.New(
 		tui.WithText("Sign:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_13.AddChild(__tui_14)
+	__tui_12.AddChild(__tui_13)
 	if s.count.Get() > 0 {
-		__tui_15 := tui.New(
+		__tui_14 := tui.New(
 			tui.WithText("Positive"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
-		__tui_13.AddChild(__tui_15)
+		__tui_12.AddChild(__tui_14)
 	} else if s.count.Get() < 0 {
-		__tui_16 := tui.New(
+		__tui_15 := tui.New(
 			tui.WithText("Negative"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
-		__tui_13.AddChild(__tui_16)
+		__tui_12.AddChild(__tui_15)
 	} else {
-		__tui_17 := tui.New(
+		__tui_16 := tui.New(
 			tui.WithText("Zero"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 		)
-		__tui_13.AddChild(__tui_17)
+		__tui_12.AddChild(__tui_16)
 	}
-	__tui_11.AddChild(__tui_13)
-	__tui_18 := tui.New(
+	__tui_10.AddChild(__tui_12)
+	__tui_17 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_19 := tui.New(
+	__tui_18 := tui.New(
 		tui.WithText("Parity:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_18.AddChild(__tui_19)
+	__tui_17.AddChild(__tui_18)
 	if isEven(s.count.Get()) {
-		__tui_20 := tui.New(
+		__tui_19 := tui.New(
 			tui.WithText("Even"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		)
-		__tui_18.AddChild(__tui_20)
+		__tui_17.AddChild(__tui_19)
 	} else {
-		__tui_21 := tui.New(
+		__tui_20 := tui.New(
 			tui.WithText("Odd"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta)),
 		)
-		__tui_18.AddChild(__tui_21)
+		__tui_17.AddChild(__tui_20)
 	}
-	__tui_11.AddChild(__tui_18)
-	__tui_22 := tui.New(
+	__tui_10.AddChild(__tui_17)
+	__tui_21 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_23 := tui.New(
+	__tui_22 := tui.New(
 		tui.WithText("Range:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_22.AddChild(__tui_23)
-	__tui_24 := tui.New(
+	__tui_21.AddChild(__tui_22)
+	__tui_23 := tui.New(
 		tui.WithText(rangeLabel(s.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 	)
-	__tui_22.AddChild(__tui_24)
-	__tui_11.AddChild(__tui_22)
-	__tui_2.AddChild(__tui_11)
+	__tui_21.AddChild(__tui_23)
+	__tui_10.AddChild(__tui_21)
+	__tui_2.AddChild(__tui_10)
 	__tui_0.AddChild(__tui_2)
-	__tui_25 := tui.New(
+	__tui_24 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
-	__tui_26 := tui.New(
+	__tui_25 := tui.New(
 		tui.WithText("Items"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_25.AddChild(__tui_26)
+	__tui_24.AddChild(__tui_25)
 	for i, item := range s.items {
 		_ = i
 		if i == s.selected.Get() {
-			__tui_27 := tui.New(
+			__tui_26 := tui.New(
 				tui.WithText(fmt.Sprintf("  > %s", item)),
 				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 				tui.WithTextStyle(tui.NewStyle().Bold()),
 			)
-			__tui_25.AddChild(__tui_27)
+			__tui_24.AddChild(__tui_26)
 		} else {
-			__tui_28 := tui.New(
+			__tui_27 := tui.New(
 				tui.WithText(fmt.Sprintf("    %s", item)),
 				tui.WithTextStyle(tui.NewStyle().Dim()),
 			)
-			__tui_25.AddChild(__tui_28)
+			__tui_24.AddChild(__tui_27)
 		}
 	}
-	__tui_0.AddChild(__tui_25)
-	__tui_29 := tui.New(
+	__tui_0.AddChild(__tui_24)
+	__tui_28 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_30 := tui.New(
+	__tui_29 := tui.New(
 		tui.WithText("+/-count|j/k navigate|r reset|q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_29.AddChild(__tui_30)
-	__tui_0.AddChild(__tui_29)
+	__tui_28.AddChild(__tui_29)
+	__tui_0.AddChild(__tui_28)
 
 	return __tui_0
 }

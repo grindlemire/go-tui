@@ -33,8 +33,8 @@ function GlobalStyles() {
         height: 6px;
       }
       @keyframes scanDrift {
-        from { background-position: 0 0; }
-        to { background-position: 0 80px; }
+        from { transform: translateY(0); }
+        to { transform: translateY(-80px); }
       }
 
       .custom-scroll::-webkit-scrollbar-track {
@@ -128,8 +128,11 @@ function PageBackground({ theme }: { theme: Theme }) {
       <div
         className="absolute inset-0"
         style={{
+          top: "-80px",
+          bottom: "0",
           backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(${lineRgb},${lineAlpha}) 3px, rgba(${lineRgb},${lineAlpha}) 4px)`,
           animation: "scanDrift 12s linear infinite",
+          willChange: "transform",
         }}
       />
       {/* Warm radial glow */}
@@ -258,14 +261,14 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden sm:flex items-center gap-1">
+        <div className="hidden sm:flex items-center">
           {links.map((link) => {
             const active = isActive(link.to);
             return (
               <Link
                 key={link.to}
                 to={link.to}
-                className="font-['Fira_Code',monospace] text-xs px-3 py-1.5 rounded transition-all duration-200"
+                className="font-['Fira_Code',monospace] text-xs px-1.5 py-1.5 rounded transition-all duration-200"
                 style={{
                   color: active ? t.accent : t.textMuted,
                   background: active
@@ -1397,24 +1400,17 @@ function ComparisonSection() {
         Go TUI libraries
       </h2>
       <p
-        className="text-[14px] sm:text-[15px] mb-3 max-w-[640px]"
+        className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[640px]"
         style={{ color: t.textMuted }}
       >
-        Each library makes different trade-offs. tcell is excluded because it is a
-        low-level terminal abstraction (used internally by tview and gocui), not a
-        UI framework.
-      </p>
-      <p
-        className="text-[13px] mb-2 max-w-[640px]"
-        style={{ color: t.textDim }}
-      >
-        go-tui is pure Go with zero CGO. tview and gocui depend on tcell, which can optionally use CGO.
-      </p>
-      <p
-        className="text-[11px] mb-8 sm:mb-10 max-w-[640px] font-['Fira_Code',monospace]"
-        style={{ color: t.textDim, opacity: 0.6 }}
-      >
-        Click any row to expand details
+        Different trade-offs, side by side.
+        Pure Go, zero CGO.{" "}
+        <span
+          className="font-['Fira_Code',monospace] text-[11px]"
+          style={{ color: t.textDim }}
+        >
+          Click a row to expand.
+        </span>
       </p>
 
       {/* Desktop table */}
@@ -1761,6 +1757,28 @@ function HomePage() {
                 v0.1.0
               </a>
               <span style={{ color: t.textDim }}>·</span>
+              <Link
+                to="/guide"
+                className="transition-colors duration-200"
+                style={{ color: t.textDim }}
+                title="Guides"
+                onMouseEnter={(e) => { e.currentTarget.style.color = t.secondary; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
+              >
+                guide
+              </Link>
+              <span style={{ color: t.textDim }}>·</span>
+              <Link
+                to="/reference"
+                className="transition-colors duration-200"
+                style={{ color: t.textDim }}
+                title="Reference"
+                onMouseEnter={(e) => { e.currentTarget.style.color = t.secondary; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
+              >
+                reference
+              </Link>
+              <span style={{ color: t.textDim }}>·</span>
               <a
                 href="https://github.com/grindlemire/go-tui"
                 target="_blank"
@@ -1805,9 +1823,10 @@ function HomePage() {
             >
               {/* Terminal body */}
               <div
-                className="flex-1 overflow-auto font-['Fira_Code',monospace] text-[13px] leading-[1.6]"
-                style={{ padding: "24px 32px" }}
+                className="flex-1 flex flex-col justify-center overflow-auto font-['Fira_Code',monospace] text-[13px] leading-[1.6]"
+                style={{ padding: "24px 32px 24px clamp(32px, 12vw, 200px)" }}
               >
+              <div className="w-full max-w-[720px]">
                 {/* Prompt line */}
                 <div className="tl mb-4 text-[13px]" style={{ animationDelay: "10ms" }}>
                   <span style={{ color: t.secondary }}>$</span>{" "}
@@ -1922,12 +1941,12 @@ function HomePage() {
                   </div>
                 </div>
 
-                {/* Man page sections */}
+                {/* Man page sections — tight and punchy */}
                 <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "145ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>NAME</div>
                   <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
                     <span className="font-semibold" style={{ color: t.heading }}>go-tui</span>
-                    {" "}&mdash; reactive terminal UI framework for{" "}
+                    {" "}&mdash; declarative terminal UIs in{" "}
                     <span
                       className="inline-block text-[10px] px-2 py-[2px] rounded-[3px] font-bold"
                       style={{
@@ -1949,38 +1968,13 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "190ms" }}>
-                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>DESCRIPTION</div>
-                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
-                    <span style={{ color: t.secondary }}>.gsx files</span> mix Go and HTML-like templates in one place,
-                    then compile to <span style={{ color: t.tertiary }}>type-safe Go</span>.{" "} Use{" "}
-                    <span style={{ color: t.accent }}>Flexbox layout</span>,{" "}
-                    <span style={{ color: theme === "dark" ? "#ae81ff" : "#7c5cb8" }}>reactive state</span>,
-                    and composable components.
-                  </div>
-                </div>
-
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "215ms" }}>
-                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>FEATURES</div>
-                  <div className="pl-5 mt-1 leading-[1.7] grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-[2px] max-w-[560px]" style={{ color: t.textMuted }}>
-                    <span>&bull; .gsx &rarr; Go compiler</span>
-                    <span>&bull; Flexbox layout engine</span>
-                    <span>&bull; Reactive State[T]</span>
-                    <span>&bull; Component system</span>
-                    <span>&bull; LSP + tree-sitter</span>
-                    <span>&bull; Double-buffered render</span>
-                    <span>&bull; Mouse + keyboard</span>
-                    <span>&bull; Inline &amp; fullscreen</span>
-                  </div>
-                </div>
-
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "235ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "200ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SEE ALSO</div>
                   <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
                     {[
-                      { label: "tui-getting-started(7)", href: "/guide", external: false },
-                      { label: "tui-api(3)", href: "/reference", external: false },
-                      { label: "tui-examples(7)", href: "https://github.com/grindlemire/go-tui/tree/main/examples", external: true },
+                      { label: "guide(7)", href: "/guide", external: false },
+                      { label: "reference(3)", href: "/reference", external: false },
+                      { label: "examples(7)", href: "https://github.com/grindlemire/go-tui/tree/main/examples", external: true },
                       { label: "github(1)", href: "https://github.com/grindlemire/go-tui", external: true },
                     ].map((link, i, arr) => (
                       <span key={link.label}>
@@ -2023,17 +2017,10 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "260ms" }}>
-                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>AUTHORS</div>
-                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textDim }}>
-                    grindlemire &lt;github.com/grindlemire/go-tui&gt;
-                  </div>
-                </div>
-
                 {/* Interactive prompt — desktop only */}
                 <div
-                  className="tl hidden sm:flex items-center mt-6 text-[13px] cursor-text"
-                  style={{ animationDelay: "280ms" }}
+                  className="tl hidden sm:flex items-center mt-8 text-[13px] cursor-text"
+                  style={{ animationDelay: "230ms" }}
                   onClick={() => promptRef.current?.focus()}
                 >
                   <span style={{ color: t.secondary }}>$</span>
@@ -2071,6 +2058,7 @@ function HomePage() {
                 </div>
 
               </div>
+              </div>
             </div>
 
             {/* Scroll indicator */}
@@ -2095,23 +2083,31 @@ function HomePage() {
               className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
               style={{ color: t.accentDim }}
             >
-              how it works
+              what is it
             </div>
             <h2
               className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
               style={{ color: t.heading }}
             >
-              Anatomy of a component
+              Go meets declarative templates
             </h2>
             <p
               className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
               style={{ color: t.textMuted }}
             >
-              Components are Go structs. You define state and key bindings as
-              methods, then write the UI in
-              a <code style={{ color: t.accent }}>templ</code> block. The
-              compiler turns the .gsx file into plain Go. Click a feature or
-              hover an annotation to explore the example below.
+              Inspired by{" "}
+              <a
+                href="https://templ.guide"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: t.accent, textDecoration: "underline", textUnderlineOffset: "3px" }}
+              >
+                templ
+              </a>
+              , but built for the terminal with reactive state management.
+              Define state and event handlers as Go methods, write the UI in
+              a <code style={{ color: t.accent }}>.gsx</code> template.
+              The compiler does the rest.
             </p>
             <CodeShowcase />
           </section>
@@ -2146,7 +2142,7 @@ function HomePage() {
               className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
               style={{ color: t.textMuted }}
             >
-              .gsx files ship with a full language server, tree-sitter grammar, and built-in formatter.
+              LSP, tree-sitter grammar, and formatter included.
               Real IDE features, not just syntax coloring.
             </p>
 
@@ -2161,11 +2157,11 @@ function HomePage() {
               {/* Capabilities list — stretches to match editor height */}
               <div className="flex flex-col justify-between">
                 {([
-                  { title: "Syntax highlighting", description: "Tree-sitter grammar for accurate tokenization. Keywords, elements, Go expressions, and Tailwind classes all get distinct coloring.", color: t.accent, editorIdx: 0 },
-                  { title: "Intelligent completions", description: "The LSP resolves your project's components and suggests them with type signatures as you type.", color: t.secondary, editorIdx: 1 },
-                  { title: "Inline diagnostics", description: "Undefined components, invalid attributes, and type mismatches surface in your editor before you compile.", color: t.tertiary, editorIdx: 2 },
-                  { title: "Go-to-definition", description: "Jump from a component call to its definition across .gsx files and into Go code via the gopls proxy.", color: theme === "dark" ? "#e6db74" : "#998a00", editorIdx: 3 },
-                  { title: "Auto-formatting", description: "Consistent indentation, attribute alignment, and import management. Run on save or via the CLI.", color: theme === "dark" ? "#ae81ff" : "#7c5cb8", editorIdx: 4 },
+                  { title: "Syntax highlighting", description: "Tree-sitter grammar with distinct tokens for keywords, elements, Go, and Tailwind classes.", color: t.accent, editorIdx: 0 },
+                  { title: "Intelligent completions", description: "Component suggestions with type signatures as you type.", color: t.secondary, editorIdx: 1 },
+                  { title: "Inline diagnostics", description: "Errors surface in your editor before you compile.", color: t.tertiary, editorIdx: 2 },
+                  { title: "Go-to-definition", description: "Jump to definitions across .gsx and Go files.", color: theme === "dark" ? "#e6db74" : "#998a00", editorIdx: 3 },
+                  { title: "Auto-formatting", description: "Indentation, alignment, and imports. On save or via CLI.", color: theme === "dark" ? "#ae81ff" : "#7c5cb8", editorIdx: 4 },
                 ] as const).map((cap, i) => (
                   <DxCapability
                     key={cap.title}
@@ -2212,8 +2208,7 @@ function HomePage() {
               className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[560px]"
               style={{ color: t.textMuted }}
             >
-              Utility classes for layout, borders, colors, and text. Each one
-              compiles to a Go option.
+              Utility classes that compile to Go options.
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
@@ -2509,6 +2504,20 @@ function GuidePage() {
               onSelect={(i) => navigate(`/guide/${pages[i].slug}`)}
             />
 
+            <div className="flex justify-end mb-3">
+              <Link
+                to={`/guide/${pages[activeSection].slug}/raw`}
+                className="font-['Fira_Code',monospace] text-[11px] flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors duration-200"
+                style={{ color: t.textDim, textDecoration: "none" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = t.accent; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
+                title="View raw markdown (for AI consumption)"
+              >
+                <span style={{ fontSize: "13px" }}>{ "\u2913" }</span>
+                raw markdown
+              </Link>
+            </div>
+
             <div className="fade-in" key={slug}>
               <Markdown content={pages[activeSection].body} />
             </div>
@@ -2525,6 +2534,35 @@ function GuidePage() {
         </div>
       </div>
     </Page>
+  );
+}
+
+/* ─── Raw Guide Page (plain markdown for AI consumption) ─── */
+
+function RawGuidePage() {
+  const { slug } = useParams();
+  const pages = loadGuide();
+  const page = pages.find((p) => p.slug === slug);
+
+  if (!page) return <pre>Guide not found.</pre>;
+
+  return (
+    <pre
+      style={{
+        margin: 0,
+        padding: "1rem",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+        fontFamily: "'Fira Code', monospace",
+        fontSize: "13px",
+        lineHeight: 1.6,
+        background: "#1a1a2e",
+        color: "#e0e0e0",
+        minHeight: "100vh",
+      }}
+    >
+      {page.body}
+    </pre>
   );
 }
 
@@ -2667,6 +2705,7 @@ export default function Design2() {
         <Route path="/" element={<HomePage />} />
         <Route path="/guide" element={<GuideRedirect />} />
         <Route path="/guide/:slug" element={<GuidePage />} />
+        <Route path="/guide/:slug/raw" element={<RawGuidePage />} />
         <Route path="/reference" element={<ReferenceRedirect />} />
         <Route path="/reference/:slug" element={<ReferencePage />} />
       </Routes>

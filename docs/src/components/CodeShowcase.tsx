@@ -1343,6 +1343,7 @@ export default function CodeShowcase() {
                 minWidth: 0,
               }}
             >
+              <div style={{ minWidth: "fit-content" }}>
               {activeLines.map((line, i) => {
                 const ln = i + 1;
                 const isHL =
@@ -1388,6 +1389,7 @@ export default function CodeShowcase() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>}
 

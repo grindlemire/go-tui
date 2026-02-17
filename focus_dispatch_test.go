@@ -44,7 +44,7 @@ func TestFocusManager_Unregister(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
 			toUnregister := tt.elements[tt.unregisterIndex]
@@ -71,7 +71,7 @@ func TestFocusManager_Unregister(t *testing.T) {
 
 func TestFocusManager_UnregisterLast(t *testing.T) {
 	a := newMockFocusable("a", true)
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(a)
 
 	fm.Unregister(a)
@@ -103,7 +103,7 @@ func TestFocusManager_Dispatch(t *testing.T) {
 			mock := newMockFocusable("a", true)
 			mock.handled = tt.handled
 
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			fm.Register(mock)
 
 			event := KeyEvent{Key: KeyEnter}
@@ -125,7 +125,7 @@ func TestFocusManager_Dispatch(t *testing.T) {
 }
 
 func TestFocusManager_DispatchNoFocusedElement(t *testing.T) {
-	fm := NewFocusManager() // Empty manager
+	fm := newFocusManager() // Empty manager
 
 	result := fm.Dispatch(KeyEvent{Key: KeyEnter})
 
@@ -138,7 +138,7 @@ func TestFocusManager_BlurOnFocusChange(t *testing.T) {
 	a := newMockFocusable("a", true)
 	b := newMockFocusable("b", true)
 
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(a)
 	fm.Register(b)
 
@@ -166,7 +166,7 @@ func TestFocusManager_SkipsNonFocusableInCycle(t *testing.T) {
 	b := newMockFocusable("b", false) // Not focusable
 	c := newMockFocusable("c", true)
 
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(a)
 	fm.Register(b)
 	fm.Register(c)
@@ -193,7 +193,7 @@ func TestFocusManager_SkipsNonFocusableInCycle(t *testing.T) {
 }
 
 func TestFocusManager_EmptyNext(t *testing.T) {
-	fm := NewFocusManager()
+	fm := newFocusManager()
 
 	// Should not panic
 	fm.Next()
@@ -204,7 +204,7 @@ func TestFocusManager_EmptyNext(t *testing.T) {
 }
 
 func TestFocusManager_EmptyPrev(t *testing.T) {
-	fm := NewFocusManager()
+	fm := newFocusManager()
 
 	// Should not panic
 	fm.Prev()

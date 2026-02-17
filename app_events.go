@@ -50,7 +50,7 @@ func (a *App) Dispatch(event Event) bool {
 		return a.focus.Dispatch(ke)
 	}
 
-	// Delegate to FocusManager for other events
+	// Delegate to focusManager for other events
 	return a.focus.Dispatch(event)
 }
 
@@ -105,7 +105,7 @@ func (a *App) readInputEvents() {
 					// Event was not stopped - continue to App.Dispatch for element handlers
 					// This allows onEvent handlers to see key events for inspection/logging
 				} else {
-					// Legacy path: global key handler runs before FocusManager dispatch.
+					// Legacy path: global key handler runs before focusManager dispatch.
 					if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
 						return // Event consumed by global handler
 					}

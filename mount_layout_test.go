@@ -179,7 +179,7 @@ func TestMount_FullAppRenderPipeline(t *testing.T) {
 	app := &App{
 		terminal:       mockTerm,
 		buffer:         NewBuffer(80, 24),
-		focus:          NewFocusManager(),
+		focus:          newFocusManager(),
 		stopCh:         make(chan struct{}),
 		stopped:        false,
 		eventQueue:     make(chan func(), 256),
@@ -284,7 +284,7 @@ func TestMount_ExactGeneratedCodePattern(t *testing.T) {
 	app := &App{
 		terminal:        mockTerm,
 		buffer:          NewBuffer(120, 50),
-		focus:           NewFocusManager(),
+		focus:           newFocusManager(),
 		stopCh:          make(chan struct{}),
 		stopped:         false,
 		eventQueue:      make(chan func(), 256),

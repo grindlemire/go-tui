@@ -366,10 +366,10 @@ func TestWalkComponents_FindsComponents(t *testing.T) {
 		t.Fatalf("walkComponents found %d components, want 2", len(found))
 	}
 	if found[0] != comp1 {
-		t.Error("first component should be comp1 (DFS order)")
+		t.Error("first component should be comp1 (BFS order)")
 	}
 	if found[1] != comp2 {
-		t.Error("second component should be comp2 (DFS order)")
+		t.Error("second component should be comp2 (BFS order)")
 	}
 }
 

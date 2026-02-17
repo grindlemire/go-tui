@@ -29,7 +29,7 @@ func TestApp_PollEventWithMockReader(t *testing.T) {
 
 			app := &App{
 				reader: mockReader,
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 				buffer: NewBuffer(80, 24),
 			}
 
@@ -63,7 +63,7 @@ func TestApp_MultipleEventsFromMockReader(t *testing.T) {
 
 	app := &App{
 		reader: mockReader,
-		focus:  NewFocusManager(),
+		focus:  newFocusManager(),
 		buffer: NewBuffer(80, 24),
 	}
 
@@ -96,7 +96,7 @@ func TestApp_BufferReturnsBuffer(t *testing.T) {
 	buffer := NewBuffer(80, 24)
 	app := &App{
 		buffer: buffer,
-		focus:  NewFocusManager(),
+		focus:  newFocusManager(),
 	}
 
 	if app.Buffer() != buffer {
@@ -106,7 +106,7 @@ func TestApp_BufferReturnsBuffer(t *testing.T) {
 
 func TestApp_FocusNext(t *testing.T) {
 	app := &App{
-		focus:  NewFocusManager(),
+		focus:  newFocusManager(),
 		buffer: NewBuffer(80, 24),
 	}
 
@@ -130,7 +130,7 @@ func TestApp_FocusNext(t *testing.T) {
 
 func TestApp_FocusPrev(t *testing.T) {
 	app := &App{
-		focus:  NewFocusManager(),
+		focus:  newFocusManager(),
 		buffer: NewBuffer(80, 24),
 	}
 
@@ -154,7 +154,7 @@ func TestApp_FocusPrev(t *testing.T) {
 
 func TestApp_Focused(t *testing.T) {
 	app := &App{
-		focus:  NewFocusManager(),
+		focus:  newFocusManager(),
 		buffer: NewBuffer(80, 24),
 	}
 
@@ -234,7 +234,7 @@ func TestApp_SetRoot_AutoRegistration(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			app := &App{
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 				buffer: NewBuffer(80, 24),
 			}
 
@@ -263,7 +263,7 @@ func TestApp_SetRoot_AutoRegistration(t *testing.T) {
 
 func TestApp_SetRoot_OnFocusableAddedCallback(t *testing.T) {
 	app := &App{
-		focus:  NewFocusManager(),
+		focus:  newFocusManager(),
 		buffer: NewBuffer(80, 24),
 	}
 
