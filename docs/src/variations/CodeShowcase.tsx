@@ -94,7 +94,7 @@ templ (c *counterApp) Render() {
 \t\t\t}
 \t\t</div>
 \t\t<div class="flex gap-1 justify-center">
-\t\t\t<span class="font-dim">+/- count \u00b7 r reset \u00b7 q quit</span>
+\t\t\t<span class="font-dim">+/- count \u00b7 0 reset \u00b7 </span>
 \t\t</div>
 \t</div>
 }`;
@@ -131,6 +131,7 @@ interface FileDef {
 const files: FileDef[] = [
   { name: "counter.gsx", code: gsxCode, language: "gsx" },
   { name: "main.go", code: mainGoCode, language: "go" },
+  { name: "Terminal", code: "", language: "terminal" },
 ];
 
 /* ─── Tutorial Steps ─── */
@@ -235,9 +236,13 @@ export default function CodeShowcase() {
   const [isWide, setIsWide] = useState(
     typeof window !== "undefined" ? window.innerWidth > 920 : true,
   );
+  const [termCount, setTermCount] = useState(0);
+  const [termElapsed, setTermElapsed] = useState(0);
   const wideScrollRef = useRef<HTMLDivElement>(null);
   const codeScrollRef = useRef<HTMLDivElement>(null);
   const gutterScrollRef = useRef<HTMLDivElement>(null);
+
+  const isTerminal = activeFile === 2;
 
   useEffect(() => {
     getHighlighter().then(() => setReady(true));
@@ -254,6 +259,41 @@ export default function CodeShowcase() {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
+  /* Terminal interactivity: timer */
+  useEffect(() => {
+    if (!isTerminal) {
+      setTermElapsed(0);
+      setTermCount(0);
+      return;
+    }
+    const interval = setInterval(() => setTermElapsed((e) => e + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isTerminal]);
+
+  /* Terminal interactivity: keyboard */
+  useEffect(() => {
+    if (!isTerminal) return;
+    const handler = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
+        return;
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        setTermCount((c) => c + 1);
+      } else if (e.key === "-") {
+        e.preventDefault();
+        setTermCount((c) => c - 1);
+      } else if (e.key === "0") {
+        e.preventDefault();
+        setTermCount(0);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isTerminal]);
+
   const file = files[activeFile];
   const isGsx = activeFile === 0;
   const activeCode = file.code;
@@ -265,6 +305,7 @@ export default function CodeShowcase() {
   const highlightedLines = useMemo(() => {
     if (!ready) return null;
     if (file.language === "text") return null;
+    if (file.language === "terminal") return null;
     const fullHtml = highlight(activeCode, file.language, theme);
     if (!fullHtml) return null;
     /* Strip <pre> and <code> wrappers */
@@ -433,6 +474,31 @@ export default function CodeShowcase() {
                   />
                 </svg>
               )}
+              {isActive && fi === 2 && (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <rect
+                    x="1" y="2" width="14" height="12" rx="1.5"
+                    stroke={t.accent}
+                    strokeWidth="1.2"
+                    fill="none"
+                  />
+                  <path
+                    d="M4 6l2.5 2L4 10"
+                    stroke={t.accent}
+                    strokeWidth="1.2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8 10h4"
+                    stroke={t.accent}
+                    strokeWidth="1.2"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
               {f.name}
             </div>
           );
@@ -476,17 +542,260 @@ export default function CodeShowcase() {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <span style={{ color: t.accent, fontWeight: 500 }}>
-          {file.language === "text" ? "MOD" : file.language.toUpperCase()}
+          {isTerminal ? "TERMINAL" : file.language === "text" ? "MOD" : file.language.toUpperCase()}
         </span>
-        <span>UTF-8</span>
-        <span>{activeLines.length} lines</span>
+        {!isTerminal && <span>UTF-8</span>}
+        {isTerminal ? <span>80×24</span> : <span>{activeLines.length} lines</span>}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <span>Spaces: 4</span>
+        {!isTerminal && <span>Spaces: 4</span>}
         <span style={{ color: t.secondary, fontWeight: 500 }}>go-tui</span>
       </div>
     </div>
   );
+
+  /* ─── Terminal view (rendered TUI output matching counter.gsx) ─── */
+  function renderTerminalView(maxH: number) {
+    const termBg = "#111210";
+    const termHr = "#49483e";
+    const termDim = "#75715e";
+    const termCyan = "#66d9ef";
+    const termYellow = "#e6db74";
+    const termGreen = "#a6e22e";
+    const termRed = "#f92672";
+    const termBlue = "#6796e6";
+    const gradient = "linear-gradient(90deg, #66d9ef, #f92672)";
+    const gradientCyanBlue = "linear-gradient(90deg, #66d9ef, #6796e6)";
+    const borderGradient =
+      "linear-gradient(135deg, #66d9ef, #ae81ff 50%, #f92672)";
+
+    const formatTime = (s: number) =>
+      `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+    const statusColor =
+      termCount > 0 ? termGreen : termCount < 0 ? termRed : termBlue;
+    const statusText =
+      termCount > 0 ? "Positive" : termCount < 0 ? "Negative" : "Zero";
+
+    const gradientText = (bg: string): React.CSSProperties => ({
+      background: bg,
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
+    });
+
+    const hr = (
+      <div
+        style={{
+          color: termHr,
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          lineHeight: "20px",
+        }}
+      >
+        {"─".repeat(200)}
+      </div>
+    );
+
+    return (
+      <div
+        style={{
+          padding: "12px 16px",
+          height: maxH,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* border-double border-gradient-cyan-magenta */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            background: borderGradient,
+            borderRadius: 7,
+            padding: 1.5,
+            display: "flex",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: termBg,
+              borderRadius: 6,
+              padding: 1.5,
+              display: "flex",
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                background: borderGradient,
+                borderRadius: 5,
+                padding: 1.5,
+                display: "flex",
+              }}
+            >
+              {/* Content area — flex-col p-1 gap-1 */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  background: termBg,
+                  borderRadius: 4,
+                  padding: "8px 10px",
+                  fontFamily: "'Fira Code', monospace",
+                  fontSize: 13,
+                  lineHeight: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  overflow: "hidden",
+                }}
+              >
+                {/* Header — flex justify-between items-center */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  {/* text-gradient-cyan-magenta font-bold */}
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      ...gradientText(gradient),
+                    }}
+                  >
+                    Counter
+                  </span>
+                  {/* @Badge("uptime:", ..., "text-yellow") */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ color: termDim }}>uptime:</span>
+                    <span style={{ color: termYellow, fontWeight: 700 }}>
+                      {formatTime(termElapsed)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* <hr /> */}
+                {hr}
+
+                {/* Cards — flex gap-2 */}
+                <div style={{ display: "flex", gap: 16, minWidth: 0 }}>
+                  {/* @Card("Count") — flex-col border-rounded border-cyan p-1 gap-1 flexGrow=1 */}
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      border: `1px solid ${termCyan}`,
+                      borderRadius: 5,
+                      padding: "8px 10px",
+                    }}
+                  >
+                    {/* font-bold text-gradient-cyan-blue */}
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        ...gradientText(gradientCyanBlue),
+                      }}
+                    >
+                      Count
+                    </span>
+                    {hr}
+                    {/* text-cyan font-bold */}
+                    <span style={{ color: termCyan, fontWeight: 700 }}>
+                      {termCount}
+                    </span>
+                  </div>
+
+                  {/* @Card("Status") — flex-col border-rounded border-cyan p-1 gap-1 flexGrow=1 */}
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      border: `1px solid ${termCyan}`,
+                      borderRadius: 5,
+                      padding: "8px 10px",
+                    }}
+                  >
+                    {/* font-bold text-gradient-cyan-blue */}
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        ...gradientText(gradientCyanBlue),
+                      }}
+                    >
+                      Status
+                    </span>
+                    {hr}
+                    {/* Conditional: text-green/red/blue font-bold */}
+                    <span style={{ color: statusColor, fontWeight: 700 }}>
+                      {statusText}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Help — flex gap-1 justify-center */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "center",
+                  }}
+                >
+                  <span style={{ color: termDim }}>
+                    +/-count·0 reset
+                  </span>
+                </div>
+
+                {/* Fill remaining space */}
+                <div style={{ flex: 1 }} />
+
+                {/* Disclaimer */}
+                <div
+                  style={{
+                    fontFamily: "'IBM Plex Sans', sans-serif",
+                    fontSize: 11,
+                    lineHeight: 1.4,
+                    color: termDim,
+                    textAlign: "center",
+                    padding: "6px 0 2px",
+                    opacity: 0.7,
+                  }}
+                >
+                  This is a React recreation — run the real thing in{" "}
+                  <span
+                    style={{
+                      fontFamily: "'Fira Code', monospace",
+                      color: termCyan,
+                      opacity: 0.8,
+                    }}
+                  >
+                    examples/counter
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ─── Step pills (shared between wide + narrow) ─── */
   function renderPills(opts: {
@@ -502,6 +811,8 @@ export default function CodeShowcase() {
           gap: 6,
           marginBottom: 12,
           flexWrap: "wrap",
+          /* keep stable height when steps are empty (terminal tab) */
+          minHeight: steps.length === 0 ? 29 : undefined,
         }}
       >
         {steps.map((step, i) => {
@@ -688,14 +999,14 @@ export default function CodeShowcase() {
 
         {/* ─── Step pills above editor ─── */}
         {renderPills({
-          highlightIdx: wideFocusStep,
-          onToggle: (i) => setActiveStep(activeStep === i ? null : i),
-          onHover: (i) => setHoveredStep(i),
-          onLeave: () => setHoveredStep(null),
+          highlightIdx: isTerminal ? null : wideFocusStep,
+          onToggle: (i) => !isTerminal && setActiveStep(activeStep === i ? null : i),
+          onHover: isTerminal ? undefined : (i) => setHoveredStep(i),
+          onLeave: isTerminal ? undefined : () => setHoveredStep(null),
         })}
 
         {/* ─── Step description ─── */}
-        {renderDescription(wideFocusStep)}
+        {renderDescription(isTerminal ? null : wideFocusStep)}
 
         {/* ─── Editor frame ─── */}
         <div
@@ -735,8 +1046,8 @@ export default function CodeShowcase() {
           >
             {titleBar}
 
-            {/* ─── Code + annotation area ─── */}
-            <div
+            {/* ─── Code + annotation area (or terminal view) ─── */}
+            {isTerminal ? renderTerminalView(maxCodeH) : <div
               ref={wideScrollRef}
               className="cshowcase-scroll"
               style={{
@@ -880,7 +1191,7 @@ export default function CodeShowcase() {
                   );
                 })}
               </div>}
-            </div>
+            </div>}
 
             {statusBar}
           </div>
@@ -905,12 +1216,12 @@ export default function CodeShowcase() {
 
       {/* ─── Step pills ─── */}
       {renderPills({
-        highlightIdx: activeStep,
-        onToggle: (i) => setActiveStep(activeStep === i ? null : i),
+        highlightIdx: isTerminal ? null : activeStep,
+        onToggle: (i) => !isTerminal && setActiveStep(activeStep === i ? null : i),
       })}
 
       {/* ─── Step description ─── */}
-      {renderDescription(activeStep)}
+      {renderDescription(isTerminal ? null : activeStep)}
 
       {/* ─── Editor frame ─── */}
       <div
@@ -950,8 +1261,8 @@ export default function CodeShowcase() {
         >
           {titleBar}
 
-          {/* ─── Code area ─── */}
-          <div
+          {/* ─── Code area (or terminal view) ─── */}
+          {isTerminal ? renderTerminalView(narrowMaxH) : <div
             style={{
               display: "flex",
               position: "relative",
@@ -1063,7 +1374,7 @@ export default function CodeShowcase() {
                 );
               })}
             </div>
-          </div>
+          </div>}
 
           {statusBar}
         </div>

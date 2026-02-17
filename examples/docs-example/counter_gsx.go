@@ -32,7 +32,7 @@ func (c *counterApp) KeyMap() tui.KeyMap {
 		tui.OnRune('-', func(ke tui.KeyEvent) {
 			c.count.Update(func(v int) int { return v - 1 })
 		}),
-		tui.OnRune('r', func(ke tui.KeyEvent) { c.count.Set(0) }),
+		tui.OnRune('0', func(ke tui.KeyEvent) { c.count.Set(0) }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
@@ -149,13 +149,15 @@ func Card(title string, children []*tui.Element) *CardView {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 		tui.WithFlexGrow(1.0),
 	)
 	__tui_1 := tui.New(
 		tui.WithText(title),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Blue).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
@@ -180,17 +182,20 @@ func Card(title string, children []*tui.Element) *CardView {
 func (c *counterApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
-		tui.WithBorder(tui.BorderRounded),
+		tui.WithBorder(tui.BorderDouble),
+		tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
 	__tui_1 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
+		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_2 := tui.New(
 		tui.WithText("Counter"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
@@ -242,7 +247,7 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_15 := tui.New(
-		tui.WithText("+/-count·r reset·q quit"),
+		tui.WithText("+/-count·0 reset·q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_14.AddChild(__tui_15)
