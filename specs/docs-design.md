@@ -370,7 +370,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 03: Styling and Colors
+#### Guide 03: Styling and Colors ✅
 **File**: `docs/content/guides/03-styling.md`
 
 **Purpose**: Teach the visual styling system — Tailwind-like classes, colors, text styles, borders, and gradients.
@@ -421,7 +421,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 04: Layout
+#### Guide 04: Layout ✅
 **File**: `docs/content/guides/04-layout.md`
 
 **Purpose**: Teach the flexbox layout system — how to arrange elements on screen.
@@ -476,7 +476,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 05: State and Reactivity
+#### Guide 05: State and Reactivity ✅
 **File**: `docs/content/guides/05-state.md`
 
 **Purpose**: Teach reactive state management — how to make UIs that respond to data changes.
@@ -524,7 +524,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 06: Components
+#### Guide 06: Components ✅
 **File**: `docs/content/guides/06-components.md`
 
 **Purpose**: Teach component patterns — pure vs struct components, children slots, composition, and component interfaces.
@@ -576,7 +576,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 07: Event Handling
+#### Guide 07: Event Handling ✅
 **File**: `docs/content/guides/07-events.md`
 
 **Purpose**: Teach keyboard and mouse event handling — KeyMap, special keys, modifiers, mouse clicks.
