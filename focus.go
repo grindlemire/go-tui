@@ -27,24 +27,24 @@ type Focusable interface {
 	Blur()
 }
 
-// FocusManager tracks focus state for a set of focusable elements.
+// focusManager tracks focus state for a set of focusable elements.
 // It does NOT automatically handle Tab navigation; the user controls
 // when focus moves by calling Next(), Prev(), or SetFocus().
-type FocusManager struct {
+type focusManager struct {
 	elements []Focusable // Registered focusable elements in order
 	current  int         // Index of currently focused element (-1 = none)
 }
 
-// NewFocusManager creates an empty FocusManager.
+// newFocusManager creates an empty focusManager.
 // Use Register to add focusable elements.
-func NewFocusManager() *FocusManager {
-	return &FocusManager{
+func newFocusManager() *focusManager {
+	return &focusManager{
 		current: -1,
 	}
 }
 
 // Register adds a focusable element to the manager.
-func (f *FocusManager) Register(elem Focusable) {
+func (f *focusManager) Register(elem Focusable) {
 	debug.Log("FocusManager.Register: adding element %T (focusable=%v)", elem, elem.IsFocusable())
 	f.elements = append(f.elements, elem)
 
@@ -58,7 +58,7 @@ func (f *FocusManager) Register(elem Focusable) {
 }
 
 // Unregister removes a focusable element from the manager.
-func (f *FocusManager) Unregister(elem Focusable) {
+func (f *focusManager) Unregister(elem Focusable) {
 	// Find the element
 	idx := -1
 	for i, e := range f.elements {
@@ -100,7 +100,7 @@ func (f *FocusManager) Unregister(elem Focusable) {
 }
 
 // Focused returns the currently focused element, or nil if none.
-func (f *FocusManager) Focused() Focusable {
+func (f *focusManager) Focused() Focusable {
 	if f.current < 0 || f.current >= len(f.elements) {
 		return nil
 	}
@@ -109,7 +109,7 @@ func (f *FocusManager) Focused() Focusable {
 
 // SetFocus moves focus to the specified element.
 // Does nothing if the element is not registered or not focusable.
-func (f *FocusManager) SetFocus(elem Focusable) {
+func (f *focusManager) SetFocus(elem Focusable) {
 	// Find the element
 	idx := -1
 	for i, e := range f.elements {
@@ -135,7 +135,7 @@ func (f *FocusManager) SetFocus(elem Focusable) {
 // Next moves focus to the next focusable element.
 // Wraps around to the first element if at the end.
 // Does nothing if there are no focusable elements.
-func (f *FocusManager) Next() {
+func (f *focusManager) Next() {
 	if len(f.elements) == 0 {
 		return
 	}
@@ -166,7 +166,7 @@ func (f *FocusManager) Next() {
 
 // Prev moves focus to the previous focusable element.
 // Wraps around to the last element if at the beginning.
-func (f *FocusManager) Prev() {
+func (f *focusManager) Prev() {
 	if len(f.elements) == 0 {
 		return
 	}
@@ -200,7 +200,7 @@ func (f *FocusManager) Prev() {
 
 // Dispatch sends an event to the currently focused element.
 // Returns true if the event was handled.
-func (f *FocusManager) Dispatch(event Event) bool {
+func (f *focusManager) Dispatch(event Event) bool {
 	focused := f.Focused()
 	debug.Log("FocusManager.Dispatch: event=%T focused=%v (current=%d, total=%d)", event, focused != nil, f.current, len(f.elements))
 	if focused == nil {
@@ -214,7 +214,7 @@ func (f *FocusManager) Dispatch(event Event) bool {
 
 // focusNextFrom finds the next focusable element starting from idx.
 // Used internally after unregister.
-func (f *FocusManager) focusNextFrom(startIdx int) {
+func (f *focusManager) focusNextFrom(startIdx int) {
 	for i := 0; i < len(f.elements); i++ {
 		idx := (startIdx + i) % len(f.elements)
 		if f.elements[idx].IsFocusable() {

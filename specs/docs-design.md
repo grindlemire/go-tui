@@ -635,7 +635,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 08: Scrolling
+#### Guide 08: Scrolling ✅
 **File**: `docs/content/guides/08-scrolling.md`
 
 **Purpose**: Teach scrollable containers — when content exceeds available space.
@@ -685,7 +685,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 09: Timers, Watchers, and Channels
+#### Guide 09: Timers, Watchers, and Channels ✅
 **File**: `docs/content/guides/09-watchers.md`
 
 **Purpose**: Teach background operations — timers, Go channels, and the event bus.
@@ -732,7 +732,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 10: Testing
+#### Guide 10: Testing ✅
 **File**: `docs/content/guides/10-testing.md`
 
 **Purpose**: Teach how to test go-tui applications and components.
@@ -775,7 +775,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 11: Multi-Component Applications
+#### Guide 11: Multi-Component Applications ✅
 **File**: `docs/content/guides/11-multi-component.md`
 
 **Purpose**: Teach building larger apps with multiple struct components, shared state, and conditional behavior.
@@ -813,7 +813,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 12: Inline Mode and Alternate Screen
+#### Guide 12: Inline Mode and Alternate Screen ✅
 **File**: `docs/content/guides/12-inline-mode.md`
 
 **Purpose**: Teach inline mode (rendering at the bottom of existing terminal output) and alternate screen switching.
@@ -857,7 +857,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 13: Focus Management
+#### Guide 13: Focus Management ✅
 **File**: `docs/content/guides/13-focus.md`
 
 **Purpose**: Teach focus management — making elements focusable, Tab/Shift-Tab navigation, and focus groups.
@@ -899,7 +899,7 @@ Guides follow a progressive learning path. Earlier guides introduce foundational
 
 ---
 
-#### Guide 14: Building a Dashboard (Capstone)
+#### Guide 14: Building a Dashboard (Capstone) ✅
 **File**: `docs/content/guides/14-dashboard.md`
 
 **Purpose**: Capstone tutorial that brings everything together — build a live metrics dashboard from scratch, exercising all major concepts.

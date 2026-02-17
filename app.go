@@ -63,7 +63,7 @@ type App struct {
 	terminal        Terminal
 	buffer          *Buffer
 	reader          EventReader
-	focus           *FocusManager
+	focus           *focusManager
 	root            Renderable
 	needsFullRedraw bool // Set after resize, cleared after RenderFull
 	dirty           atomic.Bool
@@ -142,7 +142,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 	}
 
 	// Create empty FocusManager
-	focus := NewFocusManager()
+	focus := newFocusManager()
 
 	// Create app with defaults (options may override these)
 	// Note: buffer is created after options are applied to handle inline mode
@@ -241,7 +241,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	}
 
 	// Create empty FocusManager
-	focus := NewFocusManager()
+	focus := newFocusManager()
 
 	// Create app with defaults (options may override these)
 	// Note: buffer is created after options are applied to handle inline mode
@@ -392,7 +392,7 @@ func (a *App) resetRootSession() {
 	}
 	a.rootStopCh = make(chan struct{})
 	a.rootWatcherCh = mergeStopChannels(a.stopCh, a.rootStopCh)
-	a.focus = NewFocusManager()
+	a.focus = newFocusManager()
 	a.dispatchTable = nil
 	a.mounts = newMountState()
 	a.componentWatchers = nil
@@ -426,12 +426,6 @@ func (a *App) Root() Renderable {
 // Size returns the current terminal size.
 func (a *App) Size() (width, height int) {
 	return a.terminal.Size()
-}
-
-// Focus returns the FocusManager for this app.
-// Deprecated: Use FocusNext, FocusPrev, and Focused instead.
-func (a *App) Focus() *FocusManager {
-	return a.focus
 }
 
 // FocusNext moves focus to the next focusable element.
@@ -479,17 +473,22 @@ func (a *App) PollEvent(timeout time.Duration) (Event, bool) {
 	return a.reader.PollEvent(timeout)
 }
 
-// walkComponents performs a DFS walk of the element tree, calling fn for
+// walkComponents performs a BFS walk of the element tree, calling fn for
 // each element that has an associated component (set by Mount).
-// This is used to discover KeyListener and other component capabilities.
+// BFS order means shallower components are visited before deeper ones,
+// so a parent's handlers always fire before any descendant's handlers
+// regardless of tree branching structure.
 func walkComponents(root *Element, fn func(Component)) {
 	if root == nil {
 		return
 	}
-	if root.component != nil {
-		fn(root.component)
-	}
-	for _, child := range root.children {
-		walkComponents(child, fn)
+	queue := []*Element{root}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if node.component != nil {
+			fn(node.component)
+		}
+		queue = append(queue, node.children...)
 	}
 }

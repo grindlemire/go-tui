@@ -448,7 +448,7 @@ The layout engine (`internal/layout`) implements CSS flexbox with:
 - **Dirty Flags**: Global dirty flag triggers re-layout/re-render when state changes
 - **Reactive State**: `State[T]` with `Bind()` callbacks and `Batch()` for coalescing
 - **Interface-based**: `Renderable`, `Layoutable`, `Focusable`, `Watcher`, `Terminal`
-- **Tree Walking**: DFS traversal for focus discovery, watcher collection, rendering
+- **Tree Walking**: BFS traversal for component dispatch (key/mouse events, watcher collection); DFS for focus discovery and rendering
 
 ## Testing
 

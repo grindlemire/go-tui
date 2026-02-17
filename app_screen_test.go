@@ -22,7 +22,7 @@ func TestApp_IsInAlternateScreen_InitiallyFalse(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			app := &App{
 				buffer:       NewBuffer(80, 24),
-				focus:        NewFocusManager(),
+				focus:        newFocusManager(),
 				inlineHeight: tt.inlineHeight,
 			}
 
@@ -59,7 +59,7 @@ func TestApp_EnterAlternateScreen_Basic(t *testing.T) {
 			app := &App{
 				terminal:       term,
 				buffer:         NewBuffer(80, tt.inlineHeight),
-				focus:          NewFocusManager(),
+				focus:          newFocusManager(),
 				inlineHeight:   tt.inlineHeight,
 				inlineStartRow: tt.inlineStartRow,
 			}
@@ -107,7 +107,7 @@ func TestApp_EnterAlternateScreen_SavesInlineState(t *testing.T) {
 			app := &App{
 				terminal:       term,
 				buffer:         NewBuffer(80, 24),
-				focus:          NewFocusManager(),
+				focus:          newFocusManager(),
 				inlineHeight:   tt.inlineHeight,
 				inlineStartRow: tt.inlineStartRow,
 			}
@@ -145,7 +145,7 @@ func TestApp_EnterAlternateScreen_Idempotent(t *testing.T) {
 			app := &App{
 				terminal:     term,
 				buffer:       NewBuffer(80, 24),
-				focus:        NewFocusManager(),
+				focus:        newFocusManager(),
 				inlineHeight: 5,
 			}
 
@@ -184,7 +184,7 @@ func TestApp_ExitAlternateScreen_Basic(t *testing.T) {
 			app := &App{
 				terminal:            term,
 				buffer:              NewBuffer(80, 24),
-				focus:               NewFocusManager(),
+				focus:               newFocusManager(),
 				inAlternateScreen:   true,
 				savedInlineHeight:   tt.savedInlineHeight,
 				savedInlineStartRow: tt.savedInlineStartRow,
@@ -226,7 +226,7 @@ func TestApp_ExitAlternateScreen_Idempotent(t *testing.T) {
 			app := &App{
 				terminal:          term,
 				buffer:            NewBuffer(80, 24),
-				focus:             NewFocusManager(),
+				focus:             newFocusManager(),
 				inAlternateScreen: true,
 				savedInlineHeight: 5,
 			}
@@ -260,7 +260,7 @@ func TestApp_ExitAlternateScreen_WhenNotInAlternate(t *testing.T) {
 			app := &App{
 				terminal:          term,
 				buffer:            NewBuffer(80, 24),
-				focus:             NewFocusManager(),
+				focus:             newFocusManager(),
 				inAlternateScreen: false,
 			}
 
@@ -295,7 +295,7 @@ func TestApp_EnterAlternateScreen_ResizesBuffer(t *testing.T) {
 			app := &App{
 				terminal:     term,
 				buffer:       buffer,
-				focus:        NewFocusManager(),
+				focus:        newFocusManager(),
 				inlineHeight: tt.initialInlineHeight,
 			}
 
@@ -329,7 +329,7 @@ func TestApp_EnterAlternateScreen_SetsNeedsFullRedraw(t *testing.T) {
 			app := &App{
 				terminal:     term,
 				buffer:       NewBuffer(80, 24),
-				focus:        NewFocusManager(),
+				focus:        newFocusManager(),
 				inlineHeight: 5,
 			}
 
@@ -359,7 +359,7 @@ func TestApp_ExitAlternateScreen_SetsNeedsFullRedraw(t *testing.T) {
 			app := &App{
 				terminal:          term,
 				buffer:            NewBuffer(80, 24),
-				focus:             NewFocusManager(),
+				focus:             newFocusManager(),
 				inAlternateScreen: true,
 				savedInlineHeight: 5,
 			}
@@ -396,7 +396,7 @@ func TestApp_RoundTrip_InlineToAlternateToInline(t *testing.T) {
 			app := &App{
 				terminal:       term,
 				buffer:         NewBuffer(80, tt.inlineHeight),
-				focus:          NewFocusManager(),
+				focus:          newFocusManager(),
 				inlineHeight:   tt.inlineHeight,
 				inlineStartRow: tt.inlineStartRow,
 			}
@@ -451,7 +451,7 @@ func TestApp_DispatchResize_InAlternateMode(t *testing.T) {
 			app := &App{
 				terminal:          term,
 				buffer:            NewBuffer(80, 24),
-				focus:             NewFocusManager(),
+				focus:             newFocusManager(),
 				inAlternateScreen: true,
 				savedInlineHeight: 5, // Was in inline mode before
 			}

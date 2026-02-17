@@ -41,8 +41,8 @@ func (m *mockFocusable) Blur() {
 	m.blurCalls++
 }
 
-// registerAll registers all elements to the FocusManager.
-func registerAll(fm *FocusManager, elements ...*mockFocusable) {
+// registerAll registers all elements to the focusManager.
+func registerAll(fm *focusManager, elements ...*mockFocusable) {
 	for _, elem := range elements {
 		fm.Register(elem)
 	}
@@ -80,7 +80,7 @@ func TestNewFocusManager_FocusesFirstElement(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
 			focused := fm.Focused()
@@ -127,7 +127,7 @@ func TestNewFocusManager_NoFocusableElements(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
 			if fm.Focused() != nil {
@@ -184,7 +184,7 @@ func TestFocusManager_Next(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
 			for i := 0; i < tt.nextCalls; i++ {
@@ -252,7 +252,7 @@ func TestFocusManager_Prev(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
 			for i := 0; i < tt.prevCalls; i++ {
@@ -302,7 +302,7 @@ func TestFocusManager_SetFocus(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
 			fm.SetFocus(tt.elements[tt.focusIndex])
@@ -337,7 +337,7 @@ func TestFocusManager_SetFocusNonFocusable(t *testing.T) {
 	a := newMockFocusable("a", true)
 	b := newMockFocusable("b", false) // Not focusable
 
-	fm := NewFocusManager()
+	fm := newFocusManager()
 	fm.Register(a)
 	fm.Register(b)
 
@@ -384,7 +384,7 @@ func TestFocusManager_Register(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			fm := NewFocusManager()
+			fm := newFocusManager()
 			registerAll(fm, tt.initialElements...)
 			fm.Register(tt.registerElement)
 

@@ -32,7 +32,7 @@ func (t *trackingTerminal) Flush(changes []CellChange) {
 func testableApp(width, height int) (*App, *trackingTerminal) {
 	term := newTrackingTerminal(width, height)
 	buffer := NewBuffer(width, height)
-	focus := NewFocusManager()
+	focus := newFocusManager()
 
 	app := &App{
 		terminal: nil, // We'll use renderWithTerminal helper
@@ -101,7 +101,7 @@ func TestApp_DispatchResizeEvent_SetsNeedsFullRedraw(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			buffer := NewBuffer(tt.initialWidth, tt.initialHeight)
 			app := &App{
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 				buffer: buffer,
 			}
 
@@ -250,7 +250,7 @@ func TestApp_DispatchNonResizeEvent_DoesNotSetFlag(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			app := &App{
-				focus:  NewFocusManager(),
+				focus:  newFocusManager(),
 				buffer: NewBuffer(80, 24),
 			}
 
@@ -272,7 +272,7 @@ func TestApp_DispatchNonResizeEvent_DoesNotSetFlag(t *testing.T) {
 
 func TestApp_DispatchResizeEvent_InlineWidthChange_InvalidatesLayout(t *testing.T) {
 	app := &App{
-		focus:          NewFocusManager(),
+		focus:          newFocusManager(),
 		buffer:         NewBuffer(80, 3),
 		inlineHeight:   3,
 		inlineStartRow: 21,
@@ -293,7 +293,7 @@ func TestApp_DispatchResizeEvent_InlineWidthChange_InvalidatesLayout(t *testing.
 
 func TestApp_DispatchResizeEvent_InlineHeightChange_KeepsLayoutValid(t *testing.T) {
 	app := &App{
-		focus:          NewFocusManager(),
+		focus:          newFocusManager(),
 		buffer:         NewBuffer(80, 3),
 		inlineHeight:   3,
 		inlineStartRow: 21,

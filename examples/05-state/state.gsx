@@ -72,6 +72,7 @@ func rangeLabel(count int) string {
 }
 
 templ (s *stateApp) Render() {
+	@let spanCount = <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
 	<div class="flex-col p-1 border-rounded border-cyan">
 		<span class="text-gradient-cyan-magenta font-bold">State and Control Flow</span>
 
@@ -81,7 +82,7 @@ templ (s *stateApp) Render() {
 			<div class="flex-col border-rounded p-1 gap-1 items-center justify-center" flexGrow={1.0}>
 				<span class="text-gradient-cyan-magenta font-bold">Counter</span>
 				<br />
-				<span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
+				{spanCount}
 				<div class="flex gap-1 justify-center">
 					<span class="text-cyan px-1 font-bold">+</span>
 					<span class="text-cyan px-1 font-bold">-</span>

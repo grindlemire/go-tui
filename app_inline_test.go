@@ -20,7 +20,7 @@ func newInlineTestApp(termWidth, termHeight, inlineHeight int) (*App, *EmulatorT
 		inlineLayout:   newInlineLayoutState(termHeight - inlineHeight),
 		inlineSession:  newInlineSession(emu),
 		buffer:         NewBuffer(termWidth, inlineHeight),
-		focus:          NewFocusManager(),
+		focus:          newFocusManager(),
 		reader:         NewMockEventReader(),
 		eventQueue:     make(chan func(), 256),
 		stopCh:         make(chan struct{}),
