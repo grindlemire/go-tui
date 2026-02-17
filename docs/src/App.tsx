@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
-import { projectInfo, tailwindClasses } from "./content/projectInfo.ts";
+import { tailwindClasses } from "./content/projectInfo.ts";
 import { loadGuide, loadReference } from "./lib/markdown.ts";
 import { getHighlighter, highlight } from "./lib/highlighter.ts";
 import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
-import CodeShowcase from "./variations/CodeShowcase.tsx";
+import CodeShowcase from "./components/CodeShowcase.tsx";
 
 /* ─── Global Styles ─── */
 
@@ -85,7 +85,7 @@ function GlobalStyles() {
 
       .tl {
         opacity: 0;
-        animation: lineIn 0.3s ease-out forwards;
+        animation: lineIn 0.1s ease-out forwards;
       }
 
       @keyframes scrollBounce {
@@ -1809,7 +1809,7 @@ function HomePage() {
                 style={{ padding: "24px 32px" }}
               >
                 {/* Prompt line */}
-                <div className="tl mb-4 text-[13px]" style={{ animationDelay: "50ms" }}>
+                <div className="tl mb-4 text-[13px]" style={{ animationDelay: "10ms" }}>
                   <span style={{ color: t.secondary }}>$</span>{" "}
                   <span style={{ color: t.heading }}>man tui</span>
                 </div>
@@ -1827,7 +1827,7 @@ function HomePage() {
                     key={`r${i}`}
                     className="tl whitespace-pre leading-[1.15] overflow-hidden"
                     style={{
-                      animationDelay: `${120 + i * 20}ms`,
+                      animationDelay: `${30 + i * 5}ms`,
                       color: t.heading,
                       fontSize: "clamp(7px, 1.15vw, 13px)",
                       letterSpacing: 0,
@@ -1837,7 +1837,7 @@ function HomePage() {
                   </div>
                 ))}
 
-                <div className="tl h-[2px]" style={{ animationDelay: "250ms" }} />
+                <div className="tl h-[2px]" style={{ animationDelay: "60ms" }} />
 
                 {/* ASCII Art — TERMINAL */}
                 {[
@@ -1852,7 +1852,7 @@ function HomePage() {
                     key={`t${i}`}
                     className="tl whitespace-pre leading-[1.15] overflow-hidden"
                     style={{
-                      animationDelay: `${270 + i * 20}ms`,
+                      animationDelay: `${65 + i * 5}ms`,
                       color: t.accent,
                       fontSize: "clamp(7px, 1.15vw, 13px)",
                       letterSpacing: 0,
@@ -1862,12 +1862,12 @@ function HomePage() {
                   </div>
                 ))}
 
-                <div className="tl h-[2px]" style={{ animationDelay: "400ms" }} />
+                <div className="tl h-[2px]" style={{ animationDelay: "100ms" }} />
 
                 {/* ASCII Art — UIs  in  Go — "s" and "in" as regular text */}
                 <div
                   className="tl flex items-end gap-0"
-                  style={{ animationDelay: "420ms" }}
+                  style={{ animationDelay: "105ms" }}
                 >
                   {/* UI block letters */}
                   <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
@@ -1923,7 +1923,7 @@ function HomePage() {
                 </div>
 
                 {/* Man page sections */}
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "580ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "145ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>NAME</div>
                   <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
                     <span className="font-semibold" style={{ color: t.heading }}>go-tui</span>
@@ -1941,7 +1941,7 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "670ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "170ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SYNOPSIS</div>
                   <div className="pl-5 mt-1 leading-[1.7] whitespace-pre" style={{ color: t.textMuted }}>
                     <span style={{ color: t.secondary }}>$</span> go get github.com/grindlemire/go-tui{"\n"}
@@ -1949,7 +1949,7 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "760ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "190ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>DESCRIPTION</div>
                   <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
                     <span style={{ color: t.secondary }}>.gsx files</span> mix Go and HTML-like templates in one place,
@@ -1960,7 +1960,7 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "850ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "215ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>FEATURES</div>
                   <div className="pl-5 mt-1 leading-[1.7] grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-[2px] max-w-[560px]" style={{ color: t.textMuted }}>
                     <span>&bull; .gsx &rarr; Go compiler</span>
@@ -1974,7 +1974,7 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "940ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "235ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SEE ALSO</div>
                   <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
                     {[
@@ -2023,7 +2023,7 @@ function HomePage() {
                   </div>
                 </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "1030ms" }}>
+                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "260ms" }}>
                   <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>AUTHORS</div>
                   <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textDim }}>
                     grindlemire &lt;github.com/grindlemire/go-tui&gt;
@@ -2033,7 +2033,7 @@ function HomePage() {
                 {/* Interactive prompt — desktop only */}
                 <div
                   className="tl hidden sm:flex items-center mt-6 text-[13px] cursor-text"
-                  style={{ animationDelay: "1120ms" }}
+                  style={{ animationDelay: "280ms" }}
                   onClick={() => promptRef.current?.focus()}
                 >
                   <span style={{ color: t.secondary }}>$</span>
@@ -2089,7 +2089,7 @@ function HomePage() {
 
           <Divider />
 
-          {/* How it works — Interactive Code Showcase */}
+          {/* How it works */}
           <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
             <div
               className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
@@ -2101,15 +2101,17 @@ function HomePage() {
               className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
               style={{ color: t.heading }}
             >
-              One file, everything you need
+              Anatomy of a component
             </h2>
             <p
               className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
               style={{ color: t.textMuted }}
             >
-              A .gsx file defines your component: state, events, watchers, and
-              template in one place. Click a feature or hover an annotation to
-              explore each piece.
+              Components are Go structs. You define state and key bindings as
+              methods, then write the UI in
+              a <code style={{ color: t.accent }}>templ</code> block. The
+              compiler turns the .gsx file into plain Go. Click a feature or
+              hover an annotation to explore the example below.
             </p>
             <CodeShowcase />
           </section>
@@ -2667,7 +2669,6 @@ export default function Design2() {
         <Route path="/guide/:slug" element={<GuidePage />} />
         <Route path="/reference" element={<ReferenceRedirect />} />
         <Route path="/reference/:slug" element={<ReferencePage />} />
-        <Route path="/code" element={<CodeShowcase />} />
       </Routes>
     </ThemeContext.Provider>
   );

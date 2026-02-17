@@ -155,14 +155,14 @@ const gsxStepDefs: Omit<Step, "color">[] = [
     id: "events",
     label: "Keyboard Events",
     description:
-      "KeyMap binds keys to actions. OnRune matches character keys \u2014 Update and Set mutate state and trigger re-renders.",
+      "KeyMap binds keys to actions. OnRune matches character keys; Update and Set mutate state and trigger re-renders.",
     lines: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
   },
   {
     id: "watchers",
     label: "Watchers",
     description:
-      "Background tasks that run independently. OnTimer fires a callback at a fixed interval \u2014 here it ticks once per second.",
+      "Background tasks that run independently. OnTimer fires a callback at a fixed interval, here once per second.",
     lines: [36, 37, 38, 39, 40, 41, 42],
   },
   {
@@ -189,7 +189,7 @@ const mainGoStepDefs: Omit<Step, "color">[] = [
     id: "entry",
     label: "Entry point",
     description:
-      "Pass your component to WithRootComponent \u2014 the framework owns the event loop, rendering, and cleanup.",
+      "Pass your component to WithRootComponent. The framework handles the event loop, rendering, and cleanup.",
     lines: [10, 11, 12],
   },
 ];
@@ -348,13 +348,14 @@ export default function CodeShowcase() {
     return (firstLine - 1) * LINE_H + CODE_PAD_Y;
   });
 
-  /* Scroll to highlighted region when activeStep changes */
-  useEffect(() => {
-    if (activeStep === null) return;
-    if (activeStep >= stepDefs.length) return;
+  const focusStep = hoveredStep ?? activeStep;
+
+  /* Scroll code view to center a given step (called directly from pill handlers) */
+  const scrollToStep = useCallback((idx: number) => {
+    if (idx >= stepDefs.length) return;
     const scrollEl = isWide ? wideScrollRef.current : codeScrollRef.current;
     if (!scrollEl) return;
-    const step = stepDefs[activeStep];
+    const step = stepDefs[idx];
     const firstLine = Math.min(...step.lines);
     const lastLine = Math.max(...step.lines);
     const midLine = (firstLine + lastLine) / 2;
@@ -364,7 +365,7 @@ export default function CodeShowcase() {
       top: Math.max(0, targetScroll),
       behavior: "smooth",
     });
-  }, [activeStep, isWide, activeFile]);
+  }, [stepDefs, isWide]);
 
   /* Theme palette */
   const borderColor = isDark ? "#49483e" : "#d8d8d0";
@@ -380,15 +381,12 @@ export default function CodeShowcase() {
   const dotColors = isDark
     ? ["#ff5f57", "#febc2e", "#28c840"]
     : ["#ff6159", "#ffbf2f", "#2bc840"];
-  const annotationRailBg = isDark
-    ? "rgba(26,27,23,0.6)"
-    : "rgba(240,240,236,0.6)";
   const statusBarBg = isDark ? "#1a1b17" : "#e8e8e3";
 
   const maxCodeH = 580;
 
   /* In wide mode: hover overrides click for spotlight */
-  const wideFocusStep = hoveredStep ?? activeStep;
+  const wideFocusStep = focusStep;
   const focusColor =
     wideFocusStep !== null ? steps[wideFocusStep].color : null;
 
@@ -778,16 +776,23 @@ export default function CodeShowcase() {
                     opacity: 0.7,
                   }}
                 >
-                  This is a React recreation — run the real thing in{" "}
-                  <span
+                  This is a React recreation, run the real thing in{" "}
+                  <a
+                    href="https://github.com/grindlemire/go-tui/tree/main/examples/docs-example"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       fontFamily: "'Fira Code', monospace",
                       color: termCyan,
                       opacity: 0.8,
+                      textDecoration: "none",
+                      borderBottom: `1px solid ${termCyan}40`,
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.borderBottomColor = termCyan; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.borderBottomColor = `${termCyan}40`; }}
                   >
-                    examples/counter
-                  </span>
+                    examples/docs-example
+                  </a>
                 </div>
               </div>
             </div>
@@ -972,15 +977,16 @@ export default function CodeShowcase() {
         key={i}
         style={{
           fontFamily: "'Fira Code', monospace",
-          fontSize: 12,
+          fontSize: 11,
           lineHeight: `${LINE_H}px`,
           height: LINE_H,
-          paddingRight: 14,
-          paddingLeft: 10,
+          paddingRight: 16,
+          paddingLeft: 12,
           color: isActive ? color : gutterText,
           textAlign: "right",
-          opacity: isDimmed ? 0.15 : isHL && isActive ? 1 : 0.6,
-          fontWeight: isActive && isHL ? 600 : 400,
+          opacity: isDimmed ? 0.12 : isHL && isActive ? 0.9 : 0.45,
+          fontWeight: 400,
+          letterSpacing: "0.02em",
           transition: "color 0.3s, opacity 0.3s",
         }}
       >
@@ -1000,8 +1006,8 @@ export default function CodeShowcase() {
         {/* ─── Step pills above editor ─── */}
         {renderPills({
           highlightIdx: isTerminal ? null : wideFocusStep,
-          onToggle: (i) => !isTerminal && setActiveStep(activeStep === i ? null : i),
-          onHover: isTerminal ? undefined : (i) => setHoveredStep(i),
+          onToggle: (i) => { if (!isTerminal) { setActiveStep(activeStep === i ? null : i); scrollToStep(i); } },
+          onHover: isTerminal ? undefined : (i) => { setHoveredStep(i); scrollToStep(i); },
           onLeave: isTerminal ? undefined : () => setHoveredStep(null),
         })}
 
@@ -1064,11 +1070,13 @@ export default function CodeShowcase() {
                   flexDirection: "column",
                   alignItems: "flex-end",
                   padding: `${CODE_PAD_Y}px 0`,
-                  background: gutterBg,
-                  borderRight: `1px solid ${gutterBorder}`,
+                  background: isDark
+                    ? "rgba(30,31,27,0.5)"
+                    : "rgba(237,237,234,0.4)",
+                  borderRight: `1px solid ${isDark ? "rgba(73,72,62,0.25)" : "rgba(216,216,208,0.4)"}`,
                   flexShrink: 0,
                   userSelect: "none",
-                  minWidth: 48,
+                  minWidth: 50,
                 }}
               >
                 {activeLines.map((_, i) =>
@@ -1102,8 +1110,10 @@ export default function CodeShowcase() {
                   width: ANNOTATION_W,
                   flexShrink: 0,
                   position: "relative",
-                  borderLeft: `1px solid ${gutterBorder}`,
-                  background: annotationRailBg,
+                  borderLeft: `1px solid ${isDark ? "rgba(73,72,62,0.25)" : "rgba(216,216,208,0.4)"}`,
+                  background: isDark
+                    ? "rgba(26,27,23,0.4)"
+                    : "rgba(245,245,241,0.5)",
                 }}
               >
                 {steps.map((step, i) => {
@@ -1127,36 +1137,39 @@ export default function CodeShowcase() {
                       style={{
                         position: "absolute",
                         top: annotationYs[i],
-                        left: 0,
-                        right: 0,
-                        padding: "10px 14px 10px 16px",
-                        borderLeft: `3px solid ${step.color}${isFocused ? "" : isDimmedCard ? "30" : "80"}`,
+                        left: 8,
+                        right: 8,
+                        padding: "8px 12px",
+                        borderRadius: 6,
+                        borderLeft: `2px solid ${step.color}${isFocused ? "" : isDimmedCard ? "20" : "60"}`,
                         background: isFocused
-                          ? `${step.color}18`
-                          : `${step.color}08`,
-                        opacity: isDimmedCard ? 0.2 : 1,
+                          ? isDark
+                            ? `${step.color}14`
+                            : `${step.color}0c`
+                          : "transparent",
+                        opacity: isDimmedCard ? 0.25 : 1,
                         transition:
                           "all 0.3s cubic-bezier(0.16,1,0.3,1)",
                         cursor: "pointer",
                       }}
                     >
-                      {/* Step number + label */}
+                      {/* Step label */}
                       <div
                         style={{
                           display: "flex",
-                          alignItems: "center",
-                          gap: 7,
-                          marginBottom: 5,
+                          alignItems: "baseline",
+                          gap: 6,
+                          marginBottom: 4,
                         }}
                       >
                         <span
                           style={{
                             fontFamily: "'Fira Code', monospace",
                             fontSize: 9,
-                            fontWeight: 600,
+                            fontWeight: 500,
                             color: step.color,
-                            opacity: isFocused ? 1 : 0.6,
-                            letterSpacing: "0.05em",
+                            opacity: isFocused ? 0.7 : 0.4,
+                            letterSpacing: "0.04em",
                             transition: "opacity 0.3s",
                           }}
                         >
@@ -1167,8 +1180,9 @@ export default function CodeShowcase() {
                             fontFamily: "'Fira Code', monospace",
                             fontSize: 11,
                             fontWeight: 600,
-                            color: step.color,
-                            letterSpacing: "0.02em",
+                            color: isFocused ? step.color : isDark ? t.textMuted : t.textDim,
+                            letterSpacing: "0.01em",
+                            transition: "color 0.3s",
                           }}
                         >
                           {step.label}
@@ -1180,9 +1194,10 @@ export default function CodeShowcase() {
                         style={{
                           fontFamily: "'IBM Plex Sans', sans-serif",
                           fontSize: 11,
-                          lineHeight: 1.5,
+                          lineHeight: 1.55,
                           color: isFocused ? t.textMuted : t.textDim,
-                          transition: "color 0.3s",
+                          opacity: isFocused ? 1 : 0.7,
+                          transition: "color 0.3s, opacity 0.3s",
                         }}
                       >
                         {step.description}
@@ -1217,7 +1232,7 @@ export default function CodeShowcase() {
       {/* ─── Step pills ─── */}
       {renderPills({
         highlightIdx: isTerminal ? null : activeStep,
-        onToggle: (i) => !isTerminal && setActiveStep(activeStep === i ? null : i),
+        onToggle: (i) => { if (!isTerminal) { setActiveStep(activeStep === i ? null : i); scrollToStep(i); } },
       })}
 
       {/* ─── Step description ─── */}
