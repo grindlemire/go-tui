@@ -42,7 +42,12 @@ func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, 
 			g.generateComponentExpr(c, parentVar)
 		case *ChildrenSlot:
 			// Expand the children parameter
-			g.writeln("for _, __child := range children {")
+			// In method templs, children are stored on the receiver struct
+			childrenExpr := "children"
+			if g.currentReceiver != "" {
+				childrenExpr = g.currentReceiver + ".children"
+			}
+			g.writef("for _, __child := range %s {\n", childrenExpr)
 			g.indent++
 			g.writef("%s.AddChild(__child)\n", parentVar)
 			g.indent--
@@ -93,7 +98,12 @@ func (g *Generator) generateBodyNodeWithRefs(node Node, parentVar string, inLoop
 		g.generateComponentExpr(n, parentVar)
 	case *ChildrenSlot:
 		if parentVar != "" {
-			g.writeln("for _, __child := range children {")
+			// In method templs, children are stored on the receiver struct
+			childrenExpr := "children"
+			if g.currentReceiver != "" {
+				childrenExpr = g.currentReceiver + ".children"
+			}
+			g.writef("for _, __child := range %s {\n", childrenExpr)
 			g.indent++
 			g.writef("%s.AddChild(__child)\n", parentVar)
 			g.indent--

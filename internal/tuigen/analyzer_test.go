@@ -327,3 +327,76 @@ func TestAnalyzer_SuggestAttribute(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyzer_MethodTemplChildrenField(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+	}
+
+	tests := map[string]tc{
+		"method templ with children slot and children field is valid": {
+			input: `package x
+
+type card struct {
+	title    string
+	children []*tui.Element
+}
+
+templ (c *card) Render() {
+	<div>
+		{children...}
+	</div>
+}`,
+			wantError: false,
+		},
+		"method templ with children slot missing children field": {
+			input: `package x
+
+type card struct {
+	title string
+}
+
+templ (c *card) Render() {
+	<div>
+		{children...}
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "has no `children` field",
+		},
+		"method templ without children slot needs no children field": {
+			input: `package x
+
+type panel struct {
+	title string
+}
+
+templ (p *panel) Render() {
+	<div></div>
+}`,
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.gsx", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}

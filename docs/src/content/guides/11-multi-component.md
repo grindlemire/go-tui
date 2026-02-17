@@ -683,7 +683,7 @@ go run .
 
 ## Next Steps
 
-- [Inline Mode and Alternate Screen](12-inline-mode.md) -- Rendering inline at the bottom of the terminal and switching to full-screen overlays
-- [Focus Management](13-focus.md) -- Tab navigation and focus groups for form-like interfaces
-- [Components](06-components.md) -- Component basics, lifecycle interfaces, and composition patterns
-- [State and Reactivity](05-state.md) -- Reactive state management with `State[T]`
+- [Inline Mode and Alternate Screen](inline-mode) -- Rendering inline at the bottom of the terminal and switching to full-screen overlays
+- [Focus Management](focus) -- Tab navigation and focus groups for form-like interfaces
+- [Components](components) -- Component basics, lifecycle interfaces, and composition patterns
+- [State and Reactivity](state) -- Reactive state management with `State[T]`

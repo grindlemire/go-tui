@@ -46,7 +46,9 @@ templ App() {
 
 ### Children Slot
 
-Pure components can accept nested content via the `{children...}` placeholder:
+Both pure and struct components can accept nested content via the `{children...}` placeholder.
+
+In a pure component, children arrive as a function parameter:
 
 ```gsx
 templ Card(title string) {
@@ -69,7 +71,38 @@ templ Dashboard() {
 }
 ```
 
-`{children...}` is only available in pure components. Struct component `Render` methods cannot accept children.
+Struct components use the same `{children...}` syntax. Add a `children []*tui.Element` field to the struct and accept it in the constructor:
+
+```gsx
+type panel struct {
+    title    string
+    children []*tui.Element
+}
+
+func NewPanel(title string, children []*tui.Element) *panel {
+    return &panel{title: title, children: children}
+}
+
+templ (p *panel) Render() {
+    <div class="border-rounded p-1 flex-col gap-1">
+        <span class="font-bold">{p.title}</span>
+        {children...}
+    </div>
+}
+```
+
+The caller syntax is the same as with pure components:
+
+```gsx
+templ (a *myApp) Render() {
+    @NewPanel("Items") {
+        <span>First</span>
+        <span>Second</span>
+    }
+}
+```
+
+The generated code passes children through the constructor. On re-renders, `UpdateProps` copies the fresh children to the cached instance automatically.
 
 ### When to Use Pure Components
 
@@ -133,7 +166,7 @@ At minimum, a struct component must implement `Render(app *App) *Element`. The `
 | `AppBinder` | `BindApp(app *App)` | Receive the App instance |
 | `PropsUpdater` | `UpdateProps(fresh Component)` | Handle prop changes on re-mount |
 
-You don't need to implement all of these. Use only what your component needs. The [Components](06-components.md) guide covers each in detail.
+You don't need to implement all of these. Use only what your component needs. The [Components](components) guide covers each in detail.
 
 ## Elements
 
@@ -228,7 +261,7 @@ Bind an element to a reference variable for later access (scroll control, click 
 </div>
 ```
 
-See the [Event Handling](07-events.md) guide for how refs work with click handling.
+See the [Event Handling](events) guide for how refs work with click handling.
 
 ### Attribute Reference
 
@@ -460,7 +493,7 @@ The generated files should not be edited by hand. They're overwritten on every r
 
 Path arguments accept specific files (`hello.gsx`), directories (`./examples/`), or recursive patterns (`./...`).
 
-See the [CLI Reference](../reference/cli.md) for the full command reference.
+See the CLI section above for the full command reference.
 
 ## Putting It All Together
 
@@ -594,6 +627,6 @@ go run .
 
 ## Next Steps
 
-- [Styling and Colors](03-styling.md) — Text styles, colors, borders, and gradients
-- [Layout](04-layout.md) — Flexbox layout: direction, alignment, spacing, and sizing
-- [Components](06-components.md) — Component patterns, composition, and lifecycle interfaces
+- [Styling and Colors](styling) — Text styles, colors, borders, and gradients
+- [Layout](layout) — Flexbox layout: direction, alignment, spacing, and sizing
+- [Components](components) — Component patterns, composition, and lifecycle interfaces

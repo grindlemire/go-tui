@@ -305,6 +305,5 @@ go run .
 
 ## Next Steps
 
-- [Building a Dashboard](14-dashboard.md) -- Build a live metrics dashboard from scratch
-- [Focus Reference](../reference/focus.md) -- Full API reference for Focusable and FocusGroup
-- [Events Guide](07-events.md) -- Keyboard and mouse event handling
+- [Building a Dashboard](dashboard) -- Build a live metrics dashboard from scratch
+- [Events Guide](events) -- Keyboard and mouse event handling

@@ -393,7 +393,5 @@ go run .
 
 ## Next Steps
 
-- [Scrolling](08-scrolling.md) -- Scrollable containers for content that exceeds available space
-- [Timers, Watchers, and Channels](09-watchers.md) -- Background operations with timers and Go channels
-- [KeyMap Reference](../reference/events.md) -- Full API reference for event types and key constants
-- [Refs Reference](../reference/refs.md) -- Full API reference for Ref, RefList, and RefMap
+- [Scrolling](scrolling) -- Scrollable containers for content that exceeds available space
+- [Timers, Watchers, and Channels](watchers) -- Background operations with timers and Go channels

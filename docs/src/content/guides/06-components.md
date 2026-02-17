@@ -86,7 +86,7 @@ Each `Card` renders its title and divider, then places whatever children you pas
 
 `tui generate` compiles the children into a `[]*tui.Element` slice and passes it as a parameter to the generated function. The slot expands to a loop that adds each child element to the parent container.
 
-`{children...}` is only supported in pure templ functions. Struct component render methods don't accept parameters, so there's no way to pass children into them. If you need a struct component that wraps content, have it render a pure component with a children slot internally.
+Struct components also support `{children...}` — see [Children Slot](#children-slot-2) in the struct components section below.
 
 ### When to Use Pure Components
 
@@ -146,6 +146,43 @@ templ (c *counter) Render() {
 There are three parts: the struct with state fields, a constructor function that initializes it, and the render method using `templ (receiver) Render()` syntax.
 
 The render method works exactly like a pure templ function, but it has access to the struct's fields through the receiver. The generated code turns it into a `Render(app *App) *Element` method, which satisfies the `Component` interface.
+
+### Children Slot
+
+Struct components can also accept children using `{children...}`. Add a `children []*tui.Element` field to the struct and accept it in the constructor:
+
+```gsx
+type panel struct {
+    title    string
+    children []*tui.Element
+}
+
+func NewPanel(title string, children []*tui.Element) *panel {
+    return &panel{title: title, children: children}
+}
+
+templ (p *panel) Render() {
+    <div class="border-rounded p-1 flex-col gap-1">
+        <span class="font-bold text-gradient-cyan-magenta">{p.title}</span>
+        {children...}
+    </div>
+}
+```
+
+Callers use the same block syntax as pure components:
+
+```gsx
+templ (a *myApp) Render() {
+    @NewPanel("Items") {
+        <span>First item</span>
+        <span>Second item</span>
+    }
+}
+```
+
+The generated code builds a `[]*tui.Element` slice from the children block and passes it as the last constructor argument. On re-renders, `UpdateProps` copies the fresh children to the cached instance automatically, so the panel always reflects the latest content.
+
+This is useful when you need a wrapper component that carries its own state (timers, scroll position, internal selections) while still accepting arbitrary content from the parent.
 
 ### The Component Interface
 

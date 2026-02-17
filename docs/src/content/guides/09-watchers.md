@@ -643,7 +643,5 @@ go run .
 
 ## Next Steps
 
-- [Scrolling](08-scrolling.md) -- Scrollable containers for content that exceeds available space
-- [Testing](10-testing.md) -- Testing components with MockTerminal and MockEventReader
-- [State Reference](../reference/state.md) -- Full State[T] and Events[T] API
-- [Watcher Reference](../reference/watchers.md) -- Full Watcher interface and implementations
+- [Scrolling](scrolling) -- Scrollable containers for content that exceeds available space
+- [Testing](testing) -- Testing components with MockTerminal and MockEventReader

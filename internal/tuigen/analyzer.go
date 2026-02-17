@@ -215,6 +215,13 @@ func (a *Analyzer) Analyze(file *File) error {
 		a.componentDefs[comp.Name] = comp.AcceptsChildren
 	}
 
+	// Validate method templs using {children...} have a children field on their struct
+	for _, comp := range file.Components {
+		if comp.Receiver != "" && comp.AcceptsChildren {
+			a.validateChildrenField(comp, file.Decls)
+		}
+	}
+
 	// Second pass: collect @let binding names from all components
 	for _, comp := range file.Components {
 		a.collectLetBindings(comp.Body)
@@ -490,6 +497,30 @@ func (a *Analyzer) addMissingImports() {
 			Path:  "github.com/grindlemire/go-tui",
 		})
 	}
+}
+
+// validateChildrenField checks that a method templ using {children...} has a
+// `children []*tui.Element` field on its receiver struct.
+func (a *Analyzer) validateChildrenField(comp *Component, decls []*GoDecl) {
+	structDecl := findStructDecl(decls, comp.ReceiverType)
+	if structDecl == nil {
+		a.errors.AddErrorf(comp.Position,
+			"method templ %s uses {children...} but no struct definition found for %s",
+			comp.Name, strings.TrimPrefix(comp.ReceiverType, "*"))
+		return
+	}
+
+	fields := parseStructFields(structDecl.Code)
+	for _, f := range fields {
+		if f.Name == "children" {
+			return // Found the children field
+		}
+	}
+
+	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
+	a.errors.AddErrorf(comp.Position,
+		"method templ %s uses {children...} but struct %s has no `children` field; add `children []*tui.Element` to the struct",
+		comp.Name, typeName)
 }
 
 // AnalyzeFile is a convenience function that parses and analyzes a .tui file.

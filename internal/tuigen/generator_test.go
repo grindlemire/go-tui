@@ -326,6 +326,27 @@ templ (e *empty) Render() {
 				"return nil",
 			},
 		},
+		"method templ with children slot uses receiver field": {
+			input: `package x
+
+type card struct {
+	title    string
+	children []*tui.Element
+}
+
+templ (c *card) Render() {
+	<div>
+		<span>{c.title}</span>
+		{children...}
+	</div>
+}`,
+			wantContains: []string{
+				"for _, __child := range c.children {",
+			},
+			wantNotContains: []string{
+				"range children {",
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -347,6 +368,27 @@ templ (e *empty) Render() {
 				}
 			}
 		})
+	}
+}
+
+func TestGenerator_FunctionTemplChildrenSlotUsesBareChildren(t *testing.T) {
+	input := `package x
+
+templ Card(title string) {
+	<div>
+		<span>{title}</span>
+		{children...}
+	</div>
+}`
+
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+
+	code := string(output)
+	if !strings.Contains(code, "for _, __child := range children {") {
+		t.Errorf("function templ should use bare 'children' parameter\nGot:\n%s", code)
 	}
 }
 
