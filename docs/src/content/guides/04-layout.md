@@ -458,6 +458,5 @@ Each field is a vertical stack of label and input. The button row uses `justify-
 
 ## Next Steps
 
-- [State and Reactivity](05-state.md) -- Reactive state with `State[T]`
-- [Components](06-components.md) -- Component patterns, composition, and lifecycle
-- [Layout Reference](../reference/layout.md) -- Full API reference for Direction, Justify, Align, Value, Edges, and LayoutStyle
+- [State and Reactivity](state) -- Reactive state with `State[T]`
+- [Components](components) -- Component patterns, composition, and lifecycle

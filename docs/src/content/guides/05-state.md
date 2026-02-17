@@ -481,6 +481,6 @@ go run .
 
 ## Next Steps
 
-- [Components](06-components.md) -- Component patterns, composition, and lifecycle interfaces
-- [Event Handling](07-events.md) -- Keyboard and mouse input in depth
-- [Timers, Watchers, and Channels](09-watchers.md) -- Background operations that update state over time
+- [Components](components) -- Component patterns, composition, and lifecycle interfaces
+- [Event Handling](events) -- Keyboard and mouse input in depth
+- [Timers, Watchers, and Channels](watchers) -- Background operations that update state over time

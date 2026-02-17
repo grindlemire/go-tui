@@ -439,6 +439,4 @@ The `tc` struct lives inside the test function. Each test case has a descriptive
 
 ## Next Steps
 
-- [Multi-Component Applications](11-multi-component.md) -- Building apps with multiple struct components and shared state
-- [Testing Reference](../reference/testing.md) -- Full API reference for MockTerminal and MockEventReader
-- [App Reference](../reference/app.md) -- Full API reference for App lifecycle and configuration
+- [Multi-Component Applications](multi-component) -- Building apps with multiple struct components and shared state

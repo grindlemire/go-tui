@@ -376,6 +376,5 @@ If even ANSI colors aren't supported, colors are dropped entirely and the termin
 
 ## Next Steps
 
-- [Layout](04-layout.md) -- Flexbox layout: direction, alignment, spacing, and sizing
-- [State and Reactivity](05-state.md) -- Reactive state with `State[T]`
-- [Style Reference](../reference/styling.md) -- Full API reference for Style, Color, Gradient, and BorderStyle types
+- [Layout](layout) -- Flexbox layout: direction, alignment, spacing, and sizing
+- [State and Reactivity](state) -- Reactive state with `State[T]`

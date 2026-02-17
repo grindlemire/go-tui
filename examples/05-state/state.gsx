@@ -5,6 +5,23 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+// panel is a reusable struct component that accepts children via {children...}.
+type panel struct {
+	title    string
+	children []*tui.Element
+}
+
+func NewPanel(title string, children []*tui.Element) *panel {
+	return &panel{title: title, children: children}
+}
+
+templ (p *panel) Render() {
+	<div class="flex-col border-rounded p-1 gap-1">
+		<span class="text-gradient-cyan-magenta font-bold">{p.title}</span>
+		{children...}
+	</div>
+}
+
 type stateApp struct {
 	count    *tui.State[int]
 	selected *tui.State[int]
@@ -118,9 +135,8 @@ templ (s *stateApp) Render() {
 			</div>
 		</div>
 
-		// Items list with @for
-		<div class="flex-col border-rounded p-1 gap-1">
-			<span class="text-gradient-cyan-magenta font-bold">Items</span>
+		// Items list with @for — uses panel struct component with {children...}
+		@NewPanel("Items") {
 			@for i, item := range s.items {
 				@if i == s.selected.Get() {
 					<span class="text-gradient-cyan-magenta font-bold">{fmt.Sprintf("  > %s", item)}</span>
@@ -128,7 +144,7 @@ templ (s *stateApp) Render() {
 					<span class="font-dim">{fmt.Sprintf("    %s", item)}</span>
 				}
 			}
-		</div>
+		}
 
 		// Key hints
 		<div class="flex justify-center">

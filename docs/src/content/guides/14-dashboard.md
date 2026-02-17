@@ -6,12 +6,12 @@ We're going to build a live metrics dashboard -- CPU, memory, and disk gauges, a
 
 Concepts used:
 
-- **State** ([Guide 05](05-state.md)): reactive `State[T]` for metrics, sparkline data, and event lists
-- **Components** ([Guide 06](06-components.md)): a struct component with constructor and render method
-- **Events** ([Guide 07](07-events.md)): `KeyMap` for quit bindings
-- **Watchers** ([Guide 09](09-watchers.md)): `OnTimer` for metric animation and `Watch` for channel-based event streaming
-- **Styling** ([Guide 03](03-styling.md)): gradients, conditional color classes, borders
-- **Layout** ([Guide 04](04-layout.md)): nested flex containers, gap, grow, padding
+- **State** ([Guide 05](state)): reactive `State[T]` for metrics, sparkline data, and event lists
+- **Components** ([Guide 06](components)): a struct component with constructor and render method
+- **Events** ([Guide 07](events)): `KeyMap` for quit bindings
+- **Watchers** ([Guide 09](watchers)): `OnTimer` for metric animation and `Watch` for channel-based event streaming
+- **Styling** ([Guide 03](styling)): gradients, conditional color classes, borders
+- **Layout** ([Guide 04](layout)): nested flex containers, gap, grow, padding
 
 ## Project Setup
 
@@ -769,16 +769,8 @@ go run .
 
 That covers it. Here are some ways you could extend the dashboard:
 
-- Add mouse support with `tui.WithMouse()` and clickable panels that expand when clicked ([Events Guide](07-events.md))
-- Make the event feed scrollable for longer histories ([Scrolling Guide](08-scrolling.md))
-- Add focus navigation between panels with Tab/Shift-Tab ([Focus Guide](13-focus.md))
-- Split the dashboard into multiple `.gsx` files with separate components for each panel ([Multi-Component Guide](11-multi-component.md))
-- Add an alternate screen settings overlay ([Inline Mode Guide](12-inline-mode.md))
-
-For full API details on any type used in this guide:
-
-- [App Reference](../reference/app.md) -- App creation and lifecycle
-- [State Reference](../reference/state.md) -- Reactive state and event bus
-- [Events Reference](../reference/events.md) -- Key and mouse event types
-- [Watchers Reference](../reference/watchers.md) -- Timer and channel watchers
-- [Styling Reference](../reference/styling.md) -- Colors, gradients, and text styles
+- Add mouse support with `tui.WithMouse()` and clickable panels that expand when clicked ([Events Guide](events))
+- Make the event feed scrollable for longer histories ([Scrolling Guide](scrolling))
+- Add focus navigation between panels with Tab/Shift-Tab ([Focus Guide](focus))
+- Split the dashboard into multiple `.gsx` files with separate components for each panel ([Multi-Component Guide](multi-component))
+- Add an alternate screen settings overlay ([Inline Mode Guide](inline-mode))

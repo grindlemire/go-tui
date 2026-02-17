@@ -129,10 +129,28 @@ function Markdown({ content }: { content: string }) {
           return (
             <h3
               id={id}
-              className="text-[14px] sm:text-[15px] font-semibold mb-2 mt-6 scroll-mt-16"
+              className="group text-[14px] sm:text-[15px] font-semibold mb-2 mt-6 scroll-mt-16"
               style={{ color: t.heading }}
             >
               {children}
+              {id && (
+                <a
+                  href={`#${id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    history.replaceState(null, "", `#${id}`);
+                    const url = `${window.location.origin}${window.location.pathname}#${id}`;
+                    navigator.clipboard.writeText(url);
+                  }}
+                  className="ml-2 transition-colors duration-150 no-underline"
+                  style={{ color: t.textDim, textDecoration: "none", opacity: 0.4 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = t.accent; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.4"; e.currentTarget.style.color = t.textDim; }}
+                  aria-label="Copy link to section"
+                >
+                  #
+                </a>
+              )}
             </h3>
           );
         },

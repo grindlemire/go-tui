@@ -9,10 +9,19 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
+type panel struct {
+	title    string
+	children []*tui.Element
+}
+
 type stateApp struct {
 	count    *tui.State[int]
 	selected *tui.State[int]
 	items    []string
+}
+
+func NewPanel(title string, children []*tui.Element) *panel {
+	return &panel{title: title, children: children}
 }
 
 func State() *stateApp {
@@ -74,6 +83,37 @@ func rangeLabel(count int) string {
 	}
 	return "negative"
 }
+
+func (p *panel) Render(app *tui.App) *tui.Element {
+	__tui_0 := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+		tui.WithGap(1),
+	)
+	__tui_1 := tui.New(
+		tui.WithText(p.title),
+		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	__tui_0.AddChild(__tui_1)
+	for _, __child := range p.children {
+		__tui_0.AddChild(__child)
+	}
+
+	return __tui_0
+}
+
+func (p *panel) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*panel)
+	if !ok {
+		return
+	}
+	p.title = f.title
+	p.children = f.children
+}
+
+var _ tui.PropsUpdater = (*panel)(nil)
 
 func (s *stateApp) Render(app *tui.App) *tui.Element {
 	spanCount := tui.New(
@@ -223,46 +263,38 @@ func (s *stateApp) Render(app *tui.App) *tui.Element {
 	__tui_10.AddChild(__tui_21)
 	__tui_2.AddChild(__tui_10)
 	__tui_0.AddChild(__tui_2)
-	__tui_24 := tui.New(
-		tui.WithDirection(tui.Column),
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithPadding(1),
-		tui.WithGap(1),
-	)
-	__tui_25 := tui.New(
-		tui.WithText("Items"),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_24.AddChild(__tui_25)
+	__tui_24_children := []*tui.Element{}
 	for i, item := range s.items {
 		_ = i
 		if i == s.selected.Get() {
-			__tui_26 := tui.New(
+			__tui_25 := tui.New(
 				tui.WithText(fmt.Sprintf("  > %s", item)),
 				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 				tui.WithTextStyle(tui.NewStyle().Bold()),
 			)
-			__tui_24.AddChild(__tui_26)
+			__tui_24_children = append(__tui_24_children, __tui_25)
 		} else {
-			__tui_27 := tui.New(
+			__tui_26 := tui.New(
 				tui.WithText(fmt.Sprintf("    %s", item)),
 				tui.WithTextStyle(tui.NewStyle().Dim()),
 			)
-			__tui_24.AddChild(__tui_27)
+			__tui_24_children = append(__tui_24_children, __tui_26)
 		}
 	}
+	__tui_24 := app.Mount(s, 0, func() tui.Component {
+		return NewPanel("Items", __tui_24_children)
+	})
 	__tui_0.AddChild(__tui_24)
-	__tui_28 := tui.New(
+	__tui_27 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_29 := tui.New(
+	__tui_28 := tui.New(
 		tui.WithText("+/-count|j/k navigate|r reset|q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_28.AddChild(__tui_29)
-	__tui_0.AddChild(__tui_28)
+	__tui_27.AddChild(__tui_28)
+	__tui_0.AddChild(__tui_27)
 
 	return __tui_0
 }

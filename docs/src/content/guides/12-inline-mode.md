@@ -295,4 +295,4 @@ The flow works like this:
 
 The conditional `KeyMap` is important here. When settings are showing, you return different bindings than when the text area is active. This keeps the two modes from interfering with each other.
 
-**Cross-references**: [App Reference](../reference/app.md), [TextArea Reference](../reference/built-in-components.md), [Events Guide](07-events.md), [State Guide](05-state.md)
+**Cross-references**: [Events Guide](events), [State Guide](state)

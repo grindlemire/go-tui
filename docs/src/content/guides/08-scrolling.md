@@ -538,6 +538,5 @@ go run .
 
 ## Next Steps
 
-- [Timers, Watchers, and Channels](09-watchers.md) -- Background operations that update scrollable content over time
-- [Event Handling](07-events.md) -- Keyboard and mouse input in depth
-- [Element Reference](../reference/element.md) -- Full API reference for scroll methods and element options
+- [Timers, Watchers, and Channels](watchers) -- Background operations that update scrollable content over time
+- [Event Handling](events) -- Keyboard and mouse input in depth

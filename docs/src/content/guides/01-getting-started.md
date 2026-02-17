@@ -44,24 +44,24 @@ import tui "github.com/grindlemire/go-tui"
 type helloApp struct{}
 
 func Hello() *helloApp {
-	return &helloApp{}
+ return &helloApp{}
 }
 
 func (h *helloApp) KeyMap() tui.KeyMap {
-	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-	}
+ return tui.KeyMap{
+  tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+  tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+ }
 }
 
 templ (h *helloApp) Render() {
-	<div class="flex-col items-center justify-center h-full">
-		<div class="border-rounded border-cyan p-2 gap-1 flex-col items-center">
-			<span class="text-cyan font-bold">Hello, Terminal!</span>
-			<br />
-			<span class="font-dim">Press q to quit</span>
-		</div>
-	</div>
+ <div class="flex-col items-center justify-center h-full">
+  <div class="border-rounded border-cyan p-2 gap-1 flex-col items-center">
+   <span class="text-cyan font-bold">Hello, Terminal!</span>
+   <br />
+   <span class="font-dim">Press q to quit</span>
+  </div>
+ </div>
 }
 ```
 
@@ -79,26 +79,26 @@ Create `main.go`:
 package main
 
 import (
-	"fmt"
-	"os"
+ "fmt"
+ "os"
 
-	tui "github.com/grindlemire/go-tui"
+ tui "github.com/grindlemire/go-tui"
 )
 
 func main() {
-	app, err := tui.NewApp(
-		tui.WithRootComponent(Hello()),
-	)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-	defer app.Close()
+ app, err := tui.NewApp(
+  tui.WithRootComponent(Hello()),
+ )
+ if err != nil {
+  fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+  os.Exit(1)
+ }
+ defer app.Close()
 
-	if err := app.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+ if err := app.Run(); err != nil {
+  fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+  os.Exit(1)
+ }
 }
 ```
 
@@ -117,35 +117,25 @@ You should see a centered box with "Hello, Terminal!" in cyan. Press `q` or `Esc
 
 ## How It Works
 
-The build pipeline looks like this:
+You write `.gsx` files using templ-like syntax, then `tui generate` compiles them into `_gsx.go` files containing standard Go code that calls the `tui` package API. From there, `go build` produces a single binary with no runtime dependencies. At runtime, the framework handles the event loop, flexbox layout, and double-buffered terminal rendering.
 
-```
-.gsx file       tui generate       _gsx.go file       go build       binary
-(your UI)   ──────────────────>   (generated Go)   ─────────────>   (runs)
-```
-
-1. You write `.gsx` files with templ-like syntax for your UI
-2. `tui generate` reads them and produces `_gsx.go` files containing standard Go code that calls the `tui` package API
-3. `go build` compiles everything into a single binary with no runtime dependencies
-4. At runtime, the framework runs the event loop, computes flexbox layout, and writes to the terminal using double-buffered ANSI output
-
-The generated `_gsx.go` files should not be edited by hand. They're recreated every time you run `tui generate`.
+The generated `_gsx.go` files are recreated every time you run `tui generate` and should not be edited by hand.
 
 ## Core Concepts
 
-**Components** come in two flavors. *Pure components* (`templ Greeting(name string) { ... }`) are stateless functions that take parameters and return UI. *Struct components* carry their own state, handle input, and support lifecycle hooks. See [GSX Syntax](02-gsx-syntax.md) and [Components](06-components.md).
+**Components** come in two flavors. *Pure components* (`templ Greeting(name string) { ... }`) are stateless functions that take parameters and return UI. *Struct components* carry their own state, handle input, and support lifecycle hooks. See [GSX Syntax](gsx-syntax) and [Components](components).
 
-**Elements** are the HTML-like tags you use in `.gsx` files: `<div>` for block containers, `<span>` for inline text, `<input />` for text fields, `<progress />` for progress bars, and more. See [GSX Syntax](02-gsx-syntax.md).
+**Elements** are the HTML-like tags you use in `.gsx` files: `<div>` for block containers, `<span>` for inline text, `<input />` for text fields, `<progress />` for progress bars, and more. See [GSX Syntax](gsx-syntax).
 
-**Styling** uses Tailwind-inspired classes in the `class` attribute. Apply text colors (`text-cyan`), font styles (`font-bold`), borders (`border-rounded`), backgrounds (`bg-red`), and gradients (`text-gradient-cyan-magenta`). See [Styling and Colors](03-styling.md).
+**Styling** uses Tailwind-inspired classes in the `class` attribute. Apply text colors (`text-cyan`), font styles (`font-bold`), borders (`border-rounded`), backgrounds (`bg-red`), and gradients (`text-gradient-cyan-magenta`). See [Styling and Colors](styling).
 
-**Layout** follows the CSS flexbox model. Every `<div>` is a flex container. Control direction (`flex-col`), alignment (`items-center`, `justify-between`), spacing (`gap-2`, `p-1`), and sizing (`w-full`, `h-full`, `grow`) through classes or attributes. See [Layout](04-layout.md).
+**Layout** follows the CSS flexbox model. Every `<div>` is a flex container. Control direction (`flex-col`), alignment (`items-center`, `justify-between`), spacing (`gap-2`, `p-1`), and sizing (`w-full`, `h-full`, `grow`) through classes or attributes. See [Layout](layout).
 
-**State** is managed with the generic `State[T]` type. Create it with `tui.NewState(initialValue)`, read with `.Get()`, write with `.Set()` or `.Update()`. When state changes, the UI re-renders automatically. See [State and Reactivity](05-state.md).
+**State** is managed with the generic `State[T]` type. Create it with `tui.NewState(initialValue)`, read with `.Get()`, write with `.Set()` or `.Update()`. When state changes, the UI re-renders automatically. See [State and Reactivity](state).
 
-**Events** cover keyboard and mouse input. Implement `KeyMap()` for key bindings (as shown above) or `HandleMouse()` for clicks and scrolling. See [Event Handling](07-events.md).
+**Events** cover keyboard and mouse input. Implement `KeyMap()` for key bindings (as shown above) or `HandleMouse()` for clicks and scrolling. See [Event Handling](events).
 
 ## Next Steps
 
-- [GSX Syntax](02-gsx-syntax.md) — The full `.gsx` file format: elements, attributes, control flow, and code generation
-- [Styling and Colors](03-styling.md) — Text styles, colors, borders, and gradients
+- [GSX Syntax](gsx-syntax) — The full `.gsx` file format: elements, attributes, control flow, and code generation
+- [Styling and Colors](styling) — Text styles, colors, borders, and gradients

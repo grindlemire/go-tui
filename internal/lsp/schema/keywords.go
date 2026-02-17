@@ -77,6 +77,28 @@ Callers pass children with a block:
 @Card("Title") {
     <span>Content</span>
 }
+` + "```" + `
+
+### Children in Struct Components
+
+Struct components can also accept children by adding a ` + "`children []*tui.Element`" + ` field:
+
+` + "```gsx" + `
+type card struct {
+    title    string
+    children []*tui.Element
+}
+
+func NewCard(title string, children []*tui.Element) *card {
+    return &card{title: title, children: children}
+}
+
+templ (c *card) Render() {
+    <div class="border-rounded p-1">
+        <span>{c.title}</span>
+        {children...}
+    </div>
+}
 ` + "```",
 	}
 
