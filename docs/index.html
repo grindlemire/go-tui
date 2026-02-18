@@ -7,6 +7,18 @@
     <title>go-tui — Declarative Terminal UI for Go</title>
   </head>
   <body>
+    <script>
+      // Apply theme background immediately to prevent white flash during navigation.
+      // Must run synchronously before React mounts.
+      (function() {
+        var theme = localStorage.getItem("go-tui-theme");
+        if (theme !== "light") {
+          document.body.style.background = "#272822";
+        } else {
+          document.body.style.background = "#fafaf8";
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

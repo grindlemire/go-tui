@@ -295,7 +295,6 @@ export default function CodeShowcase() {
   }, [isTerminal]);
 
   const file = files[activeFile];
-  const isGsx = activeFile === 0;
   const activeCode = file.code;
   const activeLines = activeCode.split("\n");
 

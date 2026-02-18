@@ -1,18 +1,11 @@
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
-import type { ThemeRegistrationRaw } from "shiki/core";
+import type { ThemeRegistrationRaw, LanguageInput } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 import goLang from "@shikijs/langs/go";
 import shellLang from "@shikijs/langs/shellscript";
 import gsxGrammar from "../../../editor/vscode/syntaxes/gsx.tmLanguage.json";
 
-const darkTheme: ThemeRegistrationRaw = {
-  name: "go-tui-dark",
-  type: "dark",
-  colors: {
-    "editor.background": "#23241e",
-    "editor.foreground": "#f8f8f2",
-  },
-  tokenColors: [
+const darkTokenColors = [
     {
       scope: ["comment", "comment.line", "comment.block"],
       settings: { foreground: "#75715e" },
@@ -111,17 +104,20 @@ const darkTheme: ThemeRegistrationRaw = {
       scope: ["variable.other.ref"],
       settings: { foreground: "#f8f8f2" },
     },
-  ],
+];
+
+const darkTheme: ThemeRegistrationRaw = {
+  name: "go-tui-dark",
+  type: "dark",
+  settings: darkTokenColors,
+  colors: {
+    "editor.background": "#23241e",
+    "editor.foreground": "#f8f8f2",
+  },
+  tokenColors: darkTokenColors,
 };
 
-const lightTheme: ThemeRegistrationRaw = {
-  name: "go-tui-light",
-  type: "light",
-  colors: {
-    "editor.background": "#f5f5f1",
-    "editor.foreground": "#49483e",
-  },
-  tokenColors: [
+const lightTokenColors = [
     {
       scope: ["comment", "comment.line", "comment.block"],
       settings: { foreground: "#a6a68a" },
@@ -220,7 +216,17 @@ const lightTheme: ThemeRegistrationRaw = {
       scope: ["variable.other.ref"],
       settings: { foreground: "#49483e" },
     },
-  ],
+];
+
+const lightTheme: ThemeRegistrationRaw = {
+  name: "go-tui-light",
+  type: "light",
+  settings: lightTokenColors,
+  colors: {
+    "editor.background": "#f5f5f1",
+    "editor.foreground": "#49483e",
+  },
+  tokenColors: lightTokenColors,
 };
 
 let highlighterInstance: HighlighterCore | null = null;
@@ -236,7 +242,7 @@ export async function getHighlighter(): Promise<HighlighterCore> {
       {
         ...gsxGrammar,
         name: "gsx",
-      } as unknown as Parameters<HighlighterCore["loadLanguage"]>[0],
+      } as unknown as LanguageInput,
       goLang,
       shellLang,
     ],

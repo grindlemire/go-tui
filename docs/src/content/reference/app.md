@@ -1,0 +1,619 @@
+# App Reference
+
+## Overview
+
+The `App` type is the top-level container that manages terminal setup, the event loop, rendering, and the component tree. Every go-tui program creates an `App`, sets a root component, calls `Run()`, and defers `Close()`.
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+
+    tui "github.com/grindlemire/go-tui"
+)
+
+func main() {
+    app, err := tui.NewApp(
+        tui.WithRootComponent(MyApp()),
+    )
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    if err := app.Run(); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+
+## Creating an App
+
+### NewApp
+
+```go
+func NewApp(opts ...AppOption) (*App, error)
+```
+
+Creates a new application. Sets the terminal to raw mode and alternate screen (unless inline mode is configured). Pass `AppOption` functions to configure behavior.
+
+Mouse behavior defaults:
+- **Full screen mode**: mouse events enabled
+- **Inline mode**: mouse events disabled (preserves terminal scrollback)
+- Use `WithMouse()` or `WithoutMouse()` to override
+
+```go
+app, err := tui.NewApp(
+    tui.WithRootComponent(MyApp()),
+    tui.WithFrameRate(30),
+)
+```
+
+### NewAppWithReader
+
+```go
+func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error)
+```
+
+Creates an App with a custom `EventReader`, typically for testing. Accepts the same options as `NewApp`.
+
+```go
+reader := tui.NewMockEventReader(
+    tui.KeyEvent{Key: tui.KeyEnter},
+)
+app, err := tui.NewAppWithReader(reader,
+    tui.WithRootComponent(MyApp()),
+)
+```
+
+## AppOption Functions
+
+Options configure the App before the event loop starts. Each returns an `AppOption` (which is `func(*App) error`).
+
+### WithRootComponent
+
+```go
+func WithRootComponent(component Component) AppOption
+```
+
+Sets a struct component as the root. This is the most common way to wire up your UI. The component's `Render` method is called each frame when state is dirty, and the framework manages its lifecycle (key handling, mouse, watchers, mounting).
+
+```go
+tui.NewApp(tui.WithRootComponent(MyApp()))
+```
+
+### WithRoot
+
+```go
+func WithRoot(root Renderable) AppOption
+```
+
+Sets a raw `Renderable` as the root. Use this when you're building the element tree manually rather than through a struct component.
+
+### WithRootView
+
+```go
+func WithRootView(view Viewable) AppOption
+```
+
+Sets a `Viewable` as the root. A `Viewable` provides both a root element and a set of watchers. The framework starts the watchers automatically when the view is set.
+
+### WithFrameRate
+
+```go
+func WithFrameRate(fps int) AppOption
+```
+
+Sets the target render frame rate. Default is 60 fps. Valid range: 1-240.
+
+```go
+tui.WithFrameRate(30) // 30 fps, ~33ms per frame
+```
+
+### WithInputLatency
+
+```go
+func WithInputLatency(d time.Duration) AppOption
+```
+
+Sets the polling timeout for the event reader. Default is 50ms. Use `tui.InputLatencyBlocking` for blocking mode, which is more CPU-efficient but requires proper interrupt handling. A value of 0 is not allowed.
+
+```go
+tui.WithInputLatency(tui.InputLatencyBlocking)
+```
+
+### WithEventQueueSize
+
+```go
+func WithEventQueueSize(size int) AppOption
+```
+
+Sets the capacity of the internal event queue buffer. Default is 256. Must be at least 1.
+
+### WithGlobalKeyHandler
+
+```go
+func WithGlobalKeyHandler(fn func(KeyEvent) bool) AppOption
+```
+
+Sets a handler that runs before key events reach the component tree (legacy path). If the handler returns `true`, the event is consumed and not dispatched further.
+
+When using the component model (struct components with `KeyMap()`), key dispatch goes through the dispatch table instead. Prefer `KeyMap()` on your components over global handlers.
+
+```go
+tui.WithGlobalKeyHandler(func(ke tui.KeyEvent) bool {
+    if ke.Key == tui.KeyEscape {
+        ke.App().Stop()
+        return true
+    }
+    return false
+})
+```
+
+### WithMouse
+
+```go
+func WithMouse() AppOption
+```
+
+Explicitly enables mouse event reporting. Use this to turn on mouse support in inline mode, where it's off by default.
+
+### WithoutMouse
+
+```go
+func WithoutMouse() AppOption
+```
+
+Explicitly disables mouse event reporting. Use this to turn off mouse support in full screen mode, where it's on by default.
+
+### WithCursor
+
+```go
+func WithCursor() AppOption
+```
+
+Keeps the cursor visible during app execution. By default, the cursor is hidden.
+
+### WithInlineHeight
+
+```go
+func WithInlineHeight(rows int) AppOption
+```
+
+Enables inline widget mode. The app manages only the bottom N rows of the terminal, and normal terminal output is preserved above. Must be at least 1.
+
+In inline mode:
+- Alternate screen is not used, so terminal history is preserved
+- Mouse events are disabled by default
+- Use `PrintAbove()` / `PrintAboveln()` to print scrolling content above the widget
+
+```go
+tui.WithInlineHeight(5) // 5-row widget at the bottom of the terminal
+```
+
+### WithInlineStartupMode
+
+```go
+func WithInlineStartupMode(mode InlineStartupMode) AppOption
+```
+
+Configures how inline mode handles existing visible terminal content at startup. See [InlineStartupMode Constants](#inlinestartupmode-constants) for the available modes.
+
+## Lifecycle Methods
+
+### Run
+
+```go
+func (a *App) Run() error
+```
+
+Starts the main event loop. Blocks until `Stop()` is called or a SIGINT (Ctrl+C) is received. The loop processes input events, re-renders when state is dirty, and sleeps for the remaining frame budget to maintain a consistent frame rate.
+
+```go
+if err := app.Run(); err != nil {
+    fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+    os.Exit(1)
+}
+```
+
+### Stop
+
+```go
+func (a *App) Stop()
+```
+
+Signals the `Run` loop to exit gracefully. All watchers receive a stop signal and their goroutines exit. Safe to call multiple times (idempotent).
+
+```go
+tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+    ke.App().Stop()
+})
+```
+
+### Close
+
+```go
+func (a *App) Close() error
+```
+
+Restores the terminal to its original state: disables mouse, shows cursor, exits alternate screen (or clears the inline region), exits raw mode, and closes the event reader. Must be called when the application exits.
+
+```go
+app, err := tui.NewApp(...)
+if err != nil { ... }
+defer app.Close()
+```
+
+## Root Management
+
+### SetRoot
+
+```go
+func (a *App) SetRoot(root Renderable)
+```
+
+Sets a raw `Renderable` as the root element for rendering. Clears any previous root component, discovers focusable elements and watchers in the new tree, and marks the app dirty.
+
+### SetRootView
+
+```go
+func (a *App) SetRootView(view Viewable)
+```
+
+Sets a `Viewable` as the root. Calls `BindApp` if the view implements `AppBinder`, extracts the root element via `GetRoot()`, and starts watchers returned by `GetWatchers()`.
+
+### SetRootComponent
+
+```go
+func (a *App) SetRootComponent(component Component)
+```
+
+Sets a struct component as the root. Calls `BindApp` if the component implements `AppBinder`, renders it to produce the element tree, and marks the app dirty. On subsequent frames, the component's `Render` method is called again whenever the app is dirty.
+
+### Root
+
+```go
+func (a *App) Root() Renderable
+```
+
+Returns the current root element.
+
+## Rendering
+
+### Render
+
+```go
+func (a *App) Render()
+```
+
+Clears the buffer, re-renders the component tree (calling the root component's `Render` method if one is set), and flushes changes to the terminal. Handles buffer resizing, inline mode offsets, and the mark-and-sweep cycle for mounted sub-components. Automatically performs a full redraw after a resize.
+
+### RenderFull
+
+```go
+func (a *App) RenderFull()
+```
+
+Forces a complete redraw of the entire buffer to the terminal. Use this after events that may corrupt the terminal display.
+
+### MarkDirty
+
+```go
+func (a *App) MarkDirty()
+```
+
+Marks the app as needing a render on the next frame. You rarely need to call this directly; `State.Set()` and `State.Update()` call it automatically.
+
+### Buffer
+
+```go
+func (a *App) Buffer() *Buffer
+```
+
+Returns the underlying double-buffered character grid. For advanced use cases only.
+
+### Size
+
+```go
+func (a *App) Size() (width, height int)
+```
+
+Returns the current terminal dimensions in columns and rows.
+
+### SnapshotFrame
+
+```go
+func (a *App) SnapshotFrame() string
+```
+
+Returns the current frame as a trimmed string. Useful for debugging and testing.
+
+## Event Handling
+
+### Dispatch
+
+```go
+func (a *App) Dispatch(event Event) bool
+```
+
+Sends an event through the framework's dispatch pipeline. Returns `true` if the event was consumed.
+
+- **ResizeEvent**: updates buffer size, marks root dirty, schedules a full redraw.
+- **MouseEvent**: hit-tests the element tree to find the target element and dispatches to it.
+- **KeyEvent**: routes through the focus manager to the focused element.
+
+This method is primarily used in tests. During normal operation, `Run()` handles dispatch internally.
+
+```go
+app.Dispatch(tui.KeyEvent{Key: tui.KeyEnter})
+```
+
+### SetGlobalKeyHandler
+
+```go
+func (a *App) SetGlobalKeyHandler(fn func(KeyEvent) bool)
+```
+
+Sets (or replaces) a handler that runs before key events reach the focus manager. If the handler returns `true`, the event is consumed.
+
+### QueueUpdate
+
+```go
+func (a *App) QueueUpdate(fn func())
+```
+
+Enqueues a function to run on the main event loop. Safe to call from any goroutine. Use this when you need to update state from a background goroutine.
+
+```go
+go func() {
+    result := fetchData()
+    app.QueueUpdate(func() {
+        data.Set(result)
+    })
+}()
+```
+
+### PollEvent
+
+```go
+func (a *App) PollEvent(timeout time.Duration) (Event, bool)
+```
+
+Reads the next input event with a timeout. Returns the event and `true` if one was available, or a zero event and `false` on timeout. Convenience wrapper around the `EventReader`.
+
+## Focus
+
+### FocusNext
+
+```go
+func (a *App) FocusNext()
+```
+
+Moves focus to the next focusable element in document order.
+
+### FocusPrev
+
+```go
+func (a *App) FocusPrev()
+```
+
+Moves focus to the previous focusable element.
+
+### Focused
+
+```go
+func (a *App) Focused() Focusable
+```
+
+Returns the currently focused element, or `nil` if nothing is focused.
+
+## Inline Mode
+
+These methods only take effect when the app was created with `WithInlineHeight`. In full-screen mode they are no-ops.
+
+### PrintAbove
+
+```go
+func (a *App) PrintAbove(format string, args ...any)
+```
+
+Prints formatted content above the inline widget. Does not add a trailing newline. Must be called from the app's main event loop.
+
+### PrintAboveln
+
+```go
+func (a *App) PrintAboveln(format string, args ...any)
+```
+
+Same as `PrintAbove`, but appends a newline. Must be called from the main event loop.
+
+### QueuePrintAbove
+
+```go
+func (a *App) QueuePrintAbove(format string, args ...any)
+```
+
+Thread-safe version of `PrintAbove`. Safe to call from any goroutine.
+
+### QueuePrintAboveln
+
+```go
+func (a *App) QueuePrintAboveln(format string, args ...any)
+```
+
+Thread-safe version of `PrintAboveln`. Safe to call from any goroutine.
+
+### SetInlineHeight
+
+```go
+func (a *App) SetInlineHeight(rows int)
+```
+
+Changes the inline widget height at runtime. The height change takes effect immediately. Capped at terminal height, minimum of 1. Should be called from render functions or the main event loop.
+
+### InlineHeight
+
+```go
+func (a *App) InlineHeight() int
+```
+
+Returns the current inline height. Returns 0 if the app is not in inline mode.
+
+## Alternate Screen
+
+These methods let an inline-mode app switch to a full-screen overlay and back, for things like settings panels or help screens that shouldn't affect terminal scrollback.
+
+### EnterAlternateScreen
+
+```go
+func (a *App) EnterAlternateScreen() error
+```
+
+Switches to alternate screen mode for a full-screen UI overlay. Saves the current inline mode state, clears the inline region, enters the alternate screen, and resizes the buffer to full terminal dimensions. No-op if already in alternate mode.
+
+### ExitAlternateScreen
+
+```go
+func (a *App) ExitAlternateScreen() error
+```
+
+Returns from alternate screen mode and restores the previous inline mode state. The terminal content from before `EnterAlternateScreen` reappears. No-op if not in alternate mode.
+
+### IsInAlternateScreen
+
+```go
+func (a *App) IsInAlternateScreen() bool
+```
+
+Returns `true` if the app is currently displaying in the alternate screen overlay.
+
+## State Batching
+
+### Batch
+
+```go
+func (a *App) Batch(fn func())
+```
+
+Executes `fn` with all state binding callbacks deferred until `fn` returns. Multiple `Set()` calls within a batch coalesce into a single round of binding execution, which avoids redundant intermediate renders.
+
+```go
+app.Batch(func() {
+    firstName.Set("Alice")
+    lastName.Set("Smith")
+}) // Bindings fire once here, not twice
+```
+
+## Component Mounting
+
+### Mount
+
+```go
+func (a *App) Mount(parent Component, index int, factory func() Component) *Element
+```
+
+Creates or retrieves a cached component instance and returns its rendered element tree. Generated code calls this; you typically don't call it directly.
+
+On first call for a given `(parent, index)` pair: executes `factory`, caches the instance, calls `BindApp` and `Init()` (if implemented). On subsequent calls: returns the cached instance's `Render()` result. If the instance implements `PropsUpdater`, `UpdateProps` is called with a fresh instance so the cached component can pick up new props.
+
+Stale cache entries are swept after each render pass. When a component disappears from the tree, its cleanup function runs.
+
+## Other
+
+### Terminal
+
+```go
+func (a *App) Terminal() Terminal
+```
+
+Returns the underlying `Terminal` implementation. For advanced use cases such as direct ANSI escape output.
+
+### EventQueue
+
+```go
+func (a *App) EventQueue() chan<- func()
+```
+
+Returns the event queue channel for manual watcher setup. Prefer `WatcherProvider` on components instead.
+
+### StopCh
+
+```go
+func (a *App) StopCh() <-chan struct{}
+```
+
+Returns a channel that closes when the app stops. For manual watcher setup. Prefer `WatcherProvider` on components instead.
+
+## InlineStartupMode Constants
+
+These constants control how inline mode initializes the visible terminal viewport at startup. Pass them to `WithInlineStartupMode`.
+
+| Constant | Description |
+|----------|-------------|
+| `InlineStartupPreserveVisible` | Default. Keeps existing visible rows on launch. Unknown history drains naturally as new `PrintAbove` content is appended. |
+| `InlineStartupFreshViewport` | Clears the visible viewport immediately. Existing visible rows are discarded. |
+| `InlineStartupSoftReset` | Pushes existing visible rows into scrollback via newline flow, then clears the viewport. |
+
+## InputLatencyBlocking Constant
+
+```go
+const InputLatencyBlocking = -1 * time.Millisecond
+```
+
+A special value for `WithInputLatency` that makes the event reader block indefinitely until input is available. More CPU-efficient than polling, but requires proper interrupt handling (which the framework sets up automatically when this mode is used).
+
+## Interfaces
+
+These interfaces are relevant when working with the App's root management methods.
+
+### Renderable
+
+```go
+type Renderable interface {
+    Render(buf *Buffer, width, height int)
+    MarkDirty()
+    IsDirty() bool
+}
+```
+
+Implemented by types that can be rendered to a buffer. `*Element` implements this.
+
+### Viewable
+
+```go
+type Viewable interface {
+    GetRoot() Renderable
+    GetWatchers() []Watcher
+}
+```
+
+Implemented by generated view structs. Allows `SetRootView` to extract the root element and start watchers.
+
+### Component
+
+```go
+type Component interface {
+    Render(app *App) *Element
+}
+```
+
+The base interface for struct components. Any struct with a matching `Render` method can serve as a component.
+
+### Optional Component Interfaces
+
+Components can implement these additional interfaces for extended behavior:
+
+| Interface | Method | Purpose |
+|-----------|--------|---------|
+| `KeyListener` | `KeyMap() KeyMap` | Keyboard handling |
+| `MouseListener` | `HandleMouse(MouseEvent) bool` | Mouse handling |
+| `WatcherProvider` | `Watchers() []Watcher` | Timers and channel watchers |
+| `Initializer` | `Init() func()` | Setup on mount, returns cleanup function |
+| `AppBinder` | `BindApp(app *App)` | Receives app reference (called automatically by mount) |
+| `PropsUpdater` | `UpdateProps(fresh Component)` | Receives updated props on re-render from cache |
+
+See the [Component Interfaces Reference](interfaces.md) for full details on each.

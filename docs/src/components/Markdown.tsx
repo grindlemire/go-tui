@@ -266,10 +266,10 @@ function Markdown({ content }: { content: string }) {
             );
           }
 
-          const html = ready ? highlight(codeStr, lang, theme) : "";
+          const html = ready ? highlight(codeStr, lang!, theme) : "";
 
           return (
-            <CodeBlockWrapper lang={lang} title={lang} code={codeStr}>
+            <CodeBlockWrapper lang={lang!} title={lang ?? undefined} code={codeStr}>
               {html ? (
                 <div
                   className="shiki-container [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:!p-0 [&_code]:!text-[12px] [&_code]:!sm:text-[13px] [&_code]:!leading-[1.7] [&_code]:font-['Fira_Code',monospace]"
@@ -520,7 +520,6 @@ function CopyButton({ text }: { text: string }) {
 function CodeBlockWrapper({
   children,
   lang,
-  title,
   code,
 }: {
   children: ReactNode;

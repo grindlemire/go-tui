@@ -946,7 +946,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 01: App
+#### Reference 01: App ✅
 **File**: `docs/content/reference/app.md`
 
 **Purpose**: Complete reference for the App type — creation, configuration, lifecycle, and methods.
@@ -1023,7 +1023,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 02: Element
+#### Reference 02: Element ✅
 **File**: `docs/content/reference/element.md`
 
 **Purpose**: Complete reference for the Element type — the building block of all UIs.
@@ -1089,7 +1089,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 03: Layout
+#### Reference 03: Layout ✅
 **File**: `docs/content/reference/layout.md`
 
 **Purpose**: Complete reference for the layout system types and algorithm.
@@ -1132,7 +1132,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 04: Styling
+#### Reference 04: Styling ✅
 **File**: `docs/content/reference/styling.md`
 
 **Purpose**: Complete reference for Style, Color, Gradient, and BorderStyle types.
@@ -1179,7 +1179,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 05: State
+#### Reference 05: State ✅
 **File**: `docs/content/reference/state.md`
 
 **Purpose**: Complete reference for State[T] and Events[T] generic types.
@@ -1206,7 +1206,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 06: Events
+#### Reference 06: Events ✅
 **File**: `docs/content/reference/events.md`
 
 **Purpose**: Complete reference for Event types, Key constants, and Modifier flags.
@@ -1248,7 +1248,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 07: Focus
+#### Reference 07: Focus ✅
 **File**: `docs/content/reference/focus.md`
 
 **Purpose**: Complete reference for focus management types.
@@ -1270,7 +1270,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 08: Watchers
+#### Reference 08: Watchers ✅
 **File**: `docs/content/reference/watchers.md`
 
 **Purpose**: Complete reference for Watcher types.
@@ -1290,7 +1290,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 09: Refs
+#### Reference 09: Refs ✅
 **File**: `docs/content/reference/refs.md`
 
 **Purpose**: Complete reference for Ref, RefList, RefMap, and click handling.
@@ -1313,7 +1313,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 10: Buffer and Rendering
+#### Reference 10: Buffer and Rendering ✅
 **File**: `docs/content/reference/buffer.md`
 
 **Purpose**: Complete reference for Buffer, Cell, and rendering functions.
@@ -1343,7 +1343,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 11: Terminal
+#### Reference 11: Terminal ✅
 **File**: `docs/content/reference/terminal.md`
 
 **Purpose**: Complete reference for the Terminal interface and implementations.
@@ -1371,7 +1371,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 12: Built-in Components
+#### Reference 12: Built-in Components ✅
 **File**: `docs/content/reference/built-in-components.md`
 
 **Purpose**: Complete reference for TextArea and any other built-in widget components.
@@ -1396,7 +1396,7 @@ Reference documents are exhaustive API documentation. Every exported type, funct
 
 ---
 
-#### Reference 13: Component Interfaces
+#### Reference 13: Component Interfaces ✅
 **File**: `docs/content/reference/interfaces.md`
 
 **Purpose**: Complete reference for all interfaces that users can implement.
@@ -1421,7 +1421,7 @@ For each interface: signature, when to implement, example implementation.
 
 ---
 
-#### Reference 14: GSX Syntax Reference
+#### Reference 14: GSX Syntax Reference ✅
 **File**: `docs/content/reference/gsx-syntax.md`
 
 **Purpose**: Complete reference for all .gsx syntax — elements, attributes, control flow, and Tailwind classes.
@@ -1452,7 +1452,7 @@ For each interface: signature, when to implement, example implementation.
 
 ---
 
-#### Reference 15: Testing Utilities
+#### Reference 15: Testing Utilities ✅
 **File**: `docs/content/reference/testing.md`
 
 **Purpose**: Complete reference for MockTerminal and MockEventReader.
@@ -1473,7 +1473,7 @@ For each interface: signature, when to implement, example implementation.
 
 ---
 
-#### Reference 16: CLI Reference
+#### Reference 16: CLI Reference ✅
 **File**: `docs/content/reference/cli.md`
 
 **Purpose**: Complete reference for the `tui` command-line tool.
