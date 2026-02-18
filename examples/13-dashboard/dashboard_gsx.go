@@ -12,36 +12,71 @@ import (
 )
 
 type dashboardApp struct {
-	cpu      *tui.State[int]
-	mem      *tui.State[int]
-	disk     *tui.State[int]
-	netIn    *tui.State[int]
-	netOut   *tui.State[int]
-	sparkIn  *tui.State[[]int]
-	sparkOut *tui.State[[]int]
-	events   *tui.State[[]string]
-	eventCh  <-chan string
+	cpu       *tui.State[int]
+	mem       *tui.State[int]
+	disk      *tui.State[int]
+	netIn     *tui.State[int]
+	netOut    *tui.State[int]
+	sparkIn   *tui.State[[]int]
+	sparkOut  *tui.State[[]int]
+	events    *tui.State[[]string]
+	eventCh   <-chan string
+	scrollY   *tui.State[int]
+	eventsRef *tui.Ref
 }
 
 func Dashboard(eventCh <-chan string) *dashboardApp {
 	return &dashboardApp{
-		cpu:      tui.NewState(45),
-		mem:      tui.NewState(62),
-		disk:     tui.NewState(38),
-		netIn:    tui.NewState(142),
-		netOut:   tui.NewState(89),
-		sparkIn:  tui.NewState([]int{3, 5, 4, 6, 7, 5, 4, 3, 5, 6, 7, 8, 6, 5, 4, 3, 5, 6, 7, 5}),
-		sparkOut: tui.NewState([]int{2, 3, 4, 3, 5, 4, 3, 2, 3, 4, 5, 6, 4, 3, 2, 3, 4, 5, 4, 3}),
-		events:   tui.NewState([]string{}),
-		eventCh:  eventCh,
+		cpu:       tui.NewState(45),
+		mem:       tui.NewState(62),
+		disk:      tui.NewState(38),
+		netIn:     tui.NewState(142),
+		netOut:    tui.NewState(89),
+		sparkIn:   tui.NewState([]int{3, 5, 4, 6, 7, 5, 4, 3, 5, 6, 7, 8, 6, 5, 4, 3, 5, 6, 7, 5}),
+		sparkOut:  tui.NewState([]int{2, 3, 4, 3, 5, 4, 3, 2, 3, 4, 5, 6, 4, 3, 2, 3, 4, 5, 4, 3}),
+		events:    tui.NewState([]string{}),
+		eventCh:   eventCh,
+		scrollY:   tui.NewState(0),
+		eventsRef: tui.NewRef(),
 	}
+}
+
+func (d *dashboardApp) scrollBy(delta int) {
+	el := d.eventsRef.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := d.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	d.scrollY.Set(newY)
 }
 
 func (d *dashboardApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { d.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { d.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.scrollBy(1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.scrollBy(-1) }),
 	}
+}
+
+func (d *dashboardApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		d.scrollBy(-1)
+		return true
+	case tui.MouseWheelDown:
+		d.scrollBy(1)
+		return true
+	}
+	return false
 }
 
 func (d *dashboardApp) Watchers() []tui.Watcher {
@@ -74,11 +109,18 @@ func (d *dashboardApp) addEvent(event string) {
 	ts := time.Now().Format("15:04:05")
 	entry := fmt.Sprintf("%s  %s", ts, event)
 	current = append(current, entry)
-	// Keep last 6
-	if len(current) > 6 {
-		current = current[len(current)-6:]
+	// Keep last 50
+	if len(current) > 50 {
+		current = current[len(current)-50:]
 	}
 	d.events.Set(current)
+
+	// Auto-scroll to bottom
+	el := d.eventsRef.El()
+	if el != nil {
+		_, maxY := el.MaxScroll()
+		d.scrollY.Set(maxY + 1)
+	}
 }
 
 func clampVal(v, min, max int) int {
@@ -258,106 +300,116 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_3.AddChild(__tui_12)
 	__tui_0.AddChild(__tui_3)
 	__tui_16 := tui.New(
+		tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithFlexGrow(1),
+	)
+	__tui_17 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
+		tui.WithFlexGrow(1.0),
 	)
-	__tui_17 := tui.New(
+	__tui_18 := tui.New(
 		tui.WithText("Network Traffic"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_16.AddChild(__tui_17)
-	__tui_18 := tui.New(
+	__tui_17.AddChild(__tui_18)
+	__tui_19 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_19 := tui.New(
+	__tui_20 := tui.New(
 		tui.WithText("In:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_18.AddChild(__tui_19)
-	__tui_20 := tui.New(
+	__tui_19.AddChild(__tui_20)
+	__tui_21 := tui.New(
 		tui.WithText(sparkline(d.sparkIn.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
-	__tui_18.AddChild(__tui_20)
-	__tui_16.AddChild(__tui_18)
-	__tui_21 := tui.New(
+	__tui_19.AddChild(__tui_21)
+	__tui_17.AddChild(__tui_19)
+	__tui_22 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_22 := tui.New(
+	__tui_23 := tui.New(
 		tui.WithText("Out:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_21.AddChild(__tui_22)
-	__tui_23 := tui.New(
+	__tui_22.AddChild(__tui_23)
+	__tui_24 := tui.New(
 		tui.WithText(sparkline(d.sparkOut.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta)),
 	)
-	__tui_21.AddChild(__tui_23)
-	__tui_16.AddChild(__tui_21)
-	__tui_24 := tui.New(
+	__tui_22.AddChild(__tui_24)
+	__tui_17.AddChild(__tui_22)
+	__tui_25 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_25 := tui.New(
+	__tui_26 := tui.New(
 		tui.WithText(fmt.Sprintf("In: %d MB/s", d.netIn.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_24.AddChild(__tui_25)
-	__tui_26 := tui.New(
+	__tui_25.AddChild(__tui_26)
+	__tui_27 := tui.New(
 		tui.WithText(fmt.Sprintf("Out: %d MB/s", d.netOut.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta).Bold()),
 	)
-	__tui_24.AddChild(__tui_26)
-	__tui_16.AddChild(__tui_24)
-	__tui_0.AddChild(__tui_16)
-	__tui_27 := tui.New(
+	__tui_25.AddChild(__tui_27)
+	__tui_17.AddChild(__tui_25)
+	__tui_16.AddChild(__tui_17)
+	__tui_28 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
-		tui.WithFlexGrow(1),
+		tui.WithFlexGrow(1.0),
+		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithScrollOffset(0, d.scrollY.Get()),
 	)
-	__tui_28 := tui.New(
+	d.eventsRef.Set(__tui_28)
+	__tui_29 := tui.New(
 		tui.WithText("Recent Events"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_27.AddChild(__tui_28)
+	__tui_28.AddChild(__tui_29)
 	for __idx_0, event := range d.events.Get() {
 		_ = __idx_0
-		__tui_29 := tui.New(
+		__tui_30 := tui.New(
 			tui.WithText(event),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 		)
-		__tui_27.AddChild(__tui_29)
+		__tui_28.AddChild(__tui_30)
 	}
 	if len(d.events.Get()) == 0 {
-		__tui_30 := tui.New(
+		__tui_31 := tui.New(
 			tui.WithTextStyle(tui.NewStyle().Dim()),
 		)
-		__tui_31 := tui.New(tui.WithText("Waiting"))
-		__tui_30.AddChild(__tui_31)
-		__tui_32 := tui.New(tui.WithText("events..."))
-		__tui_30.AddChild(__tui_32)
-		__tui_27.AddChild(__tui_30)
+		__tui_32 := tui.New(tui.WithText("Waiting"))
+		__tui_31.AddChild(__tui_32)
+		__tui_33 := tui.New(tui.WithText("events..."))
+		__tui_31.AddChild(__tui_33)
+		__tui_28.AddChild(__tui_31)
 	}
-	__tui_0.AddChild(__tui_27)
-	__tui_33 := tui.New(
+	__tui_16.AddChild(__tui_28)
+	__tui_0.AddChild(__tui_16)
+	__tui_34 := tui.New(
 		tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFlexShrink(0),
 	)
-	__tui_34 := tui.New(
-		tui.WithText("q to quit"),
+	__tui_35 := tui.New(
+		tui.WithText("j/k scroll events|q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_33.AddChild(__tui_34)
-	__tui_0.AddChild(__tui_33)
+	__tui_34.AddChild(__tui_35)
+	__tui_0.AddChild(__tui_34)
 
 	return __tui_0
 }
@@ -386,6 +438,9 @@ func (d *dashboardApp) BindApp(app *tui.App) {
 	}
 	if d.events != nil {
 		d.events.BindApp(app)
+	}
+	if d.scrollY != nil {
+		d.scrollY.BindApp(app)
 	}
 }
 

@@ -8,15 +8,17 @@ import (
 )
 
 type dashboardApp struct {
-	cpu      *tui.State[int]
-	mem      *tui.State[int]
-	disk     *tui.State[int]
-	netIn    *tui.State[int]
-	netOut   *tui.State[int]
-	sparkIn  *tui.State[[]int]
-	sparkOut *tui.State[[]int]
-	events   *tui.State[[]string]
-	eventCh  <-chan string
+	cpu       *tui.State[int]
+	mem       *tui.State[int]
+	disk      *tui.State[int]
+	netIn     *tui.State[int]
+	netOut    *tui.State[int]
+	sparkIn   *tui.State[[]int]
+	sparkOut  *tui.State[[]int]
+	events    *tui.State[[]string]
+	eventCh   <-chan string
+	scrollY   *tui.State[int]
+	eventsRef *tui.Ref
 }
 
 func Dashboard(eventCh <-chan string) *dashboardApp {
@@ -28,16 +30,49 @@ func Dashboard(eventCh <-chan string) *dashboardApp {
 		netOut:   tui.NewState(89),
 		sparkIn:  tui.NewState([]int{3, 5, 4, 6, 7, 5, 4, 3, 5, 6, 7, 8, 6, 5, 4, 3, 5, 6, 7, 5}),
 		sparkOut: tui.NewState([]int{2, 3, 4, 3, 5, 4, 3, 2, 3, 4, 5, 6, 4, 3, 2, 3, 4, 5, 4, 3}),
-		events:   tui.NewState([]string{}),
-		eventCh:  eventCh,
+		events:    tui.NewState([]string{}),
+		eventCh:   eventCh,
+		scrollY:   tui.NewState(0),
+		eventsRef: tui.NewRef(),
 	}
+}
+
+func (d *dashboardApp) scrollBy(delta int) {
+	el := d.eventsRef.El()
+	if el == nil {
+		return
+	}
+	_, maxY := el.MaxScroll()
+	newY := d.scrollY.Get() + delta
+	if newY < 0 {
+		newY = 0
+	} else if newY > maxY {
+		newY = maxY
+	}
+	d.scrollY.Set(newY)
 }
 
 func (d *dashboardApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { d.scrollBy(1) }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { d.scrollBy(-1) }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.scrollBy(1) }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.scrollBy(-1) }),
 	}
+}
+
+func (d *dashboardApp) HandleMouse(me tui.MouseEvent) bool {
+	switch me.Button {
+	case tui.MouseWheelUp:
+		d.scrollBy(-1)
+		return true
+	case tui.MouseWheelDown:
+		d.scrollBy(1)
+		return true
+	}
+	return false
 }
 
 func (d *dashboardApp) Watchers() []tui.Watcher {
@@ -70,11 +105,18 @@ func (d *dashboardApp) addEvent(event string) {
 	ts := time.Now().Format("15:04:05")
 	entry := fmt.Sprintf("%s  %s", ts, event)
 	current = append(current, entry)
-	// Keep last 6
-	if len(current) > 6 {
-		current = current[len(current)-6:]
+	// Keep last 50
+	if len(current) > 50 {
+		current = current[len(current)-50:]
 	}
 	d.events.Set(current)
+
+	// Auto-scroll to bottom
+	el := d.eventsRef.El()
+	if el != nil {
+		_, maxY := el.MaxScroll()
+		d.scrollY.Set(maxY + 1)
+	}
 }
 
 func clampVal(v, min, max int) int {
@@ -185,36 +227,43 @@ templ (d *dashboardApp) Render() {
 			</div>
 		</div>
 
-		// Network Traffic
-		<div class="flex-col border-rounded p-1 gap-1">
-			<span class="text-gradient-cyan-magenta font-bold">Network Traffic</span>
-			<div class="flex gap-1">
-				<span class="font-dim">In: </span>
-				<span class="text-cyan">{sparkline(d.sparkIn.Get())}</span>
+		// Network Traffic + Recent Events
+		<div class="flex gap-1 flex-grow">
+			<div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
+				<span class="text-gradient-cyan-magenta font-bold">Network Traffic</span>
+				<div class="flex gap-1">
+					<span class="font-dim">In: </span>
+					<span class="text-cyan">{sparkline(d.sparkIn.Get())}</span>
+				</div>
+				<div class="flex gap-1">
+					<span class="font-dim">Out:</span>
+					<span class="text-magenta">{sparkline(d.sparkOut.Get())}</span>
+				</div>
+				<div class="flex gap-2">
+					<span class="text-cyan font-bold">{fmt.Sprintf("In: %d MB/s", d.netIn.Get())}</span>
+					<span class="text-magenta font-bold">{fmt.Sprintf("Out: %d MB/s", d.netOut.Get())}</span>
+				</div>
 			</div>
-			<div class="flex gap-1">
-				<span class="font-dim">Out:</span>
-				<span class="text-magenta">{sparkline(d.sparkOut.Get())}</span>
-			</div>
-			<div class="flex gap-2">
-				<span class="text-cyan font-bold">{fmt.Sprintf("In: %d MB/s", d.netIn.Get())}</span>
-				<span class="text-magenta font-bold">{fmt.Sprintf("Out: %d MB/s", d.netOut.Get())}</span>
-			</div>
-		</div>
 
-		// Recent Events
-		<div class="flex-col border-rounded p-1 gap-1 flex-grow">
-			<span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
-			@for _, event := range d.events.Get() {
-				<span class="text-green">{event}</span>
-			}
-			@if len(d.events.Get()) == 0 {
-				<span class="font-dim">Waiting for events...</span>
-			}
+			<div
+				ref={d.eventsRef}
+				class="flex-col border-rounded p-1 gap-1"
+				flexGrow={1.0}
+				scrollable={tui.ScrollVertical}
+				scrollOffset={0, d.scrollY.Get()}
+			>
+				<span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
+				@for _, event := range d.events.Get() {
+					<span class="text-green">{event}</span>
+				}
+				@if len(d.events.Get()) == 0 {
+					<span class="font-dim">Waiting for events...</span>
+				}
+			</div>
 		</div>
 
 		<div class="flex justify-center shrink-0">
-			<span class="font-dim">q to quit</span>
+			<span class="font-dim">j/k scroll events | q to quit</span>
 		</div>
 	</div>
 }
