@@ -19,8 +19,10 @@ templ Empty() {
 }`,
 			wantContains: []string{
 				"type EmptyView struct",
-				"Root     *tui.Element",
-				"watchers []tui.Watcher",
+				"Root",
+				"*tui.Element",
+				"watchers",
+				"[]tui.Watcher",
 				"func Empty() *EmptyView",
 				"var view EmptyView",
 				"var watchers []tui.Watcher",
@@ -36,7 +38,7 @@ templ Header() {
 				"type HeaderView struct",
 				"func Header() *HeaderView",
 				"__tui_0 := tui.New()",
-				"Root:     __tui_0",
+				"Root:      __tui_0",
 			},
 		},
 		"component with params": {
@@ -101,7 +103,7 @@ templ Layout() {
 	}
 
 	// Should return view struct with Root set to outer element
-	if !strings.Contains(code, "Root:     __tui_0") {
+	if !strings.Contains(code, "Root:      __tui_0") {
 		t.Error("missing Root assignment to outer element")
 	}
 

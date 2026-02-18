@@ -22,12 +22,12 @@ type EventsVar struct {
 
 // StateBinding tracks a binding between state variables and an element.
 type StateBinding struct {
-	StateVars   []string // State variables referenced in expression
-	Element     *Element // Element that uses this expression
-	ElementName string   // Generated variable name for the element (e.g., "__tui_0")
-	Attribute   string   // Which attribute ("text", "class", etc.)
-	Expr        string   // The expression (e.g., "fmt.Sprintf(...)")
-	ExplicitDeps bool    // True if deps={...} was used
+	StateVars    []string // State variables referenced in expression
+	Element      *Element // Element that uses this expression
+	ElementName  string   // Generated variable name for the element (e.g., "__tui_0")
+	Attribute    string   // Which attribute ("text", "class", etc.)
+	Expr         string   // The expression (e.g., "fmt.Sprintf(...)")
+	ExplicitDeps bool     // True if deps={...} was used
 }
 
 // RefKind describes how a ref should be generated.
@@ -41,14 +41,14 @@ const (
 
 // RefInfo tracks information about an element reference declared via ref={}.
 type RefInfo struct {
-	Name          string   // Variable name from ref={name} (e.g., "content")
-	ExportName    string   // Capitalized for View struct (e.g., "Content")
+	Name          string // Variable name from ref={name} (e.g., "content")
+	ExportName    string // Capitalized for View struct (e.g., "Content")
 	Element       *Element
-	InLoop        bool     // true = generate slice or map type
-	InConditional bool     // true = may be nil at runtime
-	KeyExpr       string   // if set, generate map[KeyType]*element.Element
-	KeyType       string   // inferred type of key expression (e.g., "string", "int")
-	RefKind       RefKind  // RefSingle, RefList, RefMap
+	InLoop        bool    // true = generate slice or map type
+	InConditional bool    // true = may be nil at runtime
+	KeyExpr       string  // if set, generate map[KeyType]*element.Element
+	KeyType       string  // inferred type of key expression (e.g., "string", "int")
+	RefKind       RefKind // RefSingle, RefList, RefMap
 	Position      Position
 }
 
@@ -168,9 +168,10 @@ var knownAttributes = map[string]bool{
 // It captures the variable name and the initializer expression.
 var stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewState\((.+)\)`)
 
-// eventsNewEventsRegex matches tui.NewEvents() and tui.NewEvents[T]() declarations.
+// eventsNewEventsRegex matches tui.NewEvents("topic") and
+// tui.NewEvents[T]("topic") declarations.
 // It captures the variable name.
-var eventsNewEventsRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewEvents(?:\[.+\])?\(\)`)
+var eventsNewEventsRegex = regexp.MustCompile(`(\w+)\s*:=\s*tui\.NewEvents(?:\[.+\])?\([^)]*\)`)
 
 // stateGetRegex matches state.Get() calls to detect state usage in expressions.
 // This pattern handles:

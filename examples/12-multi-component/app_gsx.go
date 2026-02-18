@@ -10,14 +10,14 @@ import (
 type myApp struct {
 	searchActive *tui.State[bool]
 	query        *tui.State[string]
-	category     *tui.State[string]
 }
+
+const categoryTopic = "example.file-explorer.category"
 
 func MyApp() *myApp {
 	return &myApp{
 		searchActive: tui.NewState(false),
 		query:        tui.NewState(""),
-		category:     tui.NewState("Documents"),
 	}
 }
 
@@ -61,11 +61,11 @@ func (a *myApp) Render(app *tui.App) *tui.Element {
 		tui.WithFlexGrow(1),
 	)
 	__tui_4 := app.Mount(a, 0, func() tui.Component {
-		return Sidebar(a.category)
+		return Sidebar()
 	})
 	__tui_3.AddChild(__tui_4)
 	__tui_5 := app.Mount(a, 1, func() tui.Component {
-		return Content(a.category, a.query)
+		return Content(a.query)
 	})
 	__tui_3.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_3)
@@ -95,9 +95,6 @@ func (a *myApp) BindApp(app *tui.App) {
 	}
 	if a.query != nil {
 		a.query.BindApp(app)
-	}
-	if a.category != nil {
-		a.category.BindApp(app)
 	}
 }
 

@@ -16,8 +16,9 @@ type searchBar struct {
 }
 
 type content struct {
-	category *tui.State[string]
-	query    *tui.State[string]
+	category    *tui.State[string]
+	categoryBus *tui.Events[string]
+	query       *tui.State[string]
 }
 
 var filesByCategory = map[string][]string{
@@ -64,8 +65,18 @@ func (s *searchBar) deactivate(ke tui.KeyEvent) {
 	s.query.Set("")
 }
 
-func Content(category *tui.State[string], query *tui.State[string]) *content {
-	return &content{category: category, query: query}
+func Content(query *tui.State[string]) *content {
+	c := &content{
+		category:    tui.NewState("Documents"),
+		categoryBus: tui.NewEvents[string](categoryTopic),
+		query:       query,
+	}
+	c.categoryBus.Subscribe(c.onCategoryChanged)
+	return c
+}
+
+func (c *content) onCategoryChanged(category string) {
+	c.category.Set(category)
 }
 
 func (c *content) filteredFiles() []string {
@@ -183,9 +194,22 @@ func (c *content) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
+func (c *content) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*content)
+	if !ok {
+		return
+	}
+	c.categoryBus = f.categoryBus
+}
+
+var _ tui.PropsUpdater = (*content)(nil)
+
 func (c *content) BindApp(app *tui.App) {
 	if c.category != nil {
 		c.category.BindApp(app)
+	}
+	if c.categoryBus != nil {
+		c.categoryBus.BindApp(app)
 	}
 	if c.query != nil {
 		c.query.BindApp(app)
@@ -193,3 +217,11 @@ func (c *content) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*content)(nil)
+
+func (c *content) UnbindApp() {
+	if c.categoryBus != nil {
+		c.categoryBus.UnbindApp()
+	}
+}
+
+var _ tui.AppUnbinder = (*content)(nil)

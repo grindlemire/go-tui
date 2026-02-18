@@ -143,26 +143,26 @@ An event bus for broadcasting messages between components. Unlike `State[T]`, `E
 ### NewEvents
 
 ```go
-func NewEvents[T any]() *Events[T]
+func NewEvents[T any](topic string) *Events[T]
 ```
 
-Creates a new event bus. Starts unbound; the framework calls `BindApp` during component mounting.
+Creates a new topic-based event bus. `topic` is required and is used to route events across components.
 
 ```go
-notifications := tui.NewEvents[string]()
+notifications := tui.NewEvents[string]("app.notifications")
 ```
 
 ### NewEventsForApp
 
 ```go
-func NewEventsForApp[T any](app *App) *Events[T]
+func NewEventsForApp[T any](app *App, topic string) *Events[T]
 ```
 
 Creates an event bus already bound to the given app. Use this when creating a bus outside of a component. Panics if `app` is nil.
 
 ```go
 app, _ := tui.NewApp(...)
-bus := tui.NewEventsForApp[string](app)
+bus := tui.NewEventsForApp[string](app, "app.notifications")
 ```
 
 ### BindApp
@@ -172,6 +172,14 @@ func (e *Events[T]) BindApp(app *App)
 ```
 
 Binds the event bus to an app for dirty-marking. The framework calls this during component mounting. Panics if `app` is nil. Idempotent for the same app; overwrites if called with a different one.
+
+### UnbindApp
+
+```go
+func (e *Events[T]) UnbindApp()
+```
+
+Detaches the event bus from app topic routing. Called automatically when components unmount.
 
 ### Emit
 
@@ -190,15 +198,16 @@ notifications.Emit("task completed")
 ### Subscribe
 
 ```go
-func (e *Events[T]) Subscribe(fn func(T))
+func (e *Events[T]) Subscribe(fn func(T)) func()
 ```
 
 Registers a handler that will be called for every emitted event. Handlers run on the UI thread, so it is safe to update state from within a handler.
 
 ```go
-notifications.Subscribe(func(msg string) {
+unsub := notifications.Subscribe(func(msg string) {
     log.Set(append(log.Get(), msg))
 })
+defer unsub()
 ```
 
 ## Batching
@@ -306,19 +315,16 @@ Use `Events[T]` when components need to communicate without sharing mutable stat
 
 ```go
 type app struct {
-    alerts *tui.Events[string]
     header *header
     body   *body
 }
 
 func App() *app {
-    alerts := tui.NewEvents[string]()
     return &app{
-        alerts: alerts,
-        header: Header(alerts),
-        body:   Body(alerts),
+        header: Header(),
+        body:   Body(),
     }
 }
 ```
 
-The header can subscribe and the body can emit (or vice versa) without either holding a reference to the other's state.
+Both components can construct `tui.NewEvents[string]("app.alerts")` internally and communicate through that shared topic without passing bus pointers.

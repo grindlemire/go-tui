@@ -3,18 +3,18 @@ package main
 import tui "github.com/grindlemire/go-tui"
 
 type sidebar struct {
-	category *tui.State[string]
-	expanded *tui.State[bool]
-	selected *tui.State[int]
+	categoryBus *tui.Events[string]
+	expanded    *tui.State[bool]
+	selected    *tui.State[int]
 }
 
 var categories = []string{"Documents", "Images", "Music", "Projects", "Downloads"}
 
-func Sidebar(category *tui.State[string]) *sidebar {
+func Sidebar() *sidebar {
 	return &sidebar{
-		category: category,
-		expanded: tui.NewState(true),
-		selected: tui.NewState(0),
+		categoryBus: tui.NewEvents[string](categoryTopic),
+		expanded:    tui.NewState(true),
+		selected:    tui.NewState(0),
 	}
 }
 
@@ -32,7 +32,7 @@ func (s *sidebar) KeyMap() tui.KeyMap {
 		km = append(km, tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) {
 			idx := s.selected.Get()
 			if idx >= 0 && idx < len(categories) {
-				s.category.Set(categories[idx])
+				s.categoryBus.Emit(categories[idx])
 			}
 		}))
 	}
@@ -46,7 +46,7 @@ func (s *sidebar) moveDown() {
 		}
 		return v + 1
 	})
-	s.category.Set(categories[s.selected.Get()])
+	s.categoryBus.Emit(categories[s.selected.Get()])
 }
 
 func (s *sidebar) moveUp() {
@@ -56,7 +56,7 @@ func (s *sidebar) moveUp() {
 		}
 		return v - 1
 	})
-	s.category.Set(categories[s.selected.Get()])
+	s.categoryBus.Emit(categories[s.selected.Get()])
 }
 
 templ (s *sidebar) Render() {

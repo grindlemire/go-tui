@@ -614,6 +614,7 @@ Components can implement these additional interfaces for extended behavior:
 | `WatcherProvider` | `Watchers() []Watcher` | Timers and channel watchers |
 | `Initializer` | `Init() func()` | Setup on mount, returns cleanup function |
 | `AppBinder` | `BindApp(app *App)` | Receives app reference (called automatically by mount) |
+| `AppUnbinder` | `UnbindApp()` | Detaches app-bound resources on unmount |
 | `PropsUpdater` | `UpdateProps(fresh Component)` | Receives updated props on re-render from cache |
 
 See the [Component Interfaces Reference](interfaces.md) for full details on each.

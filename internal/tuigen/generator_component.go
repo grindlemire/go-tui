@@ -104,6 +104,7 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 
 	// Generate BindApp method for app binding on State/Events fields
 	g.generateBindApp(comp, g.fileDecls)
+	g.generateUnbindApp(comp, g.fileDecls)
 }
 
 // generateFunctionComponent generates a function component (existing behavior).
@@ -227,6 +228,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 	}
 	g.writeln("watchers: watchers,")
 	g.writeln("bindApp: __bindApp,")
+	g.writeln("unbindApp: __unbindApp,")
 	for _, ref := range g.refs {
 		// View struct exposes *tui.Element (not ref types)
 		switch ref.RefKind {
@@ -257,6 +259,7 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.writeln("Root     *tui.Element")
 	g.writeln("watchers []tui.Watcher")
 	g.writeln("bindApp  func(*tui.App)")
+	g.writeln("unbindApp func()")
 
 	for _, ref := range refs {
 		switch ref.RefKind {
@@ -273,6 +276,18 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 		}
 	}
 
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+
+	// Generate UnbindApp method to implement tui.AppUnbinder
+	g.writef("func (v *%s) UnbindApp() {\n", structName)
+	g.indent++
+	g.writeln("if v.unbindApp != nil {")
+	g.indent++
+	g.writeln("v.unbindApp()")
+	g.indent--
+	g.writeln("}")
 	g.indent--
 	g.writeln("}")
 	g.writeln("")
@@ -317,6 +332,7 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.writeln("v.Root = f.Root")
 	g.writeln("v.watchers = f.watchers")
 	g.writeln("v.bindApp = f.bindApp")
+	g.writeln("v.unbindApp = f.unbindApp")
 	for _, ref := range refs {
 		g.writef("v.%s = f.%s\n", ref.ExportName, ref.ExportName)
 	}
@@ -325,6 +341,8 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	g.writeln("")
 
 	g.writef("var _ tui.AppBinder = (*%s)(nil)\n", structName)
+	g.writeln("")
+	g.writef("var _ tui.AppUnbinder = (*%s)(nil)\n", structName)
 	g.writeln("")
 	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", structName)
 	g.writeln("")
@@ -598,6 +616,73 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	g.writeln("")
 }
 
+// generateUnbindApp generates an UnbindApp method for a method component.
+// This allows mount sweep to detach topic-based Events subscriptions.
+func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
+	if hasUserBindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+		return
+	}
+
+	structDecl := findStructDecl(decls, comp.ReceiverType)
+	if structDecl == nil {
+		return
+	}
+
+	fields := parseStructFields(structDecl.Code)
+	if len(fields) == 0 {
+		return
+	}
+
+	componentExprFieldSet := make(map[string]bool)
+	for _, name := range g.componentExprFields {
+		componentExprFieldSet[name] = true
+	}
+
+	var unbindFields []StructField
+	for _, f := range fields {
+		if strings.HasPrefix(f.Type, "*tui.Events[") {
+			unbindFields = append(unbindFields, f)
+		}
+	}
+	// Remove fields already handled explicitly
+	for _, f := range unbindFields {
+		delete(componentExprFieldSet, f.Name)
+	}
+	var componentUnbindFields []string
+	for _, f := range fields {
+		if componentExprFieldSet[f.Name] {
+			componentUnbindFields = append(componentUnbindFields, f.Name)
+		}
+	}
+
+	if len(unbindFields) == 0 && len(componentUnbindFields) == 0 {
+		return
+	}
+
+	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
+	g.writef("func (%s) UnbindApp() {\n", comp.Receiver)
+	g.indent++
+	for _, f := range unbindFields {
+		g.writef("if %s.%s != nil {\n", comp.ReceiverName, f.Name)
+		g.indent++
+		g.writef("%s.%s.UnbindApp()\n", comp.ReceiverName, f.Name)
+		g.indent--
+		g.writeln("}")
+	}
+	for _, name := range componentUnbindFields {
+		g.writef("if unbinder, ok := any(%s.%s).(tui.AppUnbinder); ok {\n", comp.ReceiverName, name)
+		g.indent++
+		g.writeln("unbinder.UnbindApp()")
+		g.indent--
+		g.writeln("}")
+	}
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+	g.writef("var _ tui.AppUnbinder = (*%s)(nil)\n", typeName)
+	g.writeln("")
+}
+
 // trackComponentExprField extracts and tracks receiver field names from
 // component expressions (e.g., "c.settingsView" → tracks "settingsView").
 // Only tracks when inside a method component (currentReceiver is set).
@@ -649,6 +734,27 @@ func (g *Generator) generateBindAppClosure() {
 		g.writef("if binder, ok := interface{}(%s).(tui.AppBinder); ok {\n", compVar)
 		g.indent++
 		g.writeln("binder.BindApp(app)")
+		g.indent--
+		g.writeln("}")
+	}
+
+	g.indent--
+	g.writeln("}")
+
+	g.writeln("")
+	g.writeln("__unbindApp := func() {")
+	g.indent++
+
+	// Unbind local events variables
+	for _, ev := range g.eventsVars {
+		g.writef("%s.UnbindApp()\n", ev.Name)
+	}
+
+	// Unbind child function component views (they may implement AppUnbinder)
+	for _, compVar := range g.componentVars {
+		g.writef("if unbinder, ok := interface{}(%s).(tui.AppUnbinder); ok {\n", compVar)
+		g.indent++
+		g.writeln("unbinder.UnbindApp()")
 		g.indent--
 		g.writeln("}")
 	}

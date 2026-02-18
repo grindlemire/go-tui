@@ -1230,7 +1230,7 @@ function ComparisonSection() {
         className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3"
         style={{ color: t.accentDim }}
       >
-        landscape
+        versus
       </div>
       <h2
         className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
@@ -1242,8 +1242,7 @@ function ComparisonSection() {
         className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[640px]"
         style={{ color: t.textMuted }}
       >
-        Different trade-offs, side by side.
-        Pure Go, zero CGO.{" "}
+        Different trade-offs, side by side.{" "}
         <span
           className="font-['Fira_Code',monospace] text-[11px]"
           style={{ color: t.textDim }}
@@ -1975,14 +1974,14 @@ function HomePage() {
               className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
               style={{ color: t.heading }}
             >
-              First-class editor support
+              Editor tooling included
             </h2>
             <p
               className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]"
               style={{ color: t.textMuted }}
             >
               LSP, tree-sitter grammar, and formatter included.
-              Real IDE features, not just syntax coloring.
+              Completions, diagnostics, formatting, and go-to-definition for .gsx files.
             </p>
 
             <div className="grid lg:grid-cols-[1fr_340px] gap-6 sm:gap-8 items-stretch">
@@ -1997,7 +1996,7 @@ function HomePage() {
               <div className="flex flex-col justify-between">
                 {([
                   { title: "Syntax highlighting", description: "Tree-sitter grammar with distinct tokens for keywords, elements, Go, and Tailwind classes.", color: t.accent, editorIdx: 0 },
-                  { title: "Intelligent completions", description: "Component suggestions with type signatures as you type.", color: t.secondary, editorIdx: 1 },
+                  { title: "Code completions", description: "Component suggestions with type signatures as you type.", color: t.secondary, editorIdx: 1 },
                   { title: "Inline diagnostics", description: "Errors surface in your editor before you compile.", color: t.tertiary, editorIdx: 2 },
                   { title: "Go-to-definition", description: "Jump to definitions across .gsx and Go files.", color: theme === "dark" ? "#e6db74" : "#998a00", editorIdx: 3 },
                   { title: "Auto-formatting", description: "Indentation, alignment, and imports. On save or via CLI.", color: theme === "dark" ? "#ae81ff" : "#7c5cb8", editorIdx: 4 },

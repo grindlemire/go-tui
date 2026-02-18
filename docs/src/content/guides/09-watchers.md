@@ -218,21 +218,21 @@ Note the use of `app.StopCh()`. This channel closes when the app stops, giving y
 
 ## Events Bus
 
-`tui.Events[T]` is a typed broadcast bus. There's no routing, no topics, no key-based filtering. Every call to `Emit` delivers the value to every subscriber. The type parameter `T` is the only thing that distinguishes one bus from another.
+`tui.Events[T]` is a typed broadcast bus routed by a topic key. Every call to `Emit` delivers the value to every subscriber on that same topic in the same app.
 
 ```go
-bus := tui.NewEvents[string]()
+bus := tui.NewEvents[string]("demo.events")
 bus.Subscribe(func(msg string) { fmt.Println("got:", msg) })
 bus.Emit("hello") // every subscriber receives "hello"
 ```
 
-All subscribers run synchronously in registration order when `Emit` is called, and the UI is marked dirty afterward. If you need separate communication channels, create separate bus instances (one `Events[string]` for chat messages, another `Events[int]` for score updates), or use a struct as `T` and switch on a field.
+All subscribers run synchronously in registration order when `Emit` is called, and the UI is marked dirty afterward. If you need separate channels, use different topics.
 
-The event bus must be bound to the app before `Emit` is called. The framework handles this automatically for `Events` fields on struct components through the generated `BindApp` method. If you create an event bus outside a component (say, in `main.go`), use `tui.NewEventsForApp(app)` or call `events.BindApp(app)` manually.
+The event bus must be bound to the app before `Emit` is called. The framework handles this automatically for `Events` fields on struct components through the generated `BindApp` method. If you create an event bus outside a component (say, in `main.go`), use `tui.NewEventsForApp(app, "topic")` or call `events.BindApp(app)` manually.
 
-### Two components sharing a bus
+### Two components sharing a topic
 
-The typical pattern: create the bus in the parent, pass it to each child's constructor. One component emits, the other subscribes. Neither component knows about the other.
+The typical pattern: components independently create buses with the same topic string. One component emits, the other subscribes. Neither component knows about the other and no bus passing is needed.
 
 ```gsx
 package main
@@ -251,9 +251,9 @@ type controls struct {
     counter *tui.State[int]
 }
 
-func Controls(bus *tui.Events[string]) *controls {
+func Controls() *controls {
     return &controls{
-        bus:     bus,
+        bus:     tui.NewEvents[string]("ci.events"),
         counter: tui.NewState(0),
     }
 }
@@ -281,12 +281,13 @@ type eventLog struct {
     messages *tui.State[[]string]
 }
 
-func EventLog(bus *tui.Events[string]) *eventLog {
+func EventLog() *eventLog {
+    bus := tui.NewEvents[string]("ci.events")
     el := &eventLog{
         bus:      bus,
         messages: tui.NewState([]string{}),
     }
-    bus.Subscribe(el.onEvent)
+    el.bus.Subscribe(el.onEvent)
     return el
 }
 
@@ -312,28 +313,22 @@ templ (e *eventLog) Render() {
     </div>
 }
 
-// --- Root: wires them together ---
+// --- Root: no bus wiring needed ---
 
-type app struct {
-    bus *tui.Events[string]
-}
+type app struct{}
 
-func App() *app {
-    return &app{
-        bus: tui.NewEvents[string](),
-    }
-}
+func App() *app { return &app{} }
 
 templ (a *app) Render() {
     <div class="flex-col p-1 gap-1 border-rounded border-cyan">
         <span class="text-gradient-cyan-magenta font-bold">Event Bus Demo</span>
-        @Controls(a.bus)
-        @EventLog(a.bus)
+        @Controls()
+        @EventLog()
     </div>
 }
 ```
 
-The `controls` component emits strings onto the bus when you press a key. The `eventLog` component subscribes in its constructor and appends each message to a rolling list. Neither references the other. The root `app` creates the bus and passes it to both via `@Controls(a.bus)` and `@EventLog(a.bus)`, which mount them as sub-components. The framework discovers each sub-component's `KeyMap` automatically, so the root doesn't need to delegate key handling.
+The `controls` component emits strings onto the topic when you press a key. The `eventLog` component subscribes in its constructor and appends each message to a rolling list. Neither references the other. The root just mounts both components.
 
 The event bus works well for fire-and-forget notifications and cross-component communication where the sender doesn't need to know who's listening.
 

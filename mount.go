@@ -95,6 +95,9 @@ func (a *App) Mount(parent Component, index int, factory func() Component) *Elem
 func (ms *mountState) sweep() {
 	for key := range ms.cache {
 		if !ms.activeKeys[key] {
+			if unbinder, ok := ms.cache[key].(AppUnbinder); ok {
+				unbinder.UnbindApp()
+			}
 			if cleanup, ok := ms.cleanups[key]; ok {
 				cleanup()
 				delete(ms.cleanups, key)

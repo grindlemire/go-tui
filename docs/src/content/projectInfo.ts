@@ -2,7 +2,7 @@ export const projectInfo = {
   name: "go-tui",
   tagline: "Reactive Terminal UIs in Go",
   description:
-    "A Go framework for terminal UIs. Define layout in .gsx templates with HTML-like syntax, compile to type-safe Go. Flexbox positioning, reactive state, no CGO.",
+    "A Go framework for terminal UIs. Define layout in .gsx templates with HTML-like syntax, compile to type-safe Go. Flexbox positioning, reactive state, no external dependencies.",
   installCmd: "go get github.com/grindlemire/go-tui",
   features: [
     {
@@ -14,7 +14,7 @@ export const projectInfo = {
     {
       title: "Pure Go Flexbox",
       description:
-        "Row, column, justify, align, gap, padding, margin \u2014 real flexbox layout without manual coordinate math. Pure Go, zero CGO.",
+        "Row, column, justify, align, gap, padding, margin \u2014 real flexbox layout without manual coordinate math. No external dependencies.",
       icon: "layout",
     },
     {
@@ -38,7 +38,7 @@ export const projectInfo = {
     {
       title: "Minimal Dependencies",
       description:
-        "Only golang.org/x standard libraries. No heavy frameworks, no CGO, no external C libraries. Builds fast, audits clean.",
+        "Only golang.org/x standard libraries. No external dependencies.",
       icon: "package",
     },
   ],

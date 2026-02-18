@@ -5,14 +5,14 @@ import tui "github.com/grindlemire/go-tui"
 type myApp struct {
 	searchActive *tui.State[bool]
 	query        *tui.State[string]
-	category     *tui.State[string]
 }
+
+const categoryTopic = "example.file-explorer.category"
 
 func MyApp() *myApp {
 	return &myApp{
 		searchActive: tui.NewState(false),
 		query:        tui.NewState(""),
-		category:     tui.NewState("Documents"),
 	}
 }
 
@@ -37,8 +37,8 @@ templ (a *myApp) Render() {
 			<span class="text-gradient-cyan-magenta font-bold">File Explorer</span>
 		</div>
 		<div class="flex flex-grow">
-			@Sidebar(a.category)
-			@Content(a.category, a.query)
+			@Sidebar()
+			@Content(a.query)
 		</div>
 		@SearchBar(a.searchActive, a.query)
 		<div class="flex justify-center p-1 shrink-0">

@@ -44,3 +44,9 @@ type WatcherProvider interface {
 type AppBinder interface {
 	BindApp(app *App)
 }
+
+// AppUnbinder is implemented by components that need to detach app-bound
+// resources (for example topic-based Events subscriptions) on unmount.
+type AppUnbinder interface {
+	UnbindApp()
+}

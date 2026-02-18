@@ -61,12 +61,23 @@ templ (s *searchBar) Render() {
 
 // Content displays files for the selected category
 type content struct {
-	category *tui.State[string]
-	query    *tui.State[string]
+	category    *tui.State[string]
+	categoryBus *tui.Events[string]
+	query       *tui.State[string]
 }
 
-func Content(category *tui.State[string], query *tui.State[string]) *content {
-	return &content{category: category, query: query}
+func Content(query *tui.State[string]) *content {
+	c := &content{
+		category:    tui.NewState("Documents"),
+		categoryBus: tui.NewEvents[string](categoryTopic),
+		query:       query,
+	}
+	c.categoryBus.Subscribe(c.onCategoryChanged)
+	return c
+}
+
+func (c *content) onCategoryChanged(category string) {
+	c.category.Set(category)
 }
 
 var filesByCategory = map[string][]string{

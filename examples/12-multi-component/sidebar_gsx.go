@@ -8,18 +8,18 @@ import (
 )
 
 type sidebar struct {
-	category *tui.State[string]
-	expanded *tui.State[bool]
-	selected *tui.State[int]
+	categoryBus *tui.Events[string]
+	expanded    *tui.State[bool]
+	selected    *tui.State[int]
 }
 
 var categories = []string{"Documents", "Images", "Music", "Projects", "Downloads"}
 
-func Sidebar(category *tui.State[string]) *sidebar {
+func Sidebar() *sidebar {
 	return &sidebar{
-		category: category,
-		expanded: tui.NewState(true),
-		selected: tui.NewState(0),
+		categoryBus: tui.NewEvents[string](categoryTopic),
+		expanded:    tui.NewState(true),
+		selected:    tui.NewState(0),
 	}
 }
 
@@ -37,7 +37,7 @@ func (s *sidebar) KeyMap() tui.KeyMap {
 		km = append(km, tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) {
 			idx := s.selected.Get()
 			if idx >= 0 && idx < len(categories) {
-				s.category.Set(categories[idx])
+				s.categoryBus.Emit(categories[idx])
 			}
 		}))
 	}
@@ -51,7 +51,7 @@ func (s *sidebar) moveDown() {
 		}
 		return v + 1
 	})
-	s.category.Set(categories[s.selected.Get()])
+	s.categoryBus.Emit(categories[s.selected.Get()])
 }
 
 func (s *sidebar) moveUp() {
@@ -61,7 +61,7 @@ func (s *sidebar) moveUp() {
 		}
 		return v - 1
 	})
-	s.category.Set(categories[s.selected.Get()])
+	s.categoryBus.Emit(categories[s.selected.Get()])
 }
 
 func (s *sidebar) Render(app *tui.App) *tui.Element {
@@ -128,9 +128,19 @@ func (s *sidebar) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
+func (s *sidebar) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*sidebar)
+	if !ok {
+		return
+	}
+	s.categoryBus = f.categoryBus
+}
+
+var _ tui.PropsUpdater = (*sidebar)(nil)
+
 func (s *sidebar) BindApp(app *tui.App) {
-	if s.category != nil {
-		s.category.BindApp(app)
+	if s.categoryBus != nil {
+		s.categoryBus.BindApp(app)
 	}
 	if s.expanded != nil {
 		s.expanded.BindApp(app)
@@ -141,3 +151,11 @@ func (s *sidebar) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*sidebar)(nil)
+
+func (s *sidebar) UnbindApp() {
+	if s.categoryBus != nil {
+		s.categoryBus.UnbindApp()
+	}
+}
+
+var _ tui.AppUnbinder = (*sidebar)(nil)

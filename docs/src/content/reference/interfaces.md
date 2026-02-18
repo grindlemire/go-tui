@@ -179,6 +179,18 @@ func (c *counter) BindApp(app *tui.App) {
 }
 ```
 
+## AppUnbinder
+
+```go
+type AppUnbinder interface {
+    UnbindApp()
+}
+```
+
+Called by the framework when a mounted component leaves the tree. This detaches app-bound resources such as topic-based `Events[T]` subscriptions.
+
+You usually don't implement this manually. Generated code handles it for `.gsx` components that contain `Events` fields.
+
 ## PropsUpdater
 
 ```go

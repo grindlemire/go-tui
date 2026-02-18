@@ -111,6 +111,10 @@ type App struct {
 	// Root-scoped watcher lifecycle.
 	rootStopCh    chan struct{}
 	rootWatcherCh <-chan struct{}
+
+	// Topic-based event registry (scoped per app instance).
+	topicMu sync.RWMutex
+	topics  map[string]*topicSubscription
 }
 
 // NewApp creates a new application with the terminal set up for TUI usage.
@@ -338,6 +342,9 @@ func (a *App) SetRootView(view Viewable) {
 	}
 	root := view.GetRoot()
 	a.applyRoot(root)
+	if binder, ok := view.(AppBinder); ok {
+		binder.BindApp(a)
+	}
 	for _, w := range view.GetWatchers() {
 		w.Start(a.eventQueue, a.rootWatcherCh)
 	}
@@ -352,6 +359,9 @@ func (a *App) SetRootComponent(component Component) {
 	el := component.Render(a)
 	el.component = component
 	a.applyRoot(el)
+	if binder, ok := component.(AppBinder); ok {
+		binder.BindApp(a)
+	}
 }
 
 func (a *App) applyRoot(root Renderable) {
@@ -397,6 +407,9 @@ func (a *App) resetRootSession() {
 	a.mounts = newMountState()
 	a.componentWatchers = nil
 	a.componentWatchersStarted = false
+	a.topicMu.Lock()
+	a.topics = make(map[string]*topicSubscription)
+	a.topicMu.Unlock()
 }
 
 func mergeStopChannels(ch1, ch2 <-chan struct{}) <-chan struct{} {
