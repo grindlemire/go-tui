@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
 import { tailwindClasses } from "./content/projectInfo.ts";
@@ -6,6 +6,25 @@ import { loadGuide, loadReference } from "./lib/markdown.ts";
 import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
 import CodeShowcase from "./components/CodeShowcase.tsx";
+import SearchModal from "./components/SearchModal.tsx";
+
+const SearchContext = createContext<{ openSearch: () => void }>({ openSearch: () => {} });
+function useSearch() { return useContext(SearchContext); }
+
+/* ─── Scroll to top on route change ─── */
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (pathname === "/") {
+      history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+    } else {
+      history.scrollRestoration = "auto";
+    }
+  }, [pathname]);
+  return null;
+}
 
 /* ─── Global Styles ─── */
 
@@ -149,6 +168,7 @@ function PageBackground({ theme }: { theme: Theme }) {
 
 function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
   const { theme, setTheme } = useTheme();
+  const { openSearch: onOpenSearch } = useSearch();
   const t = palette[theme];
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -200,6 +220,7 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
         <Link
           to="/"
           className="flex items-center"
+          onClick={() => window.scrollTo({ top: 0, behavior: location.pathname === "/" ? "smooth" : "instant" })}
         >
           <img
             src={theme === "dark" ? "/go-tui-logo.svg" : "/go-tui-logo-light-bg.svg"}
@@ -227,6 +248,7 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
                   border: `1px solid ${active ? (theme === "dark" ? "#66d9ef33" : "#2f9eb833") : "transparent"}`,
                   textShadow: "none",
                 }}
+                onClick={link.to === "/" ? () => window.scrollTo({ top: 0, behavior: location.pathname === "/" ? "smooth" : "instant" }) : undefined}
                 onMouseEnter={(e) => {
                   if (!active) e.currentTarget.style.color = t.accent;
                 }}
@@ -238,6 +260,51 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
               </Link>
             );
           })}
+
+          {/* Search bar */}
+          <button
+            onClick={onOpenSearch}
+            className="font-['Fira_Code',monospace] text-xs rounded transition-all duration-200 flex items-center gap-2 ml-2"
+            style={{
+              color: t.textDim,
+              background: theme === "dark" ? "rgba(62, 61, 50, 0.4)" : "rgba(232, 232, 227, 0.5)",
+              border: `1px solid ${t.border}`,
+              cursor: "pointer",
+              padding: "5px 8px 5px 10px",
+              minWidth: 160,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = theme === "dark" ? "#66d9ef44" : "#2f9eb844";
+              e.currentTarget.style.background = theme === "dark" ? "rgba(62, 61, 50, 0.7)" : "rgba(232, 232, 227, 0.8)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = t.border;
+              e.currentTarget.style.background = theme === "dark" ? "rgba(62, 61, 50, 0.4)" : "rgba(232, 232, 227, 0.5)";
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span style={{ flex: 1, textAlign: "left" }}>
+              search...
+            </span>
+            <kbd
+              style={{
+                fontSize: 10,
+                color: t.textDim,
+                background: theme === "dark" ? "rgba(62, 61, 50, 0.6)" : "rgba(216, 216, 208, 0.6)",
+                border: `1px solid ${theme === "dark" ? "#49483e" : "#d0d0c8"}`,
+                borderRadius: 4,
+                padding: "1px 5px",
+                lineHeight: 1.4,
+                flexShrink: 0,
+                fontFamily: "'Fira Code', monospace",
+              }}
+            >
+              {typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent) ? "\u2318K" : "Ctrl K"}
+            </kbd>
+          </button>
 
           <div
             className="mx-2"
@@ -311,6 +378,17 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
 
         {/* Mobile hamburger */}
         <div className="flex sm:hidden items-center gap-2">
+          <button
+            onClick={onOpenSearch}
+            className="p-1.5 rounded flex items-center"
+            style={{ color: t.textMuted, background: "transparent", border: "none", cursor: "pointer" }}
+            title="Search docs"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
           <a
             href="https://github.com/grindlemire/go-tui"
             target="_blank"
@@ -377,6 +455,7 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
                       : "#2f9eb80a"
                     : "transparent",
                 }}
+                onClick={link.to === "/" ? () => window.scrollTo({ top: 0, behavior: location.pathname === "/" ? "smooth" : "instant" }) : undefined}
               >
                 {link.label}
               </Link>
@@ -2458,17 +2537,36 @@ export default function Design2() {
     setThemeState(t);
   };
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+
+  // Global Cmd+K / Ctrl+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
-      <GlobalStyles />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/guide" element={<GuideRedirect />} />
-        <Route path="/guide/:slug" element={<GuidePage />} />
-        <Route path="/guide/:slug/raw" element={<RawGuidePage />} />
-        <Route path="/reference" element={<ReferenceRedirect />} />
-        <Route path="/reference/:slug" element={<ReferencePage />} />
-      </Routes>
+      <SearchContext.Provider value={{ openSearch }}>
+        <GlobalStyles />
+        <ScrollToTop />
+        <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/guide" element={<GuideRedirect />} />
+          <Route path="/guide/:slug" element={<GuidePage />} />
+          <Route path="/guide/:slug/raw" element={<RawGuidePage />} />
+          <Route path="/reference" element={<ReferenceRedirect />} />
+          <Route path="/reference/:slug" element={<ReferencePage />} />
+        </Routes>
+      </SearchContext.Provider>
     </ThemeContext.Provider>
   );
 }

@@ -17,6 +17,11 @@
         } else {
           document.body.style.background = "#fafaf8";
         }
+        // Only disable scroll restoration on the landing page so it always
+        // starts at the top. Guide/reference pages keep normal restoration.
+        if (location.pathname === "/" || location.pathname === "") {
+          history.scrollRestoration = "manual";
+        }
       })();
     </script>
     <div id="root"></div>
