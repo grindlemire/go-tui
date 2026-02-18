@@ -168,7 +168,6 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
           transition: "transform 0.15s ease-out, opacity 0.15s ease-out",
           animation: closing ? "none" : "searchModalIn 0.2s ease-out",
         }}
-        onKeyDown={onKeyDown}
       >
         {/* Search input row */}
         <div
