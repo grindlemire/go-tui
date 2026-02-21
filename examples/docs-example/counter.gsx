@@ -10,14 +10,12 @@ import (
 type counterApp struct {
 	count   *tui.State[int]
 	elapsed *tui.State[int]
-	display *tui.Ref
 }
 
 func Counter() *counterApp {
 	return &counterApp{
 		count:   tui.NewState(0),
 		elapsed: tui.NewState(0),
-		display: tui.NewRef(),
 	}
 }
 
@@ -70,7 +68,7 @@ templ (c *counterApp) Render() {
 		<hr />
 		<div class="flex gap-2">
 			@Card("Count") {
-				<span ref={c.display} class="text-cyan font-bold">
+				<span class="text-cyan font-bold">
 					{fmt.Sprintf("%d", c.count.Get())}
 				</span>
 			}

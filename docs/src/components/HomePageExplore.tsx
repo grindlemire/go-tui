@@ -80,35 +80,6 @@ function NavLinks() {
   );
 }
 
-/* "See it in action" prompt — a gentle nudge with a cursor icon */
-function SeeItPrompt({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  const { theme } = useTheme();
-  const t = palette[theme];
-  return (
-    <div
-      className={`flex items-center gap-2 ${className}`}
-      style={{ ...style }}
-    >
-      {/* Animated cursor icon */}
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="see-it-cursor" style={{ opacity: 0.5 }}>
-        <path d="M2 1l8.5 5L7 7.5l-1 4.5L2 1z" fill={t.accent} fillOpacity="0.6" stroke={t.accent} strokeWidth="0.8" />
-      </svg>
-      <span
-        className="font-['Fira_Code',monospace] text-[11px]"
-        style={{ color: t.textDim }}
-      >
-        See it in action
-      </span>
-      <span
-        className="text-[11px]"
-        style={{ color: t.textDim, opacity: 0.5, fontFamily: "'IBM Plex Sans', sans-serif" }}
-      >
-        hover the annotations to explore
-      </span>
-    </div>
-  );
-}
-
 /* ─── Comparison Section ─── */
 
 const comparisonLibraries = ["go-tui", "Bubble Tea", "tview", "gocui"] as const;
@@ -745,12 +716,10 @@ export default function HomePageExplore() {
       `}</style>
 
       <section className="max-w-[1100px] mx-auto px-4 sm:px-6" style={{ paddingTop: "clamp(28px, 5vh, 56px)" }}>
-        {/* Top bar: headline + nav — stacks on mobile */}
-        <div className="v-in flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4" style={{ animationDelay: "0ms" }}>
+        <div className="v-in" style={{ animationDelay: "0ms" }}>
           <h1 className="leading-[1.08] tracking-tight font-bold" style={{ color: t.heading, fontSize: "clamp(24px, 5vw, 42px)", margin: 0 }}>
             Declarative terminal UIs in <span style={{ color: t.tertiary }}>Go</span>
           </h1>
-          <NavLinks />
         </div>
 
         {/* Value prop carousel */}

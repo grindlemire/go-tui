@@ -530,7 +530,7 @@ func itemClass(selected bool) string {
 
 // Pure component with children slot
 templ Panel(title string) {
-    <div class="border-rounded p-1 flex-col gap-1">
+    <div class="border-rounded p-1 flex-col gap-1" width={32}>
         <span class="font-bold text-gradient-cyan-magenta">{title}</span>
         <hr />
         {children...}

@@ -19,14 +19,12 @@ import (
 type counterApp struct {
 \tcount   *tui.State[int]
 \telapsed *tui.State[int]
-\tdisplay *tui.Ref
 }
 
 func Counter() *counterApp {
 \treturn &counterApp{
 \t\tcount:   tui.NewState(0),
 \t\telapsed: tui.NewState(0),
-\t\tdisplay: tui.NewRef(),
 \t}
 }
 
@@ -79,7 +77,7 @@ templ (c *counterApp) Render() {
 \t\t<hr />
 \t\t<div class="flex gap-2">
 \t\t\t@Card("Count") {
-\t\t\t\t<span ref={c.display} class="text-cyan font-bold">
+\t\t\t\t<span class="text-cyan font-bold">
 \t\t\t\t\t{fmt.Sprintf("%d", c.count.Get())}
 \t\t\t\t</span>
 \t\t\t}
@@ -146,40 +144,40 @@ type Step = {
 const gsxStepDefs: Omit<Step, "color">[] = [
   {
     id: "state",
-    label: "State & Refs",
+    label: "State",
     description:
-      "Reactive State[T] values and Refs live on the component struct. The constructor initializes them with NewState and NewRef.",
-    lines: [9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21],
+      "Reactive State[T] values live on the component struct. The constructor initializes them with NewState.",
+    lines: [9, 10, 11, 12, 14, 15, 16, 17, 18, 19],
   },
   {
     id: "events",
     label: "Keyboard Events",
     description:
       "KeyMap binds keys to actions. OnRune matches character keys; Update and Set mutate state and trigger re-renders.",
-    lines: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
+    lines: [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
   },
   {
     id: "watchers",
     label: "Watchers",
     description:
       "Background tasks that run independently. OnTimer fires a callback at a fixed interval, here once per second.",
-    lines: [36, 37, 38, 39, 40, 41, 42],
+    lines: [34, 35, 36, 37, 38, 39, 40],
   },
   {
     id: "components",
     label: "Components",
     description:
       "Reusable templ functions that take props and return elements. Card accepts {children...} as a content slot.",
-    lines: [48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61],
+    lines: [46, 47, 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59],
   },
   {
     id: "template",
     label: "Composition",
     description:
-      "The Render template ties it together: @-calls nest components, ref targets elements, and @if/@else adds conditionals.",
+      "The Render template ties it together: @-calls nest components and @if/@else adds conditionals.",
     lines: [
-      63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-      80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
+      61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
+      78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
     ],
   },
 ];

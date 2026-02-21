@@ -13,14 +13,12 @@ import (
 type counterApp struct {
 	count   *tui.State[int]
 	elapsed *tui.State[int]
-	display *tui.Ref
 }
 
 func Counter() *counterApp {
 	return &counterApp{
 		count:   tui.NewState(0),
 		elapsed: tui.NewState(0),
-		display: tui.NewRef(),
 	}
 }
 
@@ -50,9 +48,16 @@ func formatTime(seconds int) string {
 }
 
 type BadgeView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *BadgeView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *BadgeView) GetRoot() tui.Renderable { return v.Root }
@@ -75,9 +80,12 @@ func (v *BadgeView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*BadgeView)(nil)
+
+var _ tui.AppUnbinder = (*BadgeView)(nil)
 
 var _ tui.PropsUpdater = (*BadgeView)(nil)
 
@@ -102,18 +110,29 @@ func Badge(label string, value string, color string) *BadgeView {
 	__bindApp := func(app *tui.App) {
 	}
 
+	__unbindApp := func() {
+	}
+
 	view = BadgeView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
 
 type CardView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *CardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *CardView) GetRoot() tui.Renderable { return v.Root }
@@ -136,9 +155,12 @@ func (v *CardView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*CardView)(nil)
+
+var _ tui.AppUnbinder = (*CardView)(nil)
 
 var _ tui.PropsUpdater = (*CardView)(nil)
 
@@ -171,10 +193,14 @@ func Card(title string, children []*tui.Element) *CardView {
 	__bindApp := func(app *tui.App) {
 	}
 
+	__unbindApp := func() {
+	}
+
 	view = CardView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
@@ -214,7 +240,6 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 		tui.WithText(fmt.Sprintf("%d", c.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	c.display.Set(__tui_8)
 	__tui_7_children = append(__tui_7_children, __tui_8)
 	__tui_6 := Card("Count", __tui_7_children)
 	__tui_5.AddChild(__tui_6.Root)
