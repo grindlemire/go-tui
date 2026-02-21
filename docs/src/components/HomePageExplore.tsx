@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import { palette, useTheme } from "../lib/theme.ts";
 import CodeShowcase from "./CodeShowcase.tsx";
 
@@ -64,20 +63,6 @@ function useValueProps() {
       color: t.accent,
     },
   ] as const;
-}
-
-function NavLinks() {
-  const { theme } = useTheme();
-  const t = palette[theme];
-  return (
-    <div className="flex items-center gap-3 sm:gap-4 font-['Fira_Code',monospace] text-[11px] sm:text-[12px]">
-      <Link to="/guide" style={{ color: t.accent, textDecoration: "none" }}>guide</Link>
-      <Link to="/reference" style={{ color: t.accent, textDecoration: "none" }}>reference</Link>
-      <a href="https://github.com/grindlemire/go-tui" target="_blank" rel="noopener noreferrer" style={{ color: t.accent, textDecoration: "none" }}>
-        github<span style={{ fontSize: 9, verticalAlign: "super", marginLeft: 2, opacity: 0.4 }}>↗</span>
-      </a>
-    </div>
-  );
 }
 
 /* ─── Comparison Section ─── */
