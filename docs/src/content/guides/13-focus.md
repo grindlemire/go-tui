@@ -138,13 +138,13 @@ Read each member state in your template to change styles based on which section 
 templ (f *myForm) Render() {
     <div class="flex gap-1 h-full">
         @if f.sidebarActive.Get() {
-            <div class="flex-col w-20 border-rounded border-cyan p-1">
+            <div class="flex-col border-rounded border-cyan p-1" width={20}>
                 <span class="text-cyan font-bold">Sidebar</span>
                 <span>Use Tab to switch</span>
             </div>
         } @else {
-            <div class="flex-col w-20 border-rounded border-bright-black p-1">
-                <span class="text-dim">Sidebar</span>
+            <div class="flex-col border-rounded border-black p-1" width={20}>
+                <span class="font-dim">Sidebar</span>
             </div>
         }
 
@@ -154,18 +154,18 @@ templ (f *myForm) Render() {
                 <span>This panel is active</span>
             </div>
         } @else {
-            <div class="flex-col grow border-rounded border-bright-black p-1">
-                <span class="text-dim">Content</span>
+            <div class="flex-col grow border-rounded border-black p-1">
+                <span class="font-dim">Content</span>
             </div>
         }
 
         @if f.footerActive.Get() {
-            <div class="flex-col w-20 border-rounded border-cyan p-1">
+            <div class="flex-col border-rounded border-cyan p-1" width={20}>
                 <span class="text-cyan font-bold">Footer</span>
             </div>
         } @else {
-            <div class="flex-col w-20 border-rounded border-bright-black p-1">
-                <span class="text-dim">Footer</span>
+            <div class="flex-col border-rounded border-black p-1" width={20}>
+                <span class="font-dim">Footer</span>
             </div>
         }
     </div>
@@ -249,15 +249,14 @@ templ (p *panelForm) Render() {
         <span class="font-bold text-gradient-cyan-magenta">Focus Demo — Tab to switch, Space to interact</span>
         <div class="flex gap-1">
             @for i, name := range p.panels {
-                @let active = i == p.focus.Current()
-                @if active {
-                    <div class="flex-col border-rounded border-cyan p-1 w-20">
+                @if i == p.focus.Current() {
+                    <div class="flex-col border-rounded border-cyan p-1" width={20}>
                         <span class="text-cyan font-bold">{name}</span>
                         <span class="text-bright-white">{fmt.Sprintf("Actions: %d", p.clickCount.Get())}</span>
                     </div>
                 } @else {
-                    <div class="flex-col border-rounded border-bright-black p-1 w-20">
-                        <span class="text-dim">{name}</span>
+                    <div class="flex-col border-rounded border-black p-1" width={20}>
+                        <span class="font-dim">{name}</span>
                     </div>
                 }
             }

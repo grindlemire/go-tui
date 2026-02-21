@@ -7,6 +7,7 @@ import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
 import CodeShowcase from "./components/CodeShowcase.tsx";
 import SearchModal from "./components/SearchModal.tsx";
+import HomePageExplore from "./components/HomePageExplore.tsx";
 
 const SearchContext = createContext<{ openSearch: () => void }>({ openSearch: () => {} });
 function useSearch() { return useContext(SearchContext); }
@@ -166,29 +167,17 @@ function PageBackground({ theme }: { theme: Theme }) {
 
 /* ─── Nav ─── */
 
-function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
+function Nav() {
   const { theme, setTheme } = useTheme();
   const { openSearch: onOpenSearch } = useSearch();
   const t = palette[theme];
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [navVisible, setNavVisible] = useState(!hideUntilScroll);
 
   // Close mobile menu on navigation
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
-
-  // Show nav after scrolling past hero
-  useEffect(() => {
-    if (!hideUntilScroll) { setNavVisible(true); return; }
-    const onScroll = () => {
-      setNavVisible(window.scrollY > window.innerHeight * 0.4);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [hideUntilScroll]);
 
   const isActive = (path: string) => {
     if (path === "/")
@@ -204,16 +193,13 @@ function Nav({ hideUntilScroll = false }: { hideUntilScroll?: boolean }) {
 
   return (
     <nav
-      className={`${hideUntilScroll ? "fixed" : "sticky"} top-0 left-0 right-0 z-40 backdrop-blur-md`}
+      className="sticky top-0 left-0 right-0 z-40 backdrop-blur-md"
       style={{
         background:
           theme === "dark"
             ? "rgba(39, 40, 34, 0.92)"
             : "rgba(250, 250, 248, 0.92)",
         borderBottom: `1px solid ${t.border}`,
-        transform: navVisible ? "translateY(0)" : "translateY(-100%)",
-        transition: "transform 0.3s ease-out",
-        pointerEvents: navVisible ? "auto" : "none",
       }}
     >
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
@@ -901,7 +887,7 @@ function Footer() {
 
 /* ─── Page Wrapper ─── */
 
-function Page({ children, hideNavUntilScroll = false }: { children: React.ReactNode; hideNavUntilScroll?: boolean }) {
+function Page({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const t = palette[theme];
   return (
@@ -914,7 +900,7 @@ function Page({ children, hideNavUntilScroll = false }: { children: React.ReactN
         fontFamily: "'IBM Plex Sans', sans-serif",
       }}
     >
-      <Nav hideUntilScroll={hideNavUntilScroll} />
+      <Nav />
       {children}
       <Footer />
     </div>
@@ -1508,8 +1494,9 @@ function ComparisonSection() {
    Pages
    ============================================================ */
 
+
 function HomePage() {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const t = palette[theme];
 
   // Shared DX feature state — editor + capability list both read/write this
@@ -1559,98 +1546,14 @@ function HomePage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Interactive prompt state
-  const [promptInput, setPromptInput] = useState("");
-  const promptRef = useRef<HTMLInputElement>(null);
 
   return (
-    <Page hideNavUntilScroll>
+    <Page>
       <div className="relative">
         <PageBackground theme={theme} />
         <div className="relative z-10">
           {/* Hero — Man Page Terminal */}
           <section className="relative" style={{ minHeight: "100vh" }}>
-            {/* Subtle top-right controls */}
-            <div
-              className="tl absolute top-0 right-0 z-20 flex items-center gap-2 font-['Fira_Code',monospace]"
-              style={{
-                padding: "16px 20px",
-                animationDelay: "800ms",
-                fontSize: "10px",
-                opacity: 0.6,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.6"; }}
-            >
-              <a
-                href="https://pkg.go.dev/github.com/grindlemire/go-tui"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors duration-200"
-                style={{ color: t.textDim }}
-                title="v0.1.0 — view on pkg.go.dev"
-                onMouseEnter={(e) => { e.currentTarget.style.color = t.secondary; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
-              >
-                v0.1.0
-              </a>
-              <span style={{ color: t.textDim }}>·</span>
-              <Link
-                to="/guide"
-                className="transition-colors duration-200"
-                style={{ color: t.textDim }}
-                title="Guides"
-                onMouseEnter={(e) => { e.currentTarget.style.color = t.secondary; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
-              >
-                guide
-              </Link>
-              <span style={{ color: t.textDim }}>·</span>
-              <Link
-                to="/reference"
-                className="transition-colors duration-200"
-                style={{ color: t.textDim }}
-                title="Reference"
-                onMouseEnter={(e) => { e.currentTarget.style.color = t.secondary; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
-              >
-                reference
-              </Link>
-              <span style={{ color: t.textDim }}>·</span>
-              <a
-                href="https://github.com/grindlemire/go-tui"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center transition-colors duration-200"
-                style={{ color: t.textDim }}
-                title="View on GitHub"
-                onMouseEnter={(e) => { e.currentTarget.style.color = t.accent; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-label="GitHub">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-              </a>
-              <span style={{ color: t.textDim }}>·</span>
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="transition-colors duration-200"
-                style={{
-                  color: t.textDim,
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  font: "inherit",
-                  fontSize: "inherit",
-                  padding: 0,
-                }}
-                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                onMouseEnter={(e) => { e.currentTarget.style.color = theme === "dark" ? t.secondary : t.tertiary; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
-              >
-                {theme === "dark" ? "light" : "dark"}
-              </button>
-            </div>
 
             <div
               className="flex flex-col"
@@ -1855,41 +1758,22 @@ function HomePage() {
                   </div>
                 </div>
 
-                {/* Interactive prompt — desktop only */}
+                {/* Static prompt — desktop only */}
                 <div
-                  className="tl hidden sm:flex items-center mt-8 text-[13px] cursor-text"
+                  className="tl hidden sm:flex items-center mt-8 text-[13px]"
                   style={{ animationDelay: "230ms" }}
-                  onClick={() => promptRef.current?.focus()}
                 >
                   <span style={{ color: t.secondary }}>$</span>
-                  <span className="ml-2 relative flex-1">
-                    <input
-                      ref={promptRef}
-                      type="text"
-                      value={promptInput}
-                      onChange={(e) => setPromptInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          scrollToNextSection();
-                          setPromptInput("");
-                        }
-                      }}
-                      className="bg-transparent border-none outline-none font-['Fira_Code',monospace] text-[13px] w-full caret-transparent"
-                      style={{ color: t.heading, padding: 0, margin: 0 }}
-                      spellCheck={false}
-                      autoComplete="off"
-                    />
+                  <span className="ml-2 relative">
                     {/* Blinking block cursor */}
                     <span
-                      className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
                       style={{
-                        left: `${promptInput.length}ch`,
+                        display: "inline-block",
                         width: "0.6ch",
                         height: "1.15em",
                         background: t.secondary,
                         animation: "blink 1s step-end infinite",
+                        verticalAlign: "middle",
                       }}
                     />
                   </span>
@@ -2558,7 +2442,8 @@ export default function Design2() {
         <ScrollToTop />
         <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Page><HomePageExplore /></Page>} />
+          <Route path="/legacy" element={<HomePage />} />
           <Route path="/guide" element={<GuideRedirect />} />
           <Route path="/guide/:slug" element={<GuidePage />} />
           <Route path="/guide/:slug/raw" element={<RawGuidePage />} />

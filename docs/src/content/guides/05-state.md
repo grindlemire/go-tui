@@ -408,10 +408,9 @@ templ (d *demoApp) Render() {
             // Status panel
             <div class="flex-col border-rounded p-1 gap-1" flexGrow={2.0}>
                 <span class="font-bold">Status</span>
-                sign := signLabel(d.count.Get())
                 <div class="flex gap-1">
                     <span class="font-dim">Sign:</span>
-                    <span class={signClass(d.count.Get())}>{sign}</span>
+                    <span class={signClass(d.count.Get())}>{signLabel(d.count.Get())}</span>
                 </div>
                 <div class="flex gap-1">
                     <span class="font-dim">Parity:</span>

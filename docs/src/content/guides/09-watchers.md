@@ -83,8 +83,8 @@ func (s *stopwatch) KeyMap() tui.KeyMap {
 templ (s *stopwatch) Render() {
     <div class="flex-col p-1 gap-1 border-rounded border-cyan items-center">
         <span class="font-bold text-gradient-cyan-magenta">Stopwatch</span>
-        @let m = s.seconds.Get() / 60
-        @let sec = s.seconds.Get() - m*60
+        m := s.seconds.Get() / 60
+        sec := s.seconds.Get() - m*60
         <span class="text-cyan font-bold">{fmt.Sprintf("%02d:%02d", m, sec)}</span>
         @if s.running.Get() {
             <span class="text-green font-bold">Running</span>

@@ -388,14 +388,17 @@ Loops and conditionals nest freely:
 
 ### @let
 
-Bind a computed value to a local variable:
+Bind an element to a local variable to avoid repeating complex expressions:
 
 ```gsx
-@let label = fmt.Sprintf("Count: %d", s.count.Get())
-<span>{label}</span>
+@let countText = <span class="font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
+<div class="flex gap-1">
+    <span>Count:</span>
+    {countText}
+</div>
 ```
 
-This avoids repeating expensive or verbose expressions. The variable is scoped to the rest of the component body after its declaration.
+This is useful when you want to compute an element once and reuse it. The variable is scoped to the rest of the component body after its declaration.
 
 ## Helper Functions
 
@@ -581,8 +584,7 @@ templ (l *listApp) Render() {
             <br />
 
             @if l.selected.Get() >= 0 {
-                @let picked = l.items[l.selected.Get()]
-                <span class="font-dim">{fmt.Sprintf("Selected: %s", picked)}</span>
+                <span class="font-dim">{fmt.Sprintf("Selected: %s", l.items[l.selected.Get()])}</span>
             }
         }
     </div>

@@ -273,11 +273,8 @@ Pass styles through element attributes in `.gsx`:
 
 ```gsx
 templ (s *myApp) Render() {
-    @let headerStyle = tui.NewStyle().Bold().Foreground(tui.Cyan)
-    @let borderColor = tui.NewStyle().Foreground(tui.Magenta)
-
-    <div borderStyle={borderColor} class="border-rounded p-1">
-        <span textStyle={headerStyle}>Dynamic style</span>
+    <div borderStyle={tui.NewStyle().Foreground(tui.Magenta)} class="border-rounded p-1">
+        <span textStyle={tui.NewStyle().Bold().Foreground(tui.Cyan)}>Dynamic style</span>
     </div>
 }
 ```
@@ -336,9 +333,8 @@ func valueStyle(v int) tui.Style {
 }
 
 templ (s *statusApp) Render() {
-    @let v = s.value.Get()
     <div class="flex-col items-center justify-center h-full gap-1">
-        <span textStyle={valueStyle(v)}>{fmt.Sprintf("Value: %d", v)}</span>
+        <span textStyle={valueStyle(s.value.Get())}>{fmt.Sprintf("Value: %d", s.value.Get())}</span>
         <span class="font-dim">Press + / - to change, Esc to quit</span>
     </div>
 }
