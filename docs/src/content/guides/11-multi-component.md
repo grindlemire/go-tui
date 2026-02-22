@@ -696,6 +696,10 @@ tui generate ./...
 go run .
 ```
 
+Here's what it looks like with the sidebar, file list, and preview all wired together:
+
+![Multi-Component Applications screenshot](/guides/11.png)
+
 ## Next Steps
 
 - [Inline Mode and Alternate Screen](inline-mode) -- Rendering inline at the bottom of the terminal and switching to full-screen overlays

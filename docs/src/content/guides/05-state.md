@@ -478,6 +478,10 @@ tui generate ./...
 go run .
 ```
 
+You should see something like this:
+
+![State and Reactivity screenshot](/guides/05.png)
+
 ## Next Steps
 
 - [Components](components) -- Component patterns, composition, and lifecycle interfaces

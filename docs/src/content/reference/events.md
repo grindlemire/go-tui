@@ -507,7 +507,7 @@ func HandleClicks(me MouseEvent, bindings ...ClickBinding) bool
 
 Tests a mouse event against a list of click bindings. Only left-button press events are matched. Returns `true` if any binding's ref contained the click coordinates.
 
-`HandleClicks` checks `MouseLeft` + `MousePress` — other buttons and actions are ignored. The first binding whose ref element contains the click point `(X, Y)` fires, and the function returns `true`.
+`HandleClicks` checks `MouseLeft` + `MousePress`. Other buttons and actions are ignored. The first binding whose ref element contains the click point `(X, Y)` fires, and the function returns `true`.
 
 ```go
 func (c *counter) HandleMouse(me tui.MouseEvent) bool {
@@ -528,7 +528,7 @@ Here's how events flow through the system.
 2. If the app uses the component model (struct components with `KeyMap()`), the dispatch table is built from all `KeyListener` components in tree order.
 3. Bindings are checked in order. The first match fires. If `Stop` is true, dispatch ends.
 4. If no binding stopped the event, it falls through to `App.Dispatch()` and the focus manager for element-level handlers.
-5. In legacy mode (no components), `WithGlobalKeyHandler` runs first — if it returns `true`, the event is consumed.
+5. In legacy mode (no components), `WithGlobalKeyHandler` runs first. If it returns `true`, the event is consumed.
 
 **Mouse events:**
 

@@ -357,7 +357,7 @@ reader := tui.NewMockEventReader(
 func (m *MockEventReader) PollEvent(timeout time.Duration) (Event, bool)
 ```
 
-Returns the next queued event. The `timeout` parameter is ignored — events are returned immediately. When all events have been consumed, returns `(nil, false)`.
+Returns the next queued event. The `timeout` parameter is ignored. Events are returned immediately. When all events have been consumed, returns `(nil, false)`.
 
 ```go
 reader := tui.NewMockEventReader(

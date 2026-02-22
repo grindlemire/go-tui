@@ -183,7 +183,7 @@ ta := tui.NewTextArea(tui.WithTextAreaWidth(80))
 func WithTextAreaMaxHeight(rows int) TextAreaOption
 ```
 
-Caps the visible height to `rows` lines of text. Set to 0 (the default) for unlimited height. This does not include border rows — if a border is set, the actual element height is `maxHeight + 2`.
+Caps the visible height to `rows` lines of text. Set to 0 (the default) for unlimited height. This does not include border rows. If a border is set, the actual element height is `maxHeight + 2`.
 
 ```go
 ta := tui.NewTextArea(tui.WithTextAreaMaxHeight(10))

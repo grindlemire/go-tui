@@ -17,12 +17,8 @@ function useSearch() { return useContext(SearchContext); }
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    if (pathname === "/") {
-      history.scrollRestoration = "manual";
-      window.scrollTo(0, 0);
-    } else {
-      history.scrollRestoration = "auto";
-    }
+    history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 }
@@ -931,7 +927,7 @@ const comparisonFeatures: ComparisonFeature[] = [
       },
       tview: {
         summary: "Imperative widget toolkit",
-        detail: "OOP style — create widget objects, configure via methods, compose in layout containers. Implements the Primitive interface",
+        detail: "OOP style. Create widget objects, configure via methods, compose in layout containers. Implements the Primitive interface",
       },
       gocui: {
         summary: "View manager",
@@ -948,7 +944,7 @@ const comparisonFeatures: ComparisonFeature[] = [
       },
       "Bubble Tea": {
         summary: "String joins via lipgloss",
-        detail: "lipgloss provides box model styling (padding, margin, borders) and JoinHorizontal/JoinVertical for composition. No flexbox — open issue since 2023",
+        detail: "lipgloss provides box model styling (padding, margin, borders) and JoinHorizontal/JoinVertical for composition. No flexbox (open issue since 2023)",
       },
       tview: {
         summary: "Basic Flex and Grid",
@@ -977,7 +973,7 @@ const comparisonFeatures: ComparisonFeature[] = [
       },
       gocui: {
         summary: "Views only",
-        detail: "No pre-built widgets. Views provide text I/O and keybindings — widgets like tables or lists must be built from scratch",
+        detail: "No pre-built widgets. Views provide text I/O and keybindings, but widgets like tables or lists must be built from scratch",
       },
     },
   },
@@ -1011,11 +1007,11 @@ const comparisonFeatures: ComparisonFeature[] = [
       },
       "Bubble Tea": {
         summary: "Default mode",
-        detail: "Inline is the default — fullscreen requires opting in with tea.WithAltScreen(). Supports tea.Println() for output above",
+        detail: "Inline is the default. Fullscreen requires opting in with tea.WithAltScreen(). Supports tea.Println() for output above",
       },
       tview: {
         summary: "Fullscreen only",
-        detail: "Architectural limitation — tcell takes over the entire screen. No inline rendering support",
+        detail: "Architectural limitation: tcell takes over the entire screen. No inline rendering support",
       },
       gocui: {
         summary: "Fullscreen only",
@@ -1053,7 +1049,7 @@ const comparisonFeatures: ComparisonFeature[] = [
       },
       "Bubble Tea": {
         summary: "Standard Go (gopls)",
-        detail: "All code is plain Go — full gopls support out of the box. No additional tooling needed or available",
+        detail: "All code is plain Go with full gopls support out of the box. No additional tooling needed or available",
       },
       tview: {
         summary: "Standard Go (gopls)",

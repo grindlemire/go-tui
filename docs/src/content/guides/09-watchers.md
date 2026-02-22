@@ -673,6 +673,10 @@ tui generate ./...
 go run .
 ```
 
+You'll see the clock ticking, the stopwatch ready to go, and the channel watcher waiting for messages:
+
+![Timers, Watchers, and Channels screenshot](/guides/09.png)
+
 ## Next Steps
 
 - [Scrolling](scrolling) -- Scrollable containers for content that exceeds available space

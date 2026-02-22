@@ -2,7 +2,7 @@
 
 ## What We're Building
 
-We're going to build a live metrics dashboard -- CPU, memory, and disk gauges, a network sparkline, and a scrollable streaming event feed -- all updating in real time. It pulls in concepts from most of the previous guides.
+We're going to build a live metrics dashboard: CPU, memory, and disk gauges, a network sparkline, and a scrollable streaming event feed, all updating in real time. It pulls in concepts from most of the previous guides.
 
 Concepts used:
 
@@ -379,7 +379,7 @@ func Dashboard(eventCh <-chan string) *dashboardApp {
 }
 ```
 
-The constructor now takes an `eventCh` parameter. The channel is receive-only (`<-chan string`) inside the component -- the producer runs elsewhere. The `scrollY` state tracks the current scroll position, and `eventsRef` is a ref to the scrollable container so we can query its maximum scroll offset.
+The constructor now takes an `eventCh` parameter. The channel is receive-only (`<-chan string`) inside the component. The producer runs elsewhere. The `scrollY` state tracks the current scroll position, and `eventsRef` is a ref to the scrollable container so we can query its maximum scroll offset.
 
 Add a scroll helper and update `KeyMap` with scroll bindings:
 
@@ -569,7 +569,7 @@ Two things to note about the goroutine pattern:
 
 The dashboard already has gradient titles (`text-gradient-cyan-magenta`) and colored borders. A few things worth calling out:
 
-The `metricColor` function returns different class strings depending on the value -- green below 60%, yellow below 80%, red and bold above. You can use this pattern anywhere: write a function that returns a class string, and pass it to `class={}`.
+The `metricColor` function returns different class strings depending on the value: green below 60%, yellow below 80%, red and bold above. You can use this pattern anywhere: write a function that returns a class string, and pass it to `class={}`.
 
 Each panel gets its own `border-rounded` frame for visual separation, and `gap-1` between sections plus `p-1` padding inside panels keeps everything readable.
 
@@ -886,6 +886,10 @@ Generate and run:
 tui generate ./...
 go run .
 ```
+
+The finished dashboard with live-updating metrics, sparklines, and an event log:
+
+![Building a Dashboard screenshot](/guides/14.png)
 
 ## Next Steps
 

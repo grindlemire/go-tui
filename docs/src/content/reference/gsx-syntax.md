@@ -206,7 +206,7 @@ These hold text content and support text styling but not flex container attribut
 
 ### Self-closing elements
 
-`<input />`, `<progress />`, `<hr />`, and `<br />` are self-closing -- they cannot have children. Writing `<input>children</input>` produces a compile error.
+`<input />`, `<progress />`, `<hr />`, and `<br />` are self-closing and cannot have children. Writing `<input>children</input>` produces a compile error.
 
 ## Attributes
 

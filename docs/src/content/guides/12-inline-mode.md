@@ -295,4 +295,8 @@ The flow works like this:
 
 The conditional `KeyMap` is important here. When settings are showing, you return different bindings than when the text area is active. This keeps the two modes from interfering with each other.
 
+Here's what the inline text area looks like at the bottom of the terminal:
+
+![Inline Mode and Alternate Screen screenshot](/guides/12.png)
+
 **Cross-references**: [Events Guide](events), [State Guide](state)
