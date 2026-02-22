@@ -42,7 +42,7 @@ func MyApp() *myApp {
 func (r *Ref) Set(v *Element)
 ```
 
-Stores an element in the ref. You rarely call this yourself -- the generated code calls it during rendering. Each render pass overwrites the previous value, so the ref always points to the latest element.
+Stores an element in the ref. You rarely call this yourself since the generated code calls it during rendering. Each render pass overwrites the previous value, so the ref always points to the latest element.
 
 ### El
 

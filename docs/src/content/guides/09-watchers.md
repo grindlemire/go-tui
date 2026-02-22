@@ -492,6 +492,8 @@ type watcherApp struct {
     messages     *tui.State[[]string]
     msgCh        chan string
     msgCount     *tui.State[int]
+    feed         *tui.Ref
+    scrollY      *tui.State[int]
 }
 
 func WatcherApp() *watcherApp {
@@ -502,6 +504,8 @@ func WatcherApp() *watcherApp {
         messages:     tui.NewState([]string{}),
         msgCh:        msgCh,
         msgCount:     tui.NewState(0),
+        feed:         tui.NewRef(),
+        scrollY:      tui.NewState(0),
     }
 
     go func() {
@@ -554,11 +558,42 @@ func (w *watcherApp) addMessage(msg string) {
     w.msgCount.Update(func(v int) int { return v + 1 })
     ts := time.Now().Format("15:04:05")
     entry := fmt.Sprintf("[%s] #%d: %s", ts, w.msgCount.Get(), msg)
-    current := w.messages.Get()
-    if len(current) >= 10 {
-        current = current[1:]
+    w.messages.Set(append(w.messages.Get(), entry))
+
+    // Auto-scroll to bottom
+    el := w.feed.El()
+    if el != nil {
+        _, maxY := el.MaxScroll()
+        w.scrollY.Set(maxY + 1)
     }
-    w.messages.Set(append(current, entry))
+}
+
+func (w *watcherApp) scrollBy(delta int) {
+    el := w.feed.El()
+    if el == nil {
+        return
+    }
+    _, maxY := el.MaxScroll()
+    newY := w.scrollY.Get() + delta
+    if newY < 0 {
+        newY = 0
+    }
+    if newY > maxY {
+        newY = maxY
+    }
+    w.scrollY.Set(newY)
+}
+
+func (w *watcherApp) HandleMouse(me tui.MouseEvent) bool {
+    switch me.Button {
+    case tui.MouseWheelUp:
+        w.scrollBy(-3)
+        return true
+    case tui.MouseWheelDown:
+        w.scrollBy(3)
+        return true
+    }
+    return false
 }
 
 func formatDuration(seconds int) string {
@@ -568,10 +603,10 @@ func formatDuration(seconds int) string {
 }
 
 templ (w *watcherApp) Render() {
-    <div class="flex-col p-2 gap-2 border-rounded border-cyan">
+    <div class="flex-col p-1 gap-1 border-rounded border-cyan">
         <span class="text-gradient-cyan-magenta font-bold">Timers & Watchers</span>
 
-        <div class="flex-col border-rounded p-1 gap-1 items-center">
+        <div class="flex gap-2 shrink-0">
             <span class="font-bold">Stopwatch</span>
             <span class="text-cyan font-bold">{formatDuration(w.stopwatchSec.Get())}</span>
             @if w.stopwatchOn.Get() {
@@ -582,7 +617,8 @@ templ (w *watcherApp) Render() {
             <span class="font-dim">[s] toggle  [r] reset</span>
         </div>
 
-        <div class="flex-col border-rounded p-1 gap-1">
+        <div class="flex-col border-rounded p-1 grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
+            ref={w.feed} scrollOffset={0, w.scrollY.Get()}>
             <div class="flex gap-2">
                 <span class="font-bold">Live Feed</span>
                 <span class="font-dim">{fmt.Sprintf("(%d received)", w.msgCount.Get())}</span>
@@ -615,6 +651,7 @@ import (
 func main() {
     app, err := tui.NewApp(
         tui.WithRootComponent(WatcherApp()),
+        tui.WithMouse(),
     )
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error: %v\n", err)

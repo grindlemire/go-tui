@@ -167,7 +167,7 @@ type AppBinder interface {
 }
 ```
 
-Called by the framework to wire up `State` and `Events` fields to the app. Generated code from `.gsx` files emits `BindApp` methods automatically -- each `State` and `Events` field gets its `BindApp` called in turn.
+Called by the framework to wire up `State` and `Events` fields to the app. Generated code from `.gsx` files emits `BindApp` methods automatically for each `State` and `Events` field gets its `BindApp` called in turn.
 
 Users never call `BindApp` directly. The mount system calls it before `Init` on first mount, and again after `UpdateProps` on subsequent renders (to bind any fresh `Events` fields from the props update).
 
@@ -221,7 +221,7 @@ func StatusBar(label string) *statusBar {
 func (s *statusBar) UpdateProps(fresh tui.Component) {
     if f, ok := fresh.(*statusBar); ok {
         s.label = f.label
-        // Don't copy count -- that's internal state, not a prop
+        // Don't copy count, that's internal state, not a prop
     }
 }
 ```
@@ -253,7 +253,7 @@ type Viewable interface {
 
 A bundle of a root `Renderable` and its associated watchers. Used by `App.SetRootView` to set the root element and start watchers in one call.
 
-Generated view structs implement this interface. Like `Renderable`, most users don't need to interact with it directly -- `WithRootComponent` handles everything.
+Generated view structs implement this interface. Like `Renderable`, most users don't need to interact with it directly since `WithRootComponent` handles everything.
 
 **When to implement:** Rarely. Use `Component` with `WithRootComponent` instead.
 

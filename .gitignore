@@ -1,16 +1,16 @@
 # Build binaries
 /tui
 
-# Example binaries (go build output has no file extension)
+# Example binaries (compiled Go binaries match their directory name)
+# Ignore everything, then un-ignore source files and known subdirectories
 examples/*/*
-!examples/*/*.go
-!examples/*/*.gsx
-!examples/*/*.md
-!examples/ai-chat/go.mod
-!examples/ai-chat/go.sum
-!examples/ai-chat/settings/
-
-debug.log
+!examples/**/*.go
+!examples/**/*.gsx
+!examples/**/*.md
+!examples/**/*.mod
+!examples/**/*.sum
+!examples/**/settings/
+!examples/guide-content/*/
 
 # Go
 *.exe
@@ -24,16 +24,28 @@ vendor/
 
 # IDE/Editor
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
-.vscode/
+
+# Editor extensions (preserve source, ignore build artifacts)
 !editor/vscode/
-./editor/zed-gsx/grammars/
+editor/vscode/out/
+editor/vscode/node_modules/
+editor/tree-sitter-gsx/build/
+editor/tree-sitter-gsx/node_modules/
 editor/zed-gsx/grammars/gsx/
 editor/zed-gsx/target/
-
+*.vsix
 extension.wasm
+
+# Node
+node_modules/
+
+# Docs site
+docs/dist/
+docs/node_modules/
 
 # Claude
 .claude/
@@ -41,25 +53,12 @@ extension.wasm
 # Worktrees
 .worktrees/
 
-# Node (VSCode extension)
-node_modules/
-out/
-**/*.vsix
-
-# Docs site
-docs/node_modules/
-docs/dist/
-docs/site/node_modules/
-docs/site/build/
-docs/site/.docusaurus/
-docs/site/.cache/
-docs/site/.vercel/
-
 # OS
 .DS_Store
 Thumbs.db
 
-# Test/Coverage
+# Debug/Test/Coverage
+debug.log
 coverage.out
 coverage.html
 *.prof

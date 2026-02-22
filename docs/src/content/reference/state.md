@@ -29,7 +29,7 @@ A reactive container for a single value of type `T`. When the value changes via 
 func NewState[T any](initial T) *State[T]
 ```
 
-Creates a new state with the given initial value. The state starts unbound -- the framework calls `BindApp` automatically when the owning component mounts.
+Creates a new state with the given initial value. The state starts unbound and the framework calls `BindApp` automatically when the owning component mounts.
 
 Works with any type: primitives, slices, structs, maps.
 
@@ -67,7 +67,7 @@ Binds the state to an app for dirty-marking and batching. The framework calls th
 func (s *State[T]) Get() T
 ```
 
-Returns the current value. Thread-safe -- safe to call from any goroutine.
+Returns the current value. Safe to call from any goroutine.
 
 ```go
 current := count.Get()

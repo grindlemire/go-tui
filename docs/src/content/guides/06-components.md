@@ -590,6 +590,53 @@ templ Card(title string) {
     </div>
 }
 
+// Tab content components
+
+templ OverviewTab() {
+    <div class="flex gap-1">
+        @Card("System") {
+            @StatusLine("CPU:", "42%")
+            @StatusLine("Memory:", "1.2 GB")
+            @StatusLine("Disk:", "68%")
+        }
+        @Card("Network") {
+            @StatusLine("In:", "12 MB/s")
+            @StatusLine("Out:", "3 MB/s")
+            @StatusLine("Latency:", "24ms")
+        }
+    </div>
+}
+
+templ MetricsTab() {
+    <div class="flex gap-1">
+        @Card("Performance") {
+            @StatusLine("Requests:", "1.2k/s")
+            @StatusLine("P99:", "145ms")
+            @StatusLine("Errors:", "0.02%")
+        }
+        @Card("Storage") {
+            @StatusLine("Used:", "42 GB")
+            @StatusLine("Free:", "118 GB")
+            @StatusLine("IOPS:", "3.4k")
+        }
+    </div>
+}
+
+templ LogsTab() {
+    <div class="flex gap-1">
+        @Card("Application") {
+            @StatusLine("Level:", "INFO")
+            @StatusLine("Rate:", "84/min")
+            @StatusLine("Errors:", "2")
+        }
+        @Card("Security") {
+            @StatusLine("Auth:", "OK")
+            @StatusLine("Blocked:", "17")
+            @StatusLine("Alerts:", "0")
+        }
+    </div>
+}
+
 // Struct component
 
 type dashboard struct {
@@ -617,7 +664,6 @@ func (d *dashboard) KeyMap() tui.KeyMap {
 
 templ (d *dashboard) Render() {
     <div class="flex-col p-1 gap-1 border-rounded border-cyan">
-        // Tab bar
         <div class="flex gap-2">
             @for i, tab := range d.tabs {
                 @if i == d.selected.Get() {
@@ -628,19 +674,13 @@ templ (d *dashboard) Render() {
             }
         </div>
 
-        // Content
-        <div class="flex gap-1">
-            @Card("System") {
-                @StatusLine("CPU:", "42%")
-                @StatusLine("Memory:", "1.2 GB")
-                @StatusLine("Disk:", "68%")
-            }
-            @Card("Network") {
-                @StatusLine("In:", "12 MB/s")
-                @StatusLine("Out:", "3 MB/s")
-                @StatusLine("Latency:", "24ms")
-            }
-        </div>
+        @if d.selected.Get() == 0 {
+            @OverviewTab()
+        } @else @if d.selected.Get() == 1 {
+            @MetricsTab()
+        } @else {
+            @LogsTab()
+        }
 
         <div class="flex justify-center">
             <span class="font-dim">{fmt.Sprintf("Tab: switch tabs | esc: quit | Viewing: %s", d.tabs[d.selected.Get()])}</span>

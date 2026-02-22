@@ -17,8 +17,7 @@ myapp/
   main.go
   app.gsx          -> app_gsx.go
   sidebar.gsx      -> sidebar_gsx.go
-  content.gsx      -> content_gsx.go
-  search.gsx       -> search_gsx.go
+  search.gsx       -> search_gsx.go   (search bar + content panel)
 ```
 
 Run `tui generate ./...` and it processes every `.gsx` file in the package, producing a corresponding `_gsx.go` file for each. The generated files are standard Go, so all the components end up in the same package and can reference each other directly.
@@ -105,7 +104,7 @@ func (s *sidebar) KeyMap() tui.KeyMap {
 }
 
 templ (s *sidebar) Render() {
-    <div class="flex-col border-single p-1 gap-1" width={20}>
+    <div class="flex-col border-single shrink-0 px-1" width={20}>
         <span class="text-gradient-cyan-magenta font-bold">Folders</span>
         <hr />
         @for i, cat := range categories {
@@ -147,15 +146,15 @@ func Content(category *tui.State[string]) *content {
 }
 
 templ (c *content) Render() {
-    <div class="flex-col flex-grow p-1 gap-1">
+    <div class="flex-col grow px-2">
         <span class="font-bold text-cyan">{c.category.Get() + "/"}</span>
         <hr />
         files := filesByCategory[c.category.Get()]
         @for i, file := range files {
             @if i == len(files)-1 {
-                <span>{fmt.Sprintf("  └── %s", file)}</span>
+                <span>{fmt.Sprintf("└── %s", file)}</span>
             } @else {
-                <span>{fmt.Sprintf("  ├── %s", file)}</span>
+                <span>{fmt.Sprintf("├── %s", file)}</span>
             }
         }
     </div>
@@ -225,10 +224,11 @@ func (s *searchBar) deactivate(ke tui.KeyEvent) {
 templ (s *searchBar) Render() {
     <div class="shrink-0">
         @if s.active.Get() {
-            <div class="border-rounded border-cyan p-1 flex gap-1">
+            <hr />
+            <div class="px-1 flex gap-1">
                 <span class="text-cyan font-bold">Search:</span>
                 <span>{s.query.Get()}</span>
-                <span class="text-cyan font-bold">|</span>
+                <span class="text-cyan blink">_</span>
             </div>
         }
     </div>
@@ -343,16 +343,18 @@ func MyApp() *myApp {
 
 templ (a *myApp) Render() {
     <div class="flex-col h-full border-rounded border-cyan">
-        <div class="flex justify-center p-1 shrink-0">
+        <div class="flex justify-center px-1 shrink-0">
             <span class="text-gradient-cyan-magenta font-bold">File Explorer</span>
         </div>
-        <div class="flex flex-grow">
+        <hr />
+        <div class="flex grow min-h-0 overflow-hidden">
             @Sidebar(a.category)
             @Content(a.category, a.query)
         </div>
         @SearchBar(a.searchActive, a.query)
-        <div class="flex justify-center p-1 shrink-0">
-            <span class="font-dim">/ search | Ctrl+B sidebar | j/k navigate | q quit</span>
+        <hr />
+        <div class="flex justify-center px-1 shrink-0">
+            <span class="font-dim">/search | Ctrl+B sidebar | j/k navigate | q quit</span>
         </div>
     </div>
 }
@@ -418,16 +420,18 @@ func (a *myApp) KeyMap() tui.KeyMap {
 
 templ (a *myApp) Render() {
     <div class="flex-col h-full border-rounded border-cyan">
-        <div class="flex justify-center p-1 shrink-0">
+        <div class="flex justify-center px-1 shrink-0">
             <span class="text-gradient-cyan-magenta font-bold">File Explorer</span>
         </div>
-        <div class="flex flex-grow">
+        <hr />
+        <div class="flex grow min-h-0 overflow-hidden">
             @Sidebar(a.category)
             @Content(a.category, a.query)
         </div>
         @SearchBar(a.searchActive, a.query)
-        <div class="flex justify-center p-1 shrink-0">
-            <span class="font-dim">/ search | Ctrl+B sidebar | j/k navigate | q quit</span>
+        <hr />
+        <div class="flex justify-center px-1 shrink-0">
+            <span class="font-dim">/search | Ctrl+B sidebar | j/k navigate | q quit</span>
         </div>
     </div>
 }
@@ -497,12 +501,21 @@ func (s *sidebar) moveUp() {
     s.category.Set(categories[s.selected.Get()])
 }
 
+func (s *sidebar) sidebarWidth() int {
+    if s.expanded.Get() {
+        return 22
+    }
+    return 5
+}
+
 templ (s *sidebar) Render() {
-    <div>
+    <div class="flex-col border-single shrink-0" width={s.sidebarWidth()}>
         @if s.expanded.Get() {
-            <div class="flex-col border-single p-1 gap-1" width={20}>
+            <div class="flex-col px-1">
                 <span class="text-gradient-cyan-magenta font-bold">Folders</span>
-                <hr />
+            </div>
+            <hr />
+            <div class="flex-col px-1 grow">
                 @for i, cat := range categories {
                     @if i == s.selected.Get() {
                         <span class="text-cyan font-bold">{"> " + cat}</span>
@@ -510,13 +523,13 @@ templ (s *sidebar) Render() {
                         <span class="font-dim">{"  " + cat}</span>
                     }
                 }
-                <hr />
-                <span class="font-dim">Ctrl+B hide</span>
+            </div>
+            <hr />
+            <div class="flex-col px-1">
+                <span class="font-dim text-cyan">Ctrl+B hide</span>
             </div>
         } @else {
-            <div class="flex-col border-single p-1" width={4}>
-                <span class="text-cyan font-bold">F</span>
-            </div>
+            <span class="text-cyan font-bold px-1">F</span>
         }
     </div>
 }
@@ -530,6 +543,7 @@ package main
 import (
     "fmt"
     "strings"
+
     tui "github.com/grindlemire/go-tui"
 )
 
@@ -577,10 +591,11 @@ func (s *searchBar) deactivate(ke tui.KeyEvent) {
 templ (s *searchBar) Render() {
     <div class="shrink-0">
         @if s.active.Get() {
-            <div class="border-rounded border-cyan p-1 flex gap-1">
+            <hr />
+            <div class="px-1 flex gap-1">
                 <span class="text-cyan font-bold">Search:</span>
                 <span>{s.query.Get()}</span>
-                <span class="text-cyan font-bold">|</span>
+                <span class="text-cyan blink">_</span>
             </div>
         }
     </div>
@@ -624,14 +639,14 @@ func (c *content) filteredFiles() []string {
 }
 
 templ (c *content) Render() {
-    <div class="flex-col flex-grow p-1 gap-1">
+    <div class="flex-col grow px-2 overflow-hidden">
         <span class="font-bold text-cyan">{c.category.Get() + "/"}</span>
         <hr />
         @for i, file := range c.filteredFiles() {
             @if i == len(c.filteredFiles())-1 {
-                <span>{fmt.Sprintf("  └── %s", file)}</span>
+                <span>{fmt.Sprintf("└── %s", file)}</span>
             } @else {
-                <span>{fmt.Sprintf("  ├── %s", file)}</span>
+                <span>{fmt.Sprintf("├── %s", file)}</span>
             }
         }
         @if len(c.filteredFiles()) == 0 {
