@@ -97,10 +97,6 @@ const darkTokenColors = [
       settings: { foreground: "#f8f8f2" },
     },
     {
-      scope: ["entity.name.import"],
-      settings: { foreground: "#f8f8f2" },
-    },
-    {
       scope: ["variable.other.ref"],
       settings: { foreground: "#f8f8f2" },
     },
@@ -206,10 +202,6 @@ const lightTokenColors = [
     },
     {
       scope: ["entity.name.package"],
-      settings: { foreground: "#49483e" },
-    },
-    {
-      scope: ["entity.name.import"],
       settings: { foreground: "#49483e" },
     },
     {

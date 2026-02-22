@@ -504,6 +504,47 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 			}
 		}
 
+		// Check if this is a real generated _gsx.go file — translate back to .gsx
+		if gopls.IsGeneratedGoFile(gl.URI) {
+			tuiURI := gopls.GeneratedGoURIToTuiURI(gl.URI)
+			cachedFile := d.virtualFiles.GetVirtualFile(tuiURI)
+			if cachedFile != nil && cachedFile.SourceMap != nil {
+				// Real _gsx.go files are offset by goimports adding blank lines
+				// between import groups. Adjust line numbers before source map lookup.
+				const goimportsLineOffset = 1
+				adjustedStartLine := gl.Range.Start.Line - goimportsLineOffset
+				if adjustedStartLine < 0 {
+					adjustedStartLine = 0
+				}
+				adjustedEndLine := gl.Range.End.Line - goimportsLineOffset
+				if adjustedEndLine < 0 {
+					adjustedEndLine = 0
+				}
+				tuiStartLine, tuiStartCol, startFound := cachedFile.SourceMap.GoToTui(adjustedStartLine, gl.Range.Start.Character)
+				tuiEndLine, tuiEndCol, endFound := cachedFile.SourceMap.GoToTui(adjustedEndLine, gl.Range.End.Character)
+				if startFound && endFound {
+					locs = append(locs, Location{
+						URI: tuiURI,
+						Range: Range{
+							Start: Position{Line: tuiStartLine, Character: tuiStartCol},
+							End:   Position{Line: tuiEndLine, Character: tuiEndCol},
+						},
+					})
+					continue
+				}
+			}
+			// Source map lookup failed but we know it's a .gsx file —
+			// return the .gsx URI so the user at least lands in the right file
+			locs = append(locs, Location{
+				URI: tuiURI,
+				Range: Range{
+					Start: Position{Line: 0, Character: 0},
+					End:   Position{Line: 0, Character: 0},
+				},
+			})
+			continue
+		}
+
 		// External file (standard library, etc.) — return as-is
 		locs = append(locs, Location{
 			URI: gl.URI,

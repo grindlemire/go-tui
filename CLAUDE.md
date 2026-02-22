@@ -47,12 +47,22 @@ Use this section to quickly find the right files for a given change.
 
 ### Changing the public API (Element options, App config, types)
 
-- `element.go` — Element struct definition, TextAlign/ScrollMode enums
-- `element_options.go` — Option funcs: WithWidth, WithHeight, WithFlexGrow, WithDirection, WithBorder, etc.
+- `element.go` — Element struct definition, TextAlign/ScrollMode/OverflowMode enums
+- `element_options.go` — Option funcs: WithWidth, WithHeight, WithFlexGrow, WithDirection, WithBorder, WithScrollable, WithTruncate, WithHidden, WithOverflow, WithTextGradient, WithBackgroundGradient, WithBorderGradient, etc.
 - `element_options_auto.go` — WithWidthAuto(), WithHeightAuto()
 - `element_accessors.go` — Getters/setters: SetText, SetBorder, SetStyle, Background, etc.
-- `app_options.go` — AppOption funcs: WithFrameRate, WithMouseEnabled, WithInlineHeight, etc.
+- `element_tree.go` — Tree manipulation: AddChild, RemoveChild, RemoveAllChildren
+- `element_scroll.go` — Scroll methods: ScrollTo, ScrollOffset, MaxScroll, ViewportSize
+- `app_options.go` — AppOption funcs: WithFrameRate, WithMouseEnabled, WithInlineHeight, WithGlobalKeyHandler, WithInputLatency, WithEventQueueSize, etc.
 - `layout.go` — Re-exports from internal/layout (Direction, Justify, Align, Value, etc.)
+- `color.go` — Color type, ANSIColor(), RGBColor(), HexColor(), Gradient, GradientDirection
+- `style.go` — Style type with chainable methods (Bold, Dim, Italic, Foreground, etc.)
+- `ref.go` — Ref, RefList, RefMap[K] for element references
+- `click.go` — Click(), HandleClicks() for ref-based mouse hit testing
+- `keymap.go` — KeyMap, KeyBinding, KeyPattern, OnKey(), OnRune(), etc.
+- `component.go` — Component, KeyListener, MouseListener, Initializer, WatcherProvider interfaces
+- `events.go` — Events[T] generic event bus for cross-component communication
+- `mount.go` — Component caching and lifecycle (Mount, PropsUpdater)
 
 ### Changing layout behavior (flexbox algorithm)
 
@@ -74,20 +84,31 @@ Use this section to quickly find the right files for a given change.
 - `terminal.go` — Terminal interface definition
 - `terminal_ansi.go` — ANSITerminal implementation (ANSI escape output, capabilities)
 - `terminal_unix.go` — Unix raw mode via termios syscalls
+- `terminal_windows.go` — Windows raw mode
 - `caps.go` — DetectCapabilities(): TERM/COLORTERM env var detection
+- `border.go` — BorderStyle type and BorderChars definitions
+- `inline_ansi.go` — ANSI escape handling for inline mode
+- `inline_session.go` — Inline session management
+- `inline_wrap.go` — Inline content wrapping
 
 ### Changing event handling / input
 
-- `event.go` — Event interface, KeyEvent, MouseEvent, ResizeEvent types
+- `event.go` — Event interface, KeyEvent, MouseEvent (MouseButton, MouseAction), ResizeEvent types
 - `key.go` — Key type: special keys (Escape, Enter, Tab, arrows, Ctrl+A-Z, function keys)
+- `keymap.go` — KeyMap, KeyBinding, KeyPattern; helpers: OnKey(), OnKeyStop(), OnRune(), OnRuneStop(), OnRunes(), OnRunesStop()
+- `dispatch.go` — Key dispatch table: priority-ordered key binding dispatch by tree position
 - `parse.go` — parseInput(): CSI/SS3 sequence parsing, mouse SGR, UTF-8, modifiers
 - `reader.go` — EventReader/InterruptibleReader interfaces, stdinReader, PollEvent()
+- `reader_types.go` — EventReader and InterruptibleReader interface definitions
 - `reader_unix.go` — Unix-specific: getTerminalSizeForReader(), selectWithTimeout()
+- `reader_windows.go` — Windows-specific terminal input
+- `click.go` — ClickBinding, Click(), HandleClicks() for ref-based mouse hit testing
 - `app_events.go` — App.Dispatch(): routes ResizeEvent, MouseEvent, key events via FocusManager
 
 ### Changing focus management
 
 - `focus.go` — Focusable interface, FocusManager: Register(), Next(), Prev(), SetFocus(), Dispatch()
+- `focus_group.go` — FocusGroup for Tab/Shift+Tab cycling between components
 - `element_focus.go` — Element focus API: IsFocusable, Focus(), Blur(), HandleEvent(), SetOnEvent()
 - `element_watchers.go` — Focus tree discovery: WalkFocusables(), SetOnFocusableAdded()
 
@@ -104,6 +125,9 @@ Use this section to quickly find the right files for a given change.
 - `app_loop.go` — Run() main event loop, frame timing, signal handling
 - `app_lifecycle.go` — Close(), Stop(), PrintAbove() for inline mode
 - `app_render.go` — App.Render(): buffer management, dirty checking, inline vs full-screen
+- `app_screen.go` — Alternate screen mode API (EnterAlternateScreen, ExitAlternateScreen)
+- `app_inline_startup.go` — Inline screen mode initialization and startup policy
+- `mount.go` — Component caching with mark-and-sweep lifecycle (Mount, PropsUpdater)
 
 ### Changing the .gsx compiler (code generation)
 
@@ -263,6 +287,14 @@ templ Counter(count int) {
     <span>{label}</span>
 }
 
+// Component calls
+templ App() {
+    <div class="flex-col">
+        @Header("Hello")
+        @Counter(0)
+    </div>
+}
+
 // Helper functions (regular Go - no Element return type)
 func helper(s string) string {
     return fmt.Sprintf("[%s]", s)
@@ -292,6 +324,8 @@ func helper(s string) string {
 | `id` | `string` | Unique identifier |
 | `class` | `string` | Tailwind-style classes |
 | `disabled` | `bool` | Disable interaction |
+| `ref` | expression | Bind element to a `tui.Ref`/`RefList`/`RefMap` variable |
+| `deps` | expression | Explicit state dependencies for reactive bindings |
 
 ### Layout Attributes
 
@@ -308,6 +342,7 @@ func helper(s string) string {
 | `direction` | `tui.Direction` | Flex direction |
 | `justify` | `tui.Justify` | Main axis alignment |
 | `align` | `tui.Align` | Cross axis alignment |
+| `alignSelf` | `tui.Align` | Override parent's align for this item |
 | `gap` | `int` | Gap between children |
 | `flexGrow` | `float64` | Flex grow factor |
 | `flexShrink` | `float64` | Flex shrink factor |
@@ -325,6 +360,36 @@ func helper(s string) string {
 | `textStyle` | `tui.Style` | Text styling |
 | `textAlign` | `string` | Text alignment |
 
+### Event & Focus Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `focusable` | `bool` | Whether the element can receive focus |
+| `onFocus` | `func()` | Called when the element gains focus |
+| `onBlur` | `func()` | Called when the element loses focus |
+
+### Scroll Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `scrollable` | `bool` | Enable scrolling for overflow content |
+| `scrollbarStyle` | `tui.Style` | Style for the scrollbar track |
+| `scrollbarThumbStyle` | `tui.Style` | Style for the scrollbar thumb |
+
+### Input-specific Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `value` | `string` | Current input value |
+| `placeholder` | `string` | Placeholder text when empty |
+
+### Progress-specific Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `value` | `int` | Current progress value (0 to max) |
+| `max` | `int` | Maximum progress value |
+
 ### Tailwind-style Classes
 
 Use the `class` attribute for styling:
@@ -336,28 +401,138 @@ Use the `class` attribute for styling:
 </div>
 ```
 
+**Layout Direction**
+
 | Class | Description |
 |-------|-------------|
-| `flex` | Display flex (row) |
+| `flex` / `flex-row` | Display flex row |
 | `flex-col` | Display flex column |
-| `gap-N` | Gap of N characters |
-| `p-N` | Padding of N |
-| `m-N` | Margin of N |
-| `border-single` | Single line border |
+
+**Flex Sizing**
+
+| Class | Description |
+|-------|-------------|
+| `grow` | Allow element to grow (flex-grow: 1) |
+| `grow-0` | Prevent element from growing |
+| `shrink` | Allow element to shrink (flex-shrink: 1) |
+| `shrink-0` | Prevent element from shrinking |
+| `flex-1` | Grow and shrink (takes available space) |
+| `flex-auto` | Grow and shrink (respects content size) |
+| `flex-initial` | Don't grow, can shrink |
+| `flex-none` | Fixed size (no grow or shrink) |
+| `flex-grow-N` | Flex grow factor of N |
+| `flex-shrink-N` | Flex shrink factor of N |
+
+**Width & Height**
+
+| Class | Description |
+|-------|-------------|
+| `w-N` | Fixed width of N characters |
+| `h-N` | Fixed height of N rows |
+| `w-full` / `h-full` | Full width/height (100%) |
+| `w-auto` / `h-auto` | Auto size to content |
+| `w-N/M` / `h-N/M` | Fractional size (e.g., `w-1/2` for 50%) |
+| `min-w-N` | Minimum width of N characters |
+| `max-w-N` | Maximum width of N characters |
+| `min-h-N` | Minimum height of N rows |
+| `max-h-N` | Maximum height of N rows |
+
+**Justify & Align**
+
+| Class | Description |
+|-------|-------------|
+| `justify-start` | Justify content to start |
+| `justify-center` | Justify content to center |
+| `justify-end` | Justify content to end |
+| `justify-between` | Justify space between |
+| `justify-around` | Justify space around |
+| `justify-evenly` | Justify space evenly |
+| `items-start` | Align items to start |
+| `items-center` | Align items to center |
+| `items-end` | Align items to end |
+| `items-stretch` | Stretch items to fill |
+| `self-start` | Align self to start |
+| `self-center` | Align self to center |
+| `self-end` | Align self to end |
+| `self-stretch` | Stretch self to fill |
+
+**Spacing**
+
+| Class | Description |
+|-------|-------------|
+| `gap-N` | Gap of N characters between children |
+| `p-N` | Padding of N on all sides |
+| `px-N` / `py-N` | Horizontal / vertical padding |
+| `pt-N` / `pr-N` / `pb-N` / `pl-N` | Individual side padding |
+| `m-N` | Margin of N on all sides |
+| `mx-N` / `my-N` | Horizontal / vertical margin |
+| `mt-N` / `mr-N` / `mb-N` / `ml-N` | Individual side margin |
+
+**Borders**
+
+| Class | Description |
+|-------|-------------|
+| `border` / `border-single` | Single line border |
 | `border-double` | Double line border |
 | `border-rounded` | Rounded border |
 | `border-thick` | Thick border |
+| `border-COLOR` | Border color (red, green, blue, cyan, etc.) |
+| `border-[#hex]` | Border color from hex (e.g., `border-[#ff6600]`) |
+| `border-gradient-C1-C2[-dir]` | Border gradient (directions: h, v, dd, du) |
+
+**Text Styling**
+
+| Class | Description |
+|-------|-------------|
 | `font-bold` | Bold text |
-| `font-dim` | Dim/faint text |
-| `font-italic` | Italic text |
-| `text-COLOR` | Text color (red, green, blue, cyan, etc.) |
+| `font-dim` / `text-dim` | Dim/faint text |
+| `italic` | Italic text |
+| `underline` | Underlined text |
+| `strikethrough` | Strikethrough text |
+| `blink` | Blinking text |
+| `reverse` | Reverse video text |
+| `text-left` / `text-center` / `text-right` | Text alignment |
+| `truncate` | Truncate text with ellipsis on overflow |
+
+**Colors**
+
+| Class | Description |
+|-------|-------------|
+| `text-COLOR` | Text color (red, green, blue, cyan, magenta, yellow, white, black) |
+| `text-bright-COLOR` | Bright text color variant |
+| `text-[#hex]` | Text color from hex (e.g., `text-[#ff0000]`) |
 | `bg-COLOR` | Background color |
-| `items-center` | Align items center |
-| `items-start` | Align items start |
-| `items-end` | Align items end |
-| `justify-center` | Justify content center |
-| `justify-between` | Justify space between |
-| `justify-around` | Justify space around |
+| `bg-bright-COLOR` | Bright background color variant |
+| `bg-[#hex]` | Background color from hex |
+
+**Gradients**
+
+| Class | Description |
+|-------|-------------|
+| `text-gradient-C1-C2[-dir]` | Text gradient between two colors |
+| `bg-gradient-C1-C2[-dir]` | Background gradient between two colors |
+| `border-gradient-C1-C2[-dir]` | Border gradient between two colors |
+
+Gradient directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagonal down), `-du` (diagonal up). Colors: any named color or bright- variant.
+
+**Scroll & Overflow**
+
+| Class | Description |
+|-------|-------------|
+| `overflow-scroll` | Enable scrolling in both directions |
+| `overflow-y-scroll` | Enable vertical scrolling |
+| `overflow-x-scroll` | Enable horizontal scrolling |
+| `overflow-hidden` | Clip children without scrollbars |
+| `scrollbar-COLOR` | Scrollbar track color |
+| `scrollbar-thumb-COLOR` | Scrollbar thumb color |
+| `scrollbar-[#hex]` / `scrollbar-thumb-[#hex]` | Hex scrollbar colors |
+
+**Other**
+
+| Class | Description |
+|-------|-------------|
+| `focusable` | Make element focusable |
+| `hidden` | Hide element from layout and rendering |
 
 ## Key Types
 
@@ -392,20 +567,91 @@ tui.AlignCenter
 tui.AlignEnd
 tui.AlignStretch
 
-// tui.Style - text styling
-tui.Style{}.Bold().Foreground(tui.ANSIColor(tui.Red))
+// tui.TextAlign
+tui.TextAlignLeft    // default
+tui.TextAlignCenter
+tui.TextAlignRight
+
+// tui.ScrollMode
+tui.ScrollNone       // default
+tui.ScrollVertical
+tui.ScrollHorizontal
+tui.ScrollBoth
+
+// tui.OverflowMode
+tui.OverflowVisible  // default
+tui.OverflowHidden
+
+// tui.Color - terminal colors
+tui.Black, tui.Red, tui.Green, tui.Yellow, tui.Blue, tui.Magenta, tui.Cyan, tui.White
+tui.BrightBlack, tui.BrightRed, tui.BrightGreen, tui.BrightYellow, tui.BrightBlue, tui.BrightMagenta, tui.BrightCyan, tui.BrightWhite
+tui.ANSIColor(index)        // ANSI 256 palette
+tui.RGBColor(r, g, b)       // 24-bit true color
+tui.HexColor("#ff6600")     // Hex string to Color
+tui.DefaultColor()           // Terminal default
+
+// tui.Gradient - color gradients
+tui.NewGradient(tui.Red, tui.Blue)                                    // Horizontal gradient
+tui.NewGradient(tui.Red, tui.Blue).WithDirection(tui.GradientVertical) // Vertical
+// Directions: GradientHorizontal, GradientVertical, GradientDiagonalDown, GradientDiagonalUp
+
+// tui.Style - text styling (chainable)
+tui.NewStyle().Bold().Foreground(tui.Red)
+tui.NewStyle().Dim().Italic().Underline().Background(tui.Blue)
+// Methods: Bold(), Dim(), Italic(), Underline(), Blink(), Reverse(), Strikethrough(), Foreground(Color), Background(Color)
 
 // tui.State[T] - reactive state
 count := tui.NewState(0)
 count.Set(count.Get() + 1)
 count.Bind(func(v int) { /* called on change */ })
+
+// tui.Ref - element references for hit testing
+ref := tui.NewRef()           // Single element ref
+list := tui.NewRefList()      // Multiple elements from loops
+m := tui.NewRefMap[string]()  // Keyed element refs
+
+// tui.Events[T] - cross-component event bus
+bus := tui.NewEvents[MyEvent]("topic-name")
+bus.Emit(MyEvent{...})
+unsub := bus.Subscribe(func(e MyEvent) { ... })
 ```
+
+## Component Interfaces
+
+Components are structs implementing `Component` (requires `Render(app *App) *Element`).
+Additional optional interfaces add capabilities:
+
+| Interface | Method | Description |
+|-----------|--------|-------------|
+| `Component` | `Render(app *App) *Element` | Required. Returns the element tree. |
+| `KeyListener` | `KeyMap() KeyMap` | Keyboard input handling via key bindings |
+| `MouseListener` | `HandleMouse(MouseEvent) bool` | Mouse input handling |
+| `Initializer` | `Init() func()` | Setup on mount; returned func is cleanup on unmount |
+| `WatcherProvider` | `Watchers() []Watcher` | Timers, tickers, channel watchers |
+| `PropsUpdater` | `UpdateProps(fresh Component)` | Receive updated props when re-rendered from cache |
+| `AppBinder` | `BindApp(app *App)` | Auto-called by mount system for State/Events fields |
+| `AppUnbinder` | `UnbindApp()` | Detach app-bound resources on unmount |
 
 ## Event Handling
 
+### Key Bindings (KeyMap)
+
+Implement `KeyListener` to handle keyboard input:
+
+```go
+func (c *myComponent) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnKey(tui.KeyEnter, c.onEnter),         // Specific key, broadcast
+        tui.OnKeyStop(tui.KeyEscape, c.onEscape),   // Specific key, stop propagation
+        tui.OnRune('q', func(ke tui.KeyEvent) { ... }), // Specific character
+        tui.OnRunesStop(c.onTyping),                  // All printable chars, exclusive
+    }
+}
+```
+
 ### Mouse Click Handling
 
-Use `HandleClicks` for automatic ref-based hit testing:
+Implement `MouseListener` with ref-based hit testing:
 
 ```go
 func (c *counter) HandleMouse(me tui.MouseEvent) bool {
@@ -429,6 +675,23 @@ func (t *timer) Watchers() []tui.Watcher {
 }
 ```
 
+### Cross-Component Communication (Events)
+
+Use `Events[T]` for pub/sub between components:
+
+```go
+// In component struct
+type myComponent struct {
+    notifications *tui.Events[Notification]  // created with tui.NewEvents[Notification]("notifications")
+}
+
+// Emit from one component
+c.notifications.Emit(Notification{Message: "hello"})
+
+// Subscribe in another component
+unsub := c.notifications.Subscribe(func(n Notification) { ... })
+```
+
 ## Layout System
 
 The layout engine (`internal/layout`) implements CSS flexbox with:
@@ -449,6 +712,10 @@ The layout engine (`internal/layout`) implements CSS flexbox with:
 - **Reactive State**: `State[T]` with `Bind()` callbacks and `Batch()` for coalescing
 - **Interface-based**: `Renderable`, `Layoutable`, `Focusable`, `Watcher`, `Terminal`
 - **Tree Walking**: BFS traversal for component dispatch (key/mouse events, watcher collection); DFS for focus discovery and rendering
+- **Component Caching**: Mount system with mark-and-sweep cleanup — components are cached by (parent, index) key and reused across renders
+- **Ref System**: Type-safe element references (`Ref`, `RefList`, `RefMap[K]`) for event handling and hit testing
+- **Event Bus**: Generic `Events[T]` for topic-based pub/sub between components
+- **Key Dispatch**: Priority-ordered key binding dispatch by tree position via `KeyListener`/`KeyMap`
 
 ## Testing
 

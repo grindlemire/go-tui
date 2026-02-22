@@ -12,7 +12,7 @@ Every flex container lays out its children along a main axis. The default is `Ro
 
 ```gsx
 templ DirectionDemo() {
-    <div class="flex-col gap-2 p-1">
+    <div class="flex-col items-center w-full gap-2 p-1">
         <span class="font-bold">Row (default):</span>
         <div class="flex gap-1">
             <span class="bg-cyan text-black px-1">A</span>
@@ -45,7 +45,7 @@ Justify controls how children are distributed along the **main axis** (horizonta
 
 ```gsx
 templ JustifyDemo() {
-    <div class="flex-col gap-1 p-1">
+    <div class="flex-col items-center w-full gap-1 p-1">
         <span class="font-dim">justify-start (default):</span>
         <div class="flex justify-start border-single w-40">
             <span class="bg-cyan text-black px-1">A</span>
@@ -108,7 +108,7 @@ Align controls how children are positioned along the **cross axis** (vertical fo
 
 ```gsx
 templ AlignDemo() {
-    <div class="flex-col gap-1 p-1">
+    <div class="flex-col items-center w-full gap-1 p-1">
         <span class="font-dim">items-start:</span>
         <div class="flex items-start gap-1 border-single h-5 w-40">
             <span class="bg-cyan text-black px-1">Short</span>
@@ -151,7 +151,7 @@ Gap adds uniform spacing between children along the main axis. It does not add s
 
 ```gsx
 templ GapDemo() {
-    <div class="flex-col gap-1 p-1">
+    <div class="flex-col items-center w-full gap-1 p-1">
         <span class="font-dim">gap-0 (no gap):</span>
         <div class="flex gap-0">
             <span class="bg-cyan text-black px-1">A</span>
@@ -188,7 +188,7 @@ Grow and shrink control how children claim extra space or give it up when the co
 
 ```gsx
 templ GrowDemo() {
-    <div class="flex-col gap-1 p-1">
+    <div class="flex-col items-center w-full gap-1 p-1">
         <span class="font-dim">Fixed sidebar + growing content:</span>
         <div class="flex gap-1 w-50 border-single">
             <div class="w-12 bg-magenta text-black p-1">
@@ -306,7 +306,7 @@ Padding adds space inside an element's border. Margin adds space outside it. Bot
 
 ```gsx
 templ SpacingDemo() {
-    <div class="flex gap-2 p-1">
+    <div class="flex justify-center w-full gap-2 p-1">
         <div class="border-single p-2">
             <span>2 cells of padding inside the border</span>
         </div>
