@@ -135,7 +135,7 @@ func lineColor(line string) string {
 
 func (s *streamingApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(1),
 		tui.WithHeightPercent(100.00),
@@ -143,7 +143,7 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_1 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithFlexShrink(0),
 	)
@@ -162,7 +162,7 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 	__tui_1.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_1)
 	__tui_4 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
@@ -179,7 +179,7 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 	}
 	__tui_0.AddChild(__tui_4)
 	__tui_6 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithFlexShrink(0),
 		tui.WithJustify(tui.JustifyCenter),

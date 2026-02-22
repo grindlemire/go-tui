@@ -73,14 +73,14 @@ func statusColor(online bool) string {
 
 func (a *componentsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(2),
 		tui.WithGap(2),
 	)
 	__tui_1 := Header("Component Showcase")
 	__tui_0.AddChild(__tui_1.Root)
 	__tui_2 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_3 := UserCard("Alice", "Engineer", true)
@@ -91,7 +91,7 @@ func (a *componentsApp) Render(app *tui.App) *tui.Element {
 	__tui_2.AddChild(__tui_5.Root)
 	__tui_0.AddChild(__tui_2)
 	__tui_6 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_8_children := []*tui.Element{}
@@ -109,7 +109,7 @@ func (a *componentsApp) Render(app *tui.App) *tui.Element {
 	__tui_15 := StatusLine("Notify:", "On")
 	__tui_13_children = append(__tui_13_children, __tui_15.Root)
 	__tui_16 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_17 := tui.New(
@@ -128,7 +128,7 @@ func (a *componentsApp) Render(app *tui.App) *tui.Element {
 	__tui_20 := StatusBar()
 	__tui_0.AddChild(__tui_20.Root)
 	__tui_21 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_22 := tui.New(
@@ -150,9 +150,16 @@ func (a *componentsApp) BindApp(app *tui.App) {
 var _ tui.AppBinder = (*componentsApp)(nil)
 
 type CardView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *CardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *CardView) GetRoot() tui.Renderable { return v.Root }
@@ -175,9 +182,12 @@ func (v *CardView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*CardView)(nil)
+
+var _ tui.AppUnbinder = (*CardView)(nil)
 
 var _ tui.PropsUpdater = (*CardView)(nil)
 
@@ -188,7 +198,7 @@ func Card(title string, children []*tui.Element) *CardView {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithWidthPercent(100.00),
 		tui.WithFlexGrow(1.0),
@@ -205,7 +215,7 @@ func Card(title string, children []*tui.Element) *CardView {
 	)
 	__tui_0.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithWidthPercent(100.00),
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
@@ -217,18 +227,29 @@ func Card(title string, children []*tui.Element) *CardView {
 	__bindApp := func(app *tui.App) {
 	}
 
+	__unbindApp := func() {
+	}
+
 	view = CardView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
 
 type BadgeView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *BadgeView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *BadgeView) GetRoot() tui.Renderable { return v.Root }
@@ -251,9 +272,12 @@ func (v *BadgeView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*BadgeView)(nil)
+
+var _ tui.AppUnbinder = (*BadgeView)(nil)
 
 var _ tui.PropsUpdater = (*BadgeView)(nil)
 
@@ -268,18 +292,29 @@ func Badge(label string, color string) *BadgeView {
 	__bindApp := func(app *tui.App) {
 	}
 
+	__unbindApp := func() {
+	}
+
 	view = BadgeView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
 
 type HeaderView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *HeaderView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *HeaderView) GetRoot() tui.Renderable { return v.Root }
@@ -302,9 +337,12 @@ func (v *HeaderView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*HeaderView)(nil)
+
+var _ tui.AppUnbinder = (*HeaderView)(nil)
 
 var _ tui.PropsUpdater = (*HeaderView)(nil)
 
@@ -316,7 +354,7 @@ func Header(title string) *HeaderView {
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithPadding(1),
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_1 := tui.New(
@@ -329,18 +367,29 @@ func Header(title string) *HeaderView {
 	__bindApp := func(app *tui.App) {
 	}
 
+	__unbindApp := func() {
+	}
+
 	view = HeaderView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
 
 type StatusLineView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *StatusLineView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *StatusLineView) GetRoot() tui.Renderable { return v.Root }
@@ -363,9 +412,12 @@ func (v *StatusLineView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*StatusLineView)(nil)
+
+var _ tui.AppUnbinder = (*StatusLineView)(nil)
 
 var _ tui.PropsUpdater = (*StatusLineView)(nil)
 
@@ -374,7 +426,7 @@ func StatusLine(label string, value string) *StatusLineView {
 	var watchers []tui.Watcher
 
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_1 := tui.New(
@@ -391,18 +443,29 @@ func StatusLine(label string, value string) *StatusLineView {
 	__bindApp := func(app *tui.App) {
 	}
 
+	__unbindApp := func() {
+	}
+
 	view = StatusLineView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
 
 type UserCardView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *UserCardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *UserCardView) GetRoot() tui.Renderable { return v.Root }
@@ -425,9 +488,12 @@ func (v *UserCardView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*UserCardView)(nil)
+
+var _ tui.AppUnbinder = (*UserCardView)(nil)
 
 var _ tui.PropsUpdater = (*UserCardView)(nil)
 
@@ -457,18 +523,35 @@ func UserCard(name string, role string, online bool) *UserCardView {
 		}
 	}
 
+	__unbindApp := func() {
+		if unbinder, ok := interface{}(__tui_3).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+		if unbinder, ok := interface{}(__tui_0).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+
 	view = UserCardView{
-		Root:     __tui_0.Root,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0.Root,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }
 
 type StatusBarView struct {
-	Root     *tui.Element
-	watchers []tui.Watcher
-	bindApp  func(*tui.App)
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *StatusBarView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
 }
 
 func (v *StatusBarView) GetRoot() tui.Renderable { return v.Root }
@@ -491,9 +574,12 @@ func (v *StatusBarView) UpdateProps(fresh tui.Component) {
 	v.Root = f.Root
 	v.watchers = f.watchers
 	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
 }
 
 var _ tui.AppBinder = (*StatusBarView)(nil)
+
+var _ tui.AppUnbinder = (*StatusBarView)(nil)
 
 var _ tui.PropsUpdater = (*StatusBarView)(nil)
 
@@ -504,7 +590,7 @@ func StatusBar() *StatusBarView {
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithJustify(tui.JustifyCenter),
 	)
@@ -541,10 +627,23 @@ func StatusBar() *StatusBarView {
 		}
 	}
 
+	__unbindApp := func() {
+		if unbinder, ok := interface{}(__tui_1).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+		if unbinder, ok := interface{}(__tui_3).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+		if unbinder, ok := interface{}(__tui_5).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+
 	view = StatusBarView{
-		Root:     __tui_0,
-		watchers: watchers,
-		bindApp:  __bindApp,
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
 	}
 	return &view
 }

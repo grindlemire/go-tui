@@ -7,6 +7,7 @@ func TestCalculate_NestedContainers(t *testing.T) {
 	root := newTestNode(DefaultStyle())
 	root.style.Width = Fixed(200)
 	root.style.Height = Fixed(100)
+	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
 	column := newTestNode(DefaultStyle())
@@ -50,6 +51,7 @@ func TestCalculate_AlignStretch(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(80)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 	parent.style.AlignItems = AlignStretch
 
@@ -70,6 +72,7 @@ func TestCalculate_WithMargin(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())
@@ -151,6 +154,7 @@ func TestCalculate_JustifyModes(t *testing.T) {
 			parent := newTestNode(DefaultStyle())
 			parent.style.Width = Fixed(100)
 			parent.style.Height = Fixed(50)
+			parent.style.Display = DisplayFlex
 			parent.style.Direction = Row
 			parent.style.JustifyContent = tt.justify
 
@@ -203,6 +207,7 @@ func TestCalculate_JustifyModes_SingleChild(t *testing.T) {
 			parent := newTestNode(DefaultStyle())
 			parent.style.Width = Fixed(100)
 			parent.style.Height = Fixed(50)
+			parent.style.Display = DisplayFlex
 			parent.style.Direction = Row
 			parent.style.JustifyContent = tt.justify
 
@@ -286,6 +291,7 @@ func TestCalculate_AlignModes(t *testing.T) {
 			parent := newTestNode(DefaultStyle())
 			parent.style.Width = Fixed(100)
 			parent.style.Height = Fixed(80)
+			parent.style.Display = DisplayFlex
 			parent.style.Direction = Row
 			parent.style.AlignItems = tt.align
 
@@ -310,6 +316,7 @@ func TestCalculate_AlignStretch_AutoHeight(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(80)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 	parent.style.AlignItems = AlignStretch
 
@@ -353,6 +360,7 @@ func TestCalculate_AlignSelf_Override(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(80)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 	parent.style.AlignItems = AlignStart
 

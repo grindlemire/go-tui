@@ -6,6 +6,7 @@ func TestCalculate_FlexGrow(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Fixed child
@@ -40,6 +41,7 @@ func TestCalculate_FlexGrow_ProportionalDistribution(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Two growing children with different flex values
@@ -69,6 +71,7 @@ func TestCalculate_FlexShrink(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Two children that are too wide for the container.
@@ -102,6 +105,7 @@ func TestCalculate_FlexShrink_ProportionalDistribution(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Two children that are too wide for the container.
@@ -136,6 +140,7 @@ func TestCalculate_WithGap(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 	parent.style.Gap = 10
 
@@ -170,6 +175,7 @@ func TestCalculate_IntrinsicSize_WithGap(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(200)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 	parent.style.Gap = 10
 
@@ -196,6 +202,7 @@ func TestCalculate_IntrinsicSize_FlexGrowFromIntrinsic(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child1 := newTestNode(DefaultStyle())

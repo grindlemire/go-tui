@@ -97,6 +97,7 @@ func TestCalculate_TwoChildren_Row(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child1 := newTestNode(DefaultStyle())
@@ -168,6 +169,7 @@ func TestCalculate_PercentWidth(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(200)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())
@@ -212,6 +214,7 @@ func TestCalculate_NestedPercent(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Percent(50) // 100
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())
@@ -237,6 +240,7 @@ func TestCalculate_PercentMinMax(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(200)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())

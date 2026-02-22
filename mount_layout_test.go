@@ -44,7 +44,7 @@ func TestMount_HeaderViewLayout(t *testing.T) {
 		div := New(
 			WithBorder(BorderRounded),
 			WithPadding(1),
-			WithDirection(Row),
+			WithDisplay(DisplayFlex), WithDirection(Row),
 			WithJustify(JustifyCenter),
 		)
 		span := New(WithText(title))
@@ -251,7 +251,7 @@ func (c *mountTestRootComponent) Render(app *App) *Element {
 		div := New(
 			WithBorder(BorderRounded),
 			WithPadding(1),
-			WithDirection(Row),
+			WithDisplay(DisplayFlex), WithDirection(Row),
 			WithJustify(JustifyCenter),
 		)
 		span := New(WithText("Hello Mount"))
@@ -356,7 +356,7 @@ func (c *exactGenRootComponent) Render(app *App) *Element {
 	__tui_0.AddChild(__tui_1)
 
 	// User cards row
-	__tui_2 := New(WithDirection(Row), WithGap(2))
+	__tui_2 := New(WithDisplay(DisplayFlex), WithDirection(Row), WithGap(2))
 	__tui_3 := app.Mount(c, 1, func() Component {
 		return genUserCard(app, c, "Alice", "Engineer", true)
 	})
@@ -368,7 +368,7 @@ func (c *exactGenRootComponent) Render(app *App) *Element {
 	__tui_0.AddChild(__tui_2)
 
 	// Cards with children row
-	__tui_6 := New(WithDirection(Row), WithGap(2))
+	__tui_6 := New(WithDisplay(DisplayFlex), WithDirection(Row), WithGap(2))
 
 	// Card("System Info") with StatusLine children
 	__tui_7_children := []*Element{}
@@ -393,7 +393,7 @@ func (c *exactGenRootComponent) Render(app *App) *Element {
 	__tui_0.AddChild(__tui_18)
 
 	// Help text
-	__tui_19 := New(WithDirection(Row), WithJustify(JustifyCenter))
+	__tui_19 := New(WithDisplay(DisplayFlex), WithDirection(Row), WithJustify(JustifyCenter))
 	__tui_20 := New(WithText("j/k scroll|q to quit"), WithTextStyle(NewStyle().Dim()))
 	__tui_19.AddChild(__tui_20)
 	__tui_0.AddChild(__tui_19)
@@ -412,7 +412,7 @@ func genHeader(title string) genHeaderView {
 		WithBorder(BorderRounded),
 		WithBorderGradient(NewGradient(Cyan, Magenta).WithDirection(GradientHorizontal)),
 		WithPadding(1),
-		WithDirection(Row),
+		WithDisplay(DisplayFlex), WithDirection(Row),
 		WithJustify(JustifyCenter),
 	)
 	span := New(
@@ -455,7 +455,7 @@ type genStatusLineView struct{ Root *Element }
 func (v genStatusLineView) Render(app *App) *Element { return v.Root }
 
 func genStatusLine(label, value string) genStatusLineView {
-	div := New(WithDirection(Row), WithGap(1))
+	div := New(WithDisplay(DisplayFlex), WithDirection(Row), WithGap(1))
 	l := New(WithText(label), WithTextStyle(NewStyle().Dim()))
 	div.AddChild(l)
 	v := New(WithText(value), WithTextStyle(NewStyle().Foreground(Cyan).Bold()))
@@ -491,7 +491,7 @@ func genStatusBar() genStatusBarView {
 	div := New(
 		WithBorder(BorderRounded),
 		WithPadding(1),
-		WithDirection(Row),
+		WithDisplay(DisplayFlex), WithDirection(Row),
 		WithGap(2),
 		WithJustify(JustifyCenter),
 	)

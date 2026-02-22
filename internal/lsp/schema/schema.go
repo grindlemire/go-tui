@@ -221,6 +221,7 @@ func layoutAttrs() []AttributeDef {
 
 func flexAttrs() []AttributeDef {
 	return []AttributeDef{
+		{Name: "display", Type: "string", Description: "Display mode (block, flex)", Category: "flex"},
 		{Name: "direction", Type: "direction", Description: "Flex direction (row, column)", Category: "flex"},
 		{Name: "justify", Type: "justify", Description: "Justify content (start, center, end, between, around)", Category: "flex"},
 		{Name: "align", Type: "align", Description: "Align items (start, center, end, stretch)", Category: "flex"},

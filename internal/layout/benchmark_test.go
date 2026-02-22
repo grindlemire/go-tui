@@ -8,6 +8,7 @@ func buildTree(branching, depth int) *testNode {
 	root := newTestNode(DefaultStyle())
 	root.style.Width = Fixed(1000)
 	root.style.Height = Fixed(1000)
+	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
 	if depth > 0 {
@@ -23,6 +24,7 @@ func addChildrenRecursive(parent *testNode, branching, remainingDepth int) {
 		child.style.FlexGrow = 1
 
 		// Alternate direction at each level
+		child.style.Display = DisplayFlex
 		if parent.style.Direction == Row {
 			child.style.Direction = Column
 		} else {
@@ -42,6 +44,7 @@ func buildLinearTree(n int) *testNode {
 	root := newTestNode(DefaultStyle())
 	root.style.Width = Fixed(1000)
 	root.style.Height = Fixed(1000)
+	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
 	for i := 0; i < n; i++ {

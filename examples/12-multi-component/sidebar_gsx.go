@@ -68,7 +68,7 @@ func (s *sidebar) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New()
 	if s.expanded.Get() {
 		__tui_1 := tui.New(
-			tui.WithDirection(tui.Column),
+			tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 			tui.WithBorder(tui.BorderSingle),
 			tui.WithPadding(1),
 			tui.WithGap(1),
@@ -112,7 +112,7 @@ func (s *sidebar) Render(app *tui.App) *tui.Element {
 		__tui_0.AddChild(__tui_1)
 	} else {
 		__tui_8 := tui.New(
-			tui.WithDirection(tui.Column),
+			tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 			tui.WithBorder(tui.BorderSingle),
 			tui.WithPadding(1),
 			tui.WithWidth(4),

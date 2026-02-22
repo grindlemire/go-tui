@@ -208,7 +208,7 @@ func produceEvents(ch chan<- string, stopCh <-chan struct{}) {
 
 func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 		tui.WithHeightPercent(100.00),
@@ -216,7 +216,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_1 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFlexShrink(0),
 	)
@@ -228,12 +228,12 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithFlexShrink(0),
 	)
 	__tui_4 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -255,7 +255,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_4.AddChild(__tui_7)
 	__tui_3.AddChild(__tui_4)
 	__tui_8 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -277,7 +277,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_8.AddChild(__tui_11)
 	__tui_3.AddChild(__tui_8)
 	__tui_12 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -300,12 +300,12 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_3.AddChild(__tui_12)
 	__tui_0.AddChild(__tui_3)
 	__tui_16 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithFlexGrow(1),
 	)
 	__tui_17 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -318,7 +318,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_17.AddChild(__tui_18)
 	__tui_19 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_20 := tui.New(
@@ -333,7 +333,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_19.AddChild(__tui_21)
 	__tui_17.AddChild(__tui_19)
 	__tui_22 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_23 := tui.New(
@@ -348,7 +348,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_22.AddChild(__tui_24)
 	__tui_17.AddChild(__tui_22)
 	__tui_25 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_26 := tui.New(
@@ -364,7 +364,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_17.AddChild(__tui_25)
 	__tui_16.AddChild(__tui_17)
 	__tui_28 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -400,7 +400,7 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_16.AddChild(__tui_28)
 	__tui_0.AddChild(__tui_16)
 	__tui_34 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFlexShrink(0),
 	)

@@ -90,7 +90,7 @@ func progressBar(value, width int) string {
 
 func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithHeightPercent(100.00),
@@ -105,7 +105,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -141,11 +141,11 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_2.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_2)
 	__tui_9 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_10 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -157,7 +157,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_10.AddChild(__tui_11)
 	__tui_12 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 	)
 	__tui_13 := tui.New()
@@ -188,7 +188,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_10.AddChild(__tui_12)
 	__tui_9.AddChild(__tui_10)
 	__tui_21 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -200,11 +200,11 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_21.AddChild(__tui_22)
 	__tui_23 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 	)
 	__tui_24 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_25 := tui.New(
@@ -231,7 +231,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_23.AddChild(__tui_28)
 	__tui_29 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_30 := tui.New(
@@ -253,7 +253,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_29.AddChild(__tui_32)
 	__tui_23.AddChild(__tui_29)
 	__tui_33 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_34 := tui.New(
@@ -275,7 +275,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_33.AddChild(__tui_36)
 	__tui_23.AddChild(__tui_33)
 	__tui_37 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_38 := tui.New(
@@ -300,7 +300,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_9.AddChild(__tui_21)
 	__tui_0.AddChild(__tui_9)
 	__tui_41 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -312,7 +312,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_41.AddChild(__tui_42)
 	__tui_43 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_44 := tui.New()
@@ -336,7 +336,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_41.AddChild(__tui_43)
 	__tui_0.AddChild(__tui_41)
 	__tui_52 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -348,7 +348,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_52.AddChild(__tui_53)
 	__tui_54 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -370,7 +370,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_54.AddChild(__tui_57)
 	__tui_52.AddChild(__tui_54)
 	__tui_58 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -392,7 +392,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_58.AddChild(__tui_61)
 	__tui_52.AddChild(__tui_58)
 	__tui_62 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)

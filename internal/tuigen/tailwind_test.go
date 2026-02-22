@@ -16,19 +16,19 @@ func TestParseTailwindClass_Layout(t *testing.T) {
 		"flex": {
 			input:      "flex",
 			wantOK:     true,
-			wantOption: "tui.WithDirection(tui.Row)",
+			wantOption: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)",
 			wantImport: "tui",
 		},
 		"flex-row": {
 			input:      "flex-row",
 			wantOK:     true,
-			wantOption: "tui.WithDirection(tui.Row)",
+			wantOption: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)",
 			wantImport: "tui",
 		},
 		"flex-col": {
 			input:      "flex-col",
 			wantOK:     true,
-			wantOption: "tui.WithDirection(tui.Column)",
+			wantOption: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column)",
 			wantImport: "tui",
 		},
 		"flex-grow": {

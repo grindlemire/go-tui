@@ -14,10 +14,11 @@ type TailwindMapping struct {
 
 // tailwindClasses maps Tailwind class names to their TUI equivalents
 var tailwindClasses = map[string]TailwindMapping{
-	// Layout - flex direction
-	"flex":     {Option: "tui.WithDirection(tui.Row)", NeedsImport: "tui"},
-	"flex-row": {Option: "tui.WithDirection(tui.Row)", NeedsImport: "tui"},
-	"flex-col": {Option: "tui.WithDirection(tui.Column)", NeedsImport: "tui"},
+	// Layout - display mode and flex direction
+	"block":    {Option: "tui.WithDisplay(tui.DisplayBlock)", NeedsImport: "tui"},
+	"flex":     {Option: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)", NeedsImport: "tui"},
+	"flex-row": {Option: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)", NeedsImport: "tui"},
+	"flex-col": {Option: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column)", NeedsImport: "tui"},
 
 	// Flex grow/shrink (Tailwind standard)
 	"grow":     {Option: "tui.WithFlexGrow(1)", NeedsImport: ""},

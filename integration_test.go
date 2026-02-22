@@ -35,7 +35,7 @@ func (r *intRoot) KeyMap() KeyMap {
 }
 
 func (r *intRoot) Render(app *App) *Element {
-	root := New(WithDirection(Row))
+	root := New(WithDisplay(DisplayFlex), WithDirection(Row))
 
 	// Mount sidebar at index 0
 	el0 := app.Mount(r, 0, func() Component {

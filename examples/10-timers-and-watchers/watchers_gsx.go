@@ -114,7 +114,7 @@ func formatDuration(seconds int) string {
 
 func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(2),
 		tui.WithGap(2),
 		tui.WithBorder(tui.BorderRounded),
@@ -127,11 +127,11 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -160,7 +160,7 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_3.AddChild(__tui_7)
 	__tui_8 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	if w.stopwatchOn.Get() {
@@ -184,7 +184,7 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	__tui_3.AddChild(__tui_11)
 	__tui_2.AddChild(__tui_3)
 	__tui_12 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -221,7 +221,7 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_12.AddChild(__tui_17)
 	__tui_18 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	if w.countdownOn.Get() {
@@ -246,7 +246,7 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	__tui_2.AddChild(__tui_12)
 	__tui_0.AddChild(__tui_2)
 	__tui_22 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -277,7 +277,7 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	}
 	__tui_0.AddChild(__tui_22)
 	__tui_28 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithJustify(tui.JustifyCenter),
 	)
@@ -288,7 +288,7 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	__tui_28.AddChild(__tui_29)
 	__tui_0.AddChild(__tui_28)
 	__tui_30 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_31 := tui.New(

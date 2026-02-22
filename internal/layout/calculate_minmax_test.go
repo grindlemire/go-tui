@@ -109,6 +109,7 @@ func TestCalculate_MinWidth_Constraint(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Child would naturally shrink, but has MinWidth
@@ -130,6 +131,7 @@ func TestCalculate_MaxWidth_Constraint(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Growing child with MaxWidth limit
@@ -152,6 +154,7 @@ func TestCalculate_MinMax_FlexGrow(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Two growing children, one has max constraint
@@ -183,6 +186,7 @@ func TestCalculate_MinMax_FlexShrink(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Two children that need to shrink, one has min constraint
@@ -232,6 +236,7 @@ func TestCalculate_MinMax_MinWins(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())

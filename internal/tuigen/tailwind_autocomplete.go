@@ -14,6 +14,7 @@ func AllTailwindClasses() []TailwindClassInfo {
 
 	// Layout classes
 	layoutClasses := []TailwindClassInfo{
+		{Name: "block", Category: "layout", Description: "Display block (column direction, fills parent width)", Example: `<div class="block">`},
 		{Name: "flex", Category: "layout", Description: "Display flex row", Example: `<div class="flex">`},
 		{Name: "flex-row", Category: "layout", Description: "Display flex row", Example: `<div class="flex-row">`},
 		{Name: "flex-col", Category: "layout", Description: "Display flex column", Example: `<div class="flex-col">`},

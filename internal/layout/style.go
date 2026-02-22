@@ -30,6 +30,14 @@ const (
 	AlignStretch              // Stretch to fill cross axis
 )
 
+// Display specifies the layout mode for an element.
+type Display uint8
+
+const (
+	DisplayBlock Display = iota // Block layout: column direction, fills parent width
+	DisplayFlex                 // Flex layout: explicit direction control
+)
+
 // Style contains all layout properties for a node.
 type Style struct {
 	// Sizing
@@ -39,6 +47,9 @@ type Style struct {
 	MinHeight Value
 	MaxWidth  Value
 	MaxHeight Value
+
+	// Display mode
+	Display Display // Block (default) or Flex
 
 	// Flex container properties
 	Direction      Direction
@@ -65,6 +76,7 @@ func DefaultStyle() Style {
 		MinHeight:  Auto(), // auto = intrinsic size (matches CSS flexbox min-height: auto)
 		MaxWidth:   Auto(), // No maximum
 		MaxHeight:  Auto(), // No maximum
+		Display:    DisplayBlock,
 		Direction:  Row,
 		AlignItems: AlignStretch,
 		FlexShrink: 1.0,

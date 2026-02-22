@@ -22,6 +22,7 @@ func TestIntegration_Dashboard(t *testing.T) {
 	// Middle section - row with sidebar and main
 	middle := newTestNode(DefaultStyle())
 	middle.style.FlexGrow = 1
+	middle.style.Display = DisplayFlex
 	middle.style.Direction = Row
 
 	// Sidebar - fixed width
@@ -103,6 +104,7 @@ func TestIntegration_NestedFlex(t *testing.T) {
 	root := newTestNode(DefaultStyle())
 	root.style.Width = Fixed(100)
 	root.style.Height = Fixed(100)
+	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
 	columnA := newTestNode(DefaultStyle())
@@ -111,6 +113,7 @@ func TestIntegration_NestedFlex(t *testing.T) {
 
 	rowA1 := newTestNode(DefaultStyle())
 	rowA1.style.Height = Fixed(30)
+	rowA1.style.Display = DisplayFlex
 	rowA1.style.Direction = Row
 
 	itemA1a := newTestNode(DefaultStyle())
@@ -121,6 +124,7 @@ func TestIntegration_NestedFlex(t *testing.T) {
 
 	rowA2 := newTestNode(DefaultStyle())
 	rowA2.style.FlexGrow = 1
+	rowA2.style.Display = DisplayFlex
 	rowA2.style.Direction = Row
 
 	columnB := newTestNode(DefaultStyle())
@@ -186,6 +190,7 @@ func TestIntegration_FormLayout(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		row := newTestNode(DefaultStyle())
 		row.style.Height = Fixed(3)
+		row.style.Display = DisplayFlex
 		row.style.Direction = Row
 		row.style.Gap = 2
 
@@ -244,6 +249,7 @@ func TestIntegration_MixedDirection(t *testing.T) {
 
 	row1 := newTestNode(DefaultStyle())
 	row1.style.Height = Fixed(50)
+	row1.style.Display = DisplayFlex
 	row1.style.Direction = Row
 
 	col1a := newTestNode(DefaultStyle())
@@ -256,6 +262,7 @@ func TestIntegration_MixedDirection(t *testing.T) {
 
 	row2 := newTestNode(DefaultStyle())
 	row2.style.FlexGrow = 1
+	row2.style.Display = DisplayFlex
 	row2.style.Direction = Row
 
 	row1.AddChild(col1a, col1b)
@@ -351,6 +358,7 @@ func TestEdgeCase_ZeroSizeParent(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(0)
 	parent.style.Height = Fixed(0)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())
@@ -376,6 +384,7 @@ func TestEdgeCase_OverflowNoShrink(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Children that overflow but don't shrink
@@ -427,6 +436,7 @@ func TestEdgeCase_VeryLargeTree(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(1000)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Add 100 children

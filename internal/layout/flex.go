@@ -31,6 +31,10 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 
 	style := node.LayoutStyle()
 	isRow := style.Direction == Row
+	// Block mode forces column direction regardless of Direction setting
+	if style.Display == DisplayBlock {
+		isRow = false
+	}
 
 	// Determine main/cross axis dimensions
 	mainSize := contentRect.Width

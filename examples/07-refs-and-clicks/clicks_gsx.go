@@ -97,7 +97,7 @@ func colorBar(value int) string {
 
 func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(2),
 		tui.WithGap(2),
 		tui.WithBorder(tui.BorderRounded),
@@ -110,7 +110,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
@@ -133,7 +133,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_4.AddChild(__tui_5)
 	__tui_2.AddChild(__tui_4)
 	__tui_6 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithJustify(tui.JustifyCenter),
 	)
@@ -155,13 +155,13 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_2.AddChild(__tui_6)
 	__tui_0.AddChild(__tui_2)
 	__tui_10 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 	)
 	__tui_11 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_12 := tui.New(
@@ -182,7 +182,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_11.AddChild(__tui_14)
 	__tui_10.AddChild(__tui_11)
 	__tui_15 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_16 := tui.New(
@@ -203,7 +203,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_15.AddChild(__tui_18)
 	__tui_10.AddChild(__tui_15)
 	__tui_19 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_20 := tui.New(
@@ -225,11 +225,11 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_10.AddChild(__tui_19)
 	__tui_0.AddChild(__tui_10)
 	__tui_23 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_24 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -262,7 +262,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_24.AddChild(__tui_29)
 	__tui_23.AddChild(__tui_24)
 	__tui_31 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -295,7 +295,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_31.AddChild(__tui_36)
 	__tui_23.AddChild(__tui_31)
 	__tui_38 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -329,7 +329,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_23.AddChild(__tui_38)
 	__tui_0.AddChild(__tui_23)
 	__tui_45 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_46 := tui.New(

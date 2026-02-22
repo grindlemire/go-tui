@@ -235,7 +235,7 @@ func TestElement_MarkDirty_StopsAtAlreadyDirty(t *testing.T) {
 }
 
 func TestElement_Calculate(t *testing.T) {
-	parent := New(WithSize(100, 80), WithDirection(Row))
+	parent := New(WithSize(100, 80), WithDisplay(DisplayFlex), WithDirection(Row))
 	child1 := New(WithWidth(30))
 	child2 := New(WithFlexGrow(1))
 

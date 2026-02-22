@@ -112,7 +112,7 @@ func keyStyle(pressed bool) string {
 
 func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithPadding(2),
 		tui.WithBorder(tui.BorderRounded),
@@ -130,7 +130,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_4 := tui.New(
@@ -146,7 +146,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_3.AddChild(__tui_5)
 	__tui_0.AddChild(__tui_3)
 	__tui_6 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_7 := tui.New(
@@ -161,11 +161,11 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_6.AddChild(__tui_8)
 	__tui_0.AddChild(__tui_6)
 	__tui_9 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
 	__tui_10 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -177,7 +177,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_10.AddChild(__tui_11)
 	__tui_12 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_13 := tui.New(
@@ -198,7 +198,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_12.AddChild(__tui_16)
 	__tui_10.AddChild(__tui_12)
 	__tui_17 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_18 := tui.New(
@@ -219,7 +219,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_17.AddChild(__tui_21)
 	__tui_10.AddChild(__tui_17)
 	__tui_22 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_23 := tui.New(
@@ -241,7 +241,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_10.AddChild(__tui_22)
 	__tui_9.AddChild(__tui_10)
 	__tui_27 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
@@ -253,7 +253,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_27.AddChild(__tui_28)
 	__tui_29 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_30 := tui.New(
@@ -274,7 +274,7 @@ func (k *keyboardApp) Render(app *tui.App) *tui.Element {
 	__tui_29.AddChild(__tui_33)
 	__tui_27.AddChild(__tui_29)
 	__tui_34 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_35 := tui.New(

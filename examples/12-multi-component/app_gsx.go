@@ -38,13 +38,13 @@ func (a *myApp) KeyMap() tui.KeyMap {
 
 func (a *myApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithHeightPercent(100.00),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_1 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithPadding(1),
 		tui.WithFlexShrink(0),
@@ -57,7 +57,7 @@ func (a *myApp) Render(app *tui.App) *tui.Element {
 	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
 	__tui_3 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithFlexGrow(1),
 	)
 	__tui_4 := app.Mount(a, 0, func() tui.Component {
@@ -74,7 +74,7 @@ func (a *myApp) Render(app *tui.App) *tui.Element {
 	})
 	__tui_0.AddChild(__tui_6)
 	__tui_7 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithPadding(1),
 		tui.WithFlexShrink(0),

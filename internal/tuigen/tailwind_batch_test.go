@@ -16,8 +16,8 @@ func TestParseTailwindClasses_Multiple(t *testing.T) {
 		"layout classes": {
 			input:       "flex flex-col gap-2 p-4",
 			wantOptions: []string{
-				"tui.WithDirection(tui.Row)",
-				"tui.WithDirection(tui.Column)",
+				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)",
+				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column)",
 				"tui.WithGap(2)",
 				"tui.WithPadding(4)",
 			},
@@ -31,7 +31,7 @@ func TestParseTailwindClasses_Multiple(t *testing.T) {
 		"mixed classes": {
 			input:       "flex-col border-rounded font-bold text-red",
 			wantOptions: []string{
-				"tui.WithDirection(tui.Column)",
+				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column)",
 				"tui.WithBorder(tui.BorderRounded)",
 			},
 			wantTextMethods: []string{"Bold()", "Foreground(tui.Red)"},
@@ -40,7 +40,7 @@ func TestParseTailwindClasses_Multiple(t *testing.T) {
 		"with unknown classes": {
 			input:       "flex unknown-class gap-1",
 			wantOptions: []string{
-				"tui.WithDirection(tui.Row)",
+				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)",
 				"tui.WithGap(1)",
 			},
 			wantImports: []string{"tui"},
@@ -136,7 +136,7 @@ func TestParseTailwindClasses_PaddingAccumulation(t *testing.T) {
 		"padding with other classes": {
 			input:       "flex pt-2 pb-4 gap-1",
 			wantOptions: []string{
-				"tui.WithDirection(tui.Row)",
+				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)",
 				"tui.WithGap(1)",
 				"tui.WithPaddingTRBL(2, 0, 4, 0)",
 			},
@@ -199,7 +199,7 @@ func TestParseTailwindClasses_MarginAccumulation(t *testing.T) {
 		"margin with other classes": {
 			input:       "flex mt-2 mb-4 gap-1",
 			wantOptions: []string{
-				"tui.WithDirection(tui.Row)",
+				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)",
 				"tui.WithGap(1)",
 				"tui.WithMarginTRBL(2, 0, 4, 0)",
 			},

@@ -96,6 +96,10 @@ func (e *Element) IntrinsicSize() (width, height int) {
 
 	// Compute intrinsic size from children
 	isRow := e.style.Direction == Row
+	// Block mode forces column direction regardless of Direction setting
+	if e.style.Display == DisplayBlock {
+		isRow = false
+	}
 	var intrinsicW, intrinsicH int
 	visibleIdx := 0
 

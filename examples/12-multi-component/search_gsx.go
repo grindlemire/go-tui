@@ -107,7 +107,7 @@ func (s *searchBar) Render(app *tui.App) *tui.Element {
 			tui.WithBorder(tui.BorderRounded),
 			tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 			tui.WithPadding(1),
-			tui.WithDirection(tui.Row),
+			tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 			tui.WithGap(1),
 		)
 		__tui_2 := tui.New(
@@ -143,7 +143,7 @@ var _ tui.AppBinder = (*searchBar)(nil)
 
 func (c *content) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithPadding(1),
 		tui.WithGap(1),

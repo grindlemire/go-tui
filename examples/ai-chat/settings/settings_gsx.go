@@ -523,13 +523,13 @@ func wrapIndex(idx, length int) int {
 
 func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithHeightPercent(100.00),
 		tui.WithPadding(1),
 		tui.WithGap(0),
 	)
 	__tui_1 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexShrink(0),
 		tui.WithBorder(tui.BorderDouble),
@@ -555,10 +555,10 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(s.borderStyleForSection(0)),
 	)
 	__tui_5 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 	)
 	__tui_6 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -574,7 +574,7 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 	__tui_6.AddChild(__tui_8)
 	__tui_5.AddChild(__tui_6)
 	__tui_9 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	for __idx_0, provider := range s.AvailableProviders {
@@ -595,10 +595,10 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(s.borderStyleForSection(1)),
 	)
 	__tui_12 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 	)
 	__tui_13 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -622,10 +622,10 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(s.borderStyleForSection(2)),
 	)
 	__tui_17 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 	)
 	__tui_18 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -654,11 +654,11 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithFlexGrow(1),
 	)
 	__tui_23 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 	)
 	__tui_24 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -684,7 +684,7 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 	__tui_22.AddChild(__tui_23)
 	__tui_0.AddChild(__tui_22)
 	__tui_28 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexShrink(0),
 		tui.WithBorder(tui.BorderThick),

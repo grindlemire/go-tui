@@ -55,7 +55,7 @@ func TestIntegration_NestedLayouts(t *testing.T) {
 
 	topRow := New(
 		WithHeight(20),
-		WithDirection(Row),
+		WithDisplay(DisplayFlex), WithDirection(Row),
 	)
 
 	leftPanel := New(
@@ -171,7 +171,7 @@ func TestIntegration_FlexGrowShrink(t *testing.T) {
 			root := New(
 				WithWidth(tt.parentWidth),
 				WithHeight(50),
-				WithDirection(Row),
+				WithDisplay(DisplayFlex), WithDirection(Row),
 			)
 
 			children := make([]*Element, len(tt.children))

@@ -94,7 +94,7 @@ func Badge(label string, value string, color string) *BadgeView {
 	var watchers []tui.Watcher
 
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
 	__tui_1 := tui.New(
@@ -169,7 +169,7 @@ func Card(title string, children []*tui.Element) *CardView {
 	var watchers []tui.Watcher
 
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		tui.WithPadding(1),
@@ -207,14 +207,14 @@ func Card(title string, children []*tui.Element) *CardView {
 
 func (c *counterApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
-		tui.WithDirection(tui.Column),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderDouble),
 		tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
 	__tui_1 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
@@ -232,7 +232,7 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
 	__tui_7_children := []*tui.Element{}
@@ -267,7 +267,7 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 	__tui_5.AddChild(__tui_9.Root)
 	__tui_0.AddChild(__tui_5)
 	__tui_14 := tui.New(
-		tui.WithDirection(tui.Row),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)

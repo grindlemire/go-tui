@@ -4,6 +4,14 @@ package tui
 
 import "github.com/grindlemire/go-tui/internal/layout"
 
+// Display specifies the layout mode for an element.
+type Display = layout.Display
+
+const (
+	DisplayBlock = layout.DisplayBlock // Block layout: column direction, fills parent width
+	DisplayFlex  = layout.DisplayFlex  // Flex layout: explicit direction control
+)
+
 // Direction specifies the main axis for laying out children.
 type Direction = layout.Direction
 

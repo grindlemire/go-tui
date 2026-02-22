@@ -173,7 +173,7 @@ func TestIntegration_CullingOutsideBounds(t *testing.T) {
 func TestIntegration_GapBetweenChildren(t *testing.T) {
 	root := New(
 		WithSize(100, 100),
-		WithDirection(Row),
+		WithDisplay(DisplayFlex), WithDirection(Row),
 		WithGap(10),
 	)
 

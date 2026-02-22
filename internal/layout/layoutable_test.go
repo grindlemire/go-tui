@@ -67,6 +67,9 @@ func (n *testNode) IntrinsicSize() (width, height int) {
 	}
 
 	isRow := n.style.Direction == Row
+	if n.style.Display == DisplayBlock {
+		isRow = false
+	}
 	var intrinsicW, intrinsicH int
 
 	for i, child := range n.children {
@@ -149,6 +152,14 @@ func (n *testNode) markDirty() {
 	for node := n; node != nil && !node.dirty; node = node.parent {
 		node.dirty = true
 	}
+}
+
+// flexStyle returns a DefaultStyle with Display set to DisplayFlex.
+// Use this in tests that need explicit row/column flex behavior.
+func flexStyle() Style {
+	s := DefaultStyle()
+	s.Display = DisplayFlex
+	return s
 }
 
 // Tests for the testNode implementation (ensures it implements Layoutable correctly)
@@ -393,6 +404,9 @@ func TestDefaultStyle(t *testing.T) {
 	}
 	if !style.MaxHeight.IsAuto() {
 		t.Error("DefaultStyle MaxHeight should be Auto")
+	}
+	if style.Display != DisplayBlock {
+		t.Errorf("DefaultStyle Display = %v, want DisplayBlock", style.Display)
 	}
 	if style.Direction != Row {
 		t.Errorf("DefaultStyle Direction = %v, want Row", style.Direction)

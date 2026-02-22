@@ -69,6 +69,15 @@ func WithMaxHeight(cells int) Option {
 	}
 }
 
+// --- Display Options ---
+
+// WithDisplay sets the layout mode (block or flex).
+func WithDisplay(d Display) Option {
+	return func(e *Element) {
+		e.style.Display = d
+	}
+}
+
 // --- Flex Container Options ---
 
 // WithDirection sets the main axis direction for laying out children.

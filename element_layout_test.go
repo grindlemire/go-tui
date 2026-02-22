@@ -245,7 +245,7 @@ func TestElement_IntrinsicSize_ContainerWithChildren(t *testing.T) {
 
 func TestElement_IntrinsicSize_RowContainerWithChildren(t *testing.T) {
 	// Row container with two text children
-	parent := New(WithDirection(Row))
+	parent := New(WithDisplay(DisplayFlex), WithDirection(Row))
 
 	child1 := New(WithText("Hello")) // 5x1
 	child2 := New(WithText("World")) // 5x1

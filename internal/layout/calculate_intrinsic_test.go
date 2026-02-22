@@ -17,6 +17,7 @@ func TestCalculate_IncrementalLayout_LeafChange(t *testing.T) {
 	root := newTestNode(DefaultStyle())
 	root.style.Width = Fixed(200)
 	root.style.Height = Fixed(100)
+	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
 	left := newTestNode(DefaultStyle())
@@ -106,6 +107,7 @@ func TestCalculate_IncrementalLayout_MultipleChanges(t *testing.T) {
 	root := newTestNode(DefaultStyle())
 	root.style.Width = Fixed(100)
 	root.style.Height = Fixed(100)
+	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
 	child1 := newTestNode(DefaultStyle())
@@ -158,6 +160,7 @@ func TestCalculate_IncrementalLayout_ParentChange(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())
@@ -225,6 +228,7 @@ func TestCalculate_IntrinsicSize_RowWithIntrinsicChildren(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(200)
 	parent.style.Height = Fixed(50)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	// Two Auto-sized children with intrinsic sizes
@@ -422,6 +426,7 @@ func TestCalculate_IntrinsicSize_ZeroIntrinsicStillWorks(t *testing.T) {
 	parent := newTestNode(DefaultStyle())
 	parent.style.Width = Fixed(100)
 	parent.style.Height = Fixed(100)
+	parent.style.Display = DisplayFlex
 	parent.style.Direction = Row
 
 	child := newTestNode(DefaultStyle())

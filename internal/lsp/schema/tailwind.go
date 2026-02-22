@@ -54,9 +54,10 @@ type paramPattern struct {
 // staticClassDocs maps exact class names to their documentation strings.
 var staticClassDocs = map[string]string{
 	// Layout
+	"block":    "Display as block (column direction, fills parent width). This is the default display mode.",
 	"flex":     "Display as flexbox with row direction.",
 	"flex-col": "Display as flexbox with column direction.",
-	"flex-row": "Display as flexbox with row direction (default).",
+	"flex-row": "Display as flexbox with row direction.",
 
 	// Alignment
 	"items-start":   "Align items to the start of the cross axis.",
@@ -207,9 +208,10 @@ var paramPatterns = []paramPattern{
 // This includes static classes and common parameterized examples.
 var AllClasses = []TailwindClassDef{
 	// Layout
+	{Name: "block", Description: "Display as block (column direction, fills parent width)", Category: "layout"},
 	{Name: "flex", Description: "Display as flexbox with row direction", Category: "layout"},
 	{Name: "flex-col", Description: "Display as flexbox with column direction", Category: "layout"},
-	{Name: "flex-row", Description: "Display as flexbox with row direction (default)", Category: "layout"},
+	{Name: "flex-row", Description: "Display as flexbox with row direction", Category: "layout"},
 
 	// Alignment
 	{Name: "items-start", Description: "Align items to the start of the cross axis", Category: "flex"},
