@@ -21,7 +21,7 @@ import (
 
 The convention is to alias the import as `tui`. This keeps element option calls readable (`tui.NewState`, `tui.KeyEscape`, etc.) and is the style used throughout the framework's own examples.
 
-Everything else in the file — type declarations, constants, variables, helper functions — follows normal Go syntax.
+Everything else in the file (type declarations, constants, variables, helper functions) follows normal Go syntax.
 
 ## Pure Components
 
@@ -239,7 +239,7 @@ Curly braces for any Go expression:
 </div>
 ```
 
-This works for integers, floats, booleans, function calls, struct literals — anything that produces a value of the right type.
+This works for integers, floats, booleans, function calls, struct literals, or any other expression that produces a value of the right type.
 
 ### Boolean Attributes
 
@@ -500,7 +500,7 @@ See the CLI section above for the full command reference.
 
 ## Putting It All Together
 
-Here's a complete `.gsx` file that uses most of the syntax covered above — pure components, a struct component with state, control flow, helper functions, and children slots:
+Here's a complete `.gsx` file that uses most of the syntax covered above: pure components, a struct component with state, control flow, helper functions, and children slots:
 
 ```gsx
 package main
@@ -626,6 +626,10 @@ Generate and run:
 tui generate ./...
 go run .
 ```
+
+Here's what the finished list looks like:
+
+![GSX Syntax screenshot](/guides/02.png)
 
 ## Next Steps
 

@@ -30,7 +30,7 @@ The full set of text style classes:
 | `strikethrough` | Struck through |
 | `reverse` | Swaps foreground and background colors |
 
-`font-dim` and `text-dim` are aliases — they produce the same result.
+`font-dim` and `text-dim` are aliases that produce the same result.
 
 ## Text Colors
 
@@ -104,7 +104,7 @@ Styles on parent elements do not cascade to children. Each element's `class` app
 
 ```gsx
 <div class="text-cyan">
-    <span>This text is NOT cyan — it uses the default color</span>
+    <span>This text is NOT cyan. It uses the default color</span>
     <span class="text-cyan">This text IS cyan</span>
 </div>
 ```
@@ -369,6 +369,10 @@ fmt.Println(caps.Unicode)   // true if Unicode rendering is supported
 You don't need to handle color fallback yourself. When you use an RGB color (via `tui.RGBColor()` or hex classes like `text-[#FF6B35]`) on a terminal that only supports 256 or 16 colors, the framework approximates it to the nearest supported color using the `Color.ToANSI()` method. This maps RGB values to the closest entry in the ANSI 256 palette's 6x6x6 color cube and grayscale ramp.
 
 If even ANSI colors aren't supported, colors are dropped entirely and the terminal's default foreground and background are used.
+
+The styling examples from this guide look like this in the terminal:
+
+![Styling and Colors screenshot](/guides/03.png)
 
 ## Next Steps
 

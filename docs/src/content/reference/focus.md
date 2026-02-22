@@ -45,7 +45,7 @@ Processes a keyboard or mouse event. Returns `true` if the event was consumed (p
 Focus()
 ```
 
-Called when the element gains focus. Implementations typically update visual state -- for example, changing a border color or adding a highlight. `Element.Focus` sets an internal `focused` flag and fires the `onFocus` callback if one was registered.
+Called when the element gains focus. Implementations typically update visual state, like changing a border color or adding a highlight. `Element.Focus` sets an internal `focused` flag and fires the `onFocus` callback if one was registered.
 
 ### Blur
 

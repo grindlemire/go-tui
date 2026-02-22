@@ -50,7 +50,7 @@ func (w *myWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 }
 ```
 
-The double-select pattern — first waiting for data, then trying to enqueue — prevents the goroutine from blocking on a full event queue when the app is shutting down.
+The double-select pattern (first waiting for data, then trying to enqueue) prevents the goroutine from blocking on a full event queue when the app is shutting down.
 
 ## OnTimer
 
@@ -72,7 +72,7 @@ func (s *stopwatch) Watchers() []tui.Watcher {
 }
 ```
 
-The interval is approximate — the handler won't fire faster than the app's frame rate, and a backed-up event queue can introduce extra delay. For UI animation, intervals below 16ms (60fps) rarely produce visible improvement.
+The interval is approximate. The handler won't fire faster than the app's frame rate, and a backed-up event queue can introduce extra delay. For UI animation, intervals below 16ms (60fps) rarely produce visible improvement.
 
 ## ChannelWatcher
 

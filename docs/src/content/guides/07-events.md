@@ -125,7 +125,7 @@ Control keys have their own constants (`KeyCtrlA` through `KeyCtrlZ`), so you do
 
 ## Stop Propagation
 
-When multiple components in the tree define key bindings, the framework walks them in breadth-first order — shallower components are visited before deeper ones. By default, every matching handler fires. The "Stop" variants change this: once a Stop handler matches, no further handlers for that key will run.
+When multiple components in the tree define key bindings, the framework walks them in breadth-first order, visiting shallower components before deeper ones. By default, every matching handler fires. The "Stop" variants change this: once a Stop handler matches, no further handlers for that key will run.
 
 This matters when you have nested components. Consider a parent that uses `j`/`k` for navigation and a child search bar that needs all printable characters:
 
@@ -390,6 +390,10 @@ Generate and run:
 tui generate ./...
 go run .
 ```
+
+Here's what the event explorer looks like:
+
+![Event Handling screenshot](/guides/07.png)
 
 ## Next Steps
 

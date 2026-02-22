@@ -536,6 +536,10 @@ tui generate ./...
 go run .
 ```
 
+The file browser with scroll should look like this:
+
+![Scrolling screenshot](/guides/08.png)
+
 ## Next Steps
 
 - [Timers, Watchers, and Channels](watchers) -- Background operations that update scrollable content over time

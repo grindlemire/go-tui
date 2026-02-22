@@ -618,10 +618,10 @@ function ValuePropCarousel() {
             onClick={() => { setActive(i); pausedRef.current = true; }}
             className="cursor-pointer rounded-full"
             style={{
-              width: active === i ? 18 : 6,
-              height: 6,
+              width: active === i ? 24 : 10,
+              height: 10,
               background: active === i ? p.color : t.textDim,
-              opacity: active === i ? 1 : 0.2,
+              opacity: active === i ? 1 : 0.25,
               border: "none",
               padding: 0,
               transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -658,6 +658,43 @@ function ValuePropCarousel() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ─── Page Background (scan lines + glow) ─── */
+
+function PageBackground({ theme }: { theme: string }) {
+  const isDark = theme === "dark";
+  const lineAlpha = isDark ? "0.025" : "0.018";
+  const lineRgb = isDark ? "248,248,242" : "39,40,34";
+  const glowColor = isDark
+    ? "rgba(166,226,46,0.03)"
+    : "rgba(212,37,104,0.02)";
+
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      {/* Scan lines */}
+      <div
+        className="absolute inset-0"
+        style={{
+          top: "-80px",
+          bottom: "0",
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(${lineRgb},${lineAlpha}) 3px, rgba(${lineRgb},${lineAlpha}) 4px)`,
+          animation: "scanDrift 12s linear infinite",
+          willChange: "transform",
+        }}
+      />
+      {/* Warm radial glow */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at 25% 40%, ${glowColor} 0%, transparent 55%)`,
+        }}
+      />
     </div>
   );
 }
@@ -700,35 +737,40 @@ export default function HomePageExplore() {
         }
       `}</style>
 
-      <section className="max-w-[1100px] mx-auto px-4 sm:px-6" style={{ paddingTop: "clamp(28px, 5vh, 56px)" }}>
-        <div className="v-in" style={{ animationDelay: "0ms" }}>
-          <h1 className="leading-[1.08] tracking-tight font-bold" style={{ color: t.heading, fontSize: "clamp(24px, 5vw, 42px)", margin: 0 }}>
-            Declarative terminal UIs in <span style={{ color: t.tertiary }}>Go</span>
-          </h1>
-        </div>
+      <div className="relative">
+        <PageBackground theme={theme} />
+        <div className="relative z-10">
+          <section className="max-w-[1100px] mx-auto px-4 sm:px-6" style={{ paddingTop: "clamp(28px, 5vh, 56px)" }}>
+            <div className="v-in" style={{ animationDelay: "0ms" }}>
+              <h1 className="leading-[1.08] tracking-tight font-bold" style={{ color: t.heading, fontSize: "clamp(24px, 5vw, 42px)", margin: 0 }}>
+                Declarative terminal UIs in <span style={{ color: t.tertiary }}>Go</span>
+              </h1>
+            </div>
 
-        {/* Value prop carousel */}
-        <div className="v-in mt-5 sm:mt-5" style={{ animationDelay: "50ms" }}>
-          <ValuePropCarousel />
-        </div>
+            {/* Value prop carousel */}
+            <div className="v-in mt-5 sm:mt-5" style={{ animationDelay: "50ms" }}>
+              <ValuePropCarousel />
+            </div>
 
-        {/* Inline "see it in action" nudge + CodeShowcase */}
-        <div className="v-in mt-5 sm:mt-6" style={{ animationDelay: "90ms" }}>
-          <div className="flex items-center gap-2 mb-3">
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="see-it-cursor" style={{ opacity: 0.45 }}>
-              <path d="M2 1l8.5 5L7 7.5l-1 4.5L2 1z" fill={t.accent} fillOpacity="0.6" stroke={t.accent} strokeWidth="0.8" />
-            </svg>
-            <span className="font-['Fira_Code',monospace] text-[10px] tracking-[0.1em] uppercase" style={{ color: t.textDim }}>
-              Hover the annotations to explore
-            </span>
-          </div>
-          <CodeShowcase />
+            {/* Inline "see it in action" nudge + CodeShowcase */}
+            <div className="v-in mt-5 sm:mt-6" style={{ animationDelay: "90ms" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="see-it-cursor" style={{ opacity: 0.45 }}>
+                  <path d="M2 1l8.5 5L7 7.5l-1 4.5L2 1z" fill={t.accent} fillOpacity="0.6" stroke={t.accent} strokeWidth="0.8" />
+                </svg>
+                <span className="font-['Fira_Code',monospace] text-[10px] tracking-[0.1em] uppercase" style={{ color: t.textDim }}>
+                  Hover the annotations to explore
+                </span>
+              </div>
+              <CodeShowcase />
+            </div>
+          </section>
+          <Divider />
+          <ComparisonSection />
+          <Divider />
+          <ToolingSection />
         </div>
-      </section>
-      <Divider />
-      <ComparisonSection />
-      <Divider />
-      <ToolingSection />
+      </div>
     </>
   );
 }

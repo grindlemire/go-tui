@@ -459,7 +459,7 @@ func (e *Element) Focus()
 func (e *Element) Blur()
 ```
 
-`Focus` marks the element as focused and calls the `onFocus` callback if one is registered. `Blur` clears the focused state and calls `onBlur`. These don't cascade to children — only the target element is affected.
+`Focus` marks the element as focused and calls the `onFocus` callback if one is registered. `Blur` clears the focused state and calls `onBlur`. These don't cascade to children. Only the target element is affected.
 
 ### SetOnFocus / SetOnBlur
 

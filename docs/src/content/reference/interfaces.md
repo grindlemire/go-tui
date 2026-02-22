@@ -2,7 +2,7 @@
 
 ## Overview
 
-go-tui uses interfaces to define component behavior. A struct component only needs to implement `Component` (the `Render` method). All other interfaces are optional -- implement them to add keyboard handling, mouse support, timers, or lifecycle hooks.
+go-tui uses interfaces to define component behavior. A struct component only needs to implement `Component` (the `Render` method). All other interfaces are optional. Implement them to add keyboard handling, mouse support, timers, or lifecycle hooks.
 
 The framework discovers these interfaces through type assertions during the mount process. The order of operations when a component first mounts:
 
@@ -24,7 +24,7 @@ type Component interface {
 
 The only required interface. Every struct component must have a `Render` method that returns an element tree. In `.gsx` files, the `templ (s *myStruct) Render()` syntax generates this method.
 
-`Render` is called on every frame where the UI is dirty. It should be a pure function of the component's state -- read state, build elements, return. Side effects belong in `Init`, `Watchers`, or event handlers.
+`Render` is called on every frame where the UI is dirty. It should be a pure function of the component's state: read state, build elements, return. Side effects belong in `Init`, `Watchers`, or event handlers.
 
 **When to implement:** Always. This is what makes a struct a component.
 

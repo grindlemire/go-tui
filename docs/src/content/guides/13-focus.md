@@ -2,7 +2,7 @@
 
 ## Overview
 
-Focus determines which element receives keyboard input. go-tui handles element-level focus automatically — mark elements as focusable and use `app.FocusNext()` / `app.FocusPrev()` to cycle between them. For section-level switching (e.g., sidebar vs content panel), `FocusGroup` manages mutual-exclusion state using `*State[bool]` values with built-in Tab/Shift+Tab bindings.
+Focus determines which element receives keyboard input. go-tui handles element-level focus automatically. Mark elements as focusable and use `app.FocusNext()` / `app.FocusPrev()` to cycle between them. For section-level switching (e.g., sidebar vs content panel), `FocusGroup` manages mutual-exclusion state using `*State[bool]` values with built-in Tab/Shift+Tab bindings.
 
 ## Making Elements Focusable
 
@@ -301,6 +301,10 @@ Generate and run:
 tui generate ./...
 go run .
 ```
+
+Tab between the panels to see focus in action:
+
+![Focus Management screenshot](/guides/13.png)
 
 ## Next Steps
 

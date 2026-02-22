@@ -296,6 +296,20 @@ function Markdown({ content }: { content: string }) {
             />
           </div>
         ),
+        img: ({ src, alt }) => (
+          <img
+            src={src}
+            alt={alt}
+            className="rounded-lg mb-4 w-full"
+            style={{
+              border: `1px solid ${t.border}`,
+              boxShadow:
+                theme === "dark"
+                  ? `0 0 12px ${t.borderGlow}, inset 0 0 20px rgba(0,0,0,0.3)`
+                  : "0 1px 3px rgba(0,0,0,0.08)",
+            }}
+          />
+        ),
       }}
     >
       {content}

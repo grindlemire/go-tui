@@ -115,6 +115,8 @@ go run .
 
 You should see a centered box with "Hello, Terminal!" in cyan. Press `q` or `Escape` to exit.
 
+![Getting Started screenshot](/guides/01.png)
+
 ## How It Works
 
 You write `.gsx` files using templ-like syntax, then `tui generate` compiles them into `_gsx.go` files containing standard Go code that calls the `tui` package API. From there, `go build` produces a single binary with no runtime dependencies. At runtime, the framework handles the event loop, flexbox layout, and double-buffered terminal rendering.

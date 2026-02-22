@@ -86,7 +86,7 @@ Each `Card` renders its title and divider, then places whatever children you pas
 
 `tui generate` compiles the children into a `[]*tui.Element` slice and passes it as a parameter to the generated function. The slot expands to a loop that adds each child element to the parent container.
 
-Struct components also support `{children...}` — see [Children Slot](#children-slot-2) in the struct components section below.
+Struct components also support `{children...}`. See [Children Slot](#children-slot-2) in the struct components section below.
 
 ### When to Use Pure Components
 
@@ -198,7 +198,7 @@ You don't write `Render(app *App) *Element` by hand. The `templ` keyword handles
 
 ## Component Interfaces
 
-Struct components can implement additional interfaces for input handling, background tasks, and lifecycle hooks. All are optional -- implement only what you need.
+Struct components can implement additional interfaces for input handling, background tasks, and lifecycle hooks. All are optional. Implement only what you need.
 
 ### KeyListener
 
@@ -724,6 +724,10 @@ Generate and run:
 tui generate ./...
 go run .
 ```
+
+When you run it, you'll get a tabbed dashboard:
+
+![Components screenshot](/guides/06.png)
 
 ## Next Steps
 

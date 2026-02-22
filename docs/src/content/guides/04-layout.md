@@ -456,6 +456,10 @@ templ FormLayout() {
 
 Each field is a vertical stack of label and input. The button row uses `justify-end` to push the button to the right.
 
+Here's what the layout patterns from this guide look like in practice:
+
+![Layout screenshot](/guides/04.png)
+
 ## Next Steps
 
 - [State and Reactivity](state) -- Reactive state with `State[T]`
