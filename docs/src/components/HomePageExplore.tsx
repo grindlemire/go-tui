@@ -79,7 +79,7 @@ const comparisonFeatures: ComparisonFeature[] = [
     label: "Approach",
     values: {
       "go-tui": { summary: "Declarative .gsx templates", detail: ".gsx files use HTML-like syntax with Tailwind-style classes and compile to type-safe Go via tui generate" },
-      "Bubble Tea": { summary: "Elm architecture", detail: "Functional Model → Update → View cycle. State is immutable, messages drive updates, View returns a string" },
+      "Bubble Tea": { summary: "Elm architecture", detail: "Functional Model → Update → View cycle. State changes are centralized in Update(), messages drive updates, View returns a string" },
       tview: { summary: "Imperative widget toolkit", detail: "OOP style: create widget objects, configure via methods, compose in layout containers" },
       gocui: { summary: "View manager", detail: "Create named rectangular views with absolute coordinates. Views implement io.ReadWriter for content" },
     },
@@ -89,7 +89,7 @@ const comparisonFeatures: ComparisonFeature[] = [
     values: {
       "go-tui": { summary: "CSS flexbox", detail: "Full flexbox: grow, shrink, justify, align, gap, padding, margin, min/max constraints, percentage and auto sizing" },
       "Bubble Tea": { summary: "String joins via lipgloss", detail: "lipgloss provides box model styling and JoinHorizontal/JoinVertical for composition. No flexbox" },
-      tview: { summary: "Basic Flex and Grid", detail: "Flex supports direction and proportional sizing. Grid adds row/column spans. No gap or align-items" },
+      tview: { summary: "Basic Flex and Grid", detail: "Flex supports direction and proportional sizing. Grid adds row/column spans and gap. No align-items" },
       gocui: { summary: "Manual coordinates", detail: "Views positioned with absolute (x0, y0, x1, y1) coordinates. Responsive sizing requires manual calculation" },
     },
   },
@@ -98,7 +98,7 @@ const comparisonFeatures: ComparisonFeature[] = [
     values: {
       "go-tui": { summary: "HTML-style primitives", detail: "Built-in: div, span, p, ul, li, button, input, table, progress, hr, br. Composable via .gsx components" },
       "Bubble Tea": { summary: "14+ via Bubbles", detail: "Separate Bubbles library: text input, viewport, list, table, spinner, progress, file picker, and more" },
-      tview: { summary: "16+ built-in", detail: "Richest widget set: TextView, Table, TreeView, List, Form, Modal, InputField, DropDown, and more" },
+      tview: { summary: "15+ built-in", detail: "Richest widget set: TextView, Table, TreeView, List, Form, Modal, InputField, DropDown, and more" },
       gocui: { summary: "Views only", detail: "No pre-built widgets. Views provide text I/O and keybindings, so widgets must be built from scratch" },
     },
   },
@@ -117,7 +117,7 @@ const comparisonFeatures: ComparisonFeature[] = [
       "go-tui": { summary: "Tailwind classes", detail: "Utility classes (border-rounded, p-2, text-cyan) compile to Go options. True color support" },
       "Bubble Tea": { summary: "lipgloss API", detail: "Fluent Go API: lipgloss.NewStyle().Bold(true).Foreground(...). Rich but verbose for complex layouts" },
       tview: { summary: "tcell styles + tags", detail: "Inline [color]text[/] tags in strings. Styles applied via tcell.Style" },
-      gocui: { summary: "Basic ANSI", detail: "Direct ANSI escape sequences or tcell attributes. No styling abstraction" },
+      gocui: { summary: "Basic ANSI", detail: "Attribute type with 8 named colors and bold/underline/reverse via termbox-go. 256-color requires raw ANSI escapes" },
     },
   },
   {
@@ -126,16 +126,7 @@ const comparisonFeatures: ComparisonFeature[] = [
       "go-tui": { summary: "LSP + tree-sitter + fmt", detail: "Language server with completions, diagnostics, go-to-definition. Tree-sitter grammar. Auto-formatter" },
       "Bubble Tea": { summary: "Standard Go", detail: "Standard Go tooling applies. No custom language features needed" },
       tview: { summary: "Standard Go", detail: "Standard Go tooling. Demo application included for exploration" },
-      gocui: { summary: "Standard Go", detail: "Standard Go tooling. Minimal examples in repository" },
-    },
-  },
-  {
-    label: "Dependencies",
-    values: {
-      "go-tui": { summary: "stdlib + x/ packages", detail: "Pure Go. No CGO. Only official golang.org/x packages" },
-      "Bubble Tea": { summary: "Several", detail: "charmbracelet ecosystem: lipgloss, bubbles, harmonica, plus muesli/termenv, go-colorful" },
-      tview: { summary: "tcell + more", detail: "gdamore/tcell, go-colorful, go-runewidth, uniseg" },
-      gocui: { summary: "tcell", detail: "gdamore/tcell/v2. Minimal beyond that" },
+      gocui: { summary: "Standard Go", detail: "Standard Go tooling. ~20 examples in repository covering layout, colors, mouse, goroutines, and more" },
     },
   },
 ];
