@@ -1,5 +1,6 @@
 # Build binaries
 /tui
+dist/
 
 # Example binaries (compiled Go binaries match their directory name)
 # Ignore everything, then un-ignore source files and known subdirectories

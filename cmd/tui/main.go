@@ -19,7 +19,7 @@ import (
 	"os"
 )
 
-const version = "0.1.0"
+var version = "dev"
 
 const usage = `tui - DSL compiler for go-tui element trees
 
