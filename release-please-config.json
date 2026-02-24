@@ -1,0 +1,8 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "go",
+      "initial-version": "0.1.0"
+    }
+  }
+}
