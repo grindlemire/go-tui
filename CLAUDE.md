@@ -8,6 +8,35 @@ Use `gcommit -m ""` for all commits to ensure proper signing.
 
 ONLY EVER COMMIT USING THIS APPROACH
 
+All commit messages MUST use conventional commit format. This is required for
+automated releases via release-please.
+
+Format: `<type>: <description>` or `<type>(<scope>): <description>`
+
+| Prefix | Version Bump | Use When |
+|--------|-------------|----------|
+| `feat:` | minor (0.1.0 → 0.2.0) | Adding new functionality |
+| `fix:` | patch (0.1.0 → 0.1.1) | Fixing a bug |
+| `perf:` | patch | Performance improvements |
+| `refactor:` | patch | Code changes that don't add features or fix bugs |
+| `docs:` | patch | Documentation only |
+| `test:` | patch | Adding or updating tests |
+| `chore:` | patch | Maintenance, dependencies, tooling |
+| `ci:` | patch | CI/CD changes |
+| `build:` | patch | Build system changes |
+| `revert:` | patch | Reverting a previous commit |
+
+For BREAKING CHANGES (major bump, e.g. 0.1.0 → 1.0.0), add `!` after the type:
+`feat!: remove deprecated API` or include `BREAKING CHANGE:` in the commit body.
+
+Examples:
+```
+gcommit -m "feat: add table element support"
+gcommit -m "fix(layout): correct flexbox gap calculation"
+gcommit -m "feat!: change State API to require type parameter"
+gcommit -m "chore: update golang.org/x dependencies"
+```
+
 ## Project Overview
 
 go-tui allows defining UIs in `.gsx` files that compile to type-safe Go code. The framework provides:
