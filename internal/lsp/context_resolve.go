@@ -135,19 +135,27 @@ func resolveFromAST(ctx *CursorContext, file *tuigen.File) {
 		ctx.ParentChain = ctx.ParentChain[:len(ctx.ParentChain)-1]
 	}
 
-	// Check if cursor is on a function declaration line
+	// Check if cursor is on or inside a function declaration
 	for _, fn := range file.Funcs {
-		if line == fn.Position.Line {
-			// Check if cursor is on a parameter name
-			if paramName := findFuncParamAtColumn(fn, col); paramName != "" {
+		fnEndLine := fn.Position.Line + strings.Count(fn.Code, "\n")
+		if line >= fn.Position.Line && line <= fnEndLine {
+			ctx.Scope.Function = fn
+			if line == fn.Position.Line {
+				// Check if cursor is on a parameter name
+				if paramName := findFuncParamAtColumn(fn, col); paramName != "" {
+					ctx.Node = fn
+					ctx.NodeKind = NodeKindParameter
+					return
+				}
 				ctx.Node = fn
-				ctx.NodeKind = NodeKindParameter
-				ctx.Scope.Function = fn
+				ctx.NodeKind = NodeKindFunction
 				return
 			}
+			// Cursor is inside the function body — classify as Go expression
+			// so gopls/word-based fallbacks can resolve it
 			ctx.Node = fn
 			ctx.NodeKind = NodeKindFunction
-			ctx.Scope.Function = fn
+			ctx.InGoExpr = true
 			return
 		}
 	}

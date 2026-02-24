@@ -41,10 +41,25 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 	}
 
 	i := 0
+	bracketDepth := 0 // track [...] depth for generic type argument coloring
 	for i < len(code) {
 		ch := code[i]
 
 		if ch == ' ' || ch == '\t' || ch == '\r' {
+			i++
+			continue
+		}
+
+		// Track square bracket depth for generic type arguments
+		if ch == '[' {
+			bracketDepth++
+			i++
+			continue
+		}
+		if ch == ']' {
+			if bracketDepth > 0 {
+				bracketDepth--
+			}
 			i++
 			continue
 		}
@@ -278,6 +293,18 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 					StartChar: charPos,
 					Length:    len(ident),
 					TokenType: TokenTypeFunction,
+					Modifiers: 0,
+				})
+				continue
+			}
+
+			// Inside square brackets — this is a generic type argument (e.g., bool in State[bool])
+			if bracketDepth > 0 {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      pos.Line - 1,
+					StartChar: charPos,
+					Length:    len(ident),
+					TokenType: TokenTypeType,
 					Modifiers: 0,
 				})
 				continue

@@ -77,18 +77,13 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 			return locs, nil
 		}
 		// Fall through to gopls
-	case NodeKindFunction:
-		locs, err := d.getGoplsDefinition(ctx)
-		if err == nil && len(locs) > 0 {
-			return locs, nil
+	case NodeKindFunction, NodeKindComponent, NodeKindGoDecl:
+		// Try local AST-based lookup first (avoids gopls offset issues)
+		if ctx.Document.AST != nil && word != "" {
+			if loc := d.findGoDeclNameInAST(ctx.Document.AST, word, ctx.Document.URI); loc != nil {
+				return []Location{*loc}, nil
+			}
 		}
-	case NodeKindComponent:
-		locs, err := d.getGoplsDefinition(ctx)
-		if err == nil && len(locs) > 0 {
-			return locs, nil
-		}
-	case NodeKindGoDecl:
-		// Top-level var/type/const declarations delegate to gopls
 		locs, err := d.getGoplsDefinition(ctx)
 		if err == nil && len(locs) > 0 {
 			return locs, nil
@@ -143,12 +138,15 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		}
 	}
 
-	// AST-based component/function definition within current file
+	// AST-based component/function/type definition within current file
 	if ctx.Document.AST != nil {
 		if loc := d.findComponentInAST(ctx.Document.AST, componentName, ctx.Document.URI); loc != nil {
 			return []Location{*loc}, nil
 		}
 		if loc := d.findFuncInAST(ctx.Document.AST, word, ctx.Document.URI); loc != nil {
+			return []Location{*loc}, nil
+		}
+		if loc := d.findGoDeclNameInAST(ctx.Document.AST, word, ctx.Document.URI); loc != nil {
 			return []Location{*loc}, nil
 		}
 	}
@@ -452,6 +450,92 @@ func (d *definitionProvider) findFuncInAST(ast *tuigen.File, name string, uri st
 	return nil
 }
 
+// findGoDeclNameInAST searches GoDecl nodes for a type, var, or const name.
+// Works for type declarations (type Foo struct{...}), var declarations, etc.
+func (d *definitionProvider) findGoDeclNameInAST(ast *tuigen.File, name string, uri string) *Location {
+	for _, decl := range ast.Decls {
+		code := decl.Code
+		// The Code includes the keyword (type/var/const). Extract the declared name.
+		// For "type chat struct {" the name is "chat".
+		// For "var _ tui.AppBinder = ..." the name is "_".
+		trimmed := strings.TrimSpace(code)
+		// Remove the keyword prefix
+		rest := ""
+		if strings.HasPrefix(trimmed, decl.Kind+" ") {
+			rest = strings.TrimSpace(trimmed[len(decl.Kind)+1:])
+		} else if strings.HasPrefix(trimmed, decl.Kind+"\t") {
+			rest = strings.TrimSpace(trimmed[len(decl.Kind)+1:])
+		}
+		if rest == "" {
+			continue
+		}
+
+		// Extract the first word (the declared name)
+		declName := ""
+		for i, ch := range rest {
+			if ch == ' ' || ch == '\t' || ch == '(' || ch == '=' {
+				declName = rest[:i]
+				break
+			}
+		}
+		if declName == "" {
+			// Single word (e.g., "const Foo")
+			declName = rest
+		}
+
+		if declName == name {
+			// Find the column of the name in the source
+			nameIdx := strings.Index(code, name)
+			col := decl.Position.Column - 1
+			if nameIdx >= 0 {
+				col += nameIdx
+			}
+			return &Location{
+				URI: uri,
+				Range: Range{
+					Start: Position{Line: decl.Position.Line - 1, Character: col},
+					End:   Position{Line: decl.Position.Line - 1, Character: col + len(name)},
+				},
+			}
+		}
+
+		// Also check for struct field definitions within the declaration.
+		// For "type chat struct { ... showSettings *tui.State[bool] ... }",
+		// search the struct body for field names.
+		if strings.Contains(code, "struct {") || strings.Contains(code, "struct{") {
+			lines := strings.Split(code, "\n")
+			for lineIdx, line := range lines {
+				trimmedLine := strings.TrimSpace(line)
+				// Skip struct opening/closing and empty lines
+				if trimmedLine == "" || trimmedLine == "{" || trimmedLine == "}" ||
+					strings.HasPrefix(trimmedLine, "type ") || strings.HasPrefix(trimmedLine, "//") {
+					continue
+				}
+				// First word on the line is the field name
+				fields := strings.Fields(trimmedLine)
+				if len(fields) >= 2 && fields[0] == name {
+					fieldIdx := strings.Index(line, name)
+					fieldCol := 0
+					if lineIdx == 0 {
+						fieldCol = decl.Position.Column - 1
+					}
+					if fieldIdx >= 0 {
+						fieldCol += fieldIdx
+					}
+					return &Location{
+						URI: uri,
+						Range: Range{
+							Start: Position{Line: decl.Position.Line - 1 + lineIdx, Character: fieldCol},
+							End:   Position{Line: decl.Position.Line - 1 + lineIdx, Character: fieldCol + len(name)},
+						},
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // --- gopls definition delegation ---
 
 func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location, error) {
@@ -502,6 +586,11 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 					continue
 				}
 			}
+			// Translation failed for virtual file — skip instead of returning
+			// a nonexistent virtual URI. The caller's word-based fallback will
+			// try AST-based lookup.
+			log.Server("gopls returned virtual file %s but source map translation failed, skipping", gl.URI)
+			continue
 		}
 
 		// Check if this is a real generated _gsx.go file — translate back to .gsx
@@ -509,14 +598,20 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 			tuiURI := gopls.GeneratedGoURIToTuiURI(gl.URI)
 			cachedFile := d.virtualFiles.GetVirtualFile(tuiURI)
 			if cachedFile != nil && cachedFile.SourceMap != nil {
-				// Real _gsx.go files are offset by goimports adding blank lines
-				// between import groups. Adjust line numbers before source map lookup.
-				const goimportsLineOffset = 1
-				adjustedStartLine := gl.Range.Start.Line - goimportsLineOffset
+				// Real _gsx.go files have a 3-line header before package:
+				//   // Code generated by tui generate. DO NOT EDIT.
+				//   // Source: <file>.gsx
+				//   <blank line>
+				// Adjust line numbers to align with the virtual file (which
+				// starts with package on line 0). goimports may also add blank
+				// lines between import groups, so we try the base offset first
+				// and fall back to a wider search.
+				const headerLineOffset = 3
+				adjustedStartLine := gl.Range.Start.Line - headerLineOffset
 				if adjustedStartLine < 0 {
 					adjustedStartLine = 0
 				}
-				adjustedEndLine := gl.Range.End.Line - goimportsLineOffset
+				adjustedEndLine := gl.Range.End.Line - headerLineOffset
 				if adjustedEndLine < 0 {
 					adjustedEndLine = 0
 				}
@@ -532,16 +627,36 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 					})
 					continue
 				}
+				// If base offset failed, try +/- 1 to handle goimports variations
+				for _, delta := range []int{-1, 1, -2, 2} {
+					altStart := gl.Range.Start.Line - headerLineOffset + delta
+					altEnd := gl.Range.End.Line - headerLineOffset + delta
+					if altStart < 0 {
+						altStart = 0
+					}
+					if altEnd < 0 {
+						altEnd = 0
+					}
+					ts, tc, sf := cachedFile.SourceMap.GoToTui(altStart, gl.Range.Start.Character)
+					te, tec, ef := cachedFile.SourceMap.GoToTui(altEnd, gl.Range.End.Character)
+					if sf && ef {
+						locs = append(locs, Location{
+							URI: tuiURI,
+							Range: Range{
+								Start: Position{Line: ts, Character: tc},
+								End:   Position{Line: te, Character: tec},
+							},
+						})
+						break
+					}
+				}
+				if len(locs) > 0 {
+					continue
+				}
 			}
-			// Source map lookup failed but we know it's a .gsx file —
-			// return the .gsx URI so the user at least lands in the right file
-			locs = append(locs, Location{
-				URI: tuiURI,
-				Range: Range{
-					Start: Position{Line: 0, Character: 0},
-					End:   Position{Line: 0, Character: 0},
-				},
-			})
+			// Source map lookup failed — skip and let word-based fallback handle it.
+			// This avoids jumping to line 0 of the file.
+			log.Server("gopls returned generated file %s but source map translation failed, skipping", gl.URI)
 			continue
 		}
 
