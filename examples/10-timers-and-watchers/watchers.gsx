@@ -156,7 +156,7 @@ templ (w *watcherApp) Render() {
 				<span class="text-green">{msg}</span>
 			}
 			@if len(w.messages.Get()) == 0 {
-				<span class="font-dim">Waiting for messages...</span>
+				<span class="font-dim">Waitingmessages...</span>
 			}
 		</div>
 

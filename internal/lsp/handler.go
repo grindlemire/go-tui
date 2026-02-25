@@ -170,10 +170,11 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 						"typeParameter", // 15: generic type arguments
 					},
 					TokenModifiers: []string{
-						"declaration",  // 0: where defined
-						"definition",   // 1: where defined
-						"readonly",     // 2: const/let
-						"modification", // 3: where modified
+						"declaration",    // 0: where defined
+						"definition",     // 1: where defined
+						"readonly",       // 2: const/let
+						"modification",   // 3: where modified
+						"defaultLibrary", // 4: builtin types (int, bool, string, etc.)
 					},
 				},
 				Full: true,

@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://grindlemire.github.io/go-tui">Guides & API Reference</a> &middot;
+  <a href="https://go-tui.dev">Guides & API Reference</a> &middot;
   <a href="#examples">Examples</a> &middot;
   <a href="#editor-support">Editor Support</a>
 </p>

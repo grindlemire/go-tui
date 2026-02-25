@@ -33,9 +33,12 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 
 	// Check local function definitions first (prevents gopls from
 	// returning generated .go files instead of .gsx sources).
-	if word != "" {
-		if funcInfo, ok := d.index.LookupFunc(word); ok {
-			log.Server("Found local function %s at %s (before gopls)", word, funcInfo.Location.URI)
+	// Skip this when inside a Go expression — gopls understands the full
+	// context (e.g., field access a.category vs a standalone function call).
+	if word != "" && !ctx.InGoExpr {
+		funcName := strings.TrimPrefix(word, "@")
+		if funcInfo, ok := d.index.LookupFunc(funcName); ok {
+			log.Server("Found local function %s at %s (before gopls)", funcName, funcInfo.Location.URI)
 			return []Location{funcInfo.Location}, nil
 		}
 	}
@@ -108,8 +111,8 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		return []Location{info.Location}, nil
 	}
 
-	// Check if it's a function
-	if funcInfo, ok := d.index.LookupFunc(word); ok {
+	// Check if it's a function (use componentName with @ stripped)
+	if funcInfo, ok := d.index.LookupFunc(componentName); ok {
 		return []Location{funcInfo.Location}, nil
 	}
 
@@ -165,6 +168,13 @@ func (d *definitionProvider) definitionComponentCall(ctx *CursorContext) ([]Loca
 	if info, ok := d.index.Lookup(call.Name); ok {
 		return []Location{info.Location}, nil
 	}
+
+	// For struct-mount components (e.g., @Sidebar()), the component call name
+	// refers to the constructor function, not a templ component name.
+	if funcInfo, ok := d.index.LookupFunc(call.Name); ok {
+		return []Location{funcInfo.Location}, nil
+	}
+
 	return nil, nil
 }
 

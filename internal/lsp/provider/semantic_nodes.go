@@ -638,17 +638,18 @@ func emitGoTypeTokens(typeStr string, line int, startCol int, tokens *[]Semantic
 				continue
 			}
 
-			// Type name — use typeParameter for types inside brackets (generic args)
-			tokenType := TokenTypeType
-			if bracketDepth > 0 {
-				tokenType = TokenTypeTypeParameter
+			// Type name — for builtin types, use type + defaultLibrary
+			// to match gopls coloring regardless of bracket depth.
+			mods := 0
+			if GoBuiltinTypes[ident] {
+				mods = TokenModDefaultLibrary
 			}
 			*tokens = append(*tokens, SemanticToken{
 				Line:      line,
 				StartChar: startCol + start,
 				Length:    len(ident),
-				TokenType: tokenType,
-				Modifiers: 0,
+				TokenType: TokenTypeType,
+				Modifiers: mods,
 			})
 			continue
 		}

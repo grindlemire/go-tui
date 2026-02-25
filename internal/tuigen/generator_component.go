@@ -556,6 +556,14 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 		return
 	}
 
+	// Find *tui.App fields to set directly (c.app = app)
+	var appFields []StructField
+	for _, f := range fields {
+		if f.Type == "*tui.App" {
+			appFields = append(appFields, f)
+		}
+	}
+
 	// Find fields that need BindApp (known types like State, Events, TextArea)
 	var bindableFields []StructField
 	for _, f := range fields {
@@ -582,7 +590,7 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 		}
 	}
 
-	if len(bindableFields) == 0 && len(componentBindFields) == 0 {
+	if len(appFields) == 0 && len(bindableFields) == 0 && len(componentBindFields) == 0 {
 		return
 	}
 
@@ -592,6 +600,10 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// Generate BindApp method with nil checks
 	g.writef("func (%s) BindApp(app *tui.App) {\n", comp.Receiver)
 	g.indent++
+	// Set *tui.App fields directly
+	for _, f := range appFields {
+		g.writef("%s.%s = app\n", comp.ReceiverName, f.Name)
+	}
 	for _, f := range bindableFields {
 		g.writef("if %s.%s != nil {\n", comp.ReceiverName, f.Name)
 		g.indent++

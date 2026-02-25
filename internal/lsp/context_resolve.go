@@ -375,8 +375,20 @@ func resolveInComponentCall(ctx *CursorContext, call *tuigen.ComponentCall, line
 	}
 
 	if call.Position.Line == line {
+		// Distinguish between the component name and the arguments.
+		// For @Sidebar(a.category), the name region is @Sidebar (up to the opening paren).
+		// Position.Column is 1-indexed and points at the @.
+		nameEnd := call.Position.Column + 1 + len(call.Name) // @ + Name
+		if col <= nameEnd {
+			ctx.Node = call
+			ctx.NodeKind = NodeKindComponentCall
+			return true
+		}
+		// Cursor is in the argument area — treat as Go expression so gopls
+		// can resolve identifiers like a.category.
 		ctx.Node = call
-		ctx.NodeKind = NodeKindComponentCall
+		ctx.NodeKind = NodeKindGoExpr
+		ctx.InGoExpr = true
 		return true
 	}
 

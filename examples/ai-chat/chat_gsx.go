@@ -16,15 +16,6 @@ type chat struct {
 	settingsView *settings.SettingsApp
 }
 
-var _ tui.AppBinder = (*chat)(nil)
-
-func (c *chat) BindApp(app *tui.App) {
-	c.app = app
-	c.showSettings.BindApp(app)
-	c.textarea.BindApp(app)
-	c.settingsView.BindApp(app)
-}
-
 func Chat(width int) *chat {
 	c := &chat{
 		width:        width,
@@ -142,3 +133,29 @@ func (c *chat) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*chat)(nil)
+
+func (c *chat) BindApp(app *tui.App) {
+	c.app = app
+	if c.textarea != nil {
+		c.textarea.BindApp(app)
+	}
+	if c.showSettings != nil {
+		c.showSettings.BindApp(app)
+	}
+	if binder, ok := any(c.settingsView).(tui.AppBinder); ok {
+		binder.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*chat)(nil)
+
+func (c *chat) UnbindApp() {
+	if unbinder, ok := any(c.textarea).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(c.settingsView).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+}
+
+var _ tui.AppUnbinder = (*chat)(nil)

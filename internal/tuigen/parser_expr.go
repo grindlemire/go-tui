@@ -209,13 +209,3 @@ func isTextToken(typ TokenType) bool {
 	}
 }
 
-// isWordToken returns true if the token is a "word" that should have spaces between
-// consecutive instances. Identifiers and numbers are words; punctuation is not.
-func isWordToken(typ TokenType) bool {
-	switch typ {
-	case TokenIdent, TokenInt, TokenFloat:
-		return true
-	default:
-		return false
-	}
-}

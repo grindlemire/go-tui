@@ -29,6 +29,12 @@ func (p *Parser) parseFuncOrComponent() Node {
 	name := p.current.Literal
 	p.advance()
 
+	// Generic function: func foo[T any](...) — capture as raw Go code.
+	// Generic functions can't be templ components, so treat them like method receivers.
+	if p.current.Type == TokenLBracket {
+		return p.captureRawGoFunc(startPos, pos)
+	}
+
 	// Parse parameters
 	if !p.expect(TokenLParen) {
 		return nil

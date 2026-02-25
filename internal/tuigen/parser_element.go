@@ -398,20 +398,16 @@ func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 			if isTextToken(p.current.Type) {
 				var text strings.Builder
 				textPos := p.position()
-				prevWasWord := false
-				prevWasSpaceAfterPunct := false
+				prevTokenEnd := -1
 				for isTextToken(p.current.Type) {
-					currIsWord := isWordToken(p.current.Type)
-					// Add space between:
-					// - consecutive word tokens (e.g., "Hello World")
-					// - punctuation that should have trailing space followed by word (e.g., ", q")
-					if text.Len() > 0 && currIsWord && (prevWasWord || prevWasSpaceAfterPunct) {
+					// Use source positions to detect whitespace: if there's a gap
+					// between the end of the previous token and the start of the
+					// current one, the original source had whitespace there.
+					if text.Len() > 0 && prevTokenEnd >= 0 && p.current.StartPos > prevTokenEnd {
 						text.WriteByte(' ')
 					}
 					text.WriteString(p.current.Literal)
-					prevWasWord = currIsWord
-					// Comma should have a space after it before the next word
-					prevWasSpaceAfterPunct = p.current.Type == TokenComma || p.current.Type == TokenColon || p.current.Type == TokenSemicolon
+					prevTokenEnd = p.current.StartPos + len(p.current.Literal)
 					p.advance()
 				}
 				child = &TextContent{

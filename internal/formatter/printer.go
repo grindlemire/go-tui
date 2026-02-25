@@ -197,6 +197,8 @@ func hasBlankLineBefore(node tuigen.Node) bool {
 		return n.BlankLineBefore
 	case *tuigen.ComponentCall:
 		return n.BlankLineBefore
+	case *tuigen.ComponentExpr:
+		return n.BlankLineBefore
 	case *tuigen.ChildrenSlot:
 		return n.BlankLineBefore
 	default:
@@ -217,6 +219,13 @@ func (p *printer) printNode(node tuigen.Node) {
 		p.printLetBinding(n)
 	case *tuigen.ComponentCall:
 		p.printComponentCall(n)
+	case *tuigen.ComponentExpr:
+		p.printLeadingComments(n.LeadingComments)
+		p.writeIndent()
+		p.write("@")
+		p.write(n.Expr)
+		p.printTrailingComment(n.TrailingComments)
+		p.newline()
 	case *tuigen.GoExpr:
 		p.printLeadingComments(n.LeadingComments)
 		p.writeIndent()

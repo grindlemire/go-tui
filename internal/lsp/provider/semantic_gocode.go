@@ -299,13 +299,31 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 			}
 
 			// Inside square brackets — this is a generic type argument (e.g., bool in State[bool])
+			// or map key type (e.g., string in map[string]). Emit as type token.
 			if bracketDepth > 0 {
+				mods := 0
+				if GoBuiltinTypes[ident] {
+					mods = TokenModDefaultLibrary
+				}
 				*tokens = append(*tokens, SemanticToken{
 					Line:      pos.Line - 1,
 					StartChar: charPos,
 					Length:    len(ident),
 					TokenType: TokenTypeType,
-					Modifiers: 0,
+					Modifiers: mods,
+				})
+				continue
+			}
+
+			// Builtin type name outside brackets (e.g., string in []string, bool in a declaration).
+			// Use type + defaultLibrary to match gopls coloring.
+			if GoBuiltinTypes[ident] {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      pos.Line - 1,
+					StartChar: charPos,
+					Length:    len(ident),
+					TokenType: TokenTypeType,
+					Modifiers: TokenModDefaultLibrary,
 				})
 				continue
 			}
@@ -457,13 +475,14 @@ type funcParam struct {
 	Type string
 }
 
-// parseFuncSignatureForTokens extracts function name, receiver, params, and return type from code.
+// parseFuncSignatureForTokens extracts function name, receiver, type params, params, and return type from code.
 // For methods like "func (s *Type) Name(...) RetType { ... }", receiver will be "s *Type".
-// For plain functions, receiver will be "".
-func parseFuncSignatureForTokens(code string) (name, receiver string, params []funcParam, returns string) {
+// For generic functions like "func foo[T any](...)", typeParams will be "[T any]".
+// For plain functions, receiver and typeParams will be "".
+func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string, params []funcParam, returns string) {
 	code = strings.TrimSpace(code)
 	if !strings.HasPrefix(code, "func ") {
-		return "", "", nil, ""
+		return "", "", "", nil, ""
 	}
 	rest := code[5:] // skip "func "
 
@@ -484,18 +503,52 @@ func parseFuncSignatureForTokens(code string) (name, receiver string, params []f
 			}
 		}
 		if closeIdx == -1 {
-			return "", "", nil, ""
+			return "", "", "", nil, ""
 		}
 		receiver = strings.TrimSpace(rest[1:closeIdx])
 		rest = strings.TrimSpace(rest[closeIdx+1:])
 	}
 
-	parenIdx := strings.Index(rest, "(")
-	if parenIdx == -1 {
-		return "", "", nil, ""
+	// Find name end: first '[' (type params) or '(' (params)
+	nameEnd := -1
+	for i := 0; i < len(rest); i++ {
+		if rest[i] == '[' || rest[i] == '(' {
+			nameEnd = i
+			break
+		}
 	}
-	name = strings.TrimSpace(rest[:parenIdx])
-	rest = rest[parenIdx:]
+	if nameEnd == -1 {
+		return "", "", "", nil, ""
+	}
+	name = strings.TrimSpace(rest[:nameEnd])
+	rest = rest[nameEnd:]
+
+	// Check for type parameters: name[T constraint, ...]
+	if len(rest) > 0 && rest[0] == '[' {
+		depth := 0
+		closeIdx := -1
+		for i := 0; i < len(rest); i++ {
+			if rest[i] == '[' {
+				depth++
+			} else if rest[i] == ']' {
+				depth--
+				if depth == 0 {
+					closeIdx = i
+					break
+				}
+			}
+		}
+		if closeIdx == -1 {
+			return name, receiver, "", nil, ""
+		}
+		typeParams = rest[:closeIdx+1] // e.g., "[T bool|string]"
+		rest = rest[closeIdx+1:]
+	}
+
+	// Now rest should start with "(" for params
+	if len(rest) == 0 || rest[0] != '(' {
+		return name, receiver, typeParams, nil, ""
+	}
 
 	// Find matching close paren for params
 	depth := 0
@@ -512,7 +565,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver string, params []f
 		}
 	}
 	if closeIdx == -1 {
-		return name, receiver, nil, ""
+		return name, receiver, typeParams, nil, ""
 	}
 
 	paramStr := rest[1:closeIdx]
@@ -534,5 +587,132 @@ func parseFuncSignatureForTokens(code string) (name, receiver string, params []f
 		returns = strings.TrimSpace(after[:braceIdx])
 	}
 
-	return name, receiver, params, returns
+	return name, receiver, typeParams, params, returns
+}
+
+// emitGenericTypeParamTokens tokenizes a generic type parameter section like "[T bool|string]"
+// or "[K comparable, V any]". Emits type parameter names, constraint types, and operators.
+func emitGenericTypeParamTokens(typeParamStr string, line int, startCol int, tokens *[]SemanticToken) {
+	if len(typeParamStr) < 2 || typeParamStr[0] != '[' {
+		return
+	}
+
+	// Strip outer brackets
+	inner := typeParamStr[1 : len(typeParamStr)-1]
+	offset := 1 // start after '['
+
+	i := 0
+	expectName := true // first identifier in each comma-separated group is the type param name
+
+	for i < len(inner) {
+		ch := inner[i]
+
+		if ch == ' ' || ch == '\t' {
+			i++
+			continue
+		}
+
+		// Comma separates type parameter groups
+		if ch == ',' {
+			expectName = true
+			i++
+			continue
+		}
+
+		// Union constraint operator
+		if ch == '|' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + offset + i,
+				Length:    1,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			i++
+			continue
+		}
+
+		// Approximation constraint operator
+		if ch == '~' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + offset + i,
+				Length:    1,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			i++
+			continue
+		}
+
+		// Pointer star
+		if ch == '*' {
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + offset + i,
+				Length:    1,
+				TokenType: TokenTypeOperator,
+				Modifiers: 0,
+			})
+			i++
+			continue
+		}
+
+		// Identifier
+		if isWordStartChar(ch) {
+			start := i
+			for i < len(inner) && isWordCharByte(inner[i]) {
+				i++
+			}
+			ident := inner[start:i]
+
+			// Type parameter name (first identifier in each group)
+			if expectName {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      line,
+					StartChar: startCol + offset + start,
+					Length:    len(ident),
+					TokenType: TokenTypeParameter,
+					Modifiers: TokenModDeclaration,
+				})
+				expectName = false
+				continue
+			}
+
+			// Go keywords in type constraints
+			if ident == "interface" || ident == "struct" || ident == "func" || ident == "map" || ident == "chan" {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      line,
+					StartChar: startCol + offset + start,
+					Length:    len(ident),
+					TokenType: TokenTypeKeyword,
+					Modifiers: 0,
+				})
+				continue
+			}
+
+			// Package prefix: followed by '.'
+			if i < len(inner) && inner[i] == '.' {
+				i++ // skip dot
+				continue
+			}
+
+			// Constraint type — apply defaultLibrary for builtins
+			mods := 0
+			if GoBuiltinTypes[ident] {
+				mods = TokenModDefaultLibrary
+			}
+			*tokens = append(*tokens, SemanticToken{
+				Line:      line,
+				StartChar: startCol + offset + start,
+				Length:    len(ident),
+				TokenType: TokenTypeType,
+				Modifiers: mods,
+			})
+			continue
+		}
+
+		// Skip brackets, parens, and other punctuation
+		i++
+	}
 }

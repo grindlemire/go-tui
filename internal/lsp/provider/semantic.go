@@ -37,11 +37,39 @@ const (
 
 // Semantic token modifiers (bit flags).
 const (
-	TokenModDeclaration  = 1 << 0 // where defined
-	TokenModDefinition   = 1 << 1 // where defined
-	TokenModReadonly     = 1 << 2 // const/let
-	TokenModModification = 1 << 3 // where modified
+	TokenModDeclaration    = 1 << 0 // where defined
+	TokenModDefinition     = 1 << 1 // where defined
+	TokenModReadonly       = 1 << 2 // const/let
+	TokenModModification   = 1 << 3 // where modified
+	TokenModDefaultLibrary = 1 << 4 // builtin types (int, bool, string, etc.)
 )
+
+// GoBuiltinTypes is the set of Go predeclared type names.
+// These receive the defaultLibrary modifier, matching gopls behavior.
+var GoBuiltinTypes = map[string]bool{
+	"bool":       true,
+	"byte":       true,
+	"complex64":  true,
+	"complex128": true,
+	"error":      true,
+	"float32":    true,
+	"float64":    true,
+	"int":        true,
+	"int8":       true,
+	"int16":      true,
+	"int32":      true,
+	"int64":      true,
+	"rune":       true,
+	"string":     true,
+	"uint":       true,
+	"uint8":      true,
+	"uint16":     true,
+	"uint32":     true,
+	"uint64":     true,
+	"uintptr":    true,
+	"any":        true,
+	"comparable": true,
+}
 
 // SemanticTokens represents the result of a semantic tokens request.
 type SemanticTokens struct {
@@ -290,13 +318,18 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 			Modifiers: 0,
 		})
 
-		// Function name (handles both plain funcs and methods with receivers)
-		name, receiverText, params, returns := parseFuncSignatureForTokens(fn.Code)
+		// Function name (handles plain funcs, methods with receivers, and generics)
+		name, receiverText, typeParamStr, params, returns := parseFuncSignatureForTokens(fn.Code)
 		if name != "" {
 			line := fn.Position.Line - 1
 
-			// Find name position by searching fn.Code for "Name("
-			nameInCode := strings.Index(fn.Code, name+"(")
+			// Find name position by searching fn.Code for the name
+			// For generics like "func foo[T any](...)", search for "foo[" or "foo("
+			nameSearch := name + "("
+			if typeParamStr != "" {
+				nameSearch = name + "["
+			}
+			nameInCode := strings.Index(fn.Code, nameSearch)
 			nameStart := fn.Position.Column - 1 + len("func ")
 			if nameInCode >= 0 {
 				nameStart = fn.Position.Column - 1 + nameInCode
@@ -337,8 +370,18 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				Modifiers: TokenModDeclaration | TokenModDefinition,
 			})
 
+			// Type parameters (generics) — emit tokens for [T bool|string] section
+			if typeParamStr != "" {
+				typeParamStart := nameStart + len(name) // position of '['
+				emitGenericTypeParamTokens(typeParamStr, line, typeParamStart, &tokens)
+			}
+
 			// Function parameters — names and types
+			// For generics, params start after name + typeParams + "("
 			paramStart := nameStart + len(name) + 1 // +1 for '('
+			if typeParamStr != "" {
+				paramStart = nameStart + len(name) + len(typeParamStr) + 1 // +1 for '('
+			}
 			for _, p := range params {
 				// Parameter name
 				tokens = append(tokens, SemanticToken{
@@ -357,6 +400,9 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 			// Return type
 			if returns != "" {
 				returnStart := nameStart + len(name) + 1 // "name("
+				if typeParamStr != "" {
+					returnStart = nameStart + len(name) + len(typeParamStr) + 1 // "name[...]("
+				}
 				if len(params) > 0 {
 					for i, p := range params {
 						returnStart += len(p.Name) + 1 + len(p.Type)
