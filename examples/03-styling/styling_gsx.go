@@ -55,7 +55,7 @@ func (s *statusApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
-		tui.WithText("Press+/-to change, Esc to quit"),
+		tui.WithText("Press + / - to change, Esc to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_2)

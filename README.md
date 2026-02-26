@@ -129,26 +129,32 @@ The `.gsx` compiler runs at build time and produces regular Go files. At runtime
 
 ## Examples
 
-The [`examples/`](examples/) directory has runnable programs for each feature area:
+The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01–17 accompany the [guides](https://go-tui.dev).
 
 | Example | What it covers |
 |---------|----------------|
-| [01-hello](examples/01-hello) | Minimal component, gradient text, quit handling |
-| [02-styling](examples/02-styling) | Colors, text styles, borders, gradients, backgrounds |
-| [03-layout](examples/03-layout) | Flexbox row/column, justify, align, gap, padding |
-| [04-components](examples/04-components) | Standalone `templ` functions, `{children...}` slot |
-| [05-state](examples/05-state) | `State[T]`, `@if`/`@for`/`@let`, reactive children |
-| [06-keyboard](examples/06-keyboard) | `OnKey`, `OnRune`, special keys, Ctrl combos |
-| [07-refs-and-clicks](examples/07-refs-and-clicks) | Refs, click handling, mouse + keyboard |
-| [08-elements](examples/08-elements) | Built-in elements, disabled state, progress bars |
-| [09-scrolling](examples/09-scrolling) | Scrollable containers, mouse wheel, PgUp/PgDn |
-| [10-timers-and-watchers](examples/10-timers-and-watchers) | Interval timers, channel watchers, live data |
-| [11-streaming](examples/11-streaming) | Auto-scroll, stick-to-bottom, streaming data |
-| [12-multi-component](examples/12-multi-component) | Multi-file components, shared state |
-| [13-dashboard](examples/13-dashboard) | Metrics, sparklines, scrollable event log |
+| [01-getting-started](examples/01-getting-started) | Minimal component, gradient text, quit handling |
+| [02-gsx-syntax](examples/02-gsx-syntax) | GSX file structure, templ syntax, control flow |
+| [03-styling](examples/03-styling) | Colors, text styles, borders, conditional styling |
+| [04-layout](examples/04-layout) | Flexbox row/column, justify, align, reusable layouts |
+| [05-elements](examples/05-elements) | Built-in elements, disabled state, progress bars |
+| [06-state](examples/06-state) | `State[T]`, `@if`/`@for`/`@let`, reactive children |
+| [07-components](examples/07-components) | Component composition, tabs, `{children...}` slot |
+| [08-events](examples/08-events) | Keyboard event handling, `KeyMap`, `OnKey`/`OnRune` |
+| [09-refs-and-clicks](examples/09-refs-and-clicks) | Refs, click handling, mouse + keyboard |
+| [10-scrolling](examples/10-scrolling) | Scrollable containers, keyboard navigation |
+| [11-focus](examples/11-focus) | Focus management, tab cycling |
+| [12-watchers](examples/12-watchers) | Interval timers, channel watchers, live data |
+| [13-testing](examples/13-testing) | Unit testing components |
+| [14-multi-component](examples/14-multi-component) | Multi-file components, shared state |
+| [15-inline-mode](examples/15-inline-mode) | Inline terminal rendering mode |
+| [16-streaming](examples/16-streaming) | Auto-scroll, stick-to-bottom, streaming data |
+| [17-dashboard](examples/17-dashboard) | Metrics, sparklines, scrollable event log |
+
+See also [`ai-chat`](examples/ai-chat) and [`docs-example`](examples/docs-example).
 
 ```bash
-cd examples/01-hello && go run .
+cd examples/01-getting-started && go run .
 ```
 
 ## CLI
