@@ -766,3 +766,58 @@ func TestRenderTree_AutoContrast(t *testing.T) {
 	}
 }
 
+func TestRenderTree_TextWrapping(t *testing.T) {
+	type tc struct {
+		text      string
+		width     int
+		height    int
+		textAlign TextAlign
+		wantLines []string // expected text at each row within content rect
+	}
+
+	tests := map[string]tc{
+		"wraps text to width": {
+			text:      "hello world",
+			width:     7,
+			height:    5,
+			wantLines: []string{"hello", "world"},
+		},
+		"right aligned wrapped text": {
+			text:      "hi world",
+			width:     7,
+			height:    5,
+			textAlign: TextAlignRight,
+			wantLines: []string{"hi", "world"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := NewBuffer(tt.width, tt.height)
+			e := New(
+				WithText(tt.text),
+				WithSize(tt.width, tt.height),
+				WithTextAlign(tt.textAlign),
+			)
+			e.Calculate(tt.width, tt.height)
+			RenderTree(buf, e)
+
+			for lineIdx, wantLine := range tt.wantLines {
+				checkString(t, buf, getAlignedX(tt.textAlign, tt.width, stringWidth(wantLine)), lineIdx, wantLine)
+			}
+		})
+	}
+}
+
+// getAlignedX returns the expected x position for aligned text.
+func getAlignedX(align TextAlign, containerWidth, textWidth int) int {
+	switch align {
+	case TextAlignCenter:
+		return (containerWidth - textWidth) / 2
+	case TextAlignRight:
+		return containerWidth - textWidth
+	default:
+		return 0
+	}
+}
+

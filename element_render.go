@@ -219,36 +219,71 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 
 	// Render text with clipping
 	if e.text != "" {
-		textX := screenX + e.style.Padding.Left
-		textY := screenY + e.style.Padding.Top
+		textBaseX := screenX + e.style.Padding.Left
+		textBaseY := screenY + e.style.Padding.Top
 		if e.border != BorderNone {
-			textX += 1
-			textY += 1
+			textBaseX += 1
+			textBaseY += 1
+		}
+
+		// Compute available width for text within this element
+		availTextWidth := childRect.Width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			availTextWidth -= 2
+		}
+
+		// Compute wrapped lines
+		var lines []string
+		if !e.noWrap && availTextWidth > 0 {
+			lines = wrapText(e.text, availTextWidth)
+		} else {
+			lines = []string{e.text}
 		}
 
 		// Apply truncation if enabled
-		displayText := e.text
 		if e.truncate {
-			// Compute available width for text within this element
-			availTextWidth := childRect.Width - e.style.Padding.Horizontal()
-			if e.border != BorderNone {
-				availTextWidth -= 2
+			if e.noWrap {
+				lines[0] = truncateText(lines[0], availTextWidth)
+			} else {
+				availTextHeight := childRect.Height - e.style.Padding.Vertical()
+				if e.border != BorderNone {
+					availTextHeight -= 2
+				}
+				if len(lines) > availTextHeight && availTextHeight > 0 {
+					lines = lines[:availTextHeight]
+					lines[availTextHeight-1] = truncateText(lines[availTextHeight-1], availTextWidth)
+				}
 			}
-			displayText = truncateText(displayText, availTextWidth)
 		}
 
-		if textY >= clipRect.Y && textY < clipRect.Bottom() {
-			ts := textStyle
-			// Merge background color into text style so text preserves the background
-			if bg != nil && !bg.Bg.IsDefault() {
-				ts.Bg = bg.Bg
+		ts := textStyle
+		// Merge background color into text style so text preserves the background
+		if bg != nil && !bg.Bg.IsDefault() {
+			ts.Bg = bg.Bg
+		}
+		needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
+
+		for lineIdx, line := range lines {
+			textY := textBaseY + lineIdx
+			if textY < clipRect.Y || textY >= clipRect.Bottom() {
+				continue
 			}
-			// When the text background is unset or a text gradient is active,
-			// render char-by-char to preserve existing buffer backgrounds
-			// (e.g. gradient backgrounds painted by a parent) and apply clipping.
-			needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
+
+			lineWidth := stringWidth(line)
+			textX := textBaseX
+
+			// Per-line text alignment
+			if availTextWidth > lineWidth {
+				switch e.textAlign {
+				case TextAlignCenter:
+					textX += (availTextWidth - lineWidth) / 2
+				case TextAlignRight:
+					textX += availTextWidth - lineWidth
+				}
+			}
+
 			if needPerCell {
-				runes := []rune(displayText)
+				runes := []rune(line)
 				if len(runes) > 0 {
 					curX := textX
 					for i, r := range runes {
@@ -284,7 +319,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 					}
 				}
 			} else {
-				buf.SetStringClipped(textX, textY, displayText, ts, clipRect)
+				buf.SetStringClipped(textX, textY, line, ts, clipRect)
 			}
 		}
 	}
@@ -371,6 +406,9 @@ func truncateText(text string, maxWidth int) string {
 
 // renderTextContent draws the text content within the element's content rect.
 //
+// Text is wrapped to fit within the content rect width when wrapping is enabled
+// (the default). Each wrapped line is aligned independently according to textAlign.
+//
 // When the element width equals text width (intrinsic sizing), the text is drawn
 // at the content rect origin - the parent's AlignItems handles centering.
 //
@@ -385,23 +423,23 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		return
 	}
 
-	// Apply truncation if enabled
-	displayText := e.text
-	if e.truncate {
-		displayText = truncateText(displayText, contentRect.Width)
+	// Compute wrapped lines
+	var lines []string
+	if !e.noWrap && contentRect.Width > 0 {
+		lines = wrapText(e.text, contentRect.Width)
+	} else {
+		lines = []string{e.text}
 	}
 
-	textWidth := stringWidth(displayText)
-	x := contentRect.X
-
-	// Only apply text-level alignment if element is wider than text content
-	// (i.e., user set explicit size larger than intrinsic)
-	if contentRect.Width > textWidth {
-		switch e.textAlign {
-		case TextAlignCenter:
-			x += (contentRect.Width - textWidth) / 2
-		case TextAlignRight:
-			x += contentRect.Width - textWidth
+	// Apply truncation
+	if e.truncate {
+		if e.noWrap {
+			// Single-line truncation (existing behavior)
+			lines[0] = truncateText(lines[0], contentRect.Width)
+		} else if len(lines) > contentRect.Height && contentRect.Height > 0 {
+			// Truncate at last visible line
+			lines = lines[:contentRect.Height]
+			lines[contentRect.Height-1] = truncateText(lines[contentRect.Height-1], contentRect.Width)
 		}
 	}
 
@@ -411,42 +449,93 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		ts.Bg = bg.Bg
 	}
 
-	// When the text background is unset (default) or a text gradient is active,
-	// render char-by-char so we can read each cell's existing background from
-	// the buffer. This preserves gradient backgrounds painted by a parent element.
-	needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
-	if needPerCell {
-		runes := []rune(displayText)
-		curX := x
-		for i, r := range runes {
-			// Clip to element's content rect (not just buffer width)
-			if curX >= contentRect.Right() {
-				break
-			}
-			width := RuneWidth(r)
-			if width == 2 && curX+1 >= contentRect.Right() {
-				break
-			}
-			style := ts
-			if ts.Bg.IsDefault() {
-				cellBg := buf.Cell(curX, contentRect.Y).Style.Bg
-				if !cellBg.IsDefault() {
-					style.Bg = cellBg
-				}
-			}
-			if e.textGradient != nil {
-				t := float64(i) / float64(len(runes)-1)
-				if len(runes) == 1 {
-					t = 0
-				}
-				style.Fg = e.textGradient.At(t)
-			}
-			buf.SetRune(curX, contentRect.Y, r, style)
-			curX += width
+	// Determine visible line count
+	maxLines := len(lines)
+	if contentRect.Height > 0 && maxLines > contentRect.Height {
+		maxLines = contentRect.Height
+	}
+
+	// Auto-scroll: if wrapped content overflows, use scrollY as line offset
+	startLine := 0
+	if len(lines) > contentRect.Height && contentRect.Height > 0 {
+		e.contentHeight = len(lines) // store for scroll bounds
+		startLine = e.scrollY
+		if startLine > len(lines)-contentRect.Height {
+			startLine = len(lines) - contentRect.Height
 		}
-	} else {
-		// Clip text to element's content rect
-		buf.SetStringClipped(x, contentRect.Y, displayText, ts, contentRect)
+		if startLine < 0 {
+			startLine = 0
+		}
+		maxLines = contentRect.Height
+	}
+
+	// Total rune count across visible lines (for gradient calculation)
+	totalRunes := 0
+	if e.textGradient != nil {
+		for i := startLine; i < startLine+maxLines && i < len(lines); i++ {
+			totalRunes += len([]rune(lines[i]))
+		}
+	}
+
+	needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
+	runeOffset := 0 // running offset for gradient
+
+	for lineIdx := 0; lineIdx < maxLines; lineIdx++ {
+		srcIdx := startLine + lineIdx
+		if srcIdx >= len(lines) {
+			break
+		}
+		line := lines[srcIdx]
+		lineWidth := stringWidth(line)
+		x := contentRect.X
+		y := contentRect.Y + lineIdx
+
+		if y >= contentRect.Bottom() {
+			break
+		}
+
+		// Per-line text alignment
+		if contentRect.Width > lineWidth {
+			switch e.textAlign {
+			case TextAlignCenter:
+				x += (contentRect.Width - lineWidth) / 2
+			case TextAlignRight:
+				x += contentRect.Width - lineWidth
+			}
+		}
+
+		if needPerCell {
+			runes := []rune(line)
+			curX := x
+			for _, r := range runes {
+				if curX >= contentRect.Right() {
+					break
+				}
+				width := RuneWidth(r)
+				if width == 2 && curX+1 >= contentRect.Right() {
+					break
+				}
+				style := ts
+				if ts.Bg.IsDefault() {
+					cellBg := buf.Cell(curX, y).Style.Bg
+					if !cellBg.IsDefault() {
+						style.Bg = cellBg
+					}
+				}
+				if e.textGradient != nil {
+					t := 0.0
+					if totalRunes > 1 {
+						t = float64(runeOffset) / float64(totalRunes-1)
+					}
+					style.Fg = e.textGradient.At(t)
+					runeOffset++
+				}
+				buf.SetRune(curX, y, r, style)
+				curX += width
+			}
+		} else {
+			buf.SetStringClipped(x, y, line, ts, contentRect)
+		}
 	}
 }
 
