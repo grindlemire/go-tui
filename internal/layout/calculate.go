@@ -59,7 +59,11 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 	// 4. Layout children within content rect, passing float positions
 	children := node.LayoutChildren()
 	if len(children) > 0 {
-		layoutChildren(node, contentRect, contentAbsX, contentAbsY)
+		if node.Tag() == "table" {
+			layoutTable(node, contentRect, contentAbsX, contentAbsY)
+		} else {
+			layoutChildren(node, contentRect, contentAbsX, contentAbsY)
+		}
 	}
 
 	// 5. Store computed layout with float positions for child calculations
