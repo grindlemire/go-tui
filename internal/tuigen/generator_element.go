@@ -83,6 +83,26 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 		if textContent != "" {
 			result.options = append(result.options, fmt.Sprintf("tui.WithText(%s)", textContent))
 		}
+	case "table":
+		result.options = append(result.options, `tui.WithTag("table")`)
+		result.options = append(result.options, "tui.WithDisplay(tui.DisplayFlex)")
+		result.options = append(result.options, "tui.WithDirection(tui.Column)")
+	case "tr":
+		result.options = append(result.options, `tui.WithTag("tr")`)
+		result.options = append(result.options, "tui.WithDisplay(tui.DisplayFlex)")
+		result.options = append(result.options, "tui.WithDirection(tui.Row)")
+	case "td":
+		result.options = append(result.options, `tui.WithTag("td")`)
+		textContent := g.extractTextContent(elem.Children)
+		if textContent != "" {
+			result.options = append(result.options, fmt.Sprintf("tui.WithText(%s)", textContent))
+		}
+	case "th":
+		result.options = append(result.options, `tui.WithTag("th")`)
+		textContent := g.extractTextContent(elem.Children)
+		if textContent != "" {
+			result.options = append(result.options, fmt.Sprintf("tui.WithText(%s)", textContent))
+		}
 	}
 
 	// Track text style methods from class attribute separately
@@ -251,7 +271,10 @@ func (g *Generator) generateAttributeValue(value Node) string {
 // textElementWithOptions checks if this is a text element that needs options
 // extracted from its children for WithText.
 func textElementWithOptions(elem *Element) bool {
-	if elem.Tag != "span" && elem.Tag != "p" {
+	switch elem.Tag {
+	case "span", "p", "td", "th":
+		// text elements
+	default:
 		return false
 	}
 	// Has text content that should go into WithText
@@ -267,7 +290,10 @@ func textElementWithOptions(elem *Element) bool {
 // skipTextChildren returns true if text element children should not be
 // processed as AddChild calls (they're already in WithText).
 func skipTextChildren(elem *Element) bool {
-	if elem.Tag != "span" && elem.Tag != "p" {
+	switch elem.Tag {
+	case "span", "p", "td", "th":
+		// text elements
+	default:
 		return false
 	}
 	// Only skip if there's a single text/expr child that was used for WithText
