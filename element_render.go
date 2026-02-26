@@ -69,6 +69,11 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 	// Resolve effective styles (inheritance applied)
 	textStyle, bg := effectiveStyles(e, inherited)
 
+	// Apply bold default for <th> header cells
+	if e.tag == "th" && !e.textStyleSet {
+		textStyle = textStyle.Bold()
+	}
+
 	// Handle HR specially - draws a horizontal line and returns (no children)
 	if e.hr {
 		renderHR(buf, e, textStyle)
@@ -175,6 +180,11 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 
 	// Resolve effective styles (inheritance applied)
 	textStyle, bg := effectiveStyles(e, inherited)
+
+	// Apply bold default for <th> header cells
+	if e.tag == "th" && !e.textStyleSet {
+		textStyle = textStyle.Bold()
+	}
 
 	// Handle HR specially - draws a horizontal line and returns (no children)
 	if e.hr {
