@@ -57,7 +57,9 @@ func layoutTable(table Layoutable, contentRect Rect, parentAbsX, parentAbsY floa
 	}
 
 	// 3. Shrink auto columns proportionally if total > available width.
-	totalWidth := 0
+	// Include 1-character gap between columns in total width.
+	columnGap := max(0, numCols-1) // 1 char gap between each pair of columns
+	totalWidth := columnGap
 	for _, w := range colWidths {
 		totalWidth += w
 	}
@@ -131,12 +133,12 @@ func layoutTable(table Layoutable, contentRect Rect, parentAbsX, parentAbsY floa
 	}
 
 	// 5. Position rows top-to-bottom, cells left-to-right at column offsets.
-	// Precompute column X offsets.
+	// Precompute column X offsets with 1-character gap between columns.
 	colOffsets := make([]float64, numCols)
 	offset := 0.0
 	for ci := range numCols {
 		colOffsets[ci] = offset
-		offset += float64(colWidths[ci])
+		offset += float64(colWidths[ci]) + 1 // +1 for inter-column gap
 	}
 
 	rowAbsY := parentAbsY
@@ -279,9 +281,12 @@ func TableIntrinsicSize(table Layoutable) (width, height int) {
 		_ = ri
 	}
 
-	// Sum column widths
+	// Sum column widths + inter-column gaps
 	for _, w := range colWidths {
 		width += w
+	}
+	if numCols > 1 {
+		width += numCols - 1 // 1 char gap between each pair of columns
 	}
 
 	return width, height
