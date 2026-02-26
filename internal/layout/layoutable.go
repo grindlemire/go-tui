@@ -26,4 +26,8 @@ type Layoutable interface {
 	// For containers, this returns the computed size based on children.
 	// The layout engine uses this as the base size for Auto-sized elements.
 	IntrinsicSize() (width, height int)
+
+	// Tag returns the element tag name (e.g., "table", "tr", "td", "th").
+	// Returns empty string for elements without a tag.
+	Tag() string
 }

@@ -148,6 +148,11 @@ func (e *Element) IntrinsicSize() (width, height int) {
 	return intrinsicW, intrinsicH
 }
 
+// Tag returns the element tag for layout dispatch.
+func (e *Element) Tag() string {
+	return e.tag
+}
+
 // Calculate computes layout for this Element and all descendants.
 func (e *Element) Calculate(availableWidth, availableHeight int) {
 	Calculate(e, availableWidth, availableHeight)
