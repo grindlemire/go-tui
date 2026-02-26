@@ -1,5 +1,7 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/debug"
+
 // inheritedStyle carries cascading visual properties down the element tree.
 // Text style (Fg, Attrs) and background color cascade from parent to child.
 // Each field is only used when the child does not explicitly set its own value.
@@ -90,6 +92,18 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 		buf.FillGradient(rect, ' ', *e.bgGradient, bgStyle)
 	} else if bg != nil {
 		buf.Fill(rect, ' ', *bg)
+	}
+
+	// Debug: highlight containers whose children overflow
+	if debug.OverflowHighlight() && !e.IsScrollable() && len(e.children) > 0 {
+		contentRect := e.ContentRect()
+		for _, child := range e.children {
+			if !contentRect.ContainsRect(child.Rect()) {
+				debugBg := NewStyle().Background(BrightRed)
+				buf.Fill(rect, ' ', debugBg)
+				break
+			}
+		}
 	}
 
 	// 2. Draw border (border style does NOT inherit)

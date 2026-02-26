@@ -87,7 +87,7 @@ func progressBar(value, width int) string {
 templ (e *elementsApp) Render() {
 	<div
 		ref={e.content}
-		class="flex-col gap-1 p-2 h-full"
+		class="flex-col gap-1 h-full"
 		scrollable={tui.ScrollVertical}
 		scrollOffset={0, e.scrollY.Get()}
 	>
@@ -108,10 +108,18 @@ templ (e *elementsApp) Render() {
 			<div class="flex-col border-rounded p-1 gap-1">
 				<span class="text-gradient-cyan-magenta font-bold">{"Lists (<ul> / <li>)"}</span>
 				<ul class="flex-col p-1">
-					<li><span>First item</span></li>
-					<li><span>Second item</span></li>
-					<li><span>Third item</span></li>
-					<li><span class="text-cyan">Fourth (styled)</span></li>
+					<li>
+						<span>First item</span>
+					</li>
+					<li>
+						<span>Second item</span>
+					</li>
+					<li>
+						<span>Third item</span>
+					</li>
+					<li>
+						<span class="text-cyan">Fourth (styled)</span>
+					</li>
 				</ul>
 			</div>
 			<div class="flex-col border-rounded p-1 gap-1">

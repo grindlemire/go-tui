@@ -11,7 +11,20 @@ import (
 var (
 	logFile *os.File
 	mu      sync.Mutex
+
+	overflowOnce      sync.Once
+	overflowHighlight bool
 )
+
+// OverflowHighlight returns true if the TUI_DEBUG_OVERFLOW environment variable
+// is set, indicating that containers with overflowing children should be
+// highlighted with a bright red background.
+func OverflowHighlight() bool {
+	overflowOnce.Do(func() {
+		overflowHighlight = os.Getenv("TUI_DEBUG_OVERFLOW") != ""
+	})
+	return overflowHighlight
+}
 
 // Init initializes debug logging to the specified file path.
 // If path is empty, uses "debug.log" in the current directory.

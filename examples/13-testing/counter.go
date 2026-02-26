@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -16,6 +18,29 @@ func NewCounter() *counter {
 	return &counter{
 		count: tui.NewState(0),
 	}
+}
+
+func (c *counter) Render(app *tui.App) *tui.Element {
+	root := tui.New(
+		tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+
+	label := tui.New(
+		tui.WithText(fmt.Sprintf("Count: %d", c.count.Get())),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	root.AddChild(label)
+
+	hint := tui.New(
+		tui.WithText("Press + / - to change, Esc to quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	root.AddChild(hint)
+
+	return root
 }
 
 func (c *counter) KeyMap() tui.KeyMap {

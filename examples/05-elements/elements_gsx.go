@@ -92,7 +92,6 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
-		tui.WithPadding(2),
 		tui.WithHeightPercent(100.00),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithScrollOffset(0, e.scrollY.Get()),
