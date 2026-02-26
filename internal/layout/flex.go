@@ -7,14 +7,16 @@ import "math"
 // Positions are stored as float64 to enable precise centering calculations
 // that only round at the final stage, preventing jitter during animation.
 type flexItem struct {
-	node      Layoutable
-	baseSize  int
-	mainSize  int
-	crossSize int
-	mainPos   float64 // float to avoid centering jitter
-	crossPos  float64 // float to avoid centering jitter
-	grow      float64
-	shrink    float64
+	node             Layoutable
+	baseSize         int
+	mainSize         int
+	crossSize        int
+	mainPos          float64 // float to avoid centering jitter
+	crossPos         float64 // float to avoid centering jitter
+	grow             float64
+	shrink           float64
+	wrappedCrossSize int  // set by Phase 3.5 when text wrapping increases cross-axis height
+	hasWrappedCross  bool // true if wrappedCrossSize is valid
 }
 
 // layoutChildren arranges the children of a node within the given content rect.
@@ -138,7 +140,54 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 		items[i].mainSize = clampFlex(items[i].mainSize, minMain, maxMain)
 	}
 
-	// Recalculate free space after min/max constraints
+	// Phase 3.5: Recompute sizes for text-wrapping elements.
+	// After main-axis sizes are finalized, call HeightForWidth to get the
+	// correct height for elements that wrap text.
+	for i, child := range children {
+		childStyle := child.LayoutStyle()
+
+		// Determine the child's assigned width
+		var childWidth int
+		if isRow {
+			// Main axis is width — use the flex-computed main size minus margin
+			childWidth = items[i].mainSize - childStyle.Margin.Horizontal()
+		} else {
+			// Cross axis is width — compute from alignment (same logic as Phase 5)
+			align := style.AlignItems
+			if childStyle.AlignSelf != nil {
+				align = *childStyle.AlignSelf
+			}
+			crossStyleValue := childStyle.Width
+			crossMargin := childStyle.Margin.Horizontal()
+			if align == AlignStretch && crossStyleValue.IsAuto() {
+				childWidth = crossSize - crossMargin
+			} else if crossStyleValue.IsAuto() {
+				childWidth, _ = child.IntrinsicSize()
+			} else {
+				childWidth = crossStyleValue.Resolve(crossSize-crossMargin, 0)
+			}
+		}
+
+		wrappedHeight := child.HeightForWidth(childWidth)
+		_, intrinsicH := child.IntrinsicSize()
+
+		if wrappedHeight > intrinsicH {
+			if isRow {
+				// For Row: update cross-axis data so Phase 5 uses wrapped height.
+				items[i].wrappedCrossSize = wrappedHeight
+				items[i].hasWrappedCross = true
+			} else {
+				// For Column: update main-axis size to wrapped height
+				mainMargin := childStyle.Margin.Vertical()
+				newMainSize := wrappedHeight + mainMargin
+				items[i].mainSize = clampFlex(newMainSize,
+					resolveMinMain(childStyle, isRow, mainSize, wrappedHeight),
+					resolveMaxMain(childStyle, isRow, mainSize))
+			}
+		}
+	}
+
+	// Recalculate free space after min/max constraints and text wrapping
 	// (needed for justify calculations)
 	totalUsed := 0
 	for i := range items {
@@ -172,7 +221,12 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 		if isRow {
 			crossStyleValue = childStyle.Height
 			crossMargin = childStyle.Margin.Vertical()
-			crossIntrinsic = childIntrinsicH
+			// Use wrapped height if text wrapping increased the cross-axis size
+			if items[i].hasWrappedCross {
+				crossIntrinsic = items[i].wrappedCrossSize
+			} else {
+				crossIntrinsic = childIntrinsicH
+			}
 		} else {
 			crossStyleValue = childStyle.Width
 			crossMargin = childStyle.Margin.Horizontal()
