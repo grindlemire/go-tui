@@ -270,6 +270,7 @@ func textAttrs() []AttributeDef {
 		{Name: "text", Type: "string", Description: "Text content", Category: "text"},
 		{Name: "textStyle", Type: "style", Description: "Text styling", Category: "text"},
 		{Name: "textAlign", Type: "string", Description: "Text alignment (left, center, right)", Category: "text"},
+		{Name: "wrap", Type: "bool", Description: "Enable or disable text wrapping (enabled by default)", Category: "text"},
 	}
 }
 

@@ -149,6 +149,10 @@ var tailwindClasses = map[string]TailwindMapping{
 	// Text overflow
 	"truncate": {Option: "tui.WithTruncate(true)", NeedsImport: ""},
 
+	// Text wrapping
+	"nowrap": {Option: "tui.WithWrap(false)", NeedsImport: ""},
+	"wrap":   {Option: "tui.WithWrap(true)", NeedsImport: ""},
+
 	// Scrollbar track colors
 	"scrollbar-red":     {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Red))", NeedsImport: "tui"},
 	"scrollbar-green":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Green))", NeedsImport: "tui"},

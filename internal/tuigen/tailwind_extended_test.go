@@ -333,6 +333,40 @@ func TestParseTailwindClass_BorderColors(t *testing.T) {
 	}
 }
 
+func TestParseTailwindClass_TextWrap(t *testing.T) {
+	type tc struct {
+		input      string
+		wantOK     bool
+		wantOption string
+	}
+
+	tests := map[string]tc{
+		"nowrap": {
+			input:      "nowrap",
+			wantOK:     true,
+			wantOption: "tui.WithWrap(false)",
+		},
+		"wrap": {
+			input:      "wrap",
+			wantOK:     true,
+			wantOption: "tui.WithWrap(true)",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mapping, ok := ParseTailwindClass(tt.input)
+			if ok != tt.wantOK {
+				t.Errorf("ParseTailwindClass(%q) ok = %v, want %v", tt.input, ok, tt.wantOK)
+				return
+			}
+			if mapping.Option != tt.wantOption {
+				t.Errorf("Option = %q, want %q", mapping.Option, tt.wantOption)
+			}
+		})
+	}
+}
+
 func TestParseTailwindClass_TextAlignment(t *testing.T) {
 	type tc struct {
 		input      string
