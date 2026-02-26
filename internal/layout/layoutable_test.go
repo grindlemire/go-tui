@@ -41,6 +41,10 @@ func (n *testNode) GetLayout() Layout  { return n.layout }
 func (n *testNode) IsDirty() bool      { return n.dirty }
 func (n *testNode) SetDirty(d bool)    { n.dirty = d }
 func (n *testNode) Tag() string        { return "" }
+func (n *testNode) HeightForWidth(width int) int {
+	_, h := n.IntrinsicSize()
+	return h
+}
 
 // IntrinsicSize returns the intrinsic dimensions of the node.
 // For leaf nodes: uses explicit intrinsicW/intrinsicH or Fixed style values.

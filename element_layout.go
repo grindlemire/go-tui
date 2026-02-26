@@ -160,6 +160,36 @@ func (e *Element) IntrinsicSize() (width, height int) {
 	return intrinsicW, intrinsicH
 }
 
+// HeightForWidth returns the height this element needs given an assigned width.
+// For text elements with wrapping enabled, computes the wrapped text height.
+// For all other cases, returns the intrinsic height.
+func (e *Element) HeightForWidth(width int) int {
+	// Text elements with wrapping
+	if e.text != "" && !e.noWrap {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		if contentWidth <= 0 {
+			h := e.style.Padding.Vertical()
+			if e.border != BorderNone {
+				h += 2
+			}
+			return h
+		}
+		lines := wrapText(e.text, contentWidth)
+		h := len(lines) + e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			h += 2
+		}
+		return h
+	}
+
+	// Default: intrinsic height
+	_, h := e.IntrinsicSize()
+	return h
+}
+
 // Tag returns the element tag for layout dispatch.
 func (e *Element) Tag() string {
 	return e.tag

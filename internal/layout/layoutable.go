@@ -30,4 +30,9 @@ type Layoutable interface {
 	// Tag returns the element tag name (e.g., "table", "tr", "td", "th").
 	// Returns empty string for elements without a tag.
 	Tag() string
+
+	// HeightForWidth returns the height this element needs given an assigned width.
+	// For text elements with wrapping, this computes wrapped line count.
+	// For elements without text wrapping, returns the intrinsic height.
+	HeightForWidth(width int) int
 }

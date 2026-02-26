@@ -354,3 +354,75 @@ func TestElement_IntrinsicSize_ContainerWithBorder(t *testing.T) {
 		t.Errorf("IntrinsicSize().Height = %d, want 3 (1 text + 2 border)", h)
 	}
 }
+
+func TestElement_HeightForWidth_TextWrap(t *testing.T) {
+	type tc struct {
+		text    string
+		width   int
+		noWrap  bool
+		padding int
+		border  BorderStyle
+		want    int
+	}
+
+	tests := map[string]tc{
+		"single line fits": {
+			text:  "hello",
+			width: 10,
+			want:  1,
+		},
+		"wraps to two lines": {
+			text:  "hello world",
+			width: 7,
+			want:  2,
+		},
+		"wraps to three lines": {
+			text:  "the quick brown fox jumps",
+			width: 10,
+			want:  3,
+		},
+		"nowrap returns 1": {
+			text:   "hello world",
+			width:  7,
+			noWrap: true,
+			want:   1,
+		},
+		"with padding": {
+			text:    "hello world",
+			width:   9,  // 9 total - 2 padding = 7 content width
+			padding: 1,
+			want:    4, // 2 lines + 2 padding
+		},
+		"with border": {
+			text:   "hello world",
+			width:  9,  // 9 total - 2 border = 7 content width
+			border: BorderSingle,
+			want:   4, // 2 lines + 2 border
+		},
+		"no text": {
+			text:  "",
+			width: 10,
+			want:  0,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			opts := []Option{WithText(tt.text)}
+			if tt.noWrap {
+				opts = append(opts, WithWrap(false))
+			}
+			if tt.padding > 0 {
+				opts = append(opts, WithPadding(tt.padding))
+			}
+			if tt.border != BorderNone {
+				opts = append(opts, WithBorder(tt.border))
+			}
+			e := New(opts...)
+			got := e.HeightForWidth(tt.width)
+			if got != tt.want {
+				t.Errorf("HeightForWidth(%d) = %d, want %d", tt.width, got, tt.want)
+			}
+		})
+	}
+}
