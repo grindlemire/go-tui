@@ -91,6 +91,13 @@ func (e *Element) SetTruncate(truncate bool) {
 	e.MarkDirty()
 }
 
+// --- Wrap API ---
+
+// wrapsText returns true if this element should wrap text content.
+func (e *Element) wrapsText() bool {
+	return !e.noWrap
+}
+
 // --- Hidden API ---
 
 // Hidden returns whether this element is hidden.

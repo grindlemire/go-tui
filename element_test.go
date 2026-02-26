@@ -455,3 +455,34 @@ func TestElement_VisualProperties(t *testing.T) {
 		t.Error("SetBackground(nil) should clear background")
 	}
 }
+
+func TestElement_WithWrap(t *testing.T) {
+	type tc struct {
+		opts     []Option
+		wantWrap bool
+	}
+
+	tests := map[string]tc{
+		"default wraps": {
+			opts:     nil,
+			wantWrap: true,
+		},
+		"explicit wrap true": {
+			opts:     []Option{WithWrap(true)},
+			wantWrap: true,
+		},
+		"explicit wrap false": {
+			opts:     []Option{WithWrap(false)},
+			wantWrap: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(tt.opts...)
+			if e.wrapsText() != tt.wantWrap {
+				t.Errorf("wrapsText() = %v, want %v", e.wrapsText(), tt.wantWrap)
+			}
+		})
+	}
+}

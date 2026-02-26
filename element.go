@@ -67,6 +67,7 @@ type Element struct {
 	textStyleSet bool // true if textStyle was explicitly configured (false = inherit from parent)
 	textAlign    TextAlign
 	truncate     bool
+	noWrap       bool // true = wrapping disabled; false (default) = wrapping enabled
 
 	// Focus properties
 	focusable bool
