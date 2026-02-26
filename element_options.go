@@ -306,6 +306,16 @@ func WithTruncate(truncate bool) Option {
 	}
 }
 
+// --- Wrap Options ---
+
+// WithWrap sets whether text content should wrap within the element's width.
+// Wrapping is enabled by default. Use WithWrap(false) or the "nowrap" class to disable.
+func WithWrap(wrap bool) Option {
+	return func(e *Element) {
+		e.noWrap = !wrap
+	}
+}
+
 // --- Hidden Options ---
 
 // WithHidden sets whether this element is excluded from layout and rendering.
