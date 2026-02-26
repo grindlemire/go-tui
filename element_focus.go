@@ -79,6 +79,36 @@ func (e *Element) ContainsPoint(x, y int) bool {
 	return e.layout.Rect.Contains(x, y)
 }
 
+// hasWrapOverflow returns true if this element has wrapped text that overflows
+// its content area, enabling auto-scroll with no visible scrollbar.
+func (e *Element) hasWrapOverflow() bool {
+	if e.scrollMode != ScrollNone || e.text == "" || e.noWrap {
+		return false
+	}
+	return e.contentHeight > 0 && e.contentHeight > e.ContentRect().Height
+}
+
+// scrollWrapOverflow adjusts scrollY for wrap-overflow elements.
+// This bypasses the normal ScrollTo/ScrollBy which require scrollMode.
+func (e *Element) scrollWrapOverflow(dy int) {
+	cr := e.ContentRect()
+	maxY := e.contentHeight - cr.Height
+	if maxY < 0 {
+		maxY = 0
+	}
+	newY := e.scrollY + dy
+	if newY < 0 {
+		newY = 0
+	}
+	if newY > maxY {
+		newY = maxY
+	}
+	if newY != e.scrollY {
+		e.scrollY = newY
+		e.MarkDirty()
+	}
+}
+
 // handleScrollEvent handles keyboard and mouse wheel events for scrolling.
 func (e *Element) handleScrollEvent(event Event) bool {
 	// Handle mouse wheel events
@@ -89,9 +119,19 @@ func (e *Element) handleScrollEvent(event Event) bool {
 				e.ScrollBy(0, -1)
 				return true
 			}
+			// Auto-scroll for wrap-overflow text
+			if e.hasWrapOverflow() {
+				e.scrollWrapOverflow(-1)
+				return true
+			}
 		case MouseWheelDown:
 			if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
 				e.ScrollBy(0, 1)
+				return true
+			}
+			// Auto-scroll for wrap-overflow text
+			if e.hasWrapOverflow() {
+				e.scrollWrapOverflow(1)
 				return true
 			}
 		}

@@ -821,3 +821,47 @@ func getAlignedX(align TextAlign, containerWidth, textWidth int) int {
 	}
 }
 
+func TestRenderTree_TextWrapAutoScroll(t *testing.T) {
+	type tc struct {
+		text    string
+		width   int
+		height  int
+		scrollY int
+		want    []string // expected visible lines
+	}
+
+	tests := map[string]tc{
+		"clips wrapped text to height": {
+			text:    "aaa bbb ccc",
+			width:   5,
+			height:  2,
+			scrollY: 0,
+			want:    []string{"aaa", "bbb"},
+		},
+		"scroll offset shows later lines": {
+			text:    "aaa bbb ccc",
+			width:   5,
+			height:  2,
+			scrollY: 1,
+			want:    []string{"bbb", "ccc"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := NewBuffer(tt.width, tt.height)
+			e := New(
+				WithText(tt.text),
+				WithSize(tt.width, tt.height),
+			)
+			e.scrollY = tt.scrollY
+			e.Calculate(tt.width, tt.height)
+			RenderTree(buf, e)
+
+			for lineIdx, wantLine := range tt.want {
+				checkString(t, buf, 0, lineIdx, wantLine)
+			}
+		})
+	}
+}
+
