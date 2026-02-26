@@ -162,8 +162,15 @@ func (e *Element) IntrinsicSize() (width, height int) {
 
 // HeightForWidth returns the height this element needs given an assigned width.
 // For text elements with wrapping enabled, computes the wrapped text height.
-// For all other cases, returns the intrinsic height.
+// For column containers with Auto height, recursively computes from children.
+// Scrollable elements and elements with explicit heights are not affected.
 func (e *Element) HeightForWidth(width int) int {
+	// Scrollable elements have fixed viewport — don't expand based on content.
+	if e.scrollMode != ScrollNone {
+		_, h := e.IntrinsicSize()
+		return h
+	}
+
 	// Text elements with wrapping
 	if e.text != "" && !e.noWrap {
 		contentWidth := width - e.style.Padding.Horizontal()
@@ -183,6 +190,64 @@ func (e *Element) HeightForWidth(width int) int {
 			h += 2
 		}
 		return h
+	}
+
+	// Column containers: recursively compute from children.
+	// Each child gets the full content width (correct for AlignStretch + Auto width,
+	// which is the default). This propagates text wrapping heights up the tree.
+	isColumn := e.style.Direction == Column || e.style.Display == DisplayBlock
+	if len(e.children) > 0 && isColumn {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		totalH := 0
+		visibleIdx := 0
+		for _, child := range e.children {
+			if child.hidden {
+				continue
+			}
+			childH := child.HeightForWidth(contentWidth)
+			totalH += childH
+			if visibleIdx > 0 {
+				totalH += e.style.Gap
+			}
+			visibleIdx++
+		}
+		totalH += e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			totalH += 2
+		}
+		return totalH
+	}
+
+	// Row containers: recursively compute max child height.
+	// Children share the width via flex, so we approximate by giving each child
+	// its intrinsic width or a fair share. For text wrapping, the key case is
+	// row children with explicit or flex-computed widths which Phase 3.5 handles
+	// directly. Here we just find the max child height for the cross-axis.
+	if len(e.children) > 0 {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		maxH := 0
+		for _, child := range e.children {
+			if child.hidden {
+				continue
+			}
+			// For row children, approximate: give each child the full width
+			// (overestimate). Phase 3.5 handles precise per-child widths.
+			childH := child.HeightForWidth(contentWidth)
+			if childH > maxH {
+				maxH = childH
+			}
+		}
+		maxH += e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			maxH += 2
+		}
+		return maxH
 	}
 
 	// Default: intrinsic height
