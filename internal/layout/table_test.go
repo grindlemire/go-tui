@@ -326,7 +326,7 @@ func TestLayoutTable_RowPositions(t *testing.T) {
 		t.Errorf("row2 Height = %d, want 3", row2Layout.Rect.Height)
 	}
 
-	// Cell positions: cell1a at X=0, cell1b at X=10
+	// Cell positions: cell1a at X=0, cell1b at X=11 (10 + 1 gap)
 	cells1 := row1.LayoutChildren()
 	cell1aLayout := cells1[0].GetLayout()
 	cell1bLayout := cells1[1].GetLayout()
@@ -334,8 +334,8 @@ func TestLayoutTable_RowPositions(t *testing.T) {
 	if cell1aLayout.Rect.X != 0 {
 		t.Errorf("cell1a X = %d, want 0", cell1aLayout.Rect.X)
 	}
-	if cell1bLayout.Rect.X != 10 {
-		t.Errorf("cell1b X = %d, want 10", cell1bLayout.Rect.X)
+	if cell1bLayout.Rect.X != 11 {
+		t.Errorf("cell1b X = %d, want 11", cell1bLayout.Rect.X)
 	}
 
 	// Cell heights should match their row's height
@@ -369,13 +369,12 @@ func TestLayoutTable_ShrinkColumns(t *testing.T) {
 	c1Layout := cells[0].GetLayout()
 	c2Layout := cells[1].GetLayout()
 
-	// Total intrinsic = 40, available = 30
-	// Both are auto so they shrink proportionally: each gets 15
-	if c1Layout.Rect.Width != 15 {
-		t.Errorf("cell1 width = %d, want 15 (shrunk)", c1Layout.Rect.Width)
-	}
-	if c2Layout.Rect.Width != 15 {
-		t.Errorf("cell2 width = %d, want 15 (shrunk)", c2Layout.Rect.Width)
+	// Total intrinsic = 20+20 = 40, plus 1 gap = 41, available = 30
+	// Overflow = 11, both auto so shrink proportionally: each loses ~5-6
+	// Total cell widths must fit in 30 - 1 (gap) = 29
+	totalCellWidth := c1Layout.Rect.Width + c2Layout.Rect.Width
+	if totalCellWidth != 29 {
+		t.Errorf("total cell width = %d, want 29 (available minus gap)", totalCellWidth)
 	}
 }
 
@@ -412,9 +411,9 @@ func TestTableIntrinsicSize(t *testing.T) {
 				table.addTableChild(row1, row2)
 				return table
 			},
-			// Col 0: max(10, 15) = 15, Col 1: max(20, 8) = 20 => width = 35
+			// Col 0: max(10, 15) = 15, Col 1: max(20, 8) = 20, gap = 1 => width = 36
 			// Row 0: max(1, 1) = 1, Row 1: max(2, 1) = 2 => height = 3
-			expectWidth:  35,
+			expectWidth:  36,
 			expectHeight: 3,
 		},
 		"empty table": {
