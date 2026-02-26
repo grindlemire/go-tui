@@ -73,6 +73,18 @@ func (e *Element) IntrinsicSize() (width, height int) {
 		return 0, 0
 	}
 
+	// Table elements compute intrinsic size from column widths and row heights
+	if e.tag == "table" {
+		w, h := TableIntrinsicSize(e)
+		w += e.style.Padding.Horizontal()
+		h += e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			w += 2
+			h += 2
+		}
+		return w, h
+	}
+
 	// Text content has explicit intrinsic size
 	if e.text != "" {
 		textWidth := stringWidth(e.text)

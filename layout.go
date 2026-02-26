@@ -111,6 +111,12 @@ func Calculate(root Layoutable, availableWidth, availableHeight int) {
 	layout.Calculate(root, availableWidth, availableHeight)
 }
 
+// TableIntrinsicSize computes the intrinsic size of a table element
+// from its column widths and row heights.
+func TableIntrinsicSize(table Layoutable) (width, height int) {
+	return layout.TableIntrinsicSize(table)
+}
+
 // InsetRect returns a new Rect inset by the given amounts on each edge.
 // The order follows CSS convention: top, right, bottom, left.
 // This is a convenience function that wraps Rect.Inset(Edges).
