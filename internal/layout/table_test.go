@@ -185,6 +185,29 @@ func TestLayoutTable(t *testing.T) {
 				{{width: 25, height: 3}},
 			},
 		},
+		"explicit height on tr overrides computed": {
+			desc:        "row with Fixed(5) height should override max cell height",
+			tableWidth:  80,
+			tableHeight: 24,
+			build: func() *tableNode {
+				table := newTableNode("table", DefaultStyle())
+				table.style.Width = Fixed(80)
+				table.style.Height = Fixed(24)
+
+				row := newTableNode("tr", DefaultStyle())
+				row.style.Height = Fixed(5) // explicit row height
+				cell := newTableNode("td", DefaultStyle())
+				cell.intrinsicW = 10
+				cell.intrinsicH = 1 // intrinsic is 1, but row forces 5
+				row.addTableChild(cell)
+
+				table.addTableChild(row)
+				return table
+			},
+			cells: [][]cellExpect{
+				{{width: 10, height: 5}},
+			},
+		},
 		"explicit width on cell overrides auto": {
 			desc:        "cell with Fixed(20) width should override intrinsic",
 			tableWidth:  80,

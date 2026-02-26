@@ -97,8 +97,16 @@ func layoutTable(table Layoutable, contentRect Rect, parentAbsX, parentAbsY floa
 	}
 
 	// 4. Compute row heights: max intrinsic height per row.
+	// Explicit h-N on <tr> overrides the computed max.
 	rowHeights := make([]int, len(rows))
 	for ri, row := range rows {
+		rowStyle := row.LayoutStyle()
+		if !rowStyle.Height.IsAuto() {
+			// Explicit row height overrides cell-based calculation
+			rowHeights[ri] = rowStyle.Height.Resolve(contentRect.Height, 1)
+			continue
+		}
+
 		cells := row.LayoutChildren()
 		maxH := 1 // minimum row height is 1
 		for _, cell := range cells {
