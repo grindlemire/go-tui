@@ -2,7 +2,7 @@
 //
 // To build and run:
 //
-//	go run ../../../cmd/tui generate syntax.gsx
+//	go run ../../cmd/tui generate syntax.gsx
 //	go run .
 package main
 
@@ -13,7 +13,7 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../../cmd/tui generate syntax.gsx
+//go:generate go run ../../cmd/tui generate syntax.gsx
 
 func main() {
 	app, err := tui.NewApp(

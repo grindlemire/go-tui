@@ -1,8 +1,8 @@
-// Package main demonstrates the Getting Started guide example.
+// Package main demonstrates the Timers, Watchers, and Channels guide example.
 //
 // To build and run:
 //
-//	go run ../../cmd/tui generate hello.gsx
+//	go run ../../cmd/tui generate watchers.gsx
 //	go run .
 package main
 
@@ -13,11 +13,12 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../cmd/tui generate hello.gsx
+//go:generate go run ../../cmd/tui generate watchers.gsx
 
 func main() {
 	app, err := tui.NewApp(
-		tui.WithRootComponent(Hello()),
+		tui.WithRootComponent(WatcherApp()),
+		tui.WithMouse(),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
