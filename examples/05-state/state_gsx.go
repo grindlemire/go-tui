@@ -9,117 +9,81 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-type panel struct {
-	title    string
-	children []*tui.Element
-}
-
-type stateApp struct {
+type demoApp struct {
 	count    *tui.State[int]
 	selected *tui.State[int]
 	items    []string
 }
 
-func NewPanel(title string, children []*tui.Element) *panel {
-	return &panel{title: title, children: children}
-}
-
-func State() *stateApp {
-	return &stateApp{
+func Demo() *demoApp {
+	return &demoApp{
 		count:    tui.NewState(0),
 		selected: tui.NewState(0),
 		items:    []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
 	}
 }
 
-func (s *stateApp) KeyMap() tui.KeyMap {
+func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('+', func(ke tui.KeyEvent) { s.count.Update(func(v int) int { return v + 1 }) }),
-		tui.OnRune('=', func(ke tui.KeyEvent) { s.count.Update(func(v int) int { return v + 1 }) }),
-		tui.OnRune('-', func(ke tui.KeyEvent) { s.count.Update(func(v int) int { return v - 1 }) }),
-		tui.OnRune('r', func(ke tui.KeyEvent) { s.count.Set(0) }),
-		tui.OnRune('j', func(ke tui.KeyEvent) { s.selectNext() }),
-		tui.OnRune('k', func(ke tui.KeyEvent) { s.selectPrev() }),
-		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.selectNext() }),
-		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.selectPrev() }),
+		tui.OnRune('+', func(ke tui.KeyEvent) {
+			d.count.Update(func(v int) int { return v + 1 })
+		}),
+		tui.OnRune('-', func(ke tui.KeyEvent) {
+			d.count.Update(func(v int) int { return v - 1 })
+		}),
+		tui.OnRune('r', func(ke tui.KeyEvent) {
+			ke.App().Batch(func() {
+				d.count.Set(0)
+				d.selected.Set(0)
+			})
+		}),
+		tui.OnRune('j', func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { d.selectPrev() }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
 	}
 }
 
-func (s *stateApp) selectNext() {
-	n := len(s.items)
-	s.selected.Update(func(v int) int {
-		if v >= n-1 {
+func (d *demoApp) selectNext() {
+	d.selected.Update(func(v int) int {
+		if v >= len(d.items)-1 {
 			return 0
 		}
 		return v + 1
 	})
 }
 
-func (s *stateApp) selectPrev() {
-	n := len(s.items)
-	s.selected.Update(func(v int) int {
+func (d *demoApp) selectPrev() {
+	d.selected.Update(func(v int) int {
 		if v <= 0 {
-			return n - 1
+			return len(d.items) - 1
 		}
 		return v - 1
 	})
 }
 
-func isEven(n int) bool {
-	return n/2*2 == n
+func signLabel(n int) string {
+	if n > 0 {
+		return "Positive"
+	}
+	if n < 0 {
+		return "Negative"
+	}
+	return "Zero"
 }
 
-func rangeLabel(count int) string {
-	if count > 20 {
-		return "high (> 20)"
+func signClass(n int) string {
+	if n > 0 {
+		return "text-green font-bold"
 	}
-	if count > 0 {
-		return "medium (1-20)"
+	if n < 0 {
+		return "text-red font-bold"
 	}
-	if count == 0 {
-		return "zero"
-	}
-	return "negative"
+	return "text-blue font-bold"
 }
 
-func (p *panel) Render(app *tui.App) *tui.Element {
-	__tui_0 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithPadding(1),
-		tui.WithGap(1),
-	)
-	__tui_1 := tui.New(
-		tui.WithText(p.title),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_0.AddChild(__tui_1)
-	for _, __child := range p.children {
-		__tui_0.AddChild(__child)
-	}
-
-	return __tui_0
-}
-
-func (p *panel) UpdateProps(fresh tui.Component) {
-	f, ok := fresh.(*panel)
-	if !ok {
-		return
-	}
-	p.title = f.title
-	p.children = f.children
-}
-
-var _ tui.PropsUpdater = (*panel)(nil)
-
-func (s *stateApp) Render(app *tui.App) *tui.Element {
-	spanCount := tui.New(
-		tui.WithText(fmt.Sprintf("%d", s.count.Get())),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-	)
+func (d *demoApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
@@ -127,7 +91,7 @@ func (s *stateApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_1 := tui.New(
-		tui.WithText("State and Control Flow"),
+		tui.WithText("State Demo"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
@@ -146,176 +110,136 @@ func (s *stateApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_4 := tui.New(
 		tui.WithText("Counter"),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_3.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithWidth(0),
-		tui.WithHeight(1),
+		tui.WithText(fmt.Sprintf("%d", d.count.Get())),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
 	__tui_3.AddChild(__tui_5)
-	__tui_3.AddChild(spanCount)
 	__tui_6 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_7 := tui.New(
-		tui.WithText("+"),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+		tui.WithText("+/-r: reset"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_6.AddChild(__tui_7)
-	__tui_8 := tui.New(
-		tui.WithText("-"),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-	)
-	__tui_6.AddChild(__tui_8)
-	__tui_9 := tui.New(
-		tui.WithText("r"),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
-	)
-	__tui_6.AddChild(__tui_9)
 	__tui_3.AddChild(__tui_6)
 	__tui_2.AddChild(__tui_3)
-	__tui_10 := tui.New(
+	__tui_8 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 		tui.WithFlexGrow(2.0),
 	)
-	__tui_11 := tui.New(
+	__tui_9 := tui.New(
 		tui.WithText("Status"),
-		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_10.AddChild(__tui_11)
-	__tui_12 := tui.New(
+	__tui_8.AddChild(__tui_9)
+	__tui_10 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_13 := tui.New(
+	__tui_11 := tui.New(
 		tui.WithText("Sign:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_12.AddChild(__tui_13)
-	if s.count.Get() > 0 {
-		__tui_14 := tui.New(
-			tui.WithText("Positive"),
-			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
-		)
-		__tui_12.AddChild(__tui_14)
-	} else if s.count.Get() < 0 {
-		__tui_15 := tui.New(
-			tui.WithText("Negative"),
-			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
-		)
-		__tui_12.AddChild(__tui_15)
-	} else {
-		__tui_16 := tui.New(
-			tui.WithText("Zero"),
-			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
-		)
-		__tui_12.AddChild(__tui_16)
-	}
+	__tui_10.AddChild(__tui_11)
+	__tui_12 := tui.New(
+		tui.WithText(signLabel(d.count.Get())),
+	)
 	__tui_10.AddChild(__tui_12)
-	__tui_17 := tui.New(
+	__tui_8.AddChild(__tui_10)
+	__tui_13 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 	)
-	__tui_18 := tui.New(
+	__tui_14 := tui.New(
 		tui.WithText("Parity:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_17.AddChild(__tui_18)
-	if isEven(s.count.Get()) {
-		__tui_19 := tui.New(
+	__tui_13.AddChild(__tui_14)
+	if d.count.Get()%2 == 0 {
+		__tui_15 := tui.New(
 			tui.WithText("Even"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		)
-		__tui_17.AddChild(__tui_19)
+		__tui_13.AddChild(__tui_15)
 	} else {
-		__tui_20 := tui.New(
+		__tui_16 := tui.New(
 			tui.WithText("Odd"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Magenta)),
 		)
-		__tui_17.AddChild(__tui_20)
+		__tui_13.AddChild(__tui_16)
 	}
-	__tui_10.AddChild(__tui_17)
-	__tui_21 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+	__tui_8.AddChild(__tui_13)
+	__tui_2.AddChild(__tui_8)
+	__tui_0.AddChild(__tui_2)
+	__tui_17 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
-	__tui_22 := tui.New(
-		tui.WithText("Range:"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
+	__tui_18 := tui.New(
+		tui.WithText("Languages"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_21.AddChild(__tui_22)
-	__tui_23 := tui.New(
-		tui.WithText(rangeLabel(s.count.Get())),
-		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
-	)
-	__tui_21.AddChild(__tui_23)
-	__tui_10.AddChild(__tui_21)
-	__tui_2.AddChild(__tui_10)
-	__tui_0.AddChild(__tui_2)
-	__tui_24_children := []*tui.Element{}
-	for i, item := range s.items {
+	__tui_17.AddChild(__tui_18)
+	for i, item := range d.items {
 		_ = i
-		if i == s.selected.Get() {
-			__tui_25 := tui.New(
+		if i == d.selected.Get() {
+			__tui_19 := tui.New(
 				tui.WithText(fmt.Sprintf("  > %s", item)),
-				tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-				tui.WithTextStyle(tui.NewStyle().Bold()),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 			)
-			__tui_24_children = append(__tui_24_children, __tui_25)
+			__tui_17.AddChild(__tui_19)
 		} else {
-			__tui_26 := tui.New(
+			__tui_20 := tui.New(
 				tui.WithText(fmt.Sprintf("    %s", item)),
 				tui.WithTextStyle(tui.NewStyle().Dim()),
 			)
-			__tui_24_children = append(__tui_24_children, __tui_26)
+			__tui_17.AddChild(__tui_20)
 		}
 	}
-	__tui_24 := app.Mount(s, 0, func() tui.Component {
-		return NewPanel("Items", __tui_24_children)
-	})
-	__tui_0.AddChild(__tui_24)
-	__tui_27 := tui.New(
+	__tui_0.AddChild(__tui_17)
+	__tui_21 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_28 := tui.New(
-		tui.WithText("+/-count|j/k navigate|r reset|q quit"),
+	__tui_22 := tui.New(
+		tui.WithText("+/-count|j/k navigate|r reset|esc quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_27.AddChild(__tui_28)
-	__tui_0.AddChild(__tui_27)
+	__tui_21.AddChild(__tui_22)
+	__tui_0.AddChild(__tui_21)
 
 	return __tui_0
 }
 
-func (s *stateApp) UpdateProps(fresh tui.Component) {
-	f, ok := fresh.(*stateApp)
+func (d *demoApp) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*demoApp)
 	if !ok {
 		return
 	}
-	s.items = f.items
+	d.items = f.items
 }
 
-var _ tui.PropsUpdater = (*stateApp)(nil)
+var _ tui.PropsUpdater = (*demoApp)(nil)
 
-func (s *stateApp) BindApp(app *tui.App) {
-	if s.count != nil {
-		s.count.BindApp(app)
+func (d *demoApp) BindApp(app *tui.App) {
+	if d.count != nil {
+		d.count.BindApp(app)
 	}
-	if s.selected != nil {
-		s.selected.BindApp(app)
+	if d.selected != nil {
+		d.selected.BindApp(app)
 	}
 }
 
-var _ tui.AppBinder = (*stateApp)(nil)
+var _ tui.AppBinder = (*demoApp)(nil)

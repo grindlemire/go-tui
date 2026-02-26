@@ -1,8 +1,8 @@
-// Package main demonstrates reactive state, conditionals, and loops.
+// Package main demonstrates the State and Reactivity guide example.
 //
 // To build and run:
 //
-//	go run ../../cmd/tui generate state.gsx
+//	go run ../../../cmd/tui generate state.gsx
 //	go run .
 package main
 
@@ -13,20 +13,20 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../cmd/tui generate state.gsx
+//go:generate go run ../../../cmd/tui generate state.gsx
 
 func main() {
 	app, err := tui.NewApp(
-		tui.WithRootComponent(State()),
+		tui.WithRootComponent(Demo()),
 	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 	defer app.Close()
 
 	if err := app.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "App error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
