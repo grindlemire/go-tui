@@ -113,6 +113,9 @@ type Element struct {
 	// Watchers attached to this element (timers, channel watchers, etc.)
 	watchers []Watcher
 
+	// Tag identifies the element type for layout dispatch (e.g., "table", "tr", "td", "th")
+	tag string
+
 	// Component that produced this element (set by Mount, read during tree walks)
 	component Component
 }

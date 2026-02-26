@@ -359,3 +359,11 @@ func WithBorderGradient(g Gradient) Option {
 		e.borderGradient = &g
 	}
 }
+
+// WithTag sets the element tag for layout dispatch.
+// Used by generated code to identify table elements.
+func WithTag(tag string) Option {
+	return func(e *Element) {
+		e.tag = tag
+	}
+}
