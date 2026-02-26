@@ -78,6 +78,24 @@ var Elements = map[string]*ElementDef{
 		Attributes:  containerAttrs(),
 		Category:    "display",
 	},
+	"tr": {
+		Tag:         "tr",
+		Description: "A table row. Must be a child of `<table>`. Contains `<td>` or `<th>` children.",
+		Attributes:  containerAttrs(),
+		Category:    "display",
+	},
+	"td": {
+		Tag:         "td",
+		Description: "A table data cell. Must be a child of `<tr>`.",
+		Attributes:  tableCellAttrs(),
+		Category:    "display",
+	},
+	"th": {
+		Tag:         "th",
+		Description: "A table header cell. Renders bold by default. Must be a child of `<tr>`.",
+		Attributes:  tableCellAttrs(),
+		Category:    "display",
+	},
 	"progress": {
 		Tag:         "progress",
 		Description: "A progress bar element showing completion status.",
@@ -281,6 +299,18 @@ func containerAttrs() []AttributeDef {
 	attrs = append(attrs, visualAttrs()...)
 	attrs = append(attrs, eventAttrs()...)
 	attrs = append(attrs, scrollAttrs()...)
+	return attrs
+}
+
+// tableCellAttrs returns attributes for table cell elements (td, th).
+func tableCellAttrs() []AttributeDef {
+	var attrs []AttributeDef
+	attrs = append(attrs, genericAttrs()...)
+	attrs = append(attrs, textAttrs()...)
+	attrs = append(attrs, layoutAttrs()...)
+	attrs = append(attrs, spacingAttrs()...)
+	attrs = append(attrs, visualAttrs()...)
+	attrs = append(attrs, eventAttrs()...)
 	return attrs
 }
 

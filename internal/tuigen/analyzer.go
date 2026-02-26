@@ -89,6 +89,9 @@ var knownTags = map[string]bool{
 	"button":   true,
 	"input":    true,
 	"table":    true,
+	"tr":       true,
+	"td":       true,
+	"th":       true,
 	"progress": true,
 	"hr":       true,
 	"br":       true,
@@ -307,6 +310,30 @@ func (a *Analyzer) analyzeElement(elem *Element) {
 	if voidElements[elem.Tag] && len(elem.Children) > 0 {
 		a.errors.AddErrorf(elem.Position,
 			"<%s> is a void element and cannot have children", elem.Tag)
+	}
+
+	// Validate table element hierarchy
+	switch elem.Tag {
+	case "tr":
+		for _, child := range elem.Children {
+			if childElem, ok := child.(*Element); ok {
+				if childElem.Tag != "td" && childElem.Tag != "th" {
+					a.errors.AddErrorf(childElem.Position,
+						"<tr> can only contain <td> or <th> children, found <%s>", childElem.Tag)
+				}
+			}
+		}
+	case "table":
+		for _, child := range elem.Children {
+			if childElem, ok := child.(*Element); ok {
+				if childElem.Tag != "tr" && childElem.Tag != "hr" {
+					a.errors.AddErrorf(childElem.Position,
+						"<table> can only contain <tr> and <hr> children, found <%s>", childElem.Tag)
+				}
+			}
+		}
+	case "td", "th":
+		// Validated from the tr parent above
 	}
 
 	// Check attributes
