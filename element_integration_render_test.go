@@ -204,6 +204,60 @@ func TestIntegration_GapBetweenChildren(t *testing.T) {
 	}
 }
 
+// TestIntegration_TextWrapEndToEnd verifies that text in a constrained container
+// wraps, renders across lines, and the layout engine assigns correct heights.
+func TestIntegration_TextWrapEndToEnd(t *testing.T) {
+	buf := NewBuffer(20, 10)
+	root := New(
+		WithSize(20, 10),
+		WithDirection(Column),
+	)
+	text := New(
+		WithText("the quick brown fox jumps over the lazy dog"),
+		WithTextAlign(TextAlignLeft),
+	)
+	root.AddChild(text)
+	root.Calculate(20, 10)
+
+	RenderTree(buf, root)
+
+	// "the quick brown fox" fits in 20 chars -> line 0
+	// "jumps over the lazy" fits in 20 chars -> line 1
+	// "dog" on line 2
+	line0 := extractBufferLine(buf, 0, 20)
+	line1 := extractBufferLine(buf, 1, 20)
+	line2 := extractBufferLine(buf, 2, 20)
+
+	if !strings.HasPrefix(strings.TrimRight(line0, " \x00"), "the quick brown fox") {
+		t.Errorf("line 0: got %q", line0)
+	}
+	if !strings.HasPrefix(strings.TrimRight(line1, " \x00"), "jumps over the lazy") {
+		t.Errorf("line 1: got %q", line1)
+	}
+	if !strings.HasPrefix(strings.TrimRight(line2, " \x00"), "dog") {
+		t.Errorf("line 2: got %q", line2)
+	}
+
+	// Verify the text element's height was expanded by the layout engine
+	textRect := text.Rect()
+	if textRect.Height != 3 {
+		t.Errorf("text element height = %d, want 3", textRect.Height)
+	}
+}
+
+func extractBufferLine(buf *Buffer, y, width int) string {
+	var b strings.Builder
+	for x := 0; x < width; x++ {
+		cell := buf.Cell(x, y)
+		if cell.Rune != 0 {
+			b.WriteRune(cell.Rune)
+		} else {
+			b.WriteByte(' ')
+		}
+	}
+	return b.String()
+}
+
 // TestIntegration_TextAlignment tests text alignment within elements
 func TestIntegration_TextAlignment(t *testing.T) {
 	type tc struct {
