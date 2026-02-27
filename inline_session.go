@@ -85,6 +85,11 @@ func (l *inlineLayoutState) clamp(historyCapacity int) {
 
 type inlineSession struct {
 	terminal Terminal
+
+	// Partial line state for streaming writes.
+	partialLine    []byte // accumulated bytes for current incomplete line
+	partialCol     int    // visual column position (ANSI escapes excluded)
+	partialVisible bool   // whether a partial line is currently displayed on screen
 }
 
 func newInlineSession(term Terminal) *inlineSession {
@@ -161,6 +166,104 @@ func (s *inlineSession) appendStyledText(layout *inlineLayoutState, historyCapac
 	if seq.Len() > 0 {
 		s.terminal.WriteDirect([]byte(seq.String()))
 	}
+}
+
+// appendBytes processes raw bytes for streaming output. ANSI escape sequences
+// are preserved. Printable characters advance the partial line. Newlines finalize
+// the current partial line as a permanent row. Lines that reach terminal width
+// are auto-wrapped.
+func (s *inlineSession) appendBytes(layout *inlineLayoutState, historyCapacity, width int, data []byte) {
+	if historyCapacity < 1 || width < 1 {
+		return
+	}
+	if !layout.valid {
+		layout.resetConservativeFull(historyCapacity)
+	}
+	layout.clamp(historyCapacity)
+
+	var scanner styledByteScanner
+	scanner.reset(data)
+
+	for scanner.next() {
+		switch scanner.kind {
+		case tokenNewline:
+			s.commitPartialRow(layout)
+		case tokenANSI:
+			s.partialLine = append(s.partialLine, scanner.bytes()...)
+		case tokenRune:
+			w := scanner.runeWidth
+			// Wrap if this rune would exceed width.
+			if s.partialCol+w > width {
+				s.commitPartialRow(layout)
+			}
+			s.partialLine = append(s.partialLine, scanner.bytes()...)
+			s.partialCol += w
+		}
+	}
+
+	// Display the current partial line in-place.
+	s.displayPartial(layout, historyCapacity)
+}
+
+// commitPartialRow finalizes the current partial line as a permanent history row.
+func (s *inlineSession) commitPartialRow(layout *inlineLayoutState) {
+	if !s.partialVisible {
+		// Not yet displayed — commit to layout via appendRow.
+		var seq strings.Builder
+		s.appendRow(&seq, layout, string(s.partialLine))
+		if seq.Len() > 0 {
+			s.terminal.WriteDirect([]byte(seq.String()))
+		}
+	}
+	// else: already displayed via displayPartial, row is in the layout.
+	s.partialLine = s.partialLine[:0]
+	s.partialCol = 0
+	s.partialVisible = false
+}
+
+// displayPartial writes the current partial line to the terminal. On first
+// call it claims a layout slot via appendRow; subsequent calls overwrite in-place.
+func (s *inlineSession) displayPartial(layout *inlineLayoutState, historyCapacity int) {
+	if len(s.partialLine) == 0 && s.partialCol == 0 {
+		return
+	}
+
+	if !s.partialVisible {
+		// Claim a new row slot via appendRow.
+		var seq strings.Builder
+		s.appendRow(&seq, layout, string(s.partialLine))
+		if seq.Len() > 0 {
+			s.terminal.WriteDirect([]byte(seq.String()))
+		}
+		s.partialVisible = true
+	} else {
+		// Overwrite the existing partial row in-place.
+		targetRow := layout.contentStartRow + layout.visibleRows - 1
+		var seq strings.Builder
+		inlineAppendUpdateLine(&seq, targetRow, string(s.partialLine))
+		if seq.Len() > 0 {
+			s.terminal.WriteDirect([]byte(seq.String()))
+		}
+	}
+}
+
+// finalizePartial commits any in-progress partial line as a permanent row.
+// No-op if the partial line is empty.
+func (s *inlineSession) finalizePartial(layout *inlineLayoutState) {
+	if s.partialCol == 0 && len(s.partialLine) == 0 {
+		return
+	}
+	if !s.partialVisible {
+		// Partial was accumulated but never displayed — commit it now.
+		var seq strings.Builder
+		s.appendRow(&seq, layout, string(s.partialLine))
+		if seq.Len() > 0 {
+			s.terminal.WriteDirect([]byte(seq.String()))
+		}
+	}
+	s.partialLine = s.partialLine[:0]
+	s.partialCol = 0
+	s.partialVisible = false
 }
 
 func (s *inlineSession) appendRow(seq *strings.Builder, layout *inlineLayoutState, row string) {

@@ -803,6 +803,113 @@ func TestEmulatorTerminal_ReverseIndex(t *testing.T) {
 	}
 }
 
+func TestInlineSession_AppendBytes_PlainText(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 80, []byte("hello"))
+
+	// Partial line should appear on the bottom history row.
+	historyBottom := app.inlineStartRow - 1
+	got := emu.ScreenRow(historyBottom)
+	if got != "hello" {
+		t.Fatalf("history row = %q, want %q\n%s", got, "hello", emu.DumpState())
+	}
+	// Not finalized yet — visibleRows should reflect the partial occupying a row.
+	if app.inlineSession.partialCol != 5 {
+		t.Fatalf("partialCol = %d, want 5", app.inlineSession.partialCol)
+	}
+}
+
+func TestInlineSession_AppendBytes_NewlineFinalizes(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 80, []byte("line1\n"))
+
+	historyBottom := app.inlineStartRow - 1
+	got := emu.ScreenRow(historyBottom)
+	if got != "line1" {
+		t.Fatalf("history row = %q, want %q\n%s", got, "line1", emu.DumpState())
+	}
+	if app.inlineSession.partialCol != 0 {
+		t.Fatalf("partialCol = %d, want 0 after newline", app.inlineSession.partialCol)
+	}
+	if len(app.inlineSession.partialLine) != 0 {
+		t.Fatalf("partialLine = %q, want empty after newline", app.inlineSession.partialLine)
+	}
+}
+
+func TestInlineSession_AppendBytes_IncrementalWrites(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 80, []byte("hel"))
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 80, []byte("lo"))
+
+	historyBottom := app.inlineStartRow - 1
+	got := emu.ScreenRow(historyBottom)
+	if got != "hello" {
+		t.Fatalf("history row = %q, want %q\n%s", got, "hello", emu.DumpState())
+	}
+}
+
+func TestInlineSession_AppendBytes_WrapsAtWidth(t *testing.T) {
+	app, emu := newInlineTestApp(5, 10, 3)
+
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 5, []byte("abcdefgh"))
+
+	// "abcde" should be finalized as row, "fgh" is partial on next row.
+	// historyCapacity = 7, content starts at row 5 (scrolled up from 6).
+	if got := emu.ScreenRow(5); got != "abcde" {
+		t.Fatalf("row 5 = %q, want %q\n%s", got, "abcde", emu.DumpState())
+	}
+	if got := emu.ScreenRow(6); got != "fgh" {
+		t.Fatalf("row 6 = %q, want %q\n%s", got, "fgh", emu.DumpState())
+	}
+	if app.inlineSession.partialCol != 3 {
+		t.Fatalf("partialCol = %d, want 3", app.inlineSession.partialCol)
+	}
+}
+
+func TestInlineSession_AppendBytes_ANSIPreserved(t *testing.T) {
+	app, _ := newInlineTestApp(80, 24, 3)
+
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 80, []byte("\x1b[31mred\x1b[0m"))
+
+	// ANSI escapes don't count toward column width.
+	if app.inlineSession.partialCol != 3 {
+		t.Fatalf("partialCol = %d, want 3 (ANSI shouldn't count)", app.inlineSession.partialCol)
+	}
+}
+
+func TestInlineSession_FinalizePartial(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	app.inlineSession.appendBytes(&app.inlineLayout, app.inlineStartRow, 80, []byte("partial"))
+	app.inlineSession.finalizePartial(&app.inlineLayout)
+
+	historyBottom := app.inlineStartRow - 1
+	got := emu.ScreenRow(historyBottom)
+	if got != "partial" {
+		t.Fatalf("history row = %q, want %q\n%s", got, "partial", emu.DumpState())
+	}
+	if app.inlineSession.partialCol != 0 {
+		t.Fatalf("partialCol = %d, want 0 after finalize", app.inlineSession.partialCol)
+	}
+	if app.inlineLayout.visibleRows != 1 {
+		t.Fatalf("visibleRows = %d, want 1", app.inlineLayout.visibleRows)
+	}
+}
+
+func TestInlineSession_FinalizePartial_EmptyNoop(t *testing.T) {
+	app, _ := newInlineTestApp(80, 24, 3)
+
+	// Finalizing with no partial data should be a no-op.
+	app.inlineSession.finalizePartial(&app.inlineLayout)
+
+	if app.inlineLayout.visibleRows != 0 {
+		t.Fatalf("visibleRows = %d, want 0", app.inlineLayout.visibleRows)
+	}
+}
+
 func TestEmulatorTerminal_EraseLine(t *testing.T) {
 	emu := NewEmulatorTerminal(10, 3)
 
