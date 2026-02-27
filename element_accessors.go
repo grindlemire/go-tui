@@ -1,5 +1,11 @@
 package tui
 
+// GetRoot implements Viewable. Returns the element itself as a Renderable.
+func (e *Element) GetRoot() Renderable { return e }
+
+// GetWatchers implements Viewable. Elements have no standalone watchers.
+func (e *Element) GetWatchers() []Watcher { return nil }
+
 // SetStyle updates the layout style and marks the element dirty.
 func (e *Element) SetStyle(style LayoutStyle) {
 	e.style = style

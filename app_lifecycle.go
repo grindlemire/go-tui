@@ -187,14 +187,22 @@ func (a *App) printAboveStyledRaw(content string) {
 	a.MarkDirty()
 }
 
-// PrintAboveElement renders an element tree and inserts the resulting rows into
+// PrintAboveElement renders a Viewable and inserts the resulting rows into
 // the inline scrollback. The element is rendered at the terminal's current width
 // and baked into static ANSI text. This is useful for inserting structured
 // content (tables, styled cards, templ component output) into the scrollback.
 // No-op if not in inline mode.
 // Must be called from the app's main event loop.
-func (a *App) PrintAboveElement(el *Element) {
-	if a.inlineHeight == 0 || el == nil {
+func (a *App) PrintAboveElement(v Viewable) {
+	if a.inlineHeight == 0 || v == nil {
+		return
+	}
+	root := v.GetRoot()
+	if root == nil {
+		return
+	}
+	el, ok := root.(*Element)
+	if !ok || el == nil {
 		return
 	}
 	if a.inlineStartRow < 1 {
@@ -230,12 +238,12 @@ func (a *App) PrintAboveElement(el *Element) {
 // QueuePrintAboveElement is the goroutine-safe version of PrintAboveElement.
 // The element is rendered and inserted on the main event loop.
 // Safe to call from any goroutine.
-func (a *App) QueuePrintAboveElement(el *Element) {
-	if a.inlineHeight == 0 || el == nil {
+func (a *App) QueuePrintAboveElement(v Viewable) {
+	if a.inlineHeight == 0 || v == nil {
 		return
 	}
 	a.QueueUpdate(func() {
-		a.PrintAboveElement(el)
+		a.PrintAboveElement(v)
 	})
 }
 

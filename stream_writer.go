@@ -109,17 +109,17 @@ func (sw *StreamWriter) WriteGradient(text string, g Gradient, base ...Style) (i
 	return sw.w.Write(sw.esc.Bytes())
 }
 
-// WriteElement renders an element tree and inserts the resulting rows into the
+// WriteElement renders a Viewable and inserts the resulting rows into the
 // inline scrollback mid-stream. Any current partial line is finalized before
 // the element rows are inserted. After insertion, the next Write call starts
 // a fresh partial line.
 // No-op if the writer is in nop mode or the app is nil.
-func (sw *StreamWriter) WriteElement(el *Element) {
+func (sw *StreamWriter) WriteElement(v Viewable) {
 	if sw.nop || sw.app == nil {
 		return
 	}
 	sw.app.QueueUpdate(func() {
-		sw.app.PrintAboveElement(el)
+		sw.app.PrintAboveElement(v)
 	})
 	sw.col = 0
 }

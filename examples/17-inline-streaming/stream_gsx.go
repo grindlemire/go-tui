@@ -82,7 +82,7 @@ func (s *streamDemo) streamWithElement() {
 		w.WriteGradient("Here's a summary:\n", gradient)
 		time.Sleep(100 * time.Millisecond)
 
-		w.WriteElement(ReportCard(randomPeople()).Root)
+		w.WriteElement(ReportCard(randomPeople()))
 
 		time.Sleep(100 * time.Millisecond)
 		w.WriteGradient("Done!\n", gradient)

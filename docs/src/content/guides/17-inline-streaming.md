@@ -141,35 +141,35 @@ The sequence looks like:
 
 `StreamWriter.WriteElement` lets you insert a fully rendered element into the scrollback without closing and reopening the stream. The element is laid out at the terminal width, rendered to ANSI text, and inserted row by row. Any partial line is finalized first.
 
-This is useful for chat-style interfaces where streamed text includes structured content like tables:
+This is useful for chat-style interfaces where streamed text includes structured content like tables or styled cards:
 
 ```go
 go func() {
     w := app.StreamAbove()
-    w.WriteStyled("Here's the data:\n", tui.NewStyle().Bold())
-    w.WriteElement(DataTable(rows))
-    w.Write([]byte("Let me know if you need more.\n"))
+    w.WriteGradient("Here's a summary:\n", gradient)
+    w.WriteElement(ReportCard(data))
+    w.WriteGradient("Done!\n", gradient)
     w.Close()
 }()
 ```
 
-`WriteElement` accepts any `*Element`, including output from templ functions. The element is rendered once and baked into static text — it does not remain interactive.
+`WriteElement` accepts any `Viewable`, which includes the view structs generated from templ functions. The element tree is rendered once and baked into static ANSI text. It does not remain interactive.
 
 You can also use `PrintAboveElement` directly on the app when you're not mid-stream:
 
 ```go
-app.PrintAboveElement(DataTable(rows))
+app.PrintAboveElement(ReportCard(data))
 ```
 
 Or from a goroutine:
 
 ```go
-app.QueuePrintAboveElement(DataTable(rows))
+app.QueuePrintAboveElement(ReportCard(data))
 ```
 
 ## Complete Example
 
-This example creates an inline widget with a 3-row status bar. Pressing Enter streams a phrase above the widget, one character at a time, with a gradient color effect:
+This example creates an inline widget with a 3-row status bar. Pressing Enter streams text character by character with a gradient. Pressing Tab streams gradient text with a rendered element (a randomized report card table) in the middle.
 
 ```go
 package main
@@ -199,18 +199,21 @@ func main() {
 }
 ```
 
-The component uses a `State[bool]` to track whether a stream is in progress, and disables starting another stream until the current one finishes:
+The component uses a `State[bool]` to track whether a stream is in progress, and disables starting another stream until the current one finishes. A `ReportCard` templ function builds a styled table that gets inserted into the scrollback via `WriteElement`:
 
 ```gsx
 package main
 
 import (
+    "fmt"
+    "math/rand/v2"
     "time"
     tui "github.com/grindlemire/go-tui"
 )
 
 var gradient = tui.NewGradient(tui.BrightCyan, tui.BrightMagenta)
 
+// phrases to cycle through when the user presses Enter.
 var phrases = []string{
     "The quick brown fox jumps over the lazy dog.",
     "Stars scattered across the midnight canvas, each one a whisper of ancient light.",
@@ -230,6 +233,97 @@ func StreamDemo() *streamDemo {
     }
 }
 
+type person struct {
+    Name   string
+    Role   string
+    Status string
+    Score  int
+}
+
+var (
+    allNames   = []string{"Alice", "Bob", "Carol", "Dave", "Eve", "Frank"}
+    allRoles   = []string{"Engineer", "Designer", "PM", "Analyst", "DevOps", "QA"}
+    allStatuses = []string{"Active", "Away", "Busy", "Offline"}
+    statusColors = map[string]tui.Color{
+        "Active":  tui.Green,
+        "Away":    tui.Yellow,
+        "Busy":    tui.Red,
+        "Offline": tui.BrightBlack,
+    }
+)
+
+func randomPeople() []person {
+    n := 3 + rand.IntN(3)
+    used := map[int]bool{}
+    people := make([]person, 0, n)
+    for range n {
+        idx := rand.IntN(len(allNames))
+        for used[idx] {
+            idx = rand.IntN(len(allNames))
+        }
+        used[idx] = true
+        people = append(people, person{
+            Name:   allNames[idx],
+            Role:   allRoles[rand.IntN(len(allRoles))],
+            Status: allStatuses[rand.IntN(len(allStatuses))],
+            Score:  50 + rand.IntN(51),
+        })
+    }
+    return people
+}
+
+templ ReportCard(people []person) {
+    <div class="flex justify-center">
+        <div class="flex-col border-rounded w-3/4 px-1" borderStyle={tui.NewStyle().Foreground(tui.BrightCyan)}>
+            <span class="font-bold text-bright-magenta">Streaming Report</span>
+            <table>
+                <tr>
+                    <th class="grow">Name</th>
+                    <th class="grow">Role</th>
+                    <th class="grow">Status</th>
+                    <th>Score</th>
+                </tr>
+                <hr />
+                @for _, p := range people {
+                    <tr>
+                        <td class="text-cyan grow">{p.Name}</td>
+                        <td class="grow">{p.Role}</td>
+                        <td class="grow" textStyle={tui.NewStyle().Foreground(statusColors[p.Status])}>{p.Status}</td>
+                        <td class="font-bold">{fmt.Sprintf("%d", p.Score)}</td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+}
+
+// streamWithElement opens a StreamAbove writer, writes gradient intro text,
+// inserts a styled card with a randomized table via WriteElement, then writes
+// gradient outro text.
+func (s *streamDemo) streamWithElement() {
+    if s.streaming.Get() {
+        return
+    }
+    s.streaming.Set(true)
+
+    go func() {
+        w := s.app.StreamAbove()
+        w.WriteGradient("Here's a summary:\n", gradient)
+        time.Sleep(100 * time.Millisecond)
+
+        w.WriteElement(ReportCard(randomPeople()))
+
+        time.Sleep(100 * time.Millisecond)
+        w.WriteGradient("Done!\n", gradient)
+        w.Close()
+        s.app.QueueUpdate(func() {
+            s.streaming.Set(false)
+        })
+    }()
+}
+
+// streamPhrase opens a StreamAbove writer, writes each character with a
+// gradient color and a small delay, then closes the writer.
 func (s *streamDemo) streamPhrase() {
     if s.streaming.Get() {
         return
@@ -255,6 +349,7 @@ func (s *streamDemo) streamPhrase() {
 func (s *streamDemo) KeyMap() tui.KeyMap {
     return tui.KeyMap{
         tui.OnKeyStop(tui.KeyEnter, func(ke tui.KeyEvent) { s.streamPhrase() }),
+        tui.OnKeyStop(tui.KeyTab, func(ke tui.KeyEvent) { s.streamWithElement() }),
         tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
         tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
@@ -264,7 +359,7 @@ func (s *streamDemo) statusText() string {
     if s.streaming.Get() {
         return "streaming..."
     }
-    return "Press Enter to stream a phrase  |  Esc to quit"
+    return "Enter to stream  |  Tab to stream with element  |  Esc to quit"
 }
 
 templ (s *streamDemo) Render() {
@@ -274,17 +369,17 @@ templ (s *streamDemo) Render() {
 }
 ```
 
-A few things to notice in the component code:
+A few things to notice:
 
-`streamPhrase()` checks `streaming.Get()` and returns early if a stream is already running, so you can't start two at once.
+Both `streamPhrase()` and `streamWithElement()` check `streaming.Get()` and return early if a stream is already running, so you can't start two at once.
 
-The actual writing happens in a goroutine so it doesn't block the event loop. The 30ms sleep between characters creates the typing effect.
+The writing happens in goroutines so it doesn't block the event loop. `streamPhrase` uses a 30ms sleep between characters for the typing effect, while `streamWithElement` uses short pauses around the element insertion.
 
-`WriteGradient` handles per-character gradient coloring and column tracking internally. No need for manual ANSI escape sequences, column counters, or `QueueUpdate` calls for position tracking.
+`WriteGradient` handles per-character gradient coloring and column tracking internally. No manual ANSI escape sequences, column counters, or position tracking needed.
 
-Newlines in the text are handled automatically by `WriteGradient` — the column resets and a new line starts.
+`WriteElement` takes the output of the `ReportCard` templ function and renders it as static ANSI text into the scrollback. The table keeps its borders, colors, and layout, and appears between the streamed gradient text. The element is rendered once at insertion time and doesn't stay interactive.
 
-After writing all characters, we close the writer and set `streaming` back to `false` through `QueueUpdate`.
+After writing, both methods close the writer and set `streaming` back to `false` through `QueueUpdate`.
 
 Generate and run:
 
@@ -293,9 +388,19 @@ tui generate ./...
 go run .
 ```
 
-Press Enter repeatedly to stream different phrases. Each appears above the widget with a cyan-to-magenta gradient:
+Press Enter to stream text with a cyan-to-magenta gradient, or press Tab to stream a report card element into the scrollback:
 
 ![Inline Streaming screenshot](/guides/17.png)
+
+## API Reference
+
+- `App.StreamAbove() *StreamWriter` - open a goroutine-safe stream writer for the scrollback region
+- `StreamWriter.WriteGradient(text string, grad Gradient, baseStyle ...Style)` - write text with gradient coloring
+- `StreamWriter.WriteStyled(text string, style Style)` - write text with a style applied
+- `StreamWriter.WriteElement(v Viewable)` - render an element tree into the scrollback mid-stream
+- `StreamWriter.Close()` - finalize the current partial line and close the writer
+- `App.PrintAboveElement(v Viewable)` - insert a rendered element into the scrollback (not mid-stream)
+- `App.QueuePrintAboveElement(v Viewable)` - goroutine-safe version of `PrintAboveElement`
 
 ## Next Steps
 
