@@ -341,6 +341,7 @@ func helper(s string) string {
 | `<li>` | List item |
 | `<button>` | Clickable button |
 | `<input>` | Text input field |
+| `<textarea>` | Multi-line text input (self-closing, mounted as Component) |
 | `<table>` | Table container |
 | `<progress>` | Progress bar |
 | `<hr>` | Horizontal rule (self-closing) |
@@ -418,6 +419,20 @@ func helper(s string) string {
 |-----------|------|-------------|
 | `value` | `int` | Current progress value (0 to max) |
 | `max` | `int` | Maximum progress value |
+
+### Textarea-specific Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `placeholder` | `string` | Placeholder text when empty |
+| `width` | `int` | Width in characters (default 40) |
+| `maxHeight` | `int` | Maximum height in rows (0 = unlimited) |
+| `border` | `tui.BorderStyle` | Border style |
+| `textStyle` | `tui.Style` | Text styling |
+| `placeholderStyle` | `tui.Style` | Placeholder styling (default: dim) |
+| `cursor` | `rune` | Cursor character (default '▌') |
+| `submitKey` | `tui.Key` | Submit trigger key (default KeyEnter) |
+| `onSubmit` | `func(string)` | Called when submit key is pressed |
 
 ### Tailwind-style Classes
 
