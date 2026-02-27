@@ -72,6 +72,13 @@ var Elements = map[string]*ElementDef{
 		SelfClosing: true,
 		Category:    "input",
 	},
+	"textarea": {
+		Tag:         "textarea",
+		Description: "A multi-line text input with word wrapping, cursor management, and submit handling.",
+		Attributes:  textareaAttrs(),
+		SelfClosing: true,
+		Category:    "input",
+	},
 	"table": {
 		Tag:         "table",
 		Description: "A table container for tabular data.",
@@ -350,6 +357,25 @@ func inputAttrs() []AttributeDef {
 		{Name: "disabled", Type: "bool", Description: "Whether input is disabled", Category: "generic"},
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
+	}
+}
+
+// textareaAttrs returns attributes for textarea elements.
+func textareaAttrs() []AttributeDef {
+	return []AttributeDef{
+		{Name: "id", Type: "string", Description: "Unique identifier for the element", Category: "generic"},
+		{Name: "class", Type: "string", Description: "Tailwind-style CSS classes", Category: "generic"},
+		{Name: "placeholder", Type: "string", Description: "Placeholder text shown when empty and unfocused", Category: "generic"},
+		{Name: "width", Type: "int", Description: "Text area width in characters (default 40)", Category: "layout"},
+		{Name: "maxHeight", Type: "int", Description: "Maximum height in rows (0 = unlimited)", Category: "layout"},
+		{Name: "border", Type: "border", Description: "Border style (none, single, double, rounded, thick)", Category: "visual"},
+		{Name: "textStyle", Type: "style", Description: "Text styling", Category: "visual"},
+		{Name: "placeholderStyle", Type: "style", Description: "Placeholder text styling (default: dim)", Category: "visual"},
+		{Name: "cursor", Type: "expression", Description: "Cursor rune (default '▌')", Category: "visual"},
+		{Name: "submitKey", Type: "expression", Description: "Key that triggers submit (default KeyEnter)", Category: "event"},
+		{Name: "onSubmit", Type: "func", Description: "Callback when submit key is pressed: func(string)", Category: "event"},
+		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
 }
 
