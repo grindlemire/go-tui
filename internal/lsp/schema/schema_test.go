@@ -50,6 +50,11 @@ func TestGetElement(t *testing.T) {
 			wantCat:  "display",
 			wantSelf: true,
 		},
+		"textarea is self-closing input": {
+			tag:      "textarea",
+			wantCat:  "input",
+			wantSelf: true,
+		},
 		"unknown tag returns nil": {
 			tag:     "foobar",
 			wantNil: true,
@@ -375,7 +380,7 @@ func TestAllElementTags(t *testing.T) {
 	}
 
 	// Ensure all expected tags are present
-	expected := []string{"div", "span", "p", "ul", "li", "button", "input", "table", "progress", "hr", "br"}
+	expected := []string{"div", "span", "p", "ul", "li", "button", "input", "textarea", "table", "progress", "hr", "br"}
 	tagSet := make(map[string]bool)
 	for _, tag := range tags {
 		tagSet[tag] = true
