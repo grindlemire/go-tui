@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+	"math/rand/v2"
 	"time"
 
 	tui "github.com/grindlemire/go-tui"
@@ -24,10 +26,71 @@ type streamDemo struct {
 	streaming *tui.State[bool]
 }
 
+type person struct {
+	Name   string
+	Role   string
+	Status string
+	Score  int
+}
+
+var (
+	allNames     = []string{"Alice", "Bob", "Carol", "Dave", "Eve", "Frank"}
+	allRoles     = []string{"Engineer", "Designer", "PM", "Analyst", "DevOps", "QA"}
+	allStatuses  = []string{"Active", "Away", "Busy", "Offline"}
+	statusColors = map[string]tui.Color{
+		"Active":  tui.Green,
+		"Away":    tui.Yellow,
+		"Busy":    tui.Red,
+		"Offline": tui.BrightBlack,
+	}
+)
+
 func StreamDemo() *streamDemo {
 	return &streamDemo{
 		streaming: tui.NewState(false),
 	}
+}
+
+func randomPeople() []person {
+	n := 3 + rand.IntN(3)
+	used := map[int]bool{}
+	people := make([]person, 0, n)
+	for range n {
+		idx := rand.IntN(len(allNames))
+		for used[idx] {
+			idx = rand.IntN(len(allNames))
+		}
+		used[idx] = true
+		people = append(people, person{
+			Name:   allNames[idx],
+			Role:   allRoles[rand.IntN(len(allRoles))],
+			Status: allStatuses[rand.IntN(len(allStatuses))],
+			Score:  50 + rand.IntN(51),
+		})
+	}
+	return people
+}
+
+func (s *streamDemo) streamWithElement() {
+	if s.streaming.Get() {
+		return
+	}
+	s.streaming.Set(true)
+
+	go func() {
+		w := s.app.StreamAbove()
+		w.WriteGradient("Here's a summary:\n", gradient)
+		time.Sleep(100 * time.Millisecond)
+
+		w.WriteElement(ReportCard(randomPeople()).Root)
+
+		time.Sleep(100 * time.Millisecond)
+		w.WriteGradient("Done!\n", gradient)
+		w.Close()
+		s.app.QueueUpdate(func() {
+			s.streaming.Set(false)
+		})
+	}()
 }
 
 func (s *streamDemo) streamPhrase() {
@@ -55,6 +118,7 @@ func (s *streamDemo) streamPhrase() {
 func (s *streamDemo) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKeyStop(tui.KeyEnter, func(ke tui.KeyEvent) { s.streamPhrase() }),
+		tui.OnKeyStop(tui.KeyTab, func(ke tui.KeyEvent) { s.streamWithElement() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
@@ -64,7 +128,160 @@ func (s *streamDemo) statusText() string {
 	if s.streaming.Get() {
 		return "streaming..."
 	}
-	return "Press Enter to stream a phrase  |  Esc to quit"
+	return "Enter to stream  |  Tab to stream with element  |  Esc to quit"
+}
+
+type ReportCardView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *ReportCardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *ReportCardView) GetRoot() tui.Renderable { return v.Root }
+
+func (v *ReportCardView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *ReportCardView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *ReportCardView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *ReportCardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*ReportCardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*ReportCardView)(nil)
+
+var _ tui.AppUnbinder = (*ReportCardView)(nil)
+
+var _ tui.PropsUpdater = (*ReportCardView)(nil)
+
+func ReportCard(people []person) *ReportCardView {
+	var view ReportCardView
+	var watchers []tui.Watcher
+
+	__tui_0 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_1 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithWidthPercent(75.00),
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
+	)
+	__tui_2 := tui.New(
+		tui.WithText("Streaming Report"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.BrightMagenta)),
+	)
+	__tui_1.AddChild(__tui_2)
+	__tui_3 := tui.New(
+		tui.WithTag("table"),
+		tui.WithDisplay(tui.DisplayFlex),
+		tui.WithDirection(tui.Column),
+	)
+	__tui_4 := tui.New(
+		tui.WithTag("tr"),
+		tui.WithDisplay(tui.DisplayFlex),
+		tui.WithDirection(tui.Row),
+	)
+	__tui_5 := tui.New(
+		tui.WithTag("th"),
+		tui.WithText("Name"),
+		tui.WithFlexGrow(1),
+	)
+	__tui_4.AddChild(__tui_5)
+	__tui_6 := tui.New(
+		tui.WithTag("th"),
+		tui.WithText("Role"),
+		tui.WithFlexGrow(1),
+	)
+	__tui_4.AddChild(__tui_6)
+	__tui_7 := tui.New(
+		tui.WithTag("th"),
+		tui.WithText("Status"),
+		tui.WithFlexGrow(1),
+	)
+	__tui_4.AddChild(__tui_7)
+	__tui_8 := tui.New(
+		tui.WithTag("th"),
+		tui.WithText("Score"),
+	)
+	__tui_4.AddChild(__tui_8)
+	__tui_3.AddChild(__tui_4)
+	__tui_9 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_3.AddChild(__tui_9)
+	for __idx_0, p := range people {
+		_ = __idx_0
+		__tui_10 := tui.New(
+			tui.WithTag("tr"),
+			tui.WithDisplay(tui.DisplayFlex),
+			tui.WithDirection(tui.Row),
+		)
+		__tui_11 := tui.New(
+			tui.WithTag("td"),
+			tui.WithText(p.Name),
+			tui.WithFlexGrow(1),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		)
+		__tui_10.AddChild(__tui_11)
+		__tui_12 := tui.New(
+			tui.WithTag("td"),
+			tui.WithText(p.Role),
+			tui.WithFlexGrow(1),
+		)
+		__tui_10.AddChild(__tui_12)
+		__tui_13 := tui.New(
+			tui.WithTag("td"),
+			tui.WithText(p.Status),
+			tui.WithFlexGrow(1),
+			tui.WithTextStyle(tui.NewStyle().Foreground(statusColors[p.Status])),
+		)
+		__tui_10.AddChild(__tui_13)
+		__tui_14 := tui.New(
+			tui.WithTag("td"),
+			tui.WithText(fmt.Sprintf("%d", p.Score)),
+			tui.WithTextStyle(tui.NewStyle().Bold()),
+		)
+		__tui_10.AddChild(__tui_14)
+		__tui_3.AddChild(__tui_10)
+	}
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = ReportCardView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
 func (s *streamDemo) Render(app *tui.App) *tui.Element {
