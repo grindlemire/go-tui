@@ -42,7 +42,9 @@ func (w *inlineStreamWriter) Close() error {
 	w.app.QueueUpdate(func() {
 		w.app.ensureInlineSession()
 		w.app.inlineSession.finalizePartial(&w.app.inlineLayout)
-		// TODO: clear activeStreamWriter in Task 4
+		if w.app.activeStreamWriter == w {
+			w.app.activeStreamWriter = nil
+		}
 		w.app.MarkDirty()
 	})
 	return nil

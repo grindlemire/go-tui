@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/grindlemire/go-tui/internal/debug"
 )
@@ -176,6 +177,10 @@ func (a *App) printAboveStyledRaw(content string) {
 	}
 	a.ensureInlineSession()
 	a.inlineSession.ensureInitialized(&a.inlineLayout, a.inlineStartRow)
+
+	// Finalize any in-progress streaming partial line first.
+	a.inlineSession.finalizePartial(&a.inlineLayout)
+
 	width, _ := a.terminal.Size()
 	a.inlineSession.appendStyledText(&a.inlineLayout, a.inlineStartRow, width, content)
 
@@ -239,6 +244,10 @@ func (a *App) printAboveRaw(content string) {
 	}
 	a.ensureInlineSession()
 	a.inlineSession.ensureInitialized(&a.inlineLayout, a.inlineStartRow)
+
+	// Finalize any in-progress streaming partial line first.
+	a.inlineSession.finalizePartial(&a.inlineLayout)
+
 	width, _ := a.terminal.Size()
 	a.inlineSession.appendText(&a.inlineLayout, a.inlineStartRow, width, content)
 
@@ -250,4 +259,26 @@ func (a *App) ensureInlineSession() {
 	if a.inlineSession == nil {
 		a.inlineSession = newInlineSession(a.terminal)
 	}
+}
+
+// StreamAbove returns an io.WriteCloser that streams text character-by-character
+// to the history region above the inline widget. ANSI escape sequences are
+// preserved for styled output. Closing the writer finalizes the current line.
+// Returns a no-op writer if not in inline mode.
+// The writer is goroutine-safe.
+func (a *App) StreamAbove() io.WriteCloser {
+	if a.inlineHeight == 0 {
+		return &nopStreamWriter{}
+	}
+
+	// Finalize any existing stream writer.
+	if a.activeStreamWriter != nil {
+		a.ensureInlineSession()
+		a.inlineSession.finalizePartial(&a.inlineLayout)
+		a.activeStreamWriter.closed.Store(true)
+	}
+
+	w := newInlineStreamWriter(a)
+	a.activeStreamWriter = w
+	return w
 }

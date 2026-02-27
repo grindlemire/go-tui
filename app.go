@@ -90,8 +90,9 @@ type App struct {
 	inlineHeight      int               // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow    int               // Terminal row where inline region starts (calculated at init)
 	inlineStartupMode InlineStartupMode // Startup behavior for inline viewport ownership
-	inlineLayout      inlineLayoutState
-	inlineSession     *inlineSession
+	inlineLayout       inlineLayoutState
+	inlineSession      *inlineSession
+	activeStreamWriter *inlineStreamWriter
 
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay

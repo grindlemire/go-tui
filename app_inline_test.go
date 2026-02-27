@@ -910,6 +910,98 @@ func TestInlineSession_FinalizePartial_EmptyNoop(t *testing.T) {
 	}
 }
 
+func TestStreamAbove_ReturnsWriter(t *testing.T) {
+	app, _ := newInlineTestApp(80, 24, 3)
+
+	w := app.StreamAbove()
+	if w == nil {
+		t.Fatal("StreamAbove returned nil")
+	}
+	_ = w.Close()
+}
+
+func TestStreamAbove_NopWhenNotInline(t *testing.T) {
+	app := &App{
+		inlineHeight: 0,
+		eventQueue:   make(chan func(), 256),
+		stopCh:       make(chan struct{}),
+	}
+
+	w := app.StreamAbove()
+	n, err := w.Write([]byte("test"))
+	if err != nil {
+		t.Fatalf("nop writer Write error: %v", err)
+	}
+	if n != 4 {
+		t.Fatalf("nop writer Write n = %d, want 4", n)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("nop writer Close error: %v", err)
+	}
+}
+
+func TestStreamAbove_SecondCallFinalizesPrevious(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	w1 := app.StreamAbove()
+	fmt.Fprint(w1, "from-w1")
+	runQueuedUpdates(app)
+
+	_ = app.StreamAbove()
+	runQueuedUpdates(app)
+
+	// w1's partial should have been finalized as a permanent row.
+	historyBottom := app.inlineStartRow - 1
+	got := emu.ScreenRow(historyBottom)
+	if got != "from-w1" {
+		t.Fatalf("history row = %q, want %q\n%s", got, "from-w1", emu.DumpState())
+	}
+	if app.inlineLayout.visibleRows != 1 {
+		t.Fatalf("visibleRows = %d, want 1 (finalized)", app.inlineLayout.visibleRows)
+	}
+}
+
+func TestStreamAbove_PrintAboveFinalizesPartial(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	w := app.StreamAbove()
+	fmt.Fprint(w, "partial")
+	runQueuedUpdates(app)
+
+	app.PrintAboveln("full-line")
+	_ = w.Close()
+	runQueuedUpdates(app)
+
+	// "partial" should be finalized, then "full-line" appended after it.
+	if got := emu.ScreenRow(app.inlineStartRow - 2); got != "partial" {
+		t.Fatalf("row -2 = %q, want %q\n%s", got, "partial", emu.DumpState())
+	}
+	if got := emu.ScreenRow(app.inlineStartRow - 1); got != "full-line" {
+		t.Fatalf("row -1 = %q, want %q\n%s", got, "full-line", emu.DumpState())
+	}
+}
+
+func TestStreamAbove_PrintAboveStyledFinalizesPartial(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	w := app.StreamAbove()
+	fmt.Fprint(w, "partial")
+	runQueuedUpdates(app)
+
+	app.printAboveStyledRaw("\x1b[31mcolored\x1b[0m\n")
+	_ = w.Close()
+	runQueuedUpdates(app)
+
+	// "partial" should be finalized first.
+	if app.inlineLayout.visibleRows < 2 {
+		t.Fatalf("visibleRows = %d, want >= 2", app.inlineLayout.visibleRows)
+	}
+	// Verify the partial is still there.
+	if got := emu.ScreenRow(app.inlineStartRow - 2); got != "partial" {
+		t.Fatalf("row -2 = %q, want %q\n%s", got, "partial", emu.DumpState())
+	}
+}
+
 func TestEmulatorTerminal_EraseLine(t *testing.T) {
 	emu := NewEmulatorTerminal(10, 3)
 
