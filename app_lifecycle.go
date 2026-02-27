@@ -338,6 +338,7 @@ func (a *App) StreamAbove() *StreamWriter {
 	width, _ := a.terminal.Size()
 	return &StreamWriter{
 		w:     inner,
+		app:   a,
 		width: width,
 		caps:  a.terminal.Caps(),
 	}

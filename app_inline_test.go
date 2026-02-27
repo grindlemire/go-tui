@@ -1177,3 +1177,62 @@ func TestQueuePrintAboveElement(t *testing.T) {
 		t.Fatalf("row = %q, want %q\n%s", row, "queued", emu.DumpState())
 	}
 }
+
+func TestStreamWriter_WriteElement(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	w := app.StreamAbove()
+	fmt.Fprint(w, "before\n")
+	runQueuedUpdates(app)
+
+	el := New(WithText("element row"))
+	w.WriteElement(el)
+	runQueuedUpdates(app)
+
+	fmt.Fprint(w, "after\n")
+	runQueuedUpdates(app)
+	w.Close()
+	runQueuedUpdates(app)
+
+	// All three should be visible: "before", "element row", "after".
+	if app.inlineLayout.visibleRows < 3 {
+		t.Fatalf("visibleRows = %d, want >= 3\n%s",
+			app.inlineLayout.visibleRows, emu.DumpState())
+	}
+}
+
+func TestStreamWriter_WriteElement_NopMode(t *testing.T) {
+	// Full-screen app — StreamAbove returns nop writer.
+	app := &App{
+		terminal:   NewEmulatorTerminal(80, 24),
+		buffer:     NewBuffer(80, 24),
+		focus:      newFocusManager(),
+		reader:     NewMockEventReader(),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+	}
+
+	w := app.StreamAbove()
+	// Should not panic in nop mode.
+	w.WriteElement(New(WithText("ignored")))
+}
+
+func TestStreamWriter_WriteElement_ResetsColumn(t *testing.T) {
+	app, _ := newInlineTestApp(80, 24, 3)
+
+	w := app.StreamAbove()
+	// Advance column via WriteStyled.
+	w.WriteStyled("advance", NewStyle())
+	if w.col == 0 {
+		t.Fatalf("col should be non-zero after WriteStyled")
+	}
+
+	w.WriteElement(New(WithText("el")))
+	runQueuedUpdates(app)
+
+	if w.col != 0 {
+		t.Fatalf("col = %d after WriteElement, want 0", w.col)
+	}
+	w.Close()
+	runQueuedUpdates(app)
+}
