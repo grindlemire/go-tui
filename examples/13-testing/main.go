@@ -2,6 +2,7 @@
 //
 // To build and run:
 //
+//	go run ../../cmd/tui generate counter.gsx
 //	go run .
 package main
 
@@ -11,6 +12,8 @@ import (
 
 	tui "github.com/grindlemire/go-tui"
 )
+
+//go:generate go run ../../cmd/tui generate counter.gsx
 
 func main() {
 	app, err := tui.NewApp(
