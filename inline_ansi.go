@@ -13,6 +13,12 @@ func inlineAppendWriteLine(seq *strings.Builder, row int, text string) {
 	seq.WriteString(text)
 }
 
+// inlineAppendUpdateLine overwrites an existing row in-place. Identical to
+// inlineAppendWriteLine — separated for semantic clarity in call sites.
+func inlineAppendUpdateLine(seq *strings.Builder, row int, text string) {
+	inlineAppendWriteLine(seq, row, text)
+}
+
 func inlineAppendScrollUp(seq *strings.Builder, topRow, bottomRow, n int) {
 	if n < 1 || topRow < 0 || bottomRow < 0 || topRow > bottomRow {
 		return
