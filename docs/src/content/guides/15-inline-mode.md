@@ -128,6 +128,8 @@ go func() {
 }()
 ```
 
+For inserting fully rendered elements (tables, styled cards, templ component output) into the scrollback, use `PrintAboveElement`. See the [Inline Streaming Guide](/guides/inline-streaming#inserting-elements-mid-stream) for details.
+
 ## Dynamic Height
 
 You can change the inline widget's height at runtime with `SetInlineHeight`. This is useful for text areas that grow as the user types:
