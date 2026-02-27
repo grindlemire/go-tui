@@ -17,14 +17,13 @@ func main() {
 
 	app, err := tui.NewApp(
 		tui.WithInlineHeight(3), // Start with 3, will grow as needed
+		tui.WithRootComponent(Chat(width)),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 	defer app.Close()
-
-	app.SetRootComponent(Chat(width))
 
 	if err := app.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

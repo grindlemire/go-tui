@@ -459,4 +459,5 @@ Watch the live metrics stream in, scroll up to pause auto-scroll:
 ## Next Steps
 
 - [Watchers Guide](watchers) - Timers, channels, and the WatcherProvider interface
+- [Inline Streaming Guide](inline-streaming) - Stream character-by-character output above an inline widget
 - [Building a Dashboard](dashboard) - Combine streaming, layout, and state into a full application

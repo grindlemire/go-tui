@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os/exec"
-	"strings"
 	"syscall"
 	tui "github.com/grindlemire/go-tui"
 	"github.com/grindlemire/go-tui/examples/ai-chat/settings"
@@ -18,7 +17,7 @@ type chat struct {
 	settingsView *settings.SettingsApp
 	streaming    *tui.State[bool]
 	eventCh      chan streamEvent
-	lineBuf      strings.Builder
+	streamWriter *tui.StreamWriter
 	cmd          *exec.Cmd
 	firstMsg     bool
 	// settings state (shared with settings view)
@@ -128,61 +127,35 @@ func (c *chat) startClaude(message string) {
 
 var agentGradient = tui.NewGradient(tui.BrightCyan, tui.BrightMagenta)
 
-func gradientLine(text string) string {
-	runes := []rune(text)
-	if len(runes) == 0 {
-		return ""
+func (c *chat) closeStream() {
+	if c.streamWriter != nil {
+		c.streamWriter.Close()
+		c.streamWriter = nil
 	}
-
-	var b strings.Builder
-	b.Grow(len(text) * 20) // ANSI overhead per char
-	for i, r := range runes {
-		t := float64(i) / float64(max(len(runes)-1, 1))
-		cr, cg, cb := agentGradient.At(t).ToRGBValues()
-		fmt.Fprintf(&b, "\033[38;2;%d;%d;%dm%c", cr, cg, cb, r)
-	}
-	b.WriteString("\033[0m")
-	return b.String()
 }
 
 func (c *chat) onStreamEvent(ev streamEvent) {
 	switch ev.Type {
 	case eventText:
-		// Accumulate text, flush complete lines
-		c.lineBuf.WriteString(ev.Text)
-		for {
-			s := c.lineBuf.String()
-			idx := strings.Index(s, "\n")
-			if idx < 0 {
-				break
-			}
-			c.app.PrintAboveStyledln("%s", gradientLine(s[:idx]))
-			c.lineBuf.Reset()
-			c.lineBuf.WriteString(s[idx+1:])
+		if c.streamWriter == nil {
+			c.streamWriter = c.app.StreamAbove()
 		}
+		c.streamWriter.WriteGradient(ev.Text, agentGradient)
 
 	case eventToolUse:
-		// Flush any pending text first
-		if c.lineBuf.Len() > 0 {
-			c.app.PrintAboveStyledln("%s", gradientLine(c.lineBuf.String()))
-			c.lineBuf.Reset()
-		}
-		c.app.PrintAboveStyledln("%s", gradientLine("  > "+ev.Text))
+		c.closeStream()
+		toolWriter := c.app.StreamAbove()
+		toolWriter.WriteGradient("  > "+ev.Text+"\n", agentGradient)
+		toolWriter.Close()
 
 	case eventError:
-		if c.lineBuf.Len() > 0 {
-			c.app.PrintAboveStyledln("%s", gradientLine(c.lineBuf.String()))
-			c.lineBuf.Reset()
-		}
+		c.closeStream()
 		c.app.PrintAboveln("Error: %s", ev.Text)
 		c.streaming.Set(false)
 		c.cmd = nil
 
 	case eventDone:
-		if c.lineBuf.Len() > 0 {
-			c.app.PrintAboveStyledln("%s", gradientLine(c.lineBuf.String()))
-			c.lineBuf.Reset()
-		}
+		c.closeStream()
 		c.app.PrintAboveln("")
 		c.streaming.Set(false)
 		c.cmd = nil
@@ -190,6 +163,7 @@ func (c *chat) onStreamEvent(ev streamEvent) {
 }
 
 func (c *chat) cancelStream() {
+	c.closeStream()
 	if c.cmd != nil && c.cmd.Process != nil {
 		c.cmd.Process.Signal(syscall.SIGTERM)
 	}
