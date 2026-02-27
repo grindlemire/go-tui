@@ -1236,3 +1236,23 @@ func TestStreamWriter_WriteElement_ResetsColumn(t *testing.T) {
 	w.Close()
 	runQueuedUpdates(app)
 }
+
+func TestPrintAboveElement_Table(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	// Build a simple 2-column, 1-row table with border.
+	table := New(WithTag("table"), WithBorder(BorderSingle))
+	tr := New(WithTag("tr"))
+	td1 := New(WithTag("td"), WithText("Name"))
+	td2 := New(WithTag("td"), WithText("Value"))
+	tr.AddChild(td1, td2)
+	table.AddChild(tr)
+
+	app.PrintAboveElement(table)
+
+	// Table should produce multiple rows (border + header).
+	if app.inlineLayout.visibleRows < 3 {
+		t.Fatalf("visibleRows = %d, want >= 3 for a bordered table\n%s",
+			app.inlineLayout.visibleRows, emu.DumpState())
+	}
+}
