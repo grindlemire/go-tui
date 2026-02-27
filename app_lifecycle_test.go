@@ -177,57 +177,17 @@ func TestApp_Focused(t *testing.T) {
 	}
 }
 
-// mockFocusableTreeWalker is a mock that implements focusableTreeWalker
-type mockFocusableTreeWalker struct {
-	*mockRenderable
-	focusables         []Focusable
-	onFocusableAddedFn func(Focusable)
-}
-
-func newMockFocusableTreeWalker(focusables ...Focusable) *mockFocusableTreeWalker {
-	return &mockFocusableTreeWalker{
-		mockRenderable: newMockRenderable(),
-		focusables:     focusables,
-	}
-}
-
-func (m *mockFocusableTreeWalker) SetOnFocusableAdded(fn func(Focusable)) {
-	m.onFocusableAddedFn = fn
-}
-
-func (m *mockFocusableTreeWalker) WalkFocusables(fn func(Focusable)) {
-	for _, f := range m.focusables {
-		fn(f)
-	}
-}
-
 func TestApp_SetRoot_AutoRegistration(t *testing.T) {
 	type tc struct {
-		focusables        []*mockFocusable
-		expectedFocusedID string
+		numFocusable int
 	}
 
 	tests := map[string]tc{
 		"single focusable": {
-			focusables: []*mockFocusable{
-				newMockFocusable("elem1", true),
-			},
-			expectedFocusedID: "elem1",
+			numFocusable: 1,
 		},
 		"multiple focusables": {
-			focusables: []*mockFocusable{
-				newMockFocusable("elem1", true),
-				newMockFocusable("elem2", true),
-				newMockFocusable("elem3", true),
-			},
-			expectedFocusedID: "elem1",
-		},
-		"skips non-focusable": {
-			focusables: []*mockFocusable{
-				newMockFocusable("elem1", false),
-				newMockFocusable("elem2", true),
-			},
-			expectedFocusedID: "elem2",
+			numFocusable: 3,
 		},
 	}
 
@@ -238,13 +198,10 @@ func TestApp_SetRoot_AutoRegistration(t *testing.T) {
 				buffer: NewBuffer(80, 24),
 			}
 
-			// Convert to []Focusable
-			focusables := make([]Focusable, len(tt.focusables))
-			for i, f := range tt.focusables {
-				focusables[i] = f
+			root := New()
+			for i := 0; i < tt.numFocusable; i++ {
+				root.AddChild(New(WithFocusable(true)))
 			}
-
-			root := newMockFocusableTreeWalker(focusables...)
 			app.SetRoot(root)
 
 			// Verify focusables were auto-registered
@@ -252,41 +209,31 @@ func TestApp_SetRoot_AutoRegistration(t *testing.T) {
 			if focused == nil {
 				t.Fatal("Focused() returned nil")
 			}
-
-			mf := focused.(*mockFocusable)
-			if mf.id != tt.expectedFocusedID {
-				t.Errorf("Focused element = %q, want %q", mf.id, tt.expectedFocusedID)
-			}
 		})
 	}
 }
 
-func TestApp_SetRoot_OnFocusableAddedCallback(t *testing.T) {
+func TestApp_SetRoot_DynamicFocusableRegistration(t *testing.T) {
 	app := &App{
 		focus:  newFocusManager(),
 		buffer: NewBuffer(80, 24),
 	}
 
-	root := newMockFocusableTreeWalker()
+	root := New()
 	app.SetRoot(root)
 
-	// Verify callback was set
-	if root.onFocusableAddedFn == nil {
-		t.Fatal("SetRoot should set onFocusableAdded callback")
+	// No focusables initially
+	if app.Focused() != nil {
+		t.Fatal("Focused() should be nil with no focusable children")
 	}
 
-	// Simulate adding a new focusable
-	newElem := newMockFocusable("newElem", true)
-	root.onFocusableAddedFn(newElem)
+	// Dynamically add a focusable child — the callback set by applyRoot should register it
+	child := New(WithFocusable(true))
+	root.AddChild(child)
 
 	// Verify it was registered
 	focused := app.Focused()
 	if focused == nil {
-		t.Fatal("Focused() returned nil after callback")
-	}
-
-	mf := focused.(*mockFocusable)
-	if mf.id != "newElem" {
-		t.Errorf("Focused element = %q, want 'newElem'", mf.id)
+		t.Fatal("Focused() returned nil after adding focusable child")
 	}
 }

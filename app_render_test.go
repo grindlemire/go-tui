@@ -223,19 +223,11 @@ func TestApp_EventBatching(t *testing.T) {
 
 	mockReader := NewMockEventReader()
 
-	var renderCount int
-	mockRend := &renderCountingMock{
-		mockRenderable: newMockRenderable(),
-		onRender: func() {
-			renderCount++
-		},
-	}
-
 	app := &App{
 		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
 		reader:     mockReader,
-		root:       mockRend,
+		root:       New(),
 		eventQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
 		stopped:    false,
@@ -269,26 +261,14 @@ drain:
 	}
 
 	// Only check dirty once, clear it
+	var renderCount int
 	if testApp.checkAndClearDirty() {
 		// Would call Render() here in the real loop
-		renderCount++ // Simulated render
+		renderCount++
 	}
 
 	// Should only have rendered once despite multiple events
 	if renderCount != 1 {
 		t.Errorf("Expected 1 render after batched events, got %d", renderCount)
-	}
-}
-
-// renderCountingMock wraps mockRenderable to count renders
-type renderCountingMock struct {
-	*mockRenderable
-	onRender func()
-}
-
-func (m *renderCountingMock) Render(buf *Buffer, width, height int) {
-	m.mockRenderable.Render(buf, width, height)
-	if m.onRender != nil {
-		m.onRender()
 	}
 }

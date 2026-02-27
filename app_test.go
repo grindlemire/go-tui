@@ -4,31 +4,6 @@ import (
 	"testing"
 )
 
-// mockRenderable is a mock implementation of Renderable for testing.
-type mockRenderable struct {
-	dirty           bool
-	renderCalled    bool
-	markDirtyCalled bool
-}
-
-func newMockRenderable() *mockRenderable {
-	return &mockRenderable{dirty: true}
-}
-
-func (m *mockRenderable) Render(buf *Buffer, width, height int) {
-	m.renderCalled = true
-	m.dirty = false
-}
-
-func (m *mockRenderable) MarkDirty() {
-	m.dirty = true
-	m.markDirtyCalled = true
-}
-
-func (m *mockRenderable) IsDirty() bool {
-	return m.dirty
-}
-
 func TestApp_SetRootAndRoot(t *testing.T) {
 	type tc struct {
 		createRoot bool
@@ -45,14 +20,13 @@ func TestApp_SetRootAndRoot(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Create a mock app (we can't test NewApp without a real terminal)
 			app := &App{
 				focus:  newFocusManager(),
 				buffer: NewBuffer(80, 24),
 			}
 
 			if tt.createRoot {
-				root := newMockRenderable()
+				root := New()
 				app.SetRoot(root)
 
 				if app.Root() != root {
@@ -72,7 +46,6 @@ func TestApp_FocusedNoElements(t *testing.T) {
 		focus: newFocusManager(),
 	}
 
-	// With no focusable elements registered, Focused() should return nil
 	if app.Focused() != nil {
 		t.Error("Focused() should return nil when no elements are registered")
 	}
@@ -119,11 +92,12 @@ func TestApp_DispatchResizeEvent(t *testing.T) {
 				buffer: buffer,
 			}
 
-			var mockRoot *mockRenderable
+			var root *Element
 			if tt.hasRoot {
-				mockRoot = newMockRenderable()
-				mockRoot.dirty = false // Start as not dirty
-				app.SetRoot(mockRoot)
+				root = New()
+				app.SetRoot(root)
+				// Clear dirty state so we can detect the resize marking it dirty
+				root.SetDirty(false)
 			}
 
 			event := ResizeEvent{Width: tt.resizeWidth, Height: tt.resizeHeight}
@@ -140,8 +114,8 @@ func TestApp_DispatchResizeEvent(t *testing.T) {
 			}
 
 			// Check root was marked dirty if it exists
-			if tt.hasRoot && !mockRoot.markDirtyCalled {
-				t.Error("MarkDirty should have been called on root after resize")
+			if tt.hasRoot && !root.IsDirty() {
+				t.Error("Root should be dirty after resize")
 			}
 		})
 	}
@@ -197,28 +171,22 @@ func TestApp_DispatchKeyEvent(t *testing.T) {
 	}
 }
 
-func TestApp_RenderWithMockRoot(t *testing.T) {
-	// Create a mock terminal for testing
-	mockTerm := NewMockTerminal(80, 24)
+func TestApp_RenderWithRoot(t *testing.T) {
 	buffer := NewBuffer(80, 24)
 
 	app := &App{
-		terminal: nil, // We can't use a real ANSITerminal in tests
-		buffer:   buffer,
-		focus:    newFocusManager(),
+		buffer: buffer,
+		focus:  newFocusManager(),
 	}
 
-	// Create a mock renderable
-	mockRoot := newMockRenderable()
-	app.SetRoot(mockRoot)
+	root := New(WithText("hello"))
+	app.SetRoot(root)
 
-	// Test that rendering calls the root's Render method
-	mockRoot.Render(buffer, 80, 24)
+	// Render directly to buffer
+	root.Render(buffer, 80, 24)
 
-	if !mockRoot.renderCalled {
-		t.Error("Root's Render method should have been called")
+	// After rendering, element should no longer be dirty
+	if root.IsDirty() {
+		t.Error("Root should not be dirty after Render()")
 	}
-
-	// Verify the mock was used
-	_ = mockTerm // We created it but App tests are limited without terminal
 }

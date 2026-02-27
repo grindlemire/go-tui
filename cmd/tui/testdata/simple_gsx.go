@@ -7,7 +7,52 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-func Header(title string) *tui.Element {
+type HeaderView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *HeaderView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *HeaderView) GetRoot() *tui.Element { return v.Root }
+
+func (v *HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *HeaderView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *HeaderView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *HeaderView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*HeaderView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*HeaderView)(nil)
+
+var _ tui.AppUnbinder = (*HeaderView)(nil)
+
+var _ tui.PropsUpdater = (*HeaderView)(nil)
+
+func Header(title string) *HeaderView {
+	var view HeaderView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
@@ -16,10 +61,68 @@ func Header(title string) *tui.Element {
 		tui.WithText(title),
 	)
 	__tui_0.AddChild(__tui_1)
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = HeaderView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
-func Footer() *tui.Element {
+type FooterView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *FooterView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *FooterView) GetRoot() *tui.Element { return v.Root }
+
+func (v *FooterView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *FooterView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *FooterView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *FooterView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*FooterView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*FooterView)(nil)
+
+var _ tui.AppUnbinder = (*FooterView)(nil)
+
+var _ tui.PropsUpdater = (*FooterView)(nil)
+
+func Footer() *FooterView {
+	var view FooterView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithPadding(1),
 	)
@@ -27,5 +130,18 @@ func Footer() *tui.Element {
 		tui.WithText("Footer content"),
 	)
 	__tui_0.AddChild(__tui_1)
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = FooterView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }

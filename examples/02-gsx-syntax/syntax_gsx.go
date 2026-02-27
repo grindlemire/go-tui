@@ -71,7 +71,7 @@ func (v *PanelView) UnbindApp() {
 	}
 }
 
-func (v *PanelView) GetRoot() tui.Renderable { return v.Root }
+func (v *PanelView) GetRoot() *tui.Element { return v.Root }
 
 func (v *PanelView) GetWatchers() []tui.Watcher { return v.watchers }
 

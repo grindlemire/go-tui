@@ -106,8 +106,7 @@ func TestApp_DispatchResizeEvent_SetsNeedsFullRedraw(t *testing.T) {
 			}
 
 			if tt.hasRoot {
-				mockRoot := newMockRenderable()
-				app.SetRoot(mockRoot)
+				app.SetRoot(New())
 			}
 
 			// Flag should initially be false

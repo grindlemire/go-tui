@@ -45,7 +45,7 @@ func (v *BadgeView) UnbindApp() {
 	}
 }
 
-func (v *BadgeView) GetRoot() tui.Renderable { return v.Root }
+func (v *BadgeView) GetRoot() *tui.Element { return v.Root }
 
 func (v *BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -110,7 +110,7 @@ func (v *StatusLineView) UnbindApp() {
 	}
 }
 
-func (v *StatusLineView) GetRoot() tui.Renderable { return v.Root }
+func (v *StatusLineView) GetRoot() *tui.Element { return v.Root }
 
 func (v *StatusLineView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -186,7 +186,7 @@ func (v *CardView) UnbindApp() {
 	}
 }
 
-func (v *CardView) GetRoot() tui.Renderable { return v.Root }
+func (v *CardView) GetRoot() *tui.Element { return v.Root }
 
 func (v *CardView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -270,7 +270,7 @@ func (v *OverviewTabView) UnbindApp() {
 	}
 }
 
-func (v *OverviewTabView) GetRoot() tui.Renderable { return v.Root }
+func (v *OverviewTabView) GetRoot() *tui.Element { return v.Root }
 
 func (v *OverviewTabView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -411,7 +411,7 @@ func (v *MetricsTabView) UnbindApp() {
 	}
 }
 
-func (v *MetricsTabView) GetRoot() tui.Renderable { return v.Root }
+func (v *MetricsTabView) GetRoot() *tui.Element { return v.Root }
 
 func (v *MetricsTabView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -552,7 +552,7 @@ func (v *LogsTabView) UnbindApp() {
 	}
 }
 
-func (v *LogsTabView) GetRoot() tui.Renderable { return v.Root }
+func (v *LogsTabView) GetRoot() *tui.Element { return v.Root }
 
 func (v *LogsTabView) GetWatchers() []tui.Watcher { return v.watchers }
 

@@ -151,7 +151,7 @@ Use this section to quickly find the right files for a given change.
 
 ### Changing the app lifecycle / main loop
 
-- `app.go` — App struct, Renderable interface, tree walkers
+- `app.go` — App struct, Viewable interface
 - `app_loop.go` — Run() main event loop, frame timing, signal handling
 - `app_lifecycle.go` — Close(), Stop(), PrintAbove(), PrintAboveElement(), StreamAbove() for inline mode
 - `app_render.go` — App.Render(): buffer management, dirty checking, inline vs full-screen
@@ -755,7 +755,7 @@ The layout engine (`internal/layout`) implements CSS flexbox with:
 - **Double Buffering**: `Buffer` maintains front/back grids with diff-based rendering
 - **Dirty Flags**: Global dirty flag triggers re-layout/re-render when state changes
 - **Reactive State**: `State[T]` with `Bind()` callbacks and `Batch()` for coalescing
-- **Interface-based**: `Renderable`, `Layoutable`, `Focusable`, `Watcher`, `Terminal`
+- **Interface-based**: `Viewable`, `Layoutable`, `Focusable`, `Watcher`, `Terminal`
 - **Tree Walking**: BFS traversal for component dispatch (key/mouse events, watcher collection); DFS for focus discovery and rendering
 - **Component Caching**: Mount system with mark-and-sweep cleanup — components are cached by (parent, index) key and reused across renders
 - **Ref System**: Type-safe element references (`Ref`, `RefList`, `RefMap[K]`) for event handling and hit testing

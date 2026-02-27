@@ -144,7 +144,7 @@ func (v *ReportCardView) UnbindApp() {
 	}
 }
 
-func (v *ReportCardView) GetRoot() tui.Renderable { return v.Root }
+func (v *ReportCardView) GetRoot() *tui.Element { return v.Root }
 
 func (v *ReportCardView) GetWatchers() []tui.Watcher { return v.watchers }
 

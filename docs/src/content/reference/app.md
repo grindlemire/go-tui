@@ -89,10 +89,10 @@ tui.NewApp(tui.WithRootComponent(MyApp()))
 ### WithRoot
 
 ```go
-func WithRoot(root Renderable) AppOption
+func WithRoot(root *Element) AppOption
 ```
 
-Sets a raw `Renderable` as the root. Use this when you're building the element tree manually rather than through a struct component.
+Sets a raw `*Element` as the root. Use this when you're building the element tree manually rather than through a struct component.
 
 ### WithRootView
 
@@ -253,10 +253,10 @@ defer app.Close()
 ### SetRoot
 
 ```go
-func (a *App) SetRoot(root Renderable)
+func (a *App) SetRoot(root *Element)
 ```
 
-Sets a raw `Renderable` as the root element for rendering. Clears any previous root component, discovers focusable elements and watchers in the new tree, and marks the app dirty.
+Sets a raw `*Element` as the root for rendering. Clears any previous root component, discovers focusable elements and watchers in the new tree, and marks the app dirty.
 
 ### SetRootView
 
@@ -277,7 +277,7 @@ Sets a struct component as the root. Calls `BindApp` if the component implements
 ### Root
 
 ```go
-func (a *App) Root() Renderable
+func (a *App) Root() *Element
 ```
 
 Returns the current root element.
@@ -651,28 +651,16 @@ A special value for `WithInputLatency` that makes the event reader block indefin
 
 These interfaces are relevant when working with the App's root management methods.
 
-### Renderable
-
-```go
-type Renderable interface {
-    Render(buf *Buffer, width, height int)
-    MarkDirty()
-    IsDirty() bool
-}
-```
-
-Implemented by types that can be rendered to a buffer. `*Element` implements this.
-
 ### Viewable
 
 ```go
 type Viewable interface {
-    GetRoot() Renderable
+    GetRoot() *Element
     GetWatchers() []Watcher
 }
 ```
 
-Implemented by generated view structs. Allows `SetRootView` to extract the root element and start watchers.
+Implemented by `*Element`, generated view structs, and struct components. Allows `SetRootView` to extract the root element and start watchers. Also accepted by `PrintAboveElement` and `StreamWriter.WriteElement`.
 
 ### Component
 

@@ -296,7 +296,7 @@ func (g *Generator) generateViewStruct(compName string, refs []RefInfo) {
 	// mutate cached *XxxView instances via UpdateProps.
 
 	// Generate GetRoot() method to implement tui.Viewable
-	g.writef("func (v *%s) GetRoot() tui.Renderable { return v.Root }\n", structName)
+	g.writef("func (v *%s) GetRoot() *tui.Element { return v.Root }\n", structName)
 	g.writeln("")
 
 	// Generate GetWatchers() method to implement tui.Viewable

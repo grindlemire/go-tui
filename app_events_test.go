@@ -7,15 +7,15 @@ import (
 
 // mockViewable implements Viewable interface for testing
 type mockViewable struct {
-	root     Renderable
+	root     *Element
 	watchers []Watcher
 }
 
-func newMockViewable(root Renderable, watchers ...Watcher) *mockViewable {
+func newMockViewable(root *Element, watchers ...Watcher) *mockViewable {
 	return &mockViewable{root: root, watchers: watchers}
 }
 
-func (m *mockViewable) GetRoot() Renderable {
+func (m *mockViewable) GetRoot() *Element {
 	return m.root
 }
 
@@ -94,7 +94,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 				stopCh:     make(chan struct{}),
 			}
 
-			root := newMockRenderable()
+			root := New()
 			watchers := make([]Watcher, tt.numWatchers)
 			mockWatchers := make([]*mockWatcher, tt.numWatchers)
 			for i := 0; i < tt.numWatchers; i++ {
@@ -124,7 +124,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 	}
 }
 
-func TestApp_SetRoot_WithRawRenderable(t *testing.T) {
+func TestApp_SetRoot_WithElement(t *testing.T) {
 	app := &App{
 		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
@@ -132,11 +132,11 @@ func TestApp_SetRoot_WithRawRenderable(t *testing.T) {
 		stopCh:     make(chan struct{}),
 	}
 
-	root := newMockRenderable()
+	root := New()
 	app.SetRoot(root)
 
 	if app.Root() != root {
-		t.Error("Root() should return the Renderable passed to SetRoot()")
+		t.Error("Root() should return the element passed to SetRoot()")
 	}
 }
 
@@ -206,7 +206,7 @@ func TestApp_Stop_IsIdempotent(t *testing.T) {
 	}
 }
 
-func TestApp_SetRoot_ClearsRootComponentForRenderable(t *testing.T) {
+func TestApp_SetRoot_ClearsRootComponent(t *testing.T) {
 	app := &App{
 		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
@@ -220,7 +220,7 @@ func TestApp_SetRoot_ClearsRootComponentForRenderable(t *testing.T) {
 		t.Fatal("expected rootComponent to be set after SetRootComponent")
 	}
 
-	app.SetRoot(newMockRenderable())
+	app.SetRoot(New())
 	if app.rootComponent != nil {
 		t.Fatal("expected rootComponent to be cleared after SetRoot")
 	}
@@ -236,10 +236,10 @@ func TestApp_SetRoot_StopsPreviousRootWatchers(t *testing.T) {
 	}
 
 	w1 := newStopAwareWatcher()
-	view1 := newMockViewable(newMockRenderable(), w1)
+	view1 := newMockViewable(New(), w1)
 	app.SetRootView(view1)
 
-	app.SetRoot(newMockRenderable())
+	app.SetRoot(New())
 
 	select {
 	case <-w1.stopped:
