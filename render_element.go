@@ -59,3 +59,31 @@ func bufferRowToANSI(buf *Buffer, row int, esc *escBuilder, caps Capabilities) s
 
 	return string(esc.Bytes())
 }
+
+// renderElementToBuffer lays out and renders an element tree into a standalone
+// buffer. Returns the buffer and its height. Returns (nil, 0) if the element
+// has no renderable content. The element does not need to be attached to an
+// App — this is a standalone render for baking elements into ANSI text.
+func renderElementToBuffer(el *Element, width int, caps Capabilities) (*Buffer, int) {
+	if el == nil || width <= 0 {
+		return nil, 0
+	}
+
+	// Ensure layout runs from scratch.
+	el.MarkDirty()
+
+	// Compute natural height for the given width.
+	height := el.HeightForWidth(width)
+	if height <= 0 {
+		return nil, 0
+	}
+
+	// Run full flexbox layout.
+	Calculate(el, width, height)
+
+	// Render to a throwaway buffer.
+	buf := NewBuffer(width, height)
+	RenderTree(buf, el)
+
+	return buf, height
+}
