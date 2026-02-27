@@ -109,6 +109,7 @@ Use this section to quickly find the right files for a given change.
 - `render.go` — Render(), RenderFull(), RenderRegion(): diff computation, full redraw
 - `buffer.go` — Double-buffered character grid: front/back, Diff(), Swap(), SetCell(), Fill()
 - `cell.go` — Cell struct: Rune, Style, Width (CJK support)
+- `render_element.go` — renderElementToBuffer, bufferRowToANSI: standalone element-to-ANSI rendering
 - `escape.go` — escBuilder: ANSI escape sequence construction (cursor, colors, styles)
 - `terminal.go` — Terminal interface definition
 - `terminal_ansi.go` — ANSITerminal implementation (ANSI escape output, capabilities)
@@ -152,7 +153,7 @@ Use this section to quickly find the right files for a given change.
 
 - `app.go` — App struct, Renderable interface, tree walkers
 - `app_loop.go` — Run() main event loop, frame timing, signal handling
-- `app_lifecycle.go` — Close(), Stop(), PrintAbove() for inline mode
+- `app_lifecycle.go` — Close(), Stop(), PrintAbove(), PrintAboveElement(), StreamAbove() for inline mode
 - `app_render.go` — App.Render(): buffer management, dirty checking, inline vs full-screen
 - `app_screen.go` — Alternate screen mode API (EnterAlternateScreen, ExitAlternateScreen)
 - `app_inline_startup.go` — Inline screen mode initialization and startup policy
