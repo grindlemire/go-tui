@@ -15,6 +15,7 @@
   "categories": [
     "Programming Languages"
   ],
+  "icon": "./icons/icon-dark.png",
   "keywords": [
     "gsx",
     "go-tui",
