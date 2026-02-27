@@ -98,8 +98,8 @@ func colorBar(value int) string {
 func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithPadding(2),
-		tui.WithGap(2),
+		tui.WithPadding(1),
+		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
@@ -112,7 +112,6 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_2 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
-		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 	)
@@ -123,8 +122,8 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	)
 	__tui_2.AddChild(__tui_3)
 	__tui_4 := tui.New(
-		tui.WithBackgroundGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
-		tui.WithHeight(3),
+		tui.WithBackgroundGradient(tui.NewGradient(tui.Black, tui.RGBColor(uint8(c.red.Get()), uint8(c.green.Get()), uint8(c.blue.Get())))),
+		tui.WithHeight(2),
 		tui.WithWidth(30),
 	)
 	__tui_5 := tui.New(
@@ -156,7 +155,6 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0.AddChild(__tui_2)
 	__tui_10 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 	)
@@ -226,13 +224,12 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0.AddChild(__tui_10)
 	__tui_23 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
-		tui.WithGap(2),
+		tui.WithGap(1),
 	)
 	__tui_24 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
-		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexGrow(1.0),
 	)
@@ -242,102 +239,118 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	)
 	__tui_24.AddChild(__tui_25)
 	__tui_26 := tui.New(
-		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	c.redUpBtn.Set(__tui_26)
-	__tui_27 := tui.New(tui.WithText(" + "))
+	__tui_27 := tui.New(
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+	)
+	c.redDnBtn.Set(__tui_27)
+	__tui_28 := tui.New(tui.WithText("-"))
+	__tui_27.AddChild(__tui_28)
 	__tui_26.AddChild(__tui_27)
-	__tui_24.AddChild(__tui_26)
-	__tui_28 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", c.red.Get())),
+	__tui_29 := tui.New(
+		tui.WithText(fmt.Sprintf("%3d", c.red.Get())),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Red)),
 	)
-	__tui_24.AddChild(__tui_28)
-	__tui_29 := tui.New(
-		tui.WithPaddingTRBL(0, 2, 0, 2),
+	__tui_26.AddChild(__tui_29)
+	__tui_30 := tui.New(
+		tui.WithPaddingTRBL(0, 1, 0, 1),
 	)
-	c.redDnBtn.Set(__tui_29)
-	__tui_30 := tui.New(tui.WithText(" - "))
-	__tui_29.AddChild(__tui_30)
-	__tui_24.AddChild(__tui_29)
+	c.redUpBtn.Set(__tui_30)
+	__tui_31 := tui.New(tui.WithText("+"))
+	__tui_30.AddChild(__tui_31)
+	__tui_26.AddChild(__tui_30)
+	__tui_24.AddChild(__tui_26)
 	__tui_23.AddChild(__tui_24)
-	__tui_31 := tui.New(
+	__tui_32 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
-		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexGrow(1.0),
 	)
-	__tui_32 := tui.New(
+	__tui_33 := tui.New(
 		tui.WithText("Green"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Green)),
 	)
-	__tui_31.AddChild(__tui_32)
-	__tui_33 := tui.New(
-		tui.WithPaddingTRBL(0, 2, 0, 2),
+	__tui_32.AddChild(__tui_33)
+	__tui_34 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	c.greenUpBtn.Set(__tui_33)
-	__tui_34 := tui.New(tui.WithText(" + "))
-	__tui_33.AddChild(__tui_34)
-	__tui_31.AddChild(__tui_33)
 	__tui_35 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", c.green.Get())),
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+	)
+	c.greenDnBtn.Set(__tui_35)
+	__tui_36 := tui.New(tui.WithText("-"))
+	__tui_35.AddChild(__tui_36)
+	__tui_34.AddChild(__tui_35)
+	__tui_37 := tui.New(
+		tui.WithText(fmt.Sprintf("%3d", c.green.Get())),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Green)),
 	)
-	__tui_31.AddChild(__tui_35)
-	__tui_36 := tui.New(
-		tui.WithPaddingTRBL(0, 2, 0, 2),
-	)
-	c.greenDnBtn.Set(__tui_36)
-	__tui_37 := tui.New(tui.WithText(" - "))
-	__tui_36.AddChild(__tui_37)
-	__tui_31.AddChild(__tui_36)
-	__tui_23.AddChild(__tui_31)
+	__tui_34.AddChild(__tui_37)
 	__tui_38 := tui.New(
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+	)
+	c.greenUpBtn.Set(__tui_38)
+	__tui_39 := tui.New(tui.WithText("+"))
+	__tui_38.AddChild(__tui_39)
+	__tui_34.AddChild(__tui_38)
+	__tui_32.AddChild(__tui_34)
+	__tui_23.AddChild(__tui_32)
+	__tui_40 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
-		tui.WithGap(1),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexGrow(1.0),
 	)
-	__tui_39 := tui.New(
+	__tui_41 := tui.New(
 		tui.WithText("Blue"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
 	)
-	__tui_38.AddChild(__tui_39)
-	__tui_40 := tui.New(
-		tui.WithPaddingTRBL(0, 2, 0, 2),
-	)
-	c.blueUpBtn.Set(__tui_40)
-	__tui_41 := tui.New(tui.WithText(" + "))
 	__tui_40.AddChild(__tui_41)
-	__tui_38.AddChild(__tui_40)
 	__tui_42 := tui.New(
-		tui.WithText(fmt.Sprintf("%d", c.blue.Get())),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_38.AddChild(__tui_42)
 	__tui_43 := tui.New(
-		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithPaddingTRBL(0, 1, 0, 1),
 	)
 	c.blueDnBtn.Set(__tui_43)
-	__tui_44 := tui.New(tui.WithText(" - "))
+	__tui_44 := tui.New(tui.WithText("-"))
 	__tui_43.AddChild(__tui_44)
-	__tui_38.AddChild(__tui_43)
-	__tui_23.AddChild(__tui_38)
-	__tui_0.AddChild(__tui_23)
+	__tui_42.AddChild(__tui_43)
 	__tui_45 := tui.New(
+		tui.WithText(fmt.Sprintf("%3d", c.blue.Get())),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Blue)),
+	)
+	__tui_42.AddChild(__tui_45)
+	__tui_46 := tui.New(
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+	)
+	c.blueUpBtn.Set(__tui_46)
+	__tui_47 := tui.New(tui.WithText("+"))
+	__tui_46.AddChild(__tui_47)
+	__tui_42.AddChild(__tui_46)
+	__tui_40.AddChild(__tui_42)
+	__tui_23.AddChild(__tui_40)
+	__tui_0.AddChild(__tui_23)
+	__tui_48 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_46 := tui.New(
+	__tui_49 := tui.New(
 		tui.WithText("r/g/b increase | R/G/B decrease | click buttons | q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_45.AddChild(__tui_46)
-	__tui_0.AddChild(__tui_45)
+	__tui_48.AddChild(__tui_49)
+	__tui_0.AddChild(__tui_48)
 
 	return __tui_0
 }

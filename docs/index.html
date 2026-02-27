@@ -1,30 +1,33 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/go-tui-favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>go-tui — Declarative Terminal UI for Go</title>
-  </head>
-  <body>
-    <script>
-      // Apply theme background immediately to prevent white flash during navigation.
-      // Must run synchronously before React mounts.
-      (function() {
-        var theme = localStorage.getItem("go-tui-theme");
-        if (theme !== "light") {
-          document.body.style.background = "#272822";
-        } else {
-          document.body.style.background = "#fafaf8";
-        }
-        // Only disable scroll restoration on the landing page so it always
-        // starts at the top. Guide/reference pages keep normal restoration.
-        if (location.pathname === "/" || location.pathname === "") {
-          history.scrollRestoration = "manual";
-        }
-      })();
-    </script>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/go-tui-favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>go-tui — Declarative Terminal UI for Go</title>
+</head>
+
+<body>
+  <script>
+    // Apply theme background immediately to prevent white flash during navigation.
+    // Must run synchronously before React mounts.
+    (function () {
+      var theme = localStorage.getItem("go-tui-theme");
+      if (theme !== "light") {
+        document.body.style.background = "#272822";
+      } else {
+        document.body.style.background = "#fafaf8";
+      }
+      // Only disable scroll restoration on the landing page so it always
+      // starts at the top. Guide/reference pages keep normal restoration.
+      if (location.pathname === "/" || location.pathname === "") {
+        history.scrollRestoration = "manual";
+      }
+    })();
+  </script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

@@ -92,13 +92,13 @@ func colorBar(value int) string {
 }
 
 templ (c *colorMixer) Render() {
-	<div class="flex-col p-2 gap-2 border-rounded border-cyan">
+	<div class="flex-col p-1 gap-1 border-rounded border-cyan">
 		<span class="text-gradient-cyan-magenta font-bold">Color Mixer</span>
 
 		// Color preview
-		<div class="flex-col items-center gap-1 border-rounded p-1">
+		<div class="flex-col items-center border-rounded p-1">
 			<span class="text-gradient-cyan-magenta font-bold">Preview</span>
-			<div class="bg-gradient-cyan-magenta" height={3} width={30}>
+			<div backgroundGradient={tui.NewGradient(tui.Black, tui.RGBColor(uint8(c.red.Get()), uint8(c.green.Get()), uint8(c.blue.Get())))} height={2} width={30}>
 				<span>{" "}</span>
 			</div>
 			<div class="flex gap-2 justify-center">
@@ -109,7 +109,7 @@ templ (c *colorMixer) Render() {
 		</div>
 
 		// Color bars
-		<div class="flex-col gap-1 border-rounded p-1">
+		<div class="flex-col border-rounded p-1">
 			<div class="flex gap-1">
 				<span class="text-red font-bold w-5">Red</span>
 				<span class="text-red">{colorBar(c.red.Get())}</span>
@@ -128,24 +128,30 @@ templ (c *colorMixer) Render() {
 		</div>
 
 		// Channel controls with refs
-		<div class="flex gap-2">
-			<div class="flex-col border-rounded p-1 gap-1 items-center" flexGrow={1.0}>
+		<div class="flex gap-1">
+			<div class="flex-col border-rounded p-1 items-center" flexGrow={1.0}>
 				<span class="font-bold text-red">Red</span>
-				<button ref={c.redUpBtn} class="px-2">{" + "}</button>
-				<span class="font-bold text-red">{fmt.Sprintf("%d", c.red.Get())}</span>
-				<button ref={c.redDnBtn} class="px-2">{" - "}</button>
+				<div class="flex gap-1 items-center">
+					<button ref={c.redDnBtn} class="px-1">{"-"}</button>
+					<span class="font-bold text-red">{fmt.Sprintf("%3d", c.red.Get())}</span>
+					<button ref={c.redUpBtn} class="px-1">{"+"}</button>
+				</div>
 			</div>
-			<div class="flex-col border-rounded p-1 gap-1 items-center" flexGrow={1.0}>
+			<div class="flex-col border-rounded p-1 items-center" flexGrow={1.0}>
 				<span class="font-bold text-green">Green</span>
-				<button ref={c.greenUpBtn} class="px-2">{" + "}</button>
-				<span class="font-bold text-green">{fmt.Sprintf("%d", c.green.Get())}</span>
-				<button ref={c.greenDnBtn} class="px-2">{" - "}</button>
+				<div class="flex gap-1 items-center">
+					<button ref={c.greenDnBtn} class="px-1">{"-"}</button>
+					<span class="font-bold text-green">{fmt.Sprintf("%3d", c.green.Get())}</span>
+					<button ref={c.greenUpBtn} class="px-1">{"+"}</button>
+				</div>
 			</div>
-			<div class="flex-col border-rounded p-1 gap-1 items-center" flexGrow={1.0}>
+			<div class="flex-col border-rounded p-1 items-center" flexGrow={1.0}>
 				<span class="font-bold text-blue">Blue</span>
-				<button ref={c.blueUpBtn} class="px-2">{" + "}</button>
-				<span class="font-bold text-blue">{fmt.Sprintf("%d", c.blue.Get())}</span>
-				<button ref={c.blueDnBtn} class="px-2">{" - "}</button>
+				<div class="flex gap-1 items-center">
+					<button ref={c.blueDnBtn} class="px-1">{"-"}</button>
+					<span class="font-bold text-blue">{fmt.Sprintf("%3d", c.blue.Get())}</span>
+					<button ref={c.blueUpBtn} class="px-1">{"+"}</button>
+				</div>
 			</div>
 		</div>
 

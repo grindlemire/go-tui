@@ -216,9 +216,10 @@ var attributeToOption = map[string]string{
 	"margin":  "tui.WithMargin(%s)",
 
 	// Visual
-	"border":      "tui.WithBorder(%s)",
-	"borderStyle": "tui.WithBorderStyle(%s)",
-	"background":  "tui.WithBackground(%s)",
+	"border":             "tui.WithBorder(%s)",
+	"borderStyle":        "tui.WithBorderStyle(%s)",
+	"background":         "tui.WithBackground(%s)",
+	"backgroundGradient": "tui.WithBackgroundGradient(%s)",
 
 	// Text
 	"text":      "tui.WithText(%s)",

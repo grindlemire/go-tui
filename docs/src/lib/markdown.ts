@@ -59,10 +59,17 @@ const referenceFiles = import.meta.glob("../content/reference/*.md", {
   eager: true,
 }) as Record<string, string>;
 
+// Single combined LLM-optimized doc
+import llmDoc from "../content/llm.md?raw";
+
 export function loadGuide(): ContentPage[] {
   return loadPages(guideFiles);
 }
 
 export function loadReference(): ContentPage[] {
   return loadPages(referenceFiles);
+}
+
+export function loadLLMDoc(): string {
+  return llmDoc;
 }

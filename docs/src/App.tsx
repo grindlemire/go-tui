@@ -2,14 +2,14 @@ import { useState, useEffect, useRef, useCallback, createContext, useContext } f
 import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
 import { tailwindClasses } from "./content/projectInfo.ts";
-import { loadGuide, loadReference } from "./lib/markdown.ts";
+import { loadGuide, loadReference, loadLLMDoc } from "./lib/markdown.ts";
 import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
 import CodeShowcase from "./components/CodeShowcase.tsx";
 import SearchModal from "./components/SearchModal.tsx";
 import HomePageExplore from "./components/HomePageExplore.tsx";
 
-const SearchContext = createContext<{ openSearch: () => void }>({ openSearch: () => {} });
+const SearchContext = createContext<{ openSearch: () => void }>({ openSearch: () => { } });
 function useSearch() { return useContext(SearchContext); }
 
 /* ─── Scroll to top on route change ─── */
@@ -854,28 +854,32 @@ function Footer() {
   return (
     <footer
       className="mt-20"
-      style={{
-        borderTop: `1px solid ${t.border}`,
-        background: t.bgSecondary,
-      }}
+      style={{ borderTop: `1px solid ${t.border}` }}
     >
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-['Fira_Code',monospace] text-[11px]">
-          <span style={{ color: t.textDim }}>
-            go-tui &mdash; reactive terminal UIs in Go
-          </span>
-          <a
-            href="https://github.com/grindlemire/go-tui"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors duration-200"
-            style={{ color: t.textMuted }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = t.textMuted)}
-          >
-            github.com/grindlemire/go-tui
-          </a>
-        </div>
+      <div className="py-6 flex items-center justify-center gap-4 font-['Fira_Code',monospace] text-[11px]">
+        <a
+          href="https://github.com/grindlemire/go-tui"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition-colors duration-200"
+          style={{ color: t.textDim }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = t.textDim)}
+        >
+          GitHub
+        </a>
+        <span style={{ color: t.border }}>·</span>
+        <a
+          href="https://pkg.go.dev/github.com/grindlemire/go-tui"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition-colors duration-200"
+          style={{ color: t.textDim }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = t.textDim)}
+        >
+          pkg.go.dev
+        </a>
       </div>
     </footer>
   );
@@ -1563,219 +1567,219 @@ function HomePage() {
                 className="flex-1 flex flex-col justify-center overflow-auto font-['Fira_Code',monospace] text-[13px] leading-[1.6]"
                 style={{ padding: "24px 32px 24px clamp(32px, 12vw, 200px)" }}
               >
-              <div className="w-full max-w-[720px]">
-                {/* Prompt line */}
-                <div className="tl mb-4 text-[13px]" style={{ animationDelay: "10ms" }}>
-                  <span style={{ color: t.secondary }}>$</span>{" "}
-                  <span style={{ color: t.heading }}>man tui</span>
-                </div>
-
-                {/* ASCII Art — REACTIVE */}
-                {[
-                  " ██████╗ ███████╗ █████╗  ██████╗████████╗██╗██╗   ██╗███████╗",
-                  " ██╔══██╗██╔════╝██╔══██╗██╔════╝╚══██╔══╝██║██║   ██║██╔════╝",
-                  " ██████╔╝█████╗  ███████║██║        ██║   ██║██║   ██║█████╗",
-                  " ██╔══██╗██╔══╝  ██╔══██║██║        ██║   ██║╚██╗ ██╔╝██╔══╝",
-                  " ██║  ██║███████╗██║  ██║╚██████╗   ██║   ██║ ╚████╔╝ ███████╗",
-                  " ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝   ╚═╝   ╚═╝  ╚═══╝  ╚══════╝",
-                ].map((line, i) => (
-                  <div
-                    key={`r${i}`}
-                    className="tl whitespace-pre leading-[1.15] overflow-hidden"
-                    style={{
-                      animationDelay: `${30 + i * 5}ms`,
-                      color: t.heading,
-                      fontSize: "clamp(7px, 1.15vw, 13px)",
-                      letterSpacing: 0,
-                    }}
-                  >
-                    {line}
+                <div className="w-full max-w-[720px]">
+                  {/* Prompt line */}
+                  <div className="tl mb-4 text-[13px]" style={{ animationDelay: "10ms" }}>
+                    <span style={{ color: t.secondary }}>$</span>{" "}
+                    <span style={{ color: t.heading }}>man tui</span>
                   </div>
-                ))}
 
-                <div className="tl h-[2px]" style={{ animationDelay: "60ms" }} />
-
-                {/* ASCII Art — TERMINAL */}
-                {[
-                  " ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗",
-                  " ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║",
-                  "    ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║",
-                  "    ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║",
-                  "    ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗",
-                  "    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝",
-                ].map((line, i) => (
-                  <div
-                    key={`t${i}`}
-                    className="tl whitespace-pre leading-[1.15] overflow-hidden"
-                    style={{
-                      animationDelay: `${65 + i * 5}ms`,
-                      color: t.accent,
-                      fontSize: "clamp(7px, 1.15vw, 13px)",
-                      letterSpacing: 0,
-                    }}
-                  >
-                    {line}
-                  </div>
-                ))}
-
-                <div className="tl h-[2px]" style={{ animationDelay: "100ms" }} />
-
-                {/* ASCII Art — UIs  in  Go — "s" and "in" as regular text */}
-                <div
-                  className="tl flex items-end gap-0"
-                  style={{ animationDelay: "105ms" }}
-                >
-                  {/* UI block letters */}
-                  <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
-                    {[
-                      " ██╗   ██╗██╗",
-                      " ██║   ██║██║",
-                      " ██║   ██║██║",
-                      " ██║   ██║██║",
-                      " ╚██████╔╝██║",
-                      "  ╚═════╝ ╚═╝",
-                    ].map((line, i) => (
-                      <div key={`u${i}`} style={{ color: t.secondary }}>{line}</div>
-                    ))}
-                  </div>
-                  {/* "s" as regular text, quarter height of block letters */}
-                  <span
-                    className="font-['Fira_Code',monospace] font-bold self-end"
-                    style={{
-                      color: t.secondary,
-                      fontSize: "clamp(14px, 2.3vw, 26px)",
-                      lineHeight: 1,
-                      paddingBottom: "clamp(1px, 0.15vw, 2px)",
-                    }}
-                  >
-                    s
-                  </span>
-                  {/* "in" as regular text, larger */}
-                  <span
-                    className="font-['Fira_Code',monospace] font-light"
-                    style={{
-                      color: t.textDim,
-                      fontSize: "clamp(20px, 3.5vw, 40px)",
-                      lineHeight: 1,
-                      padding: "0 clamp(8px, 1.5vw, 18px)",
-                      paddingBottom: "clamp(0px, 0.1vw, 1px)",
-                    }}
-                  >
-                    in
-                  </span>
-                  {/* Go block letters */}
-                  <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
-                    {[
-                      " ██████╗  ██████╗",
-                      "██╔════╝ ██╔═══██╗",
-                      "██║  ███╗██║   ██║",
-                      "██║   ██║██║   ██║",
-                      "╚██████╔╝╚██████╔╝",
-                      " ╚═════╝  ╚═════╝",
-                    ].map((line, i) => (
-                      <div key={`g${i}`} style={{ color: t.tertiary }}>{line}</div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Man page sections — tight and punchy */}
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "145ms" }}>
-                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>NAME</div>
-                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
-                    <span className="font-semibold" style={{ color: t.heading }}>go-tui</span>
-                    {" "}&mdash; declarative terminal UIs in{" "}
-                    <span
-                      className="inline-block text-[10px] px-2 py-[2px] rounded-[3px] font-bold"
+                  {/* ASCII Art — REACTIVE */}
+                  {[
+                    " ██████╗ ███████╗ █████╗  ██████╗████████╗██╗██╗   ██╗███████╗",
+                    " ██╔══██╗██╔════╝██╔══██╗██╔════╝╚══██╔══╝██║██║   ██║██╔════╝",
+                    " ██████╔╝█████╗  ███████║██║        ██║   ██║██║   ██║█████╗",
+                    " ██╔══██╗██╔══╝  ██╔══██║██║        ██║   ██║╚██╗ ██╔╝██╔══╝",
+                    " ██║  ██║███████╗██║  ██║╚██████╗   ██║   ██║ ╚████╔╝ ███████╗",
+                    " ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝   ╚═╝   ╚═╝  ╚═══╝  ╚══════╝",
+                  ].map((line, i) => (
+                    <div
+                      key={`r${i}`}
+                      className="tl whitespace-pre leading-[1.15] overflow-hidden"
                       style={{
-                        color: t.tertiary,
-                        background: theme === "dark" ? "rgba(249,38,114,0.1)" : "rgba(212,37,104,0.08)",
-                        border: `1px solid ${theme === "dark" ? "rgba(249,38,114,0.25)" : "rgba(212,37,104,0.2)"}`,
+                        animationDelay: `${30 + i * 5}ms`,
+                        color: t.heading,
+                        fontSize: "clamp(7px, 1.15vw, 13px)",
+                        letterSpacing: 0,
                       }}
                     >
-                      Go
+                      {line}
+                    </div>
+                  ))}
+
+                  <div className="tl h-[2px]" style={{ animationDelay: "60ms" }} />
+
+                  {/* ASCII Art — TERMINAL */}
+                  {[
+                    " ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗",
+                    " ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║",
+                    "    ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║",
+                    "    ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║",
+                    "    ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗",
+                    "    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝",
+                  ].map((line, i) => (
+                    <div
+                      key={`t${i}`}
+                      className="tl whitespace-pre leading-[1.15] overflow-hidden"
+                      style={{
+                        animationDelay: `${65 + i * 5}ms`,
+                        color: t.accent,
+                        fontSize: "clamp(7px, 1.15vw, 13px)",
+                        letterSpacing: 0,
+                      }}
+                    >
+                      {line}
+                    </div>
+                  ))}
+
+                  <div className="tl h-[2px]" style={{ animationDelay: "100ms" }} />
+
+                  {/* ASCII Art — UIs  in  Go — "s" and "in" as regular text */}
+                  <div
+                    className="tl flex items-end gap-0"
+                    style={{ animationDelay: "105ms" }}
+                  >
+                    {/* UI block letters */}
+                    <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
+                      {[
+                        " ██╗   ██╗██╗",
+                        " ██║   ██║██║",
+                        " ██║   ██║██║",
+                        " ██║   ██║██║",
+                        " ╚██████╔╝██║",
+                        "  ╚═════╝ ╚═╝",
+                      ].map((line, i) => (
+                        <div key={`u${i}`} style={{ color: t.secondary }}>{line}</div>
+                      ))}
+                    </div>
+                    {/* "s" as regular text, quarter height of block letters */}
+                    <span
+                      className="font-['Fira_Code',monospace] font-bold self-end"
+                      style={{
+                        color: t.secondary,
+                        fontSize: "clamp(14px, 2.3vw, 26px)",
+                        lineHeight: 1,
+                        paddingBottom: "clamp(1px, 0.15vw, 2px)",
+                      }}
+                    >
+                      s
+                    </span>
+                    {/* "in" as regular text, larger */}
+                    <span
+                      className="font-['Fira_Code',monospace] font-light"
+                      style={{
+                        color: t.textDim,
+                        fontSize: "clamp(20px, 3.5vw, 40px)",
+                        lineHeight: 1,
+                        padding: "0 clamp(8px, 1.5vw, 18px)",
+                        paddingBottom: "clamp(0px, 0.1vw, 1px)",
+                      }}
+                    >
+                      in
+                    </span>
+                    {/* Go block letters */}
+                    <div className="whitespace-pre leading-[1.15] overflow-hidden" style={{ fontSize: "clamp(7px, 1.15vw, 13px)", letterSpacing: 0 }}>
+                      {[
+                        " ██████╗  ██████╗",
+                        "██╔════╝ ██╔═══██╗",
+                        "██║  ███╗██║   ██║",
+                        "██║   ██║██║   ██║",
+                        "╚██████╔╝╚██████╔╝",
+                        " ╚═════╝  ╚═════╝",
+                      ].map((line, i) => (
+                        <div key={`g${i}`} style={{ color: t.tertiary }}>{line}</div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Man page sections — tight and punchy */}
+                  <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "145ms" }}>
+                    <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>NAME</div>
+                    <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
+                      <span className="font-semibold" style={{ color: t.heading }}>go-tui</span>
+                      {" "}&mdash; declarative terminal UIs in{" "}
+                      <span
+                        className="inline-block text-[10px] px-2 py-[2px] rounded-[3px] font-bold"
+                        style={{
+                          color: t.tertiary,
+                          background: theme === "dark" ? "rgba(249,38,114,0.1)" : "rgba(212,37,104,0.08)",
+                          border: `1px solid ${theme === "dark" ? "rgba(249,38,114,0.25)" : "rgba(212,37,104,0.2)"}`,
+                        }}
+                      >
+                        Go
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "170ms" }}>
+                    <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SYNOPSIS</div>
+                    <div className="pl-5 mt-1 leading-[1.7] whitespace-pre" style={{ color: t.textMuted }}>
+                      <span style={{ color: t.secondary }}>$</span> go get github.com/grindlemire/go-tui{"\n"}
+                      <span style={{ color: t.secondary }}>$</span> tui generate ./...
+                    </div>
+                  </div>
+
+                  <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "200ms" }}>
+                    <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SEE ALSO</div>
+                    <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
+                      {[
+                        { label: "guide(7)", href: "/guide", external: false },
+                        { label: "reference(3)", href: "/reference", external: false },
+                        { label: "examples(7)", href: "https://github.com/grindlemire/go-tui/tree/main/examples", external: true },
+                        { label: "github(1)", href: "https://github.com/grindlemire/go-tui", external: true },
+                      ].map((link, i, arr) => (
+                        <span key={link.label}>
+                          {link.external ? (
+                            <a
+                              href={link.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="transition-all duration-150"
+                              style={{
+                                color: t.accent,
+                                textDecoration: "underline",
+                                textUnderlineOffset: "3px",
+                                textDecorationColor: theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)",
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = t.accent)}
+                              onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)")}
+                            >
+                              {link.label}
+                            </a>
+                          ) : (
+                            <Link
+                              to={link.href}
+                              className="transition-all duration-150"
+                              style={{
+                                color: t.accent,
+                                textDecoration: "underline",
+                                textUnderlineOffset: "3px",
+                                textDecorationColor: theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)",
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = t.accent)}
+                              onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)")}
+                            >
+                              {link.label}
+                            </Link>
+                          )}
+                          {i < arr.length - 1 && ",  "}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Static prompt — desktop only */}
+                  <div
+                    className="tl hidden sm:flex items-center mt-8 text-[13px]"
+                    style={{ animationDelay: "230ms" }}
+                  >
+                    <span style={{ color: t.secondary }}>$</span>
+                    <span className="ml-2 relative">
+                      {/* Blinking block cursor */}
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: "0.6ch",
+                          height: "1.15em",
+                          background: t.secondary,
+                          animation: "blink 1s step-end infinite",
+                          verticalAlign: "middle",
+                        }}
+                      />
                     </span>
                   </div>
-                </div>
 
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "170ms" }}>
-                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SYNOPSIS</div>
-                  <div className="pl-5 mt-1 leading-[1.7] whitespace-pre" style={{ color: t.textMuted }}>
-                    <span style={{ color: t.secondary }}>$</span> go get github.com/grindlemire/go-tui{"\n"}
-                    <span style={{ color: t.secondary }}>$</span> tui generate ./...
-                  </div>
                 </div>
-
-                <div className="tl mt-[14px] text-[12px]" style={{ animationDelay: "200ms" }}>
-                  <div className="font-bold tracking-[0.04em]" style={{ color: t.heading }}>SEE ALSO</div>
-                  <div className="pl-5 mt-1 leading-[1.7]" style={{ color: t.textMuted }}>
-                    {[
-                      { label: "guide(7)", href: "/guide", external: false },
-                      { label: "reference(3)", href: "/reference", external: false },
-                      { label: "examples(7)", href: "https://github.com/grindlemire/go-tui/tree/main/examples", external: true },
-                      { label: "github(1)", href: "https://github.com/grindlemire/go-tui", external: true },
-                    ].map((link, i, arr) => (
-                      <span key={link.label}>
-                        {link.external ? (
-                          <a
-                            href={link.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="transition-all duration-150"
-                            style={{
-                              color: t.accent,
-                              textDecoration: "underline",
-                              textUnderlineOffset: "3px",
-                              textDecorationColor: theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)",
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = t.accent)}
-                            onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)")}
-                          >
-                            {link.label}
-                          </a>
-                        ) : (
-                          <Link
-                            to={link.href}
-                            className="transition-all duration-150"
-                            style={{
-                              color: t.accent,
-                              textDecoration: "underline",
-                              textUnderlineOffset: "3px",
-                              textDecorationColor: theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)",
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.textDecorationColor = t.accent)}
-                            onMouseLeave={(e) => (e.currentTarget.style.textDecorationColor = theme === "dark" ? "rgba(102,217,239,0.3)" : "rgba(47,158,184,0.3)")}
-                          >
-                            {link.label}
-                          </Link>
-                        )}
-                        {i < arr.length - 1 && ",  "}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Static prompt — desktop only */}
-                <div
-                  className="tl hidden sm:flex items-center mt-8 text-[13px]"
-                  style={{ animationDelay: "230ms" }}
-                >
-                  <span style={{ color: t.secondary }}>$</span>
-                  <span className="ml-2 relative">
-                    {/* Blinking block cursor */}
-                    <span
-                      style={{
-                        display: "inline-block",
-                        width: "0.6ch",
-                        height: "1.15em",
-                        background: t.secondary,
-                        animation: "blink 1s step-end infinite",
-                        verticalAlign: "middle",
-                      }}
-                    />
-                  </span>
-                </div>
-
-              </div>
               </div>
             </div>
 
@@ -2211,6 +2215,8 @@ function GuidePage() {
                   </Link>
                 );
               })}
+
+              <SidebarLLMButton label="copy all as markdown" />
             </div>
           </div>
 
@@ -2222,19 +2228,7 @@ function GuidePage() {
               onSelect={(i) => navigate(`/guide/${pages[i].slug}`)}
             />
 
-            <div className="flex justify-end mb-3">
-              <Link
-                to={`/guide/${pages[activeSection].slug}/raw`}
-                className="font-['Fira_Code',monospace] text-[11px] flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors duration-200"
-                style={{ color: t.textDim, textDecoration: "none" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = t.accent; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = t.textDim; }}
-                title="View raw markdown (for AI consumption)"
-              >
-                <span style={{ fontSize: "13px" }}>{ "\u2913" }</span>
-                raw markdown
-              </Link>
-            </div>
+            <RawMarkdownButton body={pages[activeSection].body} />
 
             <div className="fade-in" key={slug}>
               <Markdown content={pages[activeSection].body} />
@@ -2252,6 +2246,125 @@ function GuidePage() {
         </div>
       </div>
     </Page>
+  );
+}
+
+/* ─── Sidebar LLM Copy Button ─── */
+
+function SidebarLLMButton({ label }: { label: string }) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(loadLLMDoc());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="font-['Fira_Code',monospace] text-[10px] flex items-center gap-1.5 mt-6 px-3 py-1.5 rounded transition-all duration-200 w-full"
+      style={{
+        color: copied ? t.secondary : t.textDim,
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        borderTop: `1px solid ${t.border}`,
+        paddingTop: "12px",
+      }}
+      onMouseEnter={(e) => {
+        if (!copied) e.currentTarget.style.color = t.accent;
+      }}
+      onMouseLeave={(e) => {
+        if (!copied) e.currentTarget.style.color = t.textDim;
+      }}
+      title="Copy all docs as a single LLM-optimized markdown file"
+    >
+      {copied ? (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+      {copied ? "copied!" : label}
+    </button>
+  );
+}
+
+/* ─── Doc Action Buttons ─── */
+
+function CopyButton({
+  text,
+  label,
+  copiedLabel,
+  title,
+}: {
+  text: string;
+  label: string;
+  copiedLabel: string;
+  title: string;
+}) {
+  const { theme } = useTheme();
+  const t = palette[theme];
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="font-['Fira_Code',monospace] text-[11px] flex items-center gap-1.5 px-2.5 py-1 rounded transition-all duration-200"
+      style={{
+        color: copied ? t.secondary : t.textDim,
+        background: "transparent",
+        border: `1px solid ${copied ? t.secondary + "40" : "transparent"}`,
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        if (!copied) {
+          e.currentTarget.style.color = t.accent;
+          e.currentTarget.style.borderColor = t.accent + "30";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!copied) {
+          e.currentTarget.style.color = t.textDim;
+          e.currentTarget.style.borderColor = "transparent";
+        }
+      }}
+      title={title}
+    >
+      {copied ? (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+      {copied ? copiedLabel : label}
+    </button>
+  );
+}
+
+function RawMarkdownButton({ body }: { body: string }) {
+  return (
+    <div className="flex justify-end mb-3">
+      <CopyButton
+        text={body}
+        label="raw markdown"
+        copiedLabel="copied!"
+        title="Copy raw markdown to clipboard"
+      />
+    </div>
   );
 }
 
@@ -2374,6 +2487,8 @@ function ReferencePage() {
                   </Link>
                 );
               })}
+
+              <SidebarLLMButton label="copy all as markdown" />
             </div>
           </div>
 
@@ -2384,6 +2499,8 @@ function ReferencePage() {
               activeIndex={activeCategory}
               onSelect={(i) => navigate(`/reference/${pages[i].slug}`)}
             />
+
+            <RawMarkdownButton body={pages[activeCategory].body} />
 
             <div className="fade-in" key={slug}>
               <Markdown content={pages[activeCategory].body} />

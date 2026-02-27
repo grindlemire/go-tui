@@ -132,9 +132,10 @@ var knownAttributes = map[string]bool{
 	"margin":  true,
 
 	// Visual
-	"border":      true,
-	"borderStyle": true,
-	"background":  true,
+	"border":             true,
+	"borderStyle":        true,
+	"background":         true,
+	"backgroundGradient": true,
 
 	// Text
 	"text":      true,
