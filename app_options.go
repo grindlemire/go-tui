@@ -77,8 +77,8 @@ func WithGlobalKeyHandler(fn func(KeyEvent) bool) AppOption {
 	}
 }
 
-// WithRoot sets the renderable root after app initialization.
-func WithRoot(root Renderable) AppOption {
+// WithRoot sets the root element after app initialization.
+func WithRoot(root *Element) AppOption {
 	return func(a *App) error {
 		a.pendingRootApply = func(app *App) {
 			app.SetRoot(root)

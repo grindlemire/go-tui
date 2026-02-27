@@ -123,14 +123,13 @@ func (a *App) QueueUpdate(fn func()) {
 
 // rebuildDispatchTable walks the rendered element tree and builds a new
 // dispatch table from all mounted components' KeyMap() methods.
-// If the root is not an *Element or validation fails, the previous table is kept.
+// If validation fails, the previous table is kept.
 func (a *App) rebuildDispatchTable() {
-	root, ok := a.root.(*Element)
-	if !ok {
+	if a.root == nil {
 		return
 	}
 
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(a.root)
 	if err != nil {
 		// Validation error (e.g., conflicting Stop handlers).
 		// Log and keep the previous valid table rather than crashing.

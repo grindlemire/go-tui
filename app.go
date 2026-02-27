@@ -13,48 +13,11 @@ import (
 // This is more efficient for CPU usage but requires proper interrupt handling.
 const InputLatencyBlocking = -1 * time.Millisecond
 
-// Renderable is implemented by types that can be rendered to a buffer.
-// This is typically implemented by element.Element.
-type Renderable interface {
-	// Render calculates layout (if dirty) and renders to the buffer.
-	Render(buf *Buffer, width, height int)
-
-	// MarkDirty marks the element as needing layout recalculation.
-	MarkDirty()
-
-	// IsDirty returns whether the element needs recalculation.
-	IsDirty() bool
-}
-
-// focusableTreeWalker is used internally by App to discover and register
-// focusable elements in an element tree. element.Element implements this.
-type focusableTreeWalker interface {
-	// SetOnFocusableAdded sets a callback called when a focusable descendant is added.
-	SetOnFocusableAdded(fn func(Focusable))
-
-	// WalkFocusables calls fn for each focusable element in the tree.
-	WalkFocusables(fn func(Focusable))
-}
-
-// watcherTreeWalker is used internally by App to discover and start
-// watchers attached to elements in a tree. element.Element implements this.
-type watcherTreeWalker interface {
-	// WalkWatchers calls fn for each watcher in the element tree.
-	WalkWatchers(fn func(Watcher))
-}
-
-// mouseHitTester is used internally by App to find the element at a given point.
-// element.Element implements this via its ElementAtPoint method.
-type mouseHitTester interface {
-	// ElementAtPoint returns the deepest focusable-compatible element containing the point (x, y).
-	// Returns nil if no element contains the point.
-	ElementAtPoint(x, y int) Focusable
-}
-
-// Viewable is implemented by generated view structs.
-// Allows SetRoot to extract the root element and start watchers.
+// Viewable is implemented by types that provide a root element tree.
+// Generated view structs, *Element, and struct components all implement this.
+// Used by SetRootView, PrintAboveElement, and StreamWriter.WriteElement.
 type Viewable interface {
-	GetRoot() Renderable
+	GetRoot() *Element
 	GetWatchers() []Watcher
 }
 
@@ -64,7 +27,7 @@ type App struct {
 	buffer          *Buffer
 	reader          EventReader
 	focus           *focusManager
-	root            Renderable
+	root            *Element
 	needsFullRedraw bool // Set after resize, cleared after RenderFull
 	dirty           atomic.Bool
 	batch           batchContext
@@ -329,8 +292,8 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	return app, nil
 }
 
-// SetRoot sets the root renderable for rendering.
-func (a *App) SetRoot(root Renderable) {
+// SetRoot sets the root element for rendering.
+func (a *App) SetRoot(root *Element) {
 	a.rootComponent = nil
 	a.applyRoot(root)
 }
@@ -341,8 +304,7 @@ func (a *App) SetRootView(view Viewable) {
 	if binder, ok := view.(AppBinder); ok {
 		binder.BindApp(a)
 	}
-	root := view.GetRoot()
-	a.applyRoot(root)
+	a.applyRoot(view.GetRoot())
 	if binder, ok := view.(AppBinder); ok {
 		binder.BindApp(a)
 	}
@@ -365,36 +327,29 @@ func (a *App) SetRootComponent(component Component) {
 	}
 }
 
-func (a *App) applyRoot(root Renderable) {
+func (a *App) applyRoot(root *Element) {
 	a.resetRootSession()
 	a.root = root
 	if root == nil {
 		return
 	}
-	if el, ok := root.(*Element); ok {
-		el.setAppRecursive(a)
-	}
+	root.setAppRecursive(a)
 	a.MarkDirty()
 
-	// If root supports focus discovery, set up auto-registration
-	if walker, ok := root.(focusableTreeWalker); ok {
-		// Set up callback for future focusable elements
-		walker.SetOnFocusableAdded(func(f Focusable) {
-			a.focus.Register(f)
-		})
+	// Set up callback for future focusable elements
+	root.SetOnFocusableAdded(func(f Focusable) {
+		a.focus.Register(f)
+	})
 
-		// Discover existing focusable elements in tree
-		walker.WalkFocusables(func(f Focusable) {
-			a.focus.Register(f)
-		})
-	}
+	// Discover existing focusable elements in tree
+	root.WalkFocusables(func(f Focusable) {
+		a.focus.Register(f)
+	})
 
-	// If root supports watcher discovery, start all watchers in the tree
-	if walker, ok := root.(watcherTreeWalker); ok {
-		walker.WalkWatchers(func(w Watcher) {
-			w.Start(a.eventQueue, a.rootWatcherCh)
-		})
-	}
+	// Start all watchers in the tree
+	root.WalkWatchers(func(w Watcher) {
+		w.Start(a.eventQueue, a.rootWatcherCh)
+	})
 }
 
 func (a *App) resetRootSession() {
@@ -433,7 +388,7 @@ func (a *App) SetGlobalKeyHandler(fn func(KeyEvent) bool) {
 }
 
 // Root returns the current root element.
-func (a *App) Root() Renderable {
+func (a *App) Root() *Element {
 	return a.root
 }
 

@@ -226,36 +226,20 @@ func (s *statusBar) UpdateProps(fresh tui.Component) {
 }
 ```
 
-## Renderable
-
-```go
-type Renderable interface {
-    Render(buf *Buffer, width, height int)
-    MarkDirty()
-    IsDirty() bool
-}
-```
-
-The low-level rendering interface. `Element` implements this. `Render` calculates layout (if dirty) and draws to the buffer. `MarkDirty` marks the element and its ancestors as needing layout recalculation. `IsDirty` reports whether recalculation is needed.
-
-`Renderable` is what `App.SetRoot` accepts. Most users pass components (via `WithRootComponent`), which the framework wraps internally. You'd only interact with `Renderable` directly when building custom rendering pipelines or testing.
-
-**When to implement:** Rarely. Use `Component` with `WithRootComponent` instead.
-
 ## Viewable
 
 ```go
 type Viewable interface {
-    GetRoot() Renderable
+    GetRoot() *Element
     GetWatchers() []Watcher
 }
 ```
 
-A bundle of a root `Renderable` and its associated watchers. Used by `App.SetRootView` to set the root element and start watchers in one call.
+Implemented by types that provide a root element tree. `*Element`, generated view structs, and struct components all implement this. Used by `App.SetRootView`, `PrintAboveElement`, and `StreamWriter.WriteElement`.
 
-Generated view structs implement this interface. Like `Renderable`, most users don't need to interact with it directly since `WithRootComponent` handles everything.
+`*Element` implements `Viewable` directly (returning itself from `GetRoot()` and nil from `GetWatchers()`), so you can pass either a raw element or a templ-generated view struct to any API that accepts `Viewable`.
 
-**When to implement:** Rarely. Use `Component` with `WithRootComponent` instead.
+**When to implement:** When you have a custom type that wraps an element tree and optional watchers.
 
 ## Focusable
 

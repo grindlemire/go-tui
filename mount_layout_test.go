@@ -333,8 +333,8 @@ func TestMount_ExactGeneratedCodePattern(t *testing.T) {
 	t.Logf("Buffer:\n%s", bufContent)
 
 	// Dump the element tree to see layout rects
-	if el, ok := app.root.(*Element); ok {
-		t.Logf("Tree:\n%s", dumpTree(el, 0))
+	if app.root != nil {
+		t.Logf("Tree:\n%s", dumpTree(app.root, 0))
 	}
 }
 

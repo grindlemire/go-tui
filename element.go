@@ -2,7 +2,7 @@ package tui
 
 // Compile-time check that Element implements the required interfaces.
 var (
-	_ Renderable = (*Element)(nil)
+	_ Viewable   = (*Element)(nil)
 	_ Focusable  = (*Element)(nil)
 	_ Layoutable = (*Element)(nil)
 )

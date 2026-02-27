@@ -84,7 +84,7 @@ func (e *Element) ElementAt(x, y int) *Element {
 
 // ElementAtPoint finds the deepest element containing the point (x, y).
 // Returns nil if no element contains the point.
-// This method returns Focusable to satisfy the mouseHitTester interface.
+// Returns the element as Focusable for mouse event dispatch.
 func (e *Element) ElementAtPoint(x, y int) Focusable {
 	elem := e.ElementAt(x, y)
 	if elem == nil {

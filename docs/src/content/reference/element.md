@@ -30,7 +30,7 @@ body := tui.New(tui.WithText("World"))
 root.AddChild(title, body)
 ```
 
-`Element` implements the `Renderable`, `Focusable`, and `Layoutable` interfaces.
+`Element` implements the `Viewable`, `Focusable`, and `Layoutable` interfaces.
 
 ## Creating Elements
 
@@ -593,7 +593,7 @@ func (e *Element) ElementAtPoint(x, y int) Focusable
 func (e *Element) Render(buf *Buffer, width, height int)
 ```
 
-The main rendering entry point. Runs layout (if dirty) and then renders the full element tree to the buffer. Implements the `Renderable` interface.
+The main rendering entry point. Runs layout (if dirty) and then renders the full element tree to the buffer.
 
 ```go
 func RenderTree(buf *Buffer, root *Element)

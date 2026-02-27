@@ -60,7 +60,7 @@ func (v *BadgeView) UnbindApp() {
 	}
 }
 
-func (v *BadgeView) GetRoot() tui.Renderable { return v.Root }
+func (v *BadgeView) GetRoot() *tui.Element { return v.Root }
 
 func (v *BadgeView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -135,7 +135,7 @@ func (v *CardView) UnbindApp() {
 	}
 }
 
-func (v *CardView) GetRoot() tui.Renderable { return v.Root }
+func (v *CardView) GetRoot() *tui.Element { return v.Root }
 
 func (v *CardView) GetWatchers() []tui.Watcher { return v.watchers }
 

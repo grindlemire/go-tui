@@ -197,12 +197,8 @@ func (a *App) PrintAboveElement(v Viewable) {
 	if a.inlineHeight == 0 || v == nil {
 		return
 	}
-	root := v.GetRoot()
-	if root == nil {
-		return
-	}
-	el, ok := root.(*Element)
-	if !ok || el == nil {
+	el := v.GetRoot()
+	if el == nil {
 		return
 	}
 	if a.inlineStartRow < 1 {

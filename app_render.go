@@ -65,8 +65,8 @@ func (a *App) Render() {
 
 	// Collect and start component watchers (once after first render)
 	if !a.componentWatchersStarted {
-		if root, ok := a.root.(*Element); ok {
-			a.componentWatchers = collectComponentWatchers(root)
+		if a.root != nil {
+			a.componentWatchers = collectComponentWatchers(a.root)
 			for _, w := range a.componentWatchers {
 				w.Start(a.eventQueue, a.rootWatcherCh)
 			}

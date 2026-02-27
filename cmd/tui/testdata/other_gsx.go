@@ -3,9 +3,7 @@
 
 package testdata
 
-import (
-	tui "github.com/grindlemire/go-tui"
-)
+import "fmt"
 
 func otherHelperFunction(s string) string {
 	return fmt.Sprintf("[%s]", s)

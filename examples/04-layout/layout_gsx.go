@@ -33,7 +33,7 @@ func (v *AppLayoutView) UnbindApp() {
 	}
 }
 
-func (v *AppLayoutView) GetRoot() tui.Renderable { return v.Root }
+func (v *AppLayoutView) GetRoot() *tui.Element { return v.Root }
 
 func (v *AppLayoutView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -133,7 +133,7 @@ func (v *SidebarLayoutView) UnbindApp() {
 	}
 }
 
-func (v *SidebarLayoutView) GetRoot() tui.Renderable { return v.Root }
+func (v *SidebarLayoutView) GetRoot() *tui.Element { return v.Root }
 
 func (v *SidebarLayoutView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -234,7 +234,7 @@ func (v *CenteredCardView) UnbindApp() {
 	}
 }
 
-func (v *CenteredCardView) GetRoot() tui.Renderable { return v.Root }
+func (v *CenteredCardView) GetRoot() *tui.Element { return v.Root }
 
 func (v *CenteredCardView) GetWatchers() []tui.Watcher { return v.watchers }
 
@@ -323,7 +323,7 @@ func (v *DashboardView) UnbindApp() {
 	}
 }
 
-func (v *DashboardView) GetRoot() tui.Renderable { return v.Root }
+func (v *DashboardView) GetRoot() *tui.Element { return v.Root }
 
 func (v *DashboardView) GetWatchers() []tui.Watcher { return v.watchers }
 

@@ -5,6 +5,7 @@ package testdata
 
 import (
 	"fmt"
+
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -12,7 +13,52 @@ func helperFunction(s string) string {
 	return fmt.Sprintf("[%s]", s)
 }
 
-func ItemList(items []string, selected int) *tui.Element {
+type ItemListView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *ItemListView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *ItemListView) GetRoot() *tui.Element { return v.Root }
+
+func (v *ItemListView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *ItemListView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *ItemListView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *ItemListView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*ItemListView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*ItemListView)(nil)
+
+var _ tui.AppUnbinder = (*ItemListView)(nil)
+
+var _ tui.PropsUpdater = (*ItemListView)(nil)
+
+func ItemList(items []string, selected int) *ItemListView {
+	var view ItemListView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 		tui.WithGap(1),
@@ -35,10 +81,68 @@ func ItemList(items []string, selected int) *tui.Element {
 			__tui_0.AddChild(__tui_3)
 		}
 	}
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = ItemListView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
-func Counter(count int, label string) *tui.Element {
+type CounterView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *CounterView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *CounterView) GetRoot() *tui.Element { return v.Root }
+
+func (v *CounterView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *CounterView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *CounterView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *CounterView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*CounterView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*CounterView)(nil)
+
+var _ tui.AppUnbinder = (*CounterView)(nil)
+
+var _ tui.PropsUpdater = (*CounterView)(nil)
+
+func Counter(count int, label string) *CounterView {
+	var view CounterView
+	var watchers []tui.Watcher
+
 	countText := tui.New(
 		tui.WithText(fmt.Sprintf("%d", count)),
 	)
@@ -53,10 +157,68 @@ func Counter(count int, label string) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_0.AddChild(countText)
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = CounterView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
-func ConditionalContent(showHeader bool, showFooter bool) *tui.Element {
+type ConditionalContentView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *ConditionalContentView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *ConditionalContentView) GetRoot() *tui.Element { return v.Root }
+
+func (v *ConditionalContentView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *ConditionalContentView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *ConditionalContentView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *ConditionalContentView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*ConditionalContentView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*ConditionalContentView)(nil)
+
+var _ tui.AppUnbinder = (*ConditionalContentView)(nil)
+
+var _ tui.PropsUpdater = (*ConditionalContentView)(nil)
+
+func ConditionalContent(showHeader bool, showFooter bool) *ConditionalContentView {
+	var view ConditionalContentView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithDirection(tui.Column),
 	)
@@ -81,10 +243,68 @@ func ConditionalContent(showHeader bool, showFooter bool) *tui.Element {
 		)
 		__tui_0.AddChild(__tui_4)
 	}
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = ConditionalContentView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
-func WithHelper(text string) *tui.Element {
+type WithHelperView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *WithHelperView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *WithHelperView) GetRoot() *tui.Element { return v.Root }
+
+func (v *WithHelperView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *WithHelperView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *WithHelperView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *WithHelperView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*WithHelperView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*WithHelperView)(nil)
+
+var _ tui.AppUnbinder = (*WithHelperView)(nil)
+
+var _ tui.PropsUpdater = (*WithHelperView)(nil)
+
+func WithHelper(text string) *WithHelperView {
+	var view WithHelperView
+	var watchers []tui.Watcher
+
 	shouldShowHeader := true
 	otherHelperFunction("test")
 	__tui_0 := tui.New()
@@ -93,13 +313,34 @@ func WithHelper(text string) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	if shouldShowHeader {
-		__tui_2 := ConditionalContent(true, false, nil)
-		__tui_0.AddChild(__tui_2)
+		__tui_2 := ConditionalContent(true, false)
+		__tui_0.AddChild(__tui_2.Root)
 	} else {
 		__tui_3 := tui.New(
 			tui.WithText("False"),
 		)
 		__tui_0.AddChild(__tui_3)
 	}
-	return __tui_0
+
+	watchers = append(watchers, __tui_2.GetWatchers()...)
+
+	__bindApp := func(app *tui.App) {
+		if binder, ok := interface{}(__tui_2).(tui.AppBinder); ok {
+			binder.BindApp(app)
+		}
+	}
+
+	__unbindApp := func() {
+		if unbinder, ok := interface{}(__tui_2).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+
+	view = WithHelperView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }

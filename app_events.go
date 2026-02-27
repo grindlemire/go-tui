@@ -35,11 +35,8 @@ func (a *App) Dispatch(event Event) bool {
 		if a.root == nil {
 			return false
 		}
-		// Check if root supports hit-testing
-		if hitTester, ok := a.root.(mouseHitTester); ok {
-			if target := hitTester.ElementAtPoint(mouse.X, mouse.Y); target != nil {
-				return target.HandleEvent(mouse)
-			}
+		if target := a.root.ElementAtPoint(mouse.X, mouse.Y); target != nil {
+			return target.HandleEvent(mouse)
 		}
 		return false
 	}
@@ -57,12 +54,11 @@ func (a *App) Dispatch(event Event) bool {
 // dispatchMouseToComponents walks the component tree and dispatches a mouse
 // event to all MouseListener components. Returns true if any consumed it.
 func (a *App) dispatchMouseToComponents(me MouseEvent) bool {
-	root, ok := a.root.(*Element)
-	if !ok {
+	if a.root == nil {
 		return false
 	}
 	consumed := false
-	walkComponents(root, func(comp Component) {
+	walkComponents(a.root, func(comp Component) {
 		if consumed {
 			return
 		}

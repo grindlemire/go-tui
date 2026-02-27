@@ -1,7 +1,7 @@
 package tui
 
-// GetRoot implements Viewable. Returns the element itself as a Renderable.
-func (e *Element) GetRoot() Renderable { return e }
+// GetRoot implements Viewable. Returns the element itself.
+func (e *Element) GetRoot() *Element { return e }
 
 // GetWatchers implements Viewable. Elements have no standalone watchers.
 func (e *Element) GetWatchers() []Watcher { return nil }

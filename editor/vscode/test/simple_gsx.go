@@ -4,22 +4,128 @@
 package example
 
 import (
+	"fmt"
+
 	tui "github.com/grindlemire/go-tui"
 )
 
-func Header(title string) *tui.Element {
+type HeaderView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *HeaderView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *HeaderView) GetRoot() *tui.Element { return v.Root }
+
+func (v *HeaderView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *HeaderView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *HeaderView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *HeaderView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*HeaderView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*HeaderView)(nil)
+
+var _ tui.AppUnbinder = (*HeaderView)(nil)
+
+var _ tui.PropsUpdater = (*HeaderView)(nil)
+
+func Header(title string) *HeaderView {
+	var view HeaderView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
 	)
 	__tui_1 := tui.New(
 		tui.WithText(title),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_0.AddChild(__tui_1)
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = HeaderView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
-func Footer() *tui.Element {
+type FooterView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *FooterView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *FooterView) GetRoot() *tui.Element { return v.Root }
+
+func (v *FooterView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *FooterView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *FooterView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *FooterView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*FooterView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*FooterView)(nil)
+
+var _ tui.AppUnbinder = (*FooterView)(nil)
+
+var _ tui.PropsUpdater = (*FooterView)(nil)
+
+func Footer() *FooterView {
+	var view FooterView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithPadding(1),
 	)
@@ -27,10 +133,68 @@ func Footer() *tui.Element {
 		tui.WithText("Footer content"),
 	)
 	__tui_0.AddChild(__tui_1)
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = FooterView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
 
-func SimpleCard(title string, content string) *tui.Element {
+type SimpleCardView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *SimpleCardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *SimpleCardView) GetRoot() *tui.Element { return v.Root }
+
+func (v *SimpleCardView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *SimpleCardView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *SimpleCardView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *SimpleCardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*SimpleCardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*SimpleCardView)(nil)
+
+var _ tui.AppUnbinder = (*SimpleCardView)(nil)
+
+var _ tui.PropsUpdater = (*SimpleCardView)(nil)
+
+func SimpleCard(title string, content string) *SimpleCardView {
+	var view SimpleCardView
+	var watchers []tui.Watcher
+
 	__tui_0 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 	)
@@ -43,5 +207,182 @@ func SimpleCard(title string, content string) *tui.Element {
 		tui.WithText(content),
 	)
 	__tui_0.AddChild(__tui_2)
-	return __tui_0
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = SimpleCardView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
+}
+
+type LayoutView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+	Main      *tui.Element
+	TitleRef  *tui.Element
+}
+
+func (v *LayoutView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *LayoutView) GetRoot() *tui.Element { return v.Root }
+
+func (v *LayoutView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *LayoutView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *LayoutView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *LayoutView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*LayoutView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+	v.Main = f.Main
+	v.TitleRef = f.TitleRef
+}
+
+var _ tui.AppBinder = (*LayoutView)(nil)
+
+var _ tui.AppUnbinder = (*LayoutView)(nil)
+
+var _ tui.PropsUpdater = (*LayoutView)(nil)
+
+func Layout(title string) *LayoutView {
+	var view LayoutView
+	var watchers []tui.Watcher
+
+	main := tui.NewRef()
+	titleRef := tui.NewRef()
+	__tui_0 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+	)
+	main.Set(__tui_0)
+	__tui_1 := tui.New(
+		tui.WithText(title),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
+	)
+	titleRef.Set(__tui_1)
+	__tui_0.AddChild(__tui_1)
+	__tui_2 := tui.New(
+		tui.WithText("Body content"),
+	)
+	__tui_0.AddChild(__tui_2)
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = LayoutView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+		Main:      main.El(),
+		TitleRef:  titleRef.El(),
+	}
+	return &view
+}
+
+type CounterView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *CounterView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *CounterView) GetRoot() *tui.Element { return v.Root }
+
+func (v *CounterView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *CounterView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *CounterView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *CounterView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*CounterView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*CounterView)(nil)
+
+var _ tui.AppUnbinder = (*CounterView)(nil)
+
+var _ tui.PropsUpdater = (*CounterView)(nil)
+
+func Counter() *CounterView {
+	var view CounterView
+	var watchers []tui.Watcher
+
+	count := tui.NewState(0)
+	__tui_0 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderSingle),
+	)
+	__tui_1 := tui.New(
+		tui.WithText(fmt.Sprintf("Count: %d", count.Get())),
+	)
+	__tui_0.AddChild(__tui_1)
+
+	// State bindings
+	count.Bind(func(_ int) {
+		__tui_1.SetText(fmt.Sprintf("Count: %d", count.Get()))
+	})
+
+	__bindApp := func(app *tui.App) {
+		count.BindApp(app)
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = CounterView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
 }
