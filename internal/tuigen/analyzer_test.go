@@ -50,6 +50,21 @@ templ Test() {
 			wantError:     true,
 			errorContains: "unknown element tag <foobar>",
 		},
+		"textarea self-closing": {
+			input: `package x
+templ Test() {
+	<textarea />
+}`,
+			wantError: false,
+		},
+		"textarea with children is error": {
+			input: `package x
+templ Test() {
+	<textarea>text</textarea>
+}`,
+			wantError:     true,
+			errorContains: "cannot have children",
+		},
 	}
 
 	for name, tt := range tests {
@@ -240,6 +255,7 @@ func TestAnalyzer_ValidateElement(t *testing.T) {
 		"input":    {tag: "input", valid: true},
 		"table":    {tag: "table", valid: true},
 		"progress": {tag: "progress", valid: true},
+		"textarea": {tag: "textarea", valid: true},
 		"unknown":  {tag: "unknown", valid: false},
 		"box":      {tag: "box", valid: false},
 		"text":     {tag: "text", valid: false},

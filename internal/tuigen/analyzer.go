@@ -93,15 +93,17 @@ var knownTags = map[string]bool{
 	"td":       true,
 	"th":       true,
 	"progress": true,
+	"textarea": true,
 	"hr":       true,
 	"br":       true,
 }
 
 // voidElements lists elements that cannot have children.
 var voidElements = map[string]bool{
-	"hr":    true,
-	"br":    true,
-	"input": true,
+	"hr":       true,
+	"br":       true,
+	"input":    true,
+	"textarea": true,
 }
 
 // knownAttributes lists all supported element attributes.
@@ -166,6 +168,13 @@ var knownAttributes = map[string]bool{
 	// Element refs
 	"ref": true, // ref={varName} for element references
 	"key": true, // key={expr} for map-based refs in loops
+
+	// Textarea
+	"placeholder":      true,
+	"placeholderStyle": true,
+	"cursor":           true,
+	"submitKey":        true,
+	"onSubmit":         true,
 }
 
 // stateNewStateRegex matches tui.NewState(...) declarations.
