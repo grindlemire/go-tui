@@ -1083,3 +1083,97 @@ func TestEmulatorTerminal_EraseLine(t *testing.T) {
 		t.Errorf("row 1 = %q, want blank", emu.ScreenRow(1))
 	}
 }
+
+func TestPrintAboveElement_InsertsRenderedRows(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	el := New(WithText("hello world"))
+	app.PrintAboveElement(el)
+
+	// The element renders as 1 row of text. Should appear above the widget.
+	row := emu.ScreenRow(app.inlineStartRow - 1)
+	if row != "hello world" {
+		t.Fatalf("row = %q, want %q\n%s", row, "hello world", emu.DumpState())
+	}
+}
+
+func TestPrintAboveElement_NoopOutsideInlineMode(t *testing.T) {
+	// Full-screen app (inlineHeight == 0).
+	app := &App{
+		terminal:   NewEmulatorTerminal(80, 24),
+		buffer:     NewBuffer(80, 24),
+		focus:      newFocusManager(),
+		reader:     NewMockEventReader(),
+		eventQueue: make(chan func(), 256),
+		stopCh:     make(chan struct{}),
+	}
+
+	// Should not panic.
+	el := New(WithText("hello"))
+	app.PrintAboveElement(el)
+}
+
+func TestPrintAboveElement_EmptyElement(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	initialRows := app.inlineLayout.visibleRows
+	app.PrintAboveElement(New())
+
+	if app.inlineLayout.visibleRows != initialRows {
+		t.Fatalf("visibleRows changed from %d to %d for empty element",
+			initialRows, app.inlineLayout.visibleRows)
+	}
+	_ = emu
+}
+
+func TestPrintAboveElement_WithBorder(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	el := New(WithText("hi"), WithBorder(BorderSingle))
+	app.PrintAboveElement(el)
+
+	// Bordered element is 3 rows tall. Check that all rows are present.
+	if app.inlineLayout.visibleRows < 3 {
+		t.Fatalf("visibleRows = %d, want >= 3\n%s",
+			app.inlineLayout.visibleRows, emu.DumpState())
+	}
+
+	// Top border row should be non-empty.
+	topRow := emu.ScreenRow(app.inlineStartRow - 3)
+	if topRow == "" {
+		t.Fatalf("top border row is empty\n%s", emu.DumpState())
+	}
+}
+
+func TestPrintAboveElement_FinalizesPartialLine(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	// Start streaming and write a partial line.
+	w := app.StreamAbove()
+	fmt.Fprint(w, "partial")
+	runQueuedUpdates(app)
+
+	// Insert an element. Should finalize the partial first.
+	el := New(WithText("element"))
+	app.PrintAboveElement(el)
+
+	// Both the partial and the element should be in the scrollback.
+	if app.inlineLayout.visibleRows < 2 {
+		t.Fatalf("visibleRows = %d, want >= 2\n%s",
+			app.inlineLayout.visibleRows, emu.DumpState())
+	}
+	_ = w
+}
+
+func TestQueuePrintAboveElement(t *testing.T) {
+	app, emu := newInlineTestApp(80, 24, 3)
+
+	el := New(WithText("queued"))
+	app.QueuePrintAboveElement(el)
+	runQueuedUpdates(app)
+
+	row := emu.ScreenRow(app.inlineStartRow - 1)
+	if row != "queued" {
+		t.Fatalf("row = %q, want %q\n%s", row, "queued", emu.DumpState())
+	}
+}

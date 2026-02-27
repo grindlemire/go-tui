@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/grindlemire/go-tui/internal/debug"
 )
@@ -184,6 +185,58 @@ func (a *App) printAboveStyledRaw(content string) {
 	a.inlineSession.appendStyledText(&a.inlineLayout, a.inlineStartRow, width, content)
 
 	a.MarkDirty()
+}
+
+// PrintAboveElement renders an element tree and inserts the resulting rows into
+// the inline scrollback. The element is rendered at the terminal's current width
+// and baked into static ANSI text. This is useful for inserting structured
+// content (tables, styled cards, templ component output) into the scrollback.
+// No-op if not in inline mode.
+// Must be called from the app's main event loop.
+func (a *App) PrintAboveElement(el *Element) {
+	if a.inlineHeight == 0 || el == nil {
+		return
+	}
+	if a.inlineStartRow < 1 {
+		return
+	}
+	a.ensureInlineSession()
+	a.inlineSession.ensureInitialized(&a.inlineLayout, a.inlineStartRow)
+
+	// Finalize any in-progress streaming partial line first.
+	a.inlineSession.finalizePartial(&a.inlineLayout)
+
+	width, _ := a.terminal.Size()
+	caps := a.terminal.Caps()
+	buf, height := renderElementToBuffer(el, width, caps)
+	if height == 0 {
+		return
+	}
+
+	esc := newEscBuilder(256)
+	var seq strings.Builder
+	for row := 0; row < height; row++ {
+		line := bufferRowToANSI(buf, row, esc, caps)
+		a.inlineSession.appendRow(&seq, &a.inlineLayout, line)
+	}
+
+	if seq.Len() > 0 {
+		a.terminal.WriteDirect([]byte(seq.String()))
+	}
+
+	a.MarkDirty()
+}
+
+// QueuePrintAboveElement is the goroutine-safe version of PrintAboveElement.
+// The element is rendered and inserted on the main event loop.
+// Safe to call from any goroutine.
+func (a *App) QueuePrintAboveElement(el *Element) {
+	if a.inlineHeight == 0 || el == nil {
+		return
+	}
+	a.QueueUpdate(func() {
+		a.PrintAboveElement(el)
+	})
 }
 
 // SetInlineHeight changes the inline widget height at runtime.
