@@ -755,3 +755,83 @@ templ (p *panel) Render() {
 		t.Errorf("output contains unexpected return nil\nGot:\n%s", code)
 	}
 }
+
+func TestGenerator_TextareaElement(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"textarea generates mount with NewTextArea": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<textarea placeholder="Type here..." width={40} />
+}`,
+			wantContains: []string{
+				"app.Mount(",
+				"tui.NewTextArea(",
+				`tui.WithTextAreaPlaceholder("Type here...")`,
+				"tui.WithTextAreaWidth(40)",
+			},
+		},
+		"textarea with onSubmit handler": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<textarea onSubmit={c.handleSubmit} />
+}`,
+			wantContains: []string{
+				"tui.NewTextArea(",
+				"tui.WithTextAreaOnSubmit(c.handleSubmit)",
+			},
+		},
+		"textarea with border": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<textarea border={tui.BorderRounded} />
+}`,
+			wantContains: []string{
+				"tui.NewTextArea(",
+				"tui.WithTextAreaBorder(tui.BorderRounded)",
+			},
+		},
+		"textarea with no options": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<textarea />
+}`,
+			wantContains: []string{
+				"app.Mount(",
+				"tui.NewTextArea()",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing %q.\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}

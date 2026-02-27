@@ -11,9 +11,19 @@ func (g *Generator) generateElement(elem *Element, parentVar string) string {
 	return g.generateElementWithRefs(elem, parentVar, false, false)
 }
 
+// isComponentElement returns true if the tag represents a Component that
+// must be mounted via app.Mount() rather than constructed with tui.New().
+func isComponentElement(tag string) bool {
+	return tag == "textarea"
+}
+
 // generateElementWithRefs generates code for an element with ref handling.
 // inLoop and inConditional track the context for proper variable handling.
 func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
+	if isComponentElement(elem.Tag) {
+		return g.generateComponentElementWithRefs(elem, parentVar, inLoop, inConditional)
+	}
+
 	// All elements use auto-generated variable names now
 	varName := g.nextVar()
 
@@ -306,4 +316,106 @@ func skipTextChildren(elem *Element) bool {
 		return true
 	}
 	return false
+}
+
+// textareaAttributeToOption maps textarea-specific attributes to tui.WithTextArea* options.
+var textareaAttributeToOption = map[string]string{
+	"width":            "tui.WithTextAreaWidth(%s)",
+	"maxHeight":        "tui.WithTextAreaMaxHeight(%s)",
+	"border":           "tui.WithTextAreaBorder(%s)",
+	"textStyle":        "tui.WithTextAreaTextStyle(%s)",
+	"placeholder":      "tui.WithTextAreaPlaceholder(%s)",
+	"placeholderStyle": "tui.WithTextAreaPlaceholderStyle(%s)",
+	"cursor":           "tui.WithTextAreaCursor(%s)",
+	"submitKey":        "tui.WithTextAreaSubmitKey(%s)",
+}
+
+// textareaHandlerAttributes maps textarea event attributes to handler option funcs.
+var textareaHandlerAttributes = map[string]string{
+	"onSubmit": "tui.WithTextAreaOnSubmit",
+}
+
+// generateComponentElementWithRefs generates an app.Mount() call for elements
+// that are backed by Component types (e.g., <textarea> → tui.NewTextArea).
+func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
+	varName := g.nextVar()
+	baseIndex := g.mountIndex
+	g.mountIndex++
+
+	indexExpr := g.loopIndexExpr(baseIndex)
+	if indexExpr == "" {
+		indexExpr = fmt.Sprintf("%d", baseIndex)
+	}
+
+	// Build component-specific options from attributes
+	elemOpts := g.buildComponentElementOptions(elem)
+
+	g.writef("%s := app.Mount(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
+	g.indent++
+
+	if len(elemOpts.options) == 0 {
+		g.writef("return tui.NewTextArea()\n")
+	} else {
+		g.writef("return tui.NewTextArea(\n")
+		g.indent++
+		for _, opt := range elemOpts.options {
+			g.writef("%s,\n", opt)
+		}
+		g.indent--
+		g.writef(")\n")
+	}
+
+	g.indent--
+	g.writeln("})")
+
+	// Handle ref binding
+	if elem.RefExpr != nil {
+		refName := elem.RefExpr.Code
+		if elem.RefKey != nil {
+			g.writef("%s.Put(%s, %s)\n", refName, elem.RefKey.Code, varName)
+		} else if inLoop {
+			g.writef("%s.Append(%s)\n", refName, varName)
+		} else {
+			g.writef("%s.Set(%s)\n", refName, varName)
+		}
+	}
+
+	if parentVar != "" {
+		g.writef("%s.AddChild(%s)\n", parentVar, varName)
+	}
+
+	return varName
+}
+
+// buildComponentElementOptions generates option expressions for a component element (e.g., textarea).
+func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
+	var result elementOptions
+
+	for _, attr := range elem.Attributes {
+		// Skip generic attributes handled elsewhere
+		if attr.Name == "class" || attr.Name == "id" || attr.Name == "ref" ||
+			attr.Name == "key" || attr.Name == "deps" {
+			continue
+		}
+
+		// Check handler attributes first
+		if optionFunc, isHandler := textareaHandlerAttributes[attr.Name]; isHandler {
+			handlerExpr := g.generateAttributeValue(attr.Value)
+			if handlerExpr != "" {
+				result.options = append(result.options, fmt.Sprintf("%s(%s)", optionFunc, handlerExpr))
+			}
+			continue
+		}
+
+		// Check component-specific attribute map
+		if template, ok := textareaAttributeToOption[attr.Name]; ok {
+			value := g.generateAttributeValue(attr.Value)
+			if value != "" {
+				result.options = append(result.options, fmt.Sprintf(template, value))
+			}
+			continue
+		}
+	}
+
+	return result
 }
