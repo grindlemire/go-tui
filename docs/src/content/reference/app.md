@@ -447,6 +447,47 @@ func (a *App) QueuePrintAboveln(format string, args ...any)
 
 Thread-safe version of `PrintAboveln`. Safe to call from any goroutine.
 
+### StreamAbove
+
+```go
+func (a *App) StreamAbove() *StreamWriter
+```
+
+Returns a `*StreamWriter` that streams text character by character to the history region above the inline widget. The writer implements `io.WriteCloser` for plain byte streaming, and adds `WriteStyled` and `WriteGradient` methods for styled output. The writer is goroutine-safe: writes are queued onto the main event loop internally.
+
+Closing the writer finalizes the current partial line, making it a permanent row in the history. If a previous stream writer is still open when `StreamAbove()` is called again, the framework finalizes and closes it before returning the new one.
+
+Returns a no-op writer (silently discards all bytes) when not in inline mode.
+
+```go
+go func() {
+    w := app.StreamAbove()
+    // Plain write (backward compatible with io.WriteCloser)
+    fmt.Fprint(w, "hello ")
+    // Styled write
+    w.WriteStyled("important", tui.NewStyle().Bold().Foreground(tui.Red))
+    // Gradient write (per-character color interpolation)
+    grad := tui.NewGradient(tui.Cyan, tui.Magenta)
+    w.WriteGradient("gradient text", grad)
+    // Gradient with base style attributes
+    w.WriteGradient("bold gradient", grad, tui.NewStyle().Bold())
+    w.Close()
+}()
+```
+
+#### StreamWriter Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Write` | `Write(p []byte) (int, error)` | Plain byte write (backward compatible). Does not track column position. |
+| `Close` | `Close() error` | Finalizes the partial line. |
+| `WriteStyled` | `WriteStyled(text string, style Style) (int, error)` | Writes text with ANSI style prefix and reset suffix. Tracks column position. |
+| `WriteGradient` | `WriteGradient(text string, g Gradient, base ...Style) (int, error)` | Writes each character with an interpolated gradient foreground color. Optional base style provides attributes (bold, italic) and background. Tracks column position. |
+
+Column tracking: `WriteStyled` and `WriteGradient` advance an internal column counter by each character's display width (CJK-aware). Newlines reset the column to 0. The column wraps at the terminal width. This counter drives gradient color interpolation.
+
+If `PrintAbove` or `PrintAboveln` is called while a stream writer is active, the stream's partial line is finalized first, then the new content is printed on the next line. Further writes to the finalized writer return `io.ErrClosedPipe`.
+
 ### SetInlineHeight
 
 ```go

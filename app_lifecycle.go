@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/grindlemire/go-tui/internal/debug"
 )
@@ -261,14 +260,16 @@ func (a *App) ensureInlineSession() {
 	}
 }
 
-// StreamAbove returns an io.WriteCloser that streams text character-by-character
-// to the history region above the inline widget. ANSI escape sequences are
-// preserved for styled output. Closing the writer finalizes the current line.
+// StreamAbove returns a *StreamWriter that streams text character-by-character
+// to the history region above the inline widget. The writer implements
+// io.WriteCloser for plain byte streaming, and additionally provides
+// WriteStyled and WriteGradient methods for styled output.
+// Closing the writer finalizes the current line.
 // Returns a no-op writer if not in inline mode.
 // The writer is goroutine-safe.
-func (a *App) StreamAbove() io.WriteCloser {
+func (a *App) StreamAbove() *StreamWriter {
 	if a.inlineHeight == 0 {
-		return &nopStreamWriter{}
+		return &StreamWriter{w: &nopStreamWriter{}, nop: true}
 	}
 
 	// Finalize any existing stream writer.
@@ -278,7 +279,13 @@ func (a *App) StreamAbove() io.WriteCloser {
 		a.activeStreamWriter.closed.Store(true)
 	}
 
-	w := newInlineStreamWriter(a)
-	a.activeStreamWriter = w
-	return w
+	inner := newInlineStreamWriter(a)
+	a.activeStreamWriter = inner
+
+	width, _ := a.terminal.Size()
+	return &StreamWriter{
+		w:     inner,
+		width: width,
+		caps:  a.terminal.Caps(),
+	}
 }

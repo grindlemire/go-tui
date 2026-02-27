@@ -526,6 +526,7 @@ app.Batch(func())            // Batch state updates
 app.QueueUpdate(func())      // Schedule work on main loop
 app.FocusNext() / app.FocusPrev() / app.Focused()
 app.PrintAbove(string)       // Print above inline widget
+app.StreamAbove() *StreamWriter  // Stream text char-by-char above inline widget
 app.Draw()                   // Manual redraw
 app.QueueUpdateDraw(func())  // QueueUpdate + Draw
 ```
@@ -540,6 +541,30 @@ app, _ := tui.NewApp(
     tui.WithInlineHeight(5),  // Reserve 5 terminal rows
 )
 ```
+
+### StreamAbove
+
+`app.StreamAbove()` returns a `*StreamWriter` for character-by-character streaming above the inline widget. The writer implements `io.WriteCloser` and adds `WriteStyled` and `WriteGradient` methods. Goroutine-safe. Close it when done to finalize the partial line.
+
+```go
+go func() {
+    w := app.StreamAbove()
+    // Plain write (backward compatible)
+    fmt.Fprint(w, "hello ")
+    // Styled write
+    w.WriteStyled("bold text", tui.NewStyle().Bold().Foreground(tui.Red))
+    // Gradient write (per-character color interpolation)
+    grad := tui.NewGradient(tui.Cyan, tui.Magenta)
+    w.WriteGradient("gradient text", grad)
+    // Gradient with base style (bold + gradient foreground)
+    w.WriteGradient("bold gradient", grad, tui.NewStyle().Bold())
+    w.Close()
+}()
+```
+
+`WriteStyled(text, style)` wraps text in ANSI style prefix/reset. `WriteGradient(text, gradient, base...)` writes each character with an interpolated gradient foreground; optional base style adds attributes (bold, italic, etc.) and background.
+
+Returns a no-op writer when not in inline mode. Only one stream writer is active at a time; calling `StreamAbove()` again finalizes the previous one. `PrintAbove`/`PrintAboveln` also finalize any active stream before printing.
 
 ## Common Layout Patterns
 

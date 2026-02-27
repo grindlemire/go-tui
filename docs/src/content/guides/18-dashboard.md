@@ -889,7 +889,7 @@ go run .
 
 The finished dashboard with live-updating metrics, sparklines, and an event log:
 
-![Building a Dashboard screenshot](/guides/17.png)
+![Building a Dashboard screenshot](/guides/18.png)
 
 ## Next Steps
 
