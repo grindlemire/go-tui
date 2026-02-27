@@ -20,6 +20,7 @@ This guide builds on the [Inline Mode Guide](inline-mode) and the [Streaming Dat
 | Styling | Format string with manual ANSI | `WriteStyled`, `WriteGradient`, or raw ANSI via `Write` |
 | Thread safety | Use `QueuePrintAbove` from goroutines | Writer is goroutine-safe by default |
 | Best for | Chat messages, log lines, status updates | LLM token streaming, progressive output |
+| Element insertion | Use `PrintAboveElement` | Use `WriteElement` on the writer |
 
 ## Getting a Writer
 
@@ -135,6 +136,36 @@ The sequence looks like:
 4. The framework finalizes "Hello wor" as a complete line
 5. "Status: ok" appears on the next line
 6. Further writes to the (now-closed) writer return `io.ErrClosedPipe`
+
+## Inserting Elements Mid-Stream
+
+`StreamWriter.WriteElement` lets you insert a fully rendered element into the scrollback without closing and reopening the stream. The element is laid out at the terminal width, rendered to ANSI text, and inserted row by row. Any partial line is finalized first.
+
+This is useful for chat-style interfaces where streamed text includes structured content like tables:
+
+```go
+go func() {
+    w := app.StreamAbove()
+    w.WriteStyled("Here's the data:\n", tui.NewStyle().Bold())
+    w.WriteElement(DataTable(rows))
+    w.Write([]byte("Let me know if you need more.\n"))
+    w.Close()
+}()
+```
+
+`WriteElement` accepts any `*Element`, including output from templ functions. The element is rendered once and baked into static text — it does not remain interactive.
+
+You can also use `PrintAboveElement` directly on the app when you're not mid-stream:
+
+```go
+app.PrintAboveElement(DataTable(rows))
+```
+
+Or from a goroutine:
+
+```go
+app.QueuePrintAboveElement(DataTable(rows))
+```
 
 ## Complete Example
 
