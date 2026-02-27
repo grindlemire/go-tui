@@ -8,6 +8,7 @@ import "io"
 // return type of App.StreamAbove().
 type StreamWriter struct {
 	w     io.WriteCloser // inner writer (inlineStreamWriter or nopStreamWriter)
+	app   *App           // app reference for WriteElement
 	col   int            // current column for gradient position
 	width int            // terminal width (cached at creation)
 	esc   escBuilder     // reusable escape sequence builder
@@ -106,4 +107,19 @@ func (sw *StreamWriter) WriteGradient(text string, g Gradient, base ...Style) (i
 	sw.esc.ResetStyle()
 
 	return sw.w.Write(sw.esc.Bytes())
+}
+
+// WriteElement renders an element tree and inserts the resulting rows into the
+// inline scrollback mid-stream. Any current partial line is finalized before
+// the element rows are inserted. After insertion, the next Write call starts
+// a fresh partial line.
+// No-op if the writer is in nop mode or the app is nil.
+func (sw *StreamWriter) WriteElement(el *Element) {
+	if sw.nop || sw.app == nil {
+		return
+	}
+	sw.app.QueueUpdate(func() {
+		sw.app.PrintAboveElement(el)
+	})
+	sw.col = 0
 }
