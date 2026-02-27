@@ -1002,6 +1002,71 @@ func TestStreamAbove_PrintAboveStyledFinalizesPartial(t *testing.T) {
 	}
 }
 
+func TestStreamAbove_EndToEnd(t *testing.T) {
+	app, emu := newInlineTestApp(20, 10, 3)
+
+	// Stream some tokens.
+	w := app.StreamAbove()
+	tokens := []string{"Hello", " ", "world", "!"}
+	for _, tok := range tokens {
+		fmt.Fprint(w, tok)
+		runQueuedUpdates(app)
+	}
+
+	// Partial line visible.
+	historyBottom := app.inlineStartRow - 1
+	got := emu.ScreenRow(historyBottom)
+	if got != "Hello world!" {
+		t.Fatalf("partial = %q, want %q\n%s", got, "Hello world!", emu.DumpState())
+	}
+
+	// Newline finalizes, start new line.
+	fmt.Fprint(w, "\nSecond line")
+	runQueuedUpdates(app)
+
+	if got := emu.ScreenRow(historyBottom - 1); got != "Hello world!" {
+		t.Fatalf("finalized row = %q, want %q\n%s", got, "Hello world!", emu.DumpState())
+	}
+	if got := emu.ScreenRow(historyBottom); got != "Second line" {
+		t.Fatalf("new partial = %q, want %q\n%s", got, "Second line", emu.DumpState())
+	}
+
+	// Close finalizes the second line.
+	w.Close()
+	runQueuedUpdates(app)
+
+	if app.inlineLayout.visibleRows != 2 {
+		t.Fatalf("visibleRows = %d, want 2", app.inlineLayout.visibleRows)
+	}
+}
+
+func TestStreamAbove_WrapsLongStream(t *testing.T) {
+	app, emu := newInlineTestApp(5, 10, 3)
+
+	w := app.StreamAbove()
+	// Write 12 chars into a 5-wide terminal. Should wrap into 3 rows:
+	// "abcde" (committed), "fghij" (committed), "kl" (partial).
+	fmt.Fprint(w, "abcdefghijkl")
+	runQueuedUpdates(app)
+
+	// historyCapacity = 7. With 3 rows, content starts at row 4.
+	if got := emu.ScreenRow(4); got != "abcde" {
+		t.Fatalf("row 4 = %q, want %q\n%s", got, "abcde", emu.DumpState())
+	}
+	if got := emu.ScreenRow(5); got != "fghij" {
+		t.Fatalf("row 5 = %q, want %q\n%s", got, "fghij", emu.DumpState())
+	}
+	if got := emu.ScreenRow(6); got != "kl" {
+		t.Fatalf("row 6 = %q, want %q\n%s", got, "kl", emu.DumpState())
+	}
+	if app.inlineSession.partialCol != 2 {
+		t.Fatalf("partialCol = %d, want 2", app.inlineSession.partialCol)
+	}
+
+	w.Close()
+	runQueuedUpdates(app)
+}
+
 func TestEmulatorTerminal_EraseLine(t *testing.T) {
 	emu := NewEmulatorTerminal(10, 3)
 
