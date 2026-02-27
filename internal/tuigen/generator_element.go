@@ -3,6 +3,7 @@ package tuigen
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // generateElement generates code for an element and returns the variable name.
@@ -177,10 +178,10 @@ func (g *Generator) extractTextContent(children []Node) string {
 		return ""
 	}
 
-	// If single GoExpr child, return the expression
+	// If single GoExpr child, return the expression (wrapping numerics)
 	if len(children) == 1 {
 		if expr, ok := children[0].(*GoExpr); ok {
-			return expr.Code
+			return textExpr(expr.Code)
 		}
 		if text, ok := children[0].(*TextContent); ok {
 			return strconv.Quote(text.Text)
@@ -189,6 +190,29 @@ func (g *Generator) extractTextContent(children []Node) string {
 
 	// Multiple children or complex content - handled separately in generateChildren
 	return ""
+}
+
+// textExpr wraps a Go expression in fmt.Sprint() if it looks like a numeric literal.
+// This ensures numeric values are converted to strings for tui.WithText().
+// Detects: 42, 3.14, 0xFF, 0b1010, 0o755, -1, .5
+func textExpr(code string) string {
+	s := strings.TrimSpace(code)
+	if s == "" {
+		return code
+	}
+	// Strip optional leading minus
+	check := s
+	if len(check) > 0 && check[0] == '-' {
+		check = check[1:]
+	}
+	if len(check) == 0 {
+		return code
+	}
+	// If first char is a digit or '.', it's a numeric literal
+	if (check[0] >= '0' && check[0] <= '9') || check[0] == '.' {
+		return fmt.Sprintf("fmt.Sprint(%s)", s)
+	}
+	return code
 }
 
 // handlerAttributes maps focus callback attribute names to their With* option functions.
@@ -246,6 +270,17 @@ var attributeToOption = map[string]string{
 
 // generateAttributeOption generates an option expression from an attribute.
 func (g *Generator) generateAttributeOption(attr *Attribute) string {
+	// Handle width="100%" and height="100%" percentage string syntax
+	if attr.Name == "width" || attr.Name == "height" {
+		if strLit, ok := attr.Value.(*StringLit); ok && strings.HasSuffix(strLit.Value, "%") {
+			numStr := strings.TrimSuffix(strLit.Value, "%")
+			if attr.Name == "width" {
+				return fmt.Sprintf("tui.WithWidthPercent(%s)", numStr)
+			}
+			return fmt.Sprintf("tui.WithHeightPercent(%s)", numStr)
+		}
+	}
+
 	template, ok := attributeToOption[attr.Name]
 	if !ok {
 		// Unknown attribute - skip with no error (analyzer should catch this)

@@ -97,7 +97,7 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 			// Bare expression in loop body
 			if parentVar != "" {
 				varName := g.nextVar()
-				g.writef("%s := tui.New(tui.WithText(%s))\n", varName, n.Code)
+				g.writef("%s := tui.New(tui.WithText(%s))\n", varName, textExpr(n.Code))
 				g.writef("%s.AddChild(%s)\n", parentVar, varName)
 			} else {
 				g.writef("%s\n", n.Code)

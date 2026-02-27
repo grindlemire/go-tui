@@ -26,7 +26,7 @@ func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, 
 		case *GoExpr:
 			// GoExpr as child - create text element with the expression
 			varName := g.nextVar()
-			g.writef("%s := tui.New(tui.WithText(%s))\n", varName, c.Code)
+			g.writef("%s := tui.New(tui.WithText(%s))\n", varName, textExpr(c.Code))
 			g.writef("%s.AddChild(%s)\n", parentVar, varName)
 		case *TextContent:
 			// TextContent as child - create text element
@@ -77,7 +77,7 @@ func (g *Generator) generateBodyNodeWithRefs(node Node, parentVar string, inLoop
 	case *GoExpr:
 		if parentVar != "" {
 			varName := g.nextVar()
-			g.writef("%s := tui.New(tui.WithText(%s))\n", varName, n.Code)
+			g.writef("%s := tui.New(tui.WithText(%s))\n", varName, textExpr(n.Code))
 			g.writef("%s.AddChild(%s)\n", parentVar, varName)
 		} else {
 			g.writef("%s\n", n.Code)
@@ -234,7 +234,7 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 				g.generateIfStmtForSlice(c, childrenVar)
 			case *GoExpr:
 				elemVar := g.nextVar()
-				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, c.Code)
+				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, textExpr(c.Code))
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
 			case *TextContent:
 				elemVar := g.nextVar()
@@ -320,7 +320,7 @@ func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar
 			case *GoExpr:
 				// Expression - wrap in text element
 				elemVar := g.nextVar()
-				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, c.Code)
+				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, textExpr(c.Code))
 				g.writef("%s = append(%s, %s)\n", childrenVar, childrenVar, elemVar)
 			case *TextContent:
 				elemVar := g.nextVar()
@@ -417,7 +417,7 @@ func (g *Generator) generateForLoopForSlice(loop *ForLoop, sliceVar string) {
 			g.generateGoCode(n)
 		case *GoExpr:
 			elemVar := g.nextVar()
-			g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, n.Code)
+			g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, textExpr(n.Code))
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		}
 	}
@@ -458,7 +458,7 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 			g.generateGoCode(n)
 		case *GoExpr:
 			elemVar := g.nextVar()
-			g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, n.Code)
+			g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, textExpr(n.Code))
 			g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		}
 	}
@@ -504,7 +504,7 @@ func (g *Generator) generateIfStmtForSlice(stmt *IfStmt, sliceVar string) {
 				g.generateGoCode(n)
 			case *GoExpr:
 				elemVar := g.nextVar()
-				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, n.Code)
+				g.writef("%s := tui.New(tui.WithText(%s))\n", elemVar, textExpr(n.Code))
 				g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 			}
 		}
