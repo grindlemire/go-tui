@@ -8,43 +8,41 @@ import (
 
 const (
 	numSections        = 4
-	minTemp            = 0.0
-	maxTemp            = 1.0
-	tempBarWidth       = 22
+	minTurns           = 1
+	maxTurns           = 50
+	turnsBarWidth      = 22
 	valuePreviewWidth  = 30
 	promptPreviewWidth = 48
 	promptPreviewLines = 2
 )
 
 type SettingsApp struct {
-	Provider           *tui.State[string]
-	Model              *tui.State[string]
-	Temperature        *tui.State[float64]
-	SystemPrompt       *tui.State[string]
+	Model               *tui.State[string]
+	MaxTurns            *tui.State[int]
+	PermissionMode      *tui.State[string]
+	SystemPrompt        *tui.State[string]
 	SystemPromptPresets []string
-	AvailableProviders []string
-	ProviderModels     map[string][]string
-	FocusedSection     *tui.State[int]
-	onClose            func()
+	AvailableModels     []string
+	AvailablePermModes  []string
+	FocusedSection      *tui.State[int]
+	onClose             func()
 }
 
 func NewSettingsApp(
-	provider *tui.State[string], 
-	model *tui.State[string], 
-	temperature *tui.State[float64], 
-	systemPrompt *tui.State[string], 
-	availableProviders []string, 
-	providerModels map[string][]string, 
+	model *tui.State[string],
+	maxTurns *tui.State[int],
+	permissionMode *tui.State[string],
+	systemPrompt *tui.State[string],
 	onClose func(),
-	) *SettingsApp {
+) *SettingsApp {
 	return &SettingsApp{
-		Provider:            provider,
 		Model:               model,
-		Temperature:         temperature,
+		MaxTurns:            maxTurns,
+		PermissionMode:      permissionMode,
 		SystemPrompt:        systemPrompt,
 		SystemPromptPresets: buildSystemPromptPresets(systemPrompt.Get()),
-		AvailableProviders:  availableProviders,
-		ProviderModels:      providerModels,
+		AvailableModels:     []string{"sonnet", "opus", "haiku"},
+		AvailablePermModes:  []string{"default", "plan"},
 		FocusedSection:      tui.NewState(0),
 		onClose:             onClose,
 	}
@@ -85,11 +83,11 @@ func (s *SettingsApp) nextSection() {
 func (s *SettingsApp) handleLeft() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(-1)
-	case 1:
 		s.cycleModel(-1)
+	case 1:
+		s.adjustMaxTurns(-1)
 	case 2:
-		s.adjustTemp(-0.1)
+		s.cyclePermMode(-1)
 	case 3:
 		s.cycleSystemPrompt(-1)
 	}
@@ -98,11 +96,11 @@ func (s *SettingsApp) handleLeft() {
 func (s *SettingsApp) handleRight() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(1)
-	case 1:
 		s.cycleModel(1)
+	case 1:
+		s.adjustMaxTurns(1)
 	case 2:
-		s.adjustTemp(0.1)
+		s.cyclePermMode(1)
 	case 3:
 		s.cycleSystemPrompt(1)
 	}
@@ -111,11 +109,11 @@ func (s *SettingsApp) handleRight() {
 func (s *SettingsApp) handleUp() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(-1)
-	case 1:
 		s.cycleModel(-1)
+	case 1:
+		s.adjustMaxTurns(1)
 	case 2:
-		s.adjustTemp(0.1)
+		s.cyclePermMode(-1)
 	case 3:
 		s.cycleSystemPrompt(-1)
 	}
@@ -124,68 +122,61 @@ func (s *SettingsApp) handleUp() {
 func (s *SettingsApp) handleDown() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(1)
-	case 1:
 		s.cycleModel(1)
+	case 1:
+		s.adjustMaxTurns(-1)
 	case 2:
-		s.adjustTemp(-0.1)
+		s.cyclePermMode(1)
 	case 3:
 		s.cycleSystemPrompt(1)
 	}
 }
 
-func (s *SettingsApp) cycleProvider(dir int) {
-	if len(s.AvailableProviders) == 0 {
-		return
-	}
-
-	current := s.Provider.Get()
-	idx := 0
-	for i, p := range s.AvailableProviders {
-		if p == current {
-			idx = i
-			break
-		}
-	}
-
-	idx = wrapIndex(idx+dir, len(s.AvailableProviders))
-	nextProvider := s.AvailableProviders[idx]
-	s.Provider.Set(nextProvider)
-
-	models := s.ProviderModels[nextProvider]
-	if len(models) > 0 {
-		s.Model.Set(models[0])
-	}
-}
-
 func (s *SettingsApp) cycleModel(dir int) {
-	models := s.ProviderModels[s.Provider.Get()]
-	if len(models) == 0 {
+	if len(s.AvailableModels) == 0 {
 		return
 	}
 
 	current := s.Model.Get()
 	idx := 0
-	for i, m := range models {
+	for i, m := range s.AvailableModels {
 		if m == current {
 			idx = i
 			break
 		}
 	}
 
-	idx = wrapIndex(idx+dir, len(models))
-	s.Model.Set(models[idx])
+	idx = wrapIndex(idx+dir, len(s.AvailableModels))
+	s.Model.Set(s.AvailableModels[idx])
 }
 
-func (s *SettingsApp) adjustTemp(delta float64) {
-	t := s.Temperature.Get() + delta
-	if t < minTemp {
-		t = minTemp
+func (s *SettingsApp) adjustMaxTurns(delta int) {
+	t := s.MaxTurns.Get() + delta
+	if t < minTurns {
+		t = minTurns
 	}
-	if t > maxTemp {
-		t = maxTemp
+	if t > maxTurns {
+		t = maxTurns
 	}
-	s.Temperature.Set(t)
+	s.MaxTurns.Set(t)
+}
+
+func (s *SettingsApp) cyclePermMode(dir int) {
+	if len(s.AvailablePermModes) == 0 {
+		return
+	}
+
+	current := s.PermissionMode.Get()
+	idx := 0
+	for i, m := range s.AvailablePermModes {
+		if m == current {
+			idx = i
+			break
+		}
+	}
+
+	idx = wrapIndex(idx+dir, len(s.AvailablePermModes))
+	s.PermissionMode.Set(s.AvailablePermModes[idx])
 }
 
 func (s *SettingsApp) cycleSystemPrompt(dir int) {
@@ -256,15 +247,15 @@ func (s *SettingsApp) fieldLabel(section int, label string) string {
 	return "  " + label
 }
 
-func (s *SettingsApp) providerOptionLabel(provider string) string {
-	if provider == s.Provider.Get() {
-		return "  ● " + provider
+func (s *SettingsApp) modelOptionLabel(model string) string {
+	if model == s.Model.Get() {
+		return "  ● " + model
 	}
-	return "  ○ " + provider
+	return "  ○ " + model
 }
 
-func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
-	if provider == s.Provider.Get() {
+func (s *SettingsApp) modelOptionStyle(model string) tui.Style {
+	if model == s.Model.Get() {
 		if s.isFocused(0) {
 			return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(0))
 		}
@@ -273,27 +264,43 @@ func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
 	return tui.NewStyle().Foreground(tui.White).Dim()
 }
 
-func (s *SettingsApp) providerSummary() string {
-	if len(s.AvailableProviders) == 0 {
-		return "none"
+func (s *SettingsApp) permModeOptionLabel(mode string) string {
+	if mode == s.PermissionMode.Get() {
+		return "  ● " + mode
 	}
+	return "  ○ " + mode
+}
 
-	index := indexOf(s.AvailableProviders, s.Provider.Get()) + 1
-	return indexedSummary(s.Provider.Get(), index, len(s.AvailableProviders))
+func (s *SettingsApp) permModeOptionStyle(mode string) tui.Style {
+	if mode == s.PermissionMode.Get() {
+		if s.isFocused(2) {
+			return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(2))
+		}
+		return tui.NewStyle().Bold().Foreground(tui.Yellow)
+	}
+	return tui.NewStyle().Foreground(tui.White).Dim()
 }
 
 func (s *SettingsApp) modelSummary() string {
-	models := s.ProviderModels[s.Provider.Get()]
-	if len(models) == 0 {
+	if len(s.AvailableModels) == 0 {
 		return "none"
 	}
 
-	index := indexOf(models, s.Model.Get()) + 1
-	return indexedSummary(s.Model.Get(), index, len(models))
+	index := indexOf(s.AvailableModels, s.Model.Get()) + 1
+	return indexedSummary(s.Model.Get(), index, len(s.AvailableModels))
 }
 
-func (s *SettingsApp) temperatureSummary() string {
-	return fmt.Sprintf("%.1f  %s", s.Temperature.Get(), s.temperatureMode())
+func (s *SettingsApp) maxTurnsSummary() string {
+	return fmt.Sprintf("%d", s.MaxTurns.Get())
+}
+
+func (s *SettingsApp) permModeSummary() string {
+	if len(s.AvailablePermModes) == 0 {
+		return "none"
+	}
+
+	index := indexOf(s.AvailablePermModes, s.PermissionMode.Get()) + 1
+	return indexedSummary(s.PermissionMode.Get(), index, len(s.AvailablePermModes))
 }
 
 func (s *SettingsApp) promptPresetSummary() string {
@@ -308,44 +315,32 @@ func (s *SettingsApp) promptPresetSummary() string {
 	return fmt.Sprintf("preset %d/%d", index+1, len(s.SystemPromptPresets))
 }
 
-func (s *SettingsApp) temperatureMode() string {
-	t := s.Temperature.Get()
-	switch {
-	case t <= 0.3:
-		return "precise"
-	case t < 0.8:
-		return "balanced"
-	default:
-		return "creative"
-	}
-}
-
 func (s *SettingsApp) activeSectionHint() string {
 	switch s.FocusedSection.Get() {
 	case 0:
-		return "Provider focus: ↑/↓ cycles providers"
-	case 1:
 		return "Model focus: ↑/↓ or ←/→ cycles models"
+	case 1:
+		return "Max turns focus: ↑/→ increases, ↓/← decreases"
 	case 2:
-		return "Temperature focus: ↑ increases, ↓ decreases"
+		return "Permission mode focus: ↑/↓ or ←/→ cycles modes"
 	default:
 		return "System prompt focus: ↑/↓ cycles prompt presets"
 	}
 }
 
-func (s *SettingsApp) tempBar() string {
-	t := s.Temperature.Get()
-	pos := int(t*float64(tempBarWidth-1) + 0.5)
+func (s *SettingsApp) maxTurnsBar() string {
+	t := s.MaxTurns.Get()
+	pos := int(float64(t-minTurns) / float64(maxTurns-minTurns) * float64(turnsBarWidth-1) + 0.5)
 	if pos < 0 {
 		pos = 0
 	}
-	if pos >= tempBarWidth {
-		pos = tempBarWidth - 1
+	if pos >= turnsBarWidth {
+		pos = turnsBarWidth - 1
 	}
 
 	var bar strings.Builder
-	bar.Grow(tempBarWidth * 3)
-	for i := 0; i < tempBarWidth; i++ {
+	bar.Grow(turnsBarWidth * 3)
+	for i := 0; i < turnsBarWidth; i++ {
 		if i == pos {
 			bar.WriteString("●")
 		} else {
@@ -520,20 +515,20 @@ func wrapIndex(idx, length int) int {
 templ (s *SettingsApp) Render() {
 	<div class="flex-col h-full p-1 gap-0">
 		<div class="flex-col items-center shrink-0 border-double border-gradient-cyan-blue p-1">
-			<span class="text-gradient-bright-cyan-bright-yellow font-bold">{"AI Chat Settings"}</span>
-			<span class="text-bright-cyan">{"Control center for provider, model, temperature, and prompt"}</span>
+			<span class="text-gradient-bright-cyan-bright-yellow font-bold">{"Claude Settings"}</span>
+			<span class="text-bright-cyan">{"Model, turn limits, permissions, and system prompt"}</span>
 		</div>
 
 		<div class="shrink-0 border-gradient-cyan-blue" border={s.sectionBorder(0)} borderStyle={s.borderStyleForSection(0)}>
 			<div class="flex-col">
 				<div class="flex justify-between items-center">
-					<span textStyle={s.sectionTitleStyle(0)}>{s.fieldLabel(0, "Provider")}</span>
-					<span textStyle={s.sectionValueStyle(0)}>{s.providerSummary()}</span>
+					<span textStyle={s.sectionTitleStyle(0)}>{s.fieldLabel(0, "Model")}</span>
+					<span textStyle={s.sectionValueStyle(0)}>{s.modelSummary()}</span>
 				</div>
 
 				<div class="flex gap-2">
-					@for _, provider := range s.AvailableProviders {
-						<span textStyle={s.providerOptionStyle(provider)}>{s.providerOptionLabel(provider)}</span>
+					@for _, model := range s.AvailableModels {
+						<span textStyle={s.modelOptionStyle(model)}>{s.modelOptionLabel(model)}</span>
 					}
 				</div>
 			</div>
@@ -542,20 +537,26 @@ templ (s *SettingsApp) Render() {
 		<div class="shrink-0 border-gradient-blue-cyan" border={s.sectionBorder(1)} borderStyle={s.borderStyleForSection(1)}>
 			<div class="flex-col">
 				<div class="flex justify-between items-center">
-					<span textStyle={s.sectionTitleStyle(1)}>{s.fieldLabel(1, "Model")}</span>
-					<span textStyle={s.sectionValueStyle(1)}>{s.modelSummary()}</span>
+					<span textStyle={s.sectionTitleStyle(1)}>{s.fieldLabel(1, "Max Turns")}</span>
+					<span textStyle={s.sectionValueStyle(1)}>{s.maxTurnsSummary()}</span>
 				</div>
+
+				<span class="text-gradient-blue-cyan">{s.maxTurnsBar()}</span>
 			</div>
 		</div>
 
 		<div class="shrink-0 border-gradient-yellow-cyan" border={s.sectionBorder(2)} borderStyle={s.borderStyleForSection(2)}>
 			<div class="flex-col">
 				<div class="flex justify-between items-center">
-					<span textStyle={s.sectionTitleStyle(2)}>{s.fieldLabel(2, "Temperature")}</span>
-					<span textStyle={s.sectionValueStyle(2)}>{s.temperatureSummary()}</span>
+					<span textStyle={s.sectionTitleStyle(2)}>{s.fieldLabel(2, "Permission Mode")}</span>
+					<span textStyle={s.sectionValueStyle(2)}>{s.permModeSummary()}</span>
 				</div>
 
-				<span class="text-gradient-yellow-cyan">{s.tempBar()}</span>
+				<div class="flex gap-2">
+					@for _, mode := range s.AvailablePermModes {
+						<span textStyle={s.permModeOptionStyle(mode)}>{s.permModeOptionLabel(mode)}</span>
+					}
+				</div>
 			</div>
 		</div>
 

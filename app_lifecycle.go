@@ -124,6 +124,64 @@ func (a *App) printAboveFormatted(async, trailingNewline bool, format string, ar
 	a.printAboveRaw(content)
 }
 
+// PrintAboveStyled prints content that may contain ANSI escape sequences
+// above the inline widget. ANSI sequences are preserved for styled output.
+// Only works in inline mode (WithInlineHeight). In full-screen mode, this is a no-op.
+// Must be called from the app's main loop.
+func (a *App) PrintAboveStyled(format string, args ...any) {
+	a.printAboveStyledFormatted(false, false, format, args...)
+}
+
+// PrintAboveStyledln prints styled content with a trailing newline above the inline widget.
+// ANSI escape sequences are preserved. Must be called from the app's main loop.
+func (a *App) PrintAboveStyledln(format string, args ...any) {
+	a.printAboveStyledFormatted(false, true, format, args...)
+}
+
+// QueuePrintAboveStyled queues styled content to print above the inline widget.
+// ANSI escape sequences are preserved. Safe to call from any goroutine.
+func (a *App) QueuePrintAboveStyled(format string, args ...any) {
+	a.printAboveStyledFormatted(true, false, format, args...)
+}
+
+// QueuePrintAboveStyledln queues styled content with a trailing newline.
+// ANSI escape sequences are preserved. Safe to call from any goroutine.
+func (a *App) QueuePrintAboveStyledln(format string, args ...any) {
+	a.printAboveStyledFormatted(true, true, format, args...)
+}
+
+func (a *App) printAboveStyledFormatted(async, trailingNewline bool, format string, args ...any) {
+	if a.inlineHeight == 0 {
+		return
+	}
+
+	content := fmt.Sprintf(format, args...)
+	if trailingNewline {
+		content += "\n"
+	}
+
+	if async {
+		a.QueueUpdate(func() {
+			a.printAboveStyledRaw(content)
+		})
+		return
+	}
+
+	a.printAboveStyledRaw(content)
+}
+
+func (a *App) printAboveStyledRaw(content string) {
+	if a.inlineStartRow < 1 {
+		return
+	}
+	a.ensureInlineSession()
+	a.inlineSession.ensureInitialized(&a.inlineLayout, a.inlineStartRow)
+	width, _ := a.terminal.Size()
+	a.inlineSession.appendStyledText(&a.inlineLayout, a.inlineStartRow, width, content)
+
+	a.MarkDirty()
+}
+
 // SetInlineHeight changes the inline widget height at runtime.
 // Only works in inline mode (WithInlineHeight was used at creation).
 // The height change takes effect immediately.

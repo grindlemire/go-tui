@@ -12,43 +12,41 @@ import (
 
 const (
 	numSections        = 4
-	minTemp            = 0.0
-	maxTemp            = 1.0
-	tempBarWidth       = 22
+	minTurns           = 1
+	maxTurns           = 50
+	turnsBarWidth      = 22
 	valuePreviewWidth  = 30
 	promptPreviewWidth = 48
 	promptPreviewLines = 2
 )
 
 type SettingsApp struct {
-	Provider            *tui.State[string]
 	Model               *tui.State[string]
-	Temperature         *tui.State[float64]
+	MaxTurns            *tui.State[int]
+	PermissionMode      *tui.State[string]
 	SystemPrompt        *tui.State[string]
 	SystemPromptPresets []string
-	AvailableProviders  []string
-	ProviderModels      map[string][]string
+	AvailableModels     []string
+	AvailablePermModes  []string
 	FocusedSection      *tui.State[int]
 	onClose             func()
 }
 
 func NewSettingsApp(
-	provider *tui.State[string],
 	model *tui.State[string],
-	temperature *tui.State[float64],
+	maxTurns *tui.State[int],
+	permissionMode *tui.State[string],
 	systemPrompt *tui.State[string],
-	availableProviders []string,
-	providerModels map[string][]string,
 	onClose func(),
 ) *SettingsApp {
 	return &SettingsApp{
-		Provider:            provider,
 		Model:               model,
-		Temperature:         temperature,
+		MaxTurns:            maxTurns,
+		PermissionMode:      permissionMode,
 		SystemPrompt:        systemPrompt,
 		SystemPromptPresets: buildSystemPromptPresets(systemPrompt.Get()),
-		AvailableProviders:  availableProviders,
-		ProviderModels:      providerModels,
+		AvailableModels:     []string{"sonnet", "opus", "haiku"},
+		AvailablePermModes:  []string{"default", "plan"},
 		FocusedSection:      tui.NewState(0),
 		onClose:             onClose,
 	}
@@ -89,11 +87,11 @@ func (s *SettingsApp) nextSection() {
 func (s *SettingsApp) handleLeft() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(-1)
-	case 1:
 		s.cycleModel(-1)
+	case 1:
+		s.adjustMaxTurns(-1)
 	case 2:
-		s.adjustTemp(-0.1)
+		s.cyclePermMode(-1)
 	case 3:
 		s.cycleSystemPrompt(-1)
 	}
@@ -102,11 +100,11 @@ func (s *SettingsApp) handleLeft() {
 func (s *SettingsApp) handleRight() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(1)
-	case 1:
 		s.cycleModel(1)
+	case 1:
+		s.adjustMaxTurns(1)
 	case 2:
-		s.adjustTemp(0.1)
+		s.cyclePermMode(1)
 	case 3:
 		s.cycleSystemPrompt(1)
 	}
@@ -115,11 +113,11 @@ func (s *SettingsApp) handleRight() {
 func (s *SettingsApp) handleUp() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(-1)
-	case 1:
 		s.cycleModel(-1)
+	case 1:
+		s.adjustMaxTurns(1)
 	case 2:
-		s.adjustTemp(0.1)
+		s.cyclePermMode(-1)
 	case 3:
 		s.cycleSystemPrompt(-1)
 	}
@@ -128,68 +126,61 @@ func (s *SettingsApp) handleUp() {
 func (s *SettingsApp) handleDown() {
 	switch s.FocusedSection.Get() {
 	case 0:
-		s.cycleProvider(1)
-	case 1:
 		s.cycleModel(1)
+	case 1:
+		s.adjustMaxTurns(-1)
 	case 2:
-		s.adjustTemp(-0.1)
+		s.cyclePermMode(1)
 	case 3:
 		s.cycleSystemPrompt(1)
 	}
 }
 
-func (s *SettingsApp) cycleProvider(dir int) {
-	if len(s.AvailableProviders) == 0 {
-		return
-	}
-
-	current := s.Provider.Get()
-	idx := 0
-	for i, p := range s.AvailableProviders {
-		if p == current {
-			idx = i
-			break
-		}
-	}
-
-	idx = wrapIndex(idx+dir, len(s.AvailableProviders))
-	nextProvider := s.AvailableProviders[idx]
-	s.Provider.Set(nextProvider)
-
-	models := s.ProviderModels[nextProvider]
-	if len(models) > 0 {
-		s.Model.Set(models[0])
-	}
-}
-
 func (s *SettingsApp) cycleModel(dir int) {
-	models := s.ProviderModels[s.Provider.Get()]
-	if len(models) == 0 {
+	if len(s.AvailableModels) == 0 {
 		return
 	}
 
 	current := s.Model.Get()
 	idx := 0
-	for i, m := range models {
+	for i, m := range s.AvailableModels {
 		if m == current {
 			idx = i
 			break
 		}
 	}
 
-	idx = wrapIndex(idx+dir, len(models))
-	s.Model.Set(models[idx])
+	idx = wrapIndex(idx+dir, len(s.AvailableModels))
+	s.Model.Set(s.AvailableModels[idx])
 }
 
-func (s *SettingsApp) adjustTemp(delta float64) {
-	t := s.Temperature.Get() + delta
-	if t < minTemp {
-		t = minTemp
+func (s *SettingsApp) adjustMaxTurns(delta int) {
+	t := s.MaxTurns.Get() + delta
+	if t < minTurns {
+		t = minTurns
 	}
-	if t > maxTemp {
-		t = maxTemp
+	if t > maxTurns {
+		t = maxTurns
 	}
-	s.Temperature.Set(t)
+	s.MaxTurns.Set(t)
+}
+
+func (s *SettingsApp) cyclePermMode(dir int) {
+	if len(s.AvailablePermModes) == 0 {
+		return
+	}
+
+	current := s.PermissionMode.Get()
+	idx := 0
+	for i, m := range s.AvailablePermModes {
+		if m == current {
+			idx = i
+			break
+		}
+	}
+
+	idx = wrapIndex(idx+dir, len(s.AvailablePermModes))
+	s.PermissionMode.Set(s.AvailablePermModes[idx])
 }
 
 func (s *SettingsApp) cycleSystemPrompt(dir int) {
@@ -260,15 +251,15 @@ func (s *SettingsApp) fieldLabel(section int, label string) string {
 	return "  " + label
 }
 
-func (s *SettingsApp) providerOptionLabel(provider string) string {
-	if provider == s.Provider.Get() {
-		return "  ● " + provider
+func (s *SettingsApp) modelOptionLabel(model string) string {
+	if model == s.Model.Get() {
+		return "  ● " + model
 	}
-	return "  ○ " + provider
+	return "  ○ " + model
 }
 
-func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
-	if provider == s.Provider.Get() {
+func (s *SettingsApp) modelOptionStyle(model string) tui.Style {
+	if model == s.Model.Get() {
 		if s.isFocused(0) {
 			return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(0))
 		}
@@ -277,27 +268,43 @@ func (s *SettingsApp) providerOptionStyle(provider string) tui.Style {
 	return tui.NewStyle().Foreground(tui.White).Dim()
 }
 
-func (s *SettingsApp) providerSummary() string {
-	if len(s.AvailableProviders) == 0 {
-		return "none"
+func (s *SettingsApp) permModeOptionLabel(mode string) string {
+	if mode == s.PermissionMode.Get() {
+		return "  ● " + mode
 	}
+	return "  ○ " + mode
+}
 
-	index := indexOf(s.AvailableProviders, s.Provider.Get()) + 1
-	return indexedSummary(s.Provider.Get(), index, len(s.AvailableProviders))
+func (s *SettingsApp) permModeOptionStyle(mode string) tui.Style {
+	if mode == s.PermissionMode.Get() {
+		if s.isFocused(2) {
+			return tui.NewStyle().Bold().Foreground(s.sectionAccentColor(2))
+		}
+		return tui.NewStyle().Bold().Foreground(tui.Yellow)
+	}
+	return tui.NewStyle().Foreground(tui.White).Dim()
 }
 
 func (s *SettingsApp) modelSummary() string {
-	models := s.ProviderModels[s.Provider.Get()]
-	if len(models) == 0 {
+	if len(s.AvailableModels) == 0 {
 		return "none"
 	}
 
-	index := indexOf(models, s.Model.Get()) + 1
-	return indexedSummary(s.Model.Get(), index, len(models))
+	index := indexOf(s.AvailableModels, s.Model.Get()) + 1
+	return indexedSummary(s.Model.Get(), index, len(s.AvailableModels))
 }
 
-func (s *SettingsApp) temperatureSummary() string {
-	return fmt.Sprintf("%.1f  %s", s.Temperature.Get(), s.temperatureMode())
+func (s *SettingsApp) maxTurnsSummary() string {
+	return fmt.Sprintf("%d", s.MaxTurns.Get())
+}
+
+func (s *SettingsApp) permModeSummary() string {
+	if len(s.AvailablePermModes) == 0 {
+		return "none"
+	}
+
+	index := indexOf(s.AvailablePermModes, s.PermissionMode.Get()) + 1
+	return indexedSummary(s.PermissionMode.Get(), index, len(s.AvailablePermModes))
 }
 
 func (s *SettingsApp) promptPresetSummary() string {
@@ -312,44 +319,32 @@ func (s *SettingsApp) promptPresetSummary() string {
 	return fmt.Sprintf("preset %d/%d", index+1, len(s.SystemPromptPresets))
 }
 
-func (s *SettingsApp) temperatureMode() string {
-	t := s.Temperature.Get()
-	switch {
-	case t <= 0.3:
-		return "precise"
-	case t < 0.8:
-		return "balanced"
-	default:
-		return "creative"
-	}
-}
-
 func (s *SettingsApp) activeSectionHint() string {
 	switch s.FocusedSection.Get() {
 	case 0:
-		return "Provider focus: ↑/↓ cycles providers"
-	case 1:
 		return "Model focus: ↑/↓ or ←/→ cycles models"
+	case 1:
+		return "Max turns focus: ↑/→ increases, ↓/← decreases"
 	case 2:
-		return "Temperature focus: ↑ increases, ↓ decreases"
+		return "Permission mode focus: ↑/↓ or ←/→ cycles modes"
 	default:
 		return "System prompt focus: ↑/↓ cycles prompt presets"
 	}
 }
 
-func (s *SettingsApp) tempBar() string {
-	t := s.Temperature.Get()
-	pos := int(t*float64(tempBarWidth-1) + 0.5)
+func (s *SettingsApp) maxTurnsBar() string {
+	t := s.MaxTurns.Get()
+	pos := int(float64(t-minTurns)/float64(maxTurns-minTurns)*float64(turnsBarWidth-1) + 0.5)
 	if pos < 0 {
 		pos = 0
 	}
-	if pos >= tempBarWidth {
-		pos = tempBarWidth - 1
+	if pos >= turnsBarWidth {
+		pos = turnsBarWidth - 1
 	}
 
 	var bar strings.Builder
-	bar.Grow(tempBarWidth * 3)
-	for i := 0; i < tempBarWidth; i++ {
+	bar.Grow(turnsBarWidth * 3)
+	for i := 0; i < turnsBarWidth; i++ {
 		if i == pos {
 			bar.WriteString("●")
 		} else {
@@ -537,13 +532,13 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithPadding(1),
 	)
 	__tui_2 := tui.New(
-		tui.WithText("AI Chat Settings"),
+		tui.WithText("Claude Settings"),
 		tui.WithTextGradient(tui.NewGradient(tui.BrightCyan, tui.BrightYellow).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText("Control center for provider, model, temperature, and prompt"),
+		tui.WithText("Model, turn limits, permissions, and system prompt"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -563,12 +558,12 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_7 := tui.New(
-		tui.WithText(s.fieldLabel(0, "Provider")),
+		tui.WithText(s.fieldLabel(0, "Model")),
 		tui.WithTextStyle(s.sectionTitleStyle(0)),
 	)
 	__tui_6.AddChild(__tui_7)
 	__tui_8 := tui.New(
-		tui.WithText(s.providerSummary()),
+		tui.WithText(s.modelSummary()),
 		tui.WithTextStyle(s.sectionValueStyle(0)),
 	)
 	__tui_6.AddChild(__tui_8)
@@ -577,11 +572,11 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	for __idx_0, provider := range s.AvailableProviders {
+	for __idx_0, model := range s.AvailableModels {
 		_ = __idx_0
 		__tui_10 := tui.New(
-			tui.WithText(s.providerOptionLabel(provider)),
-			tui.WithTextStyle(s.providerOptionStyle(provider)),
+			tui.WithText(s.modelOptionLabel(model)),
+			tui.WithTextStyle(s.modelOptionStyle(model)),
 		)
 		__tui_9.AddChild(__tui_10)
 	}
@@ -603,104 +598,117 @@ func (s *SettingsApp) Render(app *tui.App) *tui.Element {
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_14 := tui.New(
-		tui.WithText(s.fieldLabel(1, "Model")),
+		tui.WithText(s.fieldLabel(1, "Max Turns")),
 		tui.WithTextStyle(s.sectionTitleStyle(1)),
 	)
 	__tui_13.AddChild(__tui_14)
 	__tui_15 := tui.New(
-		tui.WithText(s.modelSummary()),
+		tui.WithText(s.maxTurnsSummary()),
 		tui.WithTextStyle(s.sectionValueStyle(1)),
 	)
 	__tui_13.AddChild(__tui_15)
 	__tui_12.AddChild(__tui_13)
+	__tui_16 := tui.New(
+		tui.WithText(s.maxTurnsBar()),
+		tui.WithTextGradient(tui.NewGradient(tui.Blue, tui.Cyan).WithDirection(tui.GradientHorizontal)),
+	)
+	__tui_12.AddChild(__tui_16)
 	__tui_11.AddChild(__tui_12)
 	__tui_0.AddChild(__tui_11)
-	__tui_16 := tui.New(
+	__tui_17 := tui.New(
 		tui.WithFlexShrink(0),
 		tui.WithBorderGradient(tui.NewGradient(tui.Yellow, tui.Cyan).WithDirection(tui.GradientHorizontal)),
 		tui.WithBorder(s.sectionBorder(2)),
 		tui.WithBorderStyle(s.borderStyleForSection(2)),
 	)
-	__tui_17 := tui.New(
+	__tui_18 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 	)
-	__tui_18 := tui.New(
+	__tui_19 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_19 := tui.New(
-		tui.WithText(s.fieldLabel(2, "Temperature")),
+	__tui_20 := tui.New(
+		tui.WithText(s.fieldLabel(2, "Permission Mode")),
 		tui.WithTextStyle(s.sectionTitleStyle(2)),
 	)
-	__tui_18.AddChild(__tui_19)
-	__tui_20 := tui.New(
-		tui.WithText(s.temperatureSummary()),
+	__tui_19.AddChild(__tui_20)
+	__tui_21 := tui.New(
+		tui.WithText(s.permModeSummary()),
 		tui.WithTextStyle(s.sectionValueStyle(2)),
 	)
-	__tui_18.AddChild(__tui_20)
-	__tui_17.AddChild(__tui_18)
-	__tui_21 := tui.New(
-		tui.WithText(s.tempBar()),
-		tui.WithTextGradient(tui.NewGradient(tui.Yellow, tui.Cyan).WithDirection(tui.GradientHorizontal)),
-	)
-	__tui_17.AddChild(__tui_21)
-	__tui_16.AddChild(__tui_17)
-	__tui_0.AddChild(__tui_16)
+	__tui_19.AddChild(__tui_21)
+	__tui_18.AddChild(__tui_19)
 	__tui_22 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
+	)
+	for __idx_0, mode := range s.AvailablePermModes {
+		_ = __idx_0
+		__tui_23 := tui.New(
+			tui.WithText(s.permModeOptionLabel(mode)),
+			tui.WithTextStyle(s.permModeOptionStyle(mode)),
+		)
+		__tui_22.AddChild(__tui_23)
+	}
+	__tui_18.AddChild(__tui_22)
+	__tui_17.AddChild(__tui_18)
+	__tui_0.AddChild(__tui_17)
+	__tui_24 := tui.New(
 		tui.WithBorderGradient(tui.NewGradient(tui.Green, tui.Cyan).WithDirection(tui.GradientHorizontal)),
 		tui.WithBorder(s.sectionBorder(3)),
 		tui.WithBorderStyle(s.borderStyleForSection(3)),
 		tui.WithFlexGrow(1),
 	)
-	__tui_23 := tui.New(
+	__tui_25 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 	)
-	__tui_24 := tui.New(
+	__tui_26 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_25 := tui.New(
+	__tui_27 := tui.New(
 		tui.WithText(s.fieldLabel(3, "System Prompt")),
 		tui.WithTextStyle(s.sectionTitleStyle(3)),
 	)
-	__tui_24.AddChild(__tui_25)
-	__tui_26 := tui.New(
+	__tui_26.AddChild(__tui_27)
+	__tui_28 := tui.New(
 		tui.WithText(s.promptPresetSummary()),
 		tui.WithTextStyle(s.sectionValueStyle(3)),
 	)
-	__tui_24.AddChild(__tui_26)
-	__tui_23.AddChild(__tui_24)
+	__tui_26.AddChild(__tui_28)
+	__tui_25.AddChild(__tui_26)
 	for __idx_0, line := range s.promptPreview() {
 		_ = __idx_0
-		__tui_27 := tui.New(
+		__tui_29 := tui.New(
 			tui.WithText(line),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 		)
-		__tui_23.AddChild(__tui_27)
+		__tui_25.AddChild(__tui_29)
 	}
-	__tui_22.AddChild(__tui_23)
-	__tui_0.AddChild(__tui_22)
-	__tui_28 := tui.New(
+	__tui_24.AddChild(__tui_25)
+	__tui_0.AddChild(__tui_24)
+	__tui_30 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
 		tui.WithFlexShrink(0),
 		tui.WithBorder(tui.BorderThick),
 		tui.WithBorderGradient(tui.NewGradient(tui.White, tui.Black).WithDirection(tui.GradientHorizontal)),
 	)
-	__tui_29 := tui.New(
+	__tui_31 := tui.New(
 		tui.WithText("Tab: next section   arrows or h/j/k/l: change   Enter/Esc/Ctrl+S/q: close"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_28.AddChild(__tui_29)
-	__tui_30 := tui.New(
+	__tui_30.AddChild(__tui_31)
+	__tui_32 := tui.New(
 		tui.WithText(s.activeSectionHint()),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 	)
-	__tui_28.AddChild(__tui_30)
-	__tui_0.AddChild(__tui_28)
+	__tui_30.AddChild(__tui_32)
+	__tui_0.AddChild(__tui_30)
 
 	return __tui_0
 }
@@ -711,21 +719,21 @@ func (s *SettingsApp) UpdateProps(fresh tui.Component) {
 		return
 	}
 	s.SystemPromptPresets = f.SystemPromptPresets
-	s.AvailableProviders = f.AvailableProviders
-	s.ProviderModels = f.ProviderModels
+	s.AvailableModels = f.AvailableModels
+	s.AvailablePermModes = f.AvailablePermModes
 }
 
 var _ tui.PropsUpdater = (*SettingsApp)(nil)
 
 func (s *SettingsApp) BindApp(app *tui.App) {
-	if s.Provider != nil {
-		s.Provider.BindApp(app)
-	}
 	if s.Model != nil {
 		s.Model.BindApp(app)
 	}
-	if s.Temperature != nil {
-		s.Temperature.BindApp(app)
+	if s.MaxTurns != nil {
+		s.MaxTurns.BindApp(app)
+	}
+	if s.PermissionMode != nil {
+		s.PermissionMode.BindApp(app)
 	}
 	if s.SystemPrompt != nil {
 		s.SystemPrompt.BindApp(app)

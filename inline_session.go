@@ -134,6 +134,35 @@ func (s *inlineSession) appendText(layout *inlineLayoutState, historyCapacity, w
 	}
 }
 
+// appendStyledText is like appendText but preserves ANSI escape sequences.
+func (s *inlineSession) appendStyledText(layout *inlineLayoutState, historyCapacity, width int, content string) {
+	if historyCapacity < 1 {
+		layout.resetEmpty(historyCapacity)
+		return
+	}
+
+	if !layout.valid {
+		layout.resetConservativeFull(historyCapacity)
+	}
+	layout.clamp(historyCapacity)
+
+	text := sanitizeStyledText(content)
+	text = strings.TrimSuffix(text, "\n")
+	rows := wrapInlineStyledRows(text, width)
+	if len(rows) == 0 {
+		return
+	}
+
+	var seq strings.Builder
+	for _, row := range rows {
+		s.appendRow(&seq, layout, row)
+	}
+
+	if seq.Len() > 0 {
+		s.terminal.WriteDirect([]byte(seq.String()))
+	}
+}
+
 func (s *inlineSession) appendRow(seq *strings.Builder, layout *inlineLayoutState, row string) {
 	historyCapacity := layout.historyCapacity
 	if historyCapacity < 1 {
