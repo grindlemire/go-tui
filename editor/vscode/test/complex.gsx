@@ -218,7 +218,7 @@ templ RefsExample(items []string, users map[string]string, showWarning bool) {
 		}
 
 		@for id, name := range users {
-			<span ref={userRefs}>{name}</span>
+			<span ref={userRefs} key={id}>{name}</span>
 		}
 
 		@if showWarning {

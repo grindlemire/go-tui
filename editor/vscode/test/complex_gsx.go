@@ -410,7 +410,7 @@ type RefsExampleView struct {
 	Container *tui.Element
 	TitleRef  *tui.Element
 	ItemRefs  []*tui.Element
-	UserRefs  []*tui.Element
+	UserRefs  map[string]*tui.Element
 	Warning   *tui.Element // may be nil
 }
 
@@ -487,7 +487,7 @@ func RefsExample(items []string, users map[string]string, showWarning bool) *Ref
 		__tui_3 := tui.New(
 			tui.WithText(name),
 		)
-		userRefs.Append(__tui_3)
+		userRefs.Put(id, __tui_3)
 		__tui_0.AddChild(__tui_3)
 	}
 	if showWarning {
@@ -576,23 +576,23 @@ func NumericValues() *NumericValuesView {
 	)
 	__tui_2 := tui.New(tui.WithText("Integer:"))
 	__tui_1.AddChild(__tui_2)
-	__tui_3 := tui.New(tui.WithText(42))
+	__tui_3 := tui.New(tui.WithText(fmt.Sprint(42)))
 	__tui_1.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_1)
 	__tui_4 := tui.New(
-		tui.WithText(3.14159),
+		tui.WithText(fmt.Sprint(3.14159)),
 	)
 	__tui_0.AddChild(__tui_4)
 	__tui_5 := tui.New(
-		tui.WithText(0xFF),
+		tui.WithText(fmt.Sprint(0xFF)),
 	)
 	__tui_0.AddChild(__tui_5)
 	__tui_6 := tui.New(
-		tui.WithText(0b1010),
+		tui.WithText(fmt.Sprint(0b1010)),
 	)
 	__tui_0.AddChild(__tui_6)
 	__tui_7 := tui.New(
-		tui.WithText(0o755),
+		tui.WithText(fmt.Sprint(0o755)),
 	)
 	__tui_0.AddChild(__tui_7)
 
@@ -808,7 +808,7 @@ func AttributeTypes(enabled bool, size int) *AttributeTypesView {
 		tui.WithBorder(tui.BorderDouble),
 		tui.WithPadding(2),
 		tui.WithMargin(1),
-		tui.WithWidth("100%"),
+		tui.WithWidthPercent(100),
 		tui.WithHeight(size),
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithAlign(tui.AlignCenter),
