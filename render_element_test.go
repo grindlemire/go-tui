@@ -102,3 +102,68 @@ func searchStr(s, sub string) bool {
 	}
 	return false
 }
+
+func TestRenderElementToBuffer(t *testing.T) {
+	type tc struct {
+		el         *Element
+		width      int
+		wantHeight int // expected height; 0 means nil buffer
+	}
+
+	defaultCaps := Capabilities{Colors: ColorTrue, TrueColor: true}
+
+	tests := map[string]tc{
+		"simple text span": {
+			el:         New(WithText("hello")),
+			width:      20,
+			wantHeight: 1,
+		},
+		"text with border": {
+			el:         New(WithText("hi"), WithBorder(BorderSingle)),
+			width:      20,
+			wantHeight: 3, // 1 text + 2 border rows
+		},
+		"empty element": {
+			el:         New(),
+			width:      20,
+			wantHeight: 0,
+		},
+		"column with children": {
+			el: func() *Element {
+				parent := New(WithDirection(Column))
+				parent.AddChild(
+					New(WithText("line 1")),
+					New(WithText("line 2")),
+				)
+				return parent
+			}(),
+			width:      20,
+			wantHeight: 2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf, height := renderElementToBuffer(tt.el, tt.width, defaultCaps)
+
+			if height != tt.wantHeight {
+				t.Fatalf("height = %d, want %d", height, tt.wantHeight)
+			}
+			if tt.wantHeight == 0 {
+				if buf != nil {
+					t.Fatalf("expected nil buffer for zero height")
+				}
+				return
+			}
+			if buf == nil {
+				t.Fatalf("expected non-nil buffer for height %d", tt.wantHeight)
+			}
+			if buf.Width() != tt.width {
+				t.Fatalf("buffer width = %d, want %d", buf.Width(), tt.width)
+			}
+			if buf.Height() != tt.wantHeight {
+				t.Fatalf("buffer height = %d, want %d", buf.Height(), tt.wantHeight)
+			}
+		})
+	}
+}
