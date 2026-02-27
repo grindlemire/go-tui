@@ -566,6 +566,24 @@ go func() {
 
 Returns a no-op writer when not in inline mode. Only one stream writer is active at a time; calling `StreamAbove()` again finalizes the previous one. `PrintAbove`/`PrintAboveln` also finalize any active stream before printing.
 
+### PrintAboveElement
+
+`app.PrintAboveElement(el)` renders an element tree at the terminal width and inserts the resulting rows into the inline scrollback as static ANSI text. Works with templ function output. No-op outside inline mode. Must be called from the main event loop. `QueuePrintAboveElement(el)` is the goroutine-safe variant.
+
+`StreamWriter.WriteElement(el)` inserts a rendered element mid-stream. Finalizes the current partial line first.
+
+```go
+// Standalone
+app.PrintAboveElement(DataTable(rows))
+
+// Mid-stream
+w := app.StreamAbove()
+w.Write([]byte("Here's the data:\n"))
+w.WriteElement(DataTable(rows))
+w.Write([]byte("Done.\n"))
+w.Close()
+```
+
 ## Common Layout Patterns
 
 ```gsx
