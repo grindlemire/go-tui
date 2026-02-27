@@ -483,10 +483,50 @@ go func() {
 | `Close` | `Close() error` | Finalizes the partial line. |
 | `WriteStyled` | `WriteStyled(text string, style Style) (int, error)` | Writes text with ANSI style prefix and reset suffix. Tracks column position. |
 | `WriteGradient` | `WriteGradient(text string, g Gradient, base ...Style) (int, error)` | Writes each character with an interpolated gradient foreground color. Optional base style provides attributes (bold, italic) and background. Tracks column position. |
+| `WriteElement` | `WriteElement(el *Element)` | Renders an element and inserts its rows mid-stream. Finalizes the current partial line first. Resets column position. |
 
 Column tracking: `WriteStyled` and `WriteGradient` advance an internal column counter by each character's display width (CJK-aware). Newlines reset the column to 0. The column wraps at the terminal width. This counter drives gradient color interpolation.
 
 If `PrintAbove` or `PrintAboveln` is called while a stream writer is active, the stream's partial line is finalized first, then the new content is printed on the next line. Further writes to the finalized writer return `io.ErrClosedPipe`.
+
+### PrintAboveElement
+
+```go
+func (a *App) PrintAboveElement(el *Element)
+```
+
+Renders an element tree and inserts the resulting rows into the inline scrollback as static ANSI text. The element is laid out at the terminal's current width using the standard flexbox layout engine, then each row is converted to ANSI escape sequences and inserted via the same machinery as `PrintAboveStyled`.
+
+This enables inserting structured content — tables, styled cards, templ component output — into the scrollback alongside streamed text.
+
+Must be called from the app's main event loop. No-op if not in inline mode or if the element is nil.
+
+```go
+// Insert a templ-generated table
+table := DataTable(myRows)
+app.PrintAboveElement(table)
+
+// Insert a hand-built element
+el := tui.NewElement(tui.WithText("result"), tui.WithBorder(tui.BorderSingle))
+app.PrintAboveElement(el)
+```
+
+Any active stream writer's partial line is finalized before the element is inserted, same as `PrintAbove`.
+
+### QueuePrintAboveElement
+
+```go
+func (a *App) QueuePrintAboveElement(el *Element)
+```
+
+Thread-safe version of `PrintAboveElement`. Safe to call from any goroutine. The element is rendered and inserted on the main event loop.
+
+```go
+go func() {
+    table := buildTable(result)
+    app.QueuePrintAboveElement(table)
+}()
+```
 
 ### SetInlineHeight
 
