@@ -772,7 +772,7 @@ templ (c *myComp) Render() {
 	<textarea placeholder="Type here..." width={40} />
 }`,
 			wantContains: []string{
-				"app.Mount(",
+				"app.MountPersistent(",
 				"tui.NewTextArea(",
 				`tui.WithTextAreaPlaceholder("Type here...")`,
 				"tui.WithTextAreaWidth(40)",
@@ -813,7 +813,7 @@ templ (c *myComp) Render() {
 	<textarea />
 }`,
 			wantContains: []string{
-				"app.Mount(",
+				"app.MountPersistent(",
 				"tui.NewTextArea()",
 			},
 		},

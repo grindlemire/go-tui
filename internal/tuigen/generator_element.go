@@ -366,7 +366,7 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)
 
-	g.writef("%s := app.Mount(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
+	g.writef("%s := app.MountPersistent(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
 	g.indent++
 
 	if len(elemOpts.options) == 0 {

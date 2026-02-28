@@ -22,7 +22,7 @@ func (c *myForm) Render(app *tui.App) *tui.Element {
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 	)
-	__tui_1 := app.Mount(c, 0, func() tui.Component {
+	__tui_1 := app.MountPersistent(c, 0, func() tui.Component {
 		return tui.NewTextArea(
 			tui.WithTextAreaPlaceholder("Enter text..."),
 			tui.WithTextAreaWidth(50),
