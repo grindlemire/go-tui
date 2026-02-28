@@ -22,7 +22,7 @@ func isComponentElement(tag string) bool {
 // inLoop and inConditional track the context for proper variable handling.
 func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
 	if isComponentElement(elem.Tag) {
-		return g.generateComponentElementWithRefs(elem, parentVar, inLoop, inConditional)
+		return g.generateComponentElementWithRefs(elem, parentVar, inLoop)
 	}
 
 	// All elements use auto-generated variable names now
@@ -314,25 +314,6 @@ func (g *Generator) generateAttributeValue(value Node) string {
 	}
 }
 
-// textElementWithOptions checks if this is a text element that needs options
-// extracted from its children for WithText.
-func textElementWithOptions(elem *Element) bool {
-	switch elem.Tag {
-	case "span", "p", "td", "th":
-		// text elements
-	default:
-		return false
-	}
-	// Has text content that should go into WithText
-	for _, child := range elem.Children {
-		switch child.(type) {
-		case *TextContent, *GoExpr:
-			return true
-		}
-	}
-	return false
-}
-
 // skipTextChildren returns true if text element children should not be
 // processed as AddChild calls (they're already in WithText).
 func skipTextChildren(elem *Element) bool {
@@ -372,7 +353,7 @@ var textareaHandlerAttributes = map[string]string{
 
 // generateComponentElementWithRefs generates an app.Mount() call for elements
 // that are backed by Component types (e.g., <textarea> → tui.NewTextArea).
-func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
+func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar string, inLoop bool) string {
 	varName := g.nextVar()
 	baseIndex := g.mountIndex
 	g.mountIndex++

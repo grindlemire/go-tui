@@ -56,11 +56,6 @@ func (g *Generator) generateChildrenWithRefs(parentVar string, children []Node, 
 	}
 }
 
-// generateBodyNode generates code for a node in a component/control flow body.
-func (g *Generator) generateBodyNode(node Node, parentVar string) {
-	g.generateBodyNodeWithRefs(node, parentVar, false, false)
-}
-
 // generateBodyNodeWithRefs generates code for a node with ref context tracking.
 func (g *Generator) generateBodyNodeWithRefs(node Node, parentVar string, inLoop bool, inConditional bool) {
 	switch n := node.(type) {
@@ -154,12 +149,6 @@ func (g *Generator) generatePassthroughCode(code string, pos Position) {
 		g.writeln(line)
 	}
 	_ = codeLines // unused for now
-}
-
-// generateComponentCall generates code for a component call.
-// Returns the variable name holding the result.
-func (g *Generator) generateComponentCall(call *ComponentCall, parentVar string) string {
-	return g.generateComponentCallWithRefs(call, parentVar)
 }
 
 // generateComponentCallWithRefs generates code for a component call.

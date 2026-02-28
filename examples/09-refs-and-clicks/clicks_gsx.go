@@ -14,25 +14,41 @@ type colorMixer struct {
 	green *tui.State[int]
 	blue  *tui.State[int]
 
-	redUpBtn   *tui.Ref
-	redDnBtn   *tui.Ref
-	greenUpBtn *tui.Ref
-	greenDnBtn *tui.Ref
-	blueUpBtn  *tui.Ref
-	blueDnBtn  *tui.Ref
+	redUpBtn     *tui.Ref
+	redDnBtn     *tui.Ref
+	greenUpBtn   *tui.Ref
+	greenDnBtn   *tui.Ref
+	blueUpBtn    *tui.Ref
+	blueDnBtn    *tui.Ref
+	presetBtns   *tui.RefMap[string]
+	activePreset *tui.State[string]
+}
+
+type preset struct {
+	name    string
+	r, g, b int
+}
+
+var presets = []preset{
+	{"Sunset", 255, 128, 0},
+	{"Ocean", 0, 100, 255},
+	{"Forest", 34, 180, 34},
+	{"Rose", 255, 64, 128},
 }
 
 func ColorMixer() *colorMixer {
 	return &colorMixer{
-		red:        tui.NewState(128),
-		green:      tui.NewState(64),
-		blue:       tui.NewState(200),
-		redUpBtn:   tui.NewRef(),
-		redDnBtn:   tui.NewRef(),
-		greenUpBtn: tui.NewRef(),
-		greenDnBtn: tui.NewRef(),
-		blueUpBtn:  tui.NewRef(),
-		blueDnBtn:  tui.NewRef(),
+		red:          tui.NewState(128),
+		green:        tui.NewState(64),
+		blue:         tui.NewState(200),
+		redUpBtn:     tui.NewRef(),
+		redDnBtn:     tui.NewRef(),
+		greenUpBtn:   tui.NewRef(),
+		greenDnBtn:   tui.NewRef(),
+		blueUpBtn:    tui.NewRef(),
+		blueDnBtn:    tui.NewRef(),
+		presetBtns:   tui.NewRefMap[string](),
+		activePreset: tui.NewState(""),
 	}
 }
 
@@ -48,14 +64,29 @@ func clamp(v, min, max int) int {
 
 func (c *colorMixer) adjustRed(delta int) {
 	c.red.Set(clamp(c.red.Get()+delta, 0, 255))
+	c.activePreset.Set("")
 }
 
 func (c *colorMixer) adjustGreen(delta int) {
 	c.green.Set(clamp(c.green.Get()+delta, 0, 255))
+	c.activePreset.Set("")
 }
 
 func (c *colorMixer) adjustBlue(delta int) {
 	c.blue.Set(clamp(c.blue.Get()+delta, 0, 255))
+	c.activePreset.Set("")
+}
+
+func (c *colorMixer) applyPreset(name string) {
+	for _, p := range presets {
+		if p.name == name {
+			c.red.Set(p.r)
+			c.green.Set(p.g)
+			c.blue.Set(p.b)
+			c.activePreset.Set(name)
+			return
+		}
+	}
 }
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
@@ -72,14 +103,29 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 }
 
 func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
-	return tui.HandleClicks(me,
+	// Check single-ref button clicks
+	if tui.HandleClicks(me,
 		tui.Click(c.redUpBtn, func() { c.adjustRed(16) }),
 		tui.Click(c.redDnBtn, func() { c.adjustRed(-16) }),
 		tui.Click(c.greenUpBtn, func() { c.adjustGreen(16) }),
 		tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
 		tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
 		tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
-	)
+	) {
+		return true
+	}
+
+	// Check keyed-ref preset button clicks via RefMap
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		for name, el := range c.presetBtns.All() {
+			if el != nil && el.ContainsPoint(me.X, me.Y) {
+				c.applyPreset(name)
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func colorBar(value int) string {
@@ -99,7 +145,6 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
-		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
@@ -343,14 +388,49 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0.AddChild(__tui_23)
 	__tui_48 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
-		tui.WithJustify(tui.JustifyCenter),
+		tui.WithGap(1),
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_49 := tui.New(
-		tui.WithText("r/g/b increase | R/G/B decrease | click buttons | q quit"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
+		tui.WithText("Presets:"),
+		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_48.AddChild(__tui_49)
+	for __idx_0, p := range presets {
+		_ = __idx_0
+		if p.name == c.activePreset.Get() {
+			__tui_50 := tui.New(
+				tui.WithPaddingTRBL(0, 1, 0, 1),
+				tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+			)
+			c.presetBtns.Put(p.name, __tui_50)
+			__tui_51 := tui.New(tui.WithText(p.name))
+			__tui_50.AddChild(__tui_51)
+			__tui_48.AddChild(__tui_50)
+		} else {
+			__tui_52 := tui.New(
+				tui.WithPaddingTRBL(0, 1, 0, 1),
+				tui.WithTextStyle(tui.NewStyle().Dim()),
+			)
+			c.presetBtns.Put(p.name, __tui_52)
+			__tui_53 := tui.New(tui.WithText(p.name))
+			__tui_52.AddChild(__tui_53)
+			__tui_48.AddChild(__tui_52)
+		}
+	}
 	__tui_0.AddChild(__tui_48)
+	__tui_54 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_55 := tui.New(
+		tui.WithText("r/g/b increase | R/G/B decrease | click buttons/presets | q quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_54.AddChild(__tui_55)
+	__tui_0.AddChild(__tui_54)
 
 	return __tui_0
 }
@@ -364,6 +444,9 @@ func (c *colorMixer) BindApp(app *tui.App) {
 	}
 	if c.blue != nil {
 		c.blue.BindApp(app)
+	}
+	if c.activePreset != nil {
+		c.activePreset.BindApp(app)
 	}
 }
 

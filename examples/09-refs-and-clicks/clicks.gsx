@@ -16,6 +16,8 @@ type colorMixer struct {
 	greenDnBtn *tui.Ref
 	blueUpBtn  *tui.Ref
 	blueDnBtn  *tui.Ref
+	presetBtns   *tui.RefMap[string]
+	activePreset *tui.State[string]
 }
 
 func ColorMixer() *colorMixer {
@@ -29,7 +31,21 @@ func ColorMixer() *colorMixer {
 		greenDnBtn: tui.NewRef(),
 		blueUpBtn:  tui.NewRef(),
 		blueDnBtn:  tui.NewRef(),
+		presetBtns:   tui.NewRefMap[string](),
+		activePreset: tui.NewState(""),
 	}
+}
+
+type preset struct {
+	name string
+	r, g, b int
+}
+
+var presets = []preset{
+	{"Sunset", 255, 128, 0},
+	{"Ocean", 0, 100, 255},
+	{"Forest", 34, 180, 34},
+	{"Rose", 255, 64, 128},
 }
 
 func clamp(v, min, max int) int {
@@ -44,14 +60,29 @@ func clamp(v, min, max int) int {
 
 func (c *colorMixer) adjustRed(delta int) {
 	c.red.Set(clamp(c.red.Get()+delta, 0, 255))
+	c.activePreset.Set("")
 }
 
 func (c *colorMixer) adjustGreen(delta int) {
 	c.green.Set(clamp(c.green.Get()+delta, 0, 255))
+	c.activePreset.Set("")
 }
 
 func (c *colorMixer) adjustBlue(delta int) {
 	c.blue.Set(clamp(c.blue.Get()+delta, 0, 255))
+	c.activePreset.Set("")
+}
+
+func (c *colorMixer) applyPreset(name string) {
+	for _, p := range presets {
+		if p.name == name {
+			c.red.Set(p.r)
+			c.green.Set(p.g)
+			c.blue.Set(p.b)
+			c.activePreset.Set(name)
+			return
+		}
+	}
 }
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
@@ -68,14 +99,29 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 }
 
 func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
-	return tui.HandleClicks(me,
+	// Check single-ref button clicks
+	if tui.HandleClicks(me,
 		tui.Click(c.redUpBtn, func() { c.adjustRed(16) }),
 		tui.Click(c.redDnBtn, func() { c.adjustRed(-16) }),
 		tui.Click(c.greenUpBtn, func() { c.adjustGreen(16) }),
 		tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
 		tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
 		tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
-	)
+	) {
+		return true
+	}
+
+	// Check keyed-ref preset button clicks via RefMap
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		for name, el := range c.presetBtns.All() {
+			if el != nil && el.ContainsPoint(me.X, me.Y) {
+				c.applyPreset(name)
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func colorBar(value int) string {
@@ -92,7 +138,7 @@ func colorBar(value int) string {
 }
 
 templ (c *colorMixer) Render() {
-	<div class="flex-col p-1 gap-1 border-rounded border-cyan">
+	<div class="flex-col p-1 border-rounded border-cyan">
 		<span class="text-gradient-cyan-magenta font-bold">Color Mixer</span>
 
 		// Color preview
@@ -155,8 +201,20 @@ templ (c *colorMixer) Render() {
 			</div>
 		</div>
 
+		// Preset colors using RefMap with key
+		<div class="flex gap-1 border-rounded p-1 items-center">
+			<span class="font-bold">Presets:</span>
+			@for _, p := range presets {
+				@if p.name == c.activePreset.Get() {
+					<button ref={c.presetBtns} key={p.name} class="px-1 font-bold text-cyan">{p.name}</button>
+				} @else {
+					<button ref={c.presetBtns} key={p.name} class="px-1 font-dim">{p.name}</button>
+				}
+			}
+		</div>
+
 		<div class="flex justify-center">
-			<span class="font-dim">r/g/b increase | R/G/B decrease | click buttons | q quit</span>
+			<span class="font-dim">r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
 		</div>
 	</div>
 }
