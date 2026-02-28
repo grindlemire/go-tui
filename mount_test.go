@@ -488,6 +488,21 @@ func TestMountPersistent_RegularMountStillSwept(t *testing.T) {
 	}
 }
 
+func TestMount_ElementComponentGetter(t *testing.T) {
+	cleanup := setupTestMountState()
+	defer cleanup()
+
+	parent := &mockParent{}
+	instance := &mockComponent{}
+
+	el := testApp.Mount(parent, 0, func() Component { return instance })
+
+	got := el.Component()
+	if got != instance {
+		t.Errorf("Component() = %v, want %v", got, instance)
+	}
+}
+
 func TestNewMountState(t *testing.T) {
 	ms := newMountState()
 

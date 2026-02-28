@@ -130,6 +130,12 @@ func (e *Element) SetOverflow(mode OverflowMode) {
 	e.MarkDirty()
 }
 
+// Component returns the component instance that rendered this element,
+// or nil if the element was not created by a mounted component.
+func (e *Element) Component() Component {
+	return e.component
+}
+
 // stringWidth returns the display width of a string in terminal cells.
 func stringWidth(s string) int {
 	width := 0
