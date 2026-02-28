@@ -15,17 +15,19 @@ type mountKey struct {
 // Uses mark-and-sweep: each render marks active keys, then sweep
 // cleans up unmounted components.
 type mountState struct {
-	cache      map[mountKey]Component
-	cleanups   map[mountKey]func()
-	activeKeys map[mountKey]bool // Marked during render, swept after
+	cache       map[mountKey]Component
+	cleanups    map[mountKey]func()
+	activeKeys  map[mountKey]bool // Marked during render, swept after
+	persistKeys map[mountKey]bool // keys that survive sweep even when not rendered
 }
 
 // newMountState creates a new mountState with initialized maps.
 func newMountState() *mountState {
 	return &mountState{
-		cache:      make(map[mountKey]Component),
-		cleanups:   make(map[mountKey]func()),
-		activeKeys: make(map[mountKey]bool),
+		cache:       make(map[mountKey]Component),
+		cleanups:    make(map[mountKey]func()),
+		activeKeys:  make(map[mountKey]bool),
+		persistKeys: make(map[mountKey]bool),
 	}
 }
 
@@ -37,15 +39,8 @@ type PropsUpdater interface {
 	UpdateProps(fresh Component)
 }
 
-// Mount creates or retrieves a cached component instance and returns
-// its rendered element tree. Called by generated code from @Component() syntax.
-//
-// On first call: executes factory, caches instance, calls Init() if Initializer.
-// On subsequent calls: returns cached instance's Render() result.
-// If the cached instance implements PropsUpdater, UpdateProps is called
-// with a fresh instance to allow prop updates.
-// Mark-and-sweep: marks the key as active. Sweep after render cleans stale entries.
-func (a *App) Mount(parent Component, index int, factory func() Component) *Element {
+// mount is the shared implementation for Mount and MountPersistent.
+func (a *App) mount(parent Component, index int, factory func() Component) *Element {
 	app := a
 	ms := app.mounts
 	key := mountKey{parent: parent, index: index}
@@ -90,11 +85,32 @@ func (a *App) Mount(parent Component, index int, factory func() Component) *Elem
 	return el
 }
 
+// Mount creates or retrieves a cached component instance and returns
+// its rendered element tree. Called by generated code from @Component() syntax.
+//
+// On first call: executes factory, caches instance, calls Init() if Initializer.
+// On subsequent calls: returns cached instance's Render() result.
+// If the cached instance implements PropsUpdater, UpdateProps is called
+// with a fresh instance to allow prop updates.
+// Mark-and-sweep: marks the key as active. Sweep after render cleans stale entries.
+func (a *App) Mount(parent Component, index int, factory func() Component) *Element {
+	return a.mount(parent, index, factory)
+}
+
+// MountPersistent is like Mount but marks the component as persistent,
+// preventing it from being cleaned up during sweep even when not active.
+// Use this for components that must survive being hidden by conditionals.
+func (a *App) MountPersistent(parent Component, index int, factory func() Component) *Element {
+	key := mountKey{parent: parent, index: index}
+	a.mounts.persistKeys[key] = true
+	return a.mount(parent, index, factory)
+}
+
 // sweep removes cached instances that were not marked active during the last
 // render pass. Calls cleanup functions for removed components.
 func (ms *mountState) sweep() {
 	for key := range ms.cache {
-		if !ms.activeKeys[key] {
+		if !ms.activeKeys[key] && !ms.persistKeys[key] {
 			if unbinder, ok := ms.cache[key].(AppUnbinder); ok {
 				unbinder.UnbindApp()
 			}

@@ -404,6 +404,90 @@ func TestWalkComponents_NilRoot(t *testing.T) {
 	}
 }
 
+func TestMountPersistent_SurvivesSweep(t *testing.T) {
+	cleanup := setupTestMountState()
+	defer cleanup()
+
+	parent := &mockParent{}
+	instance := &mockInitComponent{}
+
+	// Mount persistent
+	testApp.MountPersistent(parent, 0, func() Component { return instance })
+
+	ms := testApp.mounts
+
+	// Simulate render where component is NOT active
+	ms.activeKeys = make(map[mountKey]bool)
+	ms.sweep()
+
+	// Persistent component should survive sweep
+	if instance.cleanupCalls != 0 {
+		t.Errorf("cleanup called %d times, want 0 (persistent survives sweep)", instance.cleanupCalls)
+	}
+	if len(ms.cache) != 1 {
+		t.Errorf("cache has %d entries, want 1 (persistent survives)", len(ms.cache))
+	}
+}
+
+func TestMountPersistent_StillCachesInstance(t *testing.T) {
+	cleanup := setupTestMountState()
+	defer cleanup()
+
+	parent := &mockParent{}
+	factoryCalls := 0
+	instance := &mockComponent{}
+
+	// First mount persistent
+	testApp.MountPersistent(parent, 0, func() Component {
+		factoryCalls++
+		return instance
+	})
+
+	// Second mount persistent — same key, should reuse cache
+	testApp.MountPersistent(parent, 0, func() Component {
+		factoryCalls++
+		return &mockComponent{}
+	})
+
+	if factoryCalls != 1 {
+		t.Errorf("factory called %d times, want 1 (should use cache)", factoryCalls)
+	}
+	if instance.renderCount != 2 {
+		t.Errorf("Render called %d times, want 2 (once per MountPersistent call)", instance.renderCount)
+	}
+}
+
+func TestMountPersistent_RegularMountStillSwept(t *testing.T) {
+	cleanup := setupTestMountState()
+	defer cleanup()
+
+	parent := &mockParent{}
+	persistent := &mockInitComponent{}
+	regular := &mockInitComponent{}
+
+	// Mount one persistent, one regular
+	testApp.MountPersistent(parent, 0, func() Component { return persistent })
+	testApp.Mount(parent, 1, func() Component { return regular })
+
+	ms := testApp.mounts
+
+	// Simulate render where neither is active
+	ms.activeKeys = make(map[mountKey]bool)
+	ms.sweep()
+
+	// Persistent survives
+	if persistent.cleanupCalls != 0 {
+		t.Errorf("persistent.cleanupCalls = %d, want 0", persistent.cleanupCalls)
+	}
+	// Regular is swept
+	if regular.cleanupCalls != 1 {
+		t.Errorf("regular.cleanupCalls = %d, want 1", regular.cleanupCalls)
+	}
+	if len(ms.cache) != 1 {
+		t.Errorf("cache has %d entries, want 1 (only persistent remains)", len(ms.cache))
+	}
+}
+
 func TestNewMountState(t *testing.T) {
 	ms := newMountState()
 
