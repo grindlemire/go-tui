@@ -12,7 +12,7 @@ import (
 type chat struct {
 	app          *tui.App
 	width        int
-	textarea     *tui.TextArea
+	textareaRef  *tui.Ref
 	showSettings *tui.State[bool]
 	settingsView *settings.SettingsApp
 	streaming    *tui.State[bool]
@@ -30,18 +30,12 @@ type chat struct {
 func Chat(width int) *chat {
 	c := &chat{
 		width:        width,
+		textareaRef:  tui.NewRef(),
 		showSettings: tui.NewState(false),
 		streaming:    tui.NewState(false),
 		eventCh:      make(chan streamEvent, 64),
 		firstMsg:     true,
 	}
-
-	c.textarea = tui.NewTextArea(
-		tui.WithTextAreaWidth(width-2), // -2 for border
-		tui.WithTextAreaBorder(tui.BorderRounded),
-		tui.WithTextAreaPlaceholder("Type a message..."),
-		tui.WithTextAreaOnSubmit(c.submit),
-	)
 
 	c.model = tui.NewState("sonnet")
 	c.maxTurns = tui.NewState(25)
@@ -65,11 +59,22 @@ func (c *chat) Init() func() {
 	}
 }
 
+func (c *chat) ta() *tui.TextArea {
+	if el := c.textareaRef.El(); el != nil {
+		if comp := el.Component(); comp != nil {
+			return comp.(*tui.TextArea)
+		}
+	}
+	return nil
+}
+
 func (c *chat) submit(text string) {
 	if text == "" || c.streaming.Get() {
 		return
 	}
-	c.textarea.Clear()
+	if ta := c.ta(); ta != nil {
+		ta.Clear()
+	}
 	c.updateHeight()
 	c.app.PrintAboveln("You: %s", text)
 	c.streaming.Set(true)
@@ -200,7 +205,7 @@ func (c *chat) KeyMap() tui.KeyMap {
 		}
 	}
 
-	km := c.textarea.KeyMap()
+	km := c.ta().KeyMap()
 	km = append(km,
 		tui.OnKeyStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { c.toggleSettings() }),
 		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
@@ -210,15 +215,21 @@ func (c *chat) KeyMap() tui.KeyMap {
 }
 
 func (c *chat) Watchers() []tui.Watcher {
-	w := c.textarea.Watchers()
+	var w []tui.Watcher
+	if ta := c.ta(); ta != nil {
+		w = ta.Watchers()
+	}
 	w = append(w, tui.NewChannelWatcher(c.eventCh, c.onStreamEvent))
 	return w
 }
 
 func (c *chat) updateHeight() {
-	h := c.textarea.Height()
-	if h < 3 {
-		h = 3
+	h := 3
+	if ta := c.ta(); ta != nil {
+		h = ta.Height()
+		if h < 3 {
+			h = 3
+		}
 	}
 	c.app.SetInlineHeight(h)
 }
@@ -228,6 +239,12 @@ templ (c *chat) Render() {
 		@c.settingsView
 	} @else {
 		c.updateHeight()
-		@c.textarea
+		<textarea
+			ref={c.textareaRef}
+			placeholder="Type a message..."
+			width={c.width - 2}
+			border={tui.BorderRounded}
+			onSubmit={c.submit}
+		/>
 	}
 }

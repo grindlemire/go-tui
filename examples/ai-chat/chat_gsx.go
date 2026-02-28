@@ -16,7 +16,7 @@ import (
 type chat struct {
 	app          *tui.App
 	width        int
-	textarea     *tui.TextArea
+	textareaRef  *tui.Ref
 	showSettings *tui.State[bool]
 	settingsView *settings.SettingsApp
 	streaming    *tui.State[bool]
@@ -36,18 +36,12 @@ var agentGradient = tui.NewGradient(tui.BrightCyan, tui.BrightMagenta)
 func Chat(width int) *chat {
 	c := &chat{
 		width:        width,
+		textareaRef:  tui.NewRef(),
 		showSettings: tui.NewState(false),
 		streaming:    tui.NewState(false),
 		eventCh:      make(chan streamEvent, 64),
 		firstMsg:     true,
 	}
-
-	c.textarea = tui.NewTextArea(
-		tui.WithTextAreaWidth(width-2), // -2 for border
-		tui.WithTextAreaBorder(tui.BorderRounded),
-		tui.WithTextAreaPlaceholder("Type a message..."),
-		tui.WithTextAreaOnSubmit(c.submit),
-	)
 
 	c.model = tui.NewState("sonnet")
 	c.maxTurns = tui.NewState(25)
@@ -71,11 +65,22 @@ func (c *chat) Init() func() {
 	}
 }
 
+func (c *chat) ta() *tui.TextArea {
+	if el := c.textareaRef.El(); el != nil {
+		if comp := el.Component(); comp != nil {
+			return comp.(*tui.TextArea)
+		}
+	}
+	return nil
+}
+
 func (c *chat) submit(text string) {
 	if text == "" || c.streaming.Get() {
 		return
 	}
-	c.textarea.Clear()
+	if ta := c.ta(); ta != nil {
+		ta.Clear()
+	}
 	c.updateHeight()
 	c.app.PrintAboveln("You: %s", text)
 	c.streaming.Set(true)
@@ -204,7 +209,7 @@ func (c *chat) KeyMap() tui.KeyMap {
 		}
 	}
 
-	km := c.textarea.KeyMap()
+	km := c.ta().KeyMap()
 	km = append(km,
 		tui.OnKeyStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { c.toggleSettings() }),
 		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
@@ -214,15 +219,21 @@ func (c *chat) KeyMap() tui.KeyMap {
 }
 
 func (c *chat) Watchers() []tui.Watcher {
-	w := c.textarea.Watchers()
+	var w []tui.Watcher
+	if ta := c.ta(); ta != nil {
+		w = ta.Watchers()
+	}
 	w = append(w, tui.NewChannelWatcher(c.eventCh, c.onStreamEvent))
 	return w
 }
 
 func (c *chat) updateHeight() {
-	h := c.textarea.Height()
-	if h < 3 {
-		h = 3
+	h := 3
+	if ta := c.ta(); ta != nil {
+		h = ta.Height()
+		if h < 3 {
+			h = 3
+		}
 	}
 	c.app.SetInlineHeight(h)
 }
@@ -236,7 +247,15 @@ func (c *chat) Render(app *tui.App) *tui.Element {
 		}
 	} else {
 		c.updateHeight()
-		__tui_2 := c.textarea.Render(app)
+		__tui_2 := app.MountPersistent(c, 0, func() tui.Component {
+			return tui.NewTextArea(
+				tui.WithTextAreaPlaceholder("Type a message..."),
+				tui.WithTextAreaWidth(c.width-2),
+				tui.WithTextAreaBorder(tui.BorderRounded),
+				tui.WithTextAreaOnSubmit(c.submit),
+			)
+		})
+		c.textareaRef.Set(__tui_2)
 		if __tui_0 == nil {
 			__tui_0 = __tui_2
 		}
@@ -252,7 +271,6 @@ func (c *chat) UpdateProps(fresh tui.Component) {
 	}
 	c.app = f.app
 	c.width = f.width
-	c.textarea = f.textarea
 	c.settingsView = f.settingsView
 	c.streamWriter = f.streamWriter
 	c.cmd = f.cmd
@@ -263,9 +281,6 @@ var _ tui.PropsUpdater = (*chat)(nil)
 
 func (c *chat) BindApp(app *tui.App) {
 	c.app = app
-	if c.textarea != nil {
-		c.textarea.BindApp(app)
-	}
 	if c.showSettings != nil {
 		c.showSettings.BindApp(app)
 	}
@@ -292,9 +307,6 @@ func (c *chat) BindApp(app *tui.App) {
 var _ tui.AppBinder = (*chat)(nil)
 
 func (c *chat) UnbindApp() {
-	if unbinder, ok := any(c.textarea).(tui.AppUnbinder); ok {
-		unbinder.UnbindApp()
-	}
 	if unbinder, ok := any(c.settingsView).(tui.AppUnbinder); ok {
 		unbinder.UnbindApp()
 	}
