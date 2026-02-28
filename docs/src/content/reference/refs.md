@@ -161,7 +161,7 @@ Returns the number of elements in the list.
 
 ### Usage in .gsx
 
-Use `ref=` inside a `@for` loop. The analyzer detects the loop context and generates `Append` calls instead of `Set`:
+Use `ref=` inside a `@for` loop **without** a `key` attribute. The analyzer detects the loop context and generates `Append` calls instead of `Set`:
 
 ```gsx
 templ (s *listApp) Render() {
@@ -173,9 +173,11 @@ templ (s *listApp) Render() {
 }
 ```
 
+The same `ref` variable is used on every iteration. The generated code calls `s.itemRefs.Append(el)` each time through the loop.
+
 ## RefMap[K]
 
-A keyed collection of element references, populated when you use `ref=` inside a `@for` loop that also has a `key` attribute. Lets you look up a specific element by its key rather than by position.
+A keyed collection of element references, populated when you use `ref=` inside a `@for` loop **with** a `key` attribute. The `key` tells the generator to use `Put(key, el)` instead of `Append(el)`, so you can look up a specific element by its key rather than by position.
 
 ### NewRefMap
 
@@ -237,6 +239,42 @@ func (r *RefMap[K]) Len() int
 ```
 
 Returns the number of entries in the map.
+
+### Usage in .gsx
+
+Use `ref=` together with `key=` inside a `@for` loop. The `key` attribute provides the map key for each element:
+
+```gsx
+templ (s *tabApp) Render() {
+    <div class="flex gap-1">
+        @for _, name := range s.tabs.Get() {
+            <button ref={s.tabRefs} key={name} class="px-1">{name}</button>
+        }
+    </div>
+}
+```
+
+The generated code calls `s.tabRefs.Put(name, el)` each iteration. Without `key`, the same loop would generate `Append` calls and treat the ref as a `RefList` instead.
+
+You can then look up specific elements in handlers:
+
+```go
+el := s.tabRefs.Get("settings")
+if el != nil && el.ContainsPoint(me.X, me.Y) {
+    s.activateTab("settings")
+}
+```
+
+Or iterate over all entries:
+
+```go
+for name, el := range s.tabRefs.All() {
+    if el != nil && el.ContainsPoint(me.X, me.Y) {
+        s.activateTab(name)
+        return true
+    }
+}
+```
 
 ## Click Handling
 

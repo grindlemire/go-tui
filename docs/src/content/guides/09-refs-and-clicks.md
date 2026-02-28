@@ -94,9 +94,13 @@ Each `tui.Click` binding takes a ref (any of the three types) and a `func()` han
 
 The `HandleMouse` method on your component implements the `MouseListener` interface. Return `true` if you handled the event, `false` to let it propagate.
 
-## RefList for Loop Elements
+## Refs in Loops
 
-When you render elements in a `@for` loop, use `RefList` to reference them by index:
+When you use `ref=` inside a `@for` loop, the generator automatically uses the right ref type based on whether a `key` attribute is present.
+
+### RefList (no key)
+
+Without a `key`, the ref becomes a `RefList`, an ordered collection populated with `Append` on each iteration:
 
 ```go
 type listApp struct {
@@ -113,22 +117,32 @@ func ListApp() *listApp {
 ```
 
 ```gsx
-@for i, item := range a.items {
-    <button ref={a.itemRefs.At(i)} class="px-2">{item}</button>
+@for _, item := range a.items {
+    <span ref={a.itemRefs} class="p-1">{item}</span>
 }
 ```
 
-In `HandleMouse`, pass the `RefList` directly to `Click`. It checks all indexed elements:
+The generated code calls `a.itemRefs.Append(el)` for each iteration. Access elements with `.At(i)` or `.All()`.
+
+### RefMap with key
+
+Add a `key` attribute to turn the ref into a `RefMap[K]`. Each element is stored under its key:
 
 ```go
-func (a *listApp) HandleMouse(me tui.MouseEvent) bool {
-    return tui.HandleClicks(me,
-        tui.Click(a.itemRefs, a.onItemClick),
-    )
+type tabApp struct {
+    presetBtns *tui.RefMap[string]
 }
 ```
 
-For keyed collections, `RefMap[K]` works the same way but uses `.At(key)` instead of `.At(index)`.
+```gsx
+@for _, p := range presets {
+    <button ref={a.presetBtns} key={p.name} class="px-1">{p.name}</button>
+}
+```
+
+The generated code calls `a.presetBtns.Put(p.name, el)` for each iteration. Look up elements with `.Get(key)` or iterate with `.All()`.
+
+This is useful when you need to identify *which* element was clicked by its key rather than by position.
 
 ## Combining Keyboard and Mouse
 
@@ -148,22 +162,37 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 }
 
 func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
-    return tui.HandleClicks(me,
+    // Check single-ref button clicks
+    if tui.HandleClicks(me,
         tui.Click(c.redUpBtn, func() { c.adjustRed(16) }),
         tui.Click(c.redDnBtn, func() { c.adjustRed(-16) }),
         tui.Click(c.greenUpBtn, func() { c.adjustGreen(16) }),
         tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
         tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
         tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
-    )
+    ) {
+        return true
+    }
+
+    // Check keyed-ref preset button clicks via RefMap
+    if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+        for name, el := range c.presetBtns.All() {
+            if el != nil && el.ContainsPoint(me.X, me.Y) {
+                c.applyPreset(name)
+                return true
+            }
+        }
+    }
+
+    return false
 }
 ```
 
-Both input methods call the same `adjust*` methods, so the behavior stays consistent.
+Both input methods call the same `adjust*` methods, so the behavior stays consistent. The preset buttons use `RefMap.All()` to iterate and hit-test by key, letting us identify which preset was clicked by name.
 
 ## Complete Example
 
-This color mixer lets you adjust RGB values with both keyboard shortcuts and mouse clicks. Each color channel has a visual bar, a value readout, and +/- buttons:
+This color mixer lets you adjust RGB values with both keyboard shortcuts and mouse clicks. Each color channel has a visual bar, a value readout, and +/- buttons. It also includes clickable preset color buttons using `RefMap` with `key`:
 
 ```gsx
 package main
@@ -178,26 +207,42 @@ type colorMixer struct {
     green *tui.State[int]
     blue  *tui.State[int]
 
-    redUpBtn   *tui.Ref
-    redDnBtn   *tui.Ref
-    greenUpBtn *tui.Ref
-    greenDnBtn *tui.Ref
-    blueUpBtn  *tui.Ref
-    blueDnBtn  *tui.Ref
+    redUpBtn     *tui.Ref
+    redDnBtn     *tui.Ref
+    greenUpBtn   *tui.Ref
+    greenDnBtn   *tui.Ref
+    blueUpBtn    *tui.Ref
+    blueDnBtn    *tui.Ref
+    presetBtns   *tui.RefMap[string]
+    activePreset *tui.State[string]
 }
 
 func ColorMixer() *colorMixer {
     return &colorMixer{
-        red:        tui.NewState(128),
-        green:      tui.NewState(64),
-        blue:       tui.NewState(200),
-        redUpBtn:   tui.NewRef(),
-        redDnBtn:   tui.NewRef(),
-        greenUpBtn: tui.NewRef(),
-        greenDnBtn: tui.NewRef(),
-        blueUpBtn:  tui.NewRef(),
-        blueDnBtn:  tui.NewRef(),
+        red:          tui.NewState(128),
+        green:        tui.NewState(64),
+        blue:         tui.NewState(200),
+        redUpBtn:     tui.NewRef(),
+        redDnBtn:     tui.NewRef(),
+        greenUpBtn:   tui.NewRef(),
+        greenDnBtn:   tui.NewRef(),
+        blueUpBtn:    tui.NewRef(),
+        blueDnBtn:    tui.NewRef(),
+        presetBtns:   tui.NewRefMap[string](),
+        activePreset: tui.NewState(""),
     }
+}
+
+type preset struct {
+    name    string
+    r, g, b int
+}
+
+var presets = []preset{
+    {"Sunset", 255, 128, 0},
+    {"Ocean", 0, 100, 255},
+    {"Forest", 34, 180, 34},
+    {"Rose", 255, 64, 128},
 }
 
 func clamp(v, min, max int) int {
@@ -212,14 +257,29 @@ func clamp(v, min, max int) int {
 
 func (c *colorMixer) adjustRed(delta int) {
     c.red.Set(clamp(c.red.Get()+delta, 0, 255))
+    c.activePreset.Set("")
 }
 
 func (c *colorMixer) adjustGreen(delta int) {
     c.green.Set(clamp(c.green.Get()+delta, 0, 255))
+    c.activePreset.Set("")
 }
 
 func (c *colorMixer) adjustBlue(delta int) {
     c.blue.Set(clamp(c.blue.Get()+delta, 0, 255))
+    c.activePreset.Set("")
+}
+
+func (c *colorMixer) applyPreset(name string) {
+    for _, p := range presets {
+        if p.name == name {
+            c.red.Set(p.r)
+            c.green.Set(p.g)
+            c.blue.Set(p.b)
+            c.activePreset.Set(name)
+            return
+        }
+    }
 }
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
@@ -236,14 +296,29 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 }
 
 func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
-    return tui.HandleClicks(me,
+    // Check single-ref button clicks
+    if tui.HandleClicks(me,
         tui.Click(c.redUpBtn, func() { c.adjustRed(16) }),
         tui.Click(c.redDnBtn, func() { c.adjustRed(-16) }),
         tui.Click(c.greenUpBtn, func() { c.adjustGreen(16) }),
         tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
         tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
         tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
-    )
+    ) {
+        return true
+    }
+
+    // Check keyed-ref preset button clicks via RefMap
+    if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+        for name, el := range c.presetBtns.All() {
+            if el != nil && el.ContainsPoint(me.X, me.Y) {
+                c.applyPreset(name)
+                return true
+            }
+        }
+    }
+
+    return false
 }
 
 func colorBar(value int) string {
@@ -260,13 +335,13 @@ func colorBar(value int) string {
 }
 
 templ (c *colorMixer) Render() {
-    <div class="flex-col p-2 gap-2 border-rounded border-cyan">
+    <div class="flex-col p-1 border-rounded border-cyan">
         <span class="text-gradient-cyan-magenta font-bold">Color Mixer</span>
 
         // Color preview
-        <div class="flex-col items-center gap-1 border-rounded p-1">
+        <div class="flex-col items-center border-rounded p-1">
             <span class="text-gradient-cyan-magenta font-bold">Preview</span>
-            <div class="bg-gradient-cyan-magenta" height={3} width={30}>
+            <div backgroundGradient={tui.NewGradient(tui.Black, tui.RGBColor(uint8(c.red.Get()), uint8(c.green.Get()), uint8(c.blue.Get())))} height={2} width={30}>
                 <span>{" "}</span>
             </div>
             <div class="flex gap-2 justify-center">
@@ -277,7 +352,7 @@ templ (c *colorMixer) Render() {
         </div>
 
         // Color bars
-        <div class="flex-col gap-1 border-rounded p-1">
+        <div class="flex-col border-rounded p-1">
             <div class="flex gap-1">
                 <span class="text-red font-bold w-5">Red</span>
                 <span class="text-red">{colorBar(c.red.Get())}</span>
@@ -296,29 +371,47 @@ templ (c *colorMixer) Render() {
         </div>
 
         // Channel controls with refs
-        <div class="flex gap-2">
-            <div class="flex-col border-rounded p-1 gap-1 items-center" flexGrow={1.0}>
+        <div class="flex gap-1">
+            <div class="flex-col border-rounded p-1 items-center" flexGrow={1.0}>
                 <span class="font-bold text-red">Red</span>
-                <button ref={c.redUpBtn} class="px-2">{" + "}</button>
-                <span class="font-bold text-red">{fmt.Sprintf("%d", c.red.Get())}</span>
-                <button ref={c.redDnBtn} class="px-2">{" - "}</button>
+                <div class="flex gap-1 items-center">
+                    <button ref={c.redDnBtn} class="px-1">{"-"}</button>
+                    <span class="font-bold text-red">{fmt.Sprintf("%3d", c.red.Get())}</span>
+                    <button ref={c.redUpBtn} class="px-1">{"+"}</button>
+                </div>
             </div>
-            <div class="flex-col border-rounded p-1 gap-1 items-center" flexGrow={1.0}>
+            <div class="flex-col border-rounded p-1 items-center" flexGrow={1.0}>
                 <span class="font-bold text-green">Green</span>
-                <button ref={c.greenUpBtn} class="px-2">{" + "}</button>
-                <span class="font-bold text-green">{fmt.Sprintf("%d", c.green.Get())}</span>
-                <button ref={c.greenDnBtn} class="px-2">{" - "}</button>
+                <div class="flex gap-1 items-center">
+                    <button ref={c.greenDnBtn} class="px-1">{"-"}</button>
+                    <span class="font-bold text-green">{fmt.Sprintf("%3d", c.green.Get())}</span>
+                    <button ref={c.greenUpBtn} class="px-1">{"+"}</button>
+                </div>
             </div>
-            <div class="flex-col border-rounded p-1 gap-1 items-center" flexGrow={1.0}>
+            <div class="flex-col border-rounded p-1 items-center" flexGrow={1.0}>
                 <span class="font-bold text-blue">Blue</span>
-                <button ref={c.blueUpBtn} class="px-2">{" + "}</button>
-                <span class="font-bold text-blue">{fmt.Sprintf("%d", c.blue.Get())}</span>
-                <button ref={c.blueDnBtn} class="px-2">{" - "}</button>
+                <div class="flex gap-1 items-center">
+                    <button ref={c.blueDnBtn} class="px-1">{"-"}</button>
+                    <span class="font-bold text-blue">{fmt.Sprintf("%3d", c.blue.Get())}</span>
+                    <button ref={c.blueUpBtn} class="px-1">{"+"}</button>
+                </div>
             </div>
         </div>
 
+        // Preset colors using RefMap with key
+        <div class="flex gap-1 border-rounded p-1 items-center">
+            <span class="font-bold">Presets:</span>
+            @for _, p := range presets {
+                @if p.name == c.activePreset.Get() {
+                    <button ref={c.presetBtns} key={p.name} class="px-1 font-bold text-cyan">{p.name}</button>
+                } @else {
+                    <button ref={c.presetBtns} key={p.name} class="px-1 font-dim">{p.name}</button>
+                }
+            }
+        </div>
+
         <div class="flex justify-center">
-            <span class="font-dim">r/g/b increase | R/G/B decrease | click buttons | q quit</span>
+            <span class="font-dim">r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
         </div>
     </div>
 }
@@ -360,7 +453,7 @@ tui generate ./...
 go run .
 ```
 
-Click the +/- buttons or use r/g/b keys to adjust colors:
+Click the +/- buttons, use r/g/b keys to adjust colors, or click a preset to apply it:
 
 ![Refs and Click Handling screenshot](/guides/09.png)
 

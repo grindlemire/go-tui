@@ -30,6 +30,14 @@ func (p *printer) printElement(elem *tuigen.Element) {
 			p.write(elem.RefExpr.Code)
 			p.write("}")
 		}
+		// Emit key={expr} if present (extracted from attributes during parsing)
+		if elem.RefKey != nil {
+			p.newline()
+			p.writeIndent()
+			p.write("key={")
+			p.write(elem.RefKey.Code)
+			p.write("}")
+		}
 		for _, attr := range elem.Attributes {
 			p.newline()
 			p.writeIndent()
@@ -42,6 +50,12 @@ func (p *printer) printElement(elem *tuigen.Element) {
 		if elem.RefExpr != nil {
 			p.write(" ref={")
 			p.write(elem.RefExpr.Code)
+			p.write("}")
+		}
+		// Emit key={expr} if present (extracted from attributes during parsing)
+		if elem.RefKey != nil {
+			p.write(" key={")
+			p.write(elem.RefKey.Code)
 			p.write("}")
 		}
 		for _, attr := range elem.Attributes {
