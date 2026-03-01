@@ -320,7 +320,6 @@ func (a *App) SetRootComponent(component Component) {
 	}
 	a.rootComponent = component
 	el := component.Render(a)
-	el.component = component
 	a.applyRoot(el)
 	if binder, ok := component.(AppBinder); ok {
 		binder.BindApp(a)
@@ -444,10 +443,14 @@ func (a *App) PollEvent(timeout time.Duration) (Event, bool) {
 
 // walkComponents performs a BFS walk of the element tree, calling fn for
 // each element that has an associated component (set by Mount).
+// If rootComp is non-nil it is visited first, before the tree walk.
 // BFS order means shallower components are visited before deeper ones,
 // so a parent's handlers always fire before any descendant's handlers
 // regardless of tree branching structure.
-func walkComponents(root *Element, fn func(Component)) {
+func walkComponents(rootComp Component, root *Element, fn func(Component)) {
+	if rootComp != nil {
+		fn(rootComp)
+	}
 	if root == nil {
 		return
 	}

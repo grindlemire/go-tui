@@ -58,7 +58,7 @@ func (a *App) dispatchMouseToComponents(me MouseEvent) bool {
 		return false
 	}
 	consumed := false
-	walkComponents(a.root, func(comp Component) {
+	walkComponents(a.rootComponent, a.root, func(comp Component) {
 		if consumed {
 			return
 		}

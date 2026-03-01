@@ -42,7 +42,6 @@ func (a *App) Render() {
 	// component → new element tree with updated state reads.
 	if a.rootComponent != nil {
 		el := a.rootComponent.Render(a)
-		el.component = a.rootComponent
 		el.setAppRecursive(a)
 		a.root = el
 	}
@@ -66,7 +65,7 @@ func (a *App) Render() {
 	// Collect and start component watchers (once after first render)
 	if !a.componentWatchersStarted {
 		if a.root != nil {
-			a.componentWatchers = collectComponentWatchers(a.root)
+			a.componentWatchers = collectComponentWatchers(a.rootComponent, a.root)
 			for _, w := range a.componentWatchers {
 				w.Start(a.eventQueue, a.rootWatcherCh)
 			}

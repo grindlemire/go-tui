@@ -19,11 +19,11 @@ type dispatchTable struct {
 // buildDispatchTable walks the element tree, collects KeyMap() from
 // all mounted components, validates exclusive conflicts, and builds
 // the dispatch table ordered by tree position.
-func buildDispatchTable(root *Element) (*dispatchTable, error) {
+func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, error) {
 	table := &dispatchTable{}
 	position := 0
 
-	walkComponents(root, func(comp Component) {
+	walkComponents(rootComp, root, func(comp Component) {
 		kl, ok := comp.(KeyListener)
 		if !ok {
 			return

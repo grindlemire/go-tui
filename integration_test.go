@@ -141,7 +141,6 @@ func TestIntegration_MountCachesAndDiscoverKeyMaps(t *testing.T) {
 
 	root := newIntRoot()
 	el := root.Render(testApp)
-	el.component = root
 
 	// Verify mount cached two child instances
 	ms := testApp.mounts
@@ -150,7 +149,7 @@ func TestIntegration_MountCachesAndDiscoverKeyMaps(t *testing.T) {
 	}
 
 	// Build dispatch table from the rendered tree
-	table, err := buildDispatchTable(el)
+	table, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -170,9 +169,8 @@ func TestIntegration_DispatchBroadcastAndStopPropagation(t *testing.T) {
 
 	root := newIntRoot()
 	el := root.Render(testApp)
-	el.component = root
 
-	table, err := buildDispatchTable(el)
+	table, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -193,9 +191,8 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 
 	// Initial render: search is inactive
 	el := root.Render(testApp)
-	el.component = root
 
-	table, err := buildDispatchTable(el)
+	table, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable (initial): %v", err)
 	}
@@ -208,10 +205,9 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 
 	// Re-render (simulating dirty frame)
 	el = root.Render(testApp)
-	el.component = root
 
 	// Rebuild dispatch table with new KeyMaps
-	table, err = buildDispatchTable(el)
+	table, err = buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable (after activation): %v", err)
 	}
@@ -251,9 +247,8 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	root.query.Set("test")
 
 	el := root.Render(testApp)
-	el.component = root
 
-	table, err := buildDispatchTable(el)
+	table, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -270,9 +265,8 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 
 	// Re-render: search should return nil KeyMap
 	el = root.Render(testApp)
-	el.component = root
 
-	table, err = buildDispatchTable(el)
+	table, err = buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable (after deactivation): %v", err)
 	}
@@ -323,7 +317,6 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 
 	// Initial render
 	el := root.Render(testApp)
-	el.component = root
 
 	// The query state is shared between root, sidebar, and search.
 	// Setting it from search should be visible to sidebar.
@@ -335,11 +328,10 @@ func TestIntegration_SharedStatePropagation(t *testing.T) {
 
 	// Re-render and verify the shared state is accessible
 	el = root.Render(testApp)
-	el.component = root
 
 	// walkComponents should find all 3 components
 	var found []Component
-	walkComponents(el, func(c Component) {
+	walkComponents(root, el, func(c Component) {
 		found = append(found, c)
 	})
 
@@ -358,9 +350,8 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 
 	// Phase 1: searchActive=false
 	el := root.Render(testApp)
-	el.component = root
 
-	table1, err := buildDispatchTable(el)
+	table1, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable phase 1: %v", err)
 	}
@@ -369,9 +360,8 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 	// Phase 2: activate search
 	root.searchActive.Set(true)
 	el = root.Render(testApp)
-	el.component = root
 
-	table2, err := buildDispatchTable(el)
+	table2, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable phase 2: %v", err)
 	}
@@ -398,16 +388,15 @@ func TestIntegration_CtrlBTogglesSidebar(t *testing.T) {
 
 	root := newIntRoot()
 	el := root.Render(testApp)
-	el.component = root
 
-	table, err := buildDispatchTable(el)
+	table, err := buildDispatchTable(root, el)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Find the sidebar component in the cache
 	var sidebar *intSidebar
-	walkComponents(el, func(c Component) {
+	walkComponents(root, el, func(c Component) {
 		if s, ok := c.(*intSidebar); ok {
 			sidebar = s
 		}
