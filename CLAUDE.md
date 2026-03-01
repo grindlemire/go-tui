@@ -651,6 +651,7 @@ tui.NewStyle().Dim().Italic().Underline().Background(tui.Blue)
 // tui.State[T] - reactive state
 count := tui.NewState(0)
 count.Set(count.Get() + 1)
+count.Update(func(v int) int { return v + 1 })  // atomic read-modify-write
 count.Bind(func(v int) { /* called on change */ })
 
 // tui.Ref - element references for hit testing
