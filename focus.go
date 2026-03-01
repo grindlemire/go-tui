@@ -3,12 +3,8 @@ package tui
 import "github.com/grindlemire/go-tui/internal/debug"
 
 // Focusable is implemented by elements that can receive keyboard focus.
-// Elements implementing Focusable should embed *element.Element and
-// add input handling logic.
-//
-// Note: element.Element now satisfies this interface directly, so you can
-// use WithOnFocus/WithOnBlur/WithOnEvent options on Element instead of
-// implementing a custom Focusable type.
+// Element implements this interface directly. For custom focus handling,
+// use WithOnFocus, WithOnBlur, or WithOnEvent options on Element.
 type Focusable interface {
 	// IsFocusable returns whether this element can currently receive focus.
 	// May return false for disabled elements.
