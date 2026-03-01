@@ -60,12 +60,7 @@ func (c *chat) Init() func() {
 }
 
 func (c *chat) ta() *tui.TextArea {
-	if el := c.textareaRef.El(); el != nil {
-		if comp := el.Component(); comp != nil {
-			return comp.(*tui.TextArea)
-		}
-	}
-	return nil
+	return tui.RefComponent[*tui.TextArea](c.textareaRef)
 }
 
 func (c *chat) submit(text string) {
@@ -205,22 +200,17 @@ func (c *chat) KeyMap() tui.KeyMap {
 		}
 	}
 
-	km := c.ta().KeyMap()
-	km = append(km,
+	return tui.KeyMap{
 		tui.OnKeyStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { c.toggleSettings() }),
 		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
-	)
-	return km
+	}
 }
 
 func (c *chat) Watchers() []tui.Watcher {
-	var w []tui.Watcher
-	if ta := c.ta(); ta != nil {
-		w = ta.Watchers()
+	return []tui.Watcher{
+		tui.NewChannelWatcher(c.eventCh, c.onStreamEvent),
 	}
-	w = append(w, tui.NewChannelWatcher(c.eventCh, c.onStreamEvent))
-	return w
 }
 
 func (c *chat) updateHeight() {

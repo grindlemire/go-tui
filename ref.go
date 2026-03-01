@@ -35,6 +35,24 @@ func (r *Ref) IsSet() bool {
 	return r.value != nil
 }
 
+// RefComponent extracts a typed Component from a Ref.
+// Returns the zero value of T if the ref is nil, has no element,
+// has no component, or the component is not of type T.
+func RefComponent[T Component](ref *Ref) T {
+	var zero T
+	if ref == nil {
+		return zero
+	}
+	if el := ref.El(); el != nil {
+		if comp := el.Component(); comp != nil {
+			if typed, ok := comp.(T); ok {
+				return typed
+			}
+		}
+	}
+	return zero
+}
+
 // RefList holds references to multiple elements created in a loop.
 // Thread-safe.
 type RefList struct {

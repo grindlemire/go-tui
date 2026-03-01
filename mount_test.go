@@ -358,7 +358,7 @@ func TestWalkComponents_FindsComponents(t *testing.T) {
 	root.AddChild(child1)
 
 	var found []Component
-	walkComponents(root, func(c Component) {
+	walkComponents(nil, root, func(c Component) {
 		found = append(found, c)
 	})
 
@@ -384,7 +384,7 @@ func TestWalkComponents_SkipsNonComponentElements(t *testing.T) {
 	root.AddChild(New(), child, New())
 
 	var found []Component
-	walkComponents(root, func(c Component) {
+	walkComponents(nil, root, func(c Component) {
 		found = append(found, c)
 	})
 
@@ -395,12 +395,60 @@ func TestWalkComponents_SkipsNonComponentElements(t *testing.T) {
 
 func TestWalkComponents_NilRoot(t *testing.T) {
 	var found []Component
-	walkComponents(nil, func(c Component) {
+	walkComponents(nil, nil, func(c Component) {
 		found = append(found, c)
 	})
 
 	if len(found) != 0 {
 		t.Errorf("walkComponents on nil root found %d components, want 0", len(found))
+	}
+}
+
+func TestWalkComponents_RootCompVisitedFirst(t *testing.T) {
+	rootComp := &mockComponent{}
+	treeComp := &mockComponent{}
+
+	child := New()
+	child.component = treeComp
+
+	root := New()
+	root.AddChild(child)
+
+	var found []Component
+	walkComponents(rootComp, root, func(c Component) {
+		found = append(found, c)
+	})
+
+	if len(found) != 2 {
+		t.Fatalf("walkComponents found %d components, want 2", len(found))
+	}
+	if found[0] != rootComp {
+		t.Error("first component should be rootComp")
+	}
+	if found[1] != treeComp {
+		t.Error("second component should be treeComp")
+	}
+}
+
+func TestWalkComponents_NilRootCompSkipped(t *testing.T) {
+	treeComp := &mockComponent{}
+
+	child := New()
+	child.component = treeComp
+
+	root := New()
+	root.AddChild(child)
+
+	var found []Component
+	walkComponents(nil, root, func(c Component) {
+		found = append(found, c)
+	})
+
+	if len(found) != 1 {
+		t.Fatalf("walkComponents found %d components, want 1", len(found))
+	}
+	if found[0] != treeComp {
+		t.Error("only component should be treeComp")
 	}
 }
 

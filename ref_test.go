@@ -248,6 +248,79 @@ func TestRefMap_GetMissing(t *testing.T) {
 	}
 }
 
+// stubComponent is a minimal Component for testing RefComponent.
+type stubComponent struct{}
+
+func (s *stubComponent) Render(app *App) *Element { return New() }
+
+// otherComponent is a different type to test type mismatch.
+type otherComponent struct{}
+
+func (o *otherComponent) Render(app *App) *Element { return New() }
+
+func TestRefComponent(t *testing.T) {
+	type tc struct {
+		setup func() *Ref
+		want  bool // whether result should be non-nil
+	}
+
+	tests := map[string]tc{
+		"returns typed component": {
+			setup: func() *Ref {
+				r := NewRef()
+				el := New()
+				el.component = &stubComponent{}
+				r.Set(el)
+				return r
+			},
+			want: true,
+		},
+		"nil ref": {
+			setup: func() *Ref {
+				return nil
+			},
+			want: false,
+		},
+		"no element set": {
+			setup: func() *Ref {
+				return NewRef()
+			},
+			want: false,
+		},
+		"element has no component": {
+			setup: func() *Ref {
+				r := NewRef()
+				r.Set(New())
+				return r
+			},
+			want: false,
+		},
+		"type mismatch": {
+			setup: func() *Ref {
+				r := NewRef()
+				el := New()
+				el.component = &otherComponent{}
+				r.Set(el)
+				return r
+			},
+			want: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ref := tt.setup()
+			got := RefComponent[*stubComponent](ref)
+			if tt.want && got == nil {
+				t.Error("RefComponent() should return non-nil component")
+			}
+			if !tt.want && got != nil {
+				t.Error("RefComponent() should return nil")
+			}
+		})
+	}
+}
+
 func TestRefMap_Len(t *testing.T) {
 	type tc struct {
 		count int

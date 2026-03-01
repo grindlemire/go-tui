@@ -183,7 +183,7 @@ func TestDispatch_BroadcastMultipleHandlers(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2, comp3)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -218,7 +218,7 @@ func TestDispatch_StopPreventsLaterHandlers(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2, comp3)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -249,7 +249,7 @@ func TestDispatch_TreeOrder(t *testing.T) {
 	}
 
 	root := buildNestedTestTree(parent, child)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -282,7 +282,7 @@ func TestDispatch_UnifiedOrdering_ExactAndAnyRune(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestDispatch_AnyRuneMatchesPrintableOnly(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -373,7 +373,7 @@ func TestDispatch_ExactRuneMatch(t *testing.T) {
 			}
 
 			root := buildTestTree(comp)
-			table, err := buildDispatchTable(root)
+			table, err := buildDispatchTable(nil, root)
 			if err != nil {
 				t.Fatalf("buildDispatchTable: %v", err)
 			}
@@ -421,7 +421,7 @@ func TestDispatch_ExactKeyMatch(t *testing.T) {
 			}
 
 			root := buildTestTree(comp)
-			table, err := buildDispatchTable(root)
+			table, err := buildDispatchTable(nil, root)
 			if err != nil {
 				t.Fatalf("buildDispatchTable: %v", err)
 			}
@@ -449,7 +449,7 @@ func TestDispatch_ConflictValidation_TwoStopHandlersSamePattern(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(root)
+	_, err := buildDispatchTable(nil, root)
 	if err == nil {
 		t.Fatal("expected error for conflicting stop handlers, got nil")
 	}
@@ -468,7 +468,7 @@ func TestDispatch_NoConflict_StopPlusBroadcast(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(root)
+	_, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("should not error for stop + broadcast: %v", err)
 	}
@@ -487,7 +487,7 @@ func TestDispatch_NoConflict_TwoBroadcastHandlers(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(root)
+	_, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("should not error for two broadcast handlers: %v", err)
 	}
@@ -506,7 +506,7 @@ func TestDispatch_ConflictValidation_TwoStopAnyRune(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(root)
+	_, err := buildDispatchTable(nil, root)
 	if err == nil {
 		t.Fatal("expected error for conflicting AnyRune stop handlers, got nil")
 	}
@@ -525,7 +525,7 @@ func TestDispatch_ConflictValidation_DifferentPatterns(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(root)
+	_, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("different patterns should not conflict: %v", err)
 	}
@@ -537,7 +537,7 @@ func TestDispatch_NilKeyMap(t *testing.T) {
 	comp := &mockKeyComponent{keyMap: nil}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -550,7 +550,7 @@ func TestDispatch_EmptyKeyMap(t *testing.T) {
 	comp := &mockKeyComponent{keyMap: KeyMap{}}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -563,7 +563,7 @@ func TestDispatch_NonKeyListenerComponent(t *testing.T) {
 	comp := &mockNoKeyComponent{}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -588,7 +588,7 @@ func TestDispatch_MixedComponents(t *testing.T) {
 	}
 
 	root := buildTestTree(keyComp, noKeyComp, keyComp2)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -611,7 +611,7 @@ func TestDispatch_NilDispatchTable(t *testing.T) {
 
 func TestDispatch_EmptyTree(t *testing.T) {
 	root := New()
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -632,7 +632,7 @@ func TestDispatch_NonMatchingKeyPassesThrough(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -655,7 +655,7 @@ func TestDispatch_StopOnlyAffectsMatchingPattern(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -679,7 +679,7 @@ func TestDispatch_MultipleBindingsPerComponent(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(root)
+	table, err := buildDispatchTable(nil, root)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -754,7 +754,7 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			root := buildTestTree(tt.components...)
-			table, err := buildDispatchTable(root)
+			table, err := buildDispatchTable(nil, root)
 			if err != nil {
 				t.Fatalf("buildDispatchTable: %v", err)
 			}

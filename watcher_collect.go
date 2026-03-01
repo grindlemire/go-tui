@@ -2,10 +2,10 @@ package tui
 
 // collectComponentWatchers walks the element tree and collects watchers
 // from all components that implement WatcherProvider.
-func collectComponentWatchers(root *Element) []Watcher {
+func collectComponentWatchers(rootComp Component, root *Element) []Watcher {
 	var watchers []Watcher
 
-	walkComponents(root, func(comp Component) {
+	walkComponents(rootComp, root, func(comp Component) {
 		if wp, ok := comp.(WatcherProvider); ok {
 			watchers = append(watchers, wp.Watchers()...)
 		}

@@ -104,7 +104,7 @@ func TestCollectComponentWatchers(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			root := tt.setup()
-			watchers := collectComponentWatchers(root)
+			watchers := collectComponentWatchers(nil, root)
 
 			if len(watchers) != tt.expected {
 				t.Fatalf("expected %d watchers, got %d", tt.expected, len(watchers))
