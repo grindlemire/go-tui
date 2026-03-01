@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -164,7 +165,7 @@ func (a *App) subscribeTopic(topic string, eventType reflect.Type, fn func(any))
 		a.topics[topic] = sub
 	} else if sub.eventType != eventType {
 		a.topicMu.Unlock()
-		panic("tui: topic type mismatch for " + topic + ": existing=" + sub.eventType.String() + ", new=" + eventType.String())
+		panic(fmt.Sprintf("tui: topic type mismatch for %s: existing=%s, new=%s", topic, sub.eventType.String(), eventType.String()))
 	}
 
 	id := sub.nextID
