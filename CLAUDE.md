@@ -793,6 +793,7 @@ Always define the `tc` struct separately before the test map.
 
 ```bash
 go test ./...                        # Run all tests
+go test -race ./...                  # Run all tests with race detector
 go test ./internal/tuigen/...        # Run tuigen tests
 go test ./internal/lsp/...           # Run LSP tests
 go test ./internal/layout/...        # Run layout tests
