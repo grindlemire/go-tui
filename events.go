@@ -90,9 +90,12 @@ func (e *Events[T]) Subscribe(fn func(T)) func() {
 	sub := &eventSubscriber[T]{fn: fn, active: true}
 	e.subscribers = append(e.subscribers, sub)
 	if e.app != nil {
-		sub.unsubscribe = e.app.subscribeTopic(e.topic, e.eventType, func(v any) {
+		unsub, err := e.app.subscribeTopic(e.topic, e.eventType, func(v any) {
 			sub.fn(v.(T))
 		})
+		if err == nil {
+			sub.unsubscribe = unsub
+		}
 	}
 	e.mu.Unlock()
 
@@ -125,9 +128,12 @@ func (e *Events[T]) bindSubscribersLocked(app *App) {
 		if !sub.active || sub.unsubscribe != nil {
 			continue
 		}
-		sub.unsubscribe = app.subscribeTopic(e.topic, e.eventType, func(v any) {
+		unsub, err := app.subscribeTopic(e.topic, e.eventType, func(v any) {
 			sub.fn(v.(T))
 		})
+		if err == nil {
+			sub.unsubscribe = unsub
+		}
 	}
 }
 
@@ -140,7 +146,7 @@ func (e *Events[T]) unbindSubscribersLocked() {
 	}
 }
 
-func (a *App) subscribeTopic(topic string, eventType reflect.Type, fn func(any)) func() {
+func (a *App) subscribeTopic(topic string, eventType reflect.Type, fn func(any)) (func(), error) {
 	if a == nil {
 		panic("tui: nil app in subscribeTopic")
 	}
@@ -148,7 +154,7 @@ func (a *App) subscribeTopic(topic string, eventType reflect.Type, fn func(any))
 		panic("tui: empty topic in subscribeTopic")
 	}
 	if fn == nil {
-		return func() {}
+		return func() {}, nil
 	}
 
 	a.topicMu.Lock()
@@ -165,7 +171,7 @@ func (a *App) subscribeTopic(topic string, eventType reflect.Type, fn func(any))
 		a.topics[topic] = sub
 	} else if sub.eventType != eventType {
 		a.topicMu.Unlock()
-		panic(fmt.Sprintf("tui: topic type mismatch for %s: existing=%s, new=%s", topic, sub.eventType.String(), eventType.String()))
+		return nil, fmt.Errorf("tui: topic type mismatch for %s: existing=%s, new=%s", topic, sub.eventType, eventType)
 	}
 
 	id := sub.nextID
@@ -184,7 +190,7 @@ func (a *App) subscribeTopic(topic string, eventType reflect.Type, fn func(any))
 		if sub, ok := a.topics[topic]; ok {
 			delete(sub.listeners, id)
 		}
-	}
+	}, nil
 }
 
 func (a *App) publishTopic(topic string, eventType reflect.Type, event any) {
@@ -203,7 +209,7 @@ func (a *App) publishTopic(topic string, eventType reflect.Type, event any) {
 	}
 	if sub.eventType != eventType {
 		a.topicMu.RUnlock()
-		panic("tui: topic type mismatch for " + topic + ": existing=" + sub.eventType.String() + ", emitted=" + eventType.String())
+		return
 	}
 
 	listeners := make([]func(any), 0, len(sub.listeners))

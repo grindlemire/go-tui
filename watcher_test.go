@@ -6,6 +6,19 @@ import (
 	"time"
 )
 
+// drainEvents executes all functions from the event queue until the timeout expires.
+func drainEvents(eventQueue <-chan func(), timeout time.Duration) {
+	deadline := time.After(timeout)
+	for {
+		select {
+		case fn := <-eventQueue:
+			fn()
+		case <-deadline:
+			return
+		}
+	}
+}
+
 func TestWatch_CreatesWatcher(t *testing.T) {
 	ch := make(chan string)
 	handler := func(s string) {}
@@ -113,17 +126,7 @@ func TestWatch_ExitsWhenStopChCloses(t *testing.T) {
 	default:
 	}
 
-	// Drain any remaining events
-	drainTimeout := time.After(200 * time.Millisecond)
-	for {
-		select {
-		case fn := <-eventQueue:
-			fn()
-		case <-drainTimeout:
-			goto done
-		}
-	}
-done:
+	drainEvents(eventQueue, 200*time.Millisecond)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -199,17 +202,7 @@ func TestOnTimer_ExitsWhenStopChCloses(t *testing.T) {
 
 	close(stopCh)
 
-	// Drain any in-flight events
-	drainTimeout := time.After(200 * time.Millisecond)
-	for {
-		select {
-		case fn := <-eventQueue:
-			fn()
-		case <-drainTimeout:
-			goto done
-		}
-	}
-done:
+	drainEvents(eventQueue, 200*time.Millisecond)
 
 	mu.Lock()
 	finalCount := count
@@ -325,17 +318,7 @@ func TestNewChannelWatcher_StopsOnStopCh(t *testing.T) {
 	default:
 	}
 
-	// Drain any remaining events
-	drainTimeout := time.After(200 * time.Millisecond)
-	for {
-		select {
-		case fn := <-eventQueue:
-			fn()
-		case <-drainTimeout:
-			goto done
-		}
-	}
-done:
+	drainEvents(eventQueue, 200*time.Millisecond)
 
 	mu.Lock()
 	defer mu.Unlock()

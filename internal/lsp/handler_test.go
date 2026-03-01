@@ -29,31 +29,43 @@ func TestHandleInitialize_ReturnsCapabilities(t *testing.T) {
 
 	caps := initResult.Capabilities
 
+	if caps.TextDocumentSync == nil {
+		t.Fatal("TextDocumentSync should be set")
+	}
+	if !caps.TextDocumentSync.OpenClose {
+		t.Error("TextDocumentSync.OpenClose should be true")
+	}
+	if caps.TextDocumentSync.Change != TextDocumentSyncKindFull {
+		t.Errorf("TextDocumentSync.Change = %d, want %d", caps.TextDocumentSync.Change, TextDocumentSyncKindFull)
+	}
+	if caps.CompletionProvider == nil {
+		t.Error("CompletionProvider should be set")
+	}
+
 	type tc struct {
-		name  string
-		check func() bool
+		got  bool
+		want bool
 	}
 
-	tests := []tc{
-		{"TextDocumentSync is set", func() bool { return caps.TextDocumentSync != nil }},
-		{"TextDocumentSync OpenClose", func() bool { return caps.TextDocumentSync.OpenClose }},
-		{"TextDocumentSync FullSync", func() bool { return caps.TextDocumentSync.Change == TextDocumentSyncKindFull }},
-		{"CompletionProvider is set", func() bool { return caps.CompletionProvider != nil }},
-		{"HoverProvider", func() bool { return caps.HoverProvider }},
-		{"DefinitionProvider", func() bool { return caps.DefinitionProvider }},
-		{"ReferencesProvider", func() bool { return caps.ReferencesProvider }},
-		{"DocumentSymbolProvider", func() bool { return caps.DocumentSymbolProvider }},
-		{"WorkspaceSymbolProvider", func() bool { return caps.WorkspaceSymbolProvider }},
-		{"DocumentFormattingProvider", func() bool { return caps.DocumentFormattingProvider }},
-		{"SemanticTokensProvider is set", func() bool { return caps.SemanticTokensProvider != nil }},
+	tests := map[string]tc{
+		"HoverProvider":              {got: caps.HoverProvider, want: true},
+		"DefinitionProvider":         {got: caps.DefinitionProvider, want: true},
+		"ReferencesProvider":         {got: caps.ReferencesProvider, want: true},
+		"DocumentSymbolProvider":     {got: caps.DocumentSymbolProvider, want: true},
+		"WorkspaceSymbolProvider":    {got: caps.WorkspaceSymbolProvider, want: true},
+		"DocumentFormattingProvider": {got: caps.DocumentFormattingProvider, want: true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if !tt.check() {
-				t.Errorf("capability check failed: %s", tt.name)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Errorf("%s = %v, want %v", name, tt.got, tt.want)
 			}
 		})
+	}
+
+	if caps.SemanticTokensProvider == nil {
+		t.Error("SemanticTokensProvider should be set")
 	}
 }
 
