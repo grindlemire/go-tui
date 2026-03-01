@@ -743,7 +743,7 @@ func (g *Generator) generateBindAppClosure() {
 
 	// Bind child function component views (they implement AppBinder)
 	for _, compVar := range g.componentVars {
-		g.writef("if binder, ok := interface{}(%s).(tui.AppBinder); ok {\n", compVar)
+		g.writef("if binder, ok := any(%s).(tui.AppBinder); ok {\n", compVar)
 		g.indent++
 		g.writeln("binder.BindApp(app)")
 		g.indent--
@@ -764,7 +764,7 @@ func (g *Generator) generateBindAppClosure() {
 
 	// Unbind child function component views (they may implement AppUnbinder)
 	for _, compVar := range g.componentVars {
-		g.writef("if unbinder, ok := interface{}(%s).(tui.AppUnbinder); ok {\n", compVar)
+		g.writef("if unbinder, ok := any(%s).(tui.AppUnbinder); ok {\n", compVar)
 		g.indent++
 		g.writeln("unbinder.UnbindApp()")
 		g.indent--
