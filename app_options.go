@@ -57,6 +57,10 @@ func WithFrameRate(fps int) AppOption {
 
 // WithEventQueueSize sets the capacity of the event queue buffer.
 // Default is 256. Must be at least 1.
+//
+// Note: keyboard and mouse events use a separate lossless queue.
+// Background state updates (from QueueUpdate) use a bounded queue
+// that drops the oldest update when full to prevent backpressure.
 func WithEventQueueSize(size int) AppOption {
 	return func(a *App) error {
 		if size < 1 {
