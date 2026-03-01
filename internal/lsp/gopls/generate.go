@@ -386,7 +386,7 @@ func (g *generator) generateLetBinding(binding *tuigen.LetBinding, indent string
 
 	// Add mapping for the variable name
 	// In .gsx: "@let varName = ..." - Position points to @, so varName is at Column + len("@let ")
-	// In .go: "var varName interface{}" - varName is at indent + len("var ")
+	// In .go: "var varName any" - varName is at indent + len("var ")
 	tuiLine := binding.Position.Line - 1
 	tuiCol := binding.Position.Column - 1 + len("@let ")
 	goVarStartCol := len(indent) + len("var ")
@@ -403,7 +403,7 @@ func (g *generator) generateLetBinding(binding *tuigen.LetBinding, indent string
 	g.sourceMap.AddMapping(m)
 
 	// Generate variable declaration
-	g.writeLine(fmt.Sprintf("%svar %s interface{}", indent, binding.Name))
+	g.writeLine(fmt.Sprintf("%svar %s any", indent, binding.Name))
 
 	// Generate element expressions
 	if binding.Element != nil {

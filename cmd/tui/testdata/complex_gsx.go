@@ -325,13 +325,13 @@ func WithHelper(text string) *WithHelperView {
 	watchers = append(watchers, __tui_2.GetWatchers()...)
 
 	__bindApp := func(app *tui.App) {
-		if binder, ok := interface{}(__tui_2).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_2).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
 	}
 
 	__unbindApp := func() {
-		if unbinder, ok := interface{}(__tui_2).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_2).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
 	}
