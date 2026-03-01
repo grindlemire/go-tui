@@ -37,6 +37,30 @@ func effectiveStyles(e *Element, inherited inheritedStyle) (textStyle Style, bg 
 	return textStyle, bg
 }
 
+// renderContext holds resolved state for rendering an element.
+type renderContext struct {
+	textStyle      Style
+	bg             *Style
+	childInherited inheritedStyle
+}
+
+// resolveRenderContext resolves effective styles and builds child inherited style.
+// Handles style inheritance and <th> bold default.
+func resolveRenderContext(e *Element, inherited inheritedStyle) renderContext {
+	textStyle, bg := effectiveStyles(e, inherited)
+	if e.tag == "th" && !e.textStyleSet {
+		textStyle = textStyle.Bold()
+	}
+	return renderContext{
+		textStyle: textStyle,
+		bg:        bg,
+		childInherited: inheritedStyle{
+			textStyle: textStyle,
+			bg:        bg,
+		},
+	}
+}
+
 // RenderTree traverses the Element tree and renders to the buffer.
 // This renders the element and all its descendants.
 func RenderTree(buf *Buffer, root *Element) {
@@ -68,30 +92,24 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 		return
 	}
 
-	// Resolve effective styles (inheritance applied)
-	textStyle, bg := effectiveStyles(e, inherited)
-
-	// Apply bold default for <th> header cells
-	if e.tag == "th" && !e.textStyleSet {
-		textStyle = textStyle.Bold()
-	}
+	// Resolve effective styles (inheritance + <th> bold)
+	rc := resolveRenderContext(e, inherited)
 
 	// Handle HR specially - draws a horizontal line and returns (no children)
 	if e.hr {
-		renderHR(buf, e, textStyle)
+		renderHR(buf, e, rc.textStyle)
 		return
 	}
 
 	// 1. Fill background
 	if e.bgGradient != nil {
-		// Use gradient background (create default style if bg is nil)
 		bgStyle := NewStyle()
-		if bg != nil {
-			bgStyle = *bg
+		if rc.bg != nil {
+			bgStyle = *rc.bg
 		}
 		buf.FillGradient(rect, ' ', *e.bgGradient, bgStyle)
-	} else if bg != nil {
-		buf.Fill(rect, ' ', *bg)
+	} else if rc.bg != nil {
+		buf.Fill(rect, ' ', *rc.bg)
 	}
 
 	// Debug: highlight containers whose children overflow
@@ -117,26 +135,20 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 
 	// 3. Draw text content if present
 	if e.text != "" {
-		renderTextContent(buf, e, textStyle, bg)
+		renderTextContent(buf, e, rc.textStyle, rc.bg)
 	}
 
-	// 4. Build inherited style for children
-	childInherited := inheritedStyle{
-		textStyle: textStyle,
-		bg:        bg,
-	}
-
-	// 5. Render children (with scroll handling if scrollable, or clipping if overflow-hidden)
+	// 4. Render children (with scroll handling if scrollable, or clipping if overflow-hidden)
 	if e.IsScrollable() {
-		renderScrollableChildren(buf, e, childInherited)
+		renderScrollableChildren(buf, e, rc.childInherited)
 	} else if e.overflow == OverflowHidden {
 		clipRect := e.ContentRect()
 		for _, child := range e.children {
-			renderClippedElement(buf, child, clipRect, 0, 0, clipRect.X, clipRect.Y, childInherited)
+			renderClippedElement(buf, child, clipRect, 0, 0, clipRect.X, clipRect.Y, rc.childInherited)
 		}
 	} else {
 		for _, child := range e.children {
-			renderElement(buf, child, childInherited)
+			renderElement(buf, child, rc.childInherited)
 		}
 	}
 }
@@ -192,34 +204,27 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 		return
 	}
 
-	// Resolve effective styles (inheritance applied)
-	textStyle, bg := effectiveStyles(e, inherited)
-
-	// Apply bold default for <th> header cells
-	if e.tag == "th" && !e.textStyleSet {
-		textStyle = textStyle.Bold()
-	}
+	// Resolve effective styles (inheritance + <th> bold)
+	rc := resolveRenderContext(e, inherited)
 
 	// Handle HR specially - draws a horizontal line and returns (no children)
 	if e.hr {
 		char := hrCharacter(e.border)
-		// Draw only within visible bounds
 		for x := visibleRect.X; x < visibleRect.Right(); x++ {
-			buf.SetRune(x, screenY, char, textStyle)
+			buf.SetRune(x, screenY, char, rc.textStyle)
 		}
 		return
 	}
 
 	// Render background (only visible portion)
 	if e.bgGradient != nil {
-		// Use gradient background (create default style if bg is nil)
 		bgStyle := NewStyle()
-		if bg != nil {
-			bgStyle = *bg
+		if rc.bg != nil {
+			bgStyle = *rc.bg
 		}
 		buf.FillGradient(visibleRect, ' ', *e.bgGradient, bgStyle)
-	} else if bg != nil {
-		buf.Fill(visibleRect, ' ', *bg)
+	} else if rc.bg != nil {
+		buf.Fill(visibleRect, ' ', *rc.bg)
 	}
 
 	// Render border clipped to viewport (border style does NOT inherit)
@@ -240,13 +245,11 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			textBaseY += 1
 		}
 
-		// Compute available width for text within this element
 		availTextWidth := childRect.Width - e.style.Padding.Horizontal()
 		if e.border != BorderNone {
 			availTextWidth -= 2
 		}
 
-		// Compute wrapped lines
 		var lines []string
 		if !e.noWrap && availTextWidth > 0 {
 			lines = wrapText(e.text, availTextWidth)
@@ -254,7 +257,6 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			lines = []string{e.text}
 		}
 
-		// Apply truncation if enabled
 		if e.truncate {
 			if e.noWrap {
 				lines[0] = truncateText(lines[0], availTextWidth)
@@ -270,10 +272,9 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			}
 		}
 
-		ts := textStyle
-		// Merge background color into text style so text preserves the background
-		if bg != nil && !bg.Bg.IsDefault() {
-			ts.Bg = bg.Bg
+		ts := rc.textStyle
+		if rc.bg != nil && !rc.bg.Bg.IsDefault() {
+			ts.Bg = rc.bg.Bg
 		}
 		needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
 
@@ -286,7 +287,6 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			lineWidth := stringWidth(line)
 			textX := textBaseX
 
-			// Per-line text alignment
 			if availTextWidth > lineWidth {
 				switch e.textAlign {
 				case TextAlignCenter:
@@ -338,19 +338,13 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 		}
 	}
 
-	// Build inherited style for children
-	childInherited := inheritedStyle{
-		textStyle: textStyle,
-		bg:        bg,
-	}
-
 	// Recurse to children
 	// Propagate the original viewport and scroll offsets rather than re-basing
 	// to the parent's screen position. Child Rect() values are absolute in the
 	// temp container's coordinate space (from layoutScrollContent), so the same
 	// viewport+scroll translation applies at every depth.
 	for _, child := range e.children {
-		renderClippedElement(buf, child, clipRect, scrollX, scrollY, viewportX, viewportY, childInherited)
+		renderClippedElement(buf, child, clipRect, scrollX, scrollY, viewportX, viewportY, rc.childInherited)
 	}
 }
 

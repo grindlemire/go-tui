@@ -344,6 +344,9 @@ func helper(s string) string {
 | `<input>` | Text input field |
 | `<textarea>` | Multi-line text input (self-closing, mounted as Component) |
 | `<table>` | Table container |
+| `<tr>` | Table row |
+| `<td>` | Table data cell |
+| `<th>` | Table header cell (bold by default) |
 | `<progress>` | Progress bar |
 | `<hr>` | Horizontal rule (self-closing) |
 | `<br>` | Line break (self-closing) |
@@ -648,6 +651,7 @@ tui.NewStyle().Dim().Italic().Underline().Background(tui.Blue)
 // tui.State[T] - reactive state
 count := tui.NewState(0)
 count.Set(count.Get() + 1)
+count.Update(func(v int) int { return v + 1 })  // atomic read-modify-write
 count.Bind(func(v int) { /* called on change */ })
 
 // tui.Ref - element references for hit testing
@@ -790,6 +794,7 @@ Always define the `tc` struct separately before the test map.
 
 ```bash
 go test ./...                        # Run all tests
+go test -race ./...                  # Run all tests with race detector
 go test ./internal/tuigen/...        # Run tuigen tests
 go test ./internal/lsp/...           # Run LSP tests
 go test ./internal/layout/...        # Run layout tests

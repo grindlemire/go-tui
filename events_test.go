@@ -63,21 +63,25 @@ func TestEvents_CrossAppIsolation(t *testing.T) {
 	}
 }
 
-func TestEvents_TypeMismatchPanics(t *testing.T) {
+func TestEvents_TypeMismatchDropsEmit(t *testing.T) {
 	app := &App{}
 	strBus := NewEvents[string]("shared.topic")
 	intBus := NewEvents[int]("shared.topic")
 	strBus.BindApp(app)
 	intBus.BindApp(app)
 
-	strBus.Subscribe(func(v string) {})
+	var got []string
+	strBus.Subscribe(func(v string) {
+		got = append(got, v)
+	})
 
-	defer func() {
-		if recover() == nil {
-			t.Fatal("expected panic on topic type mismatch")
-		}
-	}()
+	// Emit with mismatched type should be silently dropped, not panic
 	intBus.Emit(42)
+
+	strBus.Emit("hello")
+	if len(got) != 1 || got[0] != "hello" {
+		t.Fatalf("expected [hello], got %v", got)
+	}
 }
 
 func TestEvents_UnbindAppStopsDelivery(t *testing.T) {

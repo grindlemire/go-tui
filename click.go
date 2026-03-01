@@ -29,7 +29,7 @@ func HandleClicks(me MouseEvent, bindings ...ClickBinding) bool {
 	}
 
 	for _, b := range bindings {
-		if b.Ref.El() != nil && b.Ref.El().ContainsPoint(me.X, me.Y) {
+		if b.Ref != nil && b.Ref.El() != nil && b.Ref.El().ContainsPoint(me.X, me.Y) {
 			b.Fn()
 			return true
 		}

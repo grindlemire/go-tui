@@ -36,6 +36,7 @@ func (a *App) Run() error {
 
 		// Process events for up to half the frame budget (non-blocking)
 		eventDeadline := frameStart.Add(a.frameDuration / 2)
+	drain:
 		for time.Now().Before(eventDeadline) {
 			select {
 			case handler := <-a.eventQueue:
@@ -46,11 +47,10 @@ func (a *App) Run() error {
 				return nil
 			default:
 				// No more events, move to render phase
-				goto render
+				break drain
 			}
 		}
 
-	render:
 		// Always render if dirty
 		if a.checkAndClearDirty() {
 			a.Render()
