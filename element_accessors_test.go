@@ -241,3 +241,36 @@ func TestElement_AddChild_MarksDirty(t *testing.T) {
 	}
 }
 
+// --- Wrap API Tests ---
+
+func TestElement_Wrap(t *testing.T) {
+	type tc struct {
+		opts []Option
+		want bool
+	}
+
+	tests := map[string]tc{
+		"default is true": {
+			opts: nil,
+			want: true,
+		},
+		"WithWrap false": {
+			opts: []Option{WithWrap(false)},
+			want: false,
+		},
+		"WithWrap true": {
+			opts: []Option{WithWrap(true)},
+			want: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(tt.opts...)
+			if got := e.Wrap(); got != tt.want {
+				t.Errorf("Wrap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+

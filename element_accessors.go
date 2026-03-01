@@ -104,6 +104,12 @@ func (e *Element) wrapsText() bool {
 	return !e.noWrap
 }
 
+// Wrap returns whether text content wraps within this element's width.
+// Wrapping is enabled by default.
+func (e *Element) Wrap() bool {
+	return !e.noWrap
+}
+
 // --- Hidden API ---
 
 // Hidden returns whether this element is hidden.
