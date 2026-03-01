@@ -104,7 +104,7 @@ The `generate` command compiles `.gsx` files into plain Go source (`*_gsx.go`) t
 - Pure Go flexbox layout -- row, column, justify, align, gap, padding, margin, percentage widths, min/max constraints, no CGO
 - Generic `State[T]` with automatic re-rendering, batched updates, and bindings
 - Struct components with keyboard/mouse handlers, watchers for timers and channels, refs, and a `{children...}` slot
-- Language server, formatter, and tree-sitter grammar for VS Code and Zed
+- Language server, formatter, and tree-sitter grammar for VS Code
 - Only depends on `golang.org/x/{sys,tools}` -- no vendored C, no termbox, no tcell
 
 ## How it works
@@ -129,7 +129,7 @@ The `.gsx` compiler runs at build time and produces regular Go files. At runtime
 
 ## Examples
 
-The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01–17 accompany the [guides](https://go-tui.dev).
+The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01–18 accompany the [guides](https://go-tui.dev).
 
 | Example | What it covers |
 |---------|----------------|
@@ -149,7 +149,8 @@ The [`examples/`](examples/) directory has runnable programs for each feature ar
 | [14-multi-component](examples/14-multi-component) | Multi-file components, shared state |
 | [15-inline-mode](examples/15-inline-mode) | Inline terminal rendering mode |
 | [16-streaming](examples/16-streaming) | Auto-scroll, stick-to-bottom, streaming data |
-| [17-dashboard](examples/17-dashboard) | Metrics, sparklines, scrollable event log |
+| [17-inline-streaming](examples/17-inline-streaming) | Inline mode with streaming content |
+| [18-dashboard](examples/18-dashboard) | Metrics, sparklines, scrollable event log |
 
 See also [`ai-chat`](examples/ai-chat) and [`docs-example`](examples/docs-example).
 
@@ -174,15 +175,13 @@ tui version                  Print version
 
 **VS Code** -- Install the extension from [`editor/vscode/`](editor/vscode/). Syntax highlighting, completion, hover, go-to-definition, diagnostics, and formatting.
 
-**Zed** -- Extension at [`editor/zed-gsx/`](editor/zed-gsx/). Tree-sitter highlighting and LSP integration.
-
 **Neovim / Helix** -- Tree-sitter grammar at [`editor/tree-sitter-gsx/`](editor/tree-sitter-gsx/).
 
 The `tui lsp` language server works with any editor that speaks JSON-RPC over stdio. It proxies Go-specific features through gopls with `.gsx` ↔ `.go` source mapping.
 
 ## Documentation
 
-Guides, syntax reference, and API docs: **[grindlemire.github.io/go-tui](https://grindlemire.github.io/go-tui)**
+Guides, syntax reference, and API docs: **[go-tui.dev](https://go-tui.dev)**
 
 ## License
 
