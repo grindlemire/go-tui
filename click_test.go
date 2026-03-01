@@ -77,6 +77,19 @@ func TestHandleClicks_NilRef(t *testing.T) {
 	}
 }
 
+func TestHandleClicks_NilRefPointer(t *testing.T) {
+	me := MouseEvent{Button: MouseLeft, Action: MousePress, X: 5, Y: 5}
+
+	// Should not panic with nil *Ref pointer
+	result := HandleClicks(me, Click(nil, func() {
+		t.Error("handler should not be called for nil ref")
+	}))
+
+	if result {
+		t.Error("HandleClicks should return false for nil ref binding")
+	}
+}
+
 func TestHandleClicks_MultipleBindings(t *testing.T) {
 	ref1 := NewRef()
 	ref2 := NewRef()
