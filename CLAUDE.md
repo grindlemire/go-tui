@@ -344,6 +344,9 @@ func helper(s string) string {
 | `<input>` | Text input field |
 | `<textarea>` | Multi-line text input (self-closing, mounted as Component) |
 | `<table>` | Table container |
+| `<tr>` | Table row |
+| `<td>` | Table data cell |
+| `<th>` | Table header cell (bold by default) |
 | `<progress>` | Progress bar |
 | `<hr>` | Horizontal rule (self-closing) |
 | `<br>` | Line break (self-closing) |
