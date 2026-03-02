@@ -169,6 +169,28 @@ func main() {
 }
 ```
 
+## Single-Frame Printing
+
+For CLI tools that render styled output once and exit, without starting an interactive app:
+
+```go
+// Print to stdout (auto-detects terminal width, falls back to 80)
+tui.Print(MyComponent("hello"))
+
+// Return as ANSI string (no trailing newline)
+s := tui.Sprint(view, tui.WithPrintWidth(80))
+
+// Write to any io.Writer (appends trailing newline)
+tui.Fprint(w, view, tui.WithPrintWidth(120))
+```
+
+All three accept a `Viewable` (generated `.gsx` views and raw `*Element` values). Same components work with both `Print` and `App.Run()`.
+
+```go
+// PrintOption
+tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
+```
+
 ## Built-in Elements
 
 ### Container Elements
