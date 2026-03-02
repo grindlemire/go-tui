@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	tui "github.com/grindlemire/go-tui"
+)
 
 templ BuildReport(project string, status string, duration string, tests int, passed int) {
 	<div class="flex-col border-rounded border-cyan p-1">
@@ -10,8 +13,8 @@ templ BuildReport(project string, status string, duration string, tests int, pas
 		</div>
 		<hr />
 		<div class="flex-row gap-4">
-			<span class="text-dim">Duration: {duration}</span>
-			<span class="text-dim">Tests: {fmt.Sprintf("%d/%d passed", passed, tests)}</span>
+			<span class="text-dim">Duration:{duration}</span>
+			<span class="text-dim">Tests:{fmt.Sprintf("%d/%d passed", passed, tests)}</span>
 		</div>
 	</div>
 }
