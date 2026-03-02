@@ -53,7 +53,7 @@ By default, `Print` detects the terminal width automatically (falling back to 80
 
 ```go
 // Always render at 120 columns, regardless of terminal size
-tui.Print(el, tui.WithPrintWidth(120))
+tui.Print(view, tui.WithPrintWidth(120))
 ```
 
 This is useful when:
@@ -66,29 +66,29 @@ This is useful when:
 `Sprint` returns the ANSI string instead of writing it:
 
 ```go
-s := tui.Sprint(el, tui.WithPrintWidth(80))
-fmt.Println(s) // you control where it goes
+s := tui.Sprint(view, tui.WithPrintWidth(80))
+fmt.Println(s) // you decide where it goes
 ```
 
 `Fprint` writes to any `io.Writer`:
 
 ```go
 var buf bytes.Buffer
-tui.Fprint(&buf, el, tui.WithPrintWidth(80))
+tui.Fprint(&buf, view, tui.WithPrintWidth(80))
 // buf now contains the ANSI-styled output
 ```
 
 ```go
 f, _ := os.Create("report.txt")
 defer f.Close()
-tui.Fprint(f, el, tui.WithPrintWidth(80))
+tui.Fprint(f, view, tui.WithPrintWidth(80))
 ```
 
-Note: `Fprint` appends a trailing newline so the shell prompt doesn't collide with the output. `Sprint` does not, giving you full control when composing strings.
+`Fprint` appends a trailing newline so the shell prompt doesn't collide with the output. `Sprint` does not, so callers composing strings can manage their own newlines.
 
-## Using the Same Components Everywhere
+## Reusing Components
 
-The `.gsx` components you write for single-frame printing also work with `App.Run()`. A component library can serve both interactive and non-interactive use cases:
+The `.gsx` components you write for single-frame printing also work with `App.Run()`:
 
 ```go
 // Non-interactive: print and exit
@@ -100,4 +100,6 @@ defer app.Close()
 app.Run()
 ```
 
-Both call the same generated functions. The only difference is how the element tree is consumed.
+Both call the same generated functions. One prints and exits, the other runs an interactive loop.
+
+**Cross-references**: [Testing Guide](testing), [Inline Mode Guide](inline-mode)
