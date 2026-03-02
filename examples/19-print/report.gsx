@@ -14,8 +14,8 @@ templ BuildReport(project string, status string, duration string, tests int, pas
 			</div>
 			<hr />
 			<div class="flex-row gap-4">
-				<span class="text-dim">Duration:{duration}</span>
-				<span class="text-dim">Tests:{fmt.Sprintf("%d/%d passed", passed, tests)}</span>
+				<span class="text-dim">Duration: {duration}</span>
+				<span class="text-dim">Tests: {fmt.Sprintf("%d/%d passed", passed, tests)}</span>
 			</div>
 		</div>
 	</div>

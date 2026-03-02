@@ -13,14 +13,19 @@ package main
 
 import "fmt"
 
-templ BuildReport(project string, status string, tests int, passed int) {
-    <div class="flex-col border-rounded border-cyan p-1">
-        <div class="flex-row justify-between">
-            <span class="font-bold text-cyan">{project}</span>
-            <span class="font-bold text-green">PASS</span>
+templ BuildReport(project string, status string, duration string, tests int, passed int) {
+    <div class="flex-row justify-center">
+        <div class="flex-col border-rounded border-cyan p-1 w-1/2">
+            <div class="flex-row justify-between">
+                <span class="font-bold text-cyan">{project}</span>
+                <span class="font-bold text-green">{status}</span>
+            </div>
+            <hr />
+            <div class="flex-row gap-4">
+                <span class="text-dim">Duration: {duration}</span>
+                <span class="text-dim">Tests: {fmt.Sprintf("%d/%d passed", passed, tests)}</span>
+            </div>
         </div>
-        <hr />
-        <span class="text-dim">Tests: {fmt.Sprintf("%d/%d passed", passed, tests)}</span>
     </div>
 }
 ```
@@ -41,7 +46,7 @@ import tui "github.com/grindlemire/go-tui"
 //go:generate go run ../../cmd/tui generate report.gsx
 
 func main() {
-    tui.Print(BuildReport("myapp", "PASS", 42, 42))
+    tui.Print(BuildReport("myapp", "PASS", "2.3s", 42, 42))
 }
 ```
 
