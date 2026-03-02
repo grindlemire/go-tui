@@ -17,7 +17,7 @@ func Print(v Viewable, opts ...PrintOption)
 Renders a `Viewable` to `os.Stdout` with ANSI styling. Appends a trailing newline after the output. Width is auto-detected from the terminal, falling back to 80 columns.
 
 ```go
-tui.Print(BuildReport("myapp", "PASS", 42, 42))
+tui.Print(BuildReport("myapp", "PASS", "2.3s", 42, 42))
 ```
 
 With explicit width:
