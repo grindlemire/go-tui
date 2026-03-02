@@ -40,7 +40,7 @@ root.AddChild(title, body)
 func New(opts ...Option) *Element
 ```
 
-Creates a new Element with the given options. By default, an Element has Auto width and height, no border, no text, Row direction, and transparent background.
+Creates a new Element with the given options. By default, elements use Auto width and height, Row direction, and a transparent background, with border and text unset.
 
 ```go
 box := tui.New(

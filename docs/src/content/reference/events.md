@@ -159,7 +159,7 @@ Emitted when the terminal window changes size. The framework handles resize inte
 
 | Constant | String | Description |
 |----------|--------|-------------|
-| `KeyNone` | `"None"` | Zero value — no key. |
+| `KeyNone` | `"None"` | Zero value. No key. |
 | `KeyRune` | `"Rune"` | Printable character. Check `Rune` field for the character. |
 | `KeyEscape` | `"Escape"` | Escape key. |
 | `KeyEnter` | `"Enter"` | Enter / Return key. |

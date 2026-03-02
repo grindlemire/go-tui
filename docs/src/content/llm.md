@@ -472,7 +472,7 @@ func (c *myComp) Watchers() []tui.Watcher {
 }
 ```
 
-Callbacks run on the main event loop — safe to mutate state directly.
+Callbacks run on the main event loop, so you can mutate state directly.
 
 ## Scroll API
 

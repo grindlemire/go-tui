@@ -438,7 +438,7 @@ The timer handles the uptime counter while the channel watcher receives messages
 
 ## Thread Safety
 
-Watcher callbacks are queued on the main event loop and run one at a time. This gives you a simple guarantee: inside any callback, you are the only code running. No locks needed, no race conditions.
+Watcher callbacks are queued on the main event loop and run one at a time. This gives you a simple guarantee: inside any callback, you are the only code running, so you can update state directly without locks.
 
 This applies to:
 - `OnTimer` callbacks

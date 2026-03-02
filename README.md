@@ -101,11 +101,11 @@ The `generate` command compiles `.gsx` files into plain Go source (`*_gsx.go`) t
 ## What's in the box
 
 - `.gsx` templates with HTML-like elements and Tailwind-style utility classes, compiled to type-safe Go
-- Pure Go flexbox layout -- row, column, justify, align, gap, padding, margin, percentage widths, min/max constraints, no CGO
+- Pure Go flexbox layout without CGO: row, column, justify, align, gap, padding, margin, percentage widths, min/max constraints
 - Generic `State[T]` with automatic re-rendering, batched updates, and bindings
 - Struct components with keyboard/mouse handlers, watchers for timers and channels, refs, and a `{children...}` slot
 - Language server, formatter, and tree-sitter grammar for VS Code
-- Only depends on `golang.org/x/{sys,tools}` -- no vendored C, no termbox, no tcell
+- Only depends on `golang.org/x/{sys,tools}`, pure Go from terminal to layout
 
 ## How it works
 

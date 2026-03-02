@@ -497,7 +497,7 @@ func (a *App) PrintAboveElement(el *Element)
 
 Renders an element tree and inserts the resulting rows into the inline scrollback as static ANSI text. The element is laid out at the terminal's current width using the standard flexbox layout engine, then each row is converted to ANSI escape sequences and inserted via the same machinery as `PrintAboveStyled`.
 
-This enables inserting structured content — tables, styled cards, templ component output — into the scrollback alongside streamed text.
+This enables inserting structured content (tables, styled cards, templ component output) into the scrollback alongside streamed text.
 
 Must be called from the app's main event loop. No-op if not in inline mode or if the element is nil.
 

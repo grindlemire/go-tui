@@ -111,10 +111,10 @@ Four methods handle printing above the widget:
 
 | Method | Newline | Thread-safe |
 |---|---|---|
-| `PrintAbove(format, args...)` | No | No — call from the event loop |
-| `PrintAboveln(format, args...)` | Yes | No — call from the event loop |
-| `QueuePrintAbove(format, args...)` | No | Yes — safe from any goroutine |
-| `QueuePrintAboveln(format, args...)` | Yes | Yes — safe from any goroutine |
+| `PrintAbove(format, args...)` | No | No. Call from the event loop. |
+| `PrintAboveln(format, args...)` | Yes | No. Call from the event loop. |
+| `QueuePrintAbove(format, args...)` | No | Yes. Safe from any goroutine. |
+| `QueuePrintAboveln(format, args...)` | Yes | Yes. Safe from any goroutine. |
 
 `PrintAboveln` and `PrintAbove` work like `fmt.Sprintf`: pass a format string and arguments. The "ln" variants append a newline automatically.
 

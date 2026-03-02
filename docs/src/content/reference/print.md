@@ -4,7 +4,7 @@
 
 The `Print`, `Sprint`, and `Fprint` functions render a `Viewable` once with full ANSI styling, without starting an interactive `App`. They run the flexbox layout engine, render into an internal buffer, and convert each row to ANSI-escaped text. Use them for CLI tools, reports, and any program that wants styled terminal output without an event loop.
 
-All three functions accept any `Viewable` — this includes generated `.gsx` component views and raw `*Element` values.
+All three functions accept any `Viewable`, including generated `.gsx` component views and raw `*Element` values.
 
 ## Functions
 
