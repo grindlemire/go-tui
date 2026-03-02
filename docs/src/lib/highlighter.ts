@@ -116,7 +116,7 @@ const darkTheme: ThemeRegistrationRaw = {
 const lightTokenColors = [
     {
       scope: ["comment", "comment.line", "comment.block"],
-      settings: { foreground: "#a6a68a" },
+      settings: { foreground: "#767260" },
     },
     {
       scope: [
@@ -128,11 +128,11 @@ const lightTokenColors = [
         "keyword.other.import",
         "keyword.other.type",
       ],
-      settings: { foreground: "#d42568" },
+      settings: { foreground: "#c01f5c" },
     },
     {
       scope: ["string", "string.quoted"],
-      settings: { foreground: "#998a00" },
+      settings: { foreground: "#7a6e00" },
     },
     {
       scope: ["constant.numeric", "constant.language"],
@@ -148,7 +148,7 @@ const lightTokenColors = [
     },
     {
       scope: ["entity.name.tag"],
-      settings: { foreground: "#d42568" },
+      settings: { foreground: "#c01f5c" },
     },
     {
       scope: [
@@ -156,57 +156,57 @@ const lightTokenColors = [
         "entity.name.function.component",
         "support.function.builtin",
       ],
-      settings: { foreground: "#638b0c" },
+      settings: { foreground: "#507009" },
     },
     {
       scope: ["entity.name.type"],
-      settings: { foreground: "#2f9eb8" },
+      settings: { foreground: "#217f96" },
     },
     {
       scope: ["entity.other.attribute-name"],
-      settings: { foreground: "#638b0c" },
+      settings: { foreground: "#507009" },
     },
     {
       scope: ["variable.parameter"],
-      settings: { foreground: "#b65a0d" },
+      settings: { foreground: "#9a4c0b" },
     },
     {
       scope: ["punctuation.definition.component-call"],
-      settings: { foreground: "#d42568" },
+      settings: { foreground: "#c01f5c" },
     },
     {
       scope: [
         "entity.name.function.component-call",
       ],
-      settings: { foreground: "#638b0c" },
+      settings: { foreground: "#507009" },
     },
     {
       scope: ["keyword.operator"],
-      settings: { foreground: "#d42568" },
+      settings: { foreground: "#c01f5c" },
     },
     {
       scope: ["variable.other"],
-      settings: { foreground: "#49483e" },
+      settings: { foreground: "#3d3c34" },
     },
     {
       scope: ["punctuation.definition.tag"],
-      settings: { foreground: "#49483e" },
+      settings: { foreground: "#3d3c34" },
     },
     {
       scope: ["punctuation.separator"],
-      settings: { foreground: "#49483e" },
+      settings: { foreground: "#3d3c34" },
     },
     {
       scope: ["punctuation.definition.block"],
-      settings: { foreground: "#49483e" },
+      settings: { foreground: "#3d3c34" },
     },
     {
       scope: ["entity.name.package"],
-      settings: { foreground: "#49483e" },
+      settings: { foreground: "#3d3c34" },
     },
     {
       scope: ["variable.other.ref"],
-      settings: { foreground: "#49483e" },
+      settings: { foreground: "#3d3c34" },
     },
 ];
 
@@ -216,7 +216,7 @@ const lightTheme: ThemeRegistrationRaw = {
   settings: lightTokenColors,
   colors: {
     "editor.background": "#f5f5f1",
-    "editor.foreground": "#49483e",
+    "editor.foreground": "#3d3c34",
   },
   tokenColors: lightTokenColors,
 };

@@ -63,9 +63,18 @@ function GlobalStyles() {
       .custom-scroll::-webkit-scrollbar-thumb:hover {
         background: #75715e;
       }
+      .light-theme .custom-scroll::-webkit-scrollbar-thumb {
+        background: #c0bfb8;
+      }
+      .light-theme .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #a6a59e;
+      }
       .custom-scroll {
         scrollbar-width: thin;
         scrollbar-color: #49483e transparent;
+      }
+      .light-theme .custom-scroll {
+        scrollbar-color: #c0bfb8 transparent;
       }
 
       .neon-select ::selection {
@@ -73,8 +82,8 @@ function GlobalStyles() {
         color: #66d9ef;
       }
       .light-theme .neon-select ::selection {
-        background: #2f9eb833;
-        color: #2f9eb8;
+        background: #217f9633;
+        color: #217f96;
       }
 
       @keyframes syntaxPulse {

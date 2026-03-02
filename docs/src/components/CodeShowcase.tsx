@@ -195,12 +195,12 @@ const mainGoStepDefs: Omit<Step, "color">[] = [
 /* Colors per step per file, indexed by theme */
 const gsxStepColors = {
   dark: ["#66d9ef", "#a6e22e", "#e6db74", "#ae81ff", "#f92672"],
-  light: ["#2f9eb8", "#638b0c", "#998a00", "#6e5dc6", "#d42568"],
+  light: ["#217f96", "#507009", "#7a6e00", "#6e5dc6", "#c01f5c"],
 };
 
 const mainGoStepColors = {
   dark: ["#66d9ef"],
-  light: ["#2f9eb8"],
+  light: ["#217f96"],
 };
 
 /* Per-file step config */
@@ -370,11 +370,11 @@ export default function CodeShowcase() {
   const gutterBorder = isDark
     ? "rgba(73,72,62,0.4)"
     : "rgba(216,216,208,0.6)";
-  const gutterText = isDark ? "#5c5c50" : "#b8b8ad";
+  const gutterText = isDark ? "#5c5c50" : "#9e9b8c";
   const titleBarBg = isDark ? "#1e1f1b" : "#ededea";
   const tabActiveBg = isDark ? "#23241e" : "#f5f5f1";
-  const tabActiveText = isDark ? "#f8f8f2" : "#49483e";
-  const tabInactiveText = isDark ? "#5c5c50" : "#a6a68a";
+  const tabActiveText = isDark ? "#f8f8f2" : "#3d3c34";
+  const tabInactiveText = isDark ? "#5c5c50" : "#767260";
   const dotColors = isDark
     ? ["#ff5f57", "#febc2e", "#28c840"]
     : ["#ff6159", "#ffbf2f", "#2bc840"];
