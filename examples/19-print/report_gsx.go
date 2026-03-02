@@ -56,51 +56,57 @@ func BuildReport(project string, status string, duration string, tests int, pass
 	var watchers []tui.Watcher
 
 	__tui_0 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_1 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		tui.WithPadding(1),
+		tui.WithWidthPercent(50.00),
 	)
-	__tui_1 := tui.New(
+	__tui_2 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
-	__tui_2 := tui.New(
+	__tui_3 := tui.New(
 		tui.WithText(project),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 	)
-	__tui_1.AddChild(__tui_2)
-	__tui_3 := tui.New(
+	__tui_2.AddChild(__tui_3)
+	__tui_4 := tui.New(
 		tui.WithText(status),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Green)),
 	)
-	__tui_1.AddChild(__tui_3)
-	__tui_0.AddChild(__tui_1)
-	__tui_4 := tui.New(
+	__tui_2.AddChild(__tui_4)
+	__tui_1.AddChild(__tui_2)
+	__tui_5 := tui.New(
 		tui.WithHR(),
 	)
-	__tui_0.AddChild(__tui_4)
-	__tui_5 := tui.New(
+	__tui_1.AddChild(__tui_5)
+	__tui_6 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(4),
 	)
-	__tui_6 := tui.New(
+	__tui_7 := tui.New(
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_7 := tui.New(tui.WithText("Duration:"))
+	__tui_8 := tui.New(tui.WithText("Duration:"))
+	__tui_7.AddChild(__tui_8)
+	__tui_9 := tui.New(tui.WithText(duration))
+	__tui_7.AddChild(__tui_9)
 	__tui_6.AddChild(__tui_7)
-	__tui_8 := tui.New(tui.WithText(duration))
-	__tui_6.AddChild(__tui_8)
-	__tui_5.AddChild(__tui_6)
-	__tui_9 := tui.New(
+	__tui_10 := tui.New(
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_10 := tui.New(tui.WithText("Tests:"))
-	__tui_9.AddChild(__tui_10)
-	__tui_11 := tui.New(tui.WithText(fmt.Sprintf("%d/%d passed", passed, tests)))
-	__tui_9.AddChild(__tui_11)
-	__tui_5.AddChild(__tui_9)
-	__tui_0.AddChild(__tui_5)
+	__tui_11 := tui.New(tui.WithText("Tests:"))
+	__tui_10.AddChild(__tui_11)
+	__tui_12 := tui.New(tui.WithText(fmt.Sprintf("%d/%d passed", passed, tests)))
+	__tui_10.AddChild(__tui_12)
+	__tui_6.AddChild(__tui_10)
+	__tui_1.AddChild(__tui_6)
+	__tui_0.AddChild(__tui_1)
 
 	__bindApp := func(app *tui.App) {
 	}

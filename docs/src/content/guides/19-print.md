@@ -45,7 +45,7 @@ func main() {
 }
 ```
 
-Run it and you get styled, bordered output printed to your terminal. The process exits immediately — no raw mode, no alternate screen, no event loop.
+Run it and you get styled, bordered output printed to your terminal. The process exits immediately. No raw mode, no alternate screen, no event loop.
 
 ## Width Control
 
@@ -101,5 +101,7 @@ app.Run()
 ```
 
 Both call the same generated functions. One prints and exits, the other runs an interactive loop.
+
+![Single-Frame Printing screenshot](/guides/19.png)
 
 **Cross-references**: [Testing Guide](testing), [Inline Mode Guide](inline-mode)
