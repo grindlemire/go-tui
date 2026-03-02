@@ -14,6 +14,5 @@ import tui "github.com/grindlemire/go-tui"
 //go:generate go run ../../cmd/tui generate report.gsx
 
 func main() {
-	view := BuildReport("myapp", "PASS", "2.3s", 42, 42)
-	tui.Print(view.Root)
+	tui.Print(BuildReport("myapp", "PASS", "2.3s", 42, 42))
 }

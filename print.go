@@ -21,15 +21,15 @@ func WithPrintWidth(w int) PrintOption {
 	}
 }
 
-// Print renders an element tree to stdout with ANSI styling.
+// Print renders a Viewable to stdout with ANSI styling.
 // Width is auto-detected from the terminal unless overridden with WithPrintWidth.
-func Print(el *Element, opts ...PrintOption) {
-	Fprint(os.Stdout, el, opts...)
+func Print(v Viewable, opts ...PrintOption) {
+	Fprint(os.Stdout, v, opts...)
 }
 
-// Sprint renders an element tree to a string with ANSI escape codes.
+// Sprint renders a Viewable to a string with ANSI escape codes.
 // Width is auto-detected from the terminal unless overridden with WithPrintWidth.
-func Sprint(el *Element, opts ...PrintOption) string {
+func Sprint(v Viewable, opts ...PrintOption) string {
 	cfg := printConfig{}
 	for _, o := range opts {
 		o(&cfg)
@@ -45,6 +45,7 @@ func Sprint(el *Element, opts ...PrintOption) string {
 		}
 	}
 
+	el := v.GetRoot()
 	caps := DetectCapabilities()
 	buf, height := renderElementToBuffer(el, width, caps)
 	if height == 0 {
@@ -62,10 +63,10 @@ func Sprint(el *Element, opts ...PrintOption) string {
 	return sb.String()
 }
 
-// Fprint renders an element tree to the given writer with ANSI styling.
+// Fprint renders a Viewable to the given writer with ANSI styling.
 // Width is auto-detected from the terminal unless overridden with WithPrintWidth.
-func Fprint(w io.Writer, el *Element, opts ...PrintOption) {
-	s := Sprint(el, opts...)
+func Fprint(w io.Writer, v Viewable, opts ...PrintOption) {
+	s := Sprint(v, opts...)
 	if s != "" {
 		io.WriteString(w, s)
 		io.WriteString(w, "\n")
