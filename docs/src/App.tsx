@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, createContext, useContext } f
 import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
 import { tailwindClasses } from "./content/projectInfo.ts";
+import { VERSION } from "./version.ts";
 import { loadGuide, loadReference, loadLLMDoc } from "./lib/markdown.ts";
 import Markdown from "./components/Markdown.tsx";
 import TableOfContents from "./components/TableOfContents.tsx";
@@ -307,7 +308,7 @@ function Nav() {
               background: `${t.secondary}0a`,
               border: `1px solid ${t.secondary}22`,
             }}
-            title="v0.1.0 — view on pkg.go.dev"
+            title={`v${VERSION} — view on pkg.go.dev`}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = `${t.secondary}55`;
               e.currentTarget.style.background = `${t.secondary}14`;
@@ -317,7 +318,7 @@ function Nav() {
               e.currentTarget.style.background = `${t.secondary}0a`;
             }}
           >
-            v0.1.0
+            v{VERSION}
           </a>
 
           <a
@@ -466,7 +467,7 @@ function Nav() {
                 border: `1px solid ${t.secondary}22`,
               }}
             >
-              v0.1.0
+              v{VERSION}
             </span>
             pkg.go.dev
           </a>
