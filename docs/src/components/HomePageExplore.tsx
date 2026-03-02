@@ -136,14 +136,14 @@ function ComparisonDetailPanel({ feature, expanded }: { feature: ComparisonFeatu
   const t = palette[theme];
   return (
     <div style={{ maxHeight: expanded ? 300 : 0, opacity: expanded ? 1 : 0, overflow: "hidden", transition: "max-height 0.3s ease, opacity 0.2s ease" }}>
-      <div className="grid gap-0" style={{ gridTemplateColumns: "140px repeat(4, 1fr)", background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.01)", borderTop: `1px solid ${t.border}` }}>
+      <div className="grid gap-0" style={{ gridTemplateColumns: "140px repeat(4, minmax(0, 1fr))", background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.01)", borderTop: `1px solid ${t.border}` }}>
         <div className="px-4 py-3" />
-        {comparisonLibraries.map((lib) => {
+        {comparisonLibraries.map((lib, colIdx) => {
           const val = feature.values[lib];
           const isGoTui = lib === "go-tui";
           return (
-            <div key={lib} className="px-4 py-3" style={{ borderLeft: `1px solid ${t.border}`, background: isGoTui ? (theme === "dark" ? `${t.accent}0a` : `${t.accent}06`) : "transparent" }}>
-              <p className="text-[11px] leading-[1.6] m-0" style={{ color: t.textDim, fontFamily: "'IBM Plex Sans', sans-serif" }}>{val.detail}</p>
+            <div key={lib} className="px-4 py-3 min-w-0" style={{ borderLeft: isGoTui ? `1px solid ${t.accent}30` : `1px solid ${t.border}`, borderRight: isGoTui && colIdx < comparisonLibraries.length - 1 ? `1px solid ${t.accent}30` : undefined, background: isGoTui ? (theme === "dark" ? `${t.accent}14` : `${t.accent}0c`) : "transparent" }}>
+              <p className="text-[11px] leading-[1.6] m-0" style={{ color: t.textDim, fontFamily: "'IBM Plex Sans', sans-serif", overflowWrap: "break-word" }}>{val.detail}</p>
             </div>
           );
         })}
