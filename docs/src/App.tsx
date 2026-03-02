@@ -62,6 +62,10 @@ function GlobalStyles() {
       .custom-scroll::-webkit-scrollbar-thumb:hover {
         background: #75715e;
       }
+      .custom-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #49483e transparent;
+      }
 
       .neon-select ::selection {
         background: #66d9ef33;

@@ -183,6 +183,10 @@ The `tui lsp` language server works with any editor that speaks JSON-RPC over st
 
 Guides, syntax reference, and API docs: **[go-tui.dev](https://go-tui.dev)**
 
+## Why are there so many files?
+
+I wanted the imports to all be at the root so there is only a single package for the user to import and worry about (rather than an elements, styles, layout, etc.). Go Unfortunately doesn't have any indirection semantics for imports so I had to put a bunch of files in the root.
+
 ## License
 
 MIT
