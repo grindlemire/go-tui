@@ -2,7 +2,7 @@
 
 ## Overview
 
-Not every program needs an interactive event loop. Sometimes you want to render a styled table, a progress summary, or a formatted report once and exit. go-tui's `Print`, `Sprint`, and `Fprint` functions do exactly that: take a `Viewable`, run the flexbox layout engine, and emit ANSI-styled text to a writer. Same `.gsx` components, no `App` required.
+Not every program needs an interactive event loop. Sometimes you want to render a styled table, a progress summary, or a formatted report once and exit. go-tui's `Print`, `Sprint`, and `Fprint` functions do exactly that: take a `Viewable`, run the flexbox layout engine, and emit ANSI-styled text to a writer. Same `.gsx` components you'd use in a full app.
 
 ## Quick Start
 
@@ -50,7 +50,7 @@ func main() {
 }
 ```
 
-Run it and you get styled, bordered output printed to your terminal. The process exits immediately. No raw mode, no alternate screen, no event loop.
+Run it and you get styled, bordered output printed to your terminal. The process exits immediately, just like any other CLI command.
 
 ## Width Control
 
