@@ -1,6 +1,6 @@
 {
-  "name": "gsx-language",
-  "displayName": "GSX Language Support",
+  "name": "go-tui",
+  "displayName": "go-tui",
   "description": "Syntax highlighting and LSP support for .gsx files (go-tui DSL)",
   "version": "0.1.0",
   "publisher": "grindlemire",
