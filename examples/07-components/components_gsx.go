@@ -336,55 +336,55 @@ func OverviewTab() *OverviewTabView {
 	watchers = append(watchers, __tui_6.GetWatchers()...)
 
 	__bindApp := func(app *tui.App) {
-		if binder, ok := interface{}(__tui_3).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_3).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_4).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_4).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_5).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_5).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_1).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_1).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_8).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_8).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_9).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_9).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_10).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_10).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_6).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_6).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
 	}
 
 	__unbindApp := func() {
-		if unbinder, ok := interface{}(__tui_3).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_3).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_4).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_4).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_5).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_5).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_1).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_1).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_8).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_8).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_9).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_9).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_10).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_10).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_6).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_6).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
 	}
@@ -477,55 +477,55 @@ func MetricsTab() *MetricsTabView {
 	watchers = append(watchers, __tui_6.GetWatchers()...)
 
 	__bindApp := func(app *tui.App) {
-		if binder, ok := interface{}(__tui_3).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_3).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_4).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_4).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_5).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_5).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_1).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_1).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_8).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_8).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_9).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_9).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_10).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_10).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_6).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_6).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
 	}
 
 	__unbindApp := func() {
-		if unbinder, ok := interface{}(__tui_3).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_3).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_4).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_4).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_5).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_5).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_1).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_1).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_8).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_8).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_9).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_9).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_10).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_10).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_6).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_6).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
 	}
@@ -618,55 +618,55 @@ func LogsTab() *LogsTabView {
 	watchers = append(watchers, __tui_6.GetWatchers()...)
 
 	__bindApp := func(app *tui.App) {
-		if binder, ok := interface{}(__tui_3).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_3).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_4).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_4).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_5).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_5).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_1).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_1).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_8).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_8).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_9).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_9).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_10).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_10).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
-		if binder, ok := interface{}(__tui_6).(tui.AppBinder); ok {
+		if binder, ok := any(__tui_6).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
 	}
 
 	__unbindApp := func() {
-		if unbinder, ok := interface{}(__tui_3).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_3).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_4).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_4).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_5).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_5).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_1).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_1).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_8).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_8).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_9).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_9).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_10).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_10).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
-		if unbinder, ok := interface{}(__tui_6).(tui.AppUnbinder); ok {
+		if unbinder, ok := any(__tui_6).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}
 	}
