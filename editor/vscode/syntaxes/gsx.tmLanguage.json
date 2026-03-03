@@ -9,10 +9,10 @@
     { "include": "#component-declaration" },
     { "include": "#go-declaration" },
     { "include": "#function-declaration" },
+    { "include": "#go-expression-block" },
     { "include": "#control-keywords" },
     { "include": "#component-call" },
     { "include": "#element" },
-    { "include": "#go-expression-block" },
     { "include": "#strings" }
   ],
   "repository": {
