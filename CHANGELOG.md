@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/grindlemire/go-tui/compare/v0.1.0...v0.1.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* update README badges, examples, and VS Code extension docs ([8c9fdf4](https://github.com/grindlemire/go-tui/commit/8c9fdf444d7bdbcd29633b7b7c1aedb249cd62d5))
+
 ## 0.1.0 (2026-03-03)
 
 
