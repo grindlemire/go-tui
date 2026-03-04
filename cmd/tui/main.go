@@ -17,9 +17,20 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 )
 
 var version = "dev"
+
+func getVersion() string {
+	if version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
 
 const usage = `tui - DSL compiler for go-tui element trees
 
@@ -83,7 +94,7 @@ func main() {
 			os.Exit(1)
 		}
 	case "version":
-		fmt.Printf("tui version %s\n", version)
+		fmt.Printf("tui version %s\n", getVersion())
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 	default:
