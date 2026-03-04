@@ -550,9 +550,31 @@ function ToolingSection() {
         <div className="h-px flex-1" style={{ background: theme === "dark" ? "linear-gradient(to right, #f9267218, transparent)" : `linear-gradient(to right, ${t.border}, transparent)` }} />
       </div>
       <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ color: t.heading }}>Built-in editor tooling</h2>
-      <p className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[600px]" style={{ color: t.textMuted }}>
+      <p className="text-[14px] sm:text-[15px] mb-4 max-w-[600px]" style={{ color: t.textMuted }}>
         Your editor knows .gsx. Completions, diagnostics, and go-to-definition work out of the box.
       </p>
+      <div className="flex flex-wrap items-center gap-3 mb-8 sm:mb-10 font-['Fira_Code',monospace] text-[12px]">
+        <a
+          href="https://marketplace.visualstudio.com/items?itemName=grindlemire.go-tui"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150"
+          style={{ color: t.accent, background: `${t.accent}10`, border: `1px solid ${t.accent}25` }}
+        >
+          VS Code Marketplace
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.6 }}><path d="M3 1h6v6M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </a>
+        <a
+          href="https://open-vsx.org/extension/grindlemire/go-tui"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-150"
+          style={{ color: t.secondary, background: `${t.secondary}10`, border: `1px solid ${t.secondary}25` }}
+        >
+          Open VSX
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.6 }}><path d="M3 1h6v6M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </a>
+      </div>
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-5 sm:gap-8 items-stretch">
         <EditorSimulation

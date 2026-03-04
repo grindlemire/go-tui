@@ -135,17 +135,12 @@ The `tui lsp` command provides a Language Server Protocol server. Here's how to 
 
 ### VS Code
 
-Create a `.vscode/settings.json` in your project (or add to your user settings):
+Install the official go-tui extension, which bundles the LSP client, syntax highlighting, and file associations:
 
-```json
-{
-    "files.associations": {
-        "*.gsx": "go"
-    }
-}
-```
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=grindlemire.go-tui)
+- [Open VSX](https://open-vsx.org/extension/grindlemire/go-tui) (for VS Code forks like Cursor)
 
-For full LSP support, install a generic LSP client extension and configure it to run `tui lsp` for `.gsx` files.
+The extension automatically runs `tui lsp` for `.gsx` files. No manual configuration needed.
 
 ### Neovim
 
