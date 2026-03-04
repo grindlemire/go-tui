@@ -311,10 +311,10 @@ templ List(items []string) {
     </div>
 }
 
-// Local bindings
+// Local bindings (element references)
 templ Counter(count int) {
-    @let label = fmt.Sprintf("Count: %d", count)
-    <span>{label}</span>
+    @let label = <span class="font-bold">{fmt.Sprintf("Count: %d", count)}</span>
+    <div>{label}</div>
 }
 
 // Component calls
