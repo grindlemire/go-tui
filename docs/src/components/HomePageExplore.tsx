@@ -177,7 +177,7 @@ function ComparisonSection() {
       <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ color: t.heading }}>Go TUI libraries</h2>
       <p className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[640px]" style={{ color: t.textMuted }}>
         Different trade-offs, side by side.{" "}
-        <span className="font-['Fira_Code',monospace] text-[11px]" style={{ color: t.textDim }}>Click a row to expand.</span>
+        <span className="hidden lg:inline font-['Fira_Code',monospace] text-[11px]" style={{ color: t.textDim }}>Click a row to expand.</span>
       </p>
 
       <div className="hidden lg:block overflow-x-auto custom-scroll">

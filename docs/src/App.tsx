@@ -1244,7 +1244,7 @@ function ComparisonSection() {
       >
         Different trade-offs, side by side.{" "}
         <span
-          className="font-['Fira_Code',monospace] text-[11px]"
+          className="hidden lg:inline font-['Fira_Code',monospace] text-[11px]"
           style={{ color: t.textDim }}
         >
           Click a row to expand.
