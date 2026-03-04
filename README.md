@@ -11,6 +11,12 @@
 </p>
 
 <p align="center">
+  <a href="https://pkg.go.dev/github.com/grindlemire/go-tui"><img src="https://pkg.go.dev/badge/github.com/grindlemire/go-tui.svg" alt="Go Reference"></a>
+  <a href="https://github.com/grindlemire/go-tui/actions/workflows/ci.yml"><img src="https://github.com/grindlemire/go-tui/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/grindlemire/go-tui/blob/main/LICENSE"><img src="https://img.shields.io/github/license/grindlemire/go-tui" alt="License"></a>
+</p>
+
+<p align="center">
   Define terminal interfaces in <code>.gsx</code> templates with HTML-like syntax and Tailwind-style classes. <br>
   The compiler generates type-safe Go. The runtime handles flexbox layout, reactive state, and rendering.
 </p>
@@ -129,7 +135,7 @@ The `.gsx` compiler runs at build time and produces regular Go files. At runtime
 
 ## Examples
 
-The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01–18 accompany the [guides](https://go-tui.dev).
+The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01 through 20 accompany the [guides](https://go-tui.dev).
 
 | Example | What it covers |
 |---------|----------------|
@@ -151,6 +157,8 @@ The [`examples/`](examples/) directory has runnable programs for each feature ar
 | [16-streaming](examples/16-streaming) | Auto-scroll, stick-to-bottom, streaming data |
 | [17-inline-streaming](examples/17-inline-streaming) | Inline mode with streaming content |
 | [18-dashboard](examples/18-dashboard) | Metrics, sparklines, scrollable event log |
+| [19-print](examples/19-print) | One-shot rendering, print and exit |
+| [20-animation](examples/20-animation) | Frame-cycling spinners, eased progress, color wave, pulsing border |
 
 See also [`ai-chat`](examples/ai-chat) and [`docs-example`](examples/docs-example).
 
@@ -173,9 +181,9 @@ tui version                  Print version
 
 ## Editor support
 
-**VS Code** -- Install the extension from [`editor/vscode/`](editor/vscode/). Syntax highlighting, completion, hover, go-to-definition, diagnostics, and formatting.
+**VS Code**: Install the extension from [`editor/vscode/`](editor/vscode/). Syntax highlighting, completion, hover, go-to-definition, diagnostics, and formatting.
 
-**Neovim / Helix** -- Tree-sitter grammar at [`editor/tree-sitter-gsx/`](editor/tree-sitter-gsx/).
+**Neovim / Helix**: Tree-sitter grammar at [`editor/tree-sitter-gsx/`](editor/tree-sitter-gsx/).
 
 The `tui lsp` language server works with any editor that speaks JSON-RPC over stdio. It proxies Go-specific features through gopls with `.gsx` ↔ `.go` source mapping.
 

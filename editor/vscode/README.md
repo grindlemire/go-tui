@@ -5,12 +5,12 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
 ## Features
 
 - **Syntax Highlighting**: Full highlighting support for the GSX DSL
-  - Component declarations: `templ Name(params) { ... }`
+  - Component declarations: `templ Name(params) { ... }` and `templ (c *Type) Render() { ... }`
   - Keywords: `@for`, `@if`, `@else`, `@let`
-  - Element tags: `<div>`, `<span>`, `<p>`, `<button>`, `<input>`, etc.
-  - Named references: `#RefName` on elements
-  - Reactive state: `tui.NewState()`, `.Get()`, `.Set()`
-  - Event handlers: `onClick`, `onFocus`, `onBlur`, `onKeyPress`
+  - Element tags: `<div>`, `<span>`, `<p>`, `<button>`, `<input>`, `<textarea>`, `<table>`, `<progress>`, etc.
+  - Ref bindings: `ref={myRef}` on elements
+  - Reactive state: `tui.NewState()`, `.Get()`, `.Set()`, `.Update()`
+  - Event attributes: `onFocus`, `onBlur`
   - Attributes with string, number, and expression values
   - Go expressions inside `{}`
   - Comments: `//` and `/* */`
@@ -25,7 +25,7 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
   - Real-time diagnostics
   - Go-to-definition for components, functions, refs, and state
   - Hover documentation for elements, attributes, keywords, and state
-  - Auto-completion for elements, attributes, tailwind classes, and Go expressions
+  - Auto-completion for elements, attributes, Tailwind classes, and Go expressions
   - Find references across workspace
   - Document and workspace symbols
   - Semantic token highlighting
@@ -79,19 +79,43 @@ import (
     tui "github.com/grindlemire/go-tui"
 )
 
-templ Counter() {
-    count := tui.NewState(0)
-    <div class="flex-col gap-2 p-2 border-rounded">
-        <span class="font-bold">{fmt.Sprintf("Count: %d", count.Get())}</span>
-        <button onClick={increment(count)}>+</button>
-    </div>
+type counter struct {
+    count  *tui.State[int]
+    incBtn *tui.Ref
+    decBtn *tui.Ref
 }
 
-templ Dashboard(items []string) {
-    <div #Main class="flex-col gap-1">
-        @for _, item := range items {
-            <span #Items>{item}</span>
-        }
+func Counter() *counter {
+    return &counter{
+        count:  tui.NewState(0),
+        incBtn: tui.NewRef(),
+        decBtn: tui.NewRef(),
+    }
+}
+
+func (c *counter) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnRune('+', func(ke tui.KeyEvent) { c.count.Update(func(v int) int { return v + 1 }) }),
+        tui.OnRune('-', func(ke tui.KeyEvent) { c.count.Update(func(v int) int { return v - 1 }) }),
+        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+    }
+}
+
+func (c *counter) HandleMouse(me tui.MouseEvent) bool {
+    return tui.HandleClicks(me,
+        tui.Click(c.incBtn, func() { c.count.Update(func(v int) int { return v + 1 }) }),
+        tui.Click(c.decBtn, func() { c.count.Update(func(v int) int { return v - 1 }) }),
+    )
+}
+
+templ (c *counter) Render() {
+    <div class="flex-col gap-2 p-2 border-rounded items-center">
+        <span class="font-bold">{fmt.Sprintf("Count: %d", c.count.Get())}</span>
+        <div class="flex gap-2">
+            <button ref={c.decBtn} class="px-1">{"-"}</button>
+            <button ref={c.incBtn} class="px-1">{"+"}</button>
+        </div>
+        <span class="font-dim">+/- or click buttons, q to quit</span>
     </div>
 }
 ```
@@ -101,15 +125,16 @@ templ Dashboard(items []string) {
 | Construct | Example |
 |-----------|---------|
 | Component | `templ Name(params) { ... }` |
+| Method component | `templ (c *Type) Render() { ... }` |
 | For loop | `@for i, v := range items { ... }` |
 | If/Else | `@if condition { ... } @else { ... }` |
-| Let binding | `@let x = <element>` |
+| Let binding | `@let label = <span>text</span>` |
 | Component call | `@ComponentName(args)` |
-| Element | `<div attr={value}>children</div>` |
-| Named ref | `<div #Header>...</div>` |
-| State | `count := tui.NewState(0)` |
-| State access | `count.Get()`, `count.Set(v)` |
-| Event handler | `onClick={handler}`, `onFocus={fn}` |
+| Element | `<div class="flex-col gap-1">children</div>` |
+| Self-closing element | `<hr />`, `<br />`, `<input />`, `<progress />` |
+| Ref binding | `<button ref={myRef}>text</button>` |
+| State access | `c.count.Get()`, `c.count.Set(v)`, `c.count.Update(fn)` |
+| Event attributes | `onFocus={handler}`, `onBlur={handler}` |
 | Go expression | `{fmt.Sprintf(...)}` |
 | Helper function | `func helper(s string) string { ... }` |
 
@@ -131,4 +156,4 @@ Contributions are welcome! Please see the [go-tui repository](https://github.com
 
 ## License
 
-MIT License - see the [LICENSE](https://github.com/grindlemire/go-tui/blob/main/LICENSE) file for details.
+MIT License. See the [LICENSE](https://github.com/grindlemire/go-tui/blob/main/LICENSE) file for details.
