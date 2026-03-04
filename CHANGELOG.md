@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/grindlemire/go-tui/compare/v0.1.1...v0.1.2) (2026-03-04)
+
+
+### Bug Fixes
+
+* use runtime/debug to report version from go install ([bd586f8](https://github.com/grindlemire/go-tui/commit/bd586f84e8c465e20f4d36b980721d077c27ec4b))
+
 ## [0.1.1](https://github.com/grindlemire/go-tui/compare/v0.1.0...v0.1.1) (2026-03-04)
 
 
