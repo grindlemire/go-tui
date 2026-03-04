@@ -32,7 +32,7 @@ export const projectInfo = {
     {
       title: "Editor Support",
       description:
-        "Language server, formatter, and tree-sitter grammar for syntax highlighting, completions, go-to-definition, and more.",
+        "VS Code extension with language server, formatter, and tree-sitter grammar. Syntax highlighting, completions, go-to-definition, hover docs, and diagnostics out of the box.",
       icon: "edit",
     },
     {

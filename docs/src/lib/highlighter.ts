@@ -3,6 +3,7 @@ import type { ThemeRegistrationRaw, LanguageInput } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 import goLang from "@shikijs/langs/go";
 import shellLang from "@shikijs/langs/shellscript";
+import luaLang from "@shikijs/langs/lua";
 import gsxGrammar from "../../../editor/vscode/syntaxes/gsx.tmLanguage.json";
 
 const darkTokenColors = [
@@ -237,6 +238,7 @@ export async function getHighlighter(): Promise<HighlighterCore> {
       } as unknown as LanguageInput,
       goLang,
       shellLang,
+      luaLang,
     ],
     engine: createOnigurumaEngine(import("shiki/wasm")),
   }).then((h) => {

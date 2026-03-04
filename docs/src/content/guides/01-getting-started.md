@@ -20,6 +20,15 @@ go install github.com/grindlemire/go-tui/cmd/tui@latest
 
 Make sure `$GOPATH/bin` (or `$GOBIN`) is in your `PATH` so the `tui` command is available.
 
+## Editor Setup
+
+For VS Code (or compatible editors like Cursor), install the official extension. It provides LSP support for `.gsx` files:
+
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=grindlemire.go-tui)
+- [Open VSX](https://open-vsx.org/extension/grindlemire/go-tui)
+
+For Neovim and other editors, see the [Editor Integration](../reference/cli#editor-integration) section in the CLI reference.
+
 ## Your First App
 
 This walks through building a "Hello, Terminal!" app from scratch.
