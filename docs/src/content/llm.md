@@ -1,7 +1,7 @@
 # go-tui — Complete Reference for LLMs
 
 > Declarative terminal UI framework for Go with templ-like syntax and flexbox layout.
-> Pure Go (no CGO), minimal dependencies, generates type-safe code from `.gsx` templates.
+> Pure Go, minimal dependencies, generates type-safe code from `.gsx` templates.
 
 ## Installation
 

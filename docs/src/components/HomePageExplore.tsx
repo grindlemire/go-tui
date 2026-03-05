@@ -58,7 +58,7 @@ function useValueProps() {
     {
       tag: "layout",
       label: "Pure Go flexbox",
-      summary: "Full layout engine, zero CGO",
+      summary: "Full layout engine, pure Go",
       detail: "Row, column, justify, align, gap, padding, margin, min/max constraints, percentage and auto sizing. Cross-compiles to any target.",
       color: t.accent,
     },

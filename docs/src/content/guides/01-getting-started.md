@@ -2,7 +2,7 @@
 
 ## What is go-tui
 
-go-tui is a declarative terminal UI framework for Go. You write UI layouts in `.gsx` files using a templ-like syntax with HTML-style elements, and the framework handles flexbox layout, rendering, and terminal input. It's pure Go (no CGO), has minimal external dependencies, and generates type-safe code from your templates.
+go-tui is a declarative terminal UI framework for Go. You write UI layouts in `.gsx` files using a templ-like syntax with HTML-style elements, and the framework handles flexbox layout, rendering, and terminal input. It's pure Go with minimal external dependencies and generates type-safe code from your templates.
 
 ## Installation
 
