@@ -870,30 +870,35 @@ function Footer() {
       className="mt-20"
       style={{ borderTop: `1px solid ${t.border}` }}
     >
-      <div className="py-6 flex items-center justify-center gap-4 font-['Fira_Code',monospace] text-[11px]">
-        <a
-          href="https://github.com/grindlemire/go-tui"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="transition-colors duration-200"
-          style={{ color: t.textDim }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = t.textDim)}
-        >
-          GitHub
-        </a>
-        <span style={{ color: t.border }}>·</span>
-        <a
-          href="https://pkg.go.dev/github.com/grindlemire/go-tui"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="transition-colors duration-200"
-          style={{ color: t.textDim }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = t.textDim)}
-        >
-          pkg.go.dev
-        </a>
+      <div className="py-6 flex flex-col items-center justify-center gap-2 font-['Fira_Code',monospace] text-[11px]">
+        <div className="flex items-center gap-4">
+          <a
+            href="https://github.com/grindlemire/go-tui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors duration-200"
+            style={{ color: t.textDim }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = t.textDim)}
+          >
+            GitHub
+          </a>
+          <span style={{ color: t.border }}>·</span>
+          <a
+            href="https://pkg.go.dev/github.com/grindlemire/go-tui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors duration-200"
+            style={{ color: t.textDim }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = t.textDim)}
+          >
+            pkg.go.dev
+          </a>
+        </div>
+        <span style={{ color: t.textDim }}>
+          &copy; {new Date().getFullYear()} Joel Holsteen. All rights reserved.
+        </span>
       </div>
     </footer>
   );
@@ -2576,6 +2581,7 @@ export default function Design2() {
           <Route path="/guide/:slug/raw" element={<RawGuidePage />} />
           <Route path="/reference" element={<ReferenceRedirect />} />
           <Route path="/reference/:slug" element={<ReferencePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </SearchContext.Provider>
     </ThemeContext.Provider>
