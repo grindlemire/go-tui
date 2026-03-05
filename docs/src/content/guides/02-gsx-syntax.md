@@ -247,7 +247,7 @@ A bare attribute name is shorthand for `true`:
 
 ```gsx
 <button disabled>Can't click</button>
-<!-- equivalent to: -->
+// equivalent to:
 <button disabled={true}>Can't click</button>
 ```
 
