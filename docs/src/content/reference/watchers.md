@@ -125,6 +125,36 @@ func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct
 
 Launches the goroutine that reads from the channel. Called automatically by the framework. The goroutine exits when either the channel closes or `stopCh` is closed.
 
+## OnChange
+
+```go
+func OnChange[T any](state *State[T], handler func(T)) Watcher
+```
+
+Creates a watcher that calls `handler` when a `State[T]` value changes. The handler also fires once at startup with the current value.
+
+Unlike `OnTimer` and `Watch`, this watcher doesn't spawn a goroutine for its main work. It uses `State.Bind` internally, so the handler runs synchronously during `State.Set()`. A small goroutine waits for the stop signal and removes the binding on shutdown.
+
+```go
+func (w *myApp) Watchers() []tui.Watcher {
+    return []tui.Watcher{
+        tui.OnChange(w.selectedTab, func(tab string) {
+            w.contentArea.ScrollTo(0)
+        }),
+    }
+}
+```
+
+Use `OnChange` for side effects that should happen in response to state changes but don't belong in `Render()`: scrolling, logging, triggering secondary state updates, or kicking off background work via channels.
+
+### Start
+
+```go
+func (w *stateWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{})
+```
+
+Called automatically by the framework. Fires the handler once with the current state value, binds to future changes, and launches a goroutine that waits for `stopCh` to close before unbinding.
+
 ## WatcherProvider Interface
 
 ```go
@@ -212,6 +242,8 @@ Watcher handlers run on the main event loop. This makes them safe for state muta
 - Call `state.Set()` and `state.Update()` freely inside handlers.
 - Access element properties without locks.
 - Emit events via `Events[T].Emit()`.
+
+Note: `OnChange` handlers run synchronously during `State.Set()` rather than being queued through the event loop. Since `Set()` must be called from the main loop, the same safety guarantees apply.
 
 If you have a background goroutine that is *not* a watcher, use `app.QueueUpdate` to safely run code on the event loop:
 
