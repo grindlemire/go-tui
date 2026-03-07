@@ -55,10 +55,11 @@ var globalBindingID atomic.Uint64
 // State wraps a value and notifies bindings when it changes.
 // State is generic over any type T.
 type State[T any] struct {
-	mu       sync.RWMutex
-	value    T
-	bindings []*binding[T]
-	app      *App
+	mu        sync.RWMutex
+	value     T
+	bindings  []*binding[T]
+	app       *App
+	notifying bool // true while executing bindings, prevents re-entrant cycles
 }
 
 // binding represents a registered callback that fires when state changes.
@@ -143,20 +144,39 @@ func (s *State[T]) Set(v T) {
 	}
 	// Replace bindings slice with only active bindings (cleanup)
 	s.bindings = activeBindings
+	reentrant := s.notifying
 	app := s.app
 	s.mu.Unlock()
 
 	// Construction-time Set before app binding: keep value + bindings behavior,
 	// but skip dirty marking and batching because no app context exists yet.
 	if app == nil {
+		if reentrant {
+			return
+		}
+		s.mu.Lock()
+		s.notifying = true
+		s.mu.Unlock()
 		for _, b := range activeBindings {
 			b.fn(v)
 		}
+		s.mu.Lock()
+		s.notifying = false
+		s.mu.Unlock()
 		return
 	}
 
 	// Mark dirty on the owning app.
 	app.MarkDirty()
+
+	// If this state is already notifying its bindings, a binding callback
+	// has triggered a Set on this same state (circular dependency). The value
+	// is updated and dirty is marked, but we skip firing bindings again to
+	// prevent a stack overflow. Render() will read the correct final value.
+	if reentrant {
+		debug.Log("State.Set: skipping bindings (re-entrant)")
+		return
+	}
 
 	// Check if we're in a batch
 	batch := &app.batch
@@ -185,9 +205,15 @@ func (s *State[T]) Set(v T) {
 	// Execute bindings immediately if not batching
 	if !isBatching {
 		debug.Log("State.Set: executing %d bindings immediately", len(activeBindings))
+		s.mu.Lock()
+		s.notifying = true
+		s.mu.Unlock()
 		for _, b := range activeBindings {
 			b.fn(v)
 		}
+		s.mu.Lock()
+		s.notifying = false
+		s.mu.Unlock()
 	} else {
 		debug.Log("State.Set: deferred %d bindings (batching)", len(activeBindings))
 	}
