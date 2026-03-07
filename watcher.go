@@ -67,6 +67,41 @@ func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct
 	}()
 }
 
+// stateWatcher watches a State[T] and calls handler when the value changes.
+// The handler also fires once at start time with the current value.
+type stateWatcher[T any] struct {
+	state   *State[T]
+	handler func(T)
+}
+
+// OnChange creates a watcher that calls handler when the state value changes.
+// The handler is also called once at start time with the current value.
+// The handler runs on the main event loop.
+//
+// Example:
+//
+//	tui.OnChange(c.selectedTab, func(tab string) {
+//	    c.contentArea.ScrollTo(0)
+//	})
+func OnChange[T any](state *State[T], handler func(T)) Watcher {
+	return &stateWatcher[T]{state: state, handler: handler}
+}
+
+// Start the watcher.
+func (w *stateWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
+	// Fire once with the current value.
+	w.handler(w.state.Get())
+
+	unbind := w.state.Bind(func(v T) {
+		w.handler(v)
+	})
+
+	go func() {
+		<-stopCh
+		unbind()
+	}()
+}
+
 // timerWatcher fires at a regular interval.
 type timerWatcher struct {
 	interval time.Duration
