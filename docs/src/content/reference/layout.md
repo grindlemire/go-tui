@@ -104,6 +104,46 @@ tui.New(tui.WithAlignSelf(tui.AlignCenter)) // this child centers itself
 
 In `.gsx`, use `self-start`, `self-center`, `self-end`, or `self-stretch`.
 
+## FlexWrap
+
+`FlexWrap` controls whether children wrap onto new lines when they overflow the main axis. It is a `uint8` enum.
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `WrapNone` | `0` | Children stay on one line (default) |
+| `Wrap` | `1` | Children wrap to new lines when they overflow |
+| `WrapReverse` | `2` | Children wrap in reverse order |
+
+```go
+tui.New(tui.WithFlexWrap(tui.Wrap)) // enable wrapping
+```
+
+In `.gsx`, use `flex-wrap`, `flex-wrap-reverse`, or `flex-nowrap`.
+
+With wrapping enabled, each line handles grow, shrink, and justify separately.
+
+## AlignContent
+
+`AlignContent` controls how wrapped lines are spaced along the cross axis. It requires `FlexWrap` to be enabled and at least two lines to have any effect. It is a `uint8` enum.
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `ContentStart` | `0` | Pack lines at the start (default) |
+| `ContentEnd` | `1` | Pack lines at the end |
+| `ContentCenter` | `2` | Center lines |
+| `ContentStretch` | `3` | Stretch lines to fill the cross axis |
+| `ContentSpaceBetween` | `4` | First line at start, last at end, even spacing between |
+| `ContentSpaceAround` | `5` | Equal spacing around each line |
+
+```go
+tui.New(
+    tui.WithFlexWrap(tui.Wrap),
+    tui.WithAlignContent(tui.ContentCenter),
+)
+```
+
+In `.gsx`, use `content-start`, `content-end`, `content-center`, `content-stretch`, `content-between`, or `content-around`.
+
 ## Value
 
 `Value` represents a dimension that can be fixed, percentage-based, or automatic. The layout engine resolves values against available space during calculation.
@@ -216,7 +256,9 @@ type LayoutStyle struct {
     Direction      Direction
     JustifyContent Justify
     AlignItems     Align
-    Gap            int      // Space between children (main axis only)
+    Gap            int          // Space between children (main axis only)
+    FlexWrap       FlexWrap     // Whether children wrap to new lines
+    AlignContent   AlignContent // How wrapped lines are distributed on the cross axis
 
     // Flex item properties
     FlexGrow   float64      // How much to grow relative to siblings
@@ -248,6 +290,8 @@ Returns a `LayoutStyle` with the following defaults:
 | `Direction` | `Row` |
 | `JustifyContent` | `JustifyStart` |
 | `AlignItems` | `AlignStretch` |
+| `FlexWrap` | `WrapNone` |
+| `AlignContent` | `ContentStart` |
 | `FlexGrow` | `0` |
 | `FlexShrink` | `1.0` |
 | `AlignSelf` | `nil` (inherit from parent) |
@@ -560,13 +604,15 @@ During normal application use, the framework calls `Calculate` automatically bef
 
 ### How the Algorithm Works
 
-The layout engine implements CSS flexbox in six phases:
+The layout engine implements CSS flexbox in several phases:
 
 1. **Compute base sizes** -- Resolve each child's main-axis size from its style (fixed, percent, or intrinsic) and record its flex grow/shrink factor.
-2. **Distribute free space** -- If there's leftover space, grow children proportional to their `FlexGrow`. If children overflow, shrink them proportional to their `FlexShrink`.
-3. **Apply min/max constraints** -- Clamp each child's computed size to its min/max bounds. If clamping changes a child's size, redistribute the difference among remaining flexible children.
-4. **Position on main axis** -- Place children along the main axis using the parent's `JustifyContent` setting to compute offsets and spacing.
-5. **Cross-axis sizing and alignment** -- Compute each child's cross-axis size. Stretch children if `AlignItems` is `AlignStretch` (unless overridden by `AlignSelf`). Position using the alignment setting.
-6. **Recurse** -- Convert float positions to integer rects and recurse into each child's subtree.
+2. **Break into lines** -- If `FlexWrap` is enabled, split children into lines based on main-axis overflow. Each line runs phases 3 and 4 independently.
+3. **Distribute free space** -- If there's leftover space, grow children proportional to their `FlexGrow`. If children overflow, shrink them proportional to their `FlexShrink`.
+4. **Apply min/max constraints** -- Clamp each child's computed size to its min/max bounds. If clamping changes a child's size, redistribute the difference among remaining flexible children.
+5. **Position on main axis** -- Place children along the main axis using the parent's `JustifyContent` setting to compute offsets and spacing.
+6. **Distribute lines on cross axis** -- When wrapping produces multiple lines, use `AlignContent` to distribute them (start, end, center, stretch, space-between, space-around).
+7. **Cross-axis sizing and alignment** -- Compute each child's cross-axis size. Stretch children if `AlignItems` is `AlignStretch` (unless overridden by `AlignSelf`). Position using the alignment setting.
+8. **Recurse** -- Convert float positions to integer rects and recurse into each child's subtree.
 
 The engine uses Yoga-style float rounding (described in [LayoutResult](#layoutresult)) to avoid jitter during animations.

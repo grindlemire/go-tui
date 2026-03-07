@@ -1,34 +1,59 @@
 package main
 
-import tui "github.com/grindlemire/go-tui"
+import (
+	"fmt"
+	tui "github.com/grindlemire/go-tui"
+)
 
-type layoutApp struct{}
+type alignMode struct {
+	name    string
+	content tui.AlignContent
+}
+
+func alignModes() []alignMode {
+	return []alignMode{
+		{"content-start", tui.ContentStart},
+		{"content-end", tui.ContentEnd},
+		{"content-center", tui.ContentCenter},
+		{"content-stretch", tui.ContentStretch},
+		{"content-between", tui.ContentSpaceBetween},
+		{"content-around", tui.ContentSpaceAround},
+	}
+}
+
+func viewNames() []string {
+	return []string{"Dashboard", "Sidebar", "Centered Card", "Flex Wrap"}
+}
+
+type layoutApp struct {
+	viewIndex *tui.State[int]
+	modeIndex *tui.State[int]
+}
 
 func LayoutApp() *layoutApp {
-	return &layoutApp{}
+	return &layoutApp{
+		viewIndex: tui.NewState(0),
+		modeIndex: tui.NewState(0),
+	}
 }
 
 func (l *layoutApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+			l.viewIndex.Update(func(v int) int { return (v + 1) % len(viewNames()) })
+		}),
+		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) {
+			l.viewIndex.Update(func(v int) int { return (v - 1 + len(viewNames())) % len(viewNames()) })
+		}),
+		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) {
+			l.modeIndex.Update(func(v int) int { return (v + 1) % len(alignModes()) })
+		}),
+		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) {
+			l.modeIndex.Update(func(v int) int { return (v - 1 + len(alignModes())) % len(alignModes()) })
+		}),
 	}
-}
-
-// Full-screen app with header, content, and footer
-templ AppLayout() {
-	<div class="flex-col h-full">
-		<div class="border-single p-1">
-			<span class="font-bold text-cyan">My App</span>
-		</div>
-		<div class="flex-col grow p-1">
-			<span>Main content goes here.</span>
-			<span>This section grows to fill available space.</span>
-		</div>
-		<div class="border-single p-1">
-			<span class="font-dim">Press q to quit</span>
-		</div>
-	</div>
 }
 
 // Sidebar and main content
@@ -87,8 +112,58 @@ templ Dashboard() {
 	</div>
 }
 
+func wrapLabels() []string {
+	return []string{"Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"}
+}
+
+// Flex-wrap: items wrap to new lines when they overflow
+templ FlexWrapGrid(mode alignMode) {
+	<div class="flex-col h-full p-1">
+		<div class="flex flex-wrap gap-1 grow" alignContent={mode.content}>
+			@for _, label := range wrapLabels() {
+				<div class="border-rounded p-1 w-16 flex-col items-center shrink-0">
+					<span>{label}</span>
+				</div>
+			}
+		</div>
+		<div class="p-1">
+			<span class="font-dim">{fmt.Sprintf("align-content: %s  (←/→ to cycle)", mode.name)}</span>
+		</div>
+	</div>
+}
+
+templ ViewHeader(viewIndex int) {
+	<div class="flex gap-1 p-1 border-single">
+		@for i, name := range viewNames() {
+			@if i == viewIndex {
+				<span class="font-bold text-cyan">{fmt.Sprintf("[%s]", name)}</span>
+			} @else {
+				<span class="font-dim">{name}</span>
+			}
+		}
+	</div>
+}
+
+templ ViewFooter() {
+	<div class="p-1 border-single">
+		<span class="font-dim">{"tab/shift+tab: switch view | q: quit"}</span>
+	</div>
+}
+
 templ (l *layoutApp) Render() {
-	<div class="flex-col h-full w-full">
-		@Dashboard()
+	<div class="flex-col h-full w-full" deps={l.viewIndex, l.modeIndex}>
+		@ViewHeader(l.viewIndex.Get())
+		<div class="grow flex-col">
+			@if l.viewIndex.Get() == 0 {
+				@Dashboard()
+			} @else @if l.viewIndex.Get() == 1 {
+				@SidebarLayout()
+			} @else @if l.viewIndex.Get() == 2 {
+				@CenteredCard()
+			} @else {
+				@FlexWrapGrid(alignModes()[l.modeIndex.Get()])
+			}
+		</div>
+		@ViewFooter()
 	</div>
 }
