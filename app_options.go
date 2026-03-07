@@ -177,7 +177,7 @@ func WithInlineStartupMode(mode InlineStartupMode) AppOption {
 }
 
 // WithOnSuspend sets a callback that runs before the app suspends (Ctrl+Z).
-// Use this to save state, pause timers, or perform cleanup before the process stops.
+// Use this to save state or pause timers before the process stops.
 func WithOnSuspend(fn func()) AppOption {
 	return func(a *App) error {
 		a.onSuspend = fn
@@ -186,7 +186,7 @@ func WithOnSuspend(fn func()) AppOption {
 }
 
 // WithOnResume sets a callback that runs after the app resumes (fg).
-// Use this to restore state, restart timers, or refresh data after the process continues.
+// Use this to restart timers or refresh stale data.
 func WithOnResume(fn func()) AppOption {
 	return func(a *App) error {
 		a.onResume = fn
