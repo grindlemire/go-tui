@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.0](https://github.com/grindlemire/go-tui/compare/v0.1.2...v0.2.0) (2026-03-07)
+
+
+### Features
+
+* add default Ctrl+Z suspend fallback in key dispatch ([8f61d4e](https://github.com/grindlemire/go-tui/commit/8f61d4e161a5815f3ce7d267d20fb6be256eea65))
+* add FlexWrap and AlignContent types with public API and Tailwind classes ([28eb41f](https://github.com/grindlemire/go-tui/commit/28eb41fedb83b8ac7f53a72399b03fa31524a11f))
+* add no-op suspend stubs for Windows ([0484abf](https://github.com/grindlemire/go-tui/commit/0484abff025240f9190e50912fdc2912f07d2dcb))
+* add OnChange watcher for reactive state effects ([623b93f](https://github.com/grindlemire/go-tui/commit/623b93fbb7a0e21db4bbdfa8d5667dd8cdd5c652))
+* add OnKeyMod helper, fix flex-wrap align-content, update docs ([dbcce85](https://github.com/grindlemire/go-tui/commit/dbcce85edfed32c2780be63fd4de5d9a16f74c8b))
+* add onSuspend/onResume fields to App struct ([f8be019](https://github.com/grindlemire/go-tui/commit/f8be019ef4ece3f4f4cbebfda5ef30cd0cb765b8))
+* add WithOnSuspend and WithOnResume app options ([610b3ad](https://github.com/grindlemire/go-tui/commit/610b3ad76d69c927834eea455d42e4d541013ce1))
+* implement suspend/resume terminal state management ([699e343](https://github.com/grindlemire/go-tui/commit/699e3435a3880e77cc2e2e59ada4ca4d1fab415c))
+* **layout:** implement flex-wrap line breaking, per-line layout, and auto cross-axis sizing ([6932cd5](https://github.com/grindlemire/go-tui/commit/6932cd57dfd31eafa8b420655d05c5add0903ed3))
+* register SIGTSTP signal handler in app event loop ([8e7163e](https://github.com/grindlemire/go-tui/commit/8e7163ee52d6321c6a40cbf70244ead99e007d12))
+
+
+### Bug Fixes
+
+* bake inline widget to scrollback before suspend ([f076cb3](https://github.com/grindlemire/go-tui/commit/f076cb369e41b3a97cb06af234feb393951902dc))
+* clear widget area on inline suspend instead of baking duplicate ([a1ee2c2](https://github.com/grindlemire/go-tui/commit/a1ee2c247e50f6745f719aa72781195a2ec4df48))
+* handle inline mode suspend/resume without corrupting scrollback ([03c1aae](https://github.com/grindlemire/go-tui/commit/03c1aae3574974b5b3851c9a02f0a64705bea6a4))
+* prevent stack overflow from circular state dependencies ([f1c9ba5](https://github.com/grindlemire/go-tui/commit/f1c9ba58ec1e81b851f307319f6af8b83cbdc0b4))
+* re-register SIGTSTP signal handler after resume ([554fded](https://github.com/grindlemire/go-tui/commit/554fdedbad37f379f92da0547bb454d94c79ec6b))
+* replace sleep-based test sync with done channel, document FlexGrow heuristic ([dcc95f0](https://github.com/grindlemire/go-tui/commit/dcc95f05ad8d0aef43f5eac90b4b53af8debc1df))
+* resolve three suspend/resume issues ([7e5b061](https://github.com/grindlemire/go-tui/commit/7e5b0614c918c873187891d0433ddafe17800185))
+
 ## [0.1.2](https://github.com/grindlemire/go-tui/compare/v0.1.1...v0.1.2) (2026-03-04)
 
 
