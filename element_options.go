@@ -108,6 +108,21 @@ func WithGap(cells int) Option {
 	}
 }
 
+// WithFlexWrap sets whether flex items wrap to new lines when they overflow.
+func WithFlexWrap(w FlexWrap) Option {
+	return func(e *Element) {
+		e.style.FlexWrap = w
+	}
+}
+
+// WithAlignContent sets how flex lines are distributed along the cross axis.
+// Only applies when FlexWrap is Wrap or WrapReverse.
+func WithAlignContent(a AlignContent) Option {
+	return func(e *Element) {
+		e.style.AlignContent = a
+	}
+}
+
 // --- Flex Item Options ---
 
 // WithFlexGrow sets how much this element should grow relative to siblings.

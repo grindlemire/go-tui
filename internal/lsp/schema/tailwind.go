@@ -77,6 +77,19 @@ var staticClassDocs = map[string]string{
 	"justify-around":  "Distribute items with space around them.",
 	"justify-evenly":  "Distribute items with equal space around them.",
 
+	// Flex wrap
+	"flex-wrap":         "Enable flex wrapping. Items that overflow the main axis wrap to new lines.",
+	"flex-wrap-reverse": "Enable reverse flex wrapping. Items wrap in reverse cross-axis order.",
+	"flex-nowrap":       "Disable flex wrapping (default). All items stay on one line.",
+
+	// Align content
+	"content-start":   "Pack flex lines at the start of the cross axis.",
+	"content-end":     "Pack flex lines at the end of the cross axis.",
+	"content-center":  "Center flex lines on the cross axis.",
+	"content-stretch": "Stretch flex lines to fill the cross axis.",
+	"content-between": "Distribute flex lines with even space between them.",
+	"content-around":  "Distribute flex lines with even space around each line.",
+
 	// Borders
 	"border":         "Default border style.",
 	"border-none":    "No border.",
@@ -212,6 +225,19 @@ var AllClasses = []TailwindClassDef{
 	{Name: "flex", Description: "Display as flexbox with row direction", Category: "layout"},
 	{Name: "flex-col", Description: "Display as flexbox with column direction", Category: "layout"},
 	{Name: "flex-row", Description: "Display as flexbox with row direction", Category: "layout"},
+
+	// Flex wrap
+	{Name: "flex-wrap", Description: "Enable flex wrapping", Category: "flex"},
+	{Name: "flex-wrap-reverse", Description: "Reverse flex wrapping", Category: "flex"},
+	{Name: "flex-nowrap", Description: "Disable flex wrapping", Category: "flex"},
+
+	// Align content
+	{Name: "content-start", Description: "Pack lines at start", Category: "flex"},
+	{Name: "content-end", Description: "Pack lines at end", Category: "flex"},
+	{Name: "content-center", Description: "Center lines", Category: "flex"},
+	{Name: "content-stretch", Description: "Stretch lines to fill", Category: "flex"},
+	{Name: "content-between", Description: "Space between lines", Category: "flex"},
+	{Name: "content-around", Description: "Space around lines", Category: "flex"},
 
 	// Alignment
 	{Name: "items-start", Description: "Align items to the start of the cross axis", Category: "flex"},

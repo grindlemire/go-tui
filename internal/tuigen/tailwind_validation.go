@@ -62,6 +62,9 @@ var similarClasses = map[string]string{
 	"text-ellipsis":  "truncate",
 	"display-block":  "block",
 	"display-flex":   "flex",
+	"wrap-reverse":   "flex-wrap-reverse",
+	"no-wrap":        "flex-nowrap",
+	"align-content":  "content-start",
 }
 
 // levenshteinDistance calculates the edit distance between two strings

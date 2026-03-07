@@ -59,6 +59,25 @@ func AllTailwindClasses() []TailwindClassInfo {
 	}
 	classes = append(classes, selfClasses...)
 
+	// Flex wrap
+	wrapClasses := []TailwindClassInfo{
+		{Name: "flex-wrap", Category: "flex", Description: "Allow flex items to wrap to new lines", Example: `<div class="flex flex-wrap">`},
+		{Name: "flex-wrap-reverse", Category: "flex", Description: "Wrap flex items in reverse cross-axis order", Example: `<div class="flex flex-wrap-reverse">`},
+		{Name: "flex-nowrap", Category: "flex", Description: "Prevent flex items from wrapping (default)", Example: `<div class="flex flex-nowrap">`},
+	}
+	classes = append(classes, wrapClasses...)
+
+	// Align content
+	contentClasses := []TailwindClassInfo{
+		{Name: "content-start", Category: "flex", Description: "Pack flex lines at start of cross axis", Example: `<div class="flex flex-wrap content-start">`},
+		{Name: "content-end", Category: "flex", Description: "Pack flex lines at end of cross axis", Example: `<div class="flex flex-wrap content-end">`},
+		{Name: "content-center", Category: "flex", Description: "Center flex lines on cross axis", Example: `<div class="flex flex-wrap content-center">`},
+		{Name: "content-stretch", Category: "flex", Description: "Stretch flex lines to fill cross axis", Example: `<div class="flex flex-wrap content-stretch">`},
+		{Name: "content-between", Category: "flex", Description: "Even space between flex lines", Example: `<div class="flex flex-wrap content-between">`},
+		{Name: "content-around", Category: "flex", Description: "Even space around flex lines", Example: `<div class="flex flex-wrap content-around">`},
+	}
+	classes = append(classes, contentClasses...)
+
 	// Gap classes
 	gapClasses := []TailwindClassInfo{
 		{Name: "gap-1", Category: "spacing", Description: "Gap of 1 character", Example: `<div class="flex gap-1">`},

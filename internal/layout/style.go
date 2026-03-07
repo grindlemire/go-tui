@@ -38,6 +38,28 @@ const (
 	DisplayFlex                 // Flex layout: explicit direction control
 )
 
+// FlexWrap controls whether flex items wrap to new lines.
+type FlexWrap uint8
+
+const (
+	WrapNone    FlexWrap = iota // No wrapping (default, current behavior)
+	Wrap                        // Wrap to next line
+	WrapReverse                 // Wrap in reverse cross-axis order
+)
+
+// AlignContent controls how flex lines are distributed along the cross axis.
+// Only applies when FlexWrap is Wrap or WrapReverse and there are multiple lines.
+type AlignContent uint8
+
+const (
+	ContentStart        AlignContent = iota // Pack lines at start (default)
+	ContentEnd                              // Pack lines at end
+	ContentCenter                           // Center lines
+	ContentStretch                          // Stretch lines to fill
+	ContentSpaceBetween                     // Even space between lines
+	ContentSpaceAround                      // Even space around lines
+)
+
 // Style contains all layout properties for a node.
 type Style struct {
 	// Sizing
@@ -55,7 +77,9 @@ type Style struct {
 	Direction      Direction
 	JustifyContent Justify
 	AlignItems     Align
-	Gap            int // Space between children (main axis only)
+	Gap          int          // Space between children (main axis only)
+	FlexWrap     FlexWrap     // Wrap behavior (default WrapNone)
+	AlignContent AlignContent // Cross-axis line distribution (default ContentStart)
 
 	// Flex item properties
 	FlexGrow   float64 // How much to grow relative to siblings
