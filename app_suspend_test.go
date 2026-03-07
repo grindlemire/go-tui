@@ -74,11 +74,6 @@ func (r *recordingTerminal) ClearToEnd() {
 	r.MockTerminal.ClearToEnd()
 }
 
-func (r *recordingTerminal) WriteDirect(b []byte) (int, error) {
-	r.calls = append(r.calls, "WriteDirect")
-	return r.MockTerminal.WriteDirect(b)
-}
-
 func TestSuspendSequence_FullScreen(t *testing.T) {
 	term := newRecordingTerminal(80, 24)
 	term.inRawMode = true
@@ -119,43 +114,25 @@ func TestSuspendSequence_InlineMode(t *testing.T) {
 	term.inRawMode = true
 	term.cursorHidden = true
 
-	buf := NewBuffer(80, 3)
-	buf.SetCell(0, 0, NewCell('H', NewStyle()))
-	buf.SetCell(1, 0, NewCell('i', NewStyle()))
-
 	app := &App{
 		terminal:       term,
-		inlineHeight:   3,
-		inlineStartRow: 21,
+		inlineHeight:   5,
+		inlineStartRow: 19,
 		stopCh:         make(chan struct{}),
-		buffer:         buf,
+		buffer:         NewBuffer(80, 5),
 	}
 
 	app.suspendTerminal()
 
-	// Inline mode: should bake widget to scrollback (SetCursor per row),
-	// then ExitRawMode. Should NOT call ExitAltScreen.
-	for _, call := range term.calls {
-		if call == "ExitAltScreen" {
-			t.Fatal("should not exit alt screen in inline mode")
+	// Inline mode: should clear widget area, NOT call ExitAltScreen
+	expected := []string{"ShowCursor", "SetCursor", "ClearToEnd", "ExitRawMode"}
+	if len(term.calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
+	}
+	for i, call := range expected {
+		if term.calls[i] != call {
+			t.Errorf("call[%d] = %q, want %q", i, term.calls[i], call)
 		}
-	}
-
-	// Should contain SetCursor calls (one per buffer row + final positioning)
-	setCursorCount := 0
-	for _, call := range term.calls {
-		if call == "SetCursor" {
-			setCursorCount++
-		}
-	}
-	if setCursorCount == 0 {
-		t.Fatal("expected SetCursor calls for widget baking")
-	}
-
-	// Should still exit raw mode as the last call
-	lastCall := term.calls[len(term.calls)-1]
-	if lastCall != "ExitRawMode" {
-		t.Fatalf("expected last call to be ExitRawMode, got %q", lastCall)
 	}
 }
 
