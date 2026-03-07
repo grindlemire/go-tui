@@ -98,12 +98,22 @@ func (a *App) readInputEvents() {
 					if stopped {
 						return // Event consumed by a Stop handler
 					}
+					// Fallback: Ctrl+Z triggers suspend if not consumed
+					if keyEvent.Key == KeyCtrlZ {
+						a.suspend()
+						return
+					}
 					// Event was not stopped - continue to App.Dispatch for element handlers
 					// This allows onEvent handlers to see key events for inspection/logging
 				} else {
 					// Legacy path: global key handler runs before focusManager dispatch.
 					if a.globalKeyHandler != nil && a.globalKeyHandler(keyEvent) {
 						return // Event consumed by global handler
+					}
+					// Fallback: Ctrl+Z triggers suspend if not consumed by global handler
+					if keyEvent.Key == KeyCtrlZ {
+						a.suspend()
+						return
 					}
 				}
 				a.Dispatch(keyEvent)
