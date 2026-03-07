@@ -47,6 +47,8 @@ type App struct {
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
 	cursorVisible    bool          // Whether cursor is visible (default false)
+	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
+	onResume         func()        // Called after resuming (SIGCONT)
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
