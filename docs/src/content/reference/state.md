@@ -93,6 +93,10 @@ Must be called from the main event loop. For updates from background goroutines,
 count.Set(42)
 ```
 
+**Circular dependencies:** If a binding callback on state A triggers a `Set` on state A (directly, or through a chain like A→B→A), the value is updated and dirty is marked, but bindings are not fired again. Without this guard, the recursive calls would overflow the stack. `Render()` reads the correct final values on the next frame.
+
+Non-circular dependencies are unaffected. If A's binding sets B and C's binding also sets B, B's bindings fire once for each call. The guard only activates when `Set` is called on a state that is already in the middle of executing its own bindings.
+
 ### Update
 
 ```go
