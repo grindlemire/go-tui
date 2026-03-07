@@ -42,6 +42,27 @@ const (
 	AlignStretch = layout.AlignStretch
 )
 
+// FlexWrap controls whether flex items wrap to new lines.
+type FlexWrap = layout.FlexWrap
+
+const (
+	WrapNone    = layout.WrapNone    // No wrapping (default)
+	Wrap        = layout.Wrap        // Wrap to next line
+	WrapReverse = layout.WrapReverse // Wrap in reverse cross-axis order
+)
+
+// AlignContent controls how flex lines are distributed along the cross axis.
+type AlignContent = layout.AlignContent
+
+const (
+	ContentStart        = layout.ContentStart        // Pack lines at start
+	ContentEnd          = layout.ContentEnd           // Pack lines at end
+	ContentCenter       = layout.ContentCenter        // Center lines
+	ContentStretch      = layout.ContentStretch       // Stretch lines to fill
+	ContentSpaceBetween = layout.ContentSpaceBetween  // Even space between lines
+	ContentSpaceAround  = layout.ContentSpaceAround   // Even space around lines
+)
+
 // Value represents a dimension value (fixed, percent, or auto).
 type Value = layout.Value
 
