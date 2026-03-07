@@ -22,10 +22,12 @@ func (a *App) suspendTerminal() {
 	a.terminal.ShowCursor()
 
 	if a.inlineHeight > 0 {
-		// Inline mode: bake the current widget content into the terminal
-		// as static ANSI text so it becomes part of the scrollback. Then
-		// move the cursor below it for the shell's job control messages.
-		a.bakeWidgetToScrollback()
+		// Inline mode: clear the widget area and position the cursor there.
+		// The scrollback history above the widget is untouched. Shell job
+		// control messages ("Stopped", "fg") appear where the widget was.
+		// On resume, the widget redraws at the recalculated bottom position.
+		a.terminal.SetCursor(0, a.inlineStartRow)
+		a.terminal.ClearToEnd()
 	} else if !a.inAlternateScreen {
 		// Full-screen mode: exit alternate screen
 		a.terminal.ExitAltScreen()
@@ -66,37 +68,6 @@ func (a *App) resumeTerminal() {
 	if a.onResume != nil {
 		a.onResume()
 	}
-}
-
-// bakeWidgetToScrollback renders the current widget buffer as static ANSI text
-// at the widget position, then moves the cursor below it. This preserves the
-// widget content in the terminal's scrollback when the process is suspended.
-func (a *App) bakeWidgetToScrollback() {
-	buf := a.buffer
-	if buf == nil {
-		return
-	}
-
-	caps := a.terminal.Caps()
-	esc := newEscBuilder(256)
-	height := buf.Height()
-	width := buf.Width()
-	if height == 0 || width == 0 {
-		return
-	}
-
-	// Position cursor at widget start and overwrite each row with
-	// the buffer content rendered as ANSI escape sequences.
-	for row := 0; row < height; row++ {
-		a.terminal.SetCursor(0, a.inlineStartRow+row)
-		line := bufferRowToANSI(buf, row, esc, caps)
-		if line != "" {
-			a.terminal.WriteDirect([]byte(line))
-		}
-	}
-
-	// Move cursor below the widget so shell output appears after it.
-	a.terminal.SetCursor(0, a.inlineStartRow+height)
 }
 
 // suspend performs the full suspend sequence: tear down terminal, send SIGTSTP.
