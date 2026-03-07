@@ -72,6 +72,7 @@ func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct
 type stateWatcher[T any] struct {
 	state   *State[T]
 	handler func(T)
+	stopped chan struct{} // closed after unbind completes; nil unless set by tests
 }
 
 // OnChange creates a watcher that calls handler when the state value changes.
@@ -99,6 +100,9 @@ func (w *stateWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}
 	go func() {
 		<-stopCh
 		unbind()
+		if w.stopped != nil {
+			close(w.stopped)
+		}
 	}()
 }
 

@@ -139,7 +139,13 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 			// When the node has flex-grow and its cross axis was allocated
 			// by the parent's flex algorithm, only expand (never shrink).
 			// Otherwise (truly auto-sized), set to content size exactly.
-			flexAllocated := style.FlexGrow > 0
+			// NOTE: FlexGrow > 0 is a heuristic for "parent allocated the
+		// cross axis". It can over-size containers when the parent uses
+		// AlignItems: AlignStart (the parent allocates full line height
+		// but doesn't stretch the child). The extra space goes unused
+		// and won't cause incorrect rendering. A more precise check
+		// would require threading the parent's align mode into this pass.
+		flexAllocated := style.FlexGrow > 0
 			if isRow {
 				needed := totalCross + style.Padding.Vertical()
 				if flexAllocated {

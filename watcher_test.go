@@ -422,10 +422,12 @@ func TestOnChange_UnbindsOnStop(t *testing.T) {
 	stopCh := make(chan struct{})
 
 	var received []int
-	watcher := OnChange(state, func(v int) {
-		received = append(received, v)
-	})
-	watcher.Start(eventQueue, stopCh)
+	sw := &stateWatcher[int]{
+		state:   state,
+		handler: func(v int) { received = append(received, v) },
+		stopped: make(chan struct{}),
+	}
+	sw.Start(eventQueue, stopCh)
 
 	// Clear initial fire
 	received = nil
@@ -436,8 +438,7 @@ func TestOnChange_UnbindsOnStop(t *testing.T) {
 	}
 
 	close(stopCh)
-	// Give the goroutine time to process the stop
-	time.Sleep(50 * time.Millisecond)
+	<-sw.stopped // wait for unbind to complete
 
 	state.Set(2)
 	if len(received) != 1 {
