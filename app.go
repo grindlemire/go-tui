@@ -38,6 +38,7 @@ type App struct {
 	stopCh           chan struct{}
 	stopped          bool
 	stopOnce         sync.Once
+	selfSuspended    atomic.Bool         // True during self-initiated suspend; prevents double resume from SIGCONT handler
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 
 	// Configuration (set via options)
