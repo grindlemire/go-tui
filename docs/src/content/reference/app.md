@@ -203,6 +203,22 @@ func WithInlineStartupMode(mode InlineStartupMode) AppOption
 
 Configures how inline mode handles existing visible terminal content at startup. See [InlineStartupMode Constants](#inlinestartupmode-constants) for the available modes.
 
+### WithOnSuspend
+
+```go
+func WithOnSuspend(fn func()) AppOption
+```
+
+Sets a callback that runs before the app suspends on Ctrl+Z. Use this to save state, pause timers, or perform cleanup before the process stops.
+
+### WithOnResume
+
+```go
+func WithOnResume(fn func()) AppOption
+```
+
+Sets a callback that runs after the app resumes from suspension (when the user runs `fg`). Use this to restore state, restart timers, or refresh data.
+
 ## Lifecycle Methods
 
 ### Run
@@ -571,6 +587,55 @@ func (a *App) IsInAlternateScreen() bool
 ```
 
 Returns `true` if the app is currently displaying in the alternate screen overlay.
+
+## Job Control (Ctrl+Z)
+
+go-tui supports Unix job control out of the box. Pressing Ctrl+Z suspends the app, and running `fg` in the shell resumes it.
+
+On suspend, the framework automatically:
+1. Disables mouse reporting
+2. Shows the cursor
+3. Exits the alternate screen (full-screen mode)
+4. Restores normal terminal mode
+
+On resume, it reverses all of these and forces a full redraw.
+
+### Hooks
+
+Use `WithOnSuspend` and `WithOnResume` to run custom logic:
+
+```go
+app, err := tui.NewApp(
+    tui.WithOnSuspend(func() {
+        // Save state before suspend
+    }),
+    tui.WithOnResume(func() {
+        // Refresh data after resume
+    }),
+)
+```
+
+### Suspend
+
+```go
+func (a *App) Suspend()
+```
+
+Programmatically triggers a suspend (same as Ctrl+Z). Safe to call from any goroutine.
+
+### Overriding Ctrl+Z
+
+To prevent Ctrl+Z from suspending, bind `KeyCtrlZ` with a Stop handler in a component's `KeyMap()`:
+
+```go
+func (c *myComponent) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnKeyStop(tui.KeyCtrlZ, func(ke tui.KeyEvent) {
+            // Custom behavior instead of suspend
+        }),
+    }
+}
+```
 
 ## State Batching
 
