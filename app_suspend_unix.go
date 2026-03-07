@@ -21,14 +21,22 @@ func (a *App) suspendTerminal() {
 
 	a.terminal.ShowCursor()
 
-	if a.inlineHeight > 0 {
+	if a.inAlternateScreen {
+		// Dynamic alternate screen overlay: exit overlay first, then
+		// handle the underlying mode (inline or full-screen).
+		a.terminal.ExitAltScreen()
+		if a.savedInlineHeight > 0 {
+			a.terminal.SetCursor(0, a.savedInlineStartRow)
+			a.terminal.ClearToEnd()
+		}
+	} else if a.inlineHeight > 0 {
 		// Inline mode: clear the widget area and position the cursor there.
 		// The scrollback history above the widget is untouched. Shell job
 		// control messages ("Stopped", "fg") appear where the widget was.
 		// On resume, the widget redraws at the recalculated bottom position.
 		a.terminal.SetCursor(0, a.inlineStartRow)
 		a.terminal.ClearToEnd()
-	} else if !a.inAlternateScreen {
+	} else {
 		// Full-screen mode: exit alternate screen
 		a.terminal.ExitAltScreen()
 	}
@@ -41,7 +49,20 @@ func (a *App) suspendTerminal() {
 func (a *App) resumeTerminal() {
 	a.terminal.EnterRawMode()
 
-	if a.inlineHeight > 0 {
+	if a.inAlternateScreen {
+		// Dynamic alternate screen overlay: recalculate saved inline
+		// geometry (if the underlying mode was inline), then re-enter
+		// the overlay alt screen.
+		if a.savedInlineHeight > 0 {
+			_, termHeight := a.terminal.Size()
+			a.savedInlineStartRow = termHeight - a.savedInlineHeight
+			if a.savedInlineStartRow < 0 {
+				a.savedInlineStartRow = 0
+			}
+		}
+		a.terminal.EnterAltScreen()
+		a.terminal.Clear()
+	} else if a.inlineHeight > 0 {
 		// Inline mode: the shell printed job control messages while stopped.
 		// Recalculate where the widget should be drawn.
 		_, termHeight := a.terminal.Size()
@@ -49,7 +70,7 @@ func (a *App) resumeTerminal() {
 		if a.inlineStartRow < 0 {
 			a.inlineStartRow = 0
 		}
-	} else if !a.inAlternateScreen {
+	} else {
 		a.terminal.EnterAltScreen()
 		a.terminal.Clear()
 	}
@@ -77,6 +98,7 @@ func (a *App) resumeTerminal() {
 // the OS default (stop the process). signal.Reset after Notify doesn't reliably
 // restore SIG_DFL in Go's runtime, so avoiding Notify entirely is the fix.
 func (a *App) suspend() {
+	a.selfSuspended.Store(true)
 	a.suspendTerminal()
 
 	// Stop the process. Execution pauses here until SIGCONT.
@@ -86,6 +108,7 @@ func (a *App) suspend() {
 	// Process has been resumed by SIGCONT.
 	// Resume inline to avoid a race with the event queue.
 	a.resumeTerminal()
+	a.selfSuspended.Store(false)
 }
 
 // Suspend programmatically triggers a suspend (same as Ctrl+Z).
@@ -109,16 +132,18 @@ func (a *App) registerSuspendSignals() func() {
 		for {
 			select {
 			case <-contCh:
-				// SIGCONT after an external SIGTSTP. The terminal may be
-				// in a bad state since we didn't get to tear down cleanly.
-				// Force a full redraw on the event loop.
+				if a.selfSuspended.Load() {
+					// Our own suspend() will call resumeTerminal()
+					// inline. Nothing to do here.
+					continue
+				}
+				// SIGCONT after an external SIGTSTP (kill -TSTP).
+				// The terminal is likely in a bad state (cooked mode,
+				// no alt screen, cursor visible, mouse disabled).
+				// Run the full resume sequence on the event loop.
 				select {
 				case a.eventQueue <- func() {
-					a.needsFullRedraw = true
-					a.MarkDirty()
-					if a.onResume != nil {
-						a.onResume()
-					}
+					a.resumeTerminal()
 				}:
 				case <-a.stopCh:
 					return

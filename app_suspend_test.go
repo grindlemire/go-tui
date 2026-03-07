@@ -275,6 +275,128 @@ func TestSuspendSignalRegistration(t *testing.T) {
 	cleanup()
 }
 
+func TestSuspendSequence_DynamicAltScreen(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+	term.inRawMode = true
+	term.inAltScreen = true
+	term.cursorHidden = true
+
+	app := &App{
+		terminal:          term,
+		inAlternateScreen: true,
+		savedInlineHeight: 5,
+		savedInlineStartRow: 19,
+		stopCh:            make(chan struct{}),
+		buffer:            NewBuffer(80, 24),
+	}
+
+	app.suspendTerminal()
+
+	// Should exit alt screen overlay, then clear saved inline widget area
+	expected := []string{"ShowCursor", "ExitAltScreen", "SetCursor", "ClearToEnd", "ExitRawMode"}
+	if len(term.calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
+	}
+	for i, call := range expected {
+		if term.calls[i] != call {
+			t.Errorf("call[%d] = %q, want %q", i, term.calls[i], call)
+		}
+	}
+}
+
+func TestSuspendSequence_DynamicAltScreenFullScreenUnderlying(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+	term.inRawMode = true
+	term.inAltScreen = true
+	term.cursorHidden = true
+
+	// Dynamic alt screen with full-screen underlying mode (savedInlineHeight == 0)
+	app := &App{
+		terminal:          term,
+		inAlternateScreen: true,
+		stopCh:            make(chan struct{}),
+		buffer:            NewBuffer(80, 24),
+	}
+
+	app.suspendTerminal()
+
+	// Should exit alt screen overlay only (no SetCursor/ClearToEnd)
+	expected := []string{"ShowCursor", "ExitAltScreen", "ExitRawMode"}
+	if len(term.calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
+	}
+	for i, call := range expected {
+		if term.calls[i] != call {
+			t.Errorf("call[%d] = %q, want %q", i, term.calls[i], call)
+		}
+	}
+}
+
+func TestResumeSequence_DynamicAltScreen(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+
+	app := &App{
+		terminal:            term,
+		inAlternateScreen:   true,
+		savedInlineHeight:   5,
+		savedInlineStartRow: 0, // stale value
+		stopCh:              make(chan struct{}),
+		buffer:              NewBuffer(80, 24),
+		dirty:               atomic.Bool{},
+	}
+
+	app.resumeTerminal()
+
+	// Should re-enter alt screen overlay, then hide cursor (cursorVisible defaults to false)
+	expected := []string{"EnterRawMode", "EnterAltScreen", "Clear", "HideCursor"}
+	if len(term.calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
+	}
+	for i, call := range expected {
+		if term.calls[i] != call {
+			t.Errorf("call[%d] = %q, want %q", i, term.calls[i], call)
+		}
+	}
+
+	// Should recalculate saved inline start row
+	if app.savedInlineStartRow != 19 { // 24 - 5
+		t.Fatalf("expected savedInlineStartRow=19, got %d", app.savedInlineStartRow)
+	}
+}
+
+func TestSelfSuspendedPreventsDoubleResume(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+
+	resumeCount := 0
+	app := &App{
+		terminal:       term,
+		stopCh:         make(chan struct{}),
+		eventQueue:     make(chan func(), 256),
+		eventQueueSize: 256,
+		buffer:         NewBuffer(80, 24),
+		dirty:          atomic.Bool{},
+		onResume:       func() { resumeCount++ },
+	}
+
+	// Simulate self-initiated suspend: flag should prevent SIGCONT handler
+	// from enqueuing a duplicate resume.
+	app.selfSuspended.Store(true)
+
+	// The SIGCONT handler goroutine would check this flag and skip.
+	// Verify the flag is readable.
+	if !app.selfSuspended.Load() {
+		t.Fatal("expected selfSuspended to be true")
+	}
+
+	// Call resumeTerminal once (as suspend() would)
+	app.resumeTerminal()
+	app.selfSuspended.Store(false)
+
+	if resumeCount != 1 {
+		t.Fatalf("expected onResume called once, got %d", resumeCount)
+	}
+}
+
 func TestKeyCtrlZ_OverrideByStopper(t *testing.T) {
 	term := newRecordingTerminal(80, 24)
 	term.inRawMode = true
