@@ -42,6 +42,108 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 	// 1. Compute this node's border box dimensions (width/height only)
 	borderBox := computeBorderBox(style, available)
 
+	// Pre-sizing pass for flex-wrap containers with auto cross-axis size.
+	// Determines how many wrap lines are needed and adjusts the border box
+	// cross dimension before running the full layout.
+	if style.FlexWrap != WrapNone && len(node.LayoutChildren()) > 0 && node.Tag() != "table" {
+		isRow := style.Direction == Row
+		if style.Display == DisplayBlock {
+			isRow = false
+		}
+
+		// Check if cross-axis is Auto
+		crossIsAuto := false
+		if isRow {
+			crossIsAuto = style.Height.IsAuto()
+		} else {
+			crossIsAuto = style.Width.IsAuto()
+		}
+
+		if crossIsAuto {
+			contentWidth := borderBox.Width - style.Padding.Horizontal()
+			contentHeight := borderBox.Height - style.Padding.Vertical()
+
+			mainSz := contentWidth
+			crossSz := contentHeight
+			if !isRow {
+				mainSz, crossSz = crossSz, mainSz
+			}
+
+			// Quick Phase 1: compute base sizes
+			children := node.LayoutChildren()
+			preItems := make([]flexItem, len(children))
+			for i, child := range children {
+				childStyle := child.LayoutStyle()
+				var mainMargin int
+				if isRow {
+					mainMargin = childStyle.Margin.Horizontal()
+				} else {
+					mainMargin = childStyle.Margin.Vertical()
+				}
+				childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
+				if isRow {
+					preItems[i].baseSize = childStyle.Width.Resolve(mainSz, childIntrinsicW) + mainMargin
+				} else {
+					preItems[i].baseSize = childStyle.Height.Resolve(mainSz, childIntrinsicH) + mainMargin
+				}
+			}
+
+			// Break into lines
+			preLines := breakIntoLines(preItems, mainSz, style.Gap)
+
+			// Measure cross size per line
+			totalCross := 0
+			for _, pl := range preLines {
+				maxCross := 0
+				for j := pl.startIdx; j < pl.endIdx; j++ {
+					child := children[j]
+					childStyle := child.LayoutStyle()
+					childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
+
+					var cross int
+					if isRow {
+						childWidth := preItems[j].baseSize - childStyle.Margin.Horizontal()
+						wrappedH := child.HeightForWidth(childWidth)
+						if wrappedH > childIntrinsicH {
+							cross = wrappedH
+						} else {
+							cross = childIntrinsicH
+						}
+						cross += childStyle.Margin.Vertical()
+					} else {
+						cross = childIntrinsicW + childStyle.Margin.Horizontal()
+					}
+
+					// Use explicit cross size if set
+					var crossStyleValue Value
+					var crossMargin int
+					if isRow {
+						crossStyleValue = childStyle.Height
+						crossMargin = childStyle.Margin.Vertical()
+					} else {
+						crossStyleValue = childStyle.Width
+						crossMargin = childStyle.Margin.Horizontal()
+					}
+					if !crossStyleValue.IsAuto() {
+						cross = crossStyleValue.Resolve(crossSz-crossMargin, 0) + crossMargin
+					}
+
+					if cross > maxCross {
+						maxCross = cross
+					}
+				}
+				totalCross += maxCross
+			}
+
+			// Adjust border box
+			if isRow {
+				borderBox.Height = totalCross + style.Padding.Vertical()
+			} else {
+				borderBox.Width = totalCross + style.Padding.Horizontal()
+			}
+		}
+	}
+
 	// 2. Set border box position from the rounded absolute float position
 	borderBox.X = int(math.Round(absoluteX))
 	borderBox.Y = int(math.Round(absoluteY))

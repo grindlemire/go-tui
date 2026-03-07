@@ -19,82 +19,74 @@ type flexItem struct {
 	hasWrappedCross  bool // true if wrappedCrossSize is valid
 }
 
-// layoutChildren arranges the children of a node within the given content rect.
-// This implements the core flexbox algorithm.
-//
-// parentAbsX and parentAbsY are the parent's absolute float positions (content rect origin).
-// These are used for Yoga-style rounding: we compute each child's absolute float position
-// and only round once when creating the final integer Rect.
-func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY float64) {
-	children := node.LayoutChildren()
-	if len(children) == 0 {
+// flexLine represents a single line of flex items in a wrapped layout.
+type flexLine struct {
+	startIdx  int     // index into items array (inclusive)
+	endIdx    int     // index into items array (exclusive)
+	crossSize int     // max cross size among items on this line
+	crossPos  float64 // line's position on the cross axis
+}
+
+// breakIntoLines splits flex items into lines based on available main-axis space.
+// Each item's baseSize (including margin) is used for line-break decisions.
+// If mainSize is 0 or negative, all items go on one line.
+func breakIntoLines(items []flexItem, mainSize, gap int) []flexLine {
+	if len(items) == 0 {
+		return nil
+	}
+	if mainSize <= 0 {
+		return []flexLine{{startIdx: 0, endIdx: len(items)}}
+	}
+
+	var lines []flexLine
+	lineStart := 0
+	used := 0
+
+	for i := range items {
+		itemSize := items[i].baseSize
+		gapCost := 0
+		if i > lineStart {
+			gapCost = gap
+		}
+
+		if used+gapCost+itemSize > mainSize && i > lineStart {
+			lines = append(lines, flexLine{startIdx: lineStart, endIdx: i})
+			lineStart = i
+			used = itemSize
+		} else {
+			used += gapCost + itemSize
+		}
+	}
+	// Flush the last line
+	lines = append(lines, flexLine{startIdx: lineStart, endIdx: len(items)})
+
+	return lines
+}
+
+// distributeLineMainAxis runs flex grow/shrink distribution (Phase 2),
+// min/max constraints (Phase 3), and justify positioning (Phase 4)
+// for a single line of items.
+func distributeLineMainAxis(items []flexItem, mainSize, gap int, justify Justify, isRow bool) {
+	lineItems := len(items)
+	if lineItems == 0 {
 		return
 	}
 
-	style := node.LayoutStyle()
-	isRow := style.Direction == Row
-	// Block mode forces column direction regardless of Direction setting
-	if style.Display == DisplayBlock {
-		isRow = false
-	}
-
-	// Determine main/cross axis dimensions
-	mainSize := contentRect.Width
-	crossSize := contentRect.Height
-	if !isRow {
-		mainSize, crossSize = crossSize, mainSize
-	}
-
-	// Phase 1: Compute base sizes and flex factors
-	// Base size includes the child's content size plus its margin.
-	// Margin is part of the child's "outer size" in the flex calculation.
-	items := make([]flexItem, len(children))
+	// Compute totals for this line
 	totalFixed := 0
 	totalGrow := 0.0
 	totalShrink := 0.0
-
-	for i, child := range children {
-		item := &items[i]
-		item.node = child
-
-		childStyle := child.LayoutStyle()
-
-		// Compute margin on main and cross axes
-		var mainMargin, crossMargin int
-		if isRow {
-			mainMargin = childStyle.Margin.Horizontal()
-			crossMargin = childStyle.Margin.Vertical()
-		} else {
-			mainMargin = childStyle.Margin.Vertical()
-			crossMargin = childStyle.Margin.Horizontal()
-		}
-
-		// Resolve base content size, using intrinsic size as fallback for Auto
-		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
-		if isRow {
-			item.baseSize = childStyle.Width.Resolve(mainSize, childIntrinsicW) + mainMargin
-		} else {
-			item.baseSize = childStyle.Height.Resolve(mainSize, childIntrinsicH) + mainMargin
-		}
-
-		// Store margin for later use
-		_ = crossMargin // Will be used in cross-axis sizing
-
-		item.grow = childStyle.FlexGrow
-		item.shrink = childStyle.FlexShrink
-
-		totalFixed += item.baseSize
-		totalGrow += item.grow
-		totalShrink += item.shrink
+	for i := range items {
+		totalFixed += items[i].baseSize
+		totalGrow += items[i].grow
+		totalShrink += items[i].shrink
 	}
 
-	// Account for gaps
-	totalGap := style.Gap * max(0, len(children)-1)
+	totalGap := gap * max(0, lineItems-1)
 	freeSpace := mainSize - totalFixed - totalGap
 
 	// Phase 2: Distribute free space
 	if freeSpace > 0 && totalGrow > 0 {
-		// Grow items
 		for i := range items {
 			if items[i].grow > 0 {
 				extra := int(float64(freeSpace) * items[i].grow / totalGrow)
@@ -104,7 +96,6 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			}
 		}
 	} else if freeSpace < 0 && totalShrink > 0 {
-		// Shrink items
 		deficit := -freeSpace
 		for i := range items {
 			if items[i].shrink > 0 {
@@ -115,18 +106,15 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			}
 		}
 	} else {
-		// No flex needed
 		for i := range items {
 			items[i].mainSize = items[i].baseSize
 		}
-		freeSpace = max(0, freeSpace) // For justify calculations
+		freeSpace = max(0, freeSpace)
 	}
 
 	// Phase 3: Apply min/max constraints
-	// When MinWidth/MinHeight is Auto, use intrinsic size as the floor.
-	// This matches CSS flexbox behavior where min-width:auto / min-height:auto
-	// prevents items from shrinking below their content size.
-	for i, child := range children {
+	for i := range items {
+		child := items[i].node
 		childStyle := child.LayoutStyle()
 		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
 		var intrinsicMain int
@@ -140,20 +128,35 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 		items[i].mainSize = clampFlex(items[i].mainSize, minMain, maxMain)
 	}
 
-	// Phase 3.5: Recompute sizes for text-wrapping elements.
-	// After main-axis sizes are finalized, call HeightForWidth to get the
-	// correct height for elements that wrap text.
-	for i, child := range children {
+	// Recalculate free space after constraints
+	totalUsed := 0
+	for i := range items {
+		totalUsed += items[i].mainSize
+	}
+	freeSpace = mainSize - totalUsed - totalGap
+
+	// Phase 4: Position children along main axis (justify)
+	offset := calculateJustifyOffset(justify, freeSpace, lineItems)
+	spacing := calculateJustifySpacing(justify, freeSpace, lineItems)
+
+	for i := range items {
+		items[i].mainPos = offset
+		offset += float64(items[i].mainSize) + float64(gap) + spacing
+	}
+}
+
+// recomputeTextWrapping runs Phase 3.5 for a slice of items.
+// It calls HeightForWidth to determine if text wrapping changes cross-axis sizes.
+func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, mainSize, crossSize int) {
+	for i := range items {
+		child := items[i].node
 		childStyle := child.LayoutStyle()
 
-		// Determine the child's assigned width
 		var childWidth int
 		if isRow {
-			// Main axis is width — use the flex-computed main size minus margin
 			childWidth = items[i].mainSize - childStyle.Margin.Horizontal()
 		} else {
-			// Cross axis is width — compute from alignment (same logic as Phase 5)
-			align := style.AlignItems
+			align := parentStyle.AlignItems
 			if childStyle.AlignSelf != nil {
 				align = *childStyle.AlignSelf
 			}
@@ -173,11 +176,9 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 
 		if wrappedHeight > intrinsicH {
 			if isRow {
-				// For Row: update cross-axis data so Phase 5 uses wrapped height.
 				items[i].wrappedCrossSize = wrappedHeight
 				items[i].hasWrappedCross = true
 			} else {
-				// For Column: update main-axis size to wrapped height
 				mainMargin := childStyle.Margin.Vertical()
 				newMainSize := wrappedHeight + mainMargin
 				items[i].mainSize = clampFlex(newMainSize,
@@ -186,126 +187,311 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			}
 		}
 	}
+}
 
-	// Recalculate free space after min/max constraints and text wrapping
-	// (needed for justify calculations)
-	totalUsed := 0
-	for i := range items {
-		totalUsed += items[i].mainSize
-	}
-	freeSpace = mainSize - totalUsed - totalGap
-
-	// Phase 4: Position children along main axis (justify)
-	// Use float64 for offset to enable precise centering that only rounds at final stage
-	offset := calculateJustifyOffset(style.JustifyContent, freeSpace, len(items))
-	spacing := calculateJustifySpacing(style.JustifyContent, freeSpace, len(items))
-
-	for i := range items {
-		items[i].mainPos = offset
-		offset += float64(items[i].mainSize) + float64(style.Gap) + spacing
+// calculateContentOffset returns the initial cross-axis offset for line distribution.
+func calculateContentOffset(ac AlignContent, freeSpace, lineCount int) float64 {
+	if freeSpace <= 0 || lineCount == 0 {
+		return 0
 	}
 
-	// Phase 5: Cross-axis sizing and alignment
+	fs := float64(freeSpace)
+	lc := float64(lineCount)
+
+	switch ac {
+	case ContentEnd:
+		return fs
+	case ContentCenter:
+		return fs / 2.0
+	case ContentSpaceAround:
+		if lineCount > 0 {
+			return fs / (lc * 2.0)
+		}
+		return 0
+	default: // ContentStart, ContentSpaceBetween, ContentStretch
+		return 0
+	}
+}
+
+// calculateContentSpacing returns the extra spacing between lines.
+func calculateContentSpacing(ac AlignContent, freeSpace, lineCount int) float64 {
+	if freeSpace <= 0 || lineCount <= 1 {
+		return 0
+	}
+
+	fs := float64(freeSpace)
+	lc := float64(lineCount)
+
+	switch ac {
+	case ContentSpaceBetween:
+		return fs / (lc - 1.0)
+	case ContentSpaceAround:
+		return fs / lc
+	default:
+		return 0
+	}
+}
+
+// layoutChildren arranges the children of a node within the given content rect.
+// This implements the core flexbox algorithm with flex-wrap support.
+//
+// parentAbsX and parentAbsY are the parent's absolute float positions (content rect origin).
+// These are used for Yoga-style rounding: we compute each child's absolute float position
+// and only round once when creating the final integer Rect.
+func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY float64) {
+	children := node.LayoutChildren()
+	if len(children) == 0 {
+		return
+	}
+
+	style := node.LayoutStyle()
+	isRow := style.Direction == Row
+	if style.Display == DisplayBlock {
+		isRow = false
+	}
+
+	mainSize := contentRect.Width
+	crossSize := contentRect.Height
+	if !isRow {
+		mainSize, crossSize = crossSize, mainSize
+	}
+
+	// Phase 1: Compute base sizes and flex factors
+	items := make([]flexItem, len(children))
 	for i, child := range children {
+		item := &items[i]
+		item.node = child
+
 		childStyle := child.LayoutStyle()
-		align := style.AlignItems
-		if childStyle.AlignSelf != nil {
-			align = *childStyle.AlignSelf
+		var mainMargin int
+		if isRow {
+			mainMargin = childStyle.Margin.Horizontal()
+		} else {
+			mainMargin = childStyle.Margin.Vertical()
 		}
 
-		// Determine cross-axis size value and intrinsic size
-		var crossStyleValue Value
-		var crossMargin int
-		var crossIntrinsic int
 		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
 		if isRow {
-			crossStyleValue = childStyle.Height
-			crossMargin = childStyle.Margin.Vertical()
-			// Use wrapped height if text wrapping increased the cross-axis size
-			if items[i].hasWrappedCross {
-				crossIntrinsic = items[i].wrappedCrossSize
-			} else {
-				crossIntrinsic = childIntrinsicH
-			}
+			item.baseSize = childStyle.Width.Resolve(mainSize, childIntrinsicW) + mainMargin
 		} else {
-			crossStyleValue = childStyle.Width
-			crossMargin = childStyle.Margin.Horizontal()
-			crossIntrinsic = childIntrinsicW
+			item.baseSize = childStyle.Height.Resolve(mainSize, childIntrinsicH) + mainMargin
 		}
 
-		// Available cross space after margin
-		availableCross := crossSize - crossMargin
+		item.grow = childStyle.FlexGrow
+		item.shrink = childStyle.FlexShrink
+	}
 
-		if align == AlignStretch && crossStyleValue.IsAuto() {
-			// Stretch: fill the available cross axis (minus margin)
-			items[i].crossSize = availableCross + crossMargin // Include margin in slot size
-			items[i].crossPos = 0
-		} else {
-			// Non-stretch or explicit size: use the specified value or intrinsic size
-			var contentCross int
-			if crossStyleValue.IsAuto() {
-				// Use intrinsic size for Auto, clamped to available space
-				contentCross = min(crossIntrinsic, availableCross)
-			} else {
-				contentCross = crossStyleValue.Resolve(availableCross, crossIntrinsic)
-			}
-			// Slot size includes content + margin
-			items[i].crossSize = contentCross + crossMargin
-			items[i].crossPos = calculateAlignOffset(align, crossSize, items[i].crossSize)
+	// Determine lines
+	var lines []flexLine
+	if style.FlexWrap == WrapNone {
+		lines = []flexLine{{startIdx: 0, endIdx: len(items)}}
+	} else {
+		lines = breakIntoLines(items, mainSize, style.Gap)
+	}
+
+	// Reverse line order for WrapReverse
+	if style.FlexWrap == WrapReverse {
+		for i, j := 0, len(lines)-1; i < j; i, j = i+1, j-1 {
+			lines[i], lines[j] = lines[j], lines[i]
 		}
 	}
 
-	// Phase 6: Convert to rects and recurse
-	// Yoga-style rounding: compute each child's ABSOLUTE float position,
-	// then round once to get the integer Rect. This prevents jitter because
-	// fractional parts accumulate correctly before rounding.
-	for i, child := range children {
-		childStyle := child.LayoutStyle()
+	// Per-line: distribute main axis, apply text wrapping, compute cross sizes
+	for l := range lines {
+		line := &lines[l]
+		lineItems := items[line.startIdx:line.endIdx]
 
-		// Compute child's ABSOLUTE float position (parent float + relative offset)
-		var childAbsX, childAbsY float64
-		if isRow {
-			childAbsX = parentAbsX + items[i].mainPos
-			childAbsY = parentAbsY + items[i].crossPos
-		} else {
-			childAbsX = parentAbsX + items[i].crossPos
-			childAbsY = parentAbsY + items[i].mainPos
-		}
+		// Phases 2-4: main axis distribution and positioning
+		distributeLineMainAxis(lineItems, mainSize, style.Gap, style.JustifyContent, isRow)
 
-		// Round absolute position to get integer slot
-		var slot Rect
-		if isRow {
-			slot = Rect{
-				X:      int(math.Round(childAbsX)),
-				Y:      int(math.Round(childAbsY)),
-				Width:  items[i].mainSize,
-				Height: items[i].crossSize,
+		// Phase 3.5: text wrapping recomputation
+		recomputeTextWrapping(lineItems, style, isRow, mainSize, crossSize)
+
+		// Re-position main axis after text wrapping may have changed sizes (column mode)
+		if !isRow {
+			totalUsed := 0
+			for i := range lineItems {
+				totalUsed += lineItems[i].mainSize
 			}
-		} else {
-			slot = Rect{
-				X:      int(math.Round(childAbsX)),
-				Y:      int(math.Round(childAbsY)),
-				Width:  items[i].crossSize,
-				Height: items[i].mainSize,
+			totalGap := style.Gap * max(0, len(lineItems)-1)
+			freeSpace := mainSize - totalUsed - totalGap
+			offset := calculateJustifyOffset(style.JustifyContent, freeSpace, len(lineItems))
+			spacing := calculateJustifySpacing(style.JustifyContent, freeSpace, len(lineItems))
+			for i := range lineItems {
+				lineItems[i].mainPos = offset
+				offset += float64(lineItems[i].mainSize) + float64(style.Gap) + spacing
 			}
 		}
 
-		// Apply child's margin: shrink the slot to get the child's border box.
-		// Also adjust float position to account for margin.
-		if isRow {
-			childAbsX += float64(childStyle.Margin.Left)
-			childAbsY += float64(childStyle.Margin.Top)
-		} else {
-			childAbsX += float64(childStyle.Margin.Left)
-			childAbsY += float64(childStyle.Margin.Top)
+		// Compute line cross size (max of all items' cross sizes on this line)
+		maxCross := 0
+		for i := range lineItems {
+			child := lineItems[i].node
+			childStyle := child.LayoutStyle()
+
+			var crossIntrinsic int
+			childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
+			if isRow {
+				if lineItems[i].hasWrappedCross {
+					crossIntrinsic = lineItems[i].wrappedCrossSize
+				} else {
+					crossIntrinsic = childIntrinsicH
+				}
+				crossIntrinsic += childStyle.Margin.Vertical()
+			} else {
+				crossIntrinsic = childIntrinsicW + childStyle.Margin.Horizontal()
+			}
+
+			// Use explicit cross size if set
+			var crossStyleValue Value
+			var crossMargin int
+			if isRow {
+				crossStyleValue = childStyle.Height
+				crossMargin = childStyle.Margin.Vertical()
+			} else {
+				crossStyleValue = childStyle.Width
+				crossMargin = childStyle.Margin.Horizontal()
+			}
+
+			itemCross := crossIntrinsic
+			if !crossStyleValue.IsAuto() {
+				itemCross = crossStyleValue.Resolve(crossSize-crossMargin, 0) + crossMargin
+			}
+			if itemCross > maxCross {
+				maxCross = itemCross
+			}
 		}
-		childBorderBox := slot.Inset(childStyle.Margin)
+		line.crossSize = maxCross
+	}
 
-		// Force child to recalculate since parent layout changed.
-		child.SetDirty(true)
+	// Phase 5.5: Distribute lines along cross axis
+	if style.FlexWrap != WrapNone && len(lines) > 1 {
+		totalLineCross := 0
+		for l := range lines {
+			totalLineCross += lines[l].crossSize
+		}
+		freeCrossSpace := crossSize - totalLineCross
 
-		// Recurse with FLOAT position for jitter-free child positioning
-		calculateNode(child, childBorderBox, childAbsX, childAbsY)
+		// ContentStretch: distribute extra space equally among lines
+		if style.AlignContent == ContentStretch && freeCrossSpace > 0 {
+			extra := freeCrossSpace / len(lines)
+			remainder := freeCrossSpace % len(lines)
+			for l := range lines {
+				lines[l].crossSize += extra
+				if l < remainder {
+					lines[l].crossSize++
+				}
+			}
+			freeCrossSpace = 0
+		}
+
+		offset := calculateContentOffset(style.AlignContent, freeCrossSpace, len(lines))
+		spacing := calculateContentSpacing(style.AlignContent, freeCrossSpace, len(lines))
+
+		for l := range lines {
+			lines[l].crossPos = offset
+			offset += float64(lines[l].crossSize) + spacing
+		}
+	} else if len(lines) == 1 {
+		// Single line: use full cross size
+		lines[0].crossSize = crossSize
+		lines[0].crossPos = 0
+	}
+
+	// Phase 5 + 6: Cross-axis alignment and rect conversion per line
+	for l := range lines {
+		line := &lines[l]
+		lineItems := items[line.startIdx:line.endIdx]
+		lineChildren := children[line.startIdx:line.endIdx]
+		lineCross := line.crossSize
+
+		// Phase 5: Cross-axis sizing and alignment within the line
+		for i := range lineItems {
+			child := lineItems[i].node
+			childStyle := child.LayoutStyle()
+			align := style.AlignItems
+			if childStyle.AlignSelf != nil {
+				align = *childStyle.AlignSelf
+			}
+
+			var crossStyleValue Value
+			var crossMargin int
+			var crossIntrinsic int
+			childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
+			if isRow {
+				crossStyleValue = childStyle.Height
+				crossMargin = childStyle.Margin.Vertical()
+				if lineItems[i].hasWrappedCross {
+					crossIntrinsic = lineItems[i].wrappedCrossSize
+				} else {
+					crossIntrinsic = childIntrinsicH
+				}
+			} else {
+				crossStyleValue = childStyle.Width
+				crossMargin = childStyle.Margin.Horizontal()
+				crossIntrinsic = childIntrinsicW
+			}
+
+			availableCross := lineCross - crossMargin
+
+			if align == AlignStretch && crossStyleValue.IsAuto() {
+				lineItems[i].crossSize = availableCross + crossMargin
+				lineItems[i].crossPos = 0
+			} else {
+				var contentCross int
+				if crossStyleValue.IsAuto() {
+					contentCross = min(crossIntrinsic, availableCross)
+				} else {
+					contentCross = crossStyleValue.Resolve(availableCross, crossIntrinsic)
+				}
+				lineItems[i].crossSize = contentCross + crossMargin
+				lineItems[i].crossPos = calculateAlignOffset(align, lineCross, lineItems[i].crossSize)
+			}
+		}
+
+		// Phase 6: Convert to rects and recurse
+		for i := range lineItems {
+			child := lineChildren[i]
+			childStyle := child.LayoutStyle()
+
+			var childAbsX, childAbsY float64
+			if isRow {
+				childAbsX = parentAbsX + lineItems[i].mainPos
+				childAbsY = parentAbsY + line.crossPos + lineItems[i].crossPos
+			} else {
+				childAbsX = parentAbsX + line.crossPos + lineItems[i].crossPos
+				childAbsY = parentAbsY + lineItems[i].mainPos
+			}
+
+			var slot Rect
+			if isRow {
+				slot = Rect{
+					X:      int(math.Round(childAbsX)),
+					Y:      int(math.Round(childAbsY)),
+					Width:  lineItems[i].mainSize,
+					Height: lineItems[i].crossSize,
+				}
+			} else {
+				slot = Rect{
+					X:      int(math.Round(childAbsX)),
+					Y:      int(math.Round(childAbsY)),
+					Width:  lineItems[i].crossSize,
+					Height: lineItems[i].mainSize,
+				}
+			}
+
+			if isRow {
+				childAbsX += float64(childStyle.Margin.Left)
+				childAbsY += float64(childStyle.Margin.Top)
+			} else {
+				childAbsX += float64(childStyle.Margin.Left)
+				childAbsY += float64(childStyle.Margin.Top)
+			}
+			childBorderBox := slot.Inset(childStyle.Margin)
+
+			child.SetDirty(true)
+			calculateNode(child, childBorderBox, childAbsX, childAbsY)
+		}
 	}
 }
 
