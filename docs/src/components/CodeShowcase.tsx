@@ -19,12 +19,14 @@ import (
 type counterApp struct {
 \tcount   *tui.State[int]
 \telapsed *tui.State[int]
+\tpeak    *tui.State[int]
 }
 
 func Counter() *counterApp {
 \treturn &counterApp{
 \t\tcount:   tui.NewState(0),
 \t\telapsed: tui.NewState(0),
+\t\tpeak:    tui.NewState(0),
 \t}
 }
 
@@ -45,6 +47,11 @@ func (c *counterApp) Watchers() []tui.Watcher {
 \treturn []tui.Watcher{
 \t\ttui.OnTimer(time.Second, func() {
 \t\t\tc.elapsed.Update(func(v int) int { return v + 1 })
+\t\t}),
+\t\ttui.OnChange(c.count, func(v int) {
+\t\t\tif v > c.peak.Get() {
+\t\t\t\tc.peak.Set(v)
+\t\t\t}
 \t\t}),
 \t}
 }
@@ -72,7 +79,10 @@ templ (c *counterApp) Render() {
 \t<div class="flex-col border-rounded p-1 gap-1">
 \t\t<div class="flex justify-between">
 \t\t\t<span class="font-bold text-cyan">Counter</span>
-\t\t\t@Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
+\t\t\t<div class="flex gap-2">
+\t\t\t\t@Badge("peak:", fmt.Sprintf("%d", c.peak.Get()), "text-magenta")
+\t\t\t\t@Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
+\t\t\t</div>
 \t\t</div>
 \t\t<hr />
 \t\t<div class="flex gap-2">
@@ -147,28 +157,28 @@ const gsxStepDefs: Omit<Step, "color">[] = [
     label: "State",
     description:
       "Reactive State[T] values live on the component struct. The constructor initializes them with NewState.",
-    lines: [9, 10, 11, 12, 14, 15, 16, 17, 18, 19],
+    lines: [9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21],
   },
   {
     id: "events",
     label: "Keyboard Events",
     description:
       "KeyMap binds keys to actions. OnRune matches character keys; Update and Set mutate state and trigger re-renders.",
-    lines: [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+    lines: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
   },
   {
     id: "watchers",
     label: "Watchers",
     description:
-      "Background tasks that run independently. OnTimer fires a callback at a fixed interval, here once per second.",
-    lines: [34, 35, 36, 37, 38, 39, 40],
+      "Side effects that react to state changes or run on intervals, like React's useEffect. OnChange watches a State value and fires when it changes; OnTimer fires on a fixed interval.",
+    lines: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47],
   },
   {
     id: "components",
     label: "Components",
     description:
       "Reusable templ functions that take props and return elements. Card accepts {children...} as a content slot.",
-    lines: [46, 47, 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59],
+    lines: [53, 54, 55, 56, 57, 58, 60, 61, 62, 63, 64, 65, 66],
   },
   {
     id: "template",
@@ -176,8 +186,8 @@ const gsxStepDefs: Omit<Step, "color">[] = [
     description:
       "The Render template ties it together: @-calls nest components and @if/@else adds conditionals.",
     lines: [
-      61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
-      78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+      68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
+      85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98,
     ],
   },
 ];
@@ -236,6 +246,7 @@ export default function CodeShowcase() {
   );
   const [termCount, setTermCount] = useState(0);
   const [termElapsed, setTermElapsed] = useState(0);
+  const [termPeak, setTermPeak] = useState(0);
   const wideScrollRef = useRef<HTMLDivElement>(null);
   const codeScrollRef = useRef<HTMLDivElement>(null);
   const gutterScrollRef = useRef<HTMLDivElement>(null);
@@ -262,6 +273,7 @@ export default function CodeShowcase() {
     if (!isTerminal) {
       setTermElapsed(0);
       setTermCount(0);
+      setTermPeak(0);
       return;
     }
     const interval = setInterval(() => setTermElapsed((e) => e + 1), 1000);
@@ -279,7 +291,11 @@ export default function CodeShowcase() {
         return;
       if (e.key === "+" || e.key === "=") {
         e.preventDefault();
-        setTermCount((c) => c + 1);
+        setTermCount((c) => {
+          const next = c + 1;
+          setTermPeak((p) => Math.max(p, next));
+          return next;
+        });
       } else if (e.key === "-") {
         e.preventDefault();
         setTermCount((c) => c - 1);
@@ -556,6 +572,7 @@ export default function CodeShowcase() {
     const termDim = "#75715e";
     const termCyan = "#66d9ef";
     const termYellow = "#e6db74";
+    const termMagenta = "#ae81ff";
     const termGreen = "#a6e22e";
     const termRed = "#f92672";
     const termBlue = "#6796e6";
@@ -667,17 +684,25 @@ export default function CodeShowcase() {
                   >
                     Counter
                   </span>
-                  {/* @Badge("uptime:", ..., "text-yellow") */}
+                  {/* @Badge("peak:", ...) @Badge("uptime:", ...) */}
                   <div
                     style={{
                       display: "flex",
-                      gap: 8,
+                      gap: 16,
                     }}
                   >
-                    <span style={{ color: termDim }}>uptime:</span>
-                    <span style={{ color: termYellow, fontWeight: 700 }}>
-                      {formatTime(termElapsed)}
-                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <span style={{ color: termDim }}>peak:</span>
+                      <span style={{ color: termMagenta, fontWeight: 700 }}>
+                        {termPeak}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <span style={{ color: termDim }}>uptime:</span>
+                      <span style={{ color: termYellow, fontWeight: 700 }}>
+                        {formatTime(termElapsed)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
