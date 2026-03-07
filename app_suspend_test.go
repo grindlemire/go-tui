@@ -264,3 +264,49 @@ func TestSuspendSignalRegistration(t *testing.T) {
 	// Verify cleanup doesn't panic when called multiple times
 	cleanup()
 }
+
+func TestKeyCtrlZ_OverrideByStopper(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+	term.inRawMode = true
+
+	overrideCalled := false
+
+	// Build a dispatch table with a Stop handler for KeyCtrlZ
+	table := &dispatchTable{
+		entries: []dispatchEntry{
+			{
+				pattern: KeyPattern{Key: KeyCtrlZ},
+				handler: func(ke KeyEvent) { overrideCalled = true },
+				stop:    true,
+			},
+		},
+	}
+
+	app := &App{
+		terminal:      term,
+		stopCh:        make(chan struct{}),
+		eventQueue:    make(chan func(), 256),
+		updateQueue:   make(chan func(), 256),
+		buffer:        NewBuffer(80, 24),
+		focus:         newFocusManager(),
+		dispatchTable: table,
+		dirty:         atomic.Bool{},
+	}
+
+	ke := KeyEvent{Key: KeyCtrlZ, app: app}
+
+	// Dispatch through table - should be consumed by Stop handler
+	stopped := app.dispatchTable.dispatch(ke)
+
+	if !stopped {
+		t.Fatal("expected dispatch to return stopped=true")
+	}
+	if !overrideCalled {
+		t.Fatal("expected override handler to be called")
+	}
+
+	// Verify terminal was NOT touched (suspend should not have fired)
+	if len(term.calls) != 0 {
+		t.Fatalf("expected no terminal calls, got: %v", term.calls)
+	}
+}
