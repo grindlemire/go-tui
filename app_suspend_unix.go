@@ -60,13 +60,19 @@ func (a *App) resumeTerminal() {
 func (a *App) suspend() {
 	a.suspendTerminal()
 
-	// Restore default SIGTSTP handler so the kill actually stops the process
+	// Restore default SIGTSTP handler so the kill actually stops the process.
+	// This undoes signal.Notify, so we must re-register after resume.
 	signal.Reset(syscall.SIGTSTP)
 
 	// Stop the process. Execution pauses here until SIGCONT.
 	syscall.Kill(syscall.Getpid(), syscall.SIGTSTP)
 
 	// Process has been resumed by SIGCONT.
+	// Re-register SIGTSTP handler (signal.Reset removed it above).
+	if a.suspendCh != nil {
+		signal.Notify(a.suspendCh, syscall.SIGTSTP)
+	}
+
 	// Resume inline to avoid a race with the event queue.
 	a.resumeTerminal()
 }
@@ -83,7 +89,8 @@ func (a *App) Suspend() {
 // registerSuspendSignals sets up SIGTSTP signal handling.
 // Returns a cleanup function to call when the app stops.
 func (a *App) registerSuspendSignals() func() {
-	suspendCh := make(chan os.Signal, 1)
+	a.suspendCh = make(chan os.Signal, 1)
+	suspendCh := a.suspendCh
 	signal.Notify(suspendCh, syscall.SIGTSTP)
 
 	go func() {
