@@ -233,6 +233,58 @@ By default, flex items can shrink below their natural size when the container is
 
 You can also use attributes: `flexGrow={1.5}`, `flexShrink={0}`.
 
+## Flex Wrap
+
+By default, children stay on a single line even if they overflow the container. Add `flex-wrap` to let items break onto new lines when they run out of room.
+
+```gsx
+templ WrapDemo() {
+    <div class="flex flex-wrap gap-1 w-40 border-single p-1">
+        <span class="bg-cyan text-black px-2 shrink-0">Alpha</span>
+        <span class="bg-cyan text-black px-2 shrink-0">Bravo</span>
+        <span class="bg-cyan text-black px-2 shrink-0">Charlie</span>
+        <span class="bg-cyan text-black px-2 shrink-0">Delta</span>
+        <span class="bg-cyan text-black px-2 shrink-0">Echo</span>
+    </div>
+}
+```
+
+Items that don't fit on the first line wrap to the next. Each line handles grow, shrink, and justify on its own.
+
+| Class | Behavior |
+|-------|----------|
+| `flex-wrap` | Items wrap to new lines when they overflow |
+| `flex-wrap-reverse` | Items wrap in reverse order (last line appears first) |
+| `flex-nowrap` | Items stay on one line (default) |
+
+You can also use the attribute form: `flexWrap={tui.Wrap}`.
+
+### Align Content
+
+When wrapping produces multiple lines, `align-content` controls how the lines are spaced along the cross axis. It requires at least two lines and some free cross-axis space to have a visible effect.
+
+```gsx
+templ AlignContentDemo() {
+    <div class="flex flex-wrap gap-1 h-20 w-40 border-single content-center">
+        <span class="bg-cyan text-black px-2 shrink-0">A</span>
+        <span class="bg-cyan text-black px-2 shrink-0">B</span>
+        <span class="bg-cyan text-black px-2 shrink-0">C</span>
+        <span class="bg-cyan text-black px-2 shrink-0">D</span>
+    </div>
+}
+```
+
+| Class | Behavior |
+|-------|----------|
+| `content-start` | Pack lines at the start of the cross axis (default) |
+| `content-end` | Pack lines at the end |
+| `content-center` | Center lines in the cross axis |
+| `content-stretch` | Stretch lines to fill the cross axis |
+| `content-between` | First line at start, last line at end, even spacing between |
+| `content-around` | Equal spacing around each line |
+
+You can also use the attribute form: `alignContent={tui.ContentCenter}`.
+
 ## Sizing
 
 By default, elements size to their content (`Auto`). You can set explicit sizes in character cells, percentages, or keep the default auto behavior.
@@ -342,27 +394,6 @@ For more control via attributes, use `padding={2}` for uniform or set each side 
 
 ## Common Layout Patterns
 
-### Full-Screen App with Header, Content, and Footer
-
-```gsx
-templ AppLayout() {
-    <div class="flex-col h-full">
-        <div class="border-single p-1">
-            <span class="font-bold text-cyan">My App</span>
-        </div>
-        <div class="flex-col grow p-1">
-            <span>Main content goes here.</span>
-            <span>This section grows to fill available space.</span>
-        </div>
-        <div class="border-single p-1">
-            <span class="font-dim">Press q to quit</span>
-        </div>
-    </div>
-}
-```
-
-The outer `<div>` takes the full terminal height with `h-full` and stacks children vertically with `flex-col`. The header and footer are fixed-height (sized to their content), and the content area uses `grow` to fill whatever space remains.
-
 ### Sidebar and Main Content
 
 ```gsx
@@ -456,9 +487,29 @@ templ FormLayout() {
 
 Each field is a vertical stack of label and input. The button row uses `justify-end` to push the button to the right.
 
-Here's what the layout patterns from this guide look like in practice:
+### Wrapping Tag Grid
 
-![Layout screenshot](/guides/04.png)
+```gsx
+templ FlexWrapGrid() {
+    <div class="flex flex-wrap gap-1 grow content-center">
+        @for _, label := range labels {
+            <div class="border-rounded p-1 w-16 flex-col items-center shrink-0">
+                <span>{label}</span>
+            </div>
+        }
+    </div>
+}
+```
+
+Items have a fixed `w-16` width and `shrink-0` so they won't compress to fit. When the row fills up, `flex-wrap` pushes the rest onto a new line. The `content-center` class centers those lines vertically.
+
+The `examples/04-layout` demo lets you switch between these patterns with Tab. The dashboard view:
+
+![Dashboard layout](/guides/04a.png)
+
+The flex wrap view cycles through align-content modes with arrow keys:
+
+![Flex wrap layout](/guides/04b.png)
 
 ## Next Steps
 

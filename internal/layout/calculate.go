@@ -135,11 +135,29 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 				totalCross += maxCross
 			}
 
-			// Adjust border box
+			// Adjust border box cross dimension to fit wrapped content.
+			// When the node has flex-grow and its cross axis was allocated
+			// by the parent's flex algorithm, only expand (never shrink).
+			// Otherwise (truly auto-sized), set to content size exactly.
+			flexAllocated := style.FlexGrow > 0
 			if isRow {
-				borderBox.Height = totalCross + style.Padding.Vertical()
+				needed := totalCross + style.Padding.Vertical()
+				if flexAllocated {
+					if needed > borderBox.Height {
+						borderBox.Height = needed
+					}
+				} else {
+					borderBox.Height = needed
+				}
 			} else {
-				borderBox.Width = totalCross + style.Padding.Horizontal()
+				needed := totalCross + style.Padding.Horizontal()
+				if flexAllocated {
+					if needed > borderBox.Width {
+						borderBox.Width = needed
+					}
+				} else {
+					borderBox.Width = needed
+				}
 			}
 		}
 	}

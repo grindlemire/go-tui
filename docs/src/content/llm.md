@@ -290,6 +290,14 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 
 `items-start` `items-center` `items-end` `items-stretch` `self-start` `self-center` `self-end` `self-stretch`
 
+### Flex Wrap
+
+`flex-wrap` `flex-wrap-reverse` `flex-nowrap`
+
+### Align Content (for wrapped containers)
+
+`content-start` `content-end` `content-center` `content-stretch` `content-between` `content-around`
+
 ### Spacing
 
 `gap-N` `p-N` `px-N` `py-N` `pt-N` `pr-N` `pb-N` `pl-N` `m-N` `mx-N` `my-N` `mt-N` `mr-N` `mb-N` `ml-N`

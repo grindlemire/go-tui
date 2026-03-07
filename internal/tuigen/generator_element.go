@@ -238,7 +238,9 @@ var attributeToOption = map[string]string{
 	"direction": "tui.WithDirection(%s)",
 	"justify":   "tui.WithJustify(%s)",
 	"align":     "tui.WithAlign(%s)",
-	"gap":       "tui.WithGap(%s)",
+	"gap":          "tui.WithGap(%s)",
+	"flexWrap":     "tui.WithFlexWrap(%s)",
+	"alignContent": "tui.WithAlignContent(%s)",
 
 	// Flex item
 	"flexGrow":   "tui.WithFlexGrow(%s)",

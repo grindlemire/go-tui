@@ -4,120 +4,64 @@
 package main
 
 import (
+	"fmt"
+
 	tui "github.com/grindlemire/go-tui"
 )
 
-type layoutApp struct{}
+type alignMode struct {
+	name    string
+	content tui.AlignContent
+}
+
+type layoutApp struct {
+	viewIndex *tui.State[int]
+	modeIndex *tui.State[int]
+}
+
+func alignModes() []alignMode {
+	return []alignMode{
+		{"content-start", tui.ContentStart},
+		{"content-end", tui.ContentEnd},
+		{"content-center", tui.ContentCenter},
+		{"content-stretch", tui.ContentStretch},
+		{"content-between", tui.ContentSpaceBetween},
+		{"content-around", tui.ContentSpaceAround},
+	}
+}
+
+func viewNames() []string {
+	return []string{"Dashboard", "Sidebar", "Centered Card", "Flex Wrap"}
+}
 
 func LayoutApp() *layoutApp {
-	return &layoutApp{}
+	return &layoutApp{
+		viewIndex: tui.NewState(0),
+		modeIndex: tui.NewState(0),
+	}
 }
 
 func (l *layoutApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+			l.viewIndex.Update(func(v int) int { return (v + 1) % len(viewNames()) })
+		}),
+		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) {
+			l.viewIndex.Update(func(v int) int { return (v - 1 + len(viewNames())) % len(viewNames()) })
+		}),
+		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) {
+			l.modeIndex.Update(func(v int) int { return (v + 1) % len(alignModes()) })
+		}),
+		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) {
+			l.modeIndex.Update(func(v int) int { return (v - 1 + len(alignModes())) % len(alignModes()) })
+		}),
 	}
 }
 
-type AppLayoutView struct {
-	Root      *tui.Element
-	watchers  []tui.Watcher
-	bindApp   func(*tui.App)
-	unbindApp func()
-}
-
-func (v *AppLayoutView) UnbindApp() {
-	if v.unbindApp != nil {
-		v.unbindApp()
-	}
-}
-
-func (v *AppLayoutView) GetRoot() *tui.Element { return v.Root }
-
-func (v *AppLayoutView) GetWatchers() []tui.Watcher { return v.watchers }
-
-func (v *AppLayoutView) Render(app *tui.App) *tui.Element { return v.Root }
-
-func (v *AppLayoutView) BindApp(app *tui.App) {
-	if v.bindApp != nil {
-		v.bindApp(app)
-	}
-}
-
-func (v *AppLayoutView) UpdateProps(fresh tui.Component) {
-	f, ok := fresh.(*AppLayoutView)
-	if !ok {
-		return
-	}
-	v.Root = f.Root
-	v.watchers = f.watchers
-	v.bindApp = f.bindApp
-	v.unbindApp = f.unbindApp
-}
-
-var _ tui.AppBinder = (*AppLayoutView)(nil)
-
-var _ tui.AppUnbinder = (*AppLayoutView)(nil)
-
-var _ tui.PropsUpdater = (*AppLayoutView)(nil)
-
-func AppLayout() *AppLayoutView {
-	var view AppLayoutView
-	var watchers []tui.Watcher
-
-	__tui_0 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithHeightPercent(100.00),
-	)
-	__tui_1 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-	)
-	__tui_2 := tui.New(
-		tui.WithText("My App"),
-		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
-	)
-	__tui_1.AddChild(__tui_2)
-	__tui_0.AddChild(__tui_1)
-	__tui_3 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithFlexGrow(1),
-		tui.WithPadding(1),
-	)
-	__tui_4 := tui.New(
-		tui.WithText("Main content goes here."),
-	)
-	__tui_3.AddChild(__tui_4)
-	__tui_5 := tui.New(
-		tui.WithText("This section grows to fill available space."),
-	)
-	__tui_3.AddChild(__tui_5)
-	__tui_0.AddChild(__tui_3)
-	__tui_6 := tui.New(
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPadding(1),
-	)
-	__tui_7 := tui.New(
-		tui.WithText("Press q to quit"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_6.AddChild(__tui_7)
-	__tui_0.AddChild(__tui_6)
-
-	__bindApp := func(app *tui.App) {
-	}
-
-	__unbindApp := func() {
-	}
-
-	view = AppLayoutView{
-		Root:      __tui_0,
-		watchers:  watchers,
-		bindApp:   __bindApp,
-		unbindApp: __unbindApp,
-	}
-	return &view
+func wrapLabels() []string {
+	return []string{"Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"}
 }
 
 type SidebarLayoutView struct {
@@ -470,14 +414,300 @@ func Dashboard() *DashboardView {
 	return &view
 }
 
+type FlexWrapGridView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *FlexWrapGridView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *FlexWrapGridView) GetRoot() *tui.Element { return v.Root }
+
+func (v *FlexWrapGridView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *FlexWrapGridView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *FlexWrapGridView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *FlexWrapGridView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*FlexWrapGridView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*FlexWrapGridView)(nil)
+
+var _ tui.AppUnbinder = (*FlexWrapGridView)(nil)
+
+var _ tui.PropsUpdater = (*FlexWrapGridView)(nil)
+
+func FlexWrapGrid(mode alignMode) *FlexWrapGridView {
+	var view FlexWrapGridView
+	var watchers []tui.Watcher
+
+	__tui_0 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithHeightPercent(100.00),
+		tui.WithPadding(1),
+	)
+	__tui_1 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithFlexWrap(tui.Wrap),
+		tui.WithGap(1),
+		tui.WithFlexGrow(1),
+		tui.WithAlignContent(mode.content),
+	)
+	for __idx_0, label := range wrapLabels() {
+		_ = __idx_0
+		__tui_2 := tui.New(
+			tui.WithBorder(tui.BorderRounded),
+			tui.WithPadding(1),
+			tui.WithWidth(16),
+			tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+			tui.WithAlign(tui.AlignCenter),
+			tui.WithFlexShrink(0),
+		)
+		__tui_3 := tui.New(
+			tui.WithText(label),
+		)
+		__tui_2.AddChild(__tui_3)
+		__tui_1.AddChild(__tui_2)
+	}
+	__tui_0.AddChild(__tui_1)
+	__tui_4 := tui.New(
+		tui.WithPadding(1),
+	)
+	__tui_5 := tui.New(
+		tui.WithText(fmt.Sprintf("align-content: %s  (←/→ to cycle)", mode.name)),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_4.AddChild(__tui_5)
+	__tui_0.AddChild(__tui_4)
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = FlexWrapGridView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
+}
+
+type ViewHeaderView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *ViewHeaderView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *ViewHeaderView) GetRoot() *tui.Element { return v.Root }
+
+func (v *ViewHeaderView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *ViewHeaderView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *ViewHeaderView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *ViewHeaderView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*ViewHeaderView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*ViewHeaderView)(nil)
+
+var _ tui.AppUnbinder = (*ViewHeaderView)(nil)
+
+var _ tui.PropsUpdater = (*ViewHeaderView)(nil)
+
+func ViewHeader(viewIndex int) *ViewHeaderView {
+	var view ViewHeaderView
+	var watchers []tui.Watcher
+
+	__tui_0 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(1),
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderSingle),
+	)
+	for i, name := range viewNames() {
+		_ = i
+		if i == viewIndex {
+			__tui_1 := tui.New(
+				tui.WithText(fmt.Sprintf("[%s]", name)),
+				tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+			)
+			__tui_0.AddChild(__tui_1)
+		} else {
+			__tui_2 := tui.New(
+				tui.WithText(name),
+				tui.WithTextStyle(tui.NewStyle().Dim()),
+			)
+			__tui_0.AddChild(__tui_2)
+		}
+	}
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = ViewHeaderView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
+}
+
+type ViewFooterView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *ViewFooterView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *ViewFooterView) GetRoot() *tui.Element { return v.Root }
+
+func (v *ViewFooterView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *ViewFooterView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *ViewFooterView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *ViewFooterView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*ViewFooterView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*ViewFooterView)(nil)
+
+var _ tui.AppUnbinder = (*ViewFooterView)(nil)
+
+var _ tui.PropsUpdater = (*ViewFooterView)(nil)
+
+func ViewFooter() *ViewFooterView {
+	var view ViewFooterView
+	var watchers []tui.Watcher
+
+	__tui_0 := tui.New(
+		tui.WithPadding(1),
+		tui.WithBorder(tui.BorderSingle),
+	)
+	__tui_1 := tui.New(
+		tui.WithText("tab/shift+tab: switch view | q: quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_0.AddChild(__tui_1)
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = ViewFooterView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
+}
+
 func (l *layoutApp) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithHeightPercent(100.00),
 		tui.WithWidthPercent(100.00),
 	)
-	__tui_1 := Dashboard()
+	__tui_1 := ViewHeader(l.viewIndex.Get())
 	__tui_0.AddChild(__tui_1.Root)
+	__tui_2 := tui.New(
+		tui.WithFlexGrow(1),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+	)
+	if l.viewIndex.Get() == 0 {
+		__tui_3 := Dashboard()
+		__tui_2.AddChild(__tui_3.Root)
+	} else if l.viewIndex.Get() == 1 {
+		__tui_4 := SidebarLayout()
+		__tui_2.AddChild(__tui_4.Root)
+	} else if l.viewIndex.Get() == 2 {
+		__tui_5 := CenteredCard()
+		__tui_2.AddChild(__tui_5.Root)
+	} else {
+		__tui_6 := FlexWrapGrid(alignModes()[l.modeIndex.Get()])
+		__tui_2.AddChild(__tui_6.Root)
+	}
+	__tui_0.AddChild(__tui_2)
+	__tui_7 := ViewFooter()
+	__tui_0.AddChild(__tui_7.Root)
 
 	return __tui_0
 }
+
+func (l *layoutApp) BindApp(app *tui.App) {
+	if l.viewIndex != nil {
+		l.viewIndex.BindApp(app)
+	}
+	if l.modeIndex != nil {
+		l.modeIndex.BindApp(app)
+	}
+}
+
+var _ tui.AppBinder = (*layoutApp)(nil)

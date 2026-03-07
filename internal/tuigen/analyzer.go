@@ -119,10 +119,12 @@ var knownAttributes = map[string]bool{
 	"maxHeight":     true,
 
 	// Flex container
-	"direction": true,
-	"justify":   true,
-	"align":     true,
-	"gap":       true,
+	"direction":    true,
+	"justify":      true,
+	"align":        true,
+	"gap":          true,
+	"flexWrap":     true,
+	"alignContent": true,
 
 	// Flex item
 	"flexGrow":   true,
@@ -207,8 +209,10 @@ var attributeSimilar = map[string]string{
 	"flexshrink":  "flexShrink",
 	"textstyle":   "textStyle",
 	"textalign":   "textAlign",
-	"alignself":   "alignSelf",
-	"borderstyle": "borderStyle",
+	"alignself":     "alignSelf",
+	"flexwrap":      "flexWrap",
+	"aligncontent":  "alignContent",
+	"borderstyle":   "borderStyle",
 }
 
 // Analyze performs semantic analysis on a parsed file.

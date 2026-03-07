@@ -20,21 +20,43 @@ type KeyPattern struct {
 	RequireNoMods bool     // When true, event must have no modifiers (Mod field is ignored)
 }
 
-// OnKey creates a broadcast binding for a specific key.
+// OnKey creates a broadcast binding for a specific key with no modifiers.
 // Other handlers for the same key will also fire.
+// Use OnKeyMod to match a key with specific modifiers (e.g., Shift+Tab).
 func OnKey(key Key, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Key: key},
+		Pattern: KeyPattern{Key: key, RequireNoMods: true},
 		Handler: handler,
 		Stop:    false,
 	}
 }
 
-// OnKeyStop creates a stop-propagation binding for a specific key.
+// OnKeyStop creates a stop-propagation binding for a specific key with no modifiers.
 // No handlers registered after this one (in tree order) will fire.
+// Use OnKeyModStop to match a key with specific modifiers.
 func OnKeyStop(key Key, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Key: key},
+		Pattern: KeyPattern{Key: key, RequireNoMods: true},
+		Handler: handler,
+		Stop:    true,
+	}
+}
+
+// OnKeyMod creates a broadcast binding for a key with specific modifiers.
+// Example: OnKeyMod(KeyTab, ModShift, handler) matches Shift+Tab.
+func OnKeyMod(key Key, mod Modifier, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{
+		Pattern: KeyPattern{Key: key, Mod: mod},
+		Handler: handler,
+		Stop:    false,
+	}
+}
+
+// OnKeyModStop creates a stop-propagation binding for a key with specific modifiers.
+// Example: OnKeyModStop(KeyTab, ModShift, handler) matches Shift+Tab exclusively.
+func OnKeyModStop(key Key, mod Modifier, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{
+		Pattern: KeyPattern{Key: key, Mod: mod},
 		Handler: handler,
 		Stop:    true,
 	}

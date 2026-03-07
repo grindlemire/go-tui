@@ -123,7 +123,12 @@ func TestDispatchEntry_Matches(t *testing.T) {
 			event:   KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl},
 			want:    false,
 		},
-		"no modifier required ignores event mods": {
+		"no modifier required rejects event with mods": {
+			pattern: KeyPattern{Key: KeyEscape, RequireNoMods: true},
+			event:   KeyEvent{Key: KeyEscape, Mod: ModShift},
+			want:    false,
+		},
+		"no RequireNoMods ignores event mods": {
 			pattern: KeyPattern{Key: KeyEscape},
 			event:   KeyEvent{Key: KeyEscape, Mod: ModShift},
 			want:    true,
