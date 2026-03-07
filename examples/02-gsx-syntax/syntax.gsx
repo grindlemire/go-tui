@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -75,9 +74,7 @@ templ (l *listApp) Render() {
 					{itemLabel(i, item, i == l.selected.Get())}
 				</span>
 			}
-
 			<br />
-
 			@if l.selected.Get() >= 0 {
 				<span class="font-dim">{fmt.Sprintf("Selected: %s", l.items[l.selected.Get()])}</span>
 			}
