@@ -332,6 +332,34 @@ The `controls` component emits strings onto the topic when you press a key. The 
 
 The event bus works well for fire-and-forget notifications and cross-component communication where the sender doesn't need to know who's listening.
 
+## State Change Watchers
+
+`tui.OnChange` watches a `State[T]` value and calls your handler when it changes:
+
+```go
+tui.OnChange[T any](state *State[T], handler func(T)) Watcher
+```
+
+The handler fires once on startup with the current value, then again each time the state changes. Like other watchers, it starts and stops with the component lifecycle.
+
+Good for side effects that don't belong inside `Render()`. Scrolling a container to the bottom when new messages arrive, for instance:
+
+```go
+func (w *myApp) Watchers() []tui.Watcher {
+    return []tui.Watcher{
+        tui.OnChange(w.messages, func(_ []string) {
+            el := w.feed.El()
+            if el != nil {
+                _, maxY := el.MaxScroll()
+                w.scrollY.Set(maxY + 1)
+            }
+        }),
+    }
+}
+```
+
+The handler runs synchronously during `State.Set()`, so it doesn't go through the event queue like `OnTimer` and `Watch` callbacks do. It runs on the main loop because `Set()` itself must be called from the main loop.
+
 ## Combining Watchers
 
 A single component can return multiple watchers. Return them all from `Watchers()`:
@@ -351,6 +379,8 @@ type dashboard struct {
     messages *tui.State[[]string]
     msgCh    chan string
     msgCount *tui.State[int]
+    feed     *tui.Ref
+    scrollY  *tui.State[int]
 }
 
 func Dashboard() *dashboard {
@@ -360,6 +390,8 @@ func Dashboard() *dashboard {
         messages: tui.NewState([]string{}),
         msgCh:    msgCh,
         msgCount: tui.NewState(0),
+        feed:     tui.NewRef(),
+        scrollY:  tui.NewState(0),
     }
 
     go func() {
@@ -384,6 +416,7 @@ func (d *dashboard) Watchers() []tui.Watcher {
     return []tui.Watcher{
         tui.OnTimer(time.Second, d.tick),
         tui.Watch(d.msgCh, d.addMessage),
+        tui.OnChange(d.messages, d.autoScrollToBottom),
     }
 }
 
@@ -400,6 +433,14 @@ func (d *dashboard) addMessage(msg string) {
         current = current[1:]
     }
     d.messages.Set(append(current, entry))
+}
+
+func (d *dashboard) autoScrollToBottom(_ []string) {
+    el := d.feed.El()
+    if el != nil {
+        _, maxY := el.MaxScroll()
+        d.scrollY.Set(maxY + 1)
+    }
 }
 
 func (d *dashboard) KeyMap() tui.KeyMap {
@@ -434,7 +475,7 @@ templ (d *dashboard) Render() {
 }
 ```
 
-The timer handles the uptime counter while the channel watcher receives messages from the background producer. Both callbacks run on the main event loop, so they can freely update state without coordination.
+The timer handles the uptime counter, the channel watcher receives messages from the background producer, and `OnChange` keeps the feed scrolled to the bottom whenever new messages arrive. All three callbacks run on the main event loop, so they can update state without coordination.
 
 ## Thread Safety
 
@@ -443,6 +484,7 @@ Watcher callbacks are queued on the main event loop and run one at a time. This 
 This applies to:
 - `OnTimer` callbacks
 - `Watch` channel handlers
+- `OnChange` state change handlers
 - Key handlers in `KeyMap()`
 - Mouse handlers in `HandleMouse()`
 
@@ -474,7 +516,7 @@ Remember: `state.Get()` is safe from any goroutine, but `state.Set()` and `state
 
 ## Complete Example
 
-This app combines a stopwatch timer with a channel-fed message stream. The timer ticks every second and conditionally increments the stopwatch. The channel watcher appends messages from a background producer to a rolling log.
+This app combines a stopwatch timer with a channel-fed message stream. The timer ticks every second and conditionally increments the stopwatch. The channel watcher appends messages from a background producer. An `OnChange` watcher on the messages state keeps the feed scrolled to the bottom automatically.
 
 ```gsx
 package main
@@ -545,6 +587,7 @@ func (w *watcherApp) Watchers() []tui.Watcher {
     return []tui.Watcher{
         tui.OnTimer(time.Second, w.tick),
         tui.Watch(w.msgCh, w.addMessage),
+        tui.OnChange(w.messages, w.autoScrollToBottom),
     }
 }
 
@@ -559,8 +602,9 @@ func (w *watcherApp) addMessage(msg string) {
     ts := time.Now().Format("15:04:05")
     entry := fmt.Sprintf("[%s] #%d: %s", ts, w.msgCount.Get(), msg)
     w.messages.Set(append(w.messages.Get(), entry))
+}
 
-    // Auto-scroll to bottom
+func (w *watcherApp) autoScrollToBottom(_ []string) {
     el := w.feed.El()
     if el != nil {
         _, maxY := el.MaxScroll()
@@ -673,7 +717,7 @@ tui generate ./...
 go run .
 ```
 
-You'll see the clock ticking, the stopwatch ready to go, and the channel watcher waiting for messages:
+You'll see the clock ticking, the stopwatch ready to go, and the channel watcher waiting for messages. When messages arrive, the `OnChange` watcher scrolls the feed to the bottom automatically:
 
 ![Timers, Watchers, and Channels screenshot](/guides/12.png)
 
