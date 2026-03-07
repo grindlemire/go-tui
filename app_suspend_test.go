@@ -246,3 +246,21 @@ func TestSuspendResume_HooksNilSafe(t *testing.T) {
 	app.suspendTerminal()
 	app.resumeTerminal()
 }
+
+func TestSuspendSignalRegistration(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+
+	app := &App{
+		terminal:       term,
+		stopCh:         make(chan struct{}),
+		eventQueue:     make(chan func(), 256),
+		eventQueueSize: 256,
+		buffer:         NewBuffer(80, 24),
+	}
+
+	cleanup := app.registerSuspendSignals()
+	defer cleanup()
+
+	// Verify cleanup doesn't panic when called multiple times
+	cleanup()
+}

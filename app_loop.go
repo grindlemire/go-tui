@@ -23,6 +23,10 @@ func (a *App) Run() error {
 		signal.Stop(sigCh)
 	}()
 
+	// Handle Ctrl+Z / SIGTSTP for job control
+	cleanupSuspend := a.registerSuspendSignals()
+	defer cleanupSuspend()
+
 	// Start input reader in background
 	go a.readInputEvents()
 
