@@ -13,12 +13,14 @@ import (
 type counterApp struct {
 	count   *tui.State[int]
 	elapsed *tui.State[int]
+	peak    *tui.State[int]
 }
 
 func Counter() *counterApp {
 	return &counterApp{
 		count:   tui.NewState(0),
 		elapsed: tui.NewState(0),
+		peak:    tui.NewState(0),
 	}
 }
 
@@ -39,6 +41,11 @@ func (c *counterApp) Watchers() []tui.Watcher {
 	return []tui.Watcher{
 		tui.OnTimer(time.Second, func() {
 			c.elapsed.Update(func(v int) int { return v + 1 })
+		}),
+		tui.OnChange(c.count, func(v int) {
+			if v > c.peak.Get() {
+				c.peak.Set(v)
+			}
 		}),
 	}
 }
@@ -224,59 +231,66 @@ func (c *counterApp) Render(app *tui.App) *tui.Element {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
-	__tui_3 := Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
-	__tui_1.AddChild(__tui_3.Root)
-	__tui_0.AddChild(__tui_1)
-	__tui_4 := tui.New(
-		tui.WithHR(),
-	)
-	__tui_0.AddChild(__tui_4)
-	__tui_5 := tui.New(
+	__tui_3 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_7_children := []*tui.Element{}
-	__tui_8 := tui.New(
+	__tui_4 := Badge("peak:", fmt.Sprintf("%d", c.peak.Get()), "text-magenta")
+	__tui_3.AddChild(__tui_4.Root)
+	__tui_5 := Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
+	__tui_3.AddChild(__tui_5.Root)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+	__tui_6 := tui.New(
+		tui.WithHR(),
+	)
+	__tui_0.AddChild(__tui_6)
+	__tui_7 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
+	)
+	__tui_9_children := []*tui.Element{}
+	__tui_10 := tui.New(
 		tui.WithText(fmt.Sprintf("%d", c.count.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_7_children = append(__tui_7_children, __tui_8)
-	__tui_6 := Card("Count", __tui_7_children)
-	__tui_5.AddChild(__tui_6.Root)
-	__tui_10_children := []*tui.Element{}
+	__tui_9_children = append(__tui_9_children, __tui_10)
+	__tui_8 := Card("Count", __tui_9_children)
+	__tui_7.AddChild(__tui_8.Root)
+	__tui_12_children := []*tui.Element{}
 	if c.count.Get() > 0 {
-		__tui_11 := tui.New(
+		__tui_13 := tui.New(
 			tui.WithText("Positive"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 		)
-		__tui_10_children = append(__tui_10_children, __tui_11)
+		__tui_12_children = append(__tui_12_children, __tui_13)
 	} else if c.count.Get() < 0 {
-		__tui_12 := tui.New(
+		__tui_14 := tui.New(
 			tui.WithText("Negative"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 		)
-		__tui_10_children = append(__tui_10_children, __tui_12)
+		__tui_12_children = append(__tui_12_children, __tui_14)
 	} else {
-		__tui_13 := tui.New(
+		__tui_15 := tui.New(
 			tui.WithText("Zero"),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Blue).Bold()),
 		)
-		__tui_10_children = append(__tui_10_children, __tui_13)
+		__tui_12_children = append(__tui_12_children, __tui_15)
 	}
-	__tui_9 := Card("Status", __tui_10_children)
-	__tui_5.AddChild(__tui_9.Root)
-	__tui_0.AddChild(__tui_5)
-	__tui_14 := tui.New(
+	__tui_11 := Card("Status", __tui_12_children)
+	__tui_7.AddChild(__tui_11.Root)
+	__tui_0.AddChild(__tui_7)
+	__tui_16 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(1),
 		tui.WithJustify(tui.JustifyCenter),
 	)
-	__tui_15 := tui.New(
+	__tui_17 := tui.New(
 		tui.WithText("+/-count·0 reset·q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_14.AddChild(__tui_15)
-	__tui_0.AddChild(__tui_14)
+	__tui_16.AddChild(__tui_17)
+	__tui_0.AddChild(__tui_16)
 
 	return __tui_0
 }
@@ -287,6 +301,9 @@ func (c *counterApp) BindApp(app *tui.App) {
 	}
 	if c.elapsed != nil {
 		c.elapsed.BindApp(app)
+	}
+	if c.peak != nil {
+		c.peak.BindApp(app)
 	}
 }
 

@@ -10,12 +10,14 @@ import (
 type counterApp struct {
 	count   *tui.State[int]
 	elapsed *tui.State[int]
+	peak    *tui.State[int]
 }
 
 func Counter() *counterApp {
 	return &counterApp{
 		count:   tui.NewState(0),
 		elapsed: tui.NewState(0),
+		peak:    tui.NewState(0),
 	}
 }
 
@@ -36,6 +38,11 @@ func (c *counterApp) Watchers() []tui.Watcher {
 	return []tui.Watcher{
 		tui.OnTimer(time.Second, func() {
 			c.elapsed.Update(func(v int) int { return v + 1 })
+		}),
+		tui.OnChange(c.count, func(v int) {
+			if v > c.peak.Get() {
+				c.peak.Set(v)
+			}
 		}),
 	}
 }
@@ -63,7 +70,10 @@ templ (c *counterApp) Render() {
 	<div class="flex-col border-double border-gradient-cyan-magenta p-1 gap-1">
 		<div class="flex justify-between items-center">
 			<span class="text-gradient-cyan-magenta font-bold">Counter</span>
-			@Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
+			<div class="flex gap-2">
+				@Badge("peak:", fmt.Sprintf("%d", c.peak.Get()), "text-magenta")
+				@Badge("uptime:", formatTime(c.elapsed.Get()), "text-yellow")
+			</div>
 		</div>
 		<hr />
 		<div class="flex gap-2">
