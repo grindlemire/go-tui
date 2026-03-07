@@ -209,7 +209,7 @@ Configures how inline mode handles existing visible terminal content at startup.
 func WithOnSuspend(fn func()) AppOption
 ```
 
-Sets a callback that runs before the app suspends on Ctrl+Z. Use this to save state, pause timers, or perform cleanup before the process stops.
+Sets a callback that runs before the app suspends on Ctrl+Z. Use this to save state or pause timers before the process stops.
 
 ### WithOnResume
 
@@ -217,7 +217,7 @@ Sets a callback that runs before the app suspends on Ctrl+Z. Use this to save st
 func WithOnResume(fn func()) AppOption
 ```
 
-Sets a callback that runs after the app resumes from suspension (when the user runs `fg`). Use this to restore state, restart timers, or refresh data.
+Sets a callback that runs after the app resumes from suspension (when the user runs `fg`). Use this to restart timers or refresh stale data.
 
 ## Lifecycle Methods
 
@@ -590,7 +590,7 @@ Returns `true` if the app is currently displaying in the alternate screen overla
 
 ## Job Control (Ctrl+Z)
 
-go-tui supports Unix job control out of the box. Pressing Ctrl+Z suspends the app, and running `fg` in the shell resumes it.
+Pressing Ctrl+Z suspends the app, and running `fg` in the shell resumes it. This works automatically for all go-tui apps.
 
 On suspend, the framework automatically:
 1. Disables mouse reporting
