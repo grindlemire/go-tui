@@ -66,6 +66,7 @@ func (w *watcherApp) Watchers() []tui.Watcher {
 	return []tui.Watcher{
 		tui.OnTimer(time.Second, w.tick),
 		tui.Watch(w.msgCh, w.addMessage),
+		tui.OnChange(w.messages, w.autoScrollToBottom),
 	}
 }
 
@@ -80,8 +81,9 @@ func (w *watcherApp) addMessage(msg string) {
 	ts := time.Now().Format("15:04:05")
 	entry := fmt.Sprintf("[%s] #%d: %s", ts, w.msgCount.Get(), msg)
 	w.messages.Set(append(w.messages.Get(), entry))
+}
 
-	// Auto-scroll to bottom
+func (w *watcherApp) autoScrollToBottom(_ []string) {
 	el := w.feed.El()
 	if el != nil {
 		_, maxY := el.MaxScroll()
