@@ -351,6 +351,100 @@ func TestNewChannelWatcher_ExitsWhenChannelCloses(t *testing.T) {
 	}
 }
 
+func TestOnChange_CreatesWatcher(t *testing.T) {
+	state := NewState(0)
+
+	watcher := OnChange(state, func(v int) {})
+
+	if watcher == nil {
+		t.Error("OnChange() should return a non-nil Watcher")
+	}
+}
+
+func TestOnChange_FiresOnStart(t *testing.T) {
+	state := NewState(42)
+	state.BindApp(testApp)
+
+	eventQueue := make(chan func(), 10)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+
+	var received []int
+	watcher := OnChange(state, func(v int) {
+		received = append(received, v)
+	})
+	watcher.Start(eventQueue, stopCh)
+
+	if len(received) != 1 {
+		t.Fatalf("received %d values on start, want 1", len(received))
+	}
+	if received[0] != 42 {
+		t.Errorf("received[0] = %d, want 42", received[0])
+	}
+}
+
+func TestOnChange_FiresOnStateChange(t *testing.T) {
+	state := NewState(0)
+	state.BindApp(testApp)
+
+	eventQueue := make(chan func(), 10)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+
+	var received []int
+	watcher := OnChange(state, func(v int) {
+		received = append(received, v)
+	})
+	watcher.Start(eventQueue, stopCh)
+
+	// Clear initial fire
+	received = nil
+
+	state.Set(10)
+	state.Set(20)
+
+	if len(received) != 2 {
+		t.Fatalf("received %d values, want 2", len(received))
+	}
+	if received[0] != 10 {
+		t.Errorf("received[0] = %d, want 10", received[0])
+	}
+	if received[1] != 20 {
+		t.Errorf("received[1] = %d, want 20", received[1])
+	}
+}
+
+func TestOnChange_UnbindsOnStop(t *testing.T) {
+	state := NewState(0)
+	state.BindApp(testApp)
+
+	eventQueue := make(chan func(), 10)
+	stopCh := make(chan struct{})
+
+	var received []int
+	watcher := OnChange(state, func(v int) {
+		received = append(received, v)
+	})
+	watcher.Start(eventQueue, stopCh)
+
+	// Clear initial fire
+	received = nil
+
+	state.Set(1)
+	if len(received) != 1 {
+		t.Fatalf("received %d values before stop, want 1", len(received))
+	}
+
+	close(stopCh)
+	// Give the goroutine time to process the stop
+	time.Sleep(50 * time.Millisecond)
+
+	state.Set(2)
+	if len(received) != 1 {
+		t.Errorf("received %d values after stop, want 1 (binding should be removed)", len(received))
+	}
+}
+
 func TestWatch_WithDifferentTypes(t *testing.T) {
 	type tc struct {
 		testFunc func(t *testing.T)
