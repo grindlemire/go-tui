@@ -20,6 +20,19 @@ var tailwindClasses = map[string]TailwindMapping{
 	"flex-row": {Option: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row)", NeedsImport: "tui"},
 	"flex-col": {Option: "tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column)", NeedsImport: "tui"},
 
+	// Flex wrap
+	"flex-wrap":         {Option: "tui.WithFlexWrap(tui.Wrap)", NeedsImport: "tui"},
+	"flex-wrap-reverse": {Option: "tui.WithFlexWrap(tui.WrapReverse)", NeedsImport: "tui"},
+	"flex-nowrap":       {Option: "tui.WithFlexWrap(tui.WrapNone)", NeedsImport: "tui"},
+
+	// Align content (cross-axis line distribution for wrapped flex)
+	"content-start":   {Option: "tui.WithAlignContent(tui.ContentStart)", NeedsImport: "tui"},
+	"content-end":     {Option: "tui.WithAlignContent(tui.ContentEnd)", NeedsImport: "tui"},
+	"content-center":  {Option: "tui.WithAlignContent(tui.ContentCenter)", NeedsImport: "tui"},
+	"content-stretch": {Option: "tui.WithAlignContent(tui.ContentStretch)", NeedsImport: "tui"},
+	"content-between": {Option: "tui.WithAlignContent(tui.ContentSpaceBetween)", NeedsImport: "tui"},
+	"content-around":  {Option: "tui.WithAlignContent(tui.ContentSpaceAround)", NeedsImport: "tui"},
+
 	// Flex grow/shrink (Tailwind standard)
 	"grow":     {Option: "tui.WithFlexGrow(1)", NeedsImport: ""},
 	"grow-0":   {Option: "tui.WithFlexGrow(0)", NeedsImport: ""},
