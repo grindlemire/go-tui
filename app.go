@@ -49,6 +49,7 @@ type App struct {
 	cursorVisible    bool          // Whether cursor is visible (default false)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
 	onResume         func()        // Called after resuming (SIGCONT)
+	suspendCh        chan os.Signal // Channel for SIGTSTP signal handler (re-registered after resume)
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
