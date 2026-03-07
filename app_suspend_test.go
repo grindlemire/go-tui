@@ -64,6 +64,16 @@ func (r *recordingTerminal) Clear() {
 	r.MockTerminal.Clear()
 }
 
+func (r *recordingTerminal) SetCursor(x, y int) {
+	r.calls = append(r.calls, "SetCursor")
+	r.MockTerminal.SetCursor(x, y)
+}
+
+func (r *recordingTerminal) ClearToEnd() {
+	r.calls = append(r.calls, "ClearToEnd")
+	r.MockTerminal.ClearToEnd()
+}
+
 func TestSuspendSequence_FullScreen(t *testing.T) {
 	term := newRecordingTerminal(80, 24)
 	term.inRawMode = true
@@ -105,30 +115,24 @@ func TestSuspendSequence_InlineMode(t *testing.T) {
 	term.cursorHidden = true
 
 	app := &App{
-		terminal:     term,
-		inlineHeight: 5,
-		stopCh:       make(chan struct{}),
-		buffer:       NewBuffer(80, 5),
+		terminal:       term,
+		inlineHeight:   5,
+		inlineStartRow: 19,
+		stopCh:         make(chan struct{}),
+		buffer:         NewBuffer(80, 5),
 	}
 
 	app.suspendTerminal()
 
-	// Inline mode: should NOT call ExitAltScreen
-	for _, call := range term.calls {
-		if call == "ExitAltScreen" {
-			t.Fatal("should not exit alt screen in inline mode")
-		}
+	// Inline mode: should clear widget area, NOT call ExitAltScreen
+	expected := []string{"ShowCursor", "SetCursor", "ClearToEnd", "ExitRawMode"}
+	if len(term.calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
 	}
-
-	// Should still exit raw mode
-	found := false
-	for _, call := range term.calls {
-		if call == "ExitRawMode" {
-			found = true
+	for i, call := range expected {
+		if term.calls[i] != call {
+			t.Errorf("call[%d] = %q, want %q", i, term.calls[i], call)
 		}
-	}
-	if !found {
-		t.Fatal("expected ExitRawMode in inline mode")
 	}
 }
 
@@ -171,11 +175,12 @@ func TestResumeSequence_InlineMode(t *testing.T) {
 	term := newRecordingTerminal(80, 24)
 
 	app := &App{
-		terminal:     term,
-		inlineHeight: 5,
-		stopCh:       make(chan struct{}),
-		buffer:       NewBuffer(80, 5),
-		dirty:        atomic.Bool{},
+		terminal:       term,
+		inlineHeight:   5,
+		inlineStartRow: 0, // stale value
+		stopCh:         make(chan struct{}),
+		buffer:         NewBuffer(80, 5),
+		dirty:          atomic.Bool{},
 	}
 
 	app.resumeTerminal()
@@ -185,6 +190,11 @@ func TestResumeSequence_InlineMode(t *testing.T) {
 		if call == "EnterAltScreen" || call == "Clear" {
 			t.Fatalf("should not call %s in inline mode", call)
 		}
+	}
+
+	// Should recalculate inlineStartRow from terminal size
+	if app.inlineStartRow != 19 { // 24 - 5
+		t.Fatalf("expected inlineStartRow=19, got %d", app.inlineStartRow)
 	}
 }
 
