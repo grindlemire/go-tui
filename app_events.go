@@ -94,7 +94,7 @@ func (a *App) readInputEvents() {
 				// Component model path: use broadcast dispatch table exclusively.
 				// globalKeyHandler is skipped — components use KeyMap() instead.
 				if a.dispatchTable != nil {
-					stopped := a.dispatchTable.dispatch(keyEvent)
+					stopped := a.dispatchTable.dispatch(keyEvent, a.focus)
 					if stopped {
 						return // Event consumed by a Stop handler
 					}

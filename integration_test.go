@@ -149,7 +149,7 @@ func TestIntegration_MountCachesAndDiscoverKeyMaps(t *testing.T) {
 	}
 
 	// Build dispatch table from the rendered tree
-	table, err := buildDispatchTable(root, el)
+	table, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -170,13 +170,13 @@ func TestIntegration_DispatchBroadcastAndStopPropagation(t *testing.T) {
 	root := newIntRoot()
 	el := root.Render(testApp)
 
-	table, err := buildDispatchTable(root, el)
+	table, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Press '/': root handler fires, searchActive becomes true
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: '/'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: '/'}, nil)
 	if !root.searchActive.Get() {
 		t.Error("expected searchActive=true after '/' dispatch")
 	}
@@ -192,13 +192,13 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	// Initial render: search is inactive
 	el := root.Render(testApp)
 
-	table, err := buildDispatchTable(root, el)
+	table, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable (initial): %v", err)
 	}
 
 	// Press '/' to activate search
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: '/'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: '/'}, nil)
 	if !root.searchActive.Get() {
 		t.Fatal("expected searchActive=true")
 	}
@@ -207,7 +207,7 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	el = root.Render(testApp)
 
 	// Rebuild dispatch table with new KeyMaps
-	table, err = buildDispatchTable(root, el)
+	table, err = buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable (after activation): %v", err)
 	}
@@ -222,13 +222,13 @@ func TestIntegration_ConditionalKeyMapActivation(t *testing.T) {
 	}
 
 	// Type a character — should go to search exclusively (stop propagation)
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'h'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'h'}, nil)
 	if root.query.Get() != "h" {
 		t.Errorf("query = %q, want %q", root.query.Get(), "h")
 	}
 
 	// Type more
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'i'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'i'}, nil)
 	if root.query.Get() != "hi" {
 		t.Errorf("query = %q, want %q", root.query.Get(), "hi")
 	}
@@ -248,13 +248,13 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 
 	el := root.Render(testApp)
 
-	table, err := buildDispatchTable(root, el)
+	table, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Press Escape — search deactivates
-	table.dispatch(KeyEvent{Key: KeyEscape})
+	table.dispatch(KeyEvent{Key: KeyEscape}, nil)
 
 	if root.searchActive.Get() {
 		t.Error("expected searchActive=false after Escape")
@@ -266,7 +266,7 @@ func TestIntegration_EscapeDeactivatesSearch(t *testing.T) {
 	// Re-render: search should return nil KeyMap
 	el = root.Render(testApp)
 
-	table, err = buildDispatchTable(root, el)
+	table, err = buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable (after deactivation): %v", err)
 	}
@@ -351,7 +351,7 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 	// Phase 1: searchActive=false
 	el := root.Render(testApp)
 
-	table1, err := buildDispatchTable(root, el)
+	table1, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable phase 1: %v", err)
 	}
@@ -361,7 +361,7 @@ func TestIntegration_DispatchTableRebuiltOnStateChange(t *testing.T) {
 	root.searchActive.Set(true)
 	el = root.Render(testApp)
 
-	table2, err := buildDispatchTable(root, el)
+	table2, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable phase 2: %v", err)
 	}
@@ -389,7 +389,7 @@ func TestIntegration_CtrlBTogglesSidebar(t *testing.T) {
 	root := newIntRoot()
 	el := root.Render(testApp)
 
-	table, err := buildDispatchTable(root, el)
+	table, err := buildDispatchTable(root, el, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -410,14 +410,14 @@ func TestIntegration_CtrlBTogglesSidebar(t *testing.T) {
 	}
 
 	// Press Ctrl+B to toggle sidebar
-	table.dispatch(KeyEvent{Key: KeyCtrlB})
+	table.dispatch(KeyEvent{Key: KeyCtrlB}, nil)
 
 	if sidebar.expanded.Get() {
 		t.Error("sidebar should be collapsed after Ctrl+B")
 	}
 
 	// Press again to toggle back
-	table.dispatch(KeyEvent{Key: KeyCtrlB})
+	table.dispatch(KeyEvent{Key: KeyCtrlB}, nil)
 
 	if !sidebar.expanded.Get() {
 		t.Error("sidebar should be expanded after second Ctrl+B")

@@ -133,7 +133,7 @@ func (a *App) rebuildDispatchTable() {
 		return
 	}
 
-	table, err := buildDispatchTable(a.rootComponent, a.root)
+	table, err := buildDispatchTable(a.rootComponent, a.root, a.focus)
 	if err != nil {
 		// Validation error (e.g., conflicting Stop handlers).
 		// Log and keep the previous valid table rather than crashing.

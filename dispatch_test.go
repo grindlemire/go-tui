@@ -158,7 +158,7 @@ func TestDispatchEntry_Matches(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			entry := &dispatchEntry{pattern: tt.pattern}
-			got := entry.matches(tt.event)
+			got := entry.matches(tt.event, nil)
 			if got != tt.want {
 				t.Errorf("matches(%+v) = %v, want %v", tt.event, got, tt.want)
 			}
@@ -188,12 +188,12 @@ func TestDispatch_BroadcastMultipleHandlers(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2, comp3)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
-	table.dispatch(KeyEvent{Key: KeyCtrlC})
+	table.dispatch(KeyEvent{Key: KeyCtrlC}, nil)
 
 	if len(calls) != 3 {
 		t.Fatalf("got %d handler calls, want 3", len(calls))
@@ -223,12 +223,12 @@ func TestDispatch_StopPreventsLaterHandlers(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2, comp3)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
-	table.dispatch(KeyEvent{Key: KeyEscape})
+	table.dispatch(KeyEvent{Key: KeyEscape}, nil)
 
 	// Handler 1 (broadcast) fires, handler 2 (stop) fires, handler 3 is blocked
 	if len(calls) != 2 {
@@ -254,12 +254,12 @@ func TestDispatch_TreeOrder(t *testing.T) {
 	}
 
 	root := buildNestedTestTree(parent, child)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
-	table.dispatch(KeyEvent{Key: KeyEnter})
+	table.dispatch(KeyEvent{Key: KeyEnter}, nil)
 
 	if len(calls) != 2 {
 		t.Fatalf("got %d handler calls, want 2", len(calls))
@@ -287,13 +287,13 @@ func TestDispatch_UnifiedOrdering_ExactAndAnyRune(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Pressing 'a' should fire both in tree order
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'a'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'a'}, nil)
 
 	if len(calls) != 2 {
 		t.Fatalf("got %d handler calls, want 2", len(calls))
@@ -313,27 +313,27 @@ func TestDispatch_AnyRuneMatchesPrintableOnly(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Printable character should match
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'z'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'z'}, nil)
 	if !called {
 		t.Error("AnyRune should match printable character")
 	}
 
 	// Special key should not match
 	called = false
-	table.dispatch(KeyEvent{Key: KeyEscape})
+	table.dispatch(KeyEvent{Key: KeyEscape}, nil)
 	if called {
 		t.Error("AnyRune should not match special key")
 	}
 
 	// Ctrl key should not match
 	called = false
-	table.dispatch(KeyEvent{Key: KeyCtrlC})
+	table.dispatch(KeyEvent{Key: KeyCtrlC}, nil)
 	if called {
 		t.Error("AnyRune should not match ctrl key")
 	}
@@ -378,12 +378,12 @@ func TestDispatch_ExactRuneMatch(t *testing.T) {
 			}
 
 			root := buildTestTree(comp)
-			table, err := buildDispatchTable(nil, root)
+			table, err := buildDispatchTable(nil, root, nil)
 			if err != nil {
 				t.Fatalf("buildDispatchTable: %v", err)
 			}
 
-			table.dispatch(KeyEvent{Key: tt.eventKey, Rune: tt.eventRune})
+			table.dispatch(KeyEvent{Key: tt.eventKey, Rune: tt.eventRune}, nil)
 			if called != tt.wantCalled {
 				t.Errorf("called = %v, want %v", called, tt.wantCalled)
 			}
@@ -426,12 +426,12 @@ func TestDispatch_ExactKeyMatch(t *testing.T) {
 			}
 
 			root := buildTestTree(comp)
-			table, err := buildDispatchTable(nil, root)
+			table, err := buildDispatchTable(nil, root, nil)
 			if err != nil {
 				t.Fatalf("buildDispatchTable: %v", err)
 			}
 
-			table.dispatch(KeyEvent{Key: tt.eventKey})
+			table.dispatch(KeyEvent{Key: tt.eventKey}, nil)
 			if called != tt.wantCalled {
 				t.Errorf("called = %v, want %v", called, tt.wantCalled)
 			}
@@ -454,7 +454,7 @@ func TestDispatch_ConflictValidation_TwoStopHandlersSamePattern(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(nil, root)
+	_, err := buildDispatchTable(nil, root, nil)
 	if err == nil {
 		t.Fatal("expected error for conflicting stop handlers, got nil")
 	}
@@ -473,7 +473,7 @@ func TestDispatch_NoConflict_StopPlusBroadcast(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(nil, root)
+	_, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("should not error for stop + broadcast: %v", err)
 	}
@@ -492,7 +492,7 @@ func TestDispatch_NoConflict_TwoBroadcastHandlers(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(nil, root)
+	_, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("should not error for two broadcast handlers: %v", err)
 	}
@@ -511,7 +511,7 @@ func TestDispatch_ConflictValidation_TwoStopAnyRune(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(nil, root)
+	_, err := buildDispatchTable(nil, root, nil)
 	if err == nil {
 		t.Fatal("expected error for conflicting AnyRune stop handlers, got nil")
 	}
@@ -530,7 +530,7 @@ func TestDispatch_ConflictValidation_DifferentPatterns(t *testing.T) {
 	}
 
 	root := buildTestTree(comp1, comp2)
-	_, err := buildDispatchTable(nil, root)
+	_, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("different patterns should not conflict: %v", err)
 	}
@@ -542,7 +542,7 @@ func TestDispatch_NilKeyMap(t *testing.T) {
 	comp := &mockKeyComponent{keyMap: nil}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -555,7 +555,7 @@ func TestDispatch_EmptyKeyMap(t *testing.T) {
 	comp := &mockKeyComponent{keyMap: KeyMap{}}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -568,7 +568,7 @@ func TestDispatch_NonKeyListenerComponent(t *testing.T) {
 	comp := &mockNoKeyComponent{}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -593,12 +593,12 @@ func TestDispatch_MixedComponents(t *testing.T) {
 	}
 
 	root := buildTestTree(keyComp, noKeyComp, keyComp2)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
-	table.dispatch(KeyEvent{Key: KeyEnter})
+	table.dispatch(KeyEvent{Key: KeyEnter}, nil)
 
 	if len(calls) != 2 {
 		t.Fatalf("got %d handler calls, want 2", len(calls))
@@ -611,12 +611,12 @@ func TestDispatch_MixedComponents(t *testing.T) {
 func TestDispatch_NilDispatchTable(t *testing.T) {
 	// dispatch on nil table should not panic
 	var dt *dispatchTable
-	dt.dispatch(KeyEvent{Key: KeyRune, Rune: 'a'})
+	dt.dispatch(KeyEvent{Key: KeyRune, Rune: 'a'}, nil)
 }
 
 func TestDispatch_EmptyTree(t *testing.T) {
 	root := New()
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
@@ -625,7 +625,7 @@ func TestDispatch_EmptyTree(t *testing.T) {
 	}
 
 	// Should not panic
-	table.dispatch(KeyEvent{Key: KeyEscape})
+	table.dispatch(KeyEvent{Key: KeyEscape}, nil)
 }
 
 func TestDispatch_NonMatchingKeyPassesThrough(t *testing.T) {
@@ -637,13 +637,13 @@ func TestDispatch_NonMatchingKeyPassesThrough(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Press a different key — handler should not fire
-	table.dispatch(KeyEvent{Key: KeyEnter})
+	table.dispatch(KeyEvent{Key: KeyEnter}, nil)
 	if called {
 		t.Error("handler should not fire for non-matching key")
 	}
@@ -660,13 +660,13 @@ func TestDispatch_StopOnlyAffectsMatchingPattern(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Press Enter — escape stop doesn't affect enter
-	table.dispatch(KeyEvent{Key: KeyEnter})
+	table.dispatch(KeyEvent{Key: KeyEnter}, nil)
 	if len(calls) != 1 || calls[0] != "enter" {
 		t.Errorf("calls = %v, want [enter]", calls)
 	}
@@ -684,20 +684,20 @@ func TestDispatch_MultipleBindingsPerComponent(t *testing.T) {
 	}
 
 	root := buildTestTree(comp)
-	table, err := buildDispatchTable(nil, root)
+	table, err := buildDispatchTable(nil, root, nil)
 	if err != nil {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
 	// Press ctrl+c
-	table.dispatch(KeyEvent{Key: KeyCtrlC})
+	table.dispatch(KeyEvent{Key: KeyCtrlC}, nil)
 	if len(calls) != 1 || calls[0] != "ctrl-c" {
 		t.Errorf("ctrl+c: calls = %v, want [ctrl-c]", calls)
 	}
 
 	// Press '/' — matches both exact rune and AnyRune, but AnyRune has Stop
 	calls = nil
-	table.dispatch(KeyEvent{Key: KeyRune, Rune: '/'})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: '/'}, nil)
 	if len(calls) != 2 {
 		t.Fatalf("'/': got %d calls, want 2", len(calls))
 	}
@@ -759,7 +759,7 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			root := buildTestTree(tt.components...)
-			table, err := buildDispatchTable(nil, root)
+			table, err := buildDispatchTable(nil, root, nil)
 			if err != nil {
 				t.Fatalf("buildDispatchTable: %v", err)
 			}
