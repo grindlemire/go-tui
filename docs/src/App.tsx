@@ -185,7 +185,7 @@ function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [starCount, setStarCount] = useState<string | null>(null);
 
-  // Fetch GitHub star count (cached for 1 hour to avoid rate limits)
+  // Fetch GitHub star count (cached for 15 minutes to avoid rate limits)
   useEffect(() => {
     try {
       const raw = localStorage.getItem("gh-stars");
@@ -206,7 +206,7 @@ function Nav() {
         if (data?.stargazers_count != null) {
           const count = data.stargazers_count;
           const formatted = count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
-          localStorage.setItem("gh-stars", JSON.stringify({ value: formatted, expiry: Date.now() + 3600000 }));
+          localStorage.setItem("gh-stars", JSON.stringify({ value: formatted, expiry: Date.now() + 900000 }));
           setStarCount(formatted);
         }
       })
