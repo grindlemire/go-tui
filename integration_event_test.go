@@ -19,6 +19,7 @@ func TestIntegration_MockReaderToFocusManager(t *testing.T) {
 			events:          []Event{KeyEvent{Key: KeyEnter}},
 			expectedHandled: []bool{true},
 			focusedAfter:    "a",
+			focusCycles:     1, // Need 1 Next() to seed focus on a
 		},
 		"multiple events same element": {
 			events: []Event{
@@ -28,6 +29,7 @@ func TestIntegration_MockReaderToFocusManager(t *testing.T) {
 			},
 			expectedHandled: []bool{true, true, true},
 			focusedAfter:    "a",
+			focusCycles:     1, // Need 1 Next() to seed focus on a
 		},
 		"events after focus change": {
 			events: []Event{
@@ -35,7 +37,7 @@ func TestIntegration_MockReaderToFocusManager(t *testing.T) {
 			},
 			expectedHandled: []bool{true},
 			focusedAfter:    "b",
-			focusCycles:     1,
+			focusCycles:     2, // 1 to seed on a, 1 to move to b
 		},
 	}
 
@@ -165,9 +167,12 @@ func TestIntegration_EventDispatchToMultipleFocusables(t *testing.T) {
 	fm.Register(elem2)
 	fm.Register(elem3)
 
-	// Verify initial focus on elem1
+	// Seed focus on elem1
+	fm.SetFocus(elem1)
+
+	// Verify focus on elem1
 	if fm.Focused().(*mockFocusable).id != "elem1" {
-		t.Errorf("Initial focus should be elem1, got %s", fm.Focused().(*mockFocusable).id)
+		t.Errorf("Focus should be elem1, got %s", fm.Focused().(*mockFocusable).id)
 	}
 
 	// Send event to elem1
@@ -225,12 +230,11 @@ func TestIntegration_FocusCycleWithNonFocusable(t *testing.T) {
 	fm.Register(elem4)
 	fm.Register(elem5)
 
-	// Track focus order
+	// Track focus order (no auto-focus, first Next() goes to elem1)
 	focusOrder := []string{}
-	focusOrder = append(focusOrder, fm.Focused().(*mockFocusable).id)
 
 	// Navigate forward through all focusable elements
-	for i := 0; i < 5; i++ { // More iterations than needed to test wraparound
+	for i := 0; i < 6; i++ { // More iterations than needed to test wraparound
 		fm.Next()
 		focusOrder = append(focusOrder, fm.Focused().(*mockFocusable).id)
 	}
@@ -264,6 +268,7 @@ func TestIntegration_EventReaderWithFocusManager(t *testing.T) {
 	elem.handled = true
 	fm := newFocusManager()
 	fm.Register(elem)
+	fm.SetFocus(elem)
 
 	// Process all events
 	eventCount := 0
@@ -296,6 +301,7 @@ func TestIntegration_UnhandledEventPropagation(t *testing.T) {
 
 	fm := newFocusManager()
 	fm.Register(elem)
+	fm.SetFocus(elem)
 
 	event := KeyEvent{Key: KeyEnter}
 	handled := fm.Dispatch(event)

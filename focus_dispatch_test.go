@@ -47,6 +47,9 @@ func TestFocusManager_Unregister(t *testing.T) {
 			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
+			// Seed focus on element 0 (no auto-focus)
+			fm.SetFocus(tt.elements[0])
+
 			toUnregister := tt.elements[tt.unregisterIndex]
 			initialBlurCalls := toUnregister.blurCalls
 
@@ -105,6 +108,7 @@ func TestFocusManager_Dispatch(t *testing.T) {
 
 			fm := newFocusManager()
 			fm.Register(mock)
+			fm.SetFocus(mock)
 
 			event := KeyEvent{Key: KeyEnter}
 			result := fm.Dispatch(event)
@@ -142,12 +146,14 @@ func TestFocusManager_BlurOnFocusChange(t *testing.T) {
 	fm.Register(a)
 	fm.Register(b)
 
-	// Initial state: a is focused
-	if a.blurCalls != 0 {
-		t.Errorf("Initial blurCalls for a = %d, want 0", a.blurCalls)
-	}
+	// Seed focus on a
+	fm.SetFocus(a)
 
-	// Move to next
+	// Reset counters after SetFocus
+	a.focusCalls = 0
+	a.blurCalls = 0
+
+	// Move to next (b)
 	fm.Next()
 
 	// a should be blurred
@@ -171,24 +177,25 @@ func TestFocusManager_SkipsNonFocusableInCycle(t *testing.T) {
 	fm.Register(b)
 	fm.Register(c)
 
-	// a is focused initially
+	// First Next() focuses a
+	fm.Next()
 	focused := fm.Focused().(*mockFocusable)
 	if focused.id != "a" {
-		t.Fatalf("Initial focus = %q, want 'a'", focused.id)
+		t.Fatalf("After first Next(), focus = %q, want 'a'", focused.id)
 	}
 
 	// Next should skip b and go to c
 	fm.Next()
 	focused = fm.Focused().(*mockFocusable)
 	if focused.id != "c" {
-		t.Errorf("After Next(), focus = %q, want 'c'", focused.id)
+		t.Errorf("After second Next(), focus = %q, want 'c'", focused.id)
 	}
 
 	// Next should wrap to a (skip b)
 	fm.Next()
 	focused = fm.Focused().(*mockFocusable)
 	if focused.id != "a" {
-		t.Errorf("After second Next(), focus = %q, want 'a'", focused.id)
+		t.Errorf("After third Next(), focus = %q, want 'a'", focused.id)
 	}
 }
 

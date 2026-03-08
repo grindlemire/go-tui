@@ -170,17 +170,23 @@ func TestApp_Focused(t *testing.T) {
 		t.Error("Focused() should return nil when no elements registered")
 	}
 
-	// Register an element
+	// Register an element (no auto-focus)
 	elem := newMockFocusable("elem", true)
 	app.focus.Register(elem)
 
-	// Now should return the focused element
+	// Still nil after registration (no auto-focus)
+	if app.Focused() != nil {
+		t.Error("Focused() should return nil after registration (no auto-focus)")
+	}
+
+	// After explicit focus, should return the element
+	app.FocusNext()
 	focused := app.Focused()
 	if focused == nil {
-		t.Error("Focused() should return non-nil after registering element")
+		t.Error("Focused() should return non-nil after FocusNext()")
 	}
 	if focused.(*mockFocusable).id != "elem" {
-		t.Error("Focused() should return the registered element")
+		t.Error("Focused() should return the focused element")
 	}
 }
 
@@ -211,10 +217,15 @@ func TestApp_SetRoot_AutoRegistration(t *testing.T) {
 			}
 			app.SetRoot(root)
 
-			// Verify focusables were auto-registered
-			focused := app.Focused()
-			if focused == nil {
-				t.Fatal("Focused() returned nil")
+			// No auto-focus after registration
+			if app.Focused() != nil {
+				t.Error("Focused() should be nil after SetRoot (no auto-focus)")
+			}
+
+			// After Next(), first focusable should be focused
+			app.FocusNext()
+			if app.Focused() == nil {
+				t.Fatal("Focused() returned nil after FocusNext()")
 			}
 		})
 	}
@@ -238,9 +249,14 @@ func TestApp_SetRoot_DynamicFocusableRegistration(t *testing.T) {
 	child := New(WithFocusable(true))
 	root.AddChild(child)
 
-	// Verify it was registered
-	focused := app.Focused()
-	if focused == nil {
-		t.Fatal("Focused() returned nil after adding focusable child")
+	// Registered but not auto-focused
+	if app.Focused() != nil {
+		t.Error("Focused() should be nil after dynamic registration (no auto-focus)")
+	}
+
+	// After explicit focus, should work
+	app.FocusNext()
+	if app.Focused() == nil {
+		t.Fatal("Focused() returned nil after FocusNext()")
 	}
 }

@@ -147,6 +147,7 @@ func TestApp_GlobalKeyHandler_ConsumesEvent(t *testing.T) {
 		stopped:    false,
 	}
 	app.focus.Register(focusable)
+	app.focus.SetFocus(focusable)
 
 	var globalHandlerCalled bool
 	app.SetGlobalKeyHandler(func(e KeyEvent) bool {
@@ -188,6 +189,7 @@ func TestApp_GlobalKeyHandler_PassesEvent(t *testing.T) {
 		stopped:    false,
 	}
 	app.focus.Register(focusable)
+	app.focus.SetFocus(focusable)
 
 	var globalHandlerCalled bool
 	app.SetGlobalKeyHandler(func(e KeyEvent) bool {

@@ -154,6 +154,7 @@ func TestApp_DispatchKeyEvent(t *testing.T) {
 				mock := newMockFocusable("a", true)
 				mock.handled = tt.handled
 				focus.Register(mock)
+				focus.SetFocus(mock)
 			}
 
 			app := &App{
