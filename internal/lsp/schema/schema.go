@@ -67,7 +67,7 @@ var Elements = map[string]*ElementDef{
 	},
 	"input": {
 		Tag:         "input",
-		Description: "A text input field for user input.",
+		Description: "A single-line text input with cursor management, placeholder support, and submit handling.",
 		Attributes:  inputAttrs(),
 		SelfClosing: true,
 		Category:    "input",
@@ -351,12 +351,17 @@ func inputAttrs() []AttributeDef {
 	return []AttributeDef{
 		{Name: "id", Type: "string", Description: "Unique identifier for the element", Category: "generic"},
 		{Name: "class", Type: "string", Description: "Tailwind-style CSS classes", Category: "generic"},
-		{Name: "value", Type: "string", Description: "Current input value", Category: "generic"},
-		{Name: "placeholder", Type: "string", Description: "Placeholder text when empty", Category: "generic"},
-		{Name: "width", Type: "int", Description: "Input width in characters", Category: "layout"},
-		{Name: "disabled", Type: "bool", Description: "Whether input is disabled", Category: "generic"},
-		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
-		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
+		{Name: "value", Type: "string", Description: "Initial text value", Category: "generic"},
+		{Name: "placeholder", Type: "string", Description: "Placeholder text shown when empty and unfocused", Category: "generic"},
+		{Name: "placeholderStyle", Type: "style", Description: "Placeholder text styling (default: dim)", Category: "visual"},
+		{Name: "width", Type: "int", Description: "Input width in characters (default 20)", Category: "layout"},
+		{Name: "border", Type: "border", Description: "Border style", Category: "visual"},
+		{Name: "textStyle", Type: "style", Description: "Text styling", Category: "visual"},
+		{Name: "cursor", Type: "expression", Description: "Cursor rune (default '▌')", Category: "visual"},
+		{Name: "onSubmit", Type: "func", Description: "Callback when Enter is pressed: func(string)", Category: "event"},
+		{Name: "onChange", Type: "func", Description: "Callback when text changes: func(string)", Category: "event"},
+		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
 }
 

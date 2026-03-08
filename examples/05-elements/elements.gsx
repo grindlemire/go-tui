@@ -9,6 +9,7 @@ type elementsApp struct {
 	progress *tui.State[int]
 	scrollY  *tui.State[int]
 	content  *tui.Ref
+	name     *tui.State[string]
 }
 
 func Elements() *elementsApp {
@@ -16,7 +17,19 @@ func Elements() *elementsApp {
 		progress: tui.NewState(62),
 		scrollY:  tui.NewState(0),
 		content:  tui.NewRef(),
+		name:     tui.NewState(""),
 	}
+}
+
+func (e *elementsApp) onNameChange(text string) {
+	e.name.Set(text)
+}
+
+func greeting(name string) string {
+	if name == "" {
+		return "Hello, World!"
+	}
+	return fmt.Sprintf("Hello, %s!", name)
 }
 
 func (e *elementsApp) scrollBy(delta int) {
@@ -156,6 +169,17 @@ templ (e *elementsApp) Render() {
 			</div>
 		</div>
 
+		// Input
+		<div class="flex-col border-rounded p-1 gap-1">
+			<span class="text-gradient-cyan-magenta font-bold">Input</span>
+			<div class="flex gap-2 items-center">
+				<span class="font-dim">Name:</span>
+				<input placeholder="Type your name..." width={30} border={tui.BorderRounded} onChange={e.onNameChange} />
+			</div>
+			<span class="text-cyan font-bold">{greeting(e.name.Get())}</span>
+			<span class="font-dim">Press Tab to focus the input</span>
+		</div>
+
 		// Progress bars (using custom rendering since <progress> attributes aren't supported yet)
 		<div class="flex-col border-rounded p-1 gap-1">
 			<span class="text-gradient-cyan-magenta font-bold">Progress Bars</span>
@@ -176,6 +200,6 @@ templ (e *elementsApp) Render() {
 			</div>
 		</div>
 
-		<span class="font-dim">+/- adjust progress | j/k scroll | q quit</span>
+		<span class="font-dim">tab focus input | +/- progress | j/k scroll | q quit</span>
 	</div>
 }

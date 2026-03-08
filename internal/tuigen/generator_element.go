@@ -15,7 +15,7 @@ func (g *Generator) generateElement(elem *Element, parentVar string) string {
 // isComponentElement returns true if the tag represents a Component that
 // must be mounted via app.Mount() rather than constructed with tui.New().
 func isComponentElement(tag string) bool {
-	return tag == "textarea"
+	return tag == "textarea" || tag == "input"
 }
 
 // generateElementWithRefs generates code for an element with ref handling.
@@ -353,6 +353,35 @@ var textareaHandlerAttributes = map[string]string{
 	"onSubmit": "tui.WithTextAreaOnSubmit",
 }
 
+// inputAttributeToOption maps input-specific attributes to tui.WithInput* options.
+var inputAttributeToOption = map[string]string{
+	"width":            "tui.WithInputWidth(%s)",
+	"border":           "tui.WithInputBorder(%s)",
+	"textStyle":        "tui.WithInputTextStyle(%s)",
+	"value":            "tui.WithInputValue(%s)",
+	"placeholder":      "tui.WithInputPlaceholder(%s)",
+	"placeholderStyle": "tui.WithInputPlaceholderStyle(%s)",
+	"cursor":           "tui.WithInputCursor(%s)",
+}
+
+// inputHandlerAttributes maps input event attributes to handler option funcs.
+var inputHandlerAttributes = map[string]string{
+	"onSubmit": "tui.WithInputOnSubmit",
+	"onChange": "tui.WithInputOnChange",
+}
+
+// componentConstructor returns the tui.New* constructor for a component element tag.
+func componentConstructor(tag string) string {
+	switch tag {
+	case "textarea":
+		return "tui.NewTextArea"
+	case "input":
+		return "tui.NewInput"
+	default:
+		return "tui.NewTextArea"
+	}
+}
+
 // generateComponentElementWithRefs generates an app.Mount() call for elements
 // that are backed by Component types (e.g., <textarea> → tui.NewTextArea).
 func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar string, inLoop bool) string {
@@ -371,10 +400,12 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	g.writef("%s := app.MountPersistent(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
 	g.indent++
 
+	constructor := componentConstructor(elem.Tag)
+
 	if len(elemOpts.options) == 0 {
-		g.writef("return tui.NewTextArea()\n")
+		g.writef("return %s()\n", constructor)
 	} else {
-		g.writef("return tui.NewTextArea(\n")
+		g.writef("return %s(\n", constructor)
 		g.indent++
 		for _, opt := range elemOpts.options {
 			g.writef("%s,\n", opt)
@@ -405,9 +436,12 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	return varName
 }
 
-// buildComponentElementOptions generates option expressions for a component element (e.g., textarea).
+// buildComponentElementOptions generates option expressions for a component element (e.g., textarea, input).
 func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 	var result elementOptions
+
+	// Select the correct attribute maps based on tag
+	attrMap, handlerMap := componentAttributeMaps(elem.Tag)
 
 	for _, attr := range elem.Attributes {
 		// Skip generic attributes handled elsewhere
@@ -417,7 +451,7 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 		}
 
 		// Check handler attributes first
-		if optionFunc, isHandler := textareaHandlerAttributes[attr.Name]; isHandler {
+		if optionFunc, isHandler := handlerMap[attr.Name]; isHandler {
 			handlerExpr := g.generateAttributeValue(attr.Value)
 			if handlerExpr != "" {
 				result.options = append(result.options, fmt.Sprintf("%s(%s)", optionFunc, handlerExpr))
@@ -426,7 +460,7 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 		}
 
 		// Check component-specific attribute map
-		if template, ok := textareaAttributeToOption[attr.Name]; ok {
+		if template, ok := attrMap[attr.Name]; ok {
 			value := g.generateAttributeValue(attr.Value)
 			if value != "" {
 				result.options = append(result.options, fmt.Sprintf(template, value))
@@ -436,4 +470,14 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 	}
 
 	return result
+}
+
+// componentAttributeMaps returns the attribute and handler maps for a component element tag.
+func componentAttributeMaps(tag string) (attrMap map[string]string, handlerMap map[string]string) {
+	switch tag {
+	case "input":
+		return inputAttributeToOption, inputHandlerAttributes
+	default:
+		return textareaAttributeToOption, textareaHandlerAttributes
+	}
 }

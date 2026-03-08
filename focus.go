@@ -40,16 +40,10 @@ func newFocusManager() *focusManager {
 }
 
 // Register adds a focusable element to the manager.
+// Does not auto-focus; use Tab or SetFocus to focus an element.
 func (f *focusManager) Register(elem Focusable) {
 	debug.Log("FocusManager.Register: adding element %T (focusable=%v)", elem, elem.IsFocusable())
 	f.elements = append(f.elements, elem)
-
-	// If this is the first element and nothing is focused, focus it
-	if f.current == -1 && elem.IsFocusable() {
-		debug.Log("FocusManager.Register: auto-focusing first element (index=%d)", len(f.elements)-1)
-		f.current = len(f.elements) - 1
-		elem.Focus()
-	}
 	debug.Log("FocusManager.Register: total elements=%d, current=%d", len(f.elements), f.current)
 }
 

@@ -115,16 +115,23 @@ func TestApp_FocusNext(t *testing.T) {
 	app.focus.Register(elem1)
 	app.focus.Register(elem2)
 
-	// Initially focused on elem1
+	// Nothing focused initially (no auto-focus)
+	if app.Focused() != nil {
+		t.Error("Nothing should be focused initially")
+	}
+
+	// FocusNext should move to elem1
+	app.FocusNext()
+
 	if app.Focused().(*mockFocusable).id != "elem1" {
-		t.Error("Initial focus should be elem1")
+		t.Error("After first FocusNext(), focus should be elem1")
 	}
 
 	// FocusNext should move to elem2
 	app.FocusNext()
 
 	if app.Focused().(*mockFocusable).id != "elem2" {
-		t.Error("After FocusNext(), focus should be elem2")
+		t.Error("After second FocusNext(), focus should be elem2")
 	}
 }
 
@@ -139,12 +146,12 @@ func TestApp_FocusPrev(t *testing.T) {
 	app.focus.Register(elem1)
 	app.focus.Register(elem2)
 
-	// Initially focused on elem1
-	if app.Focused().(*mockFocusable).id != "elem1" {
-		t.Error("Initial focus should be elem1")
+	// Nothing focused initially
+	if app.Focused() != nil {
+		t.Error("Nothing should be focused initially")
 	}
 
-	// FocusPrev should wrap to elem2
+	// FocusPrev should wrap to elem2 (last element)
 	app.FocusPrev()
 
 	if app.Focused().(*mockFocusable).id != "elem2" {

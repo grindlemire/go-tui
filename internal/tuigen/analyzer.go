@@ -171,12 +171,14 @@ var knownAttributes = map[string]bool{
 	"ref": true, // ref={varName} for element references
 	"key": true, // key={expr} for map-based refs in loops
 
-	// Textarea
+	// Textarea / Input
 	"placeholder":      true,
 	"placeholderStyle": true,
 	"cursor":           true,
 	"submitKey":        true,
 	"onSubmit":         true,
+	"value":            true,
+	"onChange":          true,
 }
 
 // stateNewStateRegex matches tui.NewState(...) declarations.
