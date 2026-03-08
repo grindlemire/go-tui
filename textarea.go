@@ -126,11 +126,20 @@ func (t *TextArea) Render(app *App) *Element {
 	opts := []Option{
 		WithDirection(Column),
 		WithHeight(totalHeight),
+		WithFocusable(true),
 	}
 	if t.border != BorderNone {
 		opts = append(opts, WithBorder(t.border))
 	}
 	root := New(opts...)
+
+	// Wire Element focus/blur to component focus/blur
+	root.SetOnFocus(func(e *Element) {
+		t.Focus()
+	})
+	root.SetOnBlur(func(e *Element) {
+		t.Blur()
+	})
 
 	// Render placeholder or content
 	if t.text.Get() == "" && t.placeholder != "" && !t.focused.Get() {
@@ -213,24 +222,24 @@ func (t *TextArea) KeyMap() KeyMap {
 	}
 
 	return KeyMap{
-		// Text input
-		OnRunesStop(t.insertChar),
+		// Text input (focus-gated)
+		OnRunesFocused(t.insertChar),
 
-		// Editing
-		OnKeyStop(KeyBackspace, t.backspace),
-		OnKeyStop(KeyDelete, t.delete),
+		// Editing (focus-gated)
+		OnKeyFocused(KeyBackspace, t.backspace),
+		OnKeyFocused(KeyDelete, t.delete),
 
-		// Navigation
-		OnKeyStop(KeyLeft, t.moveLeft),
-		OnKeyStop(KeyRight, t.moveRight),
-		OnKeyStop(KeyUp, t.moveUp),
-		OnKeyStop(KeyDown, t.moveDown),
-		OnKeyStop(KeyHome, t.moveHome),
-		OnKeyStop(KeyEnd, t.moveEnd),
+		// Navigation (focus-gated)
+		OnKeyFocused(KeyLeft, t.moveLeft),
+		OnKeyFocused(KeyRight, t.moveRight),
+		OnKeyFocused(KeyUp, t.moveUp),
+		OnKeyFocused(KeyDown, t.moveDown),
+		OnKeyFocused(KeyHome, t.moveHome),
+		OnKeyFocused(KeyEnd, t.moveEnd),
 
-		// Newline and submit
-		OnKeyStop(newlineKey, t.insertNewline),
-		OnKeyStop(submitKeyBinding, t.submit),
+		// Newline and submit (focus-gated)
+		OnKeyFocused(newlineKey, t.insertNewline),
+		OnKeyFocused(submitKeyBinding, t.submit),
 	}
 }
 
