@@ -18,6 +18,7 @@ type KeyPattern struct {
 	AnyRune       bool     // Match any printable character
 	Mod           Modifier // Required modifiers (when non-zero, event must have exactly these mods)
 	RequireNoMods bool     // When true, event must have no modifiers (Mod field is ignored)
+	FocusRequired bool     // When true, only dispatch when owning component is focused
 }
 
 // OnKey creates a broadcast binding for a specific key with no modifiers.
@@ -94,6 +95,26 @@ func OnRunes(handler func(KeyEvent)) KeyBinding {
 func OnRunesStop(handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
 		Pattern: KeyPattern{AnyRune: true},
+		Handler: handler,
+		Stop:    true,
+	}
+}
+
+// OnKeyFocused creates a focus-gated stop-propagation binding for a specific key.
+// Only fires when the owning component's element is focused.
+func OnKeyFocused(key Key, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{
+		Pattern: KeyPattern{Key: key, RequireNoMods: true, FocusRequired: true},
+		Handler: handler,
+		Stop:    true,
+	}
+}
+
+// OnRunesFocused creates a focus-gated stop-propagation binding for all printable characters.
+// Only fires when the owning component's element is focused.
+func OnRunesFocused(handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{
+		Pattern: KeyPattern{AnyRune: true, FocusRequired: true},
 		Handler: handler,
 		Stop:    true,
 	}
