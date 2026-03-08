@@ -48,33 +48,48 @@ func registerAll(fm *focusManager, elements ...*mockFocusable) {
 	}
 }
 
-func TestNewFocusManager_FocusesFirstElement(t *testing.T) {
+func TestFocusManager_IsFocused(t *testing.T) {
 	type tc struct {
-		elements          []*mockFocusable
-		expectedFocusedID string
+		elements      []*mockFocusable
+		focusIndex    int // which element to SetFocus on (-1 for none)
+		checkIndex    int // which element to check IsFocused (-1 for unregistered)
+		expectFocused bool
 	}
 
 	tests := map[string]tc{
-		"single focusable element": {
-			elements: []*mockFocusable{
-				newMockFocusable("a", true),
-			},
-			expectedFocusedID: "a",
-		},
-		"first of multiple focusable": {
+		"focused element returns true": {
 			elements: []*mockFocusable{
 				newMockFocusable("a", true),
 				newMockFocusable("b", true),
-				newMockFocusable("c", true),
 			},
-			expectedFocusedID: "a",
+			focusIndex:    0,
+			checkIndex:    0,
+			expectFocused: true,
 		},
-		"skips non-focusable first element": {
+		"unfocused element returns false": {
 			elements: []*mockFocusable{
-				newMockFocusable("a", false),
+				newMockFocusable("a", true),
 				newMockFocusable("b", true),
 			},
-			expectedFocusedID: "b",
+			focusIndex:    0,
+			checkIndex:    1,
+			expectFocused: false,
+		},
+		"no focus returns false": {
+			elements: []*mockFocusable{
+				newMockFocusable("a", true),
+			},
+			focusIndex:    -1,
+			checkIndex:    0,
+			expectFocused: false,
+		},
+		"unregistered element returns false": {
+			elements: []*mockFocusable{
+				newMockFocusable("a", true),
+			},
+			focusIndex:    0,
+			checkIndex:    -1,
+			expectFocused: false,
 		},
 	}
 
@@ -83,26 +98,58 @@ func TestNewFocusManager_FocusesFirstElement(t *testing.T) {
 			fm := newFocusManager()
 			registerAll(fm, tt.elements...)
 
-			focused := fm.Focused()
-			if focused == nil {
-				t.Fatal("Focused() returned nil")
+			if tt.focusIndex >= 0 {
+				fm.SetFocus(tt.elements[tt.focusIndex])
 			}
 
-			mf, ok := focused.(*mockFocusable)
-			if !ok {
-				t.Fatalf("Focused() returned wrong type: %T", focused)
+			var check Focusable
+			if tt.checkIndex >= 0 {
+				check = tt.elements[tt.checkIndex]
+			} else {
+				check = newMockFocusable("unregistered", true)
 			}
 
-			if mf.id != tt.expectedFocusedID {
-				t.Errorf("Focused element id = %q, want %q", mf.id, tt.expectedFocusedID)
+			got := fm.IsFocused(check)
+			if got != tt.expectFocused {
+				t.Errorf("IsFocused() = %v, want %v", got, tt.expectFocused)
+			}
+		})
+	}
+}
+
+func TestFocusManager_NoAutoFocus(t *testing.T) {
+	type tc struct {
+		elements []*mockFocusable
+	}
+
+	tests := map[string]tc{
+		"single focusable element": {
+			elements: []*mockFocusable{
+				newMockFocusable("a", true),
+			},
+		},
+		"multiple focusable elements": {
+			elements: []*mockFocusable{
+				newMockFocusable("a", true),
+				newMockFocusable("b", true),
+				newMockFocusable("c", true),
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fm := newFocusManager()
+			registerAll(fm, tt.elements...)
+
+			if fm.Focused() != nil {
+				t.Error("Focused() should return nil after registration (no auto-focus)")
 			}
 
-			if !mf.focused {
-				t.Error("Focused element should have focused=true")
-			}
-
-			if mf.focusCalls != 1 {
-				t.Errorf("Focus() calls = %d, want 1", mf.focusCalls)
+			for _, elem := range tt.elements {
+				if elem.focusCalls != 0 {
+					t.Errorf("Element %q should not have Focus() called, got %d calls", elem.id, elem.focusCalls)
+				}
 			}
 		})
 	}
@@ -145,13 +192,22 @@ func TestFocusManager_Next(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"next from first to second": {
+		"first Next focuses first element": {
 			elements: []*mockFocusable{
 				newMockFocusable("a", true),
 				newMockFocusable("b", true),
 				newMockFocusable("c", true),
 			},
 			nextCalls:         1,
+			expectedFocusedID: "a",
+		},
+		"next from first to second": {
+			elements: []*mockFocusable{
+				newMockFocusable("a", true),
+				newMockFocusable("b", true),
+				newMockFocusable("c", true),
+			},
+			nextCalls:         2,
 			expectedFocusedID: "b",
 		},
 		"wraps to beginning": {
@@ -159,7 +215,7 @@ func TestFocusManager_Next(t *testing.T) {
 				newMockFocusable("a", true),
 				newMockFocusable("b", true),
 			},
-			nextCalls:         2,
+			nextCalls:         3,
 			expectedFocusedID: "a",
 		},
 		"skips non-focusable": {
@@ -168,7 +224,7 @@ func TestFocusManager_Next(t *testing.T) {
 				newMockFocusable("b", false),
 				newMockFocusable("c", true),
 			},
-			nextCalls:         1,
+			nextCalls:         2,
 			expectedFocusedID: "c",
 		},
 		"full cycle through all": {
@@ -177,7 +233,7 @@ func TestFocusManager_Next(t *testing.T) {
 				newMockFocusable("b", true),
 				newMockFocusable("c", true),
 			},
-			nextCalls:         3,
+			nextCalls:         4,
 			expectedFocusedID: "a",
 		},
 	}
@@ -212,7 +268,7 @@ func TestFocusManager_Prev(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"prev from first wraps to last": {
+		"first Prev wraps to last": {
 			elements: []*mockFocusable{
 				newMockFocusable("a", true),
 				newMockFocusable("b", true),
@@ -221,7 +277,7 @@ func TestFocusManager_Prev(t *testing.T) {
 			prevCalls:         1,
 			expectedFocusedID: "c",
 		},
-		"prev twice from first": {
+		"prev twice from none": {
 			elements: []*mockFocusable{
 				newMockFocusable("a", true),
 				newMockFocusable("b", true),
@@ -236,8 +292,8 @@ func TestFocusManager_Prev(t *testing.T) {
 				newMockFocusable("b", false),
 				newMockFocusable("c", true),
 			},
-			prevCalls:         1,
-			expectedFocusedID: "c",
+			prevCalls:         2,
+			expectedFocusedID: "a",
 		},
 		"full cycle backwards": {
 			elements: []*mockFocusable{
@@ -245,8 +301,8 @@ func TestFocusManager_Prev(t *testing.T) {
 				newMockFocusable("b", true),
 				newMockFocusable("c", true),
 			},
-			prevCalls:         3,
-			expectedFocusedID: "a",
+			prevCalls:         4,
+			expectedFocusedID: "c",
 		},
 	}
 
@@ -321,14 +377,6 @@ func TestFocusManager_SetFocus(t *testing.T) {
 			if !mf.focused {
 				t.Error("SetFocus() target should have focused=true")
 			}
-
-			// Verify previous element was blurred
-			if tt.elements[0].id != tt.expectedFocusedID && !tt.elements[0].focused {
-				// First element should have been blurred
-				if tt.elements[0].blurCalls == 0 {
-					t.Error("Previous focused element should have Blur() called")
-				}
-			}
 		})
 	}
 }
@@ -344,41 +392,32 @@ func TestFocusManager_SetFocusNonFocusable(t *testing.T) {
 	// Try to focus non-focusable element
 	fm.SetFocus(b)
 
-	// Focus should remain on 'a'
-	focused := fm.Focused()
-	if focused == nil {
-		t.Fatal("Focused() returned nil")
-	}
-	mf := focused.(*mockFocusable)
-	if mf.id != "a" {
-		t.Errorf("SetFocus() on non-focusable should not change focus, got %q", mf.id)
+	// Nothing should be focused (no auto-focus, SetFocus on non-focusable is no-op)
+	if fm.Focused() != nil {
+		t.Error("SetFocus() on non-focusable should not set focus")
 	}
 }
 
 func TestFocusManager_Register(t *testing.T) {
 	type tc struct {
-		initialElements   []*mockFocusable
-		registerElement   *mockFocusable
-		expectedFocusedID string
+		initialElements []*mockFocusable
+		registerElement *mockFocusable
 	}
 
 	tests := map[string]tc{
-		"register to empty manager focuses first": {
-			initialElements:   []*mockFocusable{},
-			registerElement:   newMockFocusable("new", true),
-			expectedFocusedID: "new",
+		"register to empty manager does not auto-focus": {
+			initialElements: []*mockFocusable{},
+			registerElement: newMockFocusable("new", true),
 		},
 		"register to existing does not change focus": {
 			initialElements: []*mockFocusable{
 				newMockFocusable("a", true),
 			},
-			registerElement:   newMockFocusable("new", true),
-			expectedFocusedID: "a",
+			registerElement: newMockFocusable("new", true),
 		},
 		"register non-focusable to empty does not focus": {
-			initialElements:   []*mockFocusable{},
-			registerElement:   newMockFocusable("new", false),
-			expectedFocusedID: "",
+			initialElements: []*mockFocusable{},
+			registerElement: newMockFocusable("new", false),
 		},
 	}
 
@@ -388,20 +427,9 @@ func TestFocusManager_Register(t *testing.T) {
 			registerAll(fm, tt.initialElements...)
 			fm.Register(tt.registerElement)
 
-			focused := fm.Focused()
-			if tt.expectedFocusedID == "" {
-				if focused != nil {
-					t.Error("Expected no focused element")
-				}
-				return
-			}
-
-			if focused == nil {
-				t.Fatal("Focused() returned nil")
-			}
-			mf := focused.(*mockFocusable)
-			if mf.id != tt.expectedFocusedID {
-				t.Errorf("After Register(), focused = %q, want %q", mf.id, tt.expectedFocusedID)
+			// Register never auto-focuses
+			if fm.Focused() != nil {
+				t.Error("Register() should not auto-focus any element")
 			}
 		})
 	}

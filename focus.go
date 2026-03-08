@@ -97,6 +97,14 @@ func (f *focusManager) Focused() Focusable {
 	return f.elements[f.current]
 }
 
+// IsFocused returns true if the given Focusable is the currently focused element.
+func (f *focusManager) IsFocused(elem Focusable) bool {
+	if f.current < 0 || f.current >= len(f.elements) {
+		return false
+	}
+	return f.elements[f.current] == elem
+}
+
 // SetFocus moves focus to the specified element.
 // Does nothing if the element is not registered or not focusable.
 func (f *focusManager) SetFocus(elem Focusable) {
