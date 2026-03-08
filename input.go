@@ -135,6 +135,7 @@ func (inp *Input) Render(app *App) *Element {
 	opts := []Option{
 		WithDirection(Row),
 		WithHeight(totalHeight),
+		WithFocusable(true),
 	}
 	if inp.width > 0 {
 		opts = append(opts, WithWidth(inp.width))
@@ -146,6 +147,14 @@ func (inp *Input) Render(app *App) *Element {
 		}
 	}
 	root := New(opts...)
+
+	// Wire Element focus/blur to component focus/blur
+	root.SetOnFocus(func(e *Element) {
+		inp.Focus()
+	})
+	root.SetOnBlur(func(e *Element) {
+		inp.Blur()
+	})
 
 	// Render placeholder or content
 	if inp.text.Get() == "" && inp.placeholder != "" && !inp.focused.Get() {
@@ -210,21 +219,21 @@ func (inp *Input) matchesPattern(ke KeyEvent, p KeyPattern) bool {
 // KeyMap returns the key bindings for the input.
 func (inp *Input) KeyMap() KeyMap {
 	return KeyMap{
-		// Text input
-		OnRunesStop(inp.insertChar),
+		// Text input (focus-gated)
+		OnRunesFocused(inp.insertChar),
 
-		// Editing
-		OnKeyStop(KeyBackspace, inp.backspace),
-		OnKeyStop(KeyDelete, inp.delete),
+		// Editing (focus-gated)
+		OnKeyFocused(KeyBackspace, inp.backspace),
+		OnKeyFocused(KeyDelete, inp.delete),
 
-		// Navigation
-		OnKeyStop(KeyLeft, inp.moveLeft),
-		OnKeyStop(KeyRight, inp.moveRight),
-		OnKeyStop(KeyHome, inp.moveHome),
-		OnKeyStop(KeyEnd, inp.moveEnd),
+		// Navigation (focus-gated)
+		OnKeyFocused(KeyLeft, inp.moveLeft),
+		OnKeyFocused(KeyRight, inp.moveRight),
+		OnKeyFocused(KeyHome, inp.moveHome),
+		OnKeyFocused(KeyEnd, inp.moveEnd),
 
-		// Submit
-		OnKeyStop(KeyEnter, inp.submit),
+		// Submit (focus-gated)
+		OnKeyFocused(KeyEnter, inp.submit),
 	}
 }
 
