@@ -90,3 +90,47 @@ func TestDispatchTable_FocusRequired(t *testing.T) {
 		})
 	}
 }
+
+func TestDispatchTable_ValidateFocusRequired(t *testing.T) {
+	type tc struct {
+		entries   []dispatchEntry
+		expectErr bool
+	}
+
+	tests := map[string]tc{
+		"two focus-gated stop handlers do not conflict": {
+			entries: []dispatchEntry{
+				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 0, focusable: newMockFocusable("a", true)},
+				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 1, focusable: newMockFocusable("b", true)},
+			},
+			expectErr: false,
+		},
+		"focus-gated and broadcast stop handlers do not conflict": {
+			entries: []dispatchEntry{
+				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 0, focusable: newMockFocusable("a", true)},
+				{pattern: KeyPattern{AnyRune: true}, stop: true, position: 1},
+			},
+			expectErr: false,
+		},
+		"two broadcast stop handlers still conflict": {
+			entries: []dispatchEntry{
+				{pattern: KeyPattern{AnyRune: true}, stop: true, position: 0},
+				{pattern: KeyPattern{AnyRune: true}, stop: true, position: 1},
+			},
+			expectErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			table := &dispatchTable{entries: tt.entries}
+			err := table.validate()
+			if tt.expectErr && err == nil {
+				t.Error("expected validation error, got nil")
+			}
+			if !tt.expectErr && err != nil {
+				t.Errorf("unexpected validation error: %v", err)
+			}
+		})
+	}
+}

@@ -123,13 +123,21 @@ func (dt *dispatchTable) validate() error {
 		if !entry.stop {
 			continue
 		}
-		if existing, conflict := stopPatterns[entry.pattern]; conflict {
+		// Focus-gated entries cannot conflict because only one can be focused at a time
+		if entry.pattern.FocusRequired {
+			continue
+		}
+		// Strip FocusRequired for comparison so focus-gated and broadcast entries
+		// with the same key don't conflict
+		comparePattern := entry.pattern
+		comparePattern.FocusRequired = false
+		if existing, conflict := stopPatterns[comparePattern]; conflict {
 			return fmt.Errorf(
 				"conflicting stop handlers for key pattern %+v at tree positions %d and %d",
 				entry.pattern, existing.position, entry.position,
 			)
 		}
-		stopPatterns[entry.pattern] = stopInfo{position: entry.position}
+		stopPatterns[comparePattern] = stopInfo{position: entry.position}
 	}
 
 	return nil
