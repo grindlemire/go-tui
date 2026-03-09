@@ -79,7 +79,7 @@ func TestDispatchTable_FocusRequired(t *testing.T) {
 				ke = KeyEvent{Key: KeyEscape}
 			}
 
-			table.dispatch(ke, fm)
+			table.dispatch(ke)
 
 			if appQuit != tt.expectAppQuit {
 				t.Errorf("appQuit = %v, want %v", appQuit, tt.expectAppQuit)

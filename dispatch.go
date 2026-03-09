@@ -2,6 +2,12 @@ package tui
 
 import "fmt"
 
+// focusQuerier is implemented by components that can report their own focus state.
+// Used by the dispatch table to evaluate focus-gated key bindings.
+type focusQuerier interface {
+	IsFocused() bool
+}
+
 // dispatchEntry is a handler with its tree position for ordering.
 type dispatchEntry struct {
 	pattern    KeyPattern
@@ -20,7 +26,7 @@ type dispatchTable struct {
 // buildDispatchTable walks the element tree, collects KeyMap() from
 // all mounted components, validates exclusive conflicts, and builds
 // the dispatch table ordered by tree position.
-func buildDispatchTable(rootComp Component, root *Element, fm *focusManager) (*dispatchTable, error) {
+func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, error) {
 	table := &dispatchTable{}
 	position := 0
 
@@ -34,10 +40,6 @@ func buildDispatchTable(rootComp Component, root *Element, fm *focusManager) (*d
 			return
 		}
 
-		// Check if this component can report its own focus state
-		type focusQuerier interface {
-			IsFocused() bool
-		}
 		fq, hasFocusQuery := comp.(focusQuerier)
 
 		for _, binding := range km {
@@ -88,7 +90,7 @@ func (e *dispatchEntry) matchesKey(ke KeyEvent) bool {
 }
 
 // matches checks if a dispatch entry matches a key event, including focus gating.
-func (e *dispatchEntry) matches(ke KeyEvent, fm *focusManager) bool {
+func (e *dispatchEntry) matches(ke KeyEvent) bool {
 	if e.pattern.FocusRequired && e.focusCheck != nil {
 		if !e.focusCheck() {
 			return false
@@ -101,7 +103,7 @@ func (e *dispatchEntry) matches(ke KeyEvent, fm *focusManager) bool {
 // Focus-gated stop handlers take priority: if any active focus-gated stop
 // handler matches, it fires exclusively and broadcast handlers are skipped.
 // Otherwise, handlers fire in tree order, stopping early if a Stop handler matches.
-func (dt *dispatchTable) dispatch(ke KeyEvent, fm *focusManager) bool {
+func (dt *dispatchTable) dispatch(ke KeyEvent) bool {
 	if dt == nil {
 		return false
 	}
@@ -121,7 +123,7 @@ func (dt *dispatchTable) dispatch(ke KeyEvent, fm *focusManager) bool {
 
 	// Normal dispatch: broadcast and non-stop handlers in tree order.
 	for i := range dt.entries {
-		if dt.entries[i].matches(ke, fm) {
+		if dt.entries[i].matches(ke) {
 			dt.entries[i].handler(ke)
 			if dt.entries[i].stop {
 				return true

@@ -219,7 +219,7 @@ templ (e *elementsApp) Render() {
 					</span>
 				</div>
 				<div class="flex-col gap-1 w-1/2">
-					<div class="flex gap-2 items-start items-center">
+					<div class="flex gap-2 items-center">
 						<span class="font-dim">Note:</span>
 						<textarea
 							placeholder="Write a note..."

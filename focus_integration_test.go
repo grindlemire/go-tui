@@ -126,7 +126,7 @@ func TestFocusIntegration_TabFocusesInput(t *testing.T) {
 
 	// Phase 3: Press Tab
 	tabEvent := KeyEvent{Key: KeyTab, app: app}
-	app.dispatchTable.dispatch(tabEvent, app.focus)
+	app.dispatchTable.dispatch(tabEvent)
 
 	// After Tab: input should be focused
 	if !input.focused.Get() {
@@ -156,7 +156,7 @@ func TestFocusIntegration_TabFocusesInput(t *testing.T) {
 
 	// Phase 5: Press 'a' - should be captured by focus-gated handler
 	aEvent := KeyEvent{Key: KeyRune, Rune: 'a', app: app}
-	stopped := app.dispatchTable.dispatch(aEvent, app.focus)
+	stopped := app.dispatchTable.dispatch(aEvent)
 
 	if !stopped {
 		t.Error("after pressing 'a' while focused: dispatch should return stopped=true")
@@ -167,7 +167,7 @@ func TestFocusIntegration_TabFocusesInput(t *testing.T) {
 
 	// Phase 6: Press 'q' - should be captured by input (not quit)
 	qEvent := KeyEvent{Key: KeyRune, Rune: 'q', app: app}
-	stopped = app.dispatchTable.dispatch(qEvent, app.focus)
+	stopped = app.dispatchTable.dispatch(qEvent)
 
 	if !stopped {
 		t.Error("after pressing 'q' while focused: dispatch should return stopped=true (captured by input)")

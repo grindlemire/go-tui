@@ -211,29 +211,12 @@ func (t *TextArea) HandleEvent(e Event) bool {
 		return false
 	}
 
-	// Check each binding in our keymap
 	for _, binding := range t.KeyMap() {
-		if t.matchesPattern(ke, binding.Pattern) {
+		entry := dispatchEntry{pattern: binding.Pattern}
+		if entry.matchesKey(ke) {
 			binding.Handler(ke)
 			return binding.Stop
 		}
-	}
-	return false
-}
-
-// matchesPattern checks if a key event matches a pattern.
-func (t *TextArea) matchesPattern(ke KeyEvent, p KeyPattern) bool {
-	// Check for specific key match
-	if p.Key != 0 && ke.Key == p.Key {
-		return true
-	}
-	// Check for specific rune match
-	if p.Rune != 0 && ke.Rune == p.Rune {
-		return true
-	}
-	// Check for any rune match
-	if p.AnyRune && ke.Rune != 0 {
-		return true
 	}
 	return false
 }
