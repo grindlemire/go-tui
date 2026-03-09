@@ -62,6 +62,21 @@ func WithInputFocusColor(c Color) InputOption {
 	}
 }
 
+// WithInputBorderGradient sets a gradient for the border color when unfocused.
+func WithInputBorderGradient(g Gradient) InputOption {
+	return func(inp *Input) {
+		inp.borderGradient = &g
+	}
+}
+
+// WithInputFocusGradient sets a gradient for the border color when focused.
+// Takes priority over focusColor when set.
+func WithInputFocusGradient(g Gradient) InputOption {
+	return func(inp *Input) {
+		inp.focusGradient = &g
+	}
+}
+
 // WithInputOnSubmit sets the callback called when Enter is pressed.
 func WithInputOnSubmit(fn func(string)) InputOption {
 	return func(inp *Input) {

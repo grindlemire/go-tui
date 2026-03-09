@@ -176,6 +176,8 @@ var knownAttributes = map[string]bool{
 	"placeholderStyle": true,
 	"cursor":           true,
 	"focusColor":       true,
+	"borderGradient":   true,
+	"focusGradient":    true,
 	"submitKey":        true,
 	"onSubmit":         true,
 	"value":            true,

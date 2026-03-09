@@ -190,7 +190,7 @@ templ (e *elementsApp) Render() {
 							value={e.name}
 							width={30}
 							border={tui.BorderRounded}
-							focusColor={tui.Magenta}
+							focusGradient={tui.NewGradient(tui.Cyan, tui.Magenta)}
 						/>
 					</div>
 					<span

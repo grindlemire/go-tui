@@ -16,6 +16,8 @@ type Input struct {
 	placeholderStyle Style
 	cursorRune       rune
 	focusColor       Color
+	borderGradient   *Gradient
+	focusGradient    *Gradient
 	onSubmit         func(string)
 	onChange         func(string)
 
@@ -143,7 +145,13 @@ func (inp *Input) Render(app *App) *Element {
 	if inp.border != BorderNone {
 		opts = append(opts, WithBorder(inp.border))
 		if inp.focused.Get() {
-			opts = append(opts, WithBorderStyle(NewStyle().Foreground(inp.focusColor)))
+			if inp.focusGradient != nil {
+				opts = append(opts, WithBorderGradient(*inp.focusGradient))
+			} else {
+				opts = append(opts, WithBorderStyle(NewStyle().Foreground(inp.focusColor)))
+			}
+		} else if inp.borderGradient != nil {
+			opts = append(opts, WithBorderGradient(*inp.borderGradient))
 		}
 	}
 	root := New(opts...)
@@ -296,8 +304,16 @@ func (inp *Input) backspace(ke KeyEvent) {
 	if pos > 0 {
 		newRunes := append(runes[:pos-1], runes[pos:]...)
 		inp.text.Set(string(newRunes))
-		inp.cursorPos.Set(pos - 1)
-		inp.ensureCursorVisible()
+		newPos := pos - 1
+		inp.cursorPos.Set(newPos)
+		// Pin cursor to the right edge while text exceeds visible width,
+		// so each delete scrolls one more character into view.
+		visible := inp.visibleWidth()
+		if len(newRunes) >= visible && newPos >= visible {
+			inp.scrollPos.Set(newPos - visible + 1)
+		} else {
+			inp.scrollPos.Set(0)
+		}
 		if inp.onChange != nil {
 			inp.onChange(inp.text.Get())
 		}
@@ -311,7 +327,12 @@ func (inp *Input) delete(ke KeyEvent) {
 	if pos < len(runes) {
 		newRunes := append(runes[:pos], runes[pos+1:]...)
 		inp.text.Set(string(newRunes))
-		inp.ensureCursorVisible()
+		visible := inp.visibleWidth()
+		if len(newRunes) >= visible && pos >= visible {
+			inp.scrollPos.Set(pos - visible + 1)
+		} else {
+			inp.scrollPos.Set(0)
+		}
 		if inp.onChange != nil {
 			inp.onChange(inp.text.Get())
 		}

@@ -18,6 +18,8 @@ type TextArea struct {
 	placeholderStyle Style
 	cursorRune       rune
 	focusColor       Color
+	borderGradient   *Gradient
+	focusGradient    *Gradient
 	submitKey        Key
 	onSubmit         func(string)
 
@@ -136,7 +138,13 @@ func (t *TextArea) Render(app *App) *Element {
 	if t.border != BorderNone {
 		opts = append(opts, WithBorder(t.border))
 		if t.focused.Get() {
-			opts = append(opts, WithBorderStyle(NewStyle().Foreground(t.focusColor)))
+			if t.focusGradient != nil {
+				opts = append(opts, WithBorderGradient(*t.focusGradient))
+			} else {
+				opts = append(opts, WithBorderStyle(NewStyle().Foreground(t.focusColor)))
+			}
+		} else if t.borderGradient != nil {
+			opts = append(opts, WithBorderGradient(*t.borderGradient))
 		}
 	}
 	root := New(opts...)

@@ -63,6 +63,21 @@ func WithTextAreaFocusColor(c Color) TextAreaOption {
 	}
 }
 
+// WithTextAreaBorderGradient sets a gradient for the border color when unfocused.
+func WithTextAreaBorderGradient(g Gradient) TextAreaOption {
+	return func(t *TextArea) {
+		t.borderGradient = &g
+	}
+}
+
+// WithTextAreaFocusGradient sets a gradient for the border color when focused.
+// Takes priority over focusColor when set.
+func WithTextAreaFocusGradient(g Gradient) TextAreaOption {
+	return func(t *TextArea) {
+		t.focusGradient = &g
+	}
+}
+
 // --- Behavior Options ---
 
 // WithTextAreaSubmitKey sets the key that triggers submit.

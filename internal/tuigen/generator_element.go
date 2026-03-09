@@ -347,6 +347,8 @@ var textareaAttributeToOption = map[string]string{
 	"placeholderStyle": "tui.WithTextAreaPlaceholderStyle(%s)",
 	"cursor":           "tui.WithTextAreaCursor(%s)",
 	"focusColor":       "tui.WithTextAreaFocusColor(%s)",
+	"borderGradient":   "tui.WithTextAreaBorderGradient(%s)",
+	"focusGradient":    "tui.WithTextAreaFocusGradient(%s)",
 	"submitKey":        "tui.WithTextAreaSubmitKey(%s)",
 }
 
@@ -365,6 +367,8 @@ var inputAttributeToOption = map[string]string{
 	"placeholderStyle": "tui.WithInputPlaceholderStyle(%s)",
 	"cursor":           "tui.WithInputCursor(%s)",
 	"focusColor":       "tui.WithInputFocusColor(%s)",
+	"borderGradient":   "tui.WithInputBorderGradient(%s)",
+	"focusGradient":    "tui.WithInputFocusGradient(%s)",
 }
 
 // inputHandlerAttributes maps input event attributes to handler option funcs.

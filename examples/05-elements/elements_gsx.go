@@ -373,7 +373,8 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 			tui.WithInputValue(e.name),
 			tui.WithInputWidth(30),
 			tui.WithInputBorder(tui.BorderRounded),
-			tui.WithInputFocusColor(tui.Magenta),
+			tui.WithInputBorderGradient(tui.NewGradient(tui.Red, tui.Blue)),
+			tui.WithInputFocusGradient(tui.NewGradient(tui.Cyan, tui.Magenta)),
 		)
 	})
 	__tui_52.AddChild(__tui_54)
