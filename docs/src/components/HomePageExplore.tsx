@@ -5,6 +5,7 @@ import Divider from "./Divider.tsx";
 import PageBackground from "./PageBackground.tsx";
 import DxCapability from "./DxCapability.tsx";
 import EditorSimulation from "./EditorSimulation.tsx";
+import ComparisonSection, { type ComparisonFeature } from "./ComparisonSection.tsx";
 
 /* ─── Shared sub-components ─── */
 
@@ -51,16 +52,9 @@ function useValueProps() {
   ] as const;
 }
 
-/* ─── Comparison Section ─── */
+/* ─── Comparison Features (HomePageExplore variant) ─── */
 
-const comparisonLibraries = ["go-tui", "Bubble Tea", "tview", "gocui"] as const;
-
-type ComparisonFeature = {
-  label: string;
-  values: Record<string, { summary: string; detail: string }>;
-};
-
-const comparisonFeatures: ComparisonFeature[] = [
+const homeComparisonFeatures: ComparisonFeature[] = [
   {
     label: "Approach",
     values: {
@@ -116,127 +110,6 @@ const comparisonFeatures: ComparisonFeature[] = [
     },
   },
 ];
-
-function ComparisonDetailPanel({ feature, expanded }: { feature: ComparisonFeature; expanded: boolean }) {
-  const { theme } = useTheme();
-  const t = palette[theme];
-  return (
-    <div style={{ maxHeight: expanded ? 300 : 0, opacity: expanded ? 1 : 0, overflow: "hidden", transition: "max-height 0.3s ease, opacity 0.2s ease" }}>
-      <div className="grid gap-0" style={{ gridTemplateColumns: "140px repeat(4, minmax(0, 1fr))", background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.01)", borderTop: `1px solid ${t.border}` }}>
-        <div className="px-4 py-3" />
-        {comparisonLibraries.map((lib, colIdx) => {
-          const val = feature.values[lib];
-          const isGoTui = lib === "go-tui";
-          return (
-            <div key={lib} className="px-4 py-3 min-w-0" style={{ borderLeft: isGoTui ? `1px solid ${t.accent}30` : `1px solid ${t.border}`, borderRight: isGoTui && colIdx < comparisonLibraries.length - 1 ? `1px solid ${t.accent}30` : undefined, background: isGoTui ? (theme === "dark" ? `${t.accent}14` : `${t.accent}0c`) : "transparent" }}>
-              <p className="text-[11px] leading-[1.6] m-0" style={{ color: t.textDim, fontFamily: "'IBM Plex Sans', sans-serif", overflowWrap: "break-word" }}>{val.detail}</p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ComparisonSection() {
-  const { theme } = useTheme();
-  const t = palette[theme];
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
-  const [expandedRow, setExpandedRow] = useState<number | null>(null);
-  const [visible, setVisible] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const goTuiColIdx = 0;
-  const accentTint = theme === "dark" ? `${t.accent}14` : `${t.accent}0c`;
-  const libColors: Record<string, string> = { "go-tui": t.accent, "Bubble Tea": t.secondary, tview: theme === "dark" ? "#e6db74" : "#998a00", gocui: t.tertiary };
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } }, { threshold: 0.1 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <section ref={sectionRef} className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-12">
-      <div className="font-['Fira_Code',monospace] text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: t.accentDim }}>versus</div>
-      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ color: t.heading }}>Go TUI libraries</h2>
-      <p className="text-[14px] sm:text-[15px] mb-8 sm:mb-10 max-w-[640px]" style={{ color: t.textMuted }}>
-        Different trade-offs, side by side.{" "}
-        <span className="hidden lg:inline font-['Fira_Code',monospace] text-[11px]" style={{ color: t.textDim }}>Click a row to expand.</span>
-      </p>
-
-      <div className="hidden lg:block overflow-x-auto custom-scroll">
-        <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${t.border}`, background: t.bgCard, boxShadow: theme === "dark" ? "0 2px 16px rgba(0,0,0,0.5)" : "0 1px 6px rgba(0,0,0,0.07)" }}>
-          <div className="grid items-end gap-0" style={{ gridTemplateColumns: "140px repeat(4, 1fr)", borderBottom: `1px solid ${t.border}`, background: theme === "dark" ? "#23241e" : "#f5f5f1" }}>
-            <div className="px-4 py-4" />
-            {comparisonLibraries.map((lib, colIdx) => {
-              const isGoTui = colIdx === goTuiColIdx;
-              return (
-                <div key={lib} className="px-4 py-4 text-center" style={{ background: isGoTui ? (theme === "dark" ? `${t.accent}1a` : `${t.accent}10`) : "transparent", borderLeft: `1px solid ${t.border}` }}>
-                  <div className="font-['Fira_Code',monospace] text-[12px] font-semibold" style={{ color: isGoTui ? t.accent : t.heading }}>{lib}</div>
-                  <div className="mt-1.5 mx-auto h-[2px] rounded-full" style={{ width: isGoTui ? "60%" : "0%", background: libColors[lib], opacity: isGoTui ? 1 : 0 }} />
-                </div>
-              );
-            })}
-          </div>
-          {comparisonFeatures.map((feature, rowIdx) => {
-            const isExpanded = expandedRow === rowIdx;
-            const isHovered = hoveredRow === rowIdx;
-            const stripeBg = rowIdx % 2 === 0 ? "transparent" : theme === "dark" ? "rgba(255,255,255,0.012)" : "rgba(0,0,0,0.012)";
-            return (
-              <div key={feature.label} className={visible ? "comparison-row-animate" : "opacity-0"} style={{ borderBottom: rowIdx < comparisonFeatures.length - 1 ? `1px solid ${t.border}` : "none", animationDelay: visible ? `${rowIdx * 50}ms` : "0ms" }}>
-                <div className="grid items-stretch gap-0 cursor-pointer select-none" style={{ gridTemplateColumns: "140px repeat(4, 1fr)", background: isExpanded ? (theme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)") : isHovered ? (theme === "dark" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)") : stripeBg, transition: "background 0.15s ease" }} onClick={() => setExpandedRow(isExpanded ? null : rowIdx)} onMouseEnter={() => setHoveredRow(rowIdx)} onMouseLeave={() => setHoveredRow(null)}>
-                  <div className="px-4 py-3.5 flex items-center gap-2">
-                    <svg width="8" height="8" viewBox="0 0 8 8" className="shrink-0" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)", opacity: isHovered || isExpanded ? 0.8 : 0.3 }}>
-                      <path d="M2 1L6 4L2 7" fill="none" stroke={t.textMuted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <div className="font-['Fira_Code',monospace] text-[11px] font-semibold" style={{ color: t.text }}>{feature.label}</div>
-                  </div>
-                  {comparisonLibraries.map((lib, colIdx) => {
-                    const isGoTui = colIdx === goTuiColIdx;
-                    return (
-                      <div key={lib} className="px-4 py-3.5" style={{ borderLeft: isGoTui ? `1px solid ${t.accent}30` : `1px solid ${t.border}`, borderRight: isGoTui && colIdx < comparisonLibraries.length - 1 ? `1px solid ${t.accent}30` : undefined, background: isGoTui ? accentTint : "transparent" }}>
-                        <span className="font-['Fira_Code',monospace] text-[11px] leading-snug" style={{ color: isGoTui ? t.accent : t.text }}>{feature.values[lib].summary}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <ComparisonDetailPanel feature={feature} expanded={isExpanded} />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="lg:hidden flex flex-col gap-4">
-        {comparisonLibraries.map((lib, libIdx) => {
-          const isGoTui = libIdx === goTuiColIdx;
-          const color = libColors[lib];
-          return (
-            <div key={lib} className={`rounded-lg overflow-hidden ${visible ? "comparison-row-animate" : "opacity-0"}`} style={{ border: `1px solid ${isGoTui ? `${t.accent}55` : t.border}`, background: t.bgCard, animationDelay: visible ? `${libIdx * 60}ms` : "0ms" }}>
-              <div className="px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${isGoTui ? `${t.accent}55` : t.border}`, background: isGoTui ? (theme === "dark" ? `${t.accent}0a` : `${t.accent}08`) : theme === "dark" ? "#23241e" : "#f5f5f1" }}>
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-                <div className="font-['Fira_Code',monospace] text-[12px] sm:text-[13px] font-semibold" style={{ color: isGoTui ? t.accent : t.heading }}>{lib}</div>
-              </div>
-              <div className="px-3 sm:px-4 py-1.5 sm:py-2">
-                {comparisonFeatures.map((feature, fIdx) => (
-                  <div key={feature.label} className="py-2" style={{ borderBottom: fIdx < comparisonFeatures.length - 1 ? `1px solid ${t.border}33` : "none" }}>
-                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2 mb-0.5">
-                      <div className="font-['Fira_Code',monospace] text-[10px] uppercase tracking-wider shrink-0" style={{ color: t.textDim }}>{feature.label}</div>
-                      <div className="font-['Fira_Code',monospace] text-[11px]" style={{ color: t.text }}>{feature.values[lib].summary}</div>
-                    </div>
-                    <div className="font-['IBM_Plex_Sans',sans-serif] text-[11px] leading-relaxed" style={{ color: t.textDim }}>{feature.values[lib].detail}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
 
 /* ─── Tooling Section ─── */
 
@@ -460,7 +333,7 @@ export default function HomePageExplore() {
             </div>
           </section>
           <Divider />
-          <ComparisonSection />
+          <ComparisonSection features={homeComparisonFeatures} />
           <Divider />
           <ToolingSection />
         </div>
