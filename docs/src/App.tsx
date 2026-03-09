@@ -11,6 +11,7 @@ import SearchModal from "./components/SearchModal.tsx";
 import HomePageExplore from "./components/HomePageExplore.tsx";
 import Divider from "./components/Divider.tsx";
 import PageBackground from "./components/PageBackground.tsx";
+import DxCapability from "./components/DxCapability.tsx";
 
 const SearchContext = createContext<{ openSearch: () => void }>({ openSearch: () => { } });
 function useSearch() { return useContext(SearchContext); }
@@ -681,62 +682,6 @@ function EditorSimulation({
           )}
           <span style={{ color: t.secondary }}>tui lsp</span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── DX Capability Row ─── */
-
-function DxCapability({
-  title,
-  description,
-  color,
-  delay,
-  active,
-  onHover,
-  onLeave,
-}: {
-  title: string;
-  description: string;
-  color: string;
-  delay: number;
-  active?: boolean;
-  onHover?: () => void;
-  onLeave?: () => void;
-}) {
-  const { theme } = useTheme();
-  const t = palette[theme];
-  const highlighted = active ?? false;
-
-  return (
-    <div
-      className="py-3 px-4 rounded-lg transition-all duration-200 cursor-default"
-      style={{
-        background: highlighted ? `${color}06` : "transparent",
-        borderLeft: `2px solid ${highlighted ? color : "transparent"}`,
-        animation: `fadeInUp 0.4s ease-out ${delay}ms both`,
-      }}
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
-    >
-      <div className="flex items-center gap-2 mb-1">
-        <div
-          className="w-1.5 h-1.5 rounded-full shrink-0"
-          style={{ background: color }}
-        />
-        <div
-          className="font-['Fira_Code',monospace] text-[13px] font-medium"
-          style={{ color: t.heading }}
-        >
-          {title}
-        </div>
-      </div>
-      <div
-        className="text-[12px] sm:text-[13px] leading-relaxed pl-3.5"
-        style={{ color: t.textMuted }}
-      >
-        {description}
       </div>
     </div>
   );
