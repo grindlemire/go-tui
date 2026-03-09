@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/grindlemire/go-tui/compare/v0.2.0...v0.3.0) (2026-03-09)
+
+
+### Features
+
+* add autoFocus attribute and make focusColor optional for Input and TextArea ([184af94](https://github.com/grindlemire/go-tui/commit/184af94620528453fd9615d39959951d0d7fdd9a))
+* add borderGradient, focusGradient, and backspace scroll fix for Input and TextArea ([d1437fd](https://github.com/grindlemire/go-tui/commit/d1437fd0a85cece58ad68bc7b7071c64861255ca))
+* add FocusRequired flag to KeyPattern and focus-gated binding helpers ([5d97ee1](https://github.com/grindlemire/go-tui/commit/5d97ee153fabb842690fcb72c67e2c6fd768220a))
+* add IsFocused query method to focusManager ([681ffb3](https://github.com/grindlemire/go-tui/commit/681ffb3e3fd450a1b56be15b8c38e0d440e22682))
+* add reactive value binding and focusColor for Input and TextArea ([35d1679](https://github.com/grindlemire/go-tui/commit/35d167916c9058f6f89d822d3b1d1cfc127a32f7))
+* implement focus-gated dispatch in dispatch table ([0ea047a](https://github.com/grindlemire/go-tui/commit/0ea047ad18050e78f966a00c955134e9875875b2))
+* separate tabStop from focusable to fix Tab navigation ([4d6189d](https://github.com/grindlemire/go-tui/commit/4d6189d96d83ed1cc19c4cb84668c0283a75bf00))
+* wire Input component into focus system with focus-gated key bindings ([d2689fa](https://github.com/grindlemire/go-tui/commit/d2689fa29436bee0fb06aecc871e0f0d7dc2502c))
+* wire TextArea component into focus system with focus-gated key bindings ([af57b8f](https://github.com/grindlemire/go-tui/commit/af57b8fdc92008c6eb19a780567d7739cd3a253c))
+
+
+### Bug Fixes
+
+* add Tab/Shift+Tab focus navigation to elements example ([7f77e38](https://github.com/grindlemire/go-tui/commit/7f77e38f410b34e36671a2345ab932e41ac3bdc1))
+* exclude focus-gated entries from dispatch table conflict validation ([1545aa6](https://github.com/grindlemire/go-tui/commit/1545aa6c51ecf40f7c6ff69fa35a1d80656f5901))
+* make ContainsPoint account for scroll offset in scrollable containers ([23be70e](https://github.com/grindlemire/go-tui/commit/23be70eebcd4ba8a04961fb361f6c908ec540717))
+
 ## [0.2.0](https://github.com/grindlemire/go-tui/compare/v0.1.2...v0.2.0) (2026-03-07)
 
 
