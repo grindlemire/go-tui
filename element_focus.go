@@ -89,10 +89,24 @@ func (e *Element) HandleEvent(event Event) bool {
 	return false
 }
 
-// ContainsPoint returns true if the point (x, y) is within the element's bounds.
-// This is useful for hit testing in HandleMouse implementations.
+// ContainsPoint returns true if the screen-space point (x, y) is within the
+// element's bounds. For elements inside scrollable containers, this
+// automatically translates screen coordinates to content space by walking up
+// through scrollable ancestors.
 func (e *Element) ContainsPoint(x, y int) bool {
-	return e.layout.Rect.Contains(x, y)
+	// Convert screen-space coordinates to the element's content-space
+	// by inverting the render-time translation for each scrollable ancestor.
+	cx, cy := x, y
+	for p := e.parent; p != nil; p = p.parent {
+		if p.scrollMode != ScrollNone {
+			cr := p.ContentRect()
+			cx = cx - cr.X + p.scrollX
+			cy = cy - cr.Y + p.scrollY
+			// After translating into this scrollable's content space,
+			// continue walking up in case of nested scrollables.
+		}
+	}
+	return e.layout.Rect.Contains(cx, cy)
 }
 
 // hasWrapOverflow returns true if this element has wrapped text that overflows

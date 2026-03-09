@@ -6,20 +6,24 @@ import (
 )
 
 type elementsApp struct {
-	progress *tui.State[int]
-	scrollY  *tui.State[int]
-	content  *tui.Ref
-	name     *tui.State[string]
-	note     *tui.State[string]
+	progress    *tui.State[int]
+	scrollY     *tui.State[int]
+	content     *tui.Ref
+	name        *tui.State[string]
+	note        *tui.State[string]
+	selectedBtn *tui.State[string]
+	btnRefs     *tui.RefMap[string]
 }
 
 func Elements() *elementsApp {
 	return &elementsApp{
-		progress: tui.NewState(62),
-		scrollY:  tui.NewState(0),
-		content:  tui.NewRef(),
-		name:     tui.NewState(""),
-		note:     tui.NewState(""),
+		progress:    tui.NewState(62),
+		scrollY:     tui.NewState(0),
+		content:     tui.NewRef(),
+		name:        tui.NewState(""),
+		note:        tui.NewState(""),
+		selectedBtn: tui.NewState(""),
+		btnRefs:     tui.NewRefMap[string](),
 	}
 }
 
@@ -90,8 +94,22 @@ func (e *elementsApp) HandleMouse(me tui.MouseEvent) bool {
 		e.scrollBy(1)
 		return true
 	}
+
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		for name, el := range e.btnRefs.All() {
+			if el != nil && el.ContainsPoint(me.X, me.Y) {
+				if name != "Disabled" {
+					e.selectedBtn.Set(name)
+				}
+				return true
+			}
+		}
+	}
+
 	return false
 }
+
+var buttonLabels = []string{"Save", "Cancel", "Submit", "Disabled"}
 
 func progressBar(value, width int) string {
 	filled := value * width / 100
@@ -171,10 +189,17 @@ templ (e *elementsApp) Render() {
 		<div class="flex-col border-rounded p-1 gap-1">
 			<span class="text-gradient-cyan-magenta font-bold">Buttons</span>
 			<div class="flex gap-2">
-				<button>{"Save"}</button>
-				<button>{"Cancel"}</button>
-				<button class="font-bold">{"Submit"}</button>
-				<button disabled={true}>{"Disabled"}</button>
+				@for _, label := range buttonLabels {
+					@if label == "Disabled" {
+						<button ref={e.btnRefs} key={label} class="font-dim" disabled={true}>{label}</button>
+					} @else {
+						@if label == e.selectedBtn.Get() {
+							<button ref={e.btnRefs} key={label} class="font-bold text-cyan">{label}</button>
+						} @else {
+							<button ref={e.btnRefs} key={label}>{label}</button>
+						}
+					}
+				}
 			</div>
 		</div>
 

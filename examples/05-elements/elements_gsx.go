@@ -10,20 +10,26 @@ import (
 )
 
 type elementsApp struct {
-	progress *tui.State[int]
-	scrollY  *tui.State[int]
-	content  *tui.Ref
-	name     *tui.State[string]
-	note     *tui.State[string]
+	progress    *tui.State[int]
+	scrollY     *tui.State[int]
+	content     *tui.Ref
+	name        *tui.State[string]
+	note        *tui.State[string]
+	selectedBtn *tui.State[string]
+	btnRefs     *tui.RefMap[string]
 }
+
+var buttonLabels = []string{"Save", "Cancel", "Submit", "Disabled"}
 
 func Elements() *elementsApp {
 	return &elementsApp{
-		progress: tui.NewState(62),
-		scrollY:  tui.NewState(0),
-		content:  tui.NewRef(),
-		name:     tui.NewState(""),
-		note:     tui.NewState(""),
+		progress:    tui.NewState(62),
+		scrollY:     tui.NewState(0),
+		content:     tui.NewRef(),
+		name:        tui.NewState(""),
+		note:        tui.NewState(""),
+		selectedBtn: tui.NewState(""),
+		btnRefs:     tui.NewRefMap[string](),
 	}
 }
 
@@ -94,6 +100,18 @@ func (e *elementsApp) HandleMouse(me tui.MouseEvent) bool {
 		e.scrollBy(1)
 		return true
 	}
+
+	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+		for name, el := range e.btnRefs.All() {
+			if el != nil && el.ContainsPoint(me.X, me.Y) {
+				if name != "Disabled" {
+					e.selectedBtn.Set(name)
+				}
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
@@ -316,93 +334,100 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_40 := tui.New()
-	__tui_41 := tui.New(tui.WithText("Save"))
-	__tui_40.AddChild(__tui_41)
-	__tui_39.AddChild(__tui_40)
-	__tui_42 := tui.New()
-	__tui_43 := tui.New(tui.WithText("Cancel"))
-	__tui_42.AddChild(__tui_43)
-	__tui_39.AddChild(__tui_42)
-	__tui_44 := tui.New(
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_45 := tui.New(tui.WithText("Submit"))
-	__tui_44.AddChild(__tui_45)
-	__tui_39.AddChild(__tui_44)
-	__tui_46 := tui.New()
-	__tui_47 := tui.New(tui.WithText("Disabled"))
-	__tui_46.AddChild(__tui_47)
-	__tui_39.AddChild(__tui_46)
+	for __idx_0, label := range buttonLabels {
+		_ = __idx_0
+		if label == "Disabled" {
+			__tui_40 := tui.New(
+				tui.WithTextStyle(tui.NewStyle().Dim()),
+			)
+			e.btnRefs.Put(label, __tui_40)
+			__tui_41 := tui.New(tui.WithText(label))
+			__tui_40.AddChild(__tui_41)
+			__tui_39.AddChild(__tui_40)
+		} else if label == e.selectedBtn.Get() {
+			__tui_42 := tui.New(
+				tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
+			)
+			e.btnRefs.Put(label, __tui_42)
+			__tui_43 := tui.New(tui.WithText(label))
+			__tui_42.AddChild(__tui_43)
+			__tui_39.AddChild(__tui_42)
+		} else {
+			__tui_44 := tui.New()
+			e.btnRefs.Put(label, __tui_44)
+			__tui_45 := tui.New(tui.WithText(label))
+			__tui_44.AddChild(__tui_45)
+			__tui_39.AddChild(__tui_44)
+		}
+	}
 	__tui_37.AddChild(__tui_39)
 	__tui_0.AddChild(__tui_37)
-	__tui_48 := tui.New(
+	__tui_46 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
-	__tui_49 := tui.New(
+	__tui_47 := tui.New(
 		tui.WithText("Input & TextArea"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_48.AddChild(__tui_49)
-	__tui_50 := tui.New(
+	__tui_46.AddChild(__tui_47)
+	__tui_48 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_51 := tui.New(
+	__tui_49 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithWidthPercent(50.00),
 	)
-	__tui_52 := tui.New(
+	__tui_50 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_53 := tui.New(
+	__tui_51 := tui.New(
 		tui.WithText("Name:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_52.AddChild(__tui_53)
-	__tui_54 := app.MountPersistent(e, 0, func() tui.Component {
+	__tui_50.AddChild(__tui_51)
+	__tui_52 := app.MountPersistent(e, 0, func() tui.Component {
 		return tui.NewInput(
 			tui.WithInputPlaceholder("Type your name..."),
 			tui.WithInputValue(e.name),
 			tui.WithInputWidth(30),
 			tui.WithInputBorder(tui.BorderRounded),
-			tui.WithInputBorderGradient(tui.NewGradient(tui.Red, tui.Blue)),
 			tui.WithInputFocusGradient(tui.NewGradient(tui.Cyan, tui.Magenta)),
 		)
 	})
-	__tui_52.AddChild(__tui_54)
-	__tui_51.AddChild(__tui_52)
-	__tui_55 := tui.New(
+	__tui_50.AddChild(__tui_52)
+	__tui_49.AddChild(__tui_50)
+	__tui_53 := tui.New(
 		tui.WithText(greeting(e.name.Get())),
 		tui.WithWidth(30),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_51.AddChild(__tui_55)
-	__tui_50.AddChild(__tui_51)
-	__tui_56 := tui.New(
+	__tui_49.AddChild(__tui_53)
+	__tui_48.AddChild(__tui_49)
+	__tui_54 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
 		tui.WithWidthPercent(50.00),
 	)
-	__tui_57 := tui.New(
+	__tui_55 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignStart),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_58 := tui.New(
+	__tui_56 := tui.New(
 		tui.WithText("Note:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_57.AddChild(__tui_58)
-	__tui_59 := app.MountPersistent(e, 1, func() tui.Component {
+	__tui_55.AddChild(__tui_56)
+	__tui_57 := app.MountPersistent(e, 1, func() tui.Component {
 		return tui.NewTextArea(
 			tui.WithTextAreaPlaceholder("Write a note..."),
 			tui.WithTextAreaWidth(30),
@@ -412,107 +437,107 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 			tui.WithTextAreaFocusColor(tui.BrightRed),
 		)
 	})
-	__tui_57.AddChild(__tui_59)
-	__tui_56.AddChild(__tui_57)
+	__tui_55.AddChild(__tui_57)
+	__tui_54.AddChild(__tui_55)
 	if e.note.Get() != "" {
-		__tui_60 := tui.New(
+		__tui_58 := tui.New(
 			tui.WithText(fmt.Sprintf("Saved: %s", e.note.Get())),
 			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 		)
-		__tui_56.AddChild(__tui_60)
+		__tui_54.AddChild(__tui_58)
 	}
-	__tui_50.AddChild(__tui_56)
-	__tui_48.AddChild(__tui_50)
-	__tui_61 := tui.New(
+	__tui_48.AddChild(__tui_54)
+	__tui_46.AddChild(__tui_48)
+	__tui_59 := tui.New(
 		tui.WithText("Tab to cycle focus | Esc to blur | Enter submits note"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_48.AddChild(__tui_61)
-	__tui_0.AddChild(__tui_48)
-	__tui_62 := tui.New(
+	__tui_46.AddChild(__tui_59)
+	__tui_0.AddChild(__tui_46)
+	__tui_60 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
-	__tui_63 := tui.New(
+	__tui_61 := tui.New(
 		tui.WithText("Progress Bars"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_62.AddChild(__tui_63)
-	__tui_64 := tui.New(
+	__tui_60.AddChild(__tui_61)
+	__tui_62 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_65 := tui.New(
+	__tui_63 := tui.New(
 		tui.WithText("Download:"),
 		tui.WithWidth(10),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_64.AddChild(__tui_65)
-	__tui_66 := tui.New(
+	__tui_62.AddChild(__tui_63)
+	__tui_64 := tui.New(
 		tui.WithText(progressBar(e.progress.Get(), 25)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
-	__tui_64.AddChild(__tui_66)
-	__tui_67 := tui.New(
+	__tui_62.AddChild(__tui_64)
+	__tui_65 := tui.New(
 		tui.WithText(fmt.Sprintf("%d%%", e.progress.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_64.AddChild(__tui_67)
-	__tui_62.AddChild(__tui_64)
-	__tui_68 := tui.New(
+	__tui_62.AddChild(__tui_65)
+	__tui_60.AddChild(__tui_62)
+	__tui_66 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_69 := tui.New(
+	__tui_67 := tui.New(
 		tui.WithText("Upload:"),
 		tui.WithWidth(10),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_68.AddChild(__tui_69)
-	__tui_70 := tui.New(
+	__tui_66.AddChild(__tui_67)
+	__tui_68 := tui.New(
 		tui.WithText(progressBar(100, 25)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	__tui_68.AddChild(__tui_70)
-	__tui_71 := tui.New(
+	__tui_66.AddChild(__tui_68)
+	__tui_69 := tui.New(
 		tui.WithText("100%"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
-	__tui_68.AddChild(__tui_71)
-	__tui_62.AddChild(__tui_68)
-	__tui_72 := tui.New(
+	__tui_66.AddChild(__tui_69)
+	__tui_60.AddChild(__tui_66)
+	__tui_70 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_73 := tui.New(
+	__tui_71 := tui.New(
 		tui.WithText("Build:"),
 		tui.WithWidth(10),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_72.AddChild(__tui_73)
-	__tui_74 := tui.New(
+	__tui_70.AddChild(__tui_71)
+	__tui_72 := tui.New(
 		tui.WithText(progressBar(35, 25)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 	)
-	__tui_72.AddChild(__tui_74)
-	__tui_75 := tui.New(
+	__tui_70.AddChild(__tui_72)
+	__tui_73 := tui.New(
 		tui.WithText("35%"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
 	)
-	__tui_72.AddChild(__tui_75)
-	__tui_62.AddChild(__tui_72)
-	__tui_0.AddChild(__tui_62)
-	__tui_76 := tui.New(
+	__tui_70.AddChild(__tui_73)
+	__tui_60.AddChild(__tui_70)
+	__tui_0.AddChild(__tui_60)
+	__tui_74 := tui.New(
 		tui.WithText("tab focus input | +/- progress | j/k scroll | q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_76)
+	__tui_0.AddChild(__tui_74)
 
 	return __tui_0
 }
@@ -529,6 +554,9 @@ func (e *elementsApp) BindApp(app *tui.App) {
 	}
 	if e.note != nil {
 		e.note.BindApp(app)
+	}
+	if e.selectedBtn != nil {
+		e.selectedBtn.BindApp(app)
 	}
 }
 
