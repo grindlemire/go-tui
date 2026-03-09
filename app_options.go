@@ -28,7 +28,8 @@ const (
 )
 
 // WithInputLatency sets the polling timeout for the event reader.
-// Default is 50ms. Use InputLatencyBlocking (-1) for blocking mode.
+// Default is InputLatencyBlocking (blocks until input arrives).
+// Use a positive duration (e.g. 50ms) for polling mode.
 // A value of 0 is not allowed and will return an error.
 func WithInputLatency(d time.Duration) AppOption {
 	return func(a *App) error {

@@ -28,7 +28,3 @@ type InterruptibleReader interface {
 	// Safe to call even if not currently blocking.
 	Interrupt() error
 }
-
-// resizeDebounceWindow is the duration to wait for additional resize events before emitting.
-// This coalesces rapid resize signals during window dragging into a single event.
-const resizeDebounceWindow = 16 * time.Millisecond

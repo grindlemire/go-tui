@@ -269,7 +269,7 @@ Reads the next input event within the given timeout. Returns `(event, true)` whe
 - **Zero**: non-blocking check, returns immediately
 - **Negative**: blocks indefinitely until an event arrives
 
-Resize events (from SIGWINCH signals) are debounced with a 16ms window. Rapid resize signals during window dragging coalesce into a single event with the final dimensions.
+Resize events are handled at the App level, not by the reader. The App catches SIGWINCH signals and dispatches `ResizeEvent` through the event queue. The reader only handles keyboard and mouse input.
 
 ### Close
 
@@ -285,7 +285,7 @@ Releases resources held by the reader (signal handlers, file descriptors). Must 
 func NewEventReader(in *os.File) (EventReader, error)
 ```
 
-Creates an `EventReader` for the given input file (typically `os.Stdin`). The terminal should already be in raw mode before creating the reader. Sets up SIGWINCH handling for resize events on Unix systems.
+Creates an `EventReader` for the given input file (typically `os.Stdin`). The terminal should already be in raw mode before creating the reader. The reader handles keyboard and mouse input only; resize events (SIGWINCH) are handled at the App level.
 
 ```go
 import (
@@ -324,7 +324,7 @@ type InterruptibleReader interface {
 EnableInterrupt() error
 ```
 
-Sets up the interrupt mechanism (a self-pipe on Unix). Must be called before using blocking mode (`PollEvent` with a negative timeout). Calling it multiple times is safe; subsequent calls are no-ops.
+Sets up the interrupt mechanism (a self-pipe on Unix). The framework calls this automatically during App initialization. Calling it multiple times is safe; subsequent calls are no-ops.
 
 ### Interrupt
 

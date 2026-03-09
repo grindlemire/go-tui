@@ -130,10 +130,12 @@ Use this section to quickly find the right files for a given change.
 - `parse.go` — parseInput(): CSI/SS3 sequence parsing, mouse SGR, UTF-8, modifiers
 - `reader.go` — EventReader/InterruptibleReader interfaces, stdinReader, PollEvent()
 - `reader_types.go` — EventReader and InterruptibleReader interface definitions
-- `reader_unix.go` — Unix-specific: getTerminalSizeForReader(), selectWithTimeout()
+- `reader_unix.go` — Unix-specific: selectWithTimeout(), selectWithTimeoutAndInterrupt()
 - `reader_windows.go` — Windows-specific terminal input
 - `click.go` — ClickBinding, Click(), HandleClicks() for ref-based mouse hit testing
 - `app_events.go` — App.Dispatch(): routes ResizeEvent, MouseEvent, key events via FocusManager
+- `app_resize_unix.go` — SIGWINCH handler: registerResizeSignal(), dispatches ResizeEvent via event queue
+- `app_resize_windows.go` — No-op (Windows has no SIGWINCH)
 
 ### Changing focus management
 

@@ -8,17 +8,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// getTerminalSizeForReader returns the terminal dimensions for the EventReader.
-// This is separate from getTerminalSize in terminal_unix.go to avoid circular deps.
-func getTerminalSizeForReader(fd int) (width, height int) {
-	ws, err := unix.IoctlGetWinsize(fd, unix.TIOCGWINSZ)
-	if err != nil {
-		// Default to standard terminal size on error
-		return 80, 24
-	}
-	return int(ws.Col), int(ws.Row)
-}
-
 // selectWithTimeout performs a select() call on the given fd with timeout.
 // Returns (true, nil) if the fd is ready for reading.
 // Returns (false, nil) on timeout.
@@ -89,6 +78,9 @@ func selectWithTimeoutAndInterrupt(fd, interruptFd int, timeout time.Duration) (
 
 	// Check if interrupt fd was triggered
 	if interruptFd >= 0 && readFds.IsSet(interruptFd) {
+		// Drain the interrupt byte so the pipe is ready for the next interrupt
+		var buf [1]byte
+		unix.Read(interruptFd, buf[:])
 		return false, true, nil
 	}
 
