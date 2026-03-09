@@ -18,6 +18,7 @@ import (
 func main() {
 	app, err := tui.NewApp(
 		tui.WithRootComponent(Elements()),
+		tui.WithMouse(),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
