@@ -41,7 +41,6 @@ func (a *App) Render() {
 	// This is the core of the reactivity cycle: state changes → dirty → re-render
 	// component → new element tree with updated state reads.
 	if a.rootComponent != nil {
-		debug.Log("App.Render: re-rendering root component, focus.current=%d", a.focus.current)
 		el := a.rootComponent.Render(a)
 		el.setAppRecursive(a)
 		a.root = el
@@ -50,7 +49,6 @@ func (a *App) Render() {
 		// Rebuild the focusable list from the current tree, preserving
 		// the focus index so the focused element stays focused.
 		a.focus.refreshFromTree(el)
-		debug.Log("App.Render: after refreshFromTree, focus.current=%d, elements=%d", a.focus.current, len(a.focus.elements))
 	}
 
 	// Re-read renderHeight in case SetInlineHeight was called during component render

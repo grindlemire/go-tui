@@ -26,10 +26,8 @@ func (e *Element) IsFocused() bool {
 // Does not cascade to children — only the FocusManager target receives focus.
 func (e *Element) Focus() {
 	if e.focused {
-		debug.Log("Element.Focus: already focused, text=%q, skipping", e.text)
 		return
 	}
-	debug.Log("Element.Focus: text=%q, hasOnFocus=%v", e.text, e.onFocus != nil)
 	e.focused = true
 	if e.onFocus != nil {
 		e.onFocus(e)
@@ -41,10 +39,8 @@ func (e *Element) Focus() {
 // Does not cascade to children — only the FocusManager target loses focus.
 func (e *Element) Blur() {
 	if !e.focused {
-		debug.Log("Element.Blur: already blurred, text=%q, skipping", e.text)
 		return
 	}
-	debug.Log("Element.Blur: text=%q, hasOnBlur=%v", e.text, e.onBlur != nil)
 	e.focused = false
 	if e.onBlur != nil {
 		e.onBlur(e)

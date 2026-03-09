@@ -25,7 +25,7 @@ func (c *myInput) Render(app *tui.App) *tui.Element {
 	__tui_1 := app.MountPersistent(c, 0, func() tui.Component {
 		return tui.NewInput(
 			tui.WithInputPlaceholder("Type here..."),
-			tui.WithInputValue("hello"),
+			tui.WithInputValue(tui.NewState("hello")),
 			tui.WithInputWidth(30),
 			tui.WithInputBorder(tui.BorderRounded),
 			tui.WithInputOnSubmit(c.handleSubmit),

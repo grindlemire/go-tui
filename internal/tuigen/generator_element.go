@@ -342,9 +342,11 @@ var textareaAttributeToOption = map[string]string{
 	"maxHeight":        "tui.WithTextAreaMaxHeight(%s)",
 	"border":           "tui.WithTextAreaBorder(%s)",
 	"textStyle":        "tui.WithTextAreaTextStyle(%s)",
+	"value":            "tui.WithTextAreaValue(%s)",
 	"placeholder":      "tui.WithTextAreaPlaceholder(%s)",
 	"placeholderStyle": "tui.WithTextAreaPlaceholderStyle(%s)",
 	"cursor":           "tui.WithTextAreaCursor(%s)",
+	"focusColor":       "tui.WithTextAreaFocusColor(%s)",
 	"submitKey":        "tui.WithTextAreaSubmitKey(%s)",
 }
 
@@ -362,6 +364,7 @@ var inputAttributeToOption = map[string]string{
 	"placeholder":      "tui.WithInputPlaceholder(%s)",
 	"placeholderStyle": "tui.WithInputPlaceholderStyle(%s)",
 	"cursor":           "tui.WithInputCursor(%s)",
+	"focusColor":       "tui.WithInputFocusColor(%s)",
 }
 
 // inputHandlerAttributes maps input event attributes to handler option funcs.
@@ -463,6 +466,12 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 		if template, ok := attrMap[attr.Name]; ok {
 			value := g.generateAttributeValue(attr.Value)
 			if value != "" {
+				// value attribute expects *State[string]; wrap string literals
+				if attr.Name == "value" {
+					if _, isStr := attr.Value.(*StringLit); isStr {
+						value = fmt.Sprintf("tui.NewState(%s)", value)
+					}
+				}
 				result.options = append(result.options, fmt.Sprintf(template, value))
 			}
 			continue

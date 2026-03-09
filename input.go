@@ -3,8 +3,6 @@ package tui
 import (
 	"time"
 	"unicode/utf8"
-
-	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 // Input is a single-line text input with cursor management.
@@ -182,23 +180,19 @@ func (inp *Input) IsTabStop() bool {
 
 // Focus is called when the input gains focus. Idempotent.
 func (inp *Input) Focus() {
-	debug.Log("Input.Focus: called, already focused=%v", inp.focused.Get())
 	if inp.focused.Get() {
 		return
 	}
 	inp.focused.Set(true)
 	inp.blink.Set(true)
-	debug.Log("Input.Focus: now focused=true")
 }
 
 // Blur is called when the input loses focus. Idempotent.
 func (inp *Input) Blur() {
-	debug.Log("Input.Blur: called, currently focused=%v", inp.focused.Get())
 	if !inp.focused.Get() {
 		return
 	}
 	inp.focused.Set(false)
-	debug.Log("Input.Blur: now focused=false")
 }
 
 // IsFocused returns whether this input is currently focused.

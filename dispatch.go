@@ -1,10 +1,6 @@
 package tui
 
-import (
-	"fmt"
-
-	"github.com/grindlemire/go-tui/internal/debug"
-)
+import "fmt"
 
 // dispatchEntry is a handler with its tree position for ordering.
 type dispatchEntry struct {
@@ -38,16 +34,11 @@ func buildDispatchTable(rootComp Component, root *Element, fm *focusManager) (*d
 			return
 		}
 
-		debug.Log("buildDispatchTable: component %T at position %d has %d bindings", comp, position, len(km))
-
 		// Check if this component can report its own focus state
 		type focusQuerier interface {
 			IsFocused() bool
 		}
 		fq, hasFocusQuery := comp.(focusQuerier)
-		if hasFocusQuery {
-			debug.Log("buildDispatchTable:   component %T implements focusQuerier, IsFocused=%v", comp, fq.IsFocused())
-		}
 
 		for _, binding := range km {
 			entry := dispatchEntry{
@@ -115,8 +106,6 @@ func (dt *dispatchTable) dispatch(ke KeyEvent, fm *focusManager) bool {
 		return false
 	}
 
-	debug.Log("dispatchTable.dispatch: key=%v rune=%c mod=%v (entries=%d)", ke.Key, ke.Rune, ke.Mod, len(dt.entries))
-
 	// Priority pass: focus-gated stop handlers consume the event exclusively.
 	// This ensures a focused input captures keys like 'q' before broadcast
 	// handlers (like quit) can intercept them.
@@ -124,7 +113,6 @@ func (dt *dispatchTable) dispatch(ke KeyEvent, fm *focusManager) bool {
 		e := &dt.entries[i]
 		if e.pattern.FocusRequired && e.stop && e.focusCheck != nil && e.focusCheck() {
 			if e.matchesKey(ke) {
-				debug.Log("dispatchTable.dispatch: PRIORITY focus-gated stop handler fired at position %d, pattern=%+v", e.position, e.pattern)
 				e.handler(ke)
 				return true
 			}
@@ -134,15 +122,12 @@ func (dt *dispatchTable) dispatch(ke KeyEvent, fm *focusManager) bool {
 	// Normal dispatch: broadcast and non-stop handlers in tree order.
 	for i := range dt.entries {
 		if dt.entries[i].matches(ke, fm) {
-			debug.Log("dispatchTable.dispatch: normal handler fired at position %d, pattern=%+v, stop=%v", dt.entries[i].position, dt.entries[i].pattern, dt.entries[i].stop)
 			dt.entries[i].handler(ke)
 			if dt.entries[i].stop {
-				debug.Log("dispatchTable.dispatch: stop handler consumed event")
 				return true
 			}
 		}
 	}
-	debug.Log("dispatchTable.dispatch: no stop handler matched, returning false")
 	return false
 }
 

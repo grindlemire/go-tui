@@ -14,6 +14,7 @@ type elementsApp struct {
 	scrollY  *tui.State[int]
 	content  *tui.Ref
 	name     *tui.State[string]
+	note     *tui.State[string]
 }
 
 func Elements() *elementsApp {
@@ -22,11 +23,16 @@ func Elements() *elementsApp {
 		scrollY:  tui.NewState(0),
 		content:  tui.NewRef(),
 		name:     tui.NewState(""),
+		note:     tui.NewState(""),
 	}
 }
 
 func (e *elementsApp) onNameChange(text string) {
 	e.name.Set(text)
+}
+
+func (e *elementsApp) onNoteSubmit(text string) {
+	e.note.Set(text)
 }
 
 func greeting(name string) string {
@@ -56,6 +62,7 @@ func (e *elementsApp) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+		tui.OnRune('n', func(ke tui.KeyEvent) { e.name.Set("John Doe") }),
 		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
 		tui.OnRune('+', func(ke tui.KeyEvent) {
 			v := e.progress.Get() + 5
@@ -336,7 +343,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 		tui.WithGap(1),
 	)
 	__tui_49 := tui.New(
-		tui.WithText("Input"),
+		tui.WithText("Input & TextArea"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
@@ -344,119 +351,167 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_50 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
-		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_51 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithWidthPercent(50.00),
+	)
+	__tui_52 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_53 := tui.New(
 		tui.WithText("Name:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_50.AddChild(__tui_51)
-	__tui_52 := app.MountPersistent(e, 0, func() tui.Component {
+	__tui_52.AddChild(__tui_53)
+	__tui_54 := app.MountPersistent(e, 0, func() tui.Component {
 		return tui.NewInput(
 			tui.WithInputPlaceholder("Type your name..."),
+			tui.WithInputValue(e.name),
 			tui.WithInputWidth(30),
 			tui.WithInputBorder(tui.BorderRounded),
-			tui.WithInputOnChange(e.onNameChange),
-			tui.WithInputValue(e.name.Get()),
+			tui.WithInputFocusColor(tui.Magenta),
 		)
 	})
-	__tui_50.AddChild(__tui_52)
-	__tui_48.AddChild(__tui_50)
-	__tui_53 := tui.New(
+	__tui_52.AddChild(__tui_54)
+	__tui_51.AddChild(__tui_52)
+	__tui_55 := tui.New(
 		tui.WithText(greeting(e.name.Get())),
+		tui.WithWidth(30),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_48.AddChild(__tui_53)
-	__tui_54 := tui.New(
-		tui.WithText("Press Tab to focus the input"),
+	__tui_51.AddChild(__tui_55)
+	__tui_50.AddChild(__tui_51)
+	__tui_56 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithWidthPercent(50.00),
+	)
+	__tui_57 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
+		tui.WithAlign(tui.AlignStart),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_58 := tui.New(
+		tui.WithText("Note:"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_48.AddChild(__tui_54)
+	__tui_57.AddChild(__tui_58)
+	__tui_59 := app.MountPersistent(e, 1, func() tui.Component {
+		return tui.NewTextArea(
+			tui.WithTextAreaPlaceholder("Write a note..."),
+			tui.WithTextAreaWidth(30),
+			tui.WithTextAreaMaxHeight(4),
+			tui.WithTextAreaBorder(tui.BorderRounded),
+			tui.WithTextAreaOnSubmit(e.onNoteSubmit),
+			tui.WithTextAreaFocusColor(tui.BrightRed),
+		)
+	})
+	__tui_57.AddChild(__tui_59)
+	__tui_56.AddChild(__tui_57)
+	if e.note.Get() != "" {
+		__tui_60 := tui.New(
+			tui.WithText(fmt.Sprintf("Saved: %s", e.note.Get())),
+			tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
+		)
+		__tui_56.AddChild(__tui_60)
+	}
+	__tui_50.AddChild(__tui_56)
+	__tui_48.AddChild(__tui_50)
+	__tui_61 := tui.New(
+		tui.WithText("Tab to cycle focus | Esc to blur | Enter submits note"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_48.AddChild(__tui_61)
 	__tui_0.AddChild(__tui_48)
-	__tui_55 := tui.New(
+	__tui_62 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithGap(1),
 	)
-	__tui_56 := tui.New(
+	__tui_63 := tui.New(
 		tui.WithText("Progress Bars"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
-	__tui_55.AddChild(__tui_56)
-	__tui_57 := tui.New(
+	__tui_62.AddChild(__tui_63)
+	__tui_64 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_58 := tui.New(
+	__tui_65 := tui.New(
 		tui.WithText("Download:"),
 		tui.WithWidth(10),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_57.AddChild(__tui_58)
-	__tui_59 := tui.New(
+	__tui_64.AddChild(__tui_65)
+	__tui_66 := tui.New(
 		tui.WithText(progressBar(e.progress.Get(), 25)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
-	__tui_57.AddChild(__tui_59)
-	__tui_60 := tui.New(
+	__tui_64.AddChild(__tui_66)
+	__tui_67 := tui.New(
 		tui.WithText(fmt.Sprintf("%d%%", e.progress.Get())),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 	)
-	__tui_57.AddChild(__tui_60)
-	__tui_55.AddChild(__tui_57)
-	__tui_61 := tui.New(
+	__tui_64.AddChild(__tui_67)
+	__tui_62.AddChild(__tui_64)
+	__tui_68 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_62 := tui.New(
+	__tui_69 := tui.New(
 		tui.WithText("Upload:"),
 		tui.WithWidth(10),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_61.AddChild(__tui_62)
-	__tui_63 := tui.New(
+	__tui_68.AddChild(__tui_69)
+	__tui_70 := tui.New(
 		tui.WithText(progressBar(100, 25)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green)),
 	)
-	__tui_61.AddChild(__tui_63)
-	__tui_64 := tui.New(
+	__tui_68.AddChild(__tui_70)
+	__tui_71 := tui.New(
 		tui.WithText("100%"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
-	__tui_61.AddChild(__tui_64)
-	__tui_55.AddChild(__tui_61)
-	__tui_65 := tui.New(
+	__tui_68.AddChild(__tui_71)
+	__tui_62.AddChild(__tui_68)
+	__tui_72 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_66 := tui.New(
+	__tui_73 := tui.New(
 		tui.WithText("Build:"),
 		tui.WithWidth(10),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_65.AddChild(__tui_66)
-	__tui_67 := tui.New(
+	__tui_72.AddChild(__tui_73)
+	__tui_74 := tui.New(
 		tui.WithText(progressBar(35, 25)),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow)),
 	)
-	__tui_65.AddChild(__tui_67)
-	__tui_68 := tui.New(
+	__tui_72.AddChild(__tui_74)
+	__tui_75 := tui.New(
 		tui.WithText("35%"),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Yellow).Bold()),
 	)
-	__tui_65.AddChild(__tui_68)
-	__tui_55.AddChild(__tui_65)
-	__tui_0.AddChild(__tui_55)
-	__tui_69 := tui.New(
+	__tui_72.AddChild(__tui_75)
+	__tui_62.AddChild(__tui_72)
+	__tui_0.AddChild(__tui_62)
+	__tui_76 := tui.New(
 		tui.WithText("tab focus input | +/- progress | j/k scroll | q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_69)
+	__tui_0.AddChild(__tui_76)
 
 	return __tui_0
 }
@@ -470,6 +525,9 @@ func (e *elementsApp) BindApp(app *tui.App) {
 	}
 	if e.name != nil {
 		e.name.BindApp(app)
+	}
+	if e.note != nil {
+		e.note.BindApp(app)
 	}
 }
 

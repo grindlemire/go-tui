@@ -45,11 +45,13 @@ func WithInputCursor(r rune) InputOption {
 	}
 }
 
-// WithInputValue sets the initial text value.
-func WithInputValue(s string) InputOption {
+// WithInputValue binds the Input to an external State for its text content.
+// The Input reads from and writes to this state directly, enabling reactive
+// two-way binding between the Input and the parent component.
+func WithInputValue(state *State[string]) InputOption {
 	return func(inp *Input) {
-		inp.text = NewState(s)
-		inp.cursorPos = NewState(len([]rune(s)))
+		inp.text = state
+		inp.cursorPos = NewState(len([]rune(state.Get())))
 	}
 }
 

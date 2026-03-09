@@ -56,6 +56,13 @@ func WithTextAreaCursor(r rune) TextAreaOption {
 	}
 }
 
+// WithTextAreaFocusColor sets the border color when focused (defaults to Cyan).
+func WithTextAreaFocusColor(c Color) TextAreaOption {
+	return func(t *TextArea) {
+		t.focusColor = c
+	}
+}
+
 // --- Behavior Options ---
 
 // WithTextAreaSubmitKey sets the key that triggers submit.
@@ -64,6 +71,16 @@ func WithTextAreaCursor(r rune) TextAreaOption {
 func WithTextAreaSubmitKey(k Key) TextAreaOption {
 	return func(t *TextArea) {
 		t.submitKey = k
+	}
+}
+
+// WithTextAreaValue binds the TextArea to an external State for its text content.
+// The TextArea reads from and writes to this state directly, enabling reactive
+// two-way binding between the TextArea and the parent component.
+func WithTextAreaValue(state *State[string]) TextAreaOption {
+	return func(t *TextArea) {
+		t.text = state
+		t.cursorPos = NewState(len([]rune(state.Get())))
 	}
 }
 

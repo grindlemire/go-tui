@@ -139,15 +139,12 @@ func (f *focusManager) SetFocus(elem Focusable) {
 // Wraps around to the first element if at the end.
 // Does nothing if there are no focusable elements.
 func (f *focusManager) Next() {
-	debug.Log("FocusManager.Next: called, elements=%d, current=%d", len(f.elements), f.current)
 	if len(f.elements) == 0 {
-		debug.Log("FocusManager.Next: no elements, returning")
 		return
 	}
 
 	// Blur current
 	if f.current >= 0 && f.current < len(f.elements) {
-		debug.Log("FocusManager.Next: blurring current element at index %d (%T)", f.current, f.elements[f.current])
 		f.elements[f.current].Blur()
 	}
 
@@ -162,21 +159,17 @@ func (f *focusManager) Next() {
 		nextIdx := (startIdx + 1 + i) % len(f.elements)
 		if nextIdx == f.current {
 			// Wrapped back to the same element; clear focus instead
-			debug.Log("FocusManager.Next: wrapped to same element, clearing focus")
 			f.current = -1
 			return
 		}
-		debug.Log("FocusManager.Next: checking index %d (%T), tabStop=%v", nextIdx, f.elements[nextIdx], f.elements[nextIdx].IsTabStop())
 		if f.elements[nextIdx].IsTabStop() {
 			f.current = nextIdx
-			debug.Log("FocusManager.Next: focusing element at index %d (%T)", nextIdx, f.elements[nextIdx])
 			f.elements[nextIdx].Focus()
 			return
 		}
 	}
 
-	// No tab-stop elements found
-	debug.Log("FocusManager.Next: no tab-stop elements found, setting current=-1")
+	// No focusable elements found
 	f.current = -1
 }
 
@@ -221,7 +214,6 @@ func (f *focusManager) Prev() {
 
 // ClearFocus blurs the currently focused element and sets focus to none.
 func (f *focusManager) ClearFocus() {
-	debug.Log("FocusManager.ClearFocus: current=%d", f.current)
 	if f.current >= 0 && f.current < len(f.elements) {
 		f.elements[f.current].Blur()
 	}
@@ -254,19 +246,13 @@ func (f *focusManager) refreshFromTree(root *Element) {
 	root.WalkFocusables(func(elem Focusable) {
 		f.elements = append(f.elements, elem)
 	})
-	debug.Log("FocusManager.refreshFromTree: savedIdx=%d, found %d focusable elements", savedIdx, len(f.elements))
-	for i, elem := range f.elements {
-		debug.Log("FocusManager.refreshFromTree:   [%d] %T focusable=%v", i, elem, elem.IsFocusable())
-	}
 	if savedIdx >= 0 && savedIdx < len(f.elements) {
 		f.current = savedIdx
 		// The new element was just created by Render() and doesn't know
 		// it's focused. Call Focus() to sync so that Blur() on the next
 		// Tab press targets the correct element state.
-		debug.Log("FocusManager.refreshFromTree: restoring focus to index %d (%T)", savedIdx, f.elements[savedIdx])
 		f.elements[savedIdx].Focus()
 	} else {
-		debug.Log("FocusManager.refreshFromTree: savedIdx out of range, setting current=-1")
 		f.current = -1
 	}
 }

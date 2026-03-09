@@ -10,6 +10,7 @@ type elementsApp struct {
 	scrollY  *tui.State[int]
 	content  *tui.Ref
 	name     *tui.State[string]
+	note     *tui.State[string]
 }
 
 func Elements() *elementsApp {
@@ -18,11 +19,16 @@ func Elements() *elementsApp {
 		scrollY:  tui.NewState(0),
 		content:  tui.NewRef(),
 		name:     tui.NewState(""),
+		note:     tui.NewState(""),
 	}
 }
 
 func (e *elementsApp) onNameChange(text string) {
 	e.name.Set(text)
+}
+
+func (e *elementsApp) onNoteSubmit(text string) {
+	e.note.Set(text)
 }
 
 func greeting(name string) string {
@@ -52,6 +58,7 @@ func (e *elementsApp) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+		tui.OnRune('n', func(ke tui.KeyEvent) {e.name.Set("John Doe") }),
 		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
 		tui.OnRune('+', func(ke tui.KeyEvent) {
 			v := e.progress.Get() + 5
@@ -171,20 +178,45 @@ templ (e *elementsApp) Render() {
 			</div>
 		</div>
 
-		// Input
+		// Input & TextArea
 		<div class="flex-col border-rounded p-1 gap-1">
-			<span class="text-gradient-cyan-magenta font-bold">Input</span>
-			<div class="flex gap-2 items-center">
-				<span class="font-dim">Name:</span>
-				<input
-					placeholder="Type your name..."
-					width={30}
-					border={tui.BorderRounded}
-					onChange={e.onNameChange}
-				/>
+			<span class="text-gradient-cyan-magenta font-bold">Input & TextArea</span>
+			<div class="flex gap-2">
+				<div class="flex-col gap-1 w-1/2">
+					<div class="flex gap-2 items-center">
+						<span class="font-dim">Name:</span>
+						<input
+							placeholder="Type your name..."
+							value={e.name}
+							width={30}
+							border={tui.BorderRounded}
+							focusColor={tui.Magenta}
+						/>
+					</div>
+					<span
+						class="text-cyan font-bold"
+						width={30}>
+						{greeting(e.name.Get())}
+					</span>
+				</div>
+				<div class="flex-col gap-1 w-1/2">
+					<div class="flex gap-2 items-start items-center">
+						<span class="font-dim">Note:</span>
+						<textarea
+							placeholder="Write a note..."
+							width={30}
+							maxHeight={4}
+							border={tui.BorderRounded}
+							onSubmit={e.onNoteSubmit}
+							focusColor={tui.BrightRed}
+						/>
+					</div>
+					@if e.note.Get() != "" {
+						<span class="text-cyan font-bold">{fmt.Sprintf("Saved: %s", e.note.Get())}</span>
+					}
+				</div>
 			</div>
-			<span class="text-cyan font-bold">{greeting(e.name.Get())}</span>
-			<span class="font-dim">Press Tab to focus the input</span>
+			<span class="font-dim">Tab to cycle focus | Esc to blur | Enter submits note</span>
 		</div>
 
 		// Progress bars (using custom rendering since <progress> attributes aren't supported yet)
