@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
-import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate } from "react-router-dom";
+import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate, Outlet } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
 import { tailwindClasses } from "./content/projectInfo.ts";
 import { VERSION } from "./version.ts";
@@ -183,18 +183,24 @@ function Nav() {
   const t = palette[theme];
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [starCount, setStarCount] = useState<string | null>(null);
+  const [starCount, setStarCount] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem("gh-stars");
+      if (raw) {
+        const { value, expiry } = JSON.parse(raw);
+        if (Date.now() < expiry) return value;
+      }
+    } catch {}
+    return null;
+  });
 
   // Fetch GitHub star count (cached for 15 minutes to avoid rate limits)
   useEffect(() => {
     try {
       const raw = localStorage.getItem("gh-stars");
       if (raw) {
-        const { value, expiry } = JSON.parse(raw);
-        if (Date.now() < expiry) {
-          setStarCount(value);
-          return;
-        }
+        const { expiry } = JSON.parse(raw);
+        if (Date.now() < expiry) return;
       }
     } catch {}
     fetch("https://api.github.com/repos/grindlemire/go-tui")
@@ -951,12 +957,12 @@ function Footer() {
 
 /* ─── Page Wrapper ─── */
 
-function Page({ children }: { children: React.ReactNode }) {
+function PageShell({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const t = palette[theme];
   return (
     <div
-      className={`${theme === "dark" ? "dark-theme" : "light-theme"} neon-select overflow-x-clip`}
+      className={`${theme === "dark" ? "dark-theme" : "light-theme"} neon-select overflow-x-clip flex flex-col`}
       style={{
         background: t.bg,
         color: t.text,
@@ -965,10 +971,24 @@ function Page({ children }: { children: React.ReactNode }) {
       }}
     >
       <Nav />
-      {children}
+      <div className="flex-1">
+        {children}
+      </div>
       <Footer />
     </div>
   );
+}
+
+function PageLayout() {
+  return (
+    <PageShell>
+      <Outlet />
+    </PageShell>
+  );
+}
+
+function Page({ children }: { children: React.ReactNode }) {
+  return <PageShell>{children}</PageShell>;
 }
 
 /* ─── Comparison Section ─── */
@@ -2231,85 +2251,83 @@ function GuidePage() {
   }, [slug, location.hash]);
 
   return (
-    <Page>
-      <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
-        <h1
-          className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
-          style={{ color: t.heading }}
-        >
-          Guide
-        </h1>
+    <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
+      <h1
+        className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
+        style={{ color: t.heading }}
+      >
+        Guide
+      </h1>
 
-        <div className="flex gap-8 sm:gap-10">
-          {/* Desktop Sidebar */}
-          <div className="w-48 shrink-0 hidden md:block">
-            <div className="sticky top-16">
-              <div
-                className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-4"
-                style={{ color: t.textDim }}
-              >
-                chapters
-              </div>
-
-              {pages.map((page, i) => {
-                const active = activeSection === i;
-                return (
-                  <Link
-                    key={page.slug}
-                    to={`/guide/${page.slug}`}
-                    className="block w-full text-left font-['Fira_Code',monospace] text-[12px] py-1.5 px-3 rounded transition-all duration-200"
-                    style={{
-                      color: active ? t.accent : t.textMuted,
-                      background: active
-                        ? theme === "dark"
-                          ? "#66d9ef0d"
-                          : "#2f9eb80d"
-                        : "transparent",
-                      textDecoration: "none",
-                      borderLeft: `2px solid ${active ? t.accent : "transparent"}`,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) e.currentTarget.style.color = t.accent;
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) e.currentTarget.style.color = t.textMuted;
-                    }}
-                  >
-                    {page.title}
-                  </Link>
-                );
-              })}
-
-              <SidebarLLMButton label="copy all as markdown" />
-            </div>
-          </div>
-
-          {/* Main content */}
-          <div className="flex-1 min-w-0">
-            <MobilePicker
-              pages={pages}
-              activeIndex={activeSection}
-              onSelect={(i) => navigate(`/guide/${pages[i].slug}`)}
-            />
-
-            <RawMarkdownButton body={pages[activeSection].body} />
-
-            <div className="fade-in" key={slug}>
-              <Markdown content={pages[activeSection].body} />
+      <div className="flex gap-8 sm:gap-10">
+        {/* Desktop Sidebar */}
+        <div className="w-48 shrink-0 hidden md:block">
+          <div className="sticky top-16">
+            <div
+              className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: t.textDim }}
+            >
+              chapters
             </div>
 
-            <PrevNextNav
-              pages={pages}
-              activeIndex={activeSection}
-              basePath="/guide"
-            />
-          </div>
+            {pages.map((page, i) => {
+              const active = activeSection === i;
+              return (
+                <Link
+                  key={page.slug}
+                  to={`/guide/${page.slug}`}
+                  className="block w-full text-left font-['Fira_Code',monospace] text-[12px] py-1.5 px-3 rounded transition-all duration-200"
+                  style={{
+                    color: active ? t.accent : t.textMuted,
+                    background: active
+                      ? theme === "dark"
+                        ? "#66d9ef0d"
+                        : "#2f9eb80d"
+                      : "transparent",
+                    textDecoration: "none",
+                    borderLeft: `2px solid ${active ? t.accent : "transparent"}`,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.color = t.accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.color = t.textMuted;
+                  }}
+                >
+                  {page.title}
+                </Link>
+              );
+            })}
 
-          {/* On-page TOC */}
-          <TableOfContents content={pages[activeSection].body} key={`toc-${slug}`} />
+            <SidebarLLMButton label="copy all as markdown" />
+          </div>
         </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          <MobilePicker
+            pages={pages}
+            activeIndex={activeSection}
+            onSelect={(i) => navigate(`/guide/${pages[i].slug}`)}
+          />
+
+          <RawMarkdownButton body={pages[activeSection].body} />
+
+          <div className="fade-in" key={slug}>
+            <Markdown content={pages[activeSection].body} />
+          </div>
+
+          <PrevNextNav
+            pages={pages}
+            activeIndex={activeSection}
+            basePath="/guide"
+          />
+        </div>
+
+        {/* On-page TOC */}
+        <TableOfContents content={pages[activeSection].body} key={`toc-${slug}`} />
       </div>
-    </Page>
+    </div>
   );
 }
 
@@ -2493,95 +2511,93 @@ function ReferencePage() {
   }, [slug, location.hash]);
 
   return (
-    <Page>
-      <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
-        <h1
-          className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
-          style={{ color: t.heading }}
-        >
-          API Reference
-        </h1>
+    <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
+      <h1
+        className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
+        style={{ color: t.heading }}
+      >
+        API Reference
+      </h1>
 
-        <div className="flex gap-8 sm:gap-10">
-          {/* Desktop Sidebar */}
-          <div className="w-48 shrink-0 hidden md:block">
-            <div className="sticky top-16">
-              <div
-                className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-4"
-                style={{ color: t.textDim }}
-              >
-                categories
-              </div>
-
-              {pages.map((page, i) => {
-                const active = activeCategory === i;
-                const isTailwind = page.slug === "tailwind-classes";
-                const activeColor = isTailwind ? t.secondary : t.accent;
-                return (
-                  <Link
-                    key={page.slug}
-                    to={`/reference/${page.slug}`}
-                    className="block w-full text-left font-['Fira_Code',monospace] text-[12px] py-1.5 px-3 rounded transition-all duration-200"
-                    style={{
-                      color: active ? activeColor : t.textMuted,
-                      background: active
-                        ? isTailwind
-                          ? theme === "dark"
-                            ? "#a6e22e08"
-                            : "#638b0c08"
-                          : theme === "dark"
-                            ? "#66d9ef0d"
-                            : "#2f9eb80d"
-                        : "transparent",
-                      textDecoration: "none",
-                      borderLeft: `2px solid ${active ? activeColor : "transparent"}`,
-                      textShadow:
-                        active && theme === "dark" && !isTailwind
-                          ? t.accentGlowSubtle
-                          : "none",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) e.currentTarget.style.color = isTailwind ? t.secondary : t.accent;
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) e.currentTarget.style.color = t.textMuted;
-                    }}
-                  >
-                    {page.title}
-                  </Link>
-                );
-              })}
-
-              <SidebarLLMButton label="copy all as markdown" />
-            </div>
-          </div>
-
-          {/* Main content */}
-          <div className="flex-1 min-w-0">
-            <MobilePicker
-              pages={pages}
-              activeIndex={activeCategory}
-              onSelect={(i) => navigate(`/reference/${pages[i].slug}`)}
-            />
-
-            <RawMarkdownButton body={pages[activeCategory].body} />
-
-            <div className="fade-in" key={slug}>
-              <Markdown content={pages[activeCategory].body} />
+      <div className="flex gap-8 sm:gap-10">
+        {/* Desktop Sidebar */}
+        <div className="w-48 shrink-0 hidden md:block">
+          <div className="sticky top-16">
+            <div
+              className="font-['Fira_Code',monospace] text-[10px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: t.textDim }}
+            >
+              categories
             </div>
 
-            <PrevNextNav
-              pages={pages}
-              activeIndex={activeCategory}
-              basePath="/reference"
-            />
-          </div>
+            {pages.map((page, i) => {
+              const active = activeCategory === i;
+              const isTailwind = page.slug === "tailwind-classes";
+              const activeColor = isTailwind ? t.secondary : t.accent;
+              return (
+                <Link
+                  key={page.slug}
+                  to={`/reference/${page.slug}`}
+                  className="block w-full text-left font-['Fira_Code',monospace] text-[12px] py-1.5 px-3 rounded transition-all duration-200"
+                  style={{
+                    color: active ? activeColor : t.textMuted,
+                    background: active
+                      ? isTailwind
+                        ? theme === "dark"
+                          ? "#a6e22e08"
+                          : "#638b0c08"
+                        : theme === "dark"
+                          ? "#66d9ef0d"
+                          : "#2f9eb80d"
+                      : "transparent",
+                    textDecoration: "none",
+                    borderLeft: `2px solid ${active ? activeColor : "transparent"}`,
+                    textShadow:
+                      active && theme === "dark" && !isTailwind
+                        ? t.accentGlowSubtle
+                        : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.color = isTailwind ? t.secondary : t.accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.color = t.textMuted;
+                  }}
+                >
+                  {page.title}
+                </Link>
+              );
+            })}
 
-          {/* On-page TOC */}
-          <TableOfContents content={pages[activeCategory].body} key={`toc-${slug}`} />
+            <SidebarLLMButton label="copy all as markdown" />
+          </div>
         </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          <MobilePicker
+            pages={pages}
+            activeIndex={activeCategory}
+            onSelect={(i) => navigate(`/reference/${pages[i].slug}`)}
+          />
+
+          <RawMarkdownButton body={pages[activeCategory].body} />
+
+          <div className="fade-in" key={slug}>
+            <Markdown content={pages[activeCategory].body} />
+          </div>
+
+          <PrevNextNav
+            pages={pages}
+            activeIndex={activeCategory}
+            basePath="/reference"
+          />
+        </div>
+
+        {/* On-page TOC */}
+        <TableOfContents content={pages[activeCategory].body} key={`toc-${slug}`} />
       </div>
-    </Page>
+    </div>
   );
 }
 
@@ -2619,14 +2635,16 @@ export default function Design2() {
         <ScrollToTop />
         <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
         <Routes>
-          <Route path="/" element={<Page><HomePageExplore /></Page>} />
+          <Route element={<PageLayout />}>
+            <Route path="/" element={<HomePageExplore />} />
+            <Route path="/guide" element={<GuideRedirect />} />
+            <Route path="/guide/:slug" element={<GuidePage />} />
+            <Route path="/reference" element={<ReferenceRedirect />} />
+            <Route path="/reference/:slug" element={<ReferencePage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
           <Route path="/legacy" element={<HomePage />} />
-          <Route path="/guide" element={<GuideRedirect />} />
-          <Route path="/guide/:slug" element={<GuidePage />} />
           <Route path="/guide/:slug/raw" element={<RawGuidePage />} />
-          <Route path="/reference" element={<ReferenceRedirect />} />
-          <Route path="/reference/:slug" element={<ReferencePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </SearchContext.Provider>
     </ThemeContext.Provider>
