@@ -78,7 +78,7 @@ const homeComparisonFeatures: ComparisonFeature[] = [
     values: {
       "go-tui": { summary: "HTML-style primitives", detail: "Built-in: div, span, p, ul, li, button, input, table, progress, hr, br. Composable via .gsx components" },
       "Bubble Tea": { summary: "14+ via Bubbles", detail: "Separate Bubbles library: text input, viewport, list, table, spinner, progress, file picker, and more" },
-      tview: { summary: "15+ built-in", detail: "Richest widget set: TextView, Table, TreeView, List, Form, Modal, InputField, DropDown, and more" },
+      tview: { summary: "16+ built-in", detail: "Richest widget set: TextView, Table, TreeView, List, Form, Modal, InputField, DropDown, and more" },
       gocui: { summary: "Views only", detail: "No pre-built widgets. Views provide text I/O and keybindings, so widgets must be built from scratch" },
     },
   },
