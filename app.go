@@ -348,10 +348,42 @@ func (a *App) applyRoot(root *Element) {
 		a.focus.Register(f)
 	})
 
+	// Auto-focus: find first element with autoFocus and set focus on it
+	a.applyAutoFocus(root)
+
 	// Start all watchers in the tree
 	root.WalkWatchers(func(w Watcher) {
 		w.Start(a.eventQueue, a.rootWatcherCh)
 	})
+}
+
+// applyAutoFocus walks the element tree depth-first to find the first
+// element with autoFocus=true and sets focus on it.
+func (a *App) applyAutoFocus(root *Element) {
+	if root == nil {
+		return
+	}
+	var found *Element
+	var walk func(e *Element) bool
+	walk = func(e *Element) bool {
+		if e.hidden {
+			return false
+		}
+		if e.autoFocus && e.IsTabStop() {
+			found = e
+			return true
+		}
+		for _, child := range e.children {
+			if walk(child) {
+				return true
+			}
+		}
+		return false
+	}
+	walk(root)
+	if found != nil {
+		a.focus.SetFocus(found)
+	}
 }
 
 func (a *App) resetRootSession() {

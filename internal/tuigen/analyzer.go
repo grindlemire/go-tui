@@ -149,7 +149,8 @@ var knownAttributes = map[string]bool{
 	// Focus
 	"onFocus":   true,
 	"onBlur":    true,
-	"focusable": true,
+	"focusable":  true,
+	"autoFocus":  true,
 
 	// Scroll
 	"scrollable":          true,

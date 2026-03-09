@@ -73,6 +73,7 @@ type Element struct {
 	focusable bool
 	tabStop   bool // whether this element appears in Tab/Shift+Tab navigation
 	focused   bool
+	autoFocus bool // request initial focus on this element
 	onFocus   func(*Element)
 	onBlur    func(*Element)
 

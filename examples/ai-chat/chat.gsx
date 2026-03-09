@@ -231,6 +231,7 @@ templ (c *chat) Render() {
 		c.updateHeight()
 		<textarea
 			ref={c.textareaRef}
+			autoFocus={true}
 			placeholder="Type a message..."
 			width={c.width - 2}
 			border={tui.BorderRounded}

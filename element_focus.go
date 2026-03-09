@@ -16,6 +16,12 @@ func (e *Element) IsTabStop() bool {
 	return e.tabStop
 }
 
+// IsAutoFocus returns whether this element should receive focus automatically
+// when the element tree is first applied.
+func (e *Element) IsAutoFocus() bool {
+	return e.autoFocus
+}
+
 // IsFocused returns whether this element currently has focus.
 func (e *Element) IsFocused() bool {
 	return e.focused

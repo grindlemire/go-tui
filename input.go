@@ -15,9 +15,10 @@ type Input struct {
 	placeholder      string
 	placeholderStyle Style
 	cursorRune       rune
-	focusColor       Color
+	focusColor       *Color
 	borderGradient   *Gradient
 	focusGradient    *Gradient
+	autoFocus        bool
 	onSubmit         func(string)
 	onChange         func(string)
 
@@ -57,7 +58,6 @@ func NewInput(opts ...InputOption) *Input {
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
 		cursorRune:       '▌',
-		focusColor:       Cyan,
 
 		// State
 		text:      NewState(""),
@@ -138,6 +138,7 @@ func (inp *Input) Render(app *App) *Element {
 		WithDirection(Row),
 		WithHeight(totalHeight),
 		WithFocusable(true),
+		WithAutoFocus(inp.autoFocus),
 	}
 	if inp.width > 0 {
 		opts = append(opts, WithWidth(inp.width))
@@ -147,8 +148,8 @@ func (inp *Input) Render(app *App) *Element {
 		if inp.focused.Get() {
 			if inp.focusGradient != nil {
 				opts = append(opts, WithBorderGradient(*inp.focusGradient))
-			} else {
-				opts = append(opts, WithBorderStyle(NewStyle().Foreground(inp.focusColor)))
+			} else if inp.focusColor != nil {
+				opts = append(opts, WithBorderStyle(NewStyle().Foreground(*inp.focusColor)))
 			}
 		} else if inp.borderGradient != nil {
 			opts = append(opts, WithBorderGradient(*inp.borderGradient))

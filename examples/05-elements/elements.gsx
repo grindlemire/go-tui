@@ -27,10 +27,6 @@ func Elements() *elementsApp {
 	}
 }
 
-func (e *elementsApp) onNameChange(text string) {
-	e.name.Set(text)
-}
-
 func (e *elementsApp) onNoteSubmit(text string) {
 	e.note.Set(text)
 }
@@ -192,12 +188,10 @@ templ (e *elementsApp) Render() {
 				@for _, label := range buttonLabels {
 					@if label == "Disabled" {
 						<button ref={e.btnRefs} key={label} class="font-dim" disabled={true}>{label}</button>
+					} @else @if label == e.selectedBtn.Get() {
+						<button ref={e.btnRefs} key={label} class="font-bold text-cyan">{label}</button>
 					} @else {
-						@if label == e.selectedBtn.Get() {
-							<button ref={e.btnRefs} key={label} class="font-bold text-cyan">{label}</button>
-						} @else {
-							<button ref={e.btnRefs} key={label}>{label}</button>
-						}
+						<button ref={e.btnRefs} key={label}>{label}</button>
 					}
 				}
 			</div>

@@ -1,6 +1,6 @@
 # Elements
 
-Showcases the built-in HTML-like elements (`<div>`, `<span>`, `<button>`, `<input>`, `<table>`, `<progress>`, `<hr>`, and more) with their default behaviors and attributes.
+Showcases the built-in HTML-like elements (`<div>`, `<span>`, `<button>`, `<input>`, `<textarea>`, `<table>`, `<progress>`, `<hr>`, and more) with their default behaviors and attributes. Demonstrates reactive value binding, Tab/Shift+Tab focus cycling, and gradient border styling on Input and TextArea.
 
 ## Screenshot
 

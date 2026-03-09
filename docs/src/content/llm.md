@@ -209,7 +209,8 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 
 | Element | Description |
 |---------|-------------|
-| `<input />` | Text input. Attrs: `value`, `placeholder` |
+| `<input />` | Single-line text input. Attrs: `value` (`*State[string]`), `placeholder`, `width`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `onSubmit`, `onChange` |
+| `<textarea />` | Multi-line text input. Attrs: `value` (`*State[string]`), `placeholder`, `width`, `maxHeight`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `submitKey`, `onSubmit` |
 | `<progress />` | Progress bar. Attrs: `value`, `max` |
 | `<hr />` | Horizontal rule |
 | `<br />` | Line break |

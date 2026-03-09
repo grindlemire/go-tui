@@ -258,6 +258,19 @@ func WithFocusable(focusable bool) Option {
 	}
 }
 
+// WithAutoFocus sets whether this element should automatically receive focus
+// when the element tree is first applied. Only the first autoFocus element
+// in tree order takes effect. Implies focusable and tabStop.
+func WithAutoFocus(auto bool) Option {
+	return func(e *Element) {
+		e.autoFocus = auto
+		if auto {
+			e.focusable = true
+			e.tabStop = true
+		}
+	}
+}
+
 // WithTabStop sets whether this element appears in Tab/Shift+Tab navigation.
 // Use this to override the default tabStop behavior set by WithFocusable or WithScrollable.
 func WithTabStop(tabStop bool) Option {

@@ -56,10 +56,10 @@ func WithTextAreaCursor(r rune) TextAreaOption {
 	}
 }
 
-// WithTextAreaFocusColor sets the border color when focused (defaults to Cyan).
+// WithTextAreaFocusColor sets the border color when focused.
 func WithTextAreaFocusColor(c Color) TextAreaOption {
 	return func(t *TextArea) {
-		t.focusColor = c
+		t.focusColor = &c
 	}
 }
 
@@ -96,6 +96,14 @@ func WithTextAreaValue(state *State[string]) TextAreaOption {
 	return func(t *TextArea) {
 		t.text = state
 		t.cursorPos = NewState(len([]rune(state.Get())))
+	}
+}
+
+// WithTextAreaAutoFocus sets whether the text area should automatically
+// receive focus when the element tree is first applied.
+func WithTextAreaAutoFocus(auto bool) TextAreaOption {
+	return func(t *TextArea) {
+		t.autoFocus = auto
 	}
 }
 
