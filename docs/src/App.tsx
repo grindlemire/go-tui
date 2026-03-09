@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { Routes, Route, Link, useLocation, useParams, useNavigate, Navigate, Outlet } from "react-router-dom";
 import { type Theme, palette, ThemeContext, useTheme } from "./lib/theme.ts";
 import { VERSION } from "./version.ts";
