@@ -1,1 +1,106 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeInUp 0.35s ease-out forwards;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+@keyframes scanDrift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-80px); }
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #49483e;
+  border-radius: 3px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #75715e;
+}
+.light-theme .custom-scroll::-webkit-scrollbar-thumb {
+  background: #c0bfb8;
+}
+.light-theme .custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a6a59e;
+}
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #49483e transparent;
+}
+.light-theme .custom-scroll {
+  scrollbar-color: #c0bfb8 transparent;
+}
+
+.neon-select ::selection {
+  background: #66d9ef33;
+  color: #66d9ef;
+}
+.light-theme .neon-select ::selection {
+  background: #217f9633;
+  color: #217f96;
+}
+
+@keyframes syntaxPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+.syntax-active-token {
+  animation: syntaxPulse 2s ease-in-out infinite;
+}
+
+@keyframes comparisonReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.comparison-row-animate {
+  animation: comparisonReveal 0.3s ease-out both;
+}
+
+@keyframes cellReveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lineIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tl {
+  opacity: 0;
+  animation: lineIn 0.1s ease-out forwards;
+}
+
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(6px); opacity: 1; }
+}
+
+@keyframes navSlideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+*, *::before, *::after {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
+}
+/* Don't let theme transition interfere with existing animations */
+.tl, [style*="animation"] {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
+}
