@@ -388,7 +388,8 @@ func componentConstructor(tag string) string {
 	case "input":
 		return "tui.NewInput"
 	default:
-		return "tui.NewTextArea"
+		// Produce an identifier that won't compile, surfacing the mistake immediately.
+		return fmt.Sprintf("UNKNOWN_COMPONENT_%s", tag)
 	}
 }
 
@@ -493,7 +494,11 @@ func componentAttributeMaps(tag string) (attrMap map[string]string, handlerMap m
 	switch tag {
 	case "input":
 		return inputAttributeToOption, inputHandlerAttributes
-	default:
+	case "textarea":
 		return textareaAttributeToOption, textareaHandlerAttributes
+	default:
+		// Unknown tags won't have any attribute mappings; componentConstructor
+		// will produce a compile error in the generated code.
+		return nil, nil
 	}
 }

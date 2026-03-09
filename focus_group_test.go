@@ -259,7 +259,7 @@ func TestFocusGroup_ShiftTabDoesNotTriggerNext(t *testing.T) {
 	matched := 0
 	for _, binding := range km {
 		entry := dispatchEntry{pattern: binding.Pattern, handler: binding.Handler, stop: binding.Stop}
-		if entry.matches(event, nil) {
+		if entry.matches(event) {
 			entry.handler(event)
 			matched++
 		}

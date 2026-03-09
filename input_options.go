@@ -52,6 +52,7 @@ func WithInputValue(state *State[string]) InputOption {
 	return func(inp *Input) {
 		inp.text = state
 		inp.cursorPos = NewState(len([]rune(state.Get())))
+		inp.scrollPos = NewState(0)
 	}
 }
 

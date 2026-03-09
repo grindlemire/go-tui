@@ -33,10 +33,6 @@ func Elements() *elementsApp {
 	}
 }
 
-func (e *elementsApp) onNameChange(text string) {
-	e.name.Set(text)
-}
-
 func (e *elementsApp) onNoteSubmit(text string) {
 	e.note.Set(text)
 }
@@ -419,7 +415,6 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_55 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
-		tui.WithAlign(tui.AlignStart),
 		tui.WithAlign(tui.AlignCenter),
 	)
 	__tui_56 := tui.New(

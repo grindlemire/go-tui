@@ -217,24 +217,11 @@ func (inp *Input) HandleEvent(e Event) bool {
 	}
 
 	for _, binding := range inp.KeyMap() {
-		if inp.matchesPattern(ke, binding.Pattern) {
+		entry := dispatchEntry{pattern: binding.Pattern}
+		if entry.matchesKey(ke) {
 			binding.Handler(ke)
 			return binding.Stop
 		}
-	}
-	return false
-}
-
-// matchesPattern checks if a key event matches a pattern.
-func (inp *Input) matchesPattern(ke KeyEvent, p KeyPattern) bool {
-	if p.Key != 0 && ke.Key == p.Key {
-		return true
-	}
-	if p.Rune != 0 && ke.Rune == p.Rune {
-		return true
-	}
-	if p.AnyRune && ke.Rune != 0 {
-		return true
 	}
 	return false
 }
@@ -288,7 +275,10 @@ func (inp *Input) Watchers() []Watcher {
 func (inp *Input) insertChar(ke KeyEvent) {
 	runes := []rune(inp.text.Get())
 	pos := inp.clampCursorPos()
-	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
+	newRunes := make([]rune, 0, len(runes)+1)
+	newRunes = append(newRunes, runes[:pos]...)
+	newRunes = append(newRunes, ke.Rune)
+	newRunes = append(newRunes, runes[pos:]...)
 	inp.text.Set(string(newRunes))
 	inp.cursorPos.Set(pos + 1)
 	inp.blink.Set(true)

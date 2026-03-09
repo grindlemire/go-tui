@@ -428,7 +428,7 @@ func TestKeyCtrlZ_OverrideByStopper(t *testing.T) {
 	ke := KeyEvent{Key: KeyCtrlZ, app: app}
 
 	// Dispatch through table - should be consumed by Stop handler
-	stopped := app.dispatchTable.dispatch(ke, app.focus)
+	stopped := app.dispatchTable.dispatch(ke)
 
 	if !stopped {
 		t.Fatal("expected dispatch to return stopped=true")
