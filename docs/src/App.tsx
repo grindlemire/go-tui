@@ -9,6 +9,7 @@ import TableOfContents from "./components/TableOfContents.tsx";
 import CodeShowcase from "./components/CodeShowcase.tsx";
 import SearchModal from "./components/SearchModal.tsx";
 import HomePageExplore from "./components/HomePageExplore.tsx";
+import Divider from "./components/Divider.tsx";
 
 const SearchContext = createContext<{ openSearch: () => void }>({ openSearch: () => { } });
 function useSearch() { return useContext(SearchContext); }
@@ -773,26 +774,6 @@ function DxCapability({
       >
         {description}
       </div>
-    </div>
-  );
-}
-
-/* ─── Divider ─── */
-
-function Divider() {
-  const { theme } = useTheme();
-  const t = palette[theme];
-  return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
-      <div
-        className="h-px"
-        style={{
-          background:
-            theme === "dark"
-              ? "linear-gradient(to right, transparent, #66d9ef18, #f9267218, transparent)"
-              : `linear-gradient(to right, transparent, ${t.border}, transparent)`,
-        }}
-      />
     </div>
   );
 }
