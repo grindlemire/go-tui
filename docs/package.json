@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "minisearch": "^7.2.0",
-    "playwright": "^1.58.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
@@ -33,6 +32,7 @@
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
+    "playwright": "^1.58.2",
     "vite": "^7.3.1"
   }
 }
