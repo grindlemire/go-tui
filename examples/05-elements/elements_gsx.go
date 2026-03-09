@@ -357,6 +357,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 			tui.WithInputWidth(30),
 			tui.WithInputBorder(tui.BorderRounded),
 			tui.WithInputOnChange(e.onNameChange),
+			tui.WithInputValue(e.name.Get()),
 		)
 	})
 	__tui_50.AddChild(__tui_52)

@@ -1,14 +1,18 @@
 package tui
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/grindlemire/go-tui/internal/debug"
+)
 
 // dispatchEntry is a handler with its tree position for ordering.
 type dispatchEntry struct {
-	pattern   KeyPattern
-	handler   func(KeyEvent)
-	stop      bool
-	position  int       // BFS order index from tree walk
-	focusable Focusable // Non-nil for focus-gated entries; checked at dispatch time
+	pattern    KeyPattern
+	handler    func(KeyEvent)
+	stop       bool
+	position   int        // BFS order index from tree walk
+	focusCheck func() bool // Non-nil for focus-gated entries; returns true when component is focused
 }
 
 // dispatchTable holds all handlers in a single tree-ordered list.
@@ -34,8 +38,16 @@ func buildDispatchTable(rootComp Component, root *Element, fm *focusManager) (*d
 			return
 		}
 
-		// Check if this component implements Focusable (for focus-gated bindings)
-		focusableComp, _ := comp.(Focusable)
+		debug.Log("buildDispatchTable: component %T at position %d has %d bindings", comp, position, len(km))
+
+		// Check if this component can report its own focus state
+		type focusQuerier interface {
+			IsFocused() bool
+		}
+		fq, hasFocusQuery := comp.(focusQuerier)
+		if hasFocusQuery {
+			debug.Log("buildDispatchTable:   component %T implements focusQuerier, IsFocused=%v", comp, fq.IsFocused())
+		}
 
 		for _, binding := range km {
 			entry := dispatchEntry{
@@ -44,9 +56,9 @@ func buildDispatchTable(rootComp Component, root *Element, fm *focusManager) (*d
 				stop:     binding.Stop,
 				position: position,
 			}
-			// Only store focusable ref if the binding requires focus
-			if binding.Pattern.FocusRequired && focusableComp != nil {
-				entry.focusable = focusableComp
+			// For focus-gated bindings, capture the component's focus check
+			if binding.Pattern.FocusRequired && hasFocusQuery {
+				entry.focusCheck = fq.IsFocused
 			}
 			table.entries = append(table.entries, entry)
 		}
@@ -60,18 +72,11 @@ func buildDispatchTable(rootComp Component, root *Element, fm *focusManager) (*d
 	return table, nil
 }
 
-// matches checks if a dispatch entry matches a key event.
-func (e *dispatchEntry) matches(ke KeyEvent, fm *focusManager) bool {
+// matchesKey checks if a dispatch entry's key pattern matches a key event,
+// without checking focus state.
+func (e *dispatchEntry) matchesKey(ke KeyEvent) bool {
 	p := e.pattern
 
-	// Focus-gated: skip if not focused
-	if p.FocusRequired && e.focusable != nil {
-		if fm == nil || !fm.IsFocused(e.focusable) {
-			return false
-		}
-	}
-
-	// Check modifier requirements
 	if p.RequireNoMods && ke.Mod != 0 {
 		return false
 	}
@@ -91,21 +96,53 @@ func (e *dispatchEntry) matches(ke KeyEvent, fm *focusManager) bool {
 	return false
 }
 
-// dispatch sends a key event to all matching handlers in tree order.
-// Stops early if a matching handler has Stop=true.
-// Returns true if a handler with Stop=true consumed the event.
+// matches checks if a dispatch entry matches a key event, including focus gating.
+func (e *dispatchEntry) matches(ke KeyEvent, fm *focusManager) bool {
+	if e.pattern.FocusRequired && e.focusCheck != nil {
+		if !e.focusCheck() {
+			return false
+		}
+	}
+	return e.matchesKey(ke)
+}
+
+// dispatch sends a key event to matching handlers.
+// Focus-gated stop handlers take priority: if any active focus-gated stop
+// handler matches, it fires exclusively and broadcast handlers are skipped.
+// Otherwise, handlers fire in tree order, stopping early if a Stop handler matches.
 func (dt *dispatchTable) dispatch(ke KeyEvent, fm *focusManager) bool {
 	if dt == nil {
 		return false
 	}
+
+	debug.Log("dispatchTable.dispatch: key=%v rune=%c mod=%v (entries=%d)", ke.Key, ke.Rune, ke.Mod, len(dt.entries))
+
+	// Priority pass: focus-gated stop handlers consume the event exclusively.
+	// This ensures a focused input captures keys like 'q' before broadcast
+	// handlers (like quit) can intercept them.
 	for i := range dt.entries {
-		if dt.entries[i].matches(ke, fm) {
-			dt.entries[i].handler(ke)
-			if dt.entries[i].stop {
+		e := &dt.entries[i]
+		if e.pattern.FocusRequired && e.stop && e.focusCheck != nil && e.focusCheck() {
+			if e.matchesKey(ke) {
+				debug.Log("dispatchTable.dispatch: PRIORITY focus-gated stop handler fired at position %d, pattern=%+v", e.position, e.pattern)
+				e.handler(ke)
 				return true
 			}
 		}
 	}
+
+	// Normal dispatch: broadcast and non-stop handlers in tree order.
+	for i := range dt.entries {
+		if dt.entries[i].matches(ke, fm) {
+			debug.Log("dispatchTable.dispatch: normal handler fired at position %d, pattern=%+v, stop=%v", dt.entries[i].position, dt.entries[i].pattern, dt.entries[i].stop)
+			dt.entries[i].handler(ke)
+			if dt.entries[i].stop {
+				debug.Log("dispatchTable.dispatch: stop handler consumed event")
+				return true
+			}
+		}
+	}
+	debug.Log("dispatchTable.dispatch: no stop handler matched, returning false")
 	return false
 }
 

@@ -160,15 +160,31 @@ func (t *TextArea) IsFocusable() bool {
 	return true
 }
 
-// Focus is called when the text area gains focus.
+// IsTabStop returns true since TextArea participates in Tab navigation.
+func (t *TextArea) IsTabStop() bool {
+	return true
+}
+
+// Focus is called when the text area gains focus. Idempotent.
 func (t *TextArea) Focus() {
+	if t.focused.Get() {
+		return
+	}
 	t.focused.Set(true)
 	t.blink.Set(true)
 }
 
-// Blur is called when the text area loses focus.
+// Blur is called when the text area loses focus. Idempotent.
 func (t *TextArea) Blur() {
+	if !t.focused.Get() {
+		return
+	}
 	t.focused.Set(false)
+}
+
+// IsFocused returns whether this text area is currently focused.
+func (t *TextArea) IsFocused() bool {
+	return t.focused.Get()
 }
 
 // HandleEvent processes keyboard events.
@@ -240,6 +256,13 @@ func (t *TextArea) KeyMap() KeyMap {
 		// Newline and submit (focus-gated)
 		OnKeyFocused(newlineKey, t.insertNewline),
 		OnKeyFocused(submitKeyBinding, t.submit),
+
+		// Blur on Escape (focus-gated)
+		OnKeyFocused(KeyEscape, func(ke KeyEvent) {
+			if app := ke.App(); app != nil {
+				app.BlurFocused()
+			}
+		}),
 	}
 }
 

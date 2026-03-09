@@ -409,6 +409,11 @@ func (a *App) FocusPrev() {
 	a.focus.Prev()
 }
 
+// BlurFocused blurs the currently focused element, leaving nothing focused.
+func (a *App) BlurFocused() {
+	a.focus.ClearFocus()
+}
+
 // Focused returns the currently focused element, or nil if none.
 func (a *App) Focused() Focusable {
 	return a.focus.Focused()

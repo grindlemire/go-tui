@@ -23,8 +23,8 @@ func (e *Element) notifyChildAdded(child *Element) {
 	if root.onChildAdded != nil {
 		root.onChildAdded(child)
 	}
-	// Notify App about focusable elements for auto-registration
-	if root.onFocusableAdded != nil && child.IsFocusable() {
+	// Notify App about tab-navigable elements for auto-registration
+	if root.onFocusableAdded != nil && child.IsTabStop() {
 		root.onFocusableAdded(child)
 	}
 }

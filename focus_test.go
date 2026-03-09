@@ -26,6 +26,10 @@ func (m *mockFocusable) IsFocusable() bool {
 	return m.focusable
 }
 
+func (m *mockFocusable) IsTabStop() bool {
+	return m.focusable
+}
+
 func (m *mockFocusable) HandleEvent(event Event) bool {
 	m.lastEvent = event
 	return m.handled
@@ -39,6 +43,10 @@ func (m *mockFocusable) Focus() {
 func (m *mockFocusable) Blur() {
 	m.focused = false
 	m.blurCalls++
+}
+
+func (m *mockFocusable) IsFocused() bool {
+	return m.focused
 }
 
 // registerAll registers all elements to the focusManager.

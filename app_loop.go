@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 // Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
@@ -31,6 +33,7 @@ func (a *App) Run() error {
 	go a.readInputEvents()
 
 	// Initial render
+	debug.Log("App.Run: initial render")
 	a.Render()
 	a.rebuildDispatchTable()
 
@@ -57,6 +60,7 @@ func (a *App) Run() error {
 
 		// Always render if dirty
 		if a.checkAndClearDirty() {
+			debug.Log("App.Run: dirty frame, re-rendering")
 			a.Render()
 			a.rebuildDispatchTable()
 		}
@@ -139,6 +143,11 @@ func (a *App) rebuildDispatchTable() {
 		// Log and keep the previous valid table rather than crashing.
 		fmt.Fprintf(os.Stderr, "tui: dispatch table error: %v\n", err)
 		return
+	}
+	debug.Log("rebuildDispatchTable: %d entries", len(table.entries))
+	for i, e := range table.entries {
+		debug.Log("rebuildDispatchTable:   [%d] pos=%d key=%v rune=%c anyRune=%v focusReq=%v stop=%v focusCheck=%v",
+			i, e.position, e.pattern.Key, e.pattern.Rune, e.pattern.AnyRune, e.pattern.FocusRequired, e.stop, e.focusCheck != nil)
 	}
 	a.dispatchTable = table
 }

@@ -8,13 +8,14 @@ func (e *Element) SetOnFocusableAdded(fn func(Focusable)) {
 	e.onFocusableAdded = fn
 }
 
-// WalkFocusables calls fn for each focusable element in the tree.
-// This is used by App to discover existing focusable elements.
+// WalkFocusables calls fn for each tab-navigable element in the tree.
+// Only elements with tabStop=true are included (not all focusable elements).
+// This is used by focusManager to build the Tab navigation cycle.
 func (e *Element) WalkFocusables(fn func(Focusable)) {
 	if e.hidden {
 		return
 	}
-	if e.IsFocusable() {
+	if e.IsTabStop() {
 		fn(e)
 	}
 	for _, child := range e.children {

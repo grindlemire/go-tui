@@ -71,6 +71,7 @@ type Element struct {
 
 	// Focus properties
 	focusable bool
+	tabStop   bool // whether this element appears in Tab/Shift+Tab navigation
 	focused   bool
 	onFocus   func(*Element)
 	onBlur    func(*Element)

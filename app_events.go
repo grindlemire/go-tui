@@ -1,10 +1,13 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/debug"
+
 // Dispatch sends an event to the focused element.
 // Handles ResizeEvent internally by updating buffer size and scheduling a full redraw.
 // Handles MouseEvent by hit-testing to find the element under the cursor.
 // Returns true if the event was consumed.
 func (a *App) Dispatch(event Event) bool {
+	debug.Log("App.Dispatch: event=%T", event)
 	// Handle ResizeEvent specially
 	if resize, ok := event.(ResizeEvent); ok {
 		if a.inAlternateScreen {
@@ -91,10 +94,12 @@ func (a *App) readInputEvents() {
 		a.eventQueue <- func() {
 			if keyEvent, isKey := ev.(KeyEvent); isKey {
 				keyEvent.app = a
+				debug.Log("readInputEvents: key=%v rune=%c mod=%v, dispatchTable=%v", keyEvent.Key, keyEvent.Rune, keyEvent.Mod, a.dispatchTable != nil)
 				// Component model path: use broadcast dispatch table exclusively.
 				// globalKeyHandler is skipped — components use KeyMap() instead.
 				if a.dispatchTable != nil {
 					stopped := a.dispatchTable.dispatch(keyEvent, a.focus)
+					debug.Log("readInputEvents: dispatchTable.dispatch returned stopped=%v", stopped)
 					if stopped {
 						return // Event consumed by a Stop handler
 					}

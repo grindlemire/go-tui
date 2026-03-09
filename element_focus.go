@@ -11,15 +11,25 @@ func (e *Element) IsFocusable() bool {
 	return e.focusable
 }
 
+// IsTabStop returns whether this element participates in Tab/Shift+Tab navigation.
+func (e *Element) IsTabStop() bool {
+	return e.tabStop
+}
+
 // IsFocused returns whether this element currently has focus.
 func (e *Element) IsFocused() bool {
 	return e.focused
 }
 
 // Focus marks this element as focused and calls onFocus callback if set.
+// Idempotent: no-op if already focused.
 // Does not cascade to children — only the FocusManager target receives focus.
 func (e *Element) Focus() {
-	debug.Log("Element.Focus: text=%q", e.text)
+	if e.focused {
+		debug.Log("Element.Focus: already focused, text=%q, skipping", e.text)
+		return
+	}
+	debug.Log("Element.Focus: text=%q, hasOnFocus=%v", e.text, e.onFocus != nil)
 	e.focused = true
 	if e.onFocus != nil {
 		e.onFocus(e)
@@ -27,8 +37,14 @@ func (e *Element) Focus() {
 }
 
 // Blur marks this element as not focused and calls onBlur callback if set.
+// Idempotent: no-op if already blurred.
 // Does not cascade to children — only the FocusManager target loses focus.
 func (e *Element) Blur() {
+	if !e.focused {
+		debug.Log("Element.Blur: already blurred, text=%q, skipping", e.text)
+		return
+	}
+	debug.Log("Element.Blur: text=%q, hasOnBlur=%v", e.text, e.onBlur != nil)
 	e.focused = false
 	if e.onBlur != nil {
 		e.onBlur(e)
@@ -36,23 +52,27 @@ func (e *Element) Blur() {
 }
 
 // SetFocusable sets whether this element can receive focus.
+// Also sets tabStop to the same value.
 func (e *Element) SetFocusable(focusable bool) {
 	e.focusable = focusable
+	e.tabStop = focusable
 }
 
 // SetOnFocus sets a handler that's called when this element gains focus.
 // The handler receives the element as its first parameter (self-inject).
-// Implicitly sets focusable = true.
+// Implicitly sets focusable = true and tabStop = true.
 func (e *Element) SetOnFocus(fn func(*Element)) {
 	e.focusable = true
+	e.tabStop = true
 	e.onFocus = fn
 }
 
 // SetOnBlur sets a handler that's called when this element loses focus.
 // The handler receives the element as its first parameter (self-inject).
-// Implicitly sets focusable = true.
+// Implicitly sets focusable = true and tabStop = true.
 func (e *Element) SetOnBlur(fn func(*Element)) {
 	e.focusable = true
+	e.tabStop = true
 	e.onBlur = fn
 }
 

@@ -10,6 +10,11 @@ type Focusable interface {
 	// May return false for disabled elements.
 	IsFocusable() bool
 
+	// IsTabStop returns whether this element participates in Tab/Shift+Tab
+	// navigation. Elements like scrollable containers are focusable (can
+	// receive keyboard events) but are not tab stops by default.
+	IsTabStop() bool
+
 	// HandleEvent processes a keyboard event.
 	// Returns true if the event was consumed, false to allow propagation.
 	HandleEvent(event Event) bool
@@ -134,16 +139,20 @@ func (f *focusManager) SetFocus(elem Focusable) {
 // Wraps around to the first element if at the end.
 // Does nothing if there are no focusable elements.
 func (f *focusManager) Next() {
+	debug.Log("FocusManager.Next: called, elements=%d, current=%d", len(f.elements), f.current)
 	if len(f.elements) == 0 {
+		debug.Log("FocusManager.Next: no elements, returning")
 		return
 	}
 
 	// Blur current
 	if f.current >= 0 && f.current < len(f.elements) {
+		debug.Log("FocusManager.Next: blurring current element at index %d (%T)", f.current, f.elements[f.current])
 		f.elements[f.current].Blur()
 	}
 
-	// Find next focusable element
+	// Find next tab-stop element, skipping the current one.
+	// If no other tab-stop exists, clear focus instead of re-focusing the same element.
 	startIdx := f.current
 	if startIdx < 0 {
 		startIdx = -1
@@ -151,19 +160,28 @@ func (f *focusManager) Next() {
 
 	for i := 0; i < len(f.elements); i++ {
 		nextIdx := (startIdx + 1 + i) % len(f.elements)
-		if f.elements[nextIdx].IsFocusable() {
+		if nextIdx == f.current {
+			// Wrapped back to the same element; clear focus instead
+			debug.Log("FocusManager.Next: wrapped to same element, clearing focus")
+			f.current = -1
+			return
+		}
+		debug.Log("FocusManager.Next: checking index %d (%T), tabStop=%v", nextIdx, f.elements[nextIdx], f.elements[nextIdx].IsTabStop())
+		if f.elements[nextIdx].IsTabStop() {
 			f.current = nextIdx
+			debug.Log("FocusManager.Next: focusing element at index %d (%T)", nextIdx, f.elements[nextIdx])
 			f.elements[nextIdx].Focus()
 			return
 		}
 	}
 
-	// No focusable elements found
+	// No tab-stop elements found
+	debug.Log("FocusManager.Next: no tab-stop elements found, setting current=-1")
 	f.current = -1
 }
 
 // Prev moves focus to the previous focusable element.
-// Wraps around to the last element if at the beginning.
+// If no other tab-stop exists, clears focus.
 func (f *focusManager) Prev() {
 	if len(f.elements) == 0 {
 		return
@@ -174,7 +192,7 @@ func (f *focusManager) Prev() {
 		f.elements[f.current].Blur()
 	}
 
-	// Find previous focusable element
+	// Find previous tab-stop element, skipping the current one.
 	startIdx := f.current
 	if startIdx < 0 {
 		startIdx = 0
@@ -185,7 +203,12 @@ func (f *focusManager) Prev() {
 		if prevIdx < 0 {
 			prevIdx += len(f.elements)
 		}
-		if f.elements[prevIdx].IsFocusable() {
+		if prevIdx == f.current {
+			// Wrapped back to the same element; clear focus instead
+			f.current = -1
+			return
+		}
+		if f.elements[prevIdx].IsTabStop() {
 			f.current = prevIdx
 			f.elements[prevIdx].Focus()
 			return
@@ -193,6 +216,15 @@ func (f *focusManager) Prev() {
 	}
 
 	// No focusable elements found
+	f.current = -1
+}
+
+// ClearFocus blurs the currently focused element and sets focus to none.
+func (f *focusManager) ClearFocus() {
+	debug.Log("FocusManager.ClearFocus: current=%d", f.current)
+	if f.current >= 0 && f.current < len(f.elements) {
+		f.elements[f.current].Blur()
+	}
 	f.current = -1
 }
 
@@ -210,12 +242,41 @@ func (f *focusManager) Dispatch(event Event) bool {
 	return result
 }
 
-// focusNextFrom finds the next focusable element starting from idx.
+// refreshFromTree rebuilds the focusable element list from the current
+// element tree while preserving the focus index. This is needed because
+// re-renders produce new Element objects, making old references stale.
+func (f *focusManager) refreshFromTree(root *Element) {
+	if root == nil {
+		return
+	}
+	savedIdx := f.current
+	f.elements = f.elements[:0]
+	root.WalkFocusables(func(elem Focusable) {
+		f.elements = append(f.elements, elem)
+	})
+	debug.Log("FocusManager.refreshFromTree: savedIdx=%d, found %d focusable elements", savedIdx, len(f.elements))
+	for i, elem := range f.elements {
+		debug.Log("FocusManager.refreshFromTree:   [%d] %T focusable=%v", i, elem, elem.IsFocusable())
+	}
+	if savedIdx >= 0 && savedIdx < len(f.elements) {
+		f.current = savedIdx
+		// The new element was just created by Render() and doesn't know
+		// it's focused. Call Focus() to sync so that Blur() on the next
+		// Tab press targets the correct element state.
+		debug.Log("FocusManager.refreshFromTree: restoring focus to index %d (%T)", savedIdx, f.elements[savedIdx])
+		f.elements[savedIdx].Focus()
+	} else {
+		debug.Log("FocusManager.refreshFromTree: savedIdx out of range, setting current=-1")
+		f.current = -1
+	}
+}
+
+// focusNextFrom finds the next tab-stop element starting from idx.
 // Used internally after unregister.
 func (f *focusManager) focusNextFrom(startIdx int) {
 	for i := 0; i < len(f.elements); i++ {
 		idx := (startIdx + i) % len(f.elements)
-		if f.elements[idx].IsFocusable() {
+		if f.elements[idx].IsTabStop() {
 			f.current = idx
 			f.elements[idx].Focus()
 			return

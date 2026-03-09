@@ -230,35 +230,47 @@ func WithTextAlign(align TextAlign) Option {
 
 // WithOnFocus sets the callback for when this element gains focus.
 // The handler receives the element as its first parameter (self-inject).
-// Implicitly sets focusable = true.
+// Implicitly sets focusable = true and tabStop = true.
 func WithOnFocus(fn func(*Element)) Option {
 	return func(e *Element) {
 		e.focusable = true
+		e.tabStop = true
 		e.onFocus = fn
 	}
 }
 
 // WithOnBlur sets the callback for when this element loses focus.
 // The handler receives the element as its first parameter (self-inject).
-// Implicitly sets focusable = true.
+// Implicitly sets focusable = true and tabStop = true.
 func WithOnBlur(fn func(*Element)) Option {
 	return func(e *Element) {
 		e.focusable = true
+		e.tabStop = true
 		e.onBlur = fn
 	}
 }
 
-// WithFocusable sets whether this element can receive focus.
+// WithFocusable sets whether this element can receive focus and appear in Tab navigation.
 func WithFocusable(focusable bool) Option {
 	return func(e *Element) {
 		e.focusable = focusable
+		e.tabStop = focusable
+	}
+}
+
+// WithTabStop sets whether this element appears in Tab/Shift+Tab navigation.
+// Use this to override the default tabStop behavior set by WithFocusable or WithScrollable.
+func WithTabStop(tabStop bool) Option {
+	return func(e *Element) {
+		e.tabStop = tabStop
 	}
 }
 
 // --- Scroll Options ---
 
 // WithScrollable enables scrolling in the specified mode.
-// Implicitly sets focusable = true so the element can receive scroll events.
+// Implicitly sets focusable = true so the element can receive scroll events,
+// but does NOT set tabStop (scrollable elements are not in the Tab cycle by default).
 func WithScrollable(mode ScrollMode) Option {
 	return func(e *Element) {
 		e.scrollMode = mode

@@ -17,11 +17,11 @@ func TestDispatchTable_FocusRequired(t *testing.T) {
 			expectAppQuit:  true,
 			expectInserted: false,
 		},
-		"focused input: both fire, broadcast before focus-gated": {
+		"focused input: focus-gated handler takes priority over broadcast": {
 			focusedID:      "input",
 			pressRune:      'q',
-			expectAppQuit:  true,  // broadcast handler fires first (position 0)
-			expectInserted: true,  // focus-gated handler also fires (position 1, then stops)
+			expectAppQuit:  false, // broadcast handler skipped (focus-gated stop handler has priority)
+			expectInserted: true,  // focus-gated handler fires exclusively
 		},
 		"focused input: non-matching app key still works": {
 			focusedID:      "input",
@@ -65,11 +65,11 @@ func TestDispatchTable_FocusRequired(t *testing.T) {
 
 			// Input focus-gated binding: any rune inserts (FocusRequired)
 			table.entries = append(table.entries, dispatchEntry{
-				pattern:   KeyPattern{AnyRune: true, FocusRequired: true},
-				handler:   func(ke KeyEvent) { charInserted = true },
-				stop:      true,
-				position:  1,
-				focusable: inputMock,
+				pattern:    KeyPattern{AnyRune: true, FocusRequired: true},
+				handler:    func(ke KeyEvent) { charInserted = true },
+				stop:       true,
+				position:   1,
+				focusCheck: inputMock.IsFocused,
 			})
 
 			var ke KeyEvent
@@ -100,14 +100,14 @@ func TestDispatchTable_ValidateFocusRequired(t *testing.T) {
 	tests := map[string]tc{
 		"two focus-gated stop handlers do not conflict": {
 			entries: []dispatchEntry{
-				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 0, focusable: newMockFocusable("a", true)},
-				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 1, focusable: newMockFocusable("b", true)},
+				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 0, focusCheck: newMockFocusable("a", true).IsFocused},
+				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 1, focusCheck: newMockFocusable("b", true).IsFocused},
 			},
 			expectErr: false,
 		},
 		"focus-gated and broadcast stop handlers do not conflict": {
 			entries: []dispatchEntry{
-				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 0, focusable: newMockFocusable("a", true)},
+				{pattern: KeyPattern{AnyRune: true, FocusRequired: true}, stop: true, position: 0, focusCheck: newMockFocusable("a", true).IsFocused},
 				{pattern: KeyPattern{AnyRune: true}, stop: true, position: 1},
 			},
 			expectErr: false,

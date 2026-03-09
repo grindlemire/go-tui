@@ -176,7 +176,12 @@ templ (e *elementsApp) Render() {
 			<span class="text-gradient-cyan-magenta font-bold">Input</span>
 			<div class="flex gap-2 items-center">
 				<span class="font-dim">Name:</span>
-				<input placeholder="Type your name..." width={30} border={tui.BorderRounded} onChange={e.onNameChange} />
+				<input
+					placeholder="Type your name..."
+					width={30}
+					border={tui.BorderRounded}
+					onChange={e.onNameChange}
+				/>
 			</div>
 			<span class="text-cyan font-bold">{greeting(e.name.Get())}</span>
 			<span class="font-dim">Press Tab to focus the input</span>

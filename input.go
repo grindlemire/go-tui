@@ -3,6 +3,8 @@ package tui
 import (
 	"time"
 	"unicode/utf8"
+
+	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 // Input is a single-line text input with cursor management.
@@ -173,15 +175,35 @@ func (inp *Input) IsFocusable() bool {
 	return true
 }
 
-// Focus is called when the input gains focus.
-func (inp *Input) Focus() {
-	inp.focused.Set(true)
-	inp.blink.Set(true)
+// IsTabStop returns true since Input participates in Tab navigation.
+func (inp *Input) IsTabStop() bool {
+	return true
 }
 
-// Blur is called when the input loses focus.
+// Focus is called when the input gains focus. Idempotent.
+func (inp *Input) Focus() {
+	debug.Log("Input.Focus: called, already focused=%v", inp.focused.Get())
+	if inp.focused.Get() {
+		return
+	}
+	inp.focused.Set(true)
+	inp.blink.Set(true)
+	debug.Log("Input.Focus: now focused=true")
+}
+
+// Blur is called when the input loses focus. Idempotent.
 func (inp *Input) Blur() {
+	debug.Log("Input.Blur: called, currently focused=%v", inp.focused.Get())
+	if !inp.focused.Get() {
+		return
+	}
 	inp.focused.Set(false)
+	debug.Log("Input.Blur: now focused=false")
+}
+
+// IsFocused returns whether this input is currently focused.
+func (inp *Input) IsFocused() bool {
+	return inp.focused.Get()
 }
 
 // HandleEvent processes keyboard events.
@@ -234,6 +256,13 @@ func (inp *Input) KeyMap() KeyMap {
 
 		// Submit (focus-gated)
 		OnKeyFocused(KeyEnter, inp.submit),
+
+		// Blur on Escape (focus-gated)
+		OnKeyFocused(KeyEscape, func(ke KeyEvent) {
+			if app := ke.App(); app != nil {
+				app.BlurFocused()
+			}
+		}),
 	}
 }
 
