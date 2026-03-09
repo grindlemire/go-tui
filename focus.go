@@ -32,8 +32,9 @@ type Focusable interface {
 // It does NOT automatically handle Tab navigation; the user controls
 // when focus moves by calling Next(), Prev(), or SetFocus().
 type focusManager struct {
-	elements []Focusable // Registered focusable elements in order
-	current  int         // Index of currently focused element (-1 = none)
+	elements     []Focusable // Registered focusable elements in order
+	current      int         // Index of currently focused element (-1 = none)
+	focusApplied bool        // true after focus has been set (prevents re-applying autoFocus)
 }
 
 // newFocusManager creates an empty focusManager.
@@ -132,6 +133,7 @@ func (f *focusManager) SetFocus(elem Focusable) {
 
 	// Focus new element
 	f.current = idx
+	f.focusApplied = true
 	elem.Focus()
 }
 
@@ -254,6 +256,39 @@ func (f *focusManager) refreshFromTree(root *Element) {
 		f.elements[savedIdx].Focus()
 	} else {
 		f.current = -1
+		// On first refresh with no prior focus, check for autoFocus elements
+		if !f.focusApplied {
+			f.applyAutoFocus(root)
+		}
+	}
+}
+
+// applyAutoFocus finds the first autoFocus element in the tree and sets
+// focus on it. Only called when no focus has been applied yet.
+func (f *focusManager) applyAutoFocus(root *Element) {
+	if root == nil {
+		return
+	}
+	var target Focusable
+	var walk func(e *Element) bool
+	walk = func(e *Element) bool {
+		if e.hidden {
+			return false
+		}
+		if e.autoFocus && e.IsTabStop() {
+			target = e
+			return true
+		}
+		for _, child := range e.children {
+			if walk(child) {
+				return true
+			}
+		}
+		return false
+	}
+	walk(root)
+	if target != nil {
+		f.SetFocus(target)
 	}
 }
 

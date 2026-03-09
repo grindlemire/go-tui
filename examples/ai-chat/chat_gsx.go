@@ -239,6 +239,7 @@ func (c *chat) Render(app *tui.App) *tui.Element {
 		c.updateHeight()
 		__tui_2 := app.MountPersistent(c, 0, func() tui.Component {
 			return tui.NewTextArea(
+				tui.WithTextAreaAutoFocus(true),
 				tui.WithTextAreaPlaceholder("Type a message..."),
 				tui.WithTextAreaWidth(c.width-2),
 				tui.WithTextAreaBorder(tui.BorderRounded),

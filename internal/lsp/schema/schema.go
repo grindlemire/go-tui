@@ -286,6 +286,7 @@ func eventAttrs() []AttributeDef {
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
 		{Name: "focusable", Type: "bool", Description: "Whether the element can receive focus", Category: "event"},
+		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this element on startup", Category: "event"},
 	}
 }
 
@@ -363,6 +364,7 @@ func inputAttrs() []AttributeDef {
 		{Name: "focusGradient", Type: "expression", Description: "Border gradient when focused (tui.Gradient)", Category: "visual"},
 		{Name: "onSubmit", Type: "func", Description: "Callback when Enter is pressed: func(string)", Category: "event"},
 		{Name: "onChange", Type: "func", Description: "Callback when text changes: func(string)", Category: "event"},
+		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this input on startup", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
@@ -386,6 +388,7 @@ func textareaAttrs() []AttributeDef {
 		{Name: "focusGradient", Type: "expression", Description: "Border gradient when focused (tui.Gradient)", Category: "visual"},
 		{Name: "submitKey", Type: "expression", Description: "Key that triggers submit (default KeyEnter)", Category: "event"},
 		{Name: "onSubmit", Type: "func", Description: "Callback when submit key is pressed: func(string)", Category: "event"},
+		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this text area on startup", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}

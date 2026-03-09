@@ -55,10 +55,10 @@ func WithInputValue(state *State[string]) InputOption {
 	}
 }
 
-// WithInputFocusColor sets the border color when focused (defaults to Cyan).
+// WithInputFocusColor sets the border color when focused.
 func WithInputFocusColor(c Color) InputOption {
 	return func(inp *Input) {
-		inp.focusColor = c
+		inp.focusColor = &c
 	}
 }
 
@@ -74,6 +74,14 @@ func WithInputBorderGradient(g Gradient) InputOption {
 func WithInputFocusGradient(g Gradient) InputOption {
 	return func(inp *Input) {
 		inp.focusGradient = &g
+	}
+}
+
+// WithInputAutoFocus sets whether the input should automatically receive
+// focus when the element tree is first applied.
+func WithInputAutoFocus(auto bool) InputOption {
+	return func(inp *Input) {
+		inp.autoFocus = auto
 	}
 }
 

@@ -178,10 +178,16 @@ These hold text content and support text styling but not flex container attribut
 <button ref={s.myBtn} class="px-2 border-rounded text-green">{" Save "}</button>
 ```
 
-**`<input />`** -- Text input field. Self-closing. Accepts `value`, `placeholder`, `width`, and `disabled` attributes.
+**`<input />`** -- Single-line text input. Self-closing. Bind `value` to a `*State[string]` for two-way binding. Also accepts `placeholder`, `width`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `onSubmit`, and `onChange`.
 
 ```gsx
-<input value={s.text.Get()} placeholder="Type here..." width={30} />
+<input value={s.text} placeholder="Type here..." width={30} border={tui.BorderRounded} />
+```
+
+**`<textarea />`** -- Multi-line text input with word wrapping. Self-closing. Bind `value` to a `*State[string]` for two-way binding. Also accepts `placeholder`, `width`, `maxHeight`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `submitKey`, and `onSubmit`.
+
+```gsx
+<textarea value={s.note} placeholder="Write here..." width={40} maxHeight={6} border={tui.BorderRounded} />
 ```
 
 ### Display elements
@@ -206,7 +212,7 @@ These hold text content and support text styling but not flex container attribut
 
 ### Self-closing elements
 
-`<input />`, `<progress />`, `<hr />`, and `<br />` are self-closing and cannot have children. Writing `<input>children</input>` produces a compile error.
+`<input />`, `<textarea />`, `<progress />`, `<hr />`, and `<br />` are self-closing and cannot have children. Writing `<input>children</input>` produces a compile error.
 
 ## Attributes
 
@@ -369,8 +375,36 @@ Available on: `div`, `ul`, `li`, `table`.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `value` | string | Current input value |
+| `value` | `*tui.State[string]` | Two-way text binding |
 | `placeholder` | string | Placeholder text when empty |
+| `width` | int | Input width in characters (default 20) |
+| `border` | `tui.BorderStyle` | Border style |
+| `textStyle` | `tui.Style` | Text styling |
+| `placeholderStyle` | `tui.Style` | Placeholder text styling (default: dim) |
+| `cursor` | rune | Cursor character (default '▌') |
+| `focusColor` | `tui.Color` | Border color when focused (default Cyan) |
+| `borderGradient` | `tui.Gradient` | Border gradient when unfocused |
+| `focusGradient` | `tui.Gradient` | Border gradient when focused (overrides focusColor) |
+| `onSubmit` | `func(string)` | Called when Enter is pressed |
+| `onChange` | `func(string)` | Called when text changes |
+
+### Textarea-specific attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `value` | `*tui.State[string]` | Two-way text binding |
+| `placeholder` | string | Placeholder text when empty |
+| `width` | int | Width in characters (default 40) |
+| `maxHeight` | int | Maximum height in rows (0 = unlimited) |
+| `border` | `tui.BorderStyle` | Border style |
+| `textStyle` | `tui.Style` | Text styling |
+| `placeholderStyle` | `tui.Style` | Placeholder text styling (default: dim) |
+| `cursor` | rune | Cursor character (default '▌') |
+| `focusColor` | `tui.Color` | Border color when focused (default Cyan) |
+| `borderGradient` | `tui.Gradient` | Border gradient when unfocused |
+| `focusGradient` | `tui.Gradient` | Border gradient when focused (overrides focusColor) |
+| `submitKey` | `tui.Key` | Key that triggers submit (default KeyEnter) |
+| `onSubmit` | `func(string)` | Called when submit key is pressed |
 
 ### Progress-specific attributes
 

@@ -264,6 +264,7 @@ var attributeToOption = map[string]string{
 
 	// Focus (non-handler attributes only)
 	"focusable": "tui.WithFocusable(%s)",
+	"autoFocus": "tui.WithAutoFocus(%s)",
 
 	// Scroll
 	"scrollable":   "tui.WithScrollable(%s)",
@@ -350,6 +351,7 @@ var textareaAttributeToOption = map[string]string{
 	"borderGradient":   "tui.WithTextAreaBorderGradient(%s)",
 	"focusGradient":    "tui.WithTextAreaFocusGradient(%s)",
 	"submitKey":        "tui.WithTextAreaSubmitKey(%s)",
+	"autoFocus":        "tui.WithTextAreaAutoFocus(%s)",
 }
 
 // textareaHandlerAttributes maps textarea event attributes to handler option funcs.
@@ -369,6 +371,7 @@ var inputAttributeToOption = map[string]string{
 	"focusColor":       "tui.WithInputFocusColor(%s)",
 	"borderGradient":   "tui.WithInputBorderGradient(%s)",
 	"focusGradient":    "tui.WithInputFocusGradient(%s)",
+	"autoFocus":        "tui.WithInputAutoFocus(%s)",
 }
 
 // inputHandlerAttributes maps input event attributes to handler option funcs.

@@ -2,9 +2,133 @@
 
 ## Overview
 
-go-tui ships with one built-in component: `TextArea`, a multi-line text input with word wrapping, cursor management, and keyboard navigation. It handles the common case of text entry so you don't have to build input handling from scratch.
+go-tui ships with two built-in input components: `Input` (single-line) and `TextArea` (multi-line). Both handle text entry, cursor management, and focus.
 
-`TextArea` implements five component interfaces: `Component`, `KeyListener`, `WatcherProvider`, `Focusable`, and `AppBinder`. You can use it as a standalone root component or embed it inside a larger UI.
+Both implement `Component`, `KeyListener`, `WatcherProvider`, `Focusable`, and `AppBinder`. Use them standalone or embed them in a larger UI.
+
+## Input
+
+A single-line text input with cursor management, horizontal scrolling, and placeholder support.
+
+```go
+import tui "github.com/grindlemire/go-tui"
+
+inp := tui.NewInput(
+    tui.WithInputWidth(30),
+    tui.WithInputBorder(tui.BorderRounded),
+    tui.WithInputPlaceholder("Type here..."),
+    tui.WithInputOnSubmit(func(text string) {
+        // handle submitted text
+    }),
+)
+```
+
+### NewInput
+
+```go
+func NewInput(opts ...InputOption) *Input
+```
+
+Creates a new `Input` with the given options. Default values:
+
+| Setting     | Default      | Description                              |
+|-------------|--------------|------------------------------------------|
+| Width       | 20           | Characters visible before scrolling      |
+| Border      | `BorderNone` | No border                                |
+| TextStyle   | `Style{}`    | Default terminal style                   |
+| Placeholder | `""`         | No placeholder text                      |
+| PlaceholderStyle | `Style{}.Dim()` | Dim text for placeholder          |
+| Cursor      | `'▌'`        | Block cursor character                   |
+| FocusColor  | `Cyan`       | Border color when focused                |
+
+### Reactive Value Binding
+
+Bind the Input to a `*State[string]` for two-way binding. The Input shares the state directly, so typing updates the state and changing the state updates the display:
+
+```go
+name := tui.NewState("")
+inp := tui.NewInput(
+    tui.WithInputValue(name),
+    tui.WithInputBorder(tui.BorderRounded),
+)
+// Later: name.Set("Alice") updates the input display
+// Typing in the input updates name.Get()
+```
+
+In `.gsx`:
+
+```gsx
+<input value={s.name} placeholder="Type your name..." border={tui.BorderRounded} />
+```
+
+### Focus Border Styling
+
+Control how the border looks when focused and unfocused:
+
+```go
+// Solid color when focused (default: Cyan)
+tui.WithInputFocusColor(tui.Magenta)
+
+// Gradient border when unfocused
+tui.WithInputBorderGradient(tui.NewGradient(tui.Blue, tui.Cyan))
+
+// Gradient border when focused (overrides focusColor)
+tui.WithInputFocusGradient(tui.NewGradient(tui.Cyan, tui.Magenta))
+```
+
+In `.gsx`:
+
+```gsx
+<input
+    value={s.query}
+    border={tui.BorderRounded}
+    focusColor={tui.Magenta}
+    borderGradient={tui.NewGradient(tui.Blue, tui.Cyan)}
+    focusGradient={tui.NewGradient(tui.Cyan, tui.Magenta)}
+/>
+```
+
+### Keyboard Behavior
+
+**Text input:**
+
+| Key         | Action                            |
+|-------------|-----------------------------------|
+| Any rune    | Insert character at cursor        |
+| Backspace   | Delete character before cursor    |
+| Delete      | Delete character at cursor        |
+
+**Navigation:**
+
+| Key         | Action                            |
+|-------------|-----------------------------------|
+| Left        | Move cursor left                  |
+| Right       | Move cursor right                 |
+| Home        | Move cursor to start              |
+| End         | Move cursor to end                |
+
+**Submit:**
+
+| Key         | Action                            |
+|-------------|-----------------------------------|
+| Enter       | Trigger `onSubmit` callback       |
+
+### InputOption Functions
+
+| Function | Description |
+|----------|-------------|
+| `WithInputWidth(int)` | Width in characters (default 20) |
+| `WithInputBorder(BorderStyle)` | Border style |
+| `WithInputTextStyle(Style)` | Text style |
+| `WithInputPlaceholder(string)` | Placeholder text |
+| `WithInputPlaceholderStyle(Style)` | Placeholder style (default: dim) |
+| `WithInputCursor(rune)` | Cursor character (default '▌') |
+| `WithInputValue(*State[string])` | Reactive two-way text binding |
+| `WithInputFocusColor(Color)` | Border color when focused (default Cyan) |
+| `WithInputBorderGradient(Gradient)` | Border gradient when unfocused |
+| `WithInputFocusGradient(Gradient)` | Border gradient when focused |
+| `WithInputOnSubmit(func(string))` | Enter key callback |
+| `WithInputOnChange(func(string))` | Text change callback |
 
 ## TextArea
 
@@ -40,6 +164,7 @@ Creates a new `TextArea` with the given options. Default values:
 | Placeholder | `""`         | No placeholder text                      |
 | PlaceholderStyle | `Style{}.Dim()` | Dim text for placeholder          |
 | Cursor      | `'▌'`        | Block cursor character                   |
+| FocusColor  | `Cyan`       | Border color when focused                |
 | SubmitKey   | `KeyEnter`   | Enter submits, Ctrl+J inserts newline    |
 
 ### State Access Methods
@@ -281,6 +406,72 @@ ta := tui.NewTextArea(
     tui.WithTextAreaOnSubmit(func(text string) {
         fmt.Println("Submitted:", text)
     }),
+)
+```
+
+### WithTextAreaValue
+
+```go
+func WithTextAreaValue(state *State[string]) TextAreaOption
+```
+
+Binds the TextArea to a `*State[string]` for two-way binding. The TextArea shares the state directly, so parent components can read or change the text at any time.
+
+```go
+note := tui.NewState("")
+ta := tui.NewTextArea(tui.WithTextAreaValue(note))
+// note.Get() reflects whatever the user types
+// note.Set("preset text") updates the textarea display
+```
+
+In `.gsx`:
+
+```gsx
+<textarea value={s.note} placeholder="Write a note..." border={tui.BorderRounded} />
+```
+
+### WithTextAreaFocusColor
+
+```go
+func WithTextAreaFocusColor(c Color) TextAreaOption
+```
+
+Sets the border color when focused. Default: `Cyan`. Only visible when a border is set.
+
+```go
+ta := tui.NewTextArea(
+    tui.WithTextAreaBorder(tui.BorderRounded),
+    tui.WithTextAreaFocusColor(tui.Magenta),
+)
+```
+
+### WithTextAreaBorderGradient
+
+```go
+func WithTextAreaBorderGradient(g Gradient) TextAreaOption
+```
+
+Sets a gradient for the border color when unfocused. Only visible when a border is set.
+
+```go
+ta := tui.NewTextArea(
+    tui.WithTextAreaBorder(tui.BorderRounded),
+    tui.WithTextAreaBorderGradient(tui.NewGradient(tui.Blue, tui.Cyan)),
+)
+```
+
+### WithTextAreaFocusGradient
+
+```go
+func WithTextAreaFocusGradient(g Gradient) TextAreaOption
+```
+
+Sets a gradient for the border color when focused. Takes priority over `focusColor` when set.
+
+```go
+ta := tui.NewTextArea(
+    tui.WithTextAreaBorder(tui.BorderRounded),
+    tui.WithTextAreaFocusGradient(tui.NewGradient(tui.Cyan, tui.Magenta)),
 )
 ```
 

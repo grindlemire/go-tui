@@ -141,13 +141,58 @@ The `disabled` attribute visually dims the button. Wire up click handling throug
 
 ## Input Element
 
-`<input>` renders a text input field with `value` and `placeholder` attributes:
+`<input>` is a single-line text input with cursor management and placeholder support. It is self-closing and focus-aware.
+
+Bind `value` to a `*State[string]` for two-way binding. Typing updates the state, and changing the state updates the display:
 
 ```gsx
-<input value={s.inputValue.Get()} placeholder="Type here..." />
+<input value={s.name} placeholder="Type your name..." width={30} border={tui.BorderRounded} />
 ```
 
-Bind the `value` attribute to a `State[string]` so the input updates reactively. The `placeholder` text appears when the value is empty.
+You can also set `focusColor` to change the border color when focused, or use `focusGradient` and `borderGradient` for gradient borders:
+
+```gsx
+<input
+    value={s.name}
+    placeholder="Type here..."
+    width={30}
+    border={tui.BorderRounded}
+    focusColor={tui.Magenta}
+/>
+
+// Gradient border that shifts color when focused
+<input
+    value={s.query}
+    placeholder="Search..."
+    border={tui.BorderRounded}
+    borderGradient={tui.NewGradient(tui.Blue, tui.Cyan)}
+    focusGradient={tui.NewGradient(tui.Cyan, tui.Magenta)}
+/>
+```
+
+Wire up `onSubmit` for Enter key handling and `onChange` to react to each keystroke.
+
+## TextArea Element
+
+`<textarea>` is a multi-line text input with word wrapping and cursor navigation. Like `<input>`, it is self-closing and focus-aware.
+
+Bind `value` to a `*State[string]` for two-way binding. Set `maxHeight` to cap the visible rows, and use `submitKey` to control how Enter behaves:
+
+```gsx
+<textarea
+    value={s.note}
+    placeholder="Write a note..."
+    width={40}
+    maxHeight={6}
+    border={tui.BorderRounded}
+    onSubmit={s.onSave}
+    focusColor={tui.BrightRed}
+/>
+```
+
+By default, Enter triggers `onSubmit` and Ctrl+J inserts a newline. Set `submitKey` to a different key (like `tui.KeyCtrlS`) to make Enter insert newlines instead.
+
+The same border styling options from Input apply here: `focusColor`, `borderGradient`, and `focusGradient`.
 
 ## Progress Bars
 
@@ -182,7 +227,7 @@ Color the bar with `text-cyan`, `text-green`, `text-yellow`, etc. to convey mean
 
 ## Complete Example
 
-This elements gallery demonstrates every built-in element type in a scrollable layout:
+This elements gallery demonstrates every built-in element type in a scrollable layout, including Input and TextArea with two-way value binding:
 
 ```gsx
 package main
@@ -193,17 +238,36 @@ import (
 )
 
 type elementsApp struct {
-    progress *tui.State[int]
-    scrollY  *tui.State[int]
-    content  *tui.Ref
+    progress    *tui.State[int]
+    scrollY     *tui.State[int]
+    content     *tui.Ref
+    name        *tui.State[string]
+    note        *tui.State[string]
+    selectedBtn *tui.State[string]
+    btnRefs     *tui.RefMap[string]
 }
 
 func Elements() *elementsApp {
     return &elementsApp{
-        progress: tui.NewState(62),
-        scrollY:  tui.NewState(0),
-        content:  tui.NewRef(),
+        progress:    tui.NewState(62),
+        scrollY:     tui.NewState(0),
+        content:     tui.NewRef(),
+        name:        tui.NewState(""),
+        note:        tui.NewState(""),
+        selectedBtn: tui.NewState(""),
+        btnRefs:     tui.NewRefMap[string](),
     }
+}
+
+func (e *elementsApp) onNoteSubmit(text string) {
+    e.note.Set(text)
+}
+
+func greeting(name string) string {
+    if name == "" {
+        return "Hello, World!"
+    }
+    return fmt.Sprintf("Hello, %s!", name)
 }
 
 func (e *elementsApp) scrollBy(delta int) {
@@ -225,6 +289,8 @@ func (e *elementsApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
         tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
         tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+        tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
         tui.OnRune('+', func(ke tui.KeyEvent) {
             v := e.progress.Get() + 5
             if v > 100 {
@@ -255,8 +321,22 @@ func (e *elementsApp) HandleMouse(me tui.MouseEvent) bool {
         e.scrollBy(1)
         return true
     }
+
+    if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
+        for name, el := range e.btnRefs.All() {
+            if el != nil && el.ContainsPoint(me.X, me.Y) {
+                if name != "Disabled" {
+                    e.selectedBtn.Set(name)
+                }
+                return true
+            }
+        }
+    }
+
     return false
 }
+
+var buttonLabels = []string{"Save", "Cancel", "Submit", "Disabled"}
 
 func progressBar(value, width int) string {
     filled := value * width / 100
@@ -274,7 +354,7 @@ func progressBar(value, width int) string {
 templ (e *elementsApp) Render() {
     <div
         ref={e.content}
-        class="flex-col gap-1 p-2 h-full"
+        class="flex-col gap-1 h-full"
         scrollable={tui.ScrollVertical}
         scrollOffset={0, e.scrollY.Get()}
     >
@@ -303,28 +383,23 @@ templ (e *elementsApp) Render() {
             </div>
             <div class="flex-col border-rounded p-1 gap-1">
                 <span class="text-gradient-cyan-magenta font-bold">Table</span>
-                <table class="flex-col p-1">
-                    <div class="flex gap-2">
-                        <span class="w-10 font-bold">Name</span>
-                        <span class="w-10 font-bold">Role</span>
-                        <span class="w-5 font-bold">Lvl</span>
-                    </div>
+                <table class="p-1">
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Lvl</th>
+                    </tr>
                     <hr />
-                    <div class="flex gap-2">
-                        <span class="w-10 text-cyan">Alice</span>
-                        <span class="w-10">Engineer</span>
-                        <span class="w-5 text-green">Sr</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="w-10 text-cyan">Bob</span>
-                        <span class="w-10">Designer</span>
-                        <span class="w-5 text-yellow">Jr</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="w-10 text-cyan">Carol</span>
-                        <span class="w-10">Manager</span>
-                        <span class="w-5 text-green">Sr</span>
-                    </div>
+                    <tr>
+                        <td class="text-cyan">Alice</td>
+                        <td>Engineer</td>
+                        <td class="text-green">Sr</td>
+                    </tr>
+                    <tr>
+                        <td class="text-cyan">Bob</td>
+                        <td>Designer</td>
+                        <td class="text-yellow">Jr</td>
+                    </tr>
                 </table>
             </div>
         </div>
@@ -333,11 +408,57 @@ templ (e *elementsApp) Render() {
         <div class="flex-col border-rounded p-1 gap-1">
             <span class="text-gradient-cyan-magenta font-bold">Buttons</span>
             <div class="flex gap-2">
-                <button>{"Save"}</button>
-                <button>{"Cancel"}</button>
-                <button class="font-bold">{"Submit"}</button>
-                <button disabled={true}>{"Disabled"}</button>
+                @for _, label := range buttonLabels {
+                    @if label == "Disabled" {
+                        <button ref={e.btnRefs} key={label} class="font-dim" disabled={true}>{label}</button>
+                    } @else {
+                        @if label == e.selectedBtn.Get() {
+                            <button ref={e.btnRefs} key={label} class="font-bold text-cyan">{label}</button>
+                        } @else {
+                            <button ref={e.btnRefs} key={label}>{label}</button>
+                        }
+                    }
+                }
             </div>
+        </div>
+
+        // Input & TextArea
+        <div class="flex-col border-rounded p-1 gap-1">
+            <span class="text-gradient-cyan-magenta font-bold">Input & TextArea</span>
+            <div class="flex gap-2">
+                <div class="flex-col gap-1 w-1/2">
+                    <div class="flex gap-2 items-center">
+                        <span class="font-dim">Name:</span>
+                        <input
+                            placeholder="Type your name..."
+                            value={e.name}
+                            width={30}
+                            border={tui.BorderRounded}
+                            focusGradient={tui.NewGradient(tui.Cyan, tui.Magenta)}
+                        />
+                    </div>
+                    <span class="text-cyan font-bold" width={30}>
+                        {greeting(e.name.Get())}
+                    </span>
+                </div>
+                <div class="flex-col gap-1 w-1/2">
+                    <div class="flex gap-2 items-center">
+                        <span class="font-dim">Note:</span>
+                        <textarea
+                            placeholder="Write a note..."
+                            width={30}
+                            maxHeight={4}
+                            border={tui.BorderRounded}
+                            onSubmit={e.onNoteSubmit}
+                            focusColor={tui.BrightRed}
+                        />
+                    </div>
+                    @if e.note.Get() != "" {
+                        <span class="text-cyan font-bold">{fmt.Sprintf("Saved: %s", e.note.Get())}</span>
+                    }
+                </div>
+            </div>
+            <span class="font-dim">Tab to cycle focus | Esc to blur | Enter submits note</span>
         </div>
 
         // Progress bars
@@ -360,7 +481,7 @@ templ (e *elementsApp) Render() {
             </div>
         </div>
 
-        <span class="font-dim">+/- adjust progress | j/k scroll | q quit</span>
+        <span class="font-dim">tab focus input | +/- progress | j/k scroll | q quit</span>
     </div>
 }
 ```
