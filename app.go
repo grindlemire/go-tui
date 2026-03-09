@@ -42,7 +42,7 @@ type App struct {
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 
 	// Configuration (set via options)
-	inputLatency     time.Duration // Polling timeout for event reader (default 50ms, -1 for blocking)
+	inputLatency     time.Duration // Polling timeout for event reader (default: blocking, use positive duration for polling)
 	frameDuration    time.Duration // Duration per frame (default 16ms = 60fps)
 	eventQueueSize   int           // Capacity of event queue (default 256, used during construction)
 	mouseEnabled     bool          // Whether mouse events are enabled
@@ -123,7 +123,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 		focus:          focus,
 		stopCh:         make(chan struct{}),
 		stopped:        false,
-		inputLatency:   50 * time.Millisecond, // Default polling timeout
+		inputLatency:   InputLatencyBlocking,  // Default: block until input arrives
 		frameDuration:  16 * time.Millisecond, // Default ~60fps
 		eventQueueSize: 256,                   // Default queue size
 		cursorVisible:  false,                 // Cursor hidden by default
@@ -167,23 +167,21 @@ func NewApp(opts ...AppOption) (*App, error) {
 		terminal.HideCursor()
 	}
 
-	// If blocking mode, enable interrupt capability on the reader
-	if app.inputLatency < 0 {
-		if interruptible, ok := reader.(InterruptibleReader); ok {
-			if err := interruptible.EnableInterrupt(); err != nil {
-				reader.Close()
-				if app.mouseEnabled {
-					terminal.DisableMouse()
-				}
-				if !app.cursorVisible {
-					terminal.ShowCursor()
-				}
-				if app.inlineHeight == 0 {
-					terminal.ExitAltScreen()
-				}
-				terminal.ExitRawMode()
-				return nil, fmt.Errorf("failed to enable interrupt for blocking mode: %w", err)
+	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
+	if interruptible, ok := reader.(InterruptibleReader); ok {
+		if err := interruptible.EnableInterrupt(); err != nil {
+			reader.Close()
+			if app.mouseEnabled {
+				terminal.DisableMouse()
 			}
+			if !app.cursorVisible {
+				terminal.ShowCursor()
+			}
+			if app.inlineHeight == 0 {
+				terminal.ExitAltScreen()
+			}
+			terminal.ExitRawMode()
+			return nil, fmt.Errorf("failed to enable interrupt: %w", err)
 		}
 	}
 
@@ -222,7 +220,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		focus:          focus,
 		stopCh:         make(chan struct{}),
 		stopped:        false,
-		inputLatency:   50 * time.Millisecond, // Default polling timeout
+		inputLatency:   InputLatencyBlocking,  // Default: block until input arrives
 		frameDuration:  16 * time.Millisecond, // Default ~60fps
 		eventQueueSize: 256,                   // Default queue size
 		cursorVisible:  false,                 // Cursor hidden by default
@@ -266,23 +264,21 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		terminal.HideCursor()
 	}
 
-	// If blocking mode, enable interrupt capability on the reader
-	if app.inputLatency < 0 {
-		if interruptible, ok := reader.(InterruptibleReader); ok {
-			if err := interruptible.EnableInterrupt(); err != nil {
-				reader.Close()
-				if app.mouseEnabled {
-					terminal.DisableMouse()
-				}
-				if !app.cursorVisible {
-					terminal.ShowCursor()
-				}
-				if app.inlineHeight == 0 {
-					terminal.ExitAltScreen()
-				}
-				terminal.ExitRawMode()
-				return nil, fmt.Errorf("failed to enable interrupt for blocking mode: %w", err)
+	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
+	if interruptible, ok := reader.(InterruptibleReader); ok {
+		if err := interruptible.EnableInterrupt(); err != nil {
+			reader.Close()
+			if app.mouseEnabled {
+				terminal.DisableMouse()
 			}
+			if !app.cursorVisible {
+				terminal.ShowCursor()
+			}
+			if app.inlineHeight == 0 {
+				terminal.ExitAltScreen()
+			}
+			terminal.ExitRawMode()
+			return nil, fmt.Errorf("failed to enable interrupt: %w", err)
 		}
 	}
 

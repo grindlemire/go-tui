@@ -23,6 +23,10 @@ func (a *App) Run() error {
 		signal.Stop(sigCh)
 	}()
 
+	// Handle SIGWINCH (terminal resize)
+	cleanupResize := a.registerResizeSignal()
+	defer cleanupResize()
+
 	// Handle Ctrl+Z / SIGTSTP for job control
 	cleanupSuspend := a.registerSuspendSignals()
 	defer cleanupSuspend()

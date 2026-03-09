@@ -120,10 +120,10 @@ tui.WithFrameRate(30) // 30 fps, ~33ms per frame
 func WithInputLatency(d time.Duration) AppOption
 ```
 
-Sets the polling timeout for the event reader. Default is 50ms. Use `tui.InputLatencyBlocking` for blocking mode, which is more CPU-efficient but requires proper interrupt handling. A value of 0 is not allowed.
+Sets the polling timeout for the event reader. Default is `tui.InputLatencyBlocking`, which blocks until input arrives (zero syscalls while idle). Use a positive duration like `50 * time.Millisecond` for polling mode. A value of 0 is not allowed.
 
 ```go
-tui.WithInputLatency(tui.InputLatencyBlocking)
+tui.WithInputLatency(50 * time.Millisecond) // poll every 50ms instead of blocking
 ```
 
 ### WithEventQueueSize
@@ -710,7 +710,7 @@ These constants control how inline mode initializes the visible terminal viewpor
 const InputLatencyBlocking = -1 * time.Millisecond
 ```
 
-A special value for `WithInputLatency` that makes the event reader block indefinitely until input is available. More CPU-efficient than polling, but requires proper interrupt handling (which the framework sets up automatically when this mode is used).
+The default value for `WithInputLatency`. The event reader blocks until input arrives, producing zero syscalls while idle. The framework sets up the interrupt pipe automatically so that SIGWINCH and shutdown can wake the blocked reader.
 
 ## Interfaces
 
