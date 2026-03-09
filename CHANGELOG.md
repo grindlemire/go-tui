@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/grindlemire/go-tui/compare/v0.3.0...v0.3.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* move SIGWINCH handling from reader to App and default to blocking input ([3b2879a](https://github.com/grindlemire/go-tui/commit/3b2879ab99fbbfae8fda2360df1041bef2db6035))
+
 ## [0.3.0](https://github.com/grindlemire/go-tui/compare/v0.2.0...v0.3.0) (2026-03-09)
 
 
