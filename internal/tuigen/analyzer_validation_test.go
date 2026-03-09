@@ -151,8 +151,8 @@ func TestAnalyzer_AllKnownTags(t *testing.T) {
 	// Test all known tags are accepted
 	tags := []string{
 		"div", "span", "p", "ul", "li",
-		"button", "input", "table", "progress",
-		"hr", "br",
+		"button", "input", "textarea", "table", "tr", "td", "th",
+		"progress", "hr", "br",
 	}
 
 	for _, tag := range tags {
