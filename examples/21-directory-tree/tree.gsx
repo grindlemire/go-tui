@@ -371,7 +371,7 @@ func (d *directoryTree) collapseOrParent() {
 }
 
 templ (d *directoryTree) Render() {
-	<div class="flex-col w-full h-full border-rounded border-cyan overflow-hidden">
+	<div class="flex-col w-full h-full border-rounded border-cyan">
 		<div class="p-1">
 			<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
 		</div>

@@ -370,7 +370,6 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithHeightPercent(100.00),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		tui.WithOverflow(tui.OverflowHidden),
 	)
 	__tui_1 := tui.New(
 		tui.WithPadding(1),
