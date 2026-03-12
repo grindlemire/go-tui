@@ -372,6 +372,7 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 	)
 	__tui_1 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithPadding(1),
 	)
 	__tui_2 := tui.New(
@@ -380,13 +381,18 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
-	__tui_0.AddChild(__tui_1)
 	__tui_3 := tui.New(
+		tui.WithText(d.selectedPath()),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Dim()),
+	)
+	__tui_1.AddChild(__tui_3)
+	__tui_0.AddChild(__tui_1)
+	__tui_4 := tui.New(
 		tui.WithHR(),
 		tui.WithBorder(tui.BorderSingle),
 	)
-	__tui_0.AddChild(__tui_3)
-	__tui_4 := tui.New(
+	__tui_0.AddChild(__tui_4)
+	__tui_5 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
@@ -394,52 +400,52 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 		tui.WithScrollOffset(0, d.scrollY.Get()),
 	)
-	d.scrollContainer.Set(__tui_4)
+	d.scrollContainer.Set(__tui_5)
 	for i, vn := range d.flatten() {
 		_ = i
 		if i == d.cursor.Get() {
-			__tui_5 := tui.New(
+			__tui_6 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithBackground(tui.NewStyle().Background(tui.BrightBlack)),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 			)
-			__tui_4.AddChild(__tui_5)
+			__tui_5.AddChild(__tui_6)
 		} else if isOnPath(vn, d.selectedPath()) {
-			__tui_6 := tui.New(
+			__tui_7 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 			)
-			__tui_4.AddChild(__tui_6)
+			__tui_5.AddChild(__tui_7)
 		} else if vn.isDir {
-			__tui_7 := tui.New(
+			__tui_8 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithTextStyle(tui.NewStyle().Bold()),
 			)
-			__tui_4.AddChild(__tui_7)
+			__tui_5.AddChild(__tui_8)
 		} else {
-			__tui_8 := tui.New(
+			__tui_9 := tui.New(
 				tui.WithText(buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())),
 			)
-			__tui_4.AddChild(__tui_8)
+			__tui_5.AddChild(__tui_9)
 		}
 	}
-	__tui_0.AddChild(__tui_4)
-	__tui_9 := tui.New(
+	__tui_0.AddChild(__tui_5)
+	__tui_10 := tui.New(
 		tui.WithHR(),
 		tui.WithBorder(tui.BorderSingle),
 	)
-	__tui_0.AddChild(__tui_9)
-	__tui_10 := tui.New(
+	__tui_0.AddChild(__tui_10)
+	__tui_11 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithPadding(1),
 	)
-	__tui_11 := tui.New(
+	__tui_12 := tui.New(
 		tui.WithText("j/k: navigate | enter/l: expand | h: collapse | q: quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_10.AddChild(__tui_11)
-	__tui_0.AddChild(__tui_10)
+	__tui_11.AddChild(__tui_12)
+	__tui_0.AddChild(__tui_11)
 
 	return __tui_0
 }
