@@ -139,6 +139,101 @@ func nodeLabel(vn visibleNode, expanded map[string]bool) string {
 	return vn.node.Name
 }
 
+func (d *directoryTree) KeyMap() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.moveUp() }),
+		tui.OnRune('k', func(ke tui.KeyEvent) { d.moveUp() }),
+		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.moveDown() }),
+		tui.OnRune('j', func(ke tui.KeyEvent) { d.moveDown() }),
+		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { d.toggle() }),
+		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { d.toggle() }),
+		tui.OnRune('l', func(ke tui.KeyEvent) { d.toggle() }),
+		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { d.collapseOrParent() }),
+		tui.OnRune('h', func(ke tui.KeyEvent) { d.collapseOrParent() }),
+	}
+}
+
+func (d *directoryTree) moveUp() {
+	d.cursor.Update(func(v int) int {
+		if v > 0 {
+			return v - 1
+		}
+		return v
+	})
+}
+
+func (d *directoryTree) moveDown() {
+	visible := d.flatten()
+	d.cursor.Update(func(v int) int {
+		if v < len(visible)-1 {
+			return v + 1
+		}
+		return v
+	})
+}
+
+func (d *directoryTree) toggle() {
+	visible := d.flatten()
+	cur := d.cursor.Get()
+	if cur >= len(visible) {
+		return
+	}
+	vn := visible[cur]
+	if !vn.isDir {
+		return
+	}
+	d.expanded.Update(func(m map[string]bool) map[string]bool {
+		newMap := make(map[string]bool, len(m))
+		for k, v := range m {
+			newMap[k] = v
+		}
+		if newMap[vn.path] {
+			delete(newMap, vn.path)
+		} else {
+			newMap[vn.path] = true
+		}
+		return newMap
+	})
+}
+
+func (d *directoryTree) collapseOrParent() {
+	visible := d.flatten()
+	cur := d.cursor.Get()
+	if cur >= len(visible) {
+		return
+	}
+	vn := visible[cur]
+
+	// If on an expanded directory, collapse it
+	expanded := d.expanded.Get()
+	if vn.isDir && expanded[vn.path] {
+		d.expanded.Update(func(m map[string]bool) map[string]bool {
+			newMap := make(map[string]bool, len(m))
+			for k, v := range m {
+				newMap[k] = v
+			}
+			delete(newMap, vn.path)
+			return newMap
+		})
+		return
+	}
+
+	// Otherwise, jump to parent directory
+	if vn.depth == 0 {
+		return
+	}
+	// Find parent: walk backwards for a node at depth-1 that is a directory
+	parentPath := vn.path[:len(vn.path)-len("/"+vn.node.Name)]
+	for i := cur - 1; i >= 0; i-- {
+		if visible[i].path == parentPath {
+			d.cursor.Set(i)
+			return
+		}
+	}
+}
+
 templ (d *directoryTree) Render() {
 	<div class="flex-col">
 		<span>placeholder</span>
