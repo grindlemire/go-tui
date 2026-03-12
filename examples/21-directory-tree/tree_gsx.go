@@ -4,15 +4,14 @@
 package main
 
 import (
-	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	tui "github.com/grindlemire/go-tui"
 )
-
-var _ = fmt.Sprintf
 
 type Node struct {
 	Name     string
@@ -37,59 +36,14 @@ type directoryTree struct {
 	scrollContainer *tui.Ref
 }
 
-func readDir(path string) []Node {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil
-	}
-
-	var children []Node
-	for _, entry := range entries {
-		// Skip hidden files/directories
-		if entry.Name()[0] == '.' {
-			continue
-		}
-		node := Node{Name: entry.Name()}
-		if entry.IsDir() {
-			node.Children = readDir(filepath.Join(path, entry.Name()))
-			if node.Children == nil {
-				// Empty directory: use a sentinel so it's still recognized as a dir
-				node.Children = []Node{}
-			}
-		}
-		children = append(children, node)
-	}
-	sortChildren(children)
-	return children
-}
-
-func sortChildren(children []Node) {
-	sort.Slice(children, func(i, j int) bool {
-		iDir := children[i].Children != nil
-		jDir := children[j].Children != nil
-		if iDir != jDir {
-			return iDir // directories first
-		}
-		return children[i].Name < children[j].Name
-	})
-}
-
 func DirectoryTree(root string) *directoryTree {
-	name := filepath.Base(root)
-	rootNode := Node{
-		Name:     name,
-		Children: readDir(root),
-	}
-	if rootNode.Children == nil {
-		rootNode.Children = []Node{}
-	}
-	tree := []Node{rootNode}
+	rootNode := buildRootNode(root)
 	return &directoryTree{
 		rootPath:        root,
+		tree:            []Node{rootNode},
 		cursor:          tui.NewState(0),
-		expanded:        tui.NewState(map[string]bool{name: true}),
+		expanded:        tui.NewState(map[string]bool{rootNode.Name: true}),
 		scrollY:         tui.NewState(0),
-		tree:            tree,
 		scrollContainer: tui.NewRef(),
 	}
 }
@@ -97,25 +51,18 @@ func DirectoryTree(root string) *directoryTree {
 func (d *directoryTree) navigateUp() {
 	parent := filepath.Dir(d.rootPath)
 	if parent == d.rootPath {
-		return // already at filesystem root
+		return
 	}
 	d.rootPath = parent
-	name := filepath.Base(parent)
-	rootNode := Node{
-		Name:     name,
-		Children: readDir(parent),
-	}
-	if rootNode.Children == nil {
-		rootNode.Children = []Node{}
-	}
+	rootNode := buildRootNode(parent)
 	d.tree = []Node{rootNode}
 	d.cursor.Set(0)
-	d.expanded.Set(map[string]bool{name: true})
+	d.expanded.Set(map[string]bool{rootNode.Name: true})
 	d.scrollY.Set(0)
 }
 
 func (d *directoryTree) selectedPath() string {
-	visible := d.flatten()
+	visible := d.visibleNodes()
 	cur := d.cursor.Get()
 	if cur >= len(visible) {
 		return ""
@@ -138,72 +85,19 @@ func (d *directoryTree) scrollToCursor() {
 	}
 }
 
-func (d *directoryTree) flatten() []visibleNode {
+func (d *directoryTree) visibleNodes() []visibleNode {
 	var result []visibleNode
 	expanded := d.expanded.Get()
 	for i, node := range d.tree {
-		d.flattenNode(node, 0, node.Name, i == len(d.tree)-1, nil, expanded, &result)
+		flattenNode(node, 0, node.Name, i == len(d.tree)-1, nil, expanded, &result)
 	}
 	return result
 }
 
-func (d *directoryTree) flattenNode(n Node, depth int, path string, isLast bool, ancestors []bool, expanded map[string]bool, result *[]visibleNode) {
-	isDir := n.Children != nil
-	*result = append(*result, visibleNode{
-		node:      n,
-		depth:     depth,
-		path:      path,
-		isDir:     isDir,
-		isLast:    isLast,
-		ancestors: ancestors,
-	})
-	if isDir && expanded[path] {
-		newAncestors := make([]bool, len(ancestors)+1)
-		copy(newAncestors, ancestors)
-		newAncestors[len(ancestors)] = isLast
-		for i, child := range n.Children {
-			childPath := path + "/" + child.Name
-			d.flattenNode(child, depth+1, childPath, i == len(n.Children)-1, newAncestors, expanded, result)
-		}
+func (d *directoryTree) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.OnChange(d.cursor, func(int) { d.scrollToCursor() }),
 	}
-}
-
-func buildPrefix(vn visibleNode) string {
-	if vn.depth == 0 {
-		return ""
-	}
-	prefix := ""
-	for i := 0; i < vn.depth-1; i++ {
-		if vn.ancestors[i+1] {
-			prefix += "    "
-		} else {
-			prefix += "│   "
-		}
-	}
-	if vn.isLast {
-		prefix += "└── "
-	} else {
-		prefix += "├── "
-	}
-	return prefix
-}
-
-func nodeLabel(vn visibleNode, expanded map[string]bool) string {
-	if vn.isDir {
-		if expanded[vn.path] {
-			return "▼ " + vn.node.Name
-		}
-		return "▶ " + vn.node.Name
-	}
-	return vn.node.Name
-}
-
-func isOnPath(vn visibleNode, selectedPath string) bool {
-	if vn.path == selectedPath {
-		return true
-	}
-	// Check if selectedPath starts with this node's path followed by "/"
-	return len(selectedPath) > len(vn.path) && selectedPath[:len(vn.path)+1] == vn.path+"/"
 }
 
 func (d *directoryTree) KeyMap() tui.KeyMap {
@@ -229,22 +123,20 @@ func (d *directoryTree) moveUp() {
 		}
 		return v
 	})
-	d.scrollToCursor()
 }
 
 func (d *directoryTree) moveDown() {
-	visible := d.flatten()
+	visible := d.visibleNodes()
 	d.cursor.Update(func(v int) int {
 		if v < len(visible)-1 {
 			return v + 1
 		}
 		return v
 	})
-	d.scrollToCursor()
 }
 
 func (d *directoryTree) toggle() {
-	visible := d.flatten()
+	visible := d.visibleNodes()
 	cur := d.cursor.Get()
 	if cur >= len(visible) {
 		return
@@ -254,21 +146,12 @@ func (d *directoryTree) toggle() {
 		return
 	}
 	d.expanded.Update(func(m map[string]bool) map[string]bool {
-		newMap := make(map[string]bool, len(m))
-		for k, v := range m {
-			newMap[k] = v
-		}
-		if newMap[vn.path] {
-			delete(newMap, vn.path)
-		} else {
-			newMap[vn.path] = true
-		}
-		return newMap
+		return cloneExpandedWith(m, vn.path, !m[vn.path])
 	})
 }
 
 func (d *directoryTree) collapseOrParent() {
-	visible := d.flatten()
+	visible := d.visibleNodes()
 	cur := d.cursor.Get()
 	if cur >= len(visible) {
 		return
@@ -279,30 +162,139 @@ func (d *directoryTree) collapseOrParent() {
 	expanded := d.expanded.Get()
 	if vn.isDir && expanded[vn.path] {
 		d.expanded.Update(func(m map[string]bool) map[string]bool {
-			newMap := make(map[string]bool, len(m))
-			for k, v := range m {
-				newMap[k] = v
-			}
-			delete(newMap, vn.path)
-			return newMap
+			return cloneExpandedWith(m, vn.path, false)
 		})
 		return
 	}
 
-	// Otherwise, jump to parent directory
+	// At root, navigate to parent directory
 	if vn.depth == 0 {
 		d.navigateUp()
 		return
 	}
-	// Find parent: walk backwards for a node at depth-1 that is a directory
-	parentPath := vn.path[:len(vn.path)-len("/"+vn.node.Name)]
+
+	// Jump to parent node
+	parentPath := path.Dir(vn.path)
 	for i := cur - 1; i >= 0; i-- {
 		if visible[i].path == parentPath {
 			d.cursor.Set(i)
-			d.scrollToCursor()
 			return
 		}
 	}
+}
+
+func readDir(dirPath string) []Node {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil
+	}
+
+	var children []Node
+	for _, entry := range entries {
+		if entry.Name()[0] == '.' {
+			continue
+		}
+		node := Node{Name: entry.Name()}
+		if entry.IsDir() {
+			node.Children = readDir(filepath.Join(dirPath, entry.Name()))
+			if node.Children == nil {
+				node.Children = []Node{}
+			}
+		}
+		children = append(children, node)
+	}
+	sortChildren(children)
+	return children
+}
+
+func sortChildren(children []Node) {
+	sort.Slice(children, func(i, j int) bool {
+		iDir := children[i].Children != nil
+		jDir := children[j].Children != nil
+		if iDir != jDir {
+			return iDir
+		}
+		return children[i].Name < children[j].Name
+	})
+}
+
+func buildRootNode(absPath string) Node {
+	root := Node{
+		Name:     filepath.Base(absPath),
+		Children: readDir(absPath),
+	}
+	if root.Children == nil {
+		root.Children = []Node{}
+	}
+	return root
+}
+
+func cloneExpandedWith(m map[string]bool, key string, val bool) map[string]bool {
+	out := make(map[string]bool, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	if val {
+		out[key] = true
+	} else {
+		delete(out, key)
+	}
+	return out
+}
+
+func flattenNode(n Node, depth int, nodePath string, isLast bool, ancestors []bool, expanded map[string]bool, result *[]visibleNode) {
+	isDir := n.Children != nil
+	*result = append(*result, visibleNode{
+		node:      n,
+		depth:     depth,
+		path:      nodePath,
+		isDir:     isDir,
+		isLast:    isLast,
+		ancestors: ancestors,
+	})
+	if isDir && expanded[nodePath] {
+		newAncestors := make([]bool, len(ancestors)+1)
+		copy(newAncestors, ancestors)
+		newAncestors[len(ancestors)] = isLast
+		for i, child := range n.Children {
+			childPath := nodePath + "/" + child.Name
+			flattenNode(child, depth+1, childPath, i == len(n.Children)-1, newAncestors, expanded, result)
+		}
+	}
+}
+
+func buildPrefix(vn visibleNode) string {
+	if vn.depth == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for i := 0; i < vn.depth-1; i++ {
+		if vn.ancestors[i+1] {
+			b.WriteString("    ")
+		} else {
+			b.WriteString("│   ")
+		}
+	}
+	if vn.isLast {
+		b.WriteString("└── ")
+	} else {
+		b.WriteString("├── ")
+	}
+	return b.String()
+}
+
+func nodeLabel(vn visibleNode, expanded map[string]bool) string {
+	if vn.isDir {
+		if expanded[vn.path] {
+			return "▼ " + vn.node.Name
+		}
+		return "▶ " + vn.node.Name
+	}
+	return vn.node.Name
+}
+
+func isOnPath(vn visibleNode, selectedPath string) bool {
+	return vn.path == selectedPath || strings.HasPrefix(selectedPath, vn.path+"/")
 }
 
 func (d *directoryTree) Render(app *tui.App) *tui.Element {
@@ -343,7 +335,7 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithScrollOffset(0, d.scrollY.Get()),
 	)
 	d.scrollContainer.Set(__tui_5)
-	for i, vn := range d.flatten() {
+	for i, vn := range d.visibleNodes() {
 		_ = i
 		if i == d.cursor.Get() {
 			__tui_6 := tui.New(
