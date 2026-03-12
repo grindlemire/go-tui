@@ -372,8 +372,9 @@ func (d *directoryTree) collapseOrParent() {
 
 templ (d *directoryTree) Render() {
 	<div class="flex-col w-full h-full border-rounded border-cyan">
-		<div class="p-1">
+		<div class="flex-col p-1">
 			<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
+			<span class="text-cyan font-dim">{d.selectedPath()}</span>
 		</div>
 		<hr class="border-single" />
 		<div class="flex-col grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
