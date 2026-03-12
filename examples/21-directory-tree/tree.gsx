@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
+	"os"
+	"path/filepath"
 	"sort"
 
 	tui "github.com/grindlemire/go-tui"
@@ -29,6 +30,7 @@ type visibleNode struct {
 
 // directoryTree is a foldable directory tree component.
 type directoryTree struct {
+	rootPath        string
 	tree            []Node
 	cursor          *tui.State[int]
 	expanded        *tui.State[map[string]bool]
@@ -36,120 +38,37 @@ type directoryTree struct {
 	scrollContainer *tui.Ref
 }
 
-var dirNames = []string{
-	"cmd", "internal", "pkg", "api", "server", "client", "config",
-	"middleware", "handlers", "models", "services", "utils", "helpers",
-	"db", "migrations", "testdata", "scripts", "deploy", "docs",
-	"auth", "cache", "queue", "worker", "scheduler", "monitor",
-	"gateway", "proxy", "router", "storage", "metrics", "logging",
-	"events", "pubsub", "grpc", "http", "websocket", "graphql",
-	"templates", "assets", "static", "vendor", "tools", "gen",
-}
-
-var fileNames = []string{
-	"main.go", "config.go", "handler.go", "middleware.go", "routes.go",
-	"server.go", "client.go", "model.go", "service.go", "utils.go",
-	"helpers.go", "db.go", "migrate.go", "schema.go", "query.go",
-	"auth.go", "token.go", "session.go", "cache.go", "queue.go",
-	"worker.go", "scheduler.go", "monitor.go", "logger.go", "errors.go",
-	"types.go", "constants.go", "interface.go", "mock.go", "factory.go",
-	"validator.go", "parser.go", "encoder.go", "decoder.go", "mapper.go",
-	"README.md", "Makefile", "Dockerfile", ".gitignore", "go.mod", "go.sum",
-	"LICENSE", ".env.example", "docker-compose.yml", "Taskfile.yml",
-}
-
-var rootFileNames = []string{
-	"README.md", "go.mod", "go.sum", "main.go", "Makefile",
-	".gitignore", "LICENSE", "Dockerfile",
-}
-
-// generateTree builds a random tree with the given max depth.
-// dirChance controls the probability of a child being a directory (0.0 to 1.0).
-func generateTree(maxDepth int, rng *rand.Rand) []Node {
-	rootName := pickOne(rng, []string{
-		"myproject", "acme-service", "platform", "dataflow", "nexus",
-		"forge", "atlas", "cortex", "herald", "vortex",
-	})
-	root := Node{
-		Name:     rootName,
-		Children: generateChildren(0, maxDepth, rng),
+// readDir reads a directory and returns its children as Nodes, sorted dirs-first then alphabetically.
+func readDir(path string) []Node {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil
 	}
-	// Always add a few root-level files
-	for _, name := range rootFileNames {
-		if rng.Float64() < 0.6 {
-			root.Children = append(root.Children, Node{Name: name})
-		}
-	}
-	sortChildren(root.Children)
-	return []Node{root}
-}
 
-func generateChildren(depth, maxDepth int, rng *rand.Rand) []Node {
 	var children []Node
-	seen := map[string]bool{}
-
-	// Number of directories decreases with depth
-	numDirs := 0
-	if depth < maxDepth {
-		numDirs = 1 + rng.Intn(max(1, 4-depth))
-	}
-
-	for i := 0; i < numDirs; i++ {
-		name := pickUnique(rng, dirNames, seen)
-		if name == "" {
-			break
+	for _, entry := range entries {
+		// Skip hidden files/directories
+		if entry.Name()[0] == '.' {
+			continue
 		}
-		dir := Node{
-			Name:     name,
-			Children: generateChildren(depth+1, maxDepth, rng),
-		}
-		// Add files inside the directory
-		numFiles := 1 + rng.Intn(4)
-		fileSeen := map[string]bool{}
-		for j := 0; j < numFiles; j++ {
-			fname := pickUnique(rng, fileNames, fileSeen)
-			if fname == "" {
-				break
+		node := Node{Name: entry.Name()}
+		if entry.IsDir() {
+			node.Children = readDir(filepath.Join(path, entry.Name()))
+			if node.Children == nil {
+				// Empty directory: use a sentinel so it's still recognized as a dir
+				node.Children = []Node{}
 			}
-			dir.Children = append(dir.Children, Node{Name: fname})
 		}
-		sortChildren(dir.Children)
-		children = append(children, dir)
+		children = append(children, node)
 	}
-
-	// Add some files at this level too
-	numFiles := rng.Intn(3)
-	for i := 0; i < numFiles; i++ {
-		name := pickUnique(rng, fileNames, seen)
-		if name == "" {
-			break
-		}
-		children = append(children, Node{Name: name})
-	}
-
+	sortChildren(children)
 	return children
-}
-
-func pickOne(rng *rand.Rand, items []string) string {
-	return items[rng.Intn(len(items))]
-}
-
-func pickUnique(rng *rand.Rand, items []string, seen map[string]bool) string {
-	// Try a few times to find an unseen item
-	for attempt := 0; attempt < 20; attempt++ {
-		name := items[rng.Intn(len(items))]
-		if !seen[name] {
-			seen[name] = true
-			return name
-		}
-	}
-	return ""
 }
 
 func sortChildren(children []Node) {
 	sort.Slice(children, func(i, j int) bool {
-		iDir := len(children[i].Children) > 0
-		jDir := len(children[j].Children) > 0
+		iDir := children[i].Children != nil
+		jDir := children[j].Children != nil
 		if iDir != jDir {
 			return iDir // directories first
 		}
@@ -157,24 +76,46 @@ func sortChildren(children []Node) {
 	})
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
+// DirectoryTree creates a new directory tree component rooted at the given path.
+func DirectoryTree(root string) *directoryTree {
+	name := filepath.Base(root)
+	rootNode := Node{
+		Name:     name,
+		Children: readDir(root),
 	}
-	return b
-}
-
-// DirectoryTree creates a new directory tree component with a randomly generated filesystem.
-func DirectoryTree() *directoryTree {
-	rng := rand.New(rand.NewSource(42))
-	tree := generateTree(5, rng)
+	if rootNode.Children == nil {
+		rootNode.Children = []Node{}
+	}
+	tree := []Node{rootNode}
 	return &directoryTree{
+		rootPath:        root,
 		cursor:          tui.NewState(0),
-		expanded:        tui.NewState(map[string]bool{tree[0].Name: true}),
+		expanded:        tui.NewState(map[string]bool{name: true}),
 		scrollY:         tui.NewState(0),
 		tree:            tree,
 		scrollContainer: tui.NewRef(),
 	}
+}
+
+// navigateUp re-roots the tree at the parent of the current root.
+func (d *directoryTree) navigateUp() {
+	parent := filepath.Dir(d.rootPath)
+	if parent == d.rootPath {
+		return // already at filesystem root
+	}
+	d.rootPath = parent
+	name := filepath.Base(parent)
+	rootNode := Node{
+		Name:     name,
+		Children: readDir(parent),
+	}
+	if rootNode.Children == nil {
+		rootNode.Children = []Node{}
+	}
+	d.tree = []Node{rootNode}
+	d.cursor.Set(0)
+	d.expanded.Set(map[string]bool{name: true})
+	d.scrollY.Set(0)
 }
 
 // selectedPath returns the path of the currently selected node.
@@ -213,7 +154,7 @@ func (d *directoryTree) flatten() []visibleNode {
 }
 
 func (d *directoryTree) flattenNode(n Node, depth int, path string, isLast bool, ancestors []bool, expanded map[string]bool, result *[]visibleNode) {
-	isDir := len(n.Children) > 0
+	isDir := n.Children != nil
 	*result = append(*result, visibleNode{
 		node:      n,
 		depth:     depth,
@@ -357,6 +298,7 @@ func (d *directoryTree) collapseOrParent() {
 
 	// Otherwise, jump to parent directory
 	if vn.depth == 0 {
+		d.navigateUp()
 		return
 	}
 	// Find parent: walk backwards for a node at depth-1 that is a directory
