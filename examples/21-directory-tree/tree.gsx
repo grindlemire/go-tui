@@ -32,6 +32,7 @@ type directoryTree struct {
 	tree            []Node
 	cursor          *tui.State[int]
 	expanded        *tui.State[map[string]bool]
+	scrollY         *tui.State[int]
 	scrollContainer *tui.Ref
 }
 
@@ -170,6 +171,7 @@ func DirectoryTree() *directoryTree {
 	return &directoryTree{
 		cursor:          tui.NewState(0),
 		expanded:        tui.NewState(map[string]bool{tree[0].Name: true}),
+		scrollY:         tui.NewState(0),
 		tree:            tree,
 		scrollContainer: tui.NewRef(),
 	}
@@ -185,19 +187,19 @@ func (d *directoryTree) selectedPath() string {
 	return visible[cur].path
 }
 
-// scrollToCursor scrolls the container so the cursor row is visible.
+// scrollToCursor adjusts scrollY state so the cursor row is visible.
 func (d *directoryTree) scrollToCursor() {
 	el := d.scrollContainer.El()
 	if el == nil {
 		return
 	}
 	cur := d.cursor.Get()
-	_, viewH := el.ViewportSize()
-	_, scrollY := el.ScrollOffset()
-	if cur < scrollY {
-		el.ScrollTo(0, cur)
-	} else if cur >= scrollY+viewH {
-		el.ScrollTo(0, cur-viewH+1)
+	_, vpH := el.ViewportSize()
+	y := d.scrollY.Get()
+	if cur < y {
+		d.scrollY.Set(cur)
+	} else if cur >= y+vpH {
+		d.scrollY.Set(cur - vpH + 1)
 	}
 }
 
@@ -374,7 +376,8 @@ templ (d *directoryTree) Render() {
 			<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
 		</div>
 		<hr class="border-single" />
-		<div class="flex-col grow overflow-y-scroll" ref={d.scrollContainer}>
+		<div class="flex-col grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
+			ref={d.scrollContainer} scrollOffset={0, d.scrollY.Get()}>
 			@for i, vn := range d.flatten() {
 				@if i == d.cursor.Get() {
 					<span class="bg-bright-black text-white">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>

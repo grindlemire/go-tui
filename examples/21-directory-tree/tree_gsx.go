@@ -31,6 +31,7 @@ type directoryTree struct {
 	tree            []Node
 	cursor          *tui.State[int]
 	expanded        *tui.State[map[string]bool]
+	scrollY         *tui.State[int]
 	scrollContainer *tui.Ref
 }
 
@@ -166,6 +167,7 @@ func DirectoryTree() *directoryTree {
 	return &directoryTree{
 		cursor:          tui.NewState(0),
 		expanded:        tui.NewState(map[string]bool{tree[0].Name: true}),
+		scrollY:         tui.NewState(0),
 		tree:            tree,
 		scrollContainer: tui.NewRef(),
 	}
@@ -186,12 +188,12 @@ func (d *directoryTree) scrollToCursor() {
 		return
 	}
 	cur := d.cursor.Get()
-	_, viewH := el.ViewportSize()
-	_, scrollY := el.ScrollOffset()
-	if cur < scrollY {
-		el.ScrollTo(0, cur)
-	} else if cur >= scrollY+viewH {
-		el.ScrollTo(0, cur-viewH+1)
+	_, vpH := el.ViewportSize()
+	y := d.scrollY.Get()
+	if cur < y {
+		d.scrollY.Set(cur)
+	} else if cur >= y+vpH {
+		d.scrollY.Set(cur - vpH + 1)
 	}
 }
 
@@ -389,6 +391,9 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
 		tui.WithScrollable(tui.ScrollVertical),
+		tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
+		tui.WithScrollOffset(0, d.scrollY.Get()),
 	)
 	d.scrollContainer.Set(__tui_4)
 	for i, vn := range d.flatten() {
@@ -456,6 +461,9 @@ func (d *directoryTree) BindApp(app *tui.App) {
 	}
 	if d.expanded != nil {
 		d.expanded.BindApp(app)
+	}
+	if d.scrollY != nil {
+		d.scrollY.BindApp(app)
 	}
 }
 
