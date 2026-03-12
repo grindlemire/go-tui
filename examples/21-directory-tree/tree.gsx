@@ -235,7 +235,25 @@ func (d *directoryTree) collapseOrParent() {
 }
 
 templ (d *directoryTree) Render() {
-	<div class="flex-col">
-		<span>placeholder</span>
+	<div class="flex-col p-1 border-rounded border-cyan">
+		<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
+		<hr class="border-single" />
+		<div class="flex-col">
+			@for i, vn := range d.flatten() {
+				@if i == d.cursor.Get() {
+					<span class="bg-bright-black text-white">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+				} @else {
+					@if vn.isDir {
+						<span class="text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+					} @else {
+						<span>{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+					}
+				}
+			}
+		</div>
+		<hr class="border-single" />
+		<div class="flex justify-center">
+			<span class="font-dim">j/k: navigate | enter/l: expand | h: collapse | q: quit</span>
+		</div>
 	</div>
 }
