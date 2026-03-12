@@ -28,9 +28,10 @@ type visibleNode struct {
 }
 
 type directoryTree struct {
-	tree     []Node
-	cursor   *tui.State[int]
-	expanded *tui.State[map[string]bool]
+	tree            []Node
+	cursor          *tui.State[int]
+	expanded        *tui.State[map[string]bool]
+	scrollContainer *tui.Ref
 }
 
 var dirNames = []string{
@@ -163,9 +164,34 @@ func DirectoryTree() *directoryTree {
 	rng := rand.New(rand.NewSource(42))
 	tree := generateTree(5, rng)
 	return &directoryTree{
-		cursor:   tui.NewState(0),
-		expanded: tui.NewState(map[string]bool{tree[0].Name: true}),
-		tree:     tree,
+		cursor:          tui.NewState(0),
+		expanded:        tui.NewState(map[string]bool{tree[0].Name: true}),
+		tree:            tree,
+		scrollContainer: tui.NewRef(),
+	}
+}
+
+func (d *directoryTree) selectedPath() string {
+	visible := d.flatten()
+	cur := d.cursor.Get()
+	if cur >= len(visible) {
+		return ""
+	}
+	return visible[cur].path
+}
+
+func (d *directoryTree) scrollToCursor() {
+	el := d.scrollContainer.El()
+	if el == nil {
+		return
+	}
+	cur := d.cursor.Get()
+	_, viewH := el.ViewportSize()
+	_, scrollY := el.ScrollOffset()
+	if cur < scrollY {
+		el.ScrollTo(0, cur)
+	} else if cur >= scrollY+viewH {
+		el.ScrollTo(0, cur-viewH+1)
 	}
 }
 
@@ -229,6 +255,14 @@ func nodeLabel(vn visibleNode, expanded map[string]bool) string {
 	return vn.node.Name
 }
 
+func isOnPath(vn visibleNode, selectedPath string) bool {
+	if vn.path == selectedPath {
+		return true
+	}
+	// Check if selectedPath starts with this node's path followed by "/"
+	return len(selectedPath) > len(vn.path) && selectedPath[:len(vn.path)+1] == vn.path+"/"
+}
+
 func (d *directoryTree) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
@@ -252,6 +286,7 @@ func (d *directoryTree) moveUp() {
 		}
 		return v
 	})
+	d.scrollToCursor()
 }
 
 func (d *directoryTree) moveDown() {
@@ -262,6 +297,7 @@ func (d *directoryTree) moveDown() {
 		}
 		return v
 	})
+	d.scrollToCursor()
 }
 
 func (d *directoryTree) toggle() {
@@ -319,6 +355,7 @@ func (d *directoryTree) collapseOrParent() {
 	for i := cur - 1; i >= 0; i-- {
 		if visible[i].path == parentPath {
 			d.cursor.Set(i)
+			d.scrollToCursor()
 			return
 		}
 	}
@@ -327,62 +364,78 @@ func (d *directoryTree) collapseOrParent() {
 func (d *directoryTree) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithPadding(1),
+		tui.WithWidthPercent(100.00),
+		tui.WithHeightPercent(100.00),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithOverflow(tui.OverflowHidden),
 	)
 	__tui_1 := tui.New(
+		tui.WithPadding(1),
+	)
+	__tui_2 := tui.New(
 		tui.WithText("Directory Tree"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
+	__tui_1.AddChild(__tui_2)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
+	__tui_3 := tui.New(
 		tui.WithHR(),
 		tui.WithBorder(tui.BorderSingle),
 	)
-	__tui_0.AddChild(__tui_2)
-	__tui_3 := tui.New(
+	__tui_0.AddChild(__tui_3)
+	__tui_4 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithFlexGrow(1),
+		tui.WithScrollable(tui.ScrollVertical),
 	)
+	d.scrollContainer.Set(__tui_4)
 	for i, vn := range d.flatten() {
 		_ = i
 		if i == d.cursor.Get() {
-			__tui_4 := tui.New(
+			__tui_5 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithBackground(tui.NewStyle().Background(tui.BrightBlack)),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
 			)
-			__tui_3.AddChild(__tui_4)
-		} else if vn.isDir {
-			__tui_5 := tui.New(
+			__tui_4.AddChild(__tui_5)
+		} else if isOnPath(vn, d.selectedPath()) {
+			__tui_6 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 			)
-			__tui_3.AddChild(__tui_5)
+			__tui_4.AddChild(__tui_6)
+		} else if vn.isDir {
+			__tui_7 := tui.New(
+				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
+				tui.WithTextStyle(tui.NewStyle().Bold()),
+			)
+			__tui_4.AddChild(__tui_7)
 		} else {
-			__tui_6 := tui.New(
+			__tui_8 := tui.New(
 				tui.WithText(buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())),
 			)
-			__tui_3.AddChild(__tui_6)
+			__tui_4.AddChild(__tui_8)
 		}
 	}
-	__tui_0.AddChild(__tui_3)
-	__tui_7 := tui.New(
+	__tui_0.AddChild(__tui_4)
+	__tui_9 := tui.New(
 		tui.WithHR(),
 		tui.WithBorder(tui.BorderSingle),
 	)
-	__tui_0.AddChild(__tui_7)
-	__tui_8 := tui.New(
+	__tui_0.AddChild(__tui_9)
+	__tui_10 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
+		tui.WithPadding(1),
 	)
-	__tui_9 := tui.New(
+	__tui_11 := tui.New(
 		tui.WithText("j/k: navigate | enter/l: expand | h: collapse | q: quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_8.AddChild(__tui_9)
-	__tui_0.AddChild(__tui_8)
+	__tui_10.AddChild(__tui_11)
+	__tui_0.AddChild(__tui_10)
 
 	return __tui_0
 }

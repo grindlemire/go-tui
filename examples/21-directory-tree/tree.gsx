@@ -29,9 +29,10 @@ type visibleNode struct {
 
 // directoryTree is a foldable directory tree component.
 type directoryTree struct {
-	tree     []Node
-	cursor   *tui.State[int]
-	expanded *tui.State[map[string]bool]
+	tree            []Node
+	cursor          *tui.State[int]
+	expanded        *tui.State[map[string]bool]
+	scrollContainer *tui.Ref
 }
 
 var dirNames = []string{
@@ -167,9 +168,36 @@ func DirectoryTree() *directoryTree {
 	rng := rand.New(rand.NewSource(42))
 	tree := generateTree(5, rng)
 	return &directoryTree{
-		cursor:   tui.NewState(0),
-		expanded: tui.NewState(map[string]bool{tree[0].Name: true}),
-		tree:     tree,
+		cursor:          tui.NewState(0),
+		expanded:        tui.NewState(map[string]bool{tree[0].Name: true}),
+		tree:            tree,
+		scrollContainer: tui.NewRef(),
+	}
+}
+
+// selectedPath returns the path of the currently selected node.
+func (d *directoryTree) selectedPath() string {
+	visible := d.flatten()
+	cur := d.cursor.Get()
+	if cur >= len(visible) {
+		return ""
+	}
+	return visible[cur].path
+}
+
+// scrollToCursor scrolls the container so the cursor row is visible.
+func (d *directoryTree) scrollToCursor() {
+	el := d.scrollContainer.El()
+	if el == nil {
+		return
+	}
+	cur := d.cursor.Get()
+	_, viewH := el.ViewportSize()
+	_, scrollY := el.ScrollOffset()
+	if cur < scrollY {
+		el.ScrollTo(0, cur)
+	} else if cur >= scrollY+viewH {
+		el.ScrollTo(0, cur-viewH+1)
 	}
 }
 
@@ -233,6 +261,15 @@ func nodeLabel(vn visibleNode, expanded map[string]bool) string {
 	return vn.node.Name
 }
 
+// isOnPath returns true if the given node's path is an ancestor of (or equal to) the selected node's path.
+func isOnPath(vn visibleNode, selectedPath string) bool {
+	if vn.path == selectedPath {
+		return true
+	}
+	// Check if selectedPath starts with this node's path followed by "/"
+	return len(selectedPath) > len(vn.path) && selectedPath[:len(vn.path)+1] == vn.path+"/"
+}
+
 func (d *directoryTree) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
@@ -256,6 +293,7 @@ func (d *directoryTree) moveUp() {
 		}
 		return v
 	})
+	d.scrollToCursor()
 }
 
 func (d *directoryTree) moveDown() {
@@ -266,6 +304,7 @@ func (d *directoryTree) moveDown() {
 		}
 		return v
 	})
+	d.scrollToCursor()
 }
 
 func (d *directoryTree) toggle() {
@@ -323,30 +362,37 @@ func (d *directoryTree) collapseOrParent() {
 	for i := cur - 1; i >= 0; i-- {
 		if visible[i].path == parentPath {
 			d.cursor.Set(i)
+			d.scrollToCursor()
 			return
 		}
 	}
 }
 
 templ (d *directoryTree) Render() {
-	<div class="flex-col p-1 border-rounded border-cyan">
-		<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
+	<div class="flex-col w-full h-full border-rounded border-cyan overflow-hidden">
+		<div class="p-1">
+			<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
+		</div>
 		<hr class="border-single" />
-		<div class="flex-col">
+		<div class="flex-col grow overflow-y-scroll" ref={d.scrollContainer}>
 			@for i, vn := range d.flatten() {
 				@if i == d.cursor.Get() {
 					<span class="bg-bright-black text-white">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
 				} @else {
-					@if vn.isDir {
+					@if isOnPath(vn, d.selectedPath()) {
 						<span class="text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
 					} @else {
-						<span>{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+						@if vn.isDir {
+							<span class="font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+						} @else {
+							<span>{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+						}
 					}
 				}
 			}
 		</div>
 		<hr class="border-single" />
-		<div class="flex justify-center">
+		<div class="flex justify-center p-1">
 			<span class="font-dim">j/k: navigate | enter/l: expand | h: collapse | q: quit</span>
 		</div>
 	</div>
