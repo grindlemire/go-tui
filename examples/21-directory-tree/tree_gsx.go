@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"sort"
 
 	tui "github.com/grindlemire/go-tui"
 )
@@ -31,49 +33,139 @@ type directoryTree struct {
 	expanded *tui.State[map[string]bool]
 }
 
+var dirNames = []string{
+	"cmd", "internal", "pkg", "api", "server", "client", "config",
+	"middleware", "handlers", "models", "services", "utils", "helpers",
+	"db", "migrations", "testdata", "scripts", "deploy", "docs",
+	"auth", "cache", "queue", "worker", "scheduler", "monitor",
+	"gateway", "proxy", "router", "storage", "metrics", "logging",
+	"events", "pubsub", "grpc", "http", "websocket", "graphql",
+	"templates", "assets", "static", "vendor", "tools", "gen",
+}
+
+var fileNames = []string{
+	"main.go", "config.go", "handler.go", "middleware.go", "routes.go",
+	"server.go", "client.go", "model.go", "service.go", "utils.go",
+	"helpers.go", "db.go", "migrate.go", "schema.go", "query.go",
+	"auth.go", "token.go", "session.go", "cache.go", "queue.go",
+	"worker.go", "scheduler.go", "monitor.go", "logger.go", "errors.go",
+	"types.go", "constants.go", "interface.go", "mock.go", "factory.go",
+	"validator.go", "parser.go", "encoder.go", "decoder.go", "mapper.go",
+	"README.md", "Makefile", "Dockerfile", ".gitignore", "go.mod", "go.sum",
+	"LICENSE", ".env.example", "docker-compose.yml", "Taskfile.yml",
+}
+
+var rootFileNames = []string{
+	"README.md", "go.mod", "go.sum", "main.go", "Makefile",
+	".gitignore", "LICENSE", "Dockerfile",
+}
+
+func generateTree(maxDepth int, rng *rand.Rand) []Node {
+	rootName := pickOne(rng, []string{
+		"myproject", "acme-service", "platform", "dataflow", "nexus",
+		"forge", "atlas", "cortex", "herald", "vortex",
+	})
+	root := Node{
+		Name:     rootName,
+		Children: generateChildren(0, maxDepth, rng),
+	}
+	// Always add a few root-level files
+	for _, name := range rootFileNames {
+		if rng.Float64() < 0.6 {
+			root.Children = append(root.Children, Node{Name: name})
+		}
+	}
+	sortChildren(root.Children)
+	return []Node{root}
+}
+
+func generateChildren(depth, maxDepth int, rng *rand.Rand) []Node {
+	var children []Node
+	seen := map[string]bool{}
+
+	// Number of directories decreases with depth
+	numDirs := 0
+	if depth < maxDepth {
+		numDirs = 1 + rng.Intn(max(1, 4-depth))
+	}
+
+	for i := 0; i < numDirs; i++ {
+		name := pickUnique(rng, dirNames, seen)
+		if name == "" {
+			break
+		}
+		dir := Node{
+			Name:     name,
+			Children: generateChildren(depth+1, maxDepth, rng),
+		}
+		// Add files inside the directory
+		numFiles := 1 + rng.Intn(4)
+		fileSeen := map[string]bool{}
+		for j := 0; j < numFiles; j++ {
+			fname := pickUnique(rng, fileNames, fileSeen)
+			if fname == "" {
+				break
+			}
+			dir.Children = append(dir.Children, Node{Name: fname})
+		}
+		sortChildren(dir.Children)
+		children = append(children, dir)
+	}
+
+	// Add some files at this level too
+	numFiles := rng.Intn(3)
+	for i := 0; i < numFiles; i++ {
+		name := pickUnique(rng, fileNames, seen)
+		if name == "" {
+			break
+		}
+		children = append(children, Node{Name: name})
+	}
+
+	return children
+}
+
+func pickOne(rng *rand.Rand, items []string) string {
+	return items[rng.Intn(len(items))]
+}
+
+func pickUnique(rng *rand.Rand, items []string, seen map[string]bool) string {
+	// Try a few times to find an unseen item
+	for attempt := 0; attempt < 20; attempt++ {
+		name := items[rng.Intn(len(items))]
+		if !seen[name] {
+			seen[name] = true
+			return name
+		}
+	}
+	return ""
+}
+
+func sortChildren(children []Node) {
+	sort.Slice(children, func(i, j int) bool {
+		iDir := len(children[i].Children) > 0
+		jDir := len(children[j].Children) > 0
+		if iDir != jDir {
+			return iDir // directories first
+		}
+		return children[i].Name < children[j].Name
+	})
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func DirectoryTree() *directoryTree {
+	rng := rand.New(rand.NewSource(42))
+	tree := generateTree(5, rng)
 	return &directoryTree{
 		cursor:   tui.NewState(0),
-		expanded: tui.NewState(map[string]bool{"myproject": true}),
-		tree: []Node{
-			{Name: "myproject", Children: []Node{
-				{Name: "README.md"},
-				{Name: "go.mod"},
-				{Name: "go.sum"},
-				{Name: "main.go"},
-				{Name: "cmd", Children: []Node{
-					{Name: "server", Children: []Node{
-						{Name: "main.go"},
-						{Name: "config.go"},
-					}},
-				}},
-				{Name: "internal", Children: []Node{
-					{Name: "api", Children: []Node{
-						{Name: "handler.go"},
-						{Name: "middleware.go"},
-						{Name: "routes.go"},
-					}},
-					{Name: "db", Children: []Node{
-						{Name: "migrations", Children: []Node{
-							{Name: "001_init.sql"},
-							{Name: "002_users.sql"},
-						}},
-						{Name: "connection.go"},
-						{Name: "queries.go"},
-					}},
-					{Name: "models", Children: []Node{
-						{Name: "user.go"},
-						{Name: "post.go"},
-					}},
-				}},
-				{Name: "pkg", Children: []Node{
-					{Name: "logger", Children: []Node{
-						{Name: "logger.go"},
-					}},
-				}},
-				{Name: ".gitignore"},
-			}},
-		},
+		expanded: tui.NewState(map[string]bool{tree[0].Name: true}),
+		tree:     tree,
 	}
 }
 
