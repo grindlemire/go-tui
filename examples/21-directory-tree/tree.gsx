@@ -23,6 +23,7 @@ type visibleNode struct {
 	isDir     bool
 	isLast    bool
 	ancestors []bool
+	onPath    bool
 }
 
 // directoryTree is a foldable directory tree component.
@@ -62,14 +63,41 @@ func (d *directoryTree) navigateUp() {
 	d.scrollY.Set(0)
 }
 
-// selectedPath returns the path of the currently selected node.
-func (d *directoryTree) selectedPath() string {
+// visibleSelectedPath returns the path of the currently selected node for display.
+func (d *directoryTree) visibleSelectedPath() string {
 	visible := d.visibleNodes()
 	cur := d.cursor.Get()
 	if cur >= len(visible) {
 		return ""
 	}
 	return visible[cur].path
+}
+
+// loadChildren reads one level of children for the directory at the given logical path.
+func (d *directoryTree) loadChildren(nodePath string) {
+	parts := strings.Split(nodePath, "/")
+	node := &d.tree[0]
+	fsPath := d.rootPath
+	for _, part := range parts[1:] {
+		found := false
+		for i := range node.Children {
+			if node.Children[i].Name == part {
+				node = &node.Children[i]
+				fsPath = filepath.Join(fsPath, part)
+				found = true
+				break
+			}
+		}
+		if !found {
+			return
+		}
+	}
+	if len(node.Children) == 0 {
+		node.Children = readDir(fsPath)
+		if node.Children == nil {
+			node.Children = []Node{}
+		}
+	}
 }
 
 // scrollToCursor adjusts scrollY state so the cursor row is visible.
@@ -93,6 +121,13 @@ func (d *directoryTree) visibleNodes() []visibleNode {
 	expanded := d.expanded.Get()
 	for i, node := range d.tree {
 		flattenNode(node, 0, node.Name, i == len(d.tree)-1, nil, expanded, &result)
+	}
+	cur := d.cursor.Get()
+	if cur < len(result) {
+		sel := result[cur].path
+		for i := range result {
+			result[i].onPath = result[i].path == sel || strings.HasPrefix(sel, result[i].path+"/")
+		}
 	}
 	return result
 }
@@ -148,8 +183,12 @@ func (d *directoryTree) toggle() {
 	if !vn.isDir {
 		return
 	}
+	expanding := !d.expanded.Get()[vn.path]
+	if expanding {
+		d.loadChildren(vn.path)
+	}
 	d.expanded.Update(func(m map[string]bool) map[string]bool {
-		return cloneExpandedWith(m, vn.path, !m[vn.path])
+		return cloneExpandedWith(m, vn.path, expanding)
 	})
 }
 
@@ -190,7 +229,7 @@ templ (d *directoryTree) Render() {
 	<div class="flex-col w-full h-full border-rounded border-cyan">
 		<div class="flex-col p-1">
 			<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
-			<span class="text-cyan font-dim">{d.selectedPath()}</span>
+			<span class="text-cyan font-dim">{d.visibleSelectedPath()}</span>
 		</div>
 		<hr class="border-single" />
 		<div
@@ -199,8 +238,8 @@ templ (d *directoryTree) Render() {
 			scrollOffset={0, d.scrollY.Get()}>
 			@for i, vn := range d.visibleNodes() {
 				@if i == d.cursor.Get() {
-					<span class="bg-bright-black text-white">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-				} @else @if isOnPath(vn, d.selectedPath()) {
+					<span class="bg-bright-black text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+				} @else @if vn.onPath {
 					<span class="text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
 				} @else @if vn.isDir {
 					<span class="font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
@@ -216,7 +255,8 @@ templ (d *directoryTree) Render() {
 	</div>
 }
 
-// readDir reads a directory and returns its children as Nodes, sorted dirs-first then alphabetically.
+// readDir reads one level of a directory and returns its children as Nodes, sorted dirs-first then alphabetically.
+// Subdirectory children are not read until the user expands them (lazy loading).
 func readDir(dirPath string) []Node {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
@@ -230,10 +270,7 @@ func readDir(dirPath string) []Node {
 		}
 		node := Node{Name: entry.Name()}
 		if entry.IsDir() {
-			node.Children = readDir(filepath.Join(dirPath, entry.Name()))
-			if node.Children == nil {
-				node.Children = []Node{}
-			}
+			node.Children = []Node{}
 		}
 		children = append(children, node)
 	}
@@ -327,9 +364,4 @@ func nodeLabel(vn visibleNode, expanded map[string]bool) string {
 		return "▶ " + vn.node.Name
 	}
 	return vn.node.Name
-}
-
-// isOnPath returns true if the given node's path is an ancestor of (or equal to) the selected path.
-func isOnPath(vn visibleNode, selectedPath string) bool {
-	return vn.path == selectedPath || strings.HasPrefix(selectedPath, vn.path+"/")
 }

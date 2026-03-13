@@ -25,6 +25,7 @@ type visibleNode struct {
 	isDir     bool
 	isLast    bool
 	ancestors []bool
+	onPath    bool
 }
 
 type directoryTree struct {
@@ -61,13 +62,39 @@ func (d *directoryTree) navigateUp() {
 	d.scrollY.Set(0)
 }
 
-func (d *directoryTree) selectedPath() string {
+func (d *directoryTree) visibleSelectedPath() string {
 	visible := d.visibleNodes()
 	cur := d.cursor.Get()
 	if cur >= len(visible) {
 		return ""
 	}
 	return visible[cur].path
+}
+
+func (d *directoryTree) loadChildren(nodePath string) {
+	parts := strings.Split(nodePath, "/")
+	node := &d.tree[0]
+	fsPath := d.rootPath
+	for _, part := range parts[1:] {
+		found := false
+		for i := range node.Children {
+			if node.Children[i].Name == part {
+				node = &node.Children[i]
+				fsPath = filepath.Join(fsPath, part)
+				found = true
+				break
+			}
+		}
+		if !found {
+			return
+		}
+	}
+	if len(node.Children) == 0 {
+		node.Children = readDir(fsPath)
+		if node.Children == nil {
+			node.Children = []Node{}
+		}
+	}
 }
 
 func (d *directoryTree) scrollToCursor() {
@@ -90,6 +117,13 @@ func (d *directoryTree) visibleNodes() []visibleNode {
 	expanded := d.expanded.Get()
 	for i, node := range d.tree {
 		flattenNode(node, 0, node.Name, i == len(d.tree)-1, nil, expanded, &result)
+	}
+	cur := d.cursor.Get()
+	if cur < len(result) {
+		sel := result[cur].path
+		for i := range result {
+			result[i].onPath = result[i].path == sel || strings.HasPrefix(sel, result[i].path+"/")
+		}
 	}
 	return result
 }
@@ -145,8 +179,12 @@ func (d *directoryTree) toggle() {
 	if !vn.isDir {
 		return
 	}
+	expanding := !d.expanded.Get()[vn.path]
+	if expanding {
+		d.loadChildren(vn.path)
+	}
 	d.expanded.Update(func(m map[string]bool) map[string]bool {
-		return cloneExpandedWith(m, vn.path, !m[vn.path])
+		return cloneExpandedWith(m, vn.path, expanding)
 	})
 }
 
@@ -196,10 +234,7 @@ func readDir(dirPath string) []Node {
 		}
 		node := Node{Name: entry.Name()}
 		if entry.IsDir() {
-			node.Children = readDir(filepath.Join(dirPath, entry.Name()))
-			if node.Children == nil {
-				node.Children = []Node{}
-			}
+			node.Children = []Node{}
 		}
 		children = append(children, node)
 	}
@@ -293,10 +328,6 @@ func nodeLabel(vn visibleNode, expanded map[string]bool) string {
 	return vn.node.Name
 }
 
-func isOnPath(vn visibleNode, selectedPath string) bool {
-	return vn.path == selectedPath || strings.HasPrefix(selectedPath, vn.path+"/")
-}
-
 func (d *directoryTree) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
@@ -316,7 +347,7 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText(d.selectedPath()),
+		tui.WithText(d.visibleSelectedPath()),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Dim()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -341,10 +372,10 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 			__tui_6 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithBackground(tui.NewStyle().Background(tui.BrightBlack)),
-				tui.WithTextStyle(tui.NewStyle().Foreground(tui.White)),
+				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 			)
 			__tui_5.AddChild(__tui_6)
-		} else if isOnPath(vn, d.selectedPath()) {
+		} else if vn.onPath {
 			__tui_7 := tui.New(
 				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
