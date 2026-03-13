@@ -13,6 +13,7 @@ import (
 type Node struct {
 	Name     string
 	Children []Node
+	Loaded   bool
 }
 
 // visibleNode is a flattened node for rendering.
@@ -34,6 +35,12 @@ type directoryTree struct {
 	expanded        *tui.State[map[string]bool]
 	scrollY         *tui.State[int]
 	scrollContainer *tui.Ref
+
+	// Per-frame render cache (populated by prepareRender).
+	snapVisible      []visibleNode
+	snapCursor       int
+	snapExpanded     map[string]bool
+	snapSelectedPath string
 }
 
 // DirectoryTree creates a new directory tree component rooted at the given path.
@@ -63,14 +70,17 @@ func (d *directoryTree) navigateUp() {
 	d.scrollY.Set(0)
 }
 
-// visibleSelectedPath returns the path of the currently selected node for display.
-func (d *directoryTree) visibleSelectedPath() string {
-	visible := d.visibleNodes()
-	cur := d.cursor.Get()
-	if cur >= len(visible) {
-		return ""
+// prepareRender computes all render state once per frame and caches it on the struct.
+// Returns an empty string so it can be called as a Go expression in the template.
+func (d *directoryTree) prepareRender() string {
+	d.snapVisible = d.visibleNodes()
+	d.snapCursor = d.cursor.Get()
+	d.snapExpanded = d.expanded.Get()
+	d.snapSelectedPath = ""
+	if d.snapCursor < len(d.snapVisible) {
+		d.snapSelectedPath = d.snapVisible[d.snapCursor].path
 	}
-	return visible[cur].path
+	return ""
 }
 
 // loadChildren reads one level of children for the directory at the given logical path.
@@ -92,11 +102,13 @@ func (d *directoryTree) loadChildren(nodePath string) {
 			return
 		}
 	}
-	if len(node.Children) == 0 {
-		node.Children = readDir(fsPath)
-		if node.Children == nil {
-			node.Children = []Node{}
+	if !node.Loaded {
+		children := readDir(fsPath)
+		if children == nil {
+			children = []Node{}
 		}
+		node.Children = children
+		node.Loaded = true
 	}
 }
 
@@ -228,23 +240,23 @@ func (d *directoryTree) collapseOrParent() {
 templ (d *directoryTree) Render() {
 	<div class="flex-col w-full h-full border-rounded border-cyan">
 		<div class="flex-col p-1">
-			<span class="text-gradient-cyan-magenta font-bold">Directory Tree</span>
-			<span class="text-cyan font-dim">{d.visibleSelectedPath()}</span>
+			<span class="text-gradient-cyan-magenta font-bold">{d.prepareRender() + "Directory Tree"}</span>
+			<span class="text-cyan font-dim">{d.snapSelectedPath}</span>
 		</div>
 		<hr class="border-single" />
 		<div
 			ref={d.scrollContainer}
 			class="flex-col grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
 			scrollOffset={0, d.scrollY.Get()}>
-			@for i, vn := range d.visibleNodes() {
-				@if i == d.cursor.Get() {
-					<span class="bg-bright-black text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+			@for i, vn := range d.snapVisible {
+				@if i == d.snapCursor {
+					<span class="nowrap bg-bright-black text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
 				} @else @if vn.onPath {
-					<span class="text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+					<span class="nowrap text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
 				} @else @if vn.isDir {
-					<span class="font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+					<span class="nowrap font-bold">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
 				} @else {
-					<span>{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
+					<span class="nowrap">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
 				}
 			}
 		</div>
@@ -265,7 +277,7 @@ func readDir(dirPath string) []Node {
 
 	var children []Node
 	for _, entry := range entries {
-		if entry.Name()[0] == '.' {
+		if strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
 		node := Node{Name: entry.Name()}
@@ -291,14 +303,15 @@ func sortChildren(children []Node) {
 
 // buildRootNode reads the filesystem at absPath and returns a root Node.
 func buildRootNode(absPath string) Node {
-	root := Node{
+	children := readDir(absPath)
+	if children == nil {
+		children = []Node{}
+	}
+	return Node{
 		Name:     filepath.Base(absPath),
-		Children: readDir(absPath),
+		Children: children,
+		Loaded:   true,
 	}
-	if root.Children == nil {
-		root.Children = []Node{}
-	}
-	return root
 }
 
 // cloneExpandedWith returns a copy of m with the given key set to val.

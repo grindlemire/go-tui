@@ -14,6 +14,12 @@ func (a *App) setupInitialScreen(width, termHeight int) {
 	// Full screen mode: use alternate screen.
 	a.terminal.EnterAltScreen()
 	a.buffer = NewBuffer(width, termHeight)
+
+	// First frame must do a full redraw so every cell is explicitly painted.
+	// Without this, the diff-based renderer skips unchanged cells and the
+	// alternate screen may show the terminal's default background on cells
+	// the component didn't touch.
+	a.needsFullRedraw = true
 }
 
 func (a *App) setupInlineScreen(width, termHeight int) {
