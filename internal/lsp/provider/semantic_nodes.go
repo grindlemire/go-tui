@@ -2,6 +2,7 @@ package provider
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/log"
 	"github.com/grindlemire/go-tui/internal/lsp/schema"
@@ -301,12 +302,19 @@ func (s *semanticTokensProvider) emitStringWithFormatSpecifiers(str string, line
 	matches := formatSpecifierRegex.FindAllStringIndex(str, -1)
 	log.Server("  format specifier matches: %v", matches)
 
+	// runeOff converts a byte offset within str to a rune (character) offset.
+	// Regex match indices are byte-based but LSP needs character positions.
+	runeOff := func(byteOff int) int {
+		return utf8.RuneCountInString(str[:byteOff])
+	}
+
 	if len(matches) == 0 {
-		log.Server("  emitting whole string token: line=%d startChar=%d len=%d type=string", line, stringStartChar, len(str))
+		strLen := utf8.RuneCountInString(str)
+		log.Server("  emitting whole string token: line=%d startChar=%d len=%d type=string", line, stringStartChar, strLen)
 		*tokens = append(*tokens, SemanticToken{
 			Line:      line,
 			StartChar: stringStartChar,
-			Length:    len(str),
+			Length:    strLen,
 			TokenType: TokenTypeString,
 			Modifiers: 0,
 		})
@@ -316,34 +324,40 @@ func (s *semanticTokensProvider) emitStringWithFormatSpecifiers(str string, line
 	idx := 0
 	for _, match := range matches {
 		if match[0] > idx {
+			runeStart := runeOff(idx)
+			runeLen := runeOff(match[0]) - runeStart
 			log.Server("  emit STRING token: line=%d startChar=%d length=%d (content=%q)",
-				line, stringStartChar+idx, match[0]-idx, str[idx:match[0]])
+				line, stringStartChar+runeStart, runeLen, str[idx:match[0]])
 			*tokens = append(*tokens, SemanticToken{
 				Line:      line,
-				StartChar: stringStartChar + idx,
-				Length:    match[0] - idx,
+				StartChar: stringStartChar + runeStart,
+				Length:    runeLen,
 				TokenType: TokenTypeString,
 				Modifiers: 0,
 			})
 		}
+		matchRuneStart := runeOff(match[0])
+		matchRuneLen := runeOff(match[1]) - matchRuneStart
 		log.Server("  emit REGEXP token for format spec: line=%d startChar=%d length=%d (content=%q)",
-			line, stringStartChar+match[0], match[1]-match[0], str[match[0]:match[1]])
+			line, stringStartChar+matchRuneStart, matchRuneLen, str[match[0]:match[1]])
 		*tokens = append(*tokens, SemanticToken{
 			Line:      line,
-			StartChar: stringStartChar + match[0],
-			Length:    match[1] - match[0],
+			StartChar: stringStartChar + matchRuneStart,
+			Length:    matchRuneLen,
 			TokenType: TokenTypeRegexp,
 			Modifiers: 0,
 		})
 		idx = match[1]
 	}
 	if idx < len(str) {
+		runeStart := runeOff(idx)
+		runeLen := utf8.RuneCountInString(str) - runeStart
 		log.Server("  emit STRING token (tail): line=%d startChar=%d length=%d (content=%q)",
-			line, stringStartChar+idx, len(str)-idx, str[idx:])
+			line, stringStartChar+runeStart, runeLen, str[idx:])
 		*tokens = append(*tokens, SemanticToken{
 			Line:      line,
-			StartChar: stringStartChar + idx,
-			Length:    len(str) - idx,
+			StartChar: stringStartChar + runeStart,
+			Length:    runeLen,
 			TokenType: TokenTypeString,
 			Modifiers: 0,
 		})

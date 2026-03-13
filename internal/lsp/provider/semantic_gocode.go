@@ -2,6 +2,7 @@ package provider
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/log"
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -40,6 +41,14 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 		return
 	}
 
+	// runePos converts a byte offset within code to a rune (character) offset.
+	// LSP semantic tokens use character positions, not byte positions. Multi-byte
+	// UTF-8 characters (e.g., "▶" is 3 bytes but 1 character) would shift all
+	// subsequent token positions if we used byte offsets directly.
+	runePos := func(byteOff int) int {
+		return utf8.RuneCountInString(code[:byteOff])
+	}
+
 	i := 0
 	bracketDepth := 0 // track [...] depth for generic type argument coloring
 	for i < len(code) {
@@ -74,11 +83,11 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 			if i+1 < len(code) {
 				i += 2
 			}
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 			*tokens = append(*tokens, SemanticToken{
 				Line:      pos.Line - 1,
 				StartChar: charPos,
-				Length:    i - start,
+				Length:    utf8.RuneCountInString(code[start:i]),
 				TokenType: TokenTypeComment,
 				Modifiers: 0,
 			})
@@ -91,11 +100,11 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 			for i < len(code) && code[i] != '\n' {
 				i++
 			}
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 			*tokens = append(*tokens, SemanticToken{
 				Line:      pos.Line - 1,
 				StartChar: charPos,
-				Length:    i - start,
+				Length:    utf8.RuneCountInString(code[start:i]),
 				TokenType: TokenTypeComment,
 				Modifiers: 0,
 			})
@@ -117,7 +126,7 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 				i++
 			}
 			stringContent := code[start:i]
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 			log.Server("Found string in GoCode: code=%q stringContent=%q start=%d pos.Column=%d startOffset=%d charPos=%d",
 				code, stringContent, start, pos.Column, startOffset, charPos)
 			s.emitStringWithFormatSpecifiers(stringContent, pos.Line-1, charPos, tokens)
@@ -135,7 +144,7 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 				i++
 			}
 			stringContent := code[start:i]
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 			s.emitStringWithFormatSpecifiers(stringContent, pos.Line-1, charPos, tokens)
 			continue
 		}
@@ -154,11 +163,11 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 			if i < len(code) {
 				i++
 			}
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 			*tokens = append(*tokens, SemanticToken{
 				Line:      pos.Line - 1,
 				StartChar: charPos,
-				Length:    i - start,
+				Length:    utf8.RuneCountInString(code[start:i]),
 				TokenType: TokenTypeString,
 				Modifiers: 0,
 			})
@@ -207,11 +216,11 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 					}
 				}
 			}
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 			*tokens = append(*tokens, SemanticToken{
 				Line:      pos.Line - 1,
 				StartChar: charPos,
-				Length:    i - start,
+				Length:    i - start, // numbers are always ASCII
 				TokenType: TokenTypeNumber,
 				Modifiers: 0,
 			})
@@ -225,7 +234,7 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 				i++
 			}
 			ident := code[start:i]
-			charPos := pos.Column - 1 + startOffset + start
+			charPos := pos.Column - 1 + startOffset + runePos(start)
 
 			// Boolean/nil literals
 			if ident == "true" || ident == "false" || ident == "nil" {
@@ -333,7 +342,7 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 
 		// := operator
 		if ch == ':' && i+1 < len(code) && code[i+1] == '=' {
-			charPos := pos.Column - 1 + startOffset + i
+			charPos := pos.Column - 1 + startOffset + runePos(i)
 			*tokens = append(*tokens, SemanticToken{
 				Line:      pos.Line - 1,
 				StartChar: charPos,
@@ -386,8 +395,9 @@ func (s *semanticTokensProvider) collectTokensFromFuncBody(code string, pos tuig
 		if lineIdx == bodyStartLine {
 			braceInLine := strings.Index(line, "{")
 			if braceInLine != -1 {
+				// Convert byte offset to rune offset for correct column position
+				lineStartCol = pos.Column + utf8.RuneCountInString(line[:braceInLine]) + 1
 				line = line[braceInLine+1:]
-				lineStartCol = pos.Column + braceInLine + 1
 			}
 		}
 
