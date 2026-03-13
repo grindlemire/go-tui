@@ -2,7 +2,10 @@ package provider
 
 import (
 	"sort"
+	"strings"
 	"testing"
+
+	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
 func TestSemanticTokens_ComponentCalls(t *testing.T) {
@@ -436,5 +439,221 @@ templ Example() {
 	// Only state var should be readonly
 	if readonlyVarCount > 1 {
 		t.Errorf("expected at most 1 readonly variable, got %d", readonlyVarCount)
+	}
+}
+
+func TestCollectTokensInGoCode_MultiByteChars(t *testing.T) {
+	type tc struct {
+		code       string
+		paramNames map[string]bool
+		localVars  map[string]bool
+		// expected tokens: each is {startChar, length, tokenType}
+		expected []struct {
+			startChar int
+			length    int
+			tokenType int
+		}
+	}
+
+	tests := map[string]tc{
+		"param after multibyte string": {
+			// "▶ " is 4 chars (", ▶, space, ") but 6 bytes. Tokens after it must use char offsets.
+			code:       `return "▶ " + vn.node.Name`,
+			paramNames: map[string]bool{"vn": true},
+			localVars:  map[string]bool{},
+			expected: []struct {
+				startChar int
+				length    int
+				tokenType int
+			}{
+				// "▶ " string at char 7, length 4
+				{startChar: 7, length: 4, tokenType: TokenTypeString},
+				// vn parameter at char 14 (after: return=6 + space + "▶ "=4 + space+plus+space=3)
+				{startChar: 14, length: 2, tokenType: TokenTypeParameter},
+				// node is followed by '.', so treated as namespace (no token)
+				// Name preceded by '.', so function at char 22
+				{startChar: 22, length: 4, tokenType: TokenTypeFunction},
+			},
+		},
+		"no multibyte baseline": {
+			// Same structure but with ASCII-only string for comparison
+			code:       `return "X " + vn.node.Name`,
+			paramNames: map[string]bool{"vn": true},
+			localVars:  map[string]bool{},
+			expected: []struct {
+				startChar int
+				length    int
+				tokenType int
+			}{
+				{startChar: 7, length: 4, tokenType: TokenTypeString},
+				{startChar: 14, length: 2, tokenType: TokenTypeParameter},
+				{startChar: 22, length: 4, tokenType: TokenTypeFunction},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			sp := newTestSemanticProvider()
+			var tokens []SemanticToken
+			pos := tuigen.Position{Line: 1, Column: 1}
+			sp.collectTokensInGoCode(tt.code, pos, 0, tt.paramNames, tt.localVars, &tokens)
+
+			sort.Slice(tokens, func(i, j int) bool {
+				if tokens[i].Line != tokens[j].Line {
+					return tokens[i].Line < tokens[j].Line
+				}
+				return tokens[i].StartChar < tokens[j].StartChar
+			})
+
+			for _, exp := range tt.expected {
+				found := false
+				for _, tok := range tokens {
+					if tok.StartChar == exp.startChar && tok.Length == exp.length && tok.TokenType == exp.tokenType {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("expected token at startChar=%d length=%d type=%d, got tokens: %+v",
+						exp.startChar, exp.length, exp.tokenType, tokens)
+				}
+			}
+		})
+	}
+}
+
+// TestSemanticTokens_GoFuncWithMultiByteChars tests the full LSP pipeline for a Go helper
+// function containing multi-byte UTF-8 characters in string literals. This reproduces the
+// exact scenario from example 21's tree.gsx nodeLabel function where "▶ " (3-byte char)
+// was causing all subsequent tokens on the same line to be shifted by 2 positions.
+func TestSemanticTokens_GoFuncWithMultiByteChars(t *testing.T) {
+	// Exact replica of the nodeLabel function and surrounding context from
+	// examples/21-directory-tree/tree.gsx, including buildPrefix which also
+	// has multi-byte box-drawing characters.
+	src := `package main
+
+import (
+	"strings"
+)
+
+type Node struct {
+	Name     string
+	Children []Node
+}
+
+type visibleNode struct {
+	node      Node
+	depth     int
+	path      string
+	isDir     bool
+	isLast    bool
+	ancestors []bool
+	onPath    bool
+}
+
+func buildPrefix(vn visibleNode) string {
+	if vn.depth == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for i := 0; i < vn.depth-1; i++ {
+		if vn.ancestors[i+1] {
+			b.WriteString("    ")
+		} else {
+			b.WriteString("│   ")
+		}
+	}
+	if vn.isLast {
+		b.WriteString("└── ")
+	} else {
+		b.WriteString("├── ")
+	}
+	return b.String()
+}
+
+func nodeLabel(vn visibleNode, expanded map[string]bool) string {
+	if vn.isDir {
+		if expanded[vn.path] {
+			return "▼ " + vn.node.Name
+		}
+		return "▶ " + vn.node.Name
+	}
+	return vn.node.Name
+}
+`
+	sp := newTestSemanticProvider()
+	doc := parseTestDoc(src)
+
+	result, err := sp.SemanticTokensFull(doc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	tokens := decodeTokens(result.Data)
+
+	// Find the target lines dynamically by searching the source
+	srcLines := strings.Split(src, "\n")
+	targetLine := -1
+	asciiLine := -1
+	for i, line := range srcLines {
+		if strings.Contains(line, "\"▶ \"") {
+			targetLine = i // 0-indexed line number
+		}
+		if strings.TrimSpace(line) == "return vn.node.Name" {
+			asciiLine = i
+		}
+	}
+	if targetLine == -1 {
+		t.Fatal("could not find line with ▶ in source")
+	}
+	if asciiLine == -1 {
+		t.Fatal("could not find ASCII-only return line in source")
+	}
+
+	var lineTokens []SemanticToken
+	for _, tok := range tokens {
+		if tok.Line == targetLine {
+			lineTokens = append(lineTokens, tok)
+		}
+	}
+
+	t.Logf("All tokens on line %d: %+v", targetLine, lineTokens)
+
+	// Line content: `		return "▶ " + vn.node.Name`
+	// Char positions (0-indexed): \t(0) \t(1) r(2)...n(7) ' '(8) "(9) ▶(10) ' '(11) "(12) ' '(13) +(14) ' '(15) v(16) n(17) .(18) n(19) o(20) d(21) e(22) .(23) N(24) a(25) m(26) e(27)
+
+	// "▶ " string at col 9, length 4 chars (not byte length 6)
+	if !hasTokenAt(tokens, targetLine, 9, 4, TokenTypeString) {
+		t.Errorf("expected string token for '\"▶ \"' at col 9, length 4 on line %d", targetLine)
+	}
+
+	// vn parameter at col 16
+	if !hasTokenAt(tokens, targetLine, 16, 2, TokenTypeParameter) {
+		t.Errorf("expected parameter token for 'vn' at col 16, length 2 on line %d", targetLine)
+	}
+
+	// Name function at col 24
+	if !hasTokenAt(tokens, targetLine, 24, 4, TokenTypeFunction) {
+		t.Errorf("expected function token for 'Name' at col 24, length 4 on line %d", targetLine)
+	}
+
+	// Also check the ASCII-only line: `	return vn.node.Name`
+	var asciiLineTokens []SemanticToken
+	for _, tok := range tokens {
+		if tok.Line == asciiLine {
+			asciiLineTokens = append(asciiLineTokens, tok)
+		}
+	}
+	t.Logf("All tokens on line %d: %+v", asciiLine, asciiLineTokens)
+
+	// vn at col 8 (after \t + return + space)
+	if !hasTokenAt(tokens, asciiLine, 8, 2, TokenTypeParameter) {
+		t.Errorf("expected parameter token for 'vn' at col 8, length 2 on line %d", asciiLine)
+	}
+
+	// Name at col 16 (after vn.node.)
+	if !hasTokenAt(tokens, asciiLine, 16, 4, TokenTypeFunction) {
+		t.Errorf("expected function token for 'Name' at col 16, length 4 on line %d", asciiLine)
 	}
 }
