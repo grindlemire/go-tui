@@ -4,7 +4,7 @@ A foldable, keyboard-driven directory tree explorer with lazy child loading, scr
 
 ![Directory Tree](../../docs/public/guides/21.png)
 
-See the full [Directory Tree guide](https://go-tui.dev/guides/21-directory-tree) for a walkthrough of the implementation.
+See the full [Directory Tree guide](https://www.go-tui.dev/guide/directory-tree) for a walkthrough of the implementation.
 
 ## Run
 
