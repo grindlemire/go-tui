@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.4.0](https://github.com/grindlemire/go-tui/compare/v0.3.1...v0.4.0) (2026-03-13)
+
+
+### Features
+
+* **examples:** add directory tree data model and flatten logic ([02912e2](https://github.com/grindlemire/go-tui/commit/02912e23e3b32fd7b943a7a923272a1264ca41eb))
+* **examples:** add directory tree example ([186b2d0](https://github.com/grindlemire/go-tui/commit/186b2d0d934b54bb20fda8ef8d9d3904174cfb8f))
+* **examples:** add directory tree example skeleton ([639da53](https://github.com/grindlemire/go-tui/commit/639da53217172ebcfa9f25ac72010dc7b2e818be))
+* **examples:** add directory tree keyboard navigation ([1bdae4e](https://github.com/grindlemire/go-tui/commit/1bdae4ee1adb027508d790f6ebde905e6bb17b8f))
+* **examples:** add directory tree render and complete example ([480566e](https://github.com/grindlemire/go-tui/commit/480566e5fb2c281e6912fe7c853af76338a0103a))
+* **examples:** add scrolling, overflow clipping, and ancestor path highlighting ([ee46208](https://github.com/grindlemire/go-tui/commit/ee46208ea46bf57d54ce444073a3286a4bbe7e11))
+* **examples:** replace hardcoded tree with random generator ([b5aaa4b](https://github.com/grindlemire/go-tui/commit/b5aaa4b88f982231677779b012777c78c7d3b421))
+* **examples:** show selected node path at top of directory tree ([4d7f0ee](https://github.com/grindlemire/go-tui/commit/4d7f0ee4f30d6ec0982cd2771ca2d5ed177a836c))
+
+
+### Bug Fixes
+
+* **docs:** move Google Fonts from CSS [@import](https://github.com/import) to HTML link tag ([e0ee0d0](https://github.com/grindlemire/go-tui/commit/e0ee0d0e8f9d7988875da85df4ae6e1d5d6a8670))
+* **docs:** move playwright to devDependencies and fix tview widget count ([269e858](https://github.com/grindlemire/go-tui/commit/269e8588fffafff8b3906af4fdf5fdfdef07eab0))
+* **docs:** remove unused useRef import ([7847f15](https://github.com/grindlemire/go-tui/commit/7847f157275d34c6827937d73e67bbcf02274bcb))
+* **examples:** remove overflow-hidden that bypassed scrollable rendering ([39ea661](https://github.com/grindlemire/go-tui/commit/39ea6617256cfe8c32beee508cbd97f1af9f1fe2))
+* **examples:** use state-driven scrollOffset for directory tree scrolling ([a272a91](https://github.com/grindlemire/go-tui/commit/a272a912b0e115f721a6684535ecc5eb782623d1))
+* **lsp:** use character offsets for semantic tokens ([b7bcf07](https://github.com/grindlemire/go-tui/commit/b7bcf07653120b43d3b781bee7a3f2e4bdf4bc9a))
+* **lsp:** use character offsets instead of byte offsets for semantic tokens ([1791cf6](https://github.com/grindlemire/go-tui/commit/1791cf6d757e891dce01719ef4ef75c0c3874e73))
+
 ## [0.3.1](https://github.com/grindlemire/go-tui/compare/v0.3.0...v0.3.1) (2026-03-09)
 
 
