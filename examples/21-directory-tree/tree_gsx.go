@@ -16,6 +16,7 @@ import (
 type Node struct {
 	Name     string
 	Children []Node
+	Loaded   bool
 }
 
 type visibleNode struct {
@@ -35,6 +36,12 @@ type directoryTree struct {
 	expanded        *tui.State[map[string]bool]
 	scrollY         *tui.State[int]
 	scrollContainer *tui.Ref
+
+	// Per-frame render cache (populated by prepareRender).
+	snapVisible      []visibleNode
+	snapCursor       int
+	snapExpanded     map[string]bool
+	snapSelectedPath string
 }
 
 func DirectoryTree(root string) *directoryTree {
@@ -62,13 +69,15 @@ func (d *directoryTree) navigateUp() {
 	d.scrollY.Set(0)
 }
 
-func (d *directoryTree) visibleSelectedPath() string {
-	visible := d.visibleNodes()
-	cur := d.cursor.Get()
-	if cur >= len(visible) {
-		return ""
+func (d *directoryTree) prepareRender() string {
+	d.snapVisible = d.visibleNodes()
+	d.snapCursor = d.cursor.Get()
+	d.snapExpanded = d.expanded.Get()
+	d.snapSelectedPath = ""
+	if d.snapCursor < len(d.snapVisible) {
+		d.snapSelectedPath = d.snapVisible[d.snapCursor].path
 	}
-	return visible[cur].path
+	return ""
 }
 
 func (d *directoryTree) loadChildren(nodePath string) {
@@ -89,11 +98,13 @@ func (d *directoryTree) loadChildren(nodePath string) {
 			return
 		}
 	}
-	if len(node.Children) == 0 {
-		node.Children = readDir(fsPath)
-		if node.Children == nil {
-			node.Children = []Node{}
+	if !node.Loaded {
+		children := readDir(fsPath)
+		if children == nil {
+			children = []Node{}
 		}
+		node.Children = children
+		node.Loaded = true
 	}
 }
 
@@ -229,7 +240,7 @@ func readDir(dirPath string) []Node {
 
 	var children []Node
 	for _, entry := range entries {
-		if entry.Name()[0] == '.' {
+		if strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
 		node := Node{Name: entry.Name()}
@@ -254,14 +265,15 @@ func sortChildren(children []Node) {
 }
 
 func buildRootNode(absPath string) Node {
-	root := Node{
+	children := readDir(absPath)
+	if children == nil {
+		children = []Node{}
+	}
+	return Node{
 		Name:     filepath.Base(absPath),
-		Children: readDir(absPath),
+		Children: children,
+		Loaded:   true,
 	}
-	if root.Children == nil {
-		root.Children = []Node{}
-	}
-	return root
 }
 
 func cloneExpandedWith(m map[string]bool, key string, val bool) map[string]bool {
@@ -341,13 +353,13 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithPadding(1),
 	)
 	__tui_2 := tui.New(
-		tui.WithText("Directory Tree"),
+		tui.WithText(d.prepareRender()+"Directory Tree"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
 	__tui_1.AddChild(__tui_2)
 	__tui_3 := tui.New(
-		tui.WithText(d.visibleSelectedPath()),
+		tui.WithText(d.snapSelectedPath),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Dim()),
 	)
 	__tui_1.AddChild(__tui_3)
@@ -366,30 +378,34 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 		tui.WithScrollOffset(0, d.scrollY.Get()),
 	)
 	d.scrollContainer.Set(__tui_5)
-	for i, vn := range d.visibleNodes() {
+	for i, vn := range d.snapVisible {
 		_ = i
-		if i == d.cursor.Get() {
+		if i == d.snapCursor {
 			__tui_6 := tui.New(
-				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
+				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.snapExpanded)),
+				tui.WithWrap(false),
 				tui.WithBackground(tui.NewStyle().Background(tui.BrightBlack)),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 			)
 			__tui_5.AddChild(__tui_6)
 		} else if vn.onPath {
 			__tui_7 := tui.New(
-				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
+				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.snapExpanded)),
+				tui.WithWrap(false),
 				tui.WithTextStyle(tui.NewStyle().Foreground(tui.Cyan).Bold()),
 			)
 			__tui_5.AddChild(__tui_7)
 		} else if vn.isDir {
 			__tui_8 := tui.New(
-				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.expanded.Get())),
+				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.snapExpanded)),
+				tui.WithWrap(false),
 				tui.WithTextStyle(tui.NewStyle().Bold()),
 			)
 			__tui_5.AddChild(__tui_8)
 		} else {
 			__tui_9 := tui.New(
-				tui.WithText(buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())),
+				tui.WithText(buildPrefix(vn)+nodeLabel(vn, d.snapExpanded)),
+				tui.WithWrap(false),
 			)
 			__tui_5.AddChild(__tui_9)
 		}
@@ -422,6 +438,10 @@ func (d *directoryTree) UpdateProps(fresh tui.Component) {
 	}
 	d.rootPath = f.rootPath
 	d.tree = f.tree
+	d.snapVisible = f.snapVisible
+	d.snapCursor = f.snapCursor
+	d.snapExpanded = f.snapExpanded
+	d.snapSelectedPath = f.snapSelectedPath
 }
 
 var _ tui.PropsUpdater = (*directoryTree)(nil)
