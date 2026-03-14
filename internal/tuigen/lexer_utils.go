@@ -223,13 +223,15 @@ func (l *Lexer) SourcePos() int {
 func (l *Lexer) PositionAt(offset int) Position {
 	line := 1
 	col := 1
-	for i := 0; i < offset && i < len(l.source); i++ {
-		if l.source[i] == '\n' {
+	for i := 0; i < offset && i < len(l.source); {
+		r, size := utf8.DecodeRuneInString(l.source[i:])
+		if r == '\n' {
 			line++
 			col = 1
 		} else {
 			col++
 		}
+		i += size
 	}
 	return Position{Line: line, Column: col}
 }
