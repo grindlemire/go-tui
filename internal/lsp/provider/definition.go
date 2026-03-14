@@ -333,16 +333,17 @@ func (d *definitionProvider) findLetBindingDefinition(ctx *CursorContext, varNam
 		}
 
 		if binding := findLetBindingInNodes(comp.Body, varName); binding != nil {
+			nameOffset := letBindingNameOffset(binding)
 			return &Location{
 				URI: ctx.Document.URI,
 				Range: Range{
 					Start: Position{
 						Line:      binding.Position.Line - 1,
-						Character: binding.Position.Column - 1 + len("@let "),
+						Character: binding.Position.Column - 1 + nameOffset,
 					},
 					End: Position{
 						Line:      binding.Position.Line - 1,
-						Character: binding.Position.Column - 1 + len("@let ") + len(varName),
+						Character: binding.Position.Column - 1 + nameOffset + len(varName),
 					},
 				},
 			}
@@ -372,16 +373,16 @@ func (d *definitionProvider) findLoopVariableDefinition(ctx *CursorContext, varN
 				Range: Range{
 					Start: Position{
 						Line:      loop.Position.Line - 1,
-						Character: loop.Position.Column - 1 + len("@for "),
+						Character: loop.Position.Column - 1 + len("for "),
 					},
 					End: Position{
 						Line:      loop.Position.Line - 1,
-						Character: loop.Position.Column - 1 + len("@for ") + len(varName),
+						Character: loop.Position.Column - 1 + len("for ") + len(varName),
 					},
 				},
 			}
 		} else if loop.Value == varName {
-			offset := len("@for ")
+			offset := len("for ")
 			if loop.Index != "" {
 				offset += len(loop.Index) + 2 // ", "
 			}
