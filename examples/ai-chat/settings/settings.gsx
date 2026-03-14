@@ -527,7 +527,7 @@ templ (s *SettingsApp) Render() {
 				</div>
 
 				<div class="flex gap-2">
-					@for _, model := range s.AvailableModels {
+					for _, model := range s.AvailableModels {
 						<span textStyle={s.modelOptionStyle(model)}>{s.modelOptionLabel(model)}</span>
 					}
 				</div>
@@ -553,7 +553,7 @@ templ (s *SettingsApp) Render() {
 				</div>
 
 				<div class="flex gap-2">
-					@for _, mode := range s.AvailablePermModes {
+					for _, mode := range s.AvailablePermModes {
 						<span textStyle={s.permModeOptionStyle(mode)}>{s.permModeOptionLabel(mode)}</span>
 					}
 				</div>
@@ -567,7 +567,7 @@ templ (s *SettingsApp) Render() {
 					<span textStyle={s.sectionValueStyle(3)}>{s.promptPresetSummary()}</span>
 				</div>
 
-				@for _, line := range s.promptPreview() {
+				for _, line := range s.promptPreview() {
 					<span class="text-white">{line}</span>
 				}
 			</div>

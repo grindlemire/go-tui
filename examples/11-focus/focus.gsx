@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -43,13 +42,13 @@ templ (p *panelForm) Render() {
 	<div class="flex-col gap-1 p-1">
 		<span class="font-bold text-gradient-cyan-magenta">Focus Demo — Tab to switch, Space to interact</span>
 		<div class="flex gap-1">
-			@for i, name := range p.panels {
-				@if i == p.focus.Current() {
+			for i, name := range p.panels {
+				if i == p.focus.Current() {
 					<div class="flex-col border-rounded border-cyan p-1" width={20}>
 						<span class="text-cyan font-bold">{name}</span>
 						<span class="text-bright-white">{fmt.Sprintf("Actions: %d", p.clickCount.Get())}</span>
 					</div>
-				} @else {
+				} else {
 					<div class="flex-col border-rounded border-black p-1" width={20}>
 						<span class="font-dim">{name}</span>
 					</div>

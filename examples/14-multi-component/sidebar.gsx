@@ -68,16 +68,16 @@ func (s *sidebar) sidebarWidth() int {
 
 templ (s *sidebar) Render() {
 	<div class="flex-col border-single shrink-0" width={s.sidebarWidth()}>
-		@if s.expanded.Get() {
+		if s.expanded.Get() {
 			<div class="flex-col px-1">
 				<span class="text-gradient-cyan-magenta font-bold">Folders</span>
 			</div>
 			<hr />
 			<div class="flex-col px-1 grow">
-				@for i, cat := range categories {
-					@if i == s.selected.Get() {
+				for i, cat := range categories {
+					if i == s.selected.Get() {
 						<span class="text-cyan font-bold">{"> " + cat}</span>
-					} @else {
+					} else {
 						<span class="font-dim">{"  " + cat}</span>
 					}
 				}
@@ -86,7 +86,7 @@ templ (s *sidebar) Render() {
 			<div class="flex-col px-1">
 				<span class="font-dim text-cyan">Ctrl+B hide</span>
 			</div>
-		} @else {
+		} else {
 			<span class="text-cyan font-bold px-1">F</span>
 		}
 	</div>
