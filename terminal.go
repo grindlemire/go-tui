@@ -24,6 +24,8 @@ type Capabilities struct {
 	TrueColor bool
 	// AltScreen indicates whether the terminal supports alternate screen buffer.
 	AltScreen bool
+	// KittyKeyboard indicates the Kitty keyboard protocol was successfully negotiated.
+	KittyKeyboard bool
 }
 
 // Terminal abstracts terminal operations for rendering and input.

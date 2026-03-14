@@ -194,3 +194,13 @@ func WithOnResume(fn func()) AppOption {
 		return nil
 	}
 }
+
+// WithLegacyKeyboard forces legacy keyboard mode, skipping Kitty keyboard
+// protocol negotiation. By default, go-tui attempts the Kitty protocol
+// and falls back to legacy if the terminal doesn't support it.
+func WithLegacyKeyboard() AppOption {
+	return func(a *App) error {
+		a.legacyKeyboard = true
+		return nil
+	}
+}
