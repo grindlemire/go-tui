@@ -92,6 +92,35 @@ func (p *Parser) parseGoStatement() *GoCode {
 	return &GoCode{Code: code, Position: pos}
 }
 
+// isRangeForLoop checks whether the current for-loop header is a
+// `:= range` for-loop by scanning the source forward for ":= range" before "{".
+// This correctly excludes Go 1.22+ forms like `for range ch {` (no :=, channel
+// drain) which parseFor() cannot handle. Called when the parser sees bare "for"
+// and needs to decide between DSL ForLoop and raw Go GoCode.
+func (p *Parser) isRangeForLoop() bool {
+	pos := p.current.StartPos
+	src := p.lexer.Source()
+	for i := pos; i < len(src); i++ {
+		if src[i] == '{' {
+			return false
+		}
+		// Look for ":=" followed by whitespace and "range"
+		if src[i] == ':' && i+1 < len(src) && src[i+1] == '=' {
+			// Found :=, now skip whitespace and check for "range"
+			j := i + 2
+			for j < len(src) && (src[j] == ' ' || src[j] == '\t') {
+				j++
+			}
+			if j+5 <= len(src) && src[j:j+5] == "range" {
+				if j+5 == len(src) || !isLetter(rune(src[j+5])) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // parseComponentCall parses @ComponentName(args) or @ComponentName(args) { children }
 func (p *Parser) parseComponentCall() *ComponentCall {
 	pos := p.position()

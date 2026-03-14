@@ -326,14 +326,6 @@ templ Test() {
 }`,
 			wantCodes: []string{"x := 1", "y := 2", "z := x + y"},
 		},
-		"inline if statement": {
-			input: `package x
-templ Test(err error) {
-	if err != nil { log.Error(err) }
-	<span>done</span>
-}`,
-			wantCodes: []string{"if err != nil { log.Error(err) }"},
-		},
 		"defer statement": {
 			input: `package x
 templ Test() {

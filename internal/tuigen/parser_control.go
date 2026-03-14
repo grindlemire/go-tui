@@ -47,9 +47,11 @@ func (p *Parser) parseLet() *LetBinding {
 func (p *Parser) parseFor() *ForLoop {
 	pos := p.position()
 
-	if !p.expect(TokenAtFor) {
+	if p.current.Type != TokenFor {
+		p.errors.AddError(p.position(), "expected 'for'")
 		return nil
 	}
+	p.advance()
 
 	loop := &ForLoop{Position: pos}
 
@@ -135,9 +137,11 @@ func (p *Parser) parseFor() *ForLoop {
 func (p *Parser) parseIf() *IfStmt {
 	pos := p.position()
 
-	if !p.expect(TokenAtIf) {
+	if p.current.Type != TokenIf {
+		p.errors.AddError(p.position(), "expected 'if'")
 		return nil
 	}
+	p.advance()
 
 	stmt := &IfStmt{Position: pos}
 
@@ -169,13 +173,13 @@ func (p *Parser) parseIf() *IfStmt {
 	// Skip newlines before checking for @else
 	p.skipNewlines()
 
-	// Check for @else
-	if p.current.Type == TokenAtElse {
+	// Check for else
+	if p.current.Type == TokenElse {
 		p.advance()
 		p.skipNewlines()
 
 		// Check for else-if
-		if p.current.Type == TokenAtIf {
+		if p.current.Type == TokenIf {
 			elseIf := p.parseIf()
 			if elseIf != nil {
 				stmt.Else = []Node{elseIf}

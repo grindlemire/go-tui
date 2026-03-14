@@ -119,6 +119,11 @@ func (l *Lexer) position() Position {
 	}
 }
 
+// Source returns the raw source string. Used by the parser for lookahead scanning.
+func (l *Lexer) Source() string {
+	return l.source
+}
+
 // Next returns the next token from the source.
 func (l *Lexer) Next() Token {
 	// Skip whitespace and collect any comments

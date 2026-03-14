@@ -88,11 +88,18 @@ func (p *Parser) parseBodyNode() Node {
 		if let := p.parseLet(); let != nil {
 			return let
 		}
-	case TokenAtFor:
-		if f := p.parseFor(); f != nil {
-			return f
+	case TokenFor:
+		if !p.isRangeForLoop() {
+			// Bare "for" that isn't range-based -> raw Go statement
+			if stmt := p.parseGoStatement(); stmt != nil {
+				return stmt
+			}
+		} else {
+			if f := p.parseFor(); f != nil {
+				return f
+			}
 		}
-	case TokenAtIf:
+	case TokenIf:
 		if i := p.parseIf(); i != nil {
 			return i
 		}
@@ -108,7 +115,7 @@ func (p *Parser) parseBodyNode() Node {
 		if node := p.parseGoExprOrChildrenSlot(); node != nil {
 			return node
 		}
-	case TokenIdent, TokenIf, TokenFor, TokenFunc, TokenReturn:
+	case TokenIdent, TokenFunc, TokenReturn:
 		// Raw Go statement (e.g., fmt.Printf("x"), x := 1, if err != nil {...})
 		// Note: go, defer, switch, select are lexed as TokenIdent
 		if stmt := p.parseGoStatement(); stmt != nil {
@@ -375,11 +382,17 @@ func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 			if let := p.parseLet(); let != nil {
 				child = let
 			}
-		case TokenAtFor:
-			if f := p.parseFor(); f != nil {
-				child = f
+		case TokenFor:
+			if !p.isRangeForLoop() {
+				if stmt := p.parseGoStatement(); stmt != nil {
+					child = stmt
+				}
+			} else {
+				if f := p.parseFor(); f != nil {
+					child = f
+				}
 			}
-		case TokenAtIf:
+		case TokenIf:
 			if i := p.parseIf(); i != nil {
 				child = i
 			}
