@@ -117,7 +117,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		*tokens = append(*tokens, SemanticToken{
 			Line:      n.Position.Line - 1,
 			StartChar: n.Position.Column - 1,
-			Length:    len("@for"),
+			Length:    len("for"),
 			TokenType: TokenTypeKeyword,
 			Modifiers: 0,
 		})
@@ -127,7 +127,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		}
 		if n.Index != "" && n.Index != "_" {
 			loopVars[n.Index] = true
-			idxStart := n.Position.Column - 1 + len("@for ")
+			idxStart := n.Position.Column - 1 + len("for ")
 			*tokens = append(*tokens, SemanticToken{
 				Line:      n.Position.Line - 1,
 				StartChar: idxStart,
@@ -138,7 +138,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		}
 		if n.Value != "" {
 			loopVars[n.Value] = true
-			valStart := n.Position.Column - 1 + len("@for ")
+			valStart := n.Position.Column - 1 + len("for ")
 			if n.Index != "" {
 				valStart += len(n.Index) + 2
 			}
@@ -151,7 +151,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 			})
 		}
 		// Iterable expression
-		iterableOffset := len("@for ")
+		iterableOffset := len("for ")
 		if n.Index != "" {
 			iterableOffset += len(n.Index) + 2
 		}
@@ -169,11 +169,11 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		*tokens = append(*tokens, SemanticToken{
 			Line:      n.Position.Line - 1,
 			StartChar: n.Position.Column - 1,
-			Length:    len("@if"),
+			Length:    len("if"),
 			TokenType: TokenTypeKeyword,
 			Modifiers: 0,
 		})
-		condPos := tuigen.Position{Line: n.Position.Line, Column: n.Position.Column + len("@if ")}
+		condPos := tuigen.Position{Line: n.Position.Line, Column: n.Position.Column + len("if ")}
 		s.collectTokensInGoCodeDirect(n.Condition, condPos, paramNames, localVars, tokens)
 		for _, child := range n.Then {
 			s.collectTokensFromNode(child, paramNames, localVars, tokens)
@@ -185,7 +185,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 				*tokens = append(*tokens, SemanticToken{
 					Line:      elseKeywordLine,
 					StartChar: elseKeywordCol,
-					Length:    len("@else"),
+					Length:    len("else"),
 					TokenType: TokenTypeKeyword,
 					Modifiers: 0,
 				})
@@ -199,21 +199,33 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 		if n == nil {
 			return
 		}
-		*tokens = append(*tokens, SemanticToken{
-			Line:      n.Position.Line - 1,
-			StartChar: n.Position.Column - 1,
-			Length:    len("@let"),
-			TokenType: TokenTypeKeyword,
-			Modifiers: 0,
-		})
-		varStart := n.Position.Column - 1 + len("@let ")
-		*tokens = append(*tokens, SemanticToken{
-			Line:      n.Position.Line - 1,
-			StartChar: varStart,
-			Length:    len(n.Name),
-			TokenType: TokenTypeVariable,
-			Modifiers: TokenModDeclaration | TokenModReadonly,
-		})
+		if n.IsShortForm {
+			// := syntax: position is at the variable name
+			*tokens = append(*tokens, SemanticToken{
+				Line:      n.Position.Line - 1,
+				StartChar: n.Position.Column - 1,
+				Length:    len(n.Name),
+				TokenType: TokenTypeVariable,
+				Modifiers: TokenModDeclaration | TokenModReadonly,
+			})
+		} else {
+			// @let syntax: position is at @, emit @let keyword + variable
+			*tokens = append(*tokens, SemanticToken{
+				Line:      n.Position.Line - 1,
+				StartChar: n.Position.Column - 1,
+				Length:    len("@let"),
+				TokenType: TokenTypeKeyword,
+				Modifiers: 0,
+			})
+			varStart := n.Position.Column - 1 + len("@let ")
+			*tokens = append(*tokens, SemanticToken{
+				Line:      n.Position.Line - 1,
+				StartChar: varStart,
+				Length:    len(n.Name),
+				TokenType: TokenTypeVariable,
+				Modifiers: TokenModDeclaration | TokenModReadonly,
+			})
+		}
 		localVars[n.Name] = true
 		if n.Element != nil {
 			s.collectTokensFromNode(n.Element, paramNames, localVars, tokens)
@@ -364,8 +376,8 @@ func (s *semanticTokensProvider) emitStringWithFormatSpecifiers(str string, line
 	}
 }
 
-// findElseKeyword scans the document content to find the @else keyword position for an IfStmt.
-// Returns 0-indexed (line, col), or (-1, -1) if not found.
+// findElseKeyword scans the document content to find the else keyword position for an IfStmt.
+// Supports both bare "else" and legacy "@else". Returns 0-indexed (line, col), or (-1, -1) if not found.
 func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, int) {
 	if s.docs == nil {
 		return -1, -1
@@ -375,12 +387,15 @@ func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, in
 		return -1, -1
 	}
 	lines := strings.Split(doc.Content, "\n")
-	// Scan from the @if line downward looking for @else
 	startLine := ifStmt.Position.Line - 1 // 0-indexed
 	for i := startLine; i < len(lines); i++ {
-		idx := strings.Index(lines[i], "@else")
+		// Look for bare "else" with word boundary check
+		idx := strings.Index(lines[i], "else")
 		if idx >= 0 {
-			return i, idx
+			if (idx == 0 || !isWordCharByte(lines[i][idx-1])) &&
+				(idx+4 >= len(lines[i]) || !isWordCharByte(lines[i][idx+4])) {
+				return i, idx
+			}
 		}
 	}
 	return -1, -1

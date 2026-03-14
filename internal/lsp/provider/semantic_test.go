@@ -286,8 +286,8 @@ templ Cond(show bool) {
 		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
 			t.Error("expected templ keyword at 2:0 with length 5")
 		}
-		if !hasTokenAt(tokens, 3, 1, 4, TokenTypeKeyword) {
-			t.Error("expected @for keyword at 3:1 with length 4")
+		if !hasTokenAt(tokens, 3, 2, 3, TokenTypeKeyword) {
+			t.Error("expected for keyword at 3:2 with length 3")
 		}
 	})
 
@@ -307,11 +307,11 @@ templ Cond(show bool) {
 		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
 			t.Error("expected templ keyword at 2:0 with length 5")
 		}
-		if !hasTokenAt(tokens, 3, 1, 3, TokenTypeKeyword) {
-			t.Error("expected @if keyword at 3:1 with length 3")
+		if !hasTokenAt(tokens, 3, 2, 2, TokenTypeKeyword) {
+			t.Error("expected if keyword at 3:2 with length 2")
 		}
-		if !hasTokenAt(tokens, 5, 3, 5, TokenTypeKeyword) {
-			t.Error("expected @else keyword at 5:3 with length 5")
+		if !hasTokenAt(tokens, 5, 4, 4, TokenTypeKeyword) {
+			t.Error("expected else keyword at 5:4 with length 4")
 		}
 	})
 }
