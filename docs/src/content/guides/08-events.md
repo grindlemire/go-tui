@@ -88,15 +88,17 @@ Three Ctrl+letter combinations produce the same byte as a functional key:
 | `KeyCtrlI` | `KeyTab` | `0x09` |
 | `KeyCtrlM` | `KeyEnter` | `0x0D` |
 
-These are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `OnKey(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `OnKey(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H. There is no way to distinguish between them at the terminal level.
+In legacy mode, these are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `OnKey(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `OnKey(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H.
+
+If the terminal supports the Kitty keyboard protocol (negotiated automatically on startup), these keys become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. Use `OnKeyMod(tui.KeyRune, tui.ModCtrl, handler)` and check `ke.Rune` to handle Ctrl+H separately from Backspace when the Kitty protocol is active.
 
 ```go
-// These two bindings are identical:
+// In legacy mode, these two bindings are identical:
 tui.OnKey(tui.KeyCtrlH, handler)    // matches Backspace AND Ctrl+H
 tui.OnKey(tui.KeyBackspace, handler) // matches Backspace AND Ctrl+H
 ```
 
-Use whichever name best communicates your intent. If you're building a text editor where Backspace deletes a character, use `KeyBackspace`. If you're binding Ctrl+H to open a help panel, use `KeyCtrlH`, but keep in mind that Backspace will also trigger it.
+Use whichever name best communicates your intent. If you're building a text editor where Backspace deletes a character, use `KeyBackspace`. If you're binding Ctrl+H to open a help panel, use `KeyCtrlH`, but keep in mind that in legacy mode Backspace will also trigger it.
 
 ## KeyEvent Properties
 

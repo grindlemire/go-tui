@@ -364,11 +364,15 @@ func parseKittyKey(params []int) (Key, rune, Modifier) {
 		return key, 0, mod
 	}
 
-	// Regular Unicode code point
+	// Regular Unicode code point (printable range)
 	if code >= 32 {
 		return KeyRune, rune(code), mod
 	}
 
+	// Code points 1-31 (excluding 9, 13, 27 handled above) are C0 control
+	// codes. Kitty normally sends these with a modifier param (e.g. mod=5
+	// for Ctrl), which maps them to printable code points instead. If a bare
+	// C0 code somehow arrives here, we drop it rather than misinterpret it.
 	return KeyNone, 0, ModNone
 }
 

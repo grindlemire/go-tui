@@ -22,38 +22,41 @@ func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
 	t.esc.KittyKeyboardQuery()
 	t.out.Write(t.esc.Bytes())
 
-	// Poll for the terminal's response with a short timeout.
-	// We read directly from the fd since the EventReader isn't created yet.
-	ready, err := selectWithTimeout(stdinFd, 50*time.Millisecond)
-	if err != nil || !ready {
-		// No response: terminal doesn't support Kitty protocol. Pop to undo.
-		t.esc.Reset()
-		t.esc.KittyKeyboardPop()
-		t.out.Write(t.esc.Bytes())
-		return false
+	// Read the response byte-by-byte to avoid consuming extra stdin data
+	// (e.g. keystrokes typed during startup). The expected response is
+	// CSI ? <digits> u, so we stop as soon as we see the 'u' terminator.
+	var resp [32]byte
+	n := 0
+	deadline := time.Now().Add(50 * time.Millisecond)
+
+	for n < len(resp) {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			break
+		}
+		ready, err := selectWithTimeout(stdinFd, remaining)
+		if err != nil || !ready {
+			break
+		}
+		var b [1]byte
+		nr, err := syscall.Read(stdinFd, b[:])
+		if err != nil || nr == 0 {
+			break
+		}
+		resp[n] = b[0]
+		n++
+		// Minimum valid response is \x1b[?1u (5 bytes). Stop at 'u' terminator.
+		if b[0] == 'u' && n >= 5 {
+			break
+		}
 	}
 
-	// Read the response
-	var buf [64]byte
-	n, err := syscall.Read(stdinFd, buf[:])
-	if err != nil || n == 0 {
-		t.esc.Reset()
-		t.esc.KittyKeyboardPop()
-		t.out.Write(t.esc.Bytes())
-		return false
-	}
-
-	// Parse response: expect CSI ? flags u
-	response := buf[:n]
-	if parseKittyQueryResponse(response) {
+	if n > 0 && parseKittyQueryResponse(resp[:n]) {
 		t.kittyKeyboard = true
 		t.caps.KittyKeyboard = true
 		return true
 	}
 
-	// Unrecognized response: pop to undo
-	t.esc.Reset()
-	t.esc.KittyKeyboardPop()
-	t.out.Write(t.esc.Bytes())
+	t.popKittyKeyboard()
 	return false
 }

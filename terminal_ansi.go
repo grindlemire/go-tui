@@ -16,8 +16,8 @@ type ANSITerminal struct {
 	esc       *escBuilder   // Escape sequence builder
 	inFd      uintptr       // File descriptor for input (needed for raw mode)
 	outFd     uintptr       // File descriptor for output (needed for size query)
-	rawState  *rawModeState // Platform-specific raw mode state
-	kittyKeyboard bool     // true if Kitty keyboard protocol was successfully negotiated
+	rawState      *rawModeState // Platform-specific raw mode state
+	kittyKeyboard bool          // true if Kitty keyboard protocol was successfully negotiated
 }
 
 // NewANSITerminal creates a new ANSI terminal with auto-detected capabilities.
@@ -224,11 +224,16 @@ func (t *ANSITerminal) DisableKittyKeyboard() {
 	if !t.kittyKeyboard {
 		return
 	}
+	t.popKittyKeyboard()
+	t.kittyKeyboard = false
+	t.caps.KittyKeyboard = false
+}
+
+// popKittyKeyboard sends the pop escape sequence to undo a Kitty push.
+func (t *ANSITerminal) popKittyKeyboard() {
 	t.esc.Reset()
 	t.esc.KittyKeyboardPop()
 	t.out.Write(t.esc.Bytes())
-	t.kittyKeyboard = false
-	t.caps.KittyKeyboard = false
 }
 
 // parseKittyQueryResponse checks if the response bytes contain a valid

@@ -213,7 +213,7 @@ Terminals encode some Ctrl+letter combinations using the same byte as a function
 | `KeyCtrlI` | `KeyTab` | `0x09` |
 | `KeyCtrlM` | `KeyEnter` | `0x0D` |
 
-Because these are the same constant, `OnKey(tui.KeyCtrlH, handler)` and `OnKey(tui.KeyBackspace, handler)` produce identical bindings. There is no way to distinguish Ctrl+H from Backspace at the terminal level, and the same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
+Because these are the same constant, `OnKey(tui.KeyCtrlH, handler)` and `OnKey(tui.KeyBackspace, handler)` produce identical bindings in legacy mode. When the Kitty keyboard protocol is active (negotiated automatically on supported terminals), these become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. The same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
 
 ## Modifier Flags
 
