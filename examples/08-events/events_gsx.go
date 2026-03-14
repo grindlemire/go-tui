@@ -33,6 +33,9 @@ func (e *explorer) KeyMap() tui.KeyMap {
 		tui.OnRunes(func(ke tui.KeyEvent) {
 			e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
 		}),
+		// KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases for KeyBackspace,
+		// KeyTab, and KeyEnter (same terminal byte), so you can use
+		// either name here and both will match if your terminal allows both through.
 		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
 		tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),

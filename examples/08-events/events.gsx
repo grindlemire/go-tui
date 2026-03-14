@@ -29,12 +29,12 @@ func (e *explorer) KeyMap() tui.KeyMap {
 		tui.OnRunes(func(ke tui.KeyEvent) {
 			e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
 		}),
-		// KeyCtrlH == KeyBackspace, KeyCtrlI == KeyTab, KeyCtrlM == KeyEnter.
-		// The terminal sends the same byte for each pair, so either name
-		// matches the same key. Here we use the Ctrl aliases to show this.
-		tui.OnKey(tui.KeyCtrlM, func(ke tui.KeyEvent) { e.record("Enter (Ctrl+M)") }),
-		tui.OnKey(tui.KeyCtrlI, func(ke tui.KeyEvent) { e.record("Tab (Ctrl+I)") }),
-		tui.OnKey(tui.KeyCtrlH, func(ke tui.KeyEvent) { e.record("Backspace (Ctrl+H)") }),
+		// KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases for KeyBackspace,
+		// KeyTab, and KeyEnter (same terminal byte), so you can use
+		// either name here and both will match if your terminal allows both through.
+		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
+		tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
 		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
 		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
