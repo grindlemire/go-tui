@@ -242,7 +242,7 @@ Pass `true` or `false`, or use the shorthand (attribute name alone means `true`)
 
 ```gsx
 <div focusable={true} />
-<div focusable />          <!-- equivalent -->
+<div focusable />          // equivalent
 <div disabled={false} />
 ```
 
@@ -484,9 +484,9 @@ for i, item := range s.items.Get() {
 Supports all standard Go range patterns:
 
 ```gsx
-for _, v := range items {       <!-- index ignored -->
-for i := range items {           <!-- value ignored -->
-for i, v := range items {       <!-- both used -->
+for _, v := range items {       // index ignored
+for i := range items {           // value ignored
+for i, v := range items {       // both used
 ```
 
 ### Local bindings (:=)

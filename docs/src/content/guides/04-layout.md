@@ -314,9 +314,9 @@ By default, elements size to their content (`Auto`). You can set explicit sizes 
 
 ```gsx
 <div class="w-full h-full">
-    <!-- Takes all available width and height -->
+    // Takes all available width and height
     <div class="w-auto h-auto">
-        <!-- Sizes to its content (the default) -->
+        // Sizes to its content (the default)
     </div>
 </div>
 ```
