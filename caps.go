@@ -153,5 +153,9 @@ func (c Capabilities) String() string {
 		parts = append(parts, "altscreen")
 	}
 
+	if c.KittyKeyboard {
+		parts = append(parts, "kitty-keyboard")
+	}
+
 	return strings.Join(parts, ", ")
 }
