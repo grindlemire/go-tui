@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.5.0](https://github.com/grindlemire/go-tui/compare/v0.4.0...v0.5.0) (2026-03-14)
+
+
+### Features
+
+* drop @ prefix from control flow keywords ([470db04](https://github.com/grindlemire/go-tui/commit/470db04495a876cf4b4f52e9527151572353545b))
+* extend LetBinding AST for component call and expression RHS ([888a780](https://github.com/grindlemire/go-tui/commit/888a78008d3c5096cc0876ee79e9396ed0d4d229))
+* formatter emits bare if/for/else and := instead of @-prefixed syntax ([8aefebe](https://github.com/grindlemire/go-tui/commit/8aefebe396583b48bf0b11a362ad7c6cd74487e2))
+* generator handles component call and expression RHS in LetBinding ([9d68ba0](https://github.com/grindlemire/go-tui/commit/9d68ba0b348f1952be6262d5470a79ac87ab62a7))
+* lexer and parser accept bare if/for/else, remove TokenAtIf/TokenAtFor/TokenAtElse ([8560391](https://github.com/grindlemire/go-tui/commit/85603914c6a8ceedee4faad7d6bc7e57edbd1bd7))
+* LSP uses bare keyword syntax in completions, hover, and semantic tokens ([5cfc3de](https://github.com/grindlemire/go-tui/commit/5cfc3de4eef931db4d4e60b00be8ade71b13581d))
+* parse bare if/for/else and := / var bindings with element/component RHS ([55a8047](https://github.com/grindlemire/go-tui/commit/55a8047e0b79609ccce8705345a7784013465b02))
+* support multi-line component call arguments ([761cd7f](https://github.com/grindlemire/go-tui/commit/761cd7f110d7e0cb649d36710ca67718b41e457c))
+* TextMate grammar highlights bare if/for/else and := bindings ([27d98e7](https://github.com/grindlemire/go-tui/commit/27d98e733a7602af65fa104221733c91b5d1d169))
+* tree-sitter grammar supports bare if/for/else and := bindings ([80764b3](https://github.com/grindlemire/go-tui/commit/80764b350dfb3a6b06a7c59965781182252b9460))
+
+
+### Bug Fixes
+
+* analyzer handles component call and expression RHS in LetBinding ([3d86741](https://github.com/grindlemire/go-tui/commit/3d8674108868cf0c05173e77df1e6bdd6c88f755))
+* **lsp:** drop @ prefix from offset calculations in LSP providers ([feecc14](https://github.com/grindlemire/go-tui/commit/feecc1491cd54c0ffdabadf0def6233e20cd18f5))
+* **lsp:** prevent findElseKeyword false-positive on else inside strings ([394494e](https://github.com/grindlemire/go-tui/commit/394494ed848a16979423083edad963c380e71c9c))
+* parseGoStatement stops at closing brace at depth 0 ([e83980f](https://github.com/grindlemire/go-tui/commit/e83980f40ac0ebd623b9ea920197168d2522ca67))
+* **parser:** prevent speculative parsing from leaking errors and comments ([62caa56](https://github.com/grindlemire/go-tui/commit/62caa569d25c9f4b238358aeeb227fbd9b098a85))
+* **parser:** use rune-aware iteration for UTF-8 correctness ([f542956](https://github.com/grindlemire/go-tui/commit/f54295637cabc6e2abc90cd417ff2bae77f27082))
+* replace HTML-style comments with Go-style comments in docs code blocks ([1c287fe](https://github.com/grindlemire/go-tui/commit/1c287fe6c201be3295dc6baf7eee0b9d3d8f9d12))
+
 ## [0.4.0](https://github.com/grindlemire/go-tui/compare/v0.3.1...v0.4.0) (2026-03-13)
 
 
