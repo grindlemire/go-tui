@@ -71,12 +71,32 @@ go-tui defines constants for every non-printable key the terminal can report:
 `KeyEnter`, `KeyTab`, `KeyBackspace`, `KeyDelete`, `KeyInsert`
 
 **Control:**
-`KeyEscape`, `KeyCtrlA` through `KeyCtrlZ`, `KeyCtrlSpace`
+`KeyEscape`, `KeyCtrlA` through `KeyCtrlZ`, `KeyCtrlSpace` (note: `KeyCtrlH`, `KeyCtrlI`, and `KeyCtrlM` are aliases for `KeyBackspace`, `KeyTab`, and `KeyEnter`; see Terminal Byte Aliases below)
 
 **Function keys:**
 `KeyF1` through `KeyF12`
 
 Printable characters (letters, numbers, symbols) come through as `KeyRune` with the character in the `Rune` field. You generally don't check for `KeyRune` directly; the `OnRune` and `OnRunes` helpers handle that for you.
+
+### Terminal Byte Aliases
+
+Three Ctrl+letter combinations produce the same byte as a functional key:
+
+| Alias | Same as | Terminal byte |
+|---|---|---|
+| `KeyCtrlH` | `KeyBackspace` | `0x08` |
+| `KeyCtrlI` | `KeyTab` | `0x09` |
+| `KeyCtrlM` | `KeyEnter` | `0x0D` |
+
+These are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `OnKey(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `OnKey(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H. There is no way to distinguish between them at the terminal level.
+
+```go
+// These two bindings are identical:
+tui.OnKey(tui.KeyCtrlH, handler)    // matches Backspace AND Ctrl+H
+tui.OnKey(tui.KeyBackspace, handler) // matches Backspace AND Ctrl+H
+```
+
+Use whichever name best communicates your intent. If you're building a text editor where Backspace deletes a character, use `KeyBackspace`. If you're binding Ctrl+H to open a help panel, use `KeyCtrlH`, but keep in mind that Backspace will also trigger it.
 
 ## KeyEvent Properties
 
@@ -322,9 +342,12 @@ func (e *explorer) KeyMap() tui.KeyMap {
         tui.OnRunes(func(ke tui.KeyEvent) {
             e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
         }),
-        tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
-        tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
+        // KeyCtrlH == KeyBackspace, KeyCtrlI == KeyTab, KeyCtrlM == KeyEnter.
+        // The terminal sends the same byte for each pair, so either name
+        // matches the same key. Here we use the Ctrl aliases to show this.
+        tui.OnKey(tui.KeyCtrlM, func(ke tui.KeyEvent) { e.record("Enter (Ctrl+M)") }),
+        tui.OnKey(tui.KeyCtrlI, func(ke tui.KeyEvent) { e.record("Tab (Ctrl+I)") }),
+        tui.OnKey(tui.KeyCtrlH, func(ke tui.KeyEvent) { e.record("Backspace (Ctrl+H)") }),
         tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
         tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
         tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),

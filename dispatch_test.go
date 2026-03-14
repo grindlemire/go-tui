@@ -770,6 +770,92 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 	}
 }
 
+// --- Key alias tests (issue #25: Ctrl+H/I/M same terminal byte) ---
+
+func TestKeyAliases_SameValue(t *testing.T) {
+	type tc struct {
+		ctrl       Key
+		functional Key
+	}
+
+	tests := map[string]tc{
+		"Ctrl+H == Backspace": {ctrl: KeyCtrlH, functional: KeyBackspace},
+		"Ctrl+I == Tab":       {ctrl: KeyCtrlI, functional: KeyTab},
+		"Ctrl+M == Enter":     {ctrl: KeyCtrlM, functional: KeyEnter},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tt.ctrl != tt.functional {
+				t.Errorf("%v != %v (should be the same constant)", tt.ctrl, tt.functional)
+			}
+		})
+	}
+}
+
+func TestDispatch_KeyCtrlH_MatchesBackspace(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnKey(KeyCtrlH, func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// KeyCtrlH == KeyBackspace, so this must match
+	table.dispatch(KeyEvent{Key: KeyBackspace})
+	if !called {
+		t.Error("OnKey(KeyCtrlH) should match KeyBackspace event (same byte 0x08)")
+	}
+}
+
+func TestDispatch_KeyCtrlI_MatchesTab(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnKey(KeyCtrlI, func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// KeyCtrlI == KeyTab, so this must match
+	table.dispatch(KeyEvent{Key: KeyTab})
+	if !called {
+		t.Error("OnKey(KeyCtrlI) should match KeyTab event (same byte 0x09)")
+	}
+}
+
+func TestDispatch_KeyCtrlM_MatchesEnter(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnKey(KeyCtrlM, func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// KeyCtrlM == KeyEnter, so this must match
+	table.dispatch(KeyEvent{Key: KeyEnter})
+	if !called {
+		t.Error("OnKey(KeyCtrlM) should match KeyEnter event (same byte 0x0d)")
+	}
+}
+
 // --- Validate tests ---
 
 func TestValidate_NoEntries(t *testing.T) {
