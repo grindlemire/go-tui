@@ -4,9 +4,33 @@ import (
 	"fmt"
 )
 
-// generateLetBinding generates code for a @let binding.
+// generateLetBinding generates code for a let binding.
 func (g *Generator) generateLetBinding(let *LetBinding, parentVar string) {
-	// Generate the element with a specific variable name
+	if let.Call != nil {
+		// RHS is a component call
+		varName := g.generateComponentCallWithRefs(let.Call, "")
+		if g.returnsElement(let.Call) {
+			g.writef("%s := %s\n", let.Name, varName)
+		} else {
+			g.writef("%s := %s.Root\n", let.Name, varName)
+		}
+		if parentVar != "" {
+			g.writef("%s.AddChild(%s)\n", parentVar, let.Name)
+		}
+		return
+	}
+
+	if let.Expr != "" && let.Element == nil {
+		// RHS is a Go expression (component expression like c.textarea)
+		g.writef("%s := %s.Render(app)\n", let.Name, let.Expr)
+		g.trackComponentExprField(let.Expr)
+		if parentVar != "" {
+			g.writef("%s.AddChild(%s)\n", parentVar, let.Name)
+		}
+		return
+	}
+
+	// RHS is an element (existing behavior)
 	elemOpts := g.buildElementOptions(let.Element)
 
 	if len(elemOpts.options) == 0 {

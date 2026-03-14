@@ -168,8 +168,9 @@
     "control-keywords": {
       "patterns": [
         {
+          "comment": "for loop: for ... { or @for ... { (legacy)",
           "name": "meta.control.for.gsx",
-          "begin": "(@for)\\s+",
+          "begin": "(@for|(?<=^|\\s)for)\\s+",
           "end": "(?=\\{)",
           "beginCaptures": {
             "1": { "name": "keyword.control.for.gsx" }
@@ -179,8 +180,9 @@
           ]
         },
         {
+          "comment": "if statement: if ... { or @if ... { (legacy)",
           "name": "meta.control.if.gsx",
-          "begin": "(@if)\\s+",
+          "begin": "(@if|(?<=^|\\s)if)\\s+",
           "end": "(?=\\{)",
           "beginCaptures": {
             "1": { "name": "keyword.control.if.gsx" }
@@ -190,10 +192,15 @@
           ]
         },
         {
-          "match": "@else",
-          "name": "keyword.control.else.gsx"
+          "comment": "else keyword: else or @else (legacy)",
+          "match": "@else|(?<=\\})\\s*(else)\\b",
+          "captures": {
+            "0": { "name": "keyword.control.else.gsx" },
+            "1": { "name": "keyword.control.else.gsx" }
+          }
         },
         {
+          "comment": "Legacy @let binding: @let name = <element>",
           "name": "meta.control.let.gsx",
           "begin": "(@let)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(=)",
           "end": "(?=<|\\{|$)",
@@ -201,6 +208,15 @@
             "1": { "name": "keyword.control.let.gsx" },
             "2": { "name": "variable.other.gsx" },
             "3": { "name": "keyword.operator.assignment.gsx" }
+          }
+        },
+        {
+          "comment": "Short binding: name := <element> or name := @Component()",
+          "name": "meta.control.binding.gsx",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:=)\\s*(?=<|@[A-Z])",
+          "captures": {
+            "1": { "name": "variable.other.gsx" },
+            "2": { "name": "keyword.operator.assignment.gsx" }
           }
         },
         {

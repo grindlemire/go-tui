@@ -162,9 +162,9 @@ func TestLexer_DSLKeywords(t *testing.T) {
 
 	tests := map[string]tc{
 		"@let":  {input: "@let", expectedType: TokenAtLet, literal: "@let"},
-		"@for":  {input: "@for", expectedType: TokenAtFor, literal: "@for"},
-		"@if":   {input: "@if", expectedType: TokenAtIf, literal: "@if"},
-		"@else": {input: "@else", expectedType: TokenAtElse, literal: "@else"},
+		"@for":  {input: "@for", expectedType: TokenFor, literal: "for"},
+		"@if":   {input: "@if", expectedType: TokenIf, literal: "if"},
+		"@else": {input: "@else", expectedType: TokenElse, literal: "else"},
 	}
 
 	for name, tt := range tests {
@@ -176,6 +176,46 @@ func TestLexer_DSLKeywords(t *testing.T) {
 			}
 			if tok.Literal != tt.literal {
 				t.Errorf("Literal = %q, want %q", tok.Literal, tt.literal)
+			}
+		})
+	}
+}
+
+func TestLexer_AtKeywordsEmitBareTokens(t *testing.T) {
+	type tc struct {
+		input    string
+		wantType TokenType
+	}
+
+	tests := map[string]tc{
+		"@if emits TokenIf": {
+			input:    "@if",
+			wantType: TokenIf,
+		},
+		"@for emits TokenFor": {
+			input:    "@for",
+			wantType: TokenFor,
+		},
+		"@else emits TokenElse": {
+			input:    "@else",
+			wantType: TokenElse,
+		},
+		"@let still emits TokenAtLet": {
+			input:    "@let",
+			wantType: TokenAtLet,
+		},
+		"@Component still emits TokenAtCall": {
+			input:    "@Header",
+			wantType: TokenAtCall,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			tok := l.Next()
+			if tok.Type != tt.wantType {
+				t.Errorf("got %s, want %s", tok.Type, tt.wantType)
 			}
 		})
 	}

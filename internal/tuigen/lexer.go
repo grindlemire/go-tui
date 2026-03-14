@@ -119,6 +119,53 @@ func (l *Lexer) position() Position {
 	}
 }
 
+// LexerState captures the lexer's position for save/restore.
+type LexerState struct {
+	pos, readPos int
+	ch           rune
+	line, column int
+
+	tokenLine, tokenColumn int
+	tokenStartPos          int
+	pendingComments        []*Comment
+	lastCommentEndLine     int
+}
+
+// SaveState captures the current lexer state for speculative parsing.
+func (l *Lexer) SaveState() LexerState {
+	return LexerState{
+		pos:                l.pos,
+		readPos:            l.readPos,
+		ch:                 l.ch,
+		line:               l.line,
+		column:             l.column,
+		tokenLine:          l.tokenLine,
+		tokenColumn:        l.tokenColumn,
+		tokenStartPos:      l.tokenStartPos,
+		pendingComments:    l.pendingComments,
+		lastCommentEndLine: l.lastCommentEndLine,
+	}
+}
+
+// RestoreState restores the lexer to a previously saved state.
+func (l *Lexer) RestoreState(s LexerState) {
+	l.pos = s.pos
+	l.readPos = s.readPos
+	l.ch = s.ch
+	l.line = s.line
+	l.column = s.column
+	l.tokenLine = s.tokenLine
+	l.tokenColumn = s.tokenColumn
+	l.tokenStartPos = s.tokenStartPos
+	l.pendingComments = s.pendingComments
+	l.lastCommentEndLine = s.lastCommentEndLine
+}
+
+// Source returns the raw source string. Used by the parser for lookahead scanning.
+func (l *Lexer) Source() string {
+	return l.source
+}
+
 // Next returns the next token from the source.
 func (l *Lexer) Next() Token {
 	// Skip whitespace and collect any comments

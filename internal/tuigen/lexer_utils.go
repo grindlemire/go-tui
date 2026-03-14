@@ -138,6 +138,11 @@ func (l *Lexer) readIdentifier() Token {
 func (l *Lexer) readAtKeyword() Token {
 	l.readChar() // consume @
 
+	// Save the position of the keyword start (after @) for migrated keywords
+	kwLine := l.line
+	kwColumn := l.column
+	kwStartPos := l.pos
+
 	startPos := l.pos
 	for isLetter(l.ch) {
 		l.readChar()
@@ -146,13 +151,27 @@ func (l *Lexer) readAtKeyword() Token {
 
 	switch keyword {
 	case "let":
+		// @let keeps position at @, literal "@let" (length 4 matches position)
 		return l.makeToken(TokenAtLet, "@let")
 	case "for":
-		return l.makeToken(TokenAtFor, "@for")
+		// Override position to keyword start (after @)
+		l.tokenLine = kwLine
+		l.tokenColumn = kwColumn
+		l.tokenStartPos = kwStartPos
+		// Backward compat: @for emits same token as bare "for"
+		return l.makeToken(TokenFor, "for")
 	case "if":
-		return l.makeToken(TokenAtIf, "@if")
+		// Override position to keyword start (after @)
+		l.tokenLine = kwLine
+		l.tokenColumn = kwColumn
+		l.tokenStartPos = kwStartPos
+		return l.makeToken(TokenIf, "if")
 	case "else":
-		return l.makeToken(TokenAtElse, "@else")
+		// Override position to keyword start (after @)
+		l.tokenLine = kwLine
+		l.tokenColumn = kwColumn
+		l.tokenStartPos = kwStartPos
+		return l.makeToken(TokenElse, "else")
 	default:
 		if len(keyword) > 0 {
 			firstRune, _ := utf8.DecodeRuneInString(keyword)
@@ -198,6 +217,23 @@ func (l *Lexer) SkipWhitespace() {
 // Used by the parser to mark start positions for raw source capture.
 func (l *Lexer) SourcePos() int {
 	return l.pos
+}
+
+// PositionAt converts a byte offset in the source to a 1-based line/column Position.
+func (l *Lexer) PositionAt(offset int) Position {
+	line := 1
+	col := 1
+	for i := 0; i < offset && i < len(l.source); {
+		r, size := utf8.DecodeRuneInString(l.source[i:])
+		if r == '\n' {
+			line++
+			col = 1
+		} else {
+			col++
+		}
+		i += size
+	}
+	return Position{Line: line, Column: col}
 }
 
 // SourceRange extracts a substring of the original source from start to end positions.

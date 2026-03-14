@@ -386,27 +386,24 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	}
 	if len(d.events.Get()) == 0 {
 		__tui_31 := tui.New(
+			tui.WithText("Waitingevents..."),
 			tui.WithTextStyle(tui.NewStyle().Dim()),
 		)
-		__tui_32 := tui.New(tui.WithText("Waiting"))
-		__tui_31.AddChild(__tui_32)
-		__tui_33 := tui.New(tui.WithText("events..."))
-		__tui_31.AddChild(__tui_33)
 		__tui_28.AddChild(__tui_31)
 	}
 	__tui_16.AddChild(__tui_28)
 	__tui_0.AddChild(__tui_16)
-	__tui_34 := tui.New(
+	__tui_32 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithJustify(tui.JustifyCenter),
 		tui.WithFlexShrink(0),
 	)
-	__tui_35 := tui.New(
+	__tui_33 := tui.New(
 		tui.WithText("j/k scroll events | q to quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_34.AddChild(__tui_35)
-	__tui_0.AddChild(__tui_34)
+	__tui_32.AddChild(__tui_33)
+	__tui_0.AddChild(__tui_32)
 
 	return __tui_0
 }

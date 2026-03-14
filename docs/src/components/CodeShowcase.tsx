@@ -92,11 +92,11 @@ templ (c *counterApp) Render() {
 \t\t\t\t</span>
 \t\t\t}
 \t\t\t@Card("Status") {
-\t\t\t\t@if c.count.Get() > 0 {
+\t\t\t\tif c.count.Get() > 0 {
 \t\t\t\t\t<span class="text-green font-bold">Positive</span>
-\t\t\t\t} @else @if c.count.Get() < 0 {
+\t\t\t\t} else if c.count.Get() < 0 {
 \t\t\t\t\t<span class="text-red font-bold">Negative</span>
-\t\t\t\t} @else {
+\t\t\t\t} else {
 \t\t\t\t\t<span class="text-blue font-bold">Zero</span>
 \t\t\t\t}
 \t\t\t}
@@ -184,7 +184,7 @@ const gsxStepDefs: Omit<Step, "color">[] = [
     id: "template",
     label: "Composition",
     description:
-      "The Render template ties it together: @-calls nest components and @if/@else adds conditionals.",
+      "The Render template ties it together: @-calls nest components and if/else adds conditionals.",
     lines: [
       68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
       85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98,

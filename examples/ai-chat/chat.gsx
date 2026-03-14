@@ -225,9 +225,9 @@ func (c *chat) updateHeight() {
 }
 
 templ (c *chat) Render() {
-	@if c.showSettings.Get() {
+	if c.showSettings.Get() {
 		@c.settingsView
-	} @else {
+	} else {
 		c.updateHeight()
 		<textarea
 			ref={c.textareaRef}

@@ -47,9 +47,11 @@ func (p *Parser) parseLet() *LetBinding {
 func (p *Parser) parseFor() *ForLoop {
 	pos := p.position()
 
-	if !p.expect(TokenAtFor) {
+	if p.current.Type != TokenFor {
+		p.errors.AddError(p.position(), "expected 'for'")
 		return nil
 	}
+	p.advance()
 
 	loop := &ForLoop{Position: pos}
 
@@ -135,9 +137,11 @@ func (p *Parser) parseFor() *ForLoop {
 func (p *Parser) parseIf() *IfStmt {
 	pos := p.position()
 
-	if !p.expect(TokenAtIf) {
+	if p.current.Type != TokenIf {
+		p.errors.AddError(p.position(), "expected 'if'")
 		return nil
 	}
+	p.advance()
 
 	stmt := &IfStmt{Position: pos}
 
@@ -169,13 +173,13 @@ func (p *Parser) parseIf() *IfStmt {
 	// Skip newlines before checking for @else
 	p.skipNewlines()
 
-	// Check for @else
-	if p.current.Type == TokenAtElse {
+	// Check for else
+	if p.current.Type == TokenElse {
 		p.advance()
 		p.skipNewlines()
 
 		// Check for else-if
-		if p.current.Type == TokenAtIf {
+		if p.current.Type == TokenIf {
 			elseIf := p.parseIf()
 			if elseIf != nil {
 				stmt.Else = []Node{elseIf}
@@ -198,4 +202,99 @@ func (p *Parser) parseIf() *IfStmt {
 	}
 
 	return stmt
+}
+
+// parseShortBinding parses name := <element> or name := @Component().
+// Called when parser sees TokenIdent followed by TokenColonEquals followed by
+// TokenLAngle (element) or TokenAtCall/TokenAtExpr (component call).
+// The identifier and := have already been consumed; name and pos are passed in.
+func (p *Parser) parseShortBinding(name string, pos Position) *LetBinding {
+	// := was already consumed by caller
+	p.skipNewlines()
+
+	binding := &LetBinding{
+		Name:        name,
+		IsShortForm: true,
+		Position:    pos,
+	}
+
+	switch p.current.Type {
+	case TokenLAngle:
+		elem := p.parseElement()
+		if elem == nil {
+			return nil
+		}
+		binding.Element = elem
+	case TokenAtCall:
+		call := p.parseComponentCall()
+		if call == nil {
+			return nil
+		}
+		binding.Call = call
+	case TokenAtExpr:
+		expr := p.parseComponentExpr()
+		if expr == nil {
+			return nil
+		}
+		binding.Expr = expr.Expr
+	default:
+		p.errors.AddErrorf(p.position(), "expected element or component after :=")
+		return nil
+	}
+
+	return binding
+}
+
+// parseVarBinding parses var name = <element> or var name = @Component().
+// Called when parser sees TokenVar followed by TokenIdent followed by TokenEquals
+// followed by TokenLAngle or TokenAtCall/TokenAtExpr.
+// Sets IsVarForm=true to distinguish from @let bindings in semantic highlighting.
+func (p *Parser) parseVarBinding() *LetBinding {
+	pos := p.position()
+	p.advance() // consume "var"
+
+	if p.current.Type != TokenIdent {
+		p.errors.AddError(p.position(), "expected variable name after var")
+		return nil
+	}
+	name := p.current.Literal
+	p.advance()
+
+	if p.current.Type != TokenEquals {
+		return nil // not a var-binding form; caller will restore state
+	}
+	p.advance()
+	p.skipNewlines()
+
+	binding := &LetBinding{
+		Name:        name,
+		IsShortForm: false,
+		IsVarForm:   true,
+		Position:    pos,
+	}
+
+	switch p.current.Type {
+	case TokenLAngle:
+		elem := p.parseElement()
+		if elem == nil {
+			return nil
+		}
+		binding.Element = elem
+	case TokenAtCall:
+		call := p.parseComponentCall()
+		if call == nil {
+			return nil
+		}
+		binding.Call = call
+	case TokenAtExpr:
+		expr := p.parseComponentExpr()
+		if expr == nil {
+			return nil
+		}
+		binding.Expr = expr.Expr
+	default:
+		return nil
+	}
+
+	return binding
 }

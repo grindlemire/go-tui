@@ -82,6 +82,13 @@ func (el *ErrorList) Len() int {
 	return len(el.errors)
 }
 
+// Truncate removes all errors after position n, restoring the list to a prior length.
+func (el *ErrorList) Truncate(n int) {
+	if n < len(el.errors) {
+		el.errors = el.errors[:n]
+	}
+}
+
 // HasErrors returns true if there are any errors.
 func (el *ErrorList) HasErrors() bool {
 	return len(el.errors) > 0

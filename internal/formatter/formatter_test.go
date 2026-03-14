@@ -160,7 +160,7 @@ templ List(items []string) {
 			want: `package main
 
 templ List(items []string) {
-	@for i, item := range items {
+	for i, item := range items {
 		<span>{item}</span>
 	}
 }
@@ -178,7 +178,7 @@ templ Cond(show bool) {
 			want: `package main
 
 templ Cond(show bool) {
-	@if show {
+	if show {
 		<span>Visible</span>
 	}
 }
@@ -198,9 +198,9 @@ templ Cond(show bool) {
 			want: `package main
 
 templ Cond(show bool) {
-	@if show {
+	if show {
 		<span>Yes</span>
-	} @else {
+	} else {
 		<span>No</span>
 	}
 }
@@ -217,7 +217,7 @@ templ WithLet() {
 			want: `package main
 
 templ WithLet() {
-	@let x = <span>Hello</span>
+	x := <span>Hello</span>
 	{x}
 }
 `,
@@ -273,6 +273,94 @@ templ Card(title string) {
 		<span>{title}</span>
 		{children...}
 	</div>
+}
+`,
+		},
+		"component call with multi-line args": {
+			input: `package main
+
+templ Parent() {
+	@Child(
+		"arg1",
+		"arg2",
+	)
+}
+
+templ Child(a string, b string) {
+	<span>{a}</span>
+}
+`,
+			want: `package main
+
+templ Parent() {
+	@Child(
+		"arg1",
+		"arg2",
+	)
+}
+
+templ Child(a string, b string) {
+	<span>{a}</span>
+}
+`,
+		},
+		"component call with multi-line args and children": {
+			input: `package main
+
+templ Parent() {
+	@Card(
+		"Title",
+		42,
+	) {
+		<span>Content</span>
+	}
+}
+
+templ Card(title string, count int) {
+	<div>{title}</div>
+}
+`,
+			want: `package main
+
+templ Parent() {
+	@Card(
+		"Title",
+		42,
+	) {
+		<span>Content</span>
+	}
+}
+
+templ Card(title string, count int) {
+	<div>{title}</div>
+}
+`,
+		},
+		"component call multi-line args reformat indentation": {
+			input: `package main
+
+templ Parent() {
+@Child(
+"arg1",
+      "arg2",
+)
+}
+
+templ Child(a string, b string) {
+<span>{a}</span>
+}
+`,
+			want: `package main
+
+templ Parent() {
+	@Child(
+		"arg1",
+		"arg2",
+	)
+}
+
+templ Child(a string, b string) {
+	<span>{a}</span>
 }
 `,
 		},
@@ -474,10 +562,10 @@ import (
 
 templ Complex(items []string, selected int) {
 	<div border={1}>
-		@for i, item := range items {
-			@if i == selected {
+		for i, item := range items {
+			if i == selected {
 				<span class="bold">{fmt.Sprintf("> %s", item)}</span>
-			} @else {
+			} else {
 				<span>{item}</span>
 			}
 		}

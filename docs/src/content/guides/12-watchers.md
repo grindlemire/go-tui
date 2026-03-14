@@ -86,9 +86,9 @@ templ (s *stopwatch) Render() {
         m := s.seconds.Get() / 60
         sec := s.seconds.Get() - m*60
         <span class="text-cyan font-bold">{fmt.Sprintf("%02d:%02d", m, sec)}</span>
-        @if s.running.Get() {
+        if s.running.Get() {
             <span class="text-green font-bold">Running</span>
-        } @else {
+        } else {
             <span class="text-yellow">Paused</span>
         }
         <span class="font-dim">space toggle | r reset | esc quit</span>
@@ -156,10 +156,10 @@ func (f *feedApp) KeyMap() tui.KeyMap {
 templ (f *feedApp) Render() {
     <div class="flex-col p-1 gap-1 border-rounded border-cyan">
         <span class="font-bold text-gradient-cyan-magenta">Live Feed</span>
-        @for _, msg := range f.messages.Get() {
+        for _, msg := range f.messages.Get() {
             <span class="text-green">{msg}</span>
         }
-        @if len(f.messages.Get()) == 0 {
+        if len(f.messages.Get()) == 0 {
             <span class="font-dim">Waiting for messages...</span>
         }
         <span class="font-dim">esc quit</span>
@@ -304,10 +304,10 @@ func (e *eventLog) onEvent(msg string) {
 templ (e *eventLog) Render() {
     <div class="flex-col border-rounded p-1 gap-1">
         <span class="font-bold">Event Log</span>
-        @for _, msg := range e.messages.Get() {
+        for _, msg := range e.messages.Get() {
             <span class="text-green">{msg}</span>
         }
-        @if len(e.messages.Get()) == 0 {
+        if len(e.messages.Get()) == 0 {
             <span class="font-dim">No events yet</span>
         }
     </div>
@@ -462,10 +462,10 @@ templ (d *dashboard) Render() {
 
         <div class="flex-col border-single p-1">
             <span class="font-bold">Event Log</span>
-            @for _, msg := range d.messages.Get() {
+            for _, msg := range d.messages.Get() {
                 <span class="text-green">{msg}</span>
             }
-            @if len(d.messages.Get()) == 0 {
+            if len(d.messages.Get()) == 0 {
                 <span class="font-dim">Waiting for events...</span>
             }
         </div>
@@ -653,9 +653,9 @@ templ (w *watcherApp) Render() {
         <div class="flex gap-2 shrink-0">
             <span class="font-bold">Stopwatch</span>
             <span class="text-cyan font-bold">{formatDuration(w.stopwatchSec.Get())}</span>
-            @if w.stopwatchOn.Get() {
+            if w.stopwatchOn.Get() {
                 <span class="text-green font-bold">Running</span>
-            } @else {
+            } else {
                 <span class="text-yellow">Paused</span>
             }
             <span class="font-dim">[s] toggle  [r] reset</span>
@@ -667,10 +667,10 @@ templ (w *watcherApp) Render() {
                 <span class="font-bold">Live Feed</span>
                 <span class="font-dim">{fmt.Sprintf("(%d received)", w.msgCount.Get())}</span>
             </div>
-            @for _, msg := range w.messages.Get() {
+            for _, msg := range w.messages.Get() {
                 <span class="text-green">{msg}</span>
             }
-            @if len(w.messages.Get()) == 0 {
+            if len(w.messages.Get()) == 0 {
                 <span class="font-dim">Waiting for messages...</span>
             }
         </div>

@@ -419,17 +419,17 @@ Each row in the tree gets one of four visual treatments: teal text on a dark bac
 
 The `onPath` field was already computed during flattening in `visibleNodes()`, so the render template just checks the boolean. This avoids recomputing path ancestry per row, which would otherwise turn the render loop into O(N²) work.
 
-The render template uses chained `@if`/`@else @if` to apply the right class to each row:
+The render template uses chained `if`/`else if` to apply the right class to each row:
 
 ```gsx
-@for i, vn := range d.visibleNodes() {
-    @if i == d.cursor.Get() {
+for i, vn := range d.visibleNodes() {
+    if i == d.cursor.Get() {
         <span class="bg-bright-black text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-    } @else @if vn.onPath {
+    } else if vn.onPath {
         <span class="text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-    } @else @if vn.isDir {
+    } else if vn.isDir {
         <span class="font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-    } @else {
+    } else {
         <span>{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
     }
 }
@@ -680,14 +680,14 @@ templ (d *directoryTree) Render() {
             ref={d.scrollContainer}
             class="flex-col grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
             scrollOffset={0, d.scrollY.Get()}>
-            @for i, vn := range d.visibleNodes() {
-                @if i == d.cursor.Get() {
+            for i, vn := range d.visibleNodes() {
+                if i == d.cursor.Get() {
                     <span class="bg-bright-black text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-                } @else @if vn.onPath {
+                } else if vn.onPath {
                     <span class="text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-                } @else @if vn.isDir {
+                } else if vn.isDir {
                     <span class="font-bold">{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
-                } @else {
+                } else {
                     <span>{buildPrefix(vn) + nodeLabel(vn, d.expanded.Get())}</span>
                 }
             }

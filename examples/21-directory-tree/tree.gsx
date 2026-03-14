@@ -248,14 +248,14 @@ templ (d *directoryTree) Render() {
 			ref={d.scrollContainer}
 			class="flex-col grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
 			scrollOffset={0, d.scrollY.Get()}>
-			@for i, vn := range d.snapVisible {
-				@if i == d.snapCursor {
+			for i, vn := range d.snapVisible {
+				if i == d.snapCursor {
 					<span class="nowrap bg-bright-black text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
-				} @else @if vn.onPath {
+				} else if vn.onPath {
 					<span class="nowrap text-cyan font-bold">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
-				} @else @if vn.isDir {
+				} else if vn.isDir {
 					<span class="nowrap font-bold">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
-				} @else {
+				} else {
 					<span class="nowrap">{buildPrefix(vn) + nodeLabel(vn, d.snapExpanded)}</span>
 				}
 			}

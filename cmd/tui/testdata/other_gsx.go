@@ -3,7 +3,9 @@
 
 package testdata
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func otherHelperFunction(s string) string {
 	return fmt.Sprintf("[%s]", s)

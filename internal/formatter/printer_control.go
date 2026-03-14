@@ -1,16 +1,18 @@
 package formatter
 
 import (
+	"strings"
+
 	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
-// printForLoop outputs a @for loop.
+// printForLoop outputs a for loop.
 func (p *printer) printForLoop(f *tuigen.ForLoop) {
 	// Leading comments
 	p.printLeadingComments(f.LeadingComments)
 
 	p.writeIndent()
-	p.write("@for ")
+	p.write("for ")
 
 	// Loop variables
 	if f.Index != "" {
@@ -35,13 +37,13 @@ func (p *printer) printForLoop(f *tuigen.ForLoop) {
 	p.newline()
 }
 
-// printIfStmt outputs an @if statement.
+// printIfStmt outputs an if statement.
 func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 	// Leading comments
 	p.printLeadingComments(stmt.LeadingComments)
 
 	p.writeIndent()
-	p.write("@if ")
+	p.write("if ")
 	p.write(stmt.Condition)
 	p.write(" {")
 	p.printTrailingComment(stmt.TrailingComments)
@@ -56,13 +58,13 @@ func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 	// Else branch
 	if len(stmt.Else) > 0 {
 		p.writeIndent()
-		p.write("} @else ")
+		p.write("} else ")
 
 		// Check for else-if chain
 		if len(stmt.Else) == 1 {
 			if elseIf, ok := stmt.Else[0].(*tuigen.IfStmt); ok {
 				// Print else-if without extra indent
-				p.write("@if ")
+				p.write("if ")
 				p.write(elseIf.Condition)
 				p.write(" {")
 				p.printTrailingComment(elseIf.TrailingComments)
@@ -103,11 +105,11 @@ func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 // printElseBranch handles recursive else-if chains.
 func (p *printer) printElseBranch(nodes []tuigen.Node) {
 	p.writeIndent()
-	p.write("} @else ")
+	p.write("} else ")
 
 	if len(nodes) == 1 {
 		if elseIf, ok := nodes[0].(*tuigen.IfStmt); ok {
-			p.write("@if ")
+			p.write("if ")
 			p.write(elseIf.Condition)
 			p.write(" {")
 			p.printTrailingComment(elseIf.TrailingComments)
@@ -139,21 +141,38 @@ func (p *printer) printElseBranch(nodes []tuigen.Node) {
 	p.newline()
 }
 
-// printLetBinding outputs a @let binding.
+// printLetBinding outputs a let binding using := syntax.
 func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 	// Leading comments
 	p.printLeadingComments(let.LeadingComments)
 
 	p.writeIndent()
-	p.write("@let ")
-	p.write(let.Name)
-	p.write(" = ")
 
-	// Reset indent for the element since we're already indented
+	// Always emit := (migrates old @let to short form)
+	p.write(let.Name)
+	p.write(" := ")
+
+	if let.Call != nil {
+		p.write("@")
+		p.write(let.Call.Name)
+		p.write("(")
+		p.write(formatInlineBlockComments(let.Call.Args))
+		p.write(")")
+		p.newline()
+		return
+	}
+
+	if let.Expr != "" && let.Element == nil {
+		p.write("@")
+		p.write(let.Expr)
+		p.newline()
+		return
+	}
+
+	// Element RHS - print inline or multi-line
 	savedDepth := p.depth
 	p.depth = 0
 
-	// Print element inline or multi-line based on complexity
 	p.buf.WriteString("<")
 	p.buf.WriteString(let.Element.Tag)
 
@@ -210,7 +229,26 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 	p.write("@")
 	p.write(call.Name)
 	p.write("(")
-	p.write(formatInlineBlockComments(call.Args))
+
+	if call.MultiLineArgs {
+		args := splitTopLevelArgs(call.Args)
+		p.newline()
+		p.depth++
+		for i, arg := range args {
+			p.writeIndent()
+			p.write(arg)
+			p.write(",")
+			if i < len(args)-1 {
+				p.newline()
+			}
+		}
+		p.depth--
+		p.newline()
+		p.writeIndent()
+	} else {
+		p.write(formatInlineBlockComments(call.Args))
+	}
+
 	p.write(")")
 
 	if len(call.Children) > 0 {
@@ -228,6 +266,68 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 		p.printTrailingComment(call.TrailingComments)
 	}
 	p.newline()
+}
+
+// splitTopLevelArgs splits a Go argument string by top-level commas,
+// respecting nested parentheses, brackets, braces, and string literals.
+func splitTopLevelArgs(args string) []string {
+	var result []string
+	depth := 0
+	inString := false
+	inRune := false
+	inBacktick := false
+	start := 0
+
+	for i := 0; i < len(args); i++ {
+		ch := args[i]
+		switch {
+		case inBacktick:
+			if ch == '`' {
+				inBacktick = false
+			}
+		case inString:
+			if ch == '\\' {
+				i++ // skip escaped char
+			} else if ch == '"' {
+				inString = false
+			}
+		case inRune:
+			if ch == '\\' {
+				i++
+			} else if ch == '\'' {
+				inRune = false
+			}
+		default:
+			switch ch {
+			case '"':
+				inString = true
+			case '\'':
+				inRune = true
+			case '`':
+				inBacktick = true
+			case '(', '[', '{':
+				depth++
+			case ')', ']', '}':
+				depth--
+			case ',':
+				if depth == 0 {
+					arg := strings.TrimSpace(args[start:i])
+					if arg != "" {
+						result = append(result, arg)
+					}
+					start = i + 1
+				}
+			}
+		}
+	}
+
+	// Last argument (may have trailing comma already trimmed by parser)
+	last := strings.TrimSpace(args[start:])
+	if last != "" {
+		result = append(result, last)
+	}
+
+	return result
 }
 
 // printGoFunc outputs a top-level Go function.

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -46,7 +45,6 @@ templ (e *explorer) Render() {
 	<div class="flex-col gap-1 p-2 border-rounded border-cyan">
 		<span class="text-gradient-cyan-magenta font-bold">Keyboard Explorer</span>
 		<hr class="border-single" />
-
 		<div class="flex gap-2">
 			<span class="font-dim">Last Key:</span>
 			<span class="text-cyan font-bold">{e.lastKey.Get()}</span>

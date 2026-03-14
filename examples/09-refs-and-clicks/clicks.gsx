@@ -204,10 +204,10 @@ templ (c *colorMixer) Render() {
 		// Preset colors using RefMap with key
 		<div class="flex gap-1 border-rounded p-1 items-center">
 			<span class="font-bold">Presets:</span>
-			@for _, p := range presets {
-				@if p.name == c.activePreset.Get() {
+			for _, p := range presets {
+				if p.name == c.activePreset.Get() {
 					<button ref={c.presetBtns} key={p.name} class="px-1 font-bold text-cyan">{p.name}</button>
-				} @else {
+				} else {
 					<button ref={c.presetBtns} key={p.name} class="px-1 font-dim">{p.name}</button>
 				}
 			}

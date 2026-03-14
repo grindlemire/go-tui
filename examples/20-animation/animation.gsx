@@ -5,16 +5,17 @@ import (
 	"math"
 	"strings"
 	"time"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
 // Spinner frame sets. Each spinner cycles through its frames on a timer.
 var spinnerDots = []string{"⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓"}
-var spinnerLine = []string{"┤", "┘", "┴", "└", "├", "┌", "┬", "┐"}
-var spinnerCircle = []string{"◜", "◠", "◝", "◞", "◡", "◟"}
-var spinnerBraille = []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
 
+var spinnerLine = []string{"┤", "┘", "┴", "└", "├", "┌", "┬", "┐"}
+
+var spinnerCircle = []string{"◜", "◠", "◝", "◞", "◡", "◟"}
+
+var spinnerBraille = []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
 
 // Characters for the color wave animation. Each character gets its own color.
 var waveChars = []string{"A", "N", "I", "M", "A", "T", "I", "O", "N", "S"}
@@ -220,7 +221,7 @@ templ (a *animationApp) Render() {
 		<div class="flex-col border-rounded p-1 gap-1" borderStyle={pulseBorderStyle(a.pulsePhase.Get())}>
 			<span class="font-bold text-cyan">3. Color Wave + Pulsing Border</span>
 			<div class="flex gap-0">
-				@for i, ch := range waveChars {
+				for i, ch := range waveChars {
 					<span textStyle={waveStyle(i, a.wavePhase.Get())}>{ch}</span>
 				}
 			</div>

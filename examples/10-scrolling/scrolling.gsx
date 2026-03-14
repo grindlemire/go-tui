@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -99,12 +98,15 @@ func (f *fileList) HandleMouse(me tui.MouseEvent) bool {
 templ (f *fileList) Render() {
 	<div class="flex-col p-1 border-rounded border-cyan">
 		<span class="text-gradient-cyan-magenta font-bold">Files</span>
-		<div class="overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
-			height={12} ref={f.content} scrollOffset={0, f.scrollY.Get()}>
-			@for i, name := range f.files {
-				@if i == f.selected.Get() {
+		<div
+			ref={f.content}
+			class="overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
+			height={12}
+			scrollOffset={0, f.scrollY.Get()}>
+			for i, name := range f.files {
+				if i == f.selected.Get() {
 					<span class="text-cyan font-bold bg-bright-black">{fmt.Sprintf(" > %s ", name)}</span>
-				} @else {
+				} else {
 					<span>{fmt.Sprintf("   %s", name)}</span>
 				}
 			}

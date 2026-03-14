@@ -275,12 +275,12 @@ func (a *myApp) Watchers() []tui.Watcher {
 }
 
 templ (a *myApp) Render() {
-    @if a.showSettings.Get() {
+    if a.showSettings.Get() {
         <div class="flex-col h-full p-1 border-rounded border-cyan">
             <span class="font-bold text-cyan">Settings</span>
             <span class="font-dim">Press Escape to return</span>
         </div>
-    } @else {
+    } else {
         @a.textarea
     }
 }

@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
 // Pure components
-
 templ Badge(label string, color string) {
 	<span class={color + " font-bold px-1"}>{label}</span>
 }
@@ -28,7 +26,6 @@ templ Card(title string) {
 }
 
 // Tab content components
-
 templ OverviewTab() {
 	<div class="flex gap-1">
 		@Card("System") {
@@ -75,7 +72,6 @@ templ LogsTab() {
 }
 
 // Struct component
-
 type dashboard struct {
 	selected *tui.State[int]
 	tabs     []string
@@ -102,20 +98,20 @@ func (d *dashboard) KeyMap() tui.KeyMap {
 templ (d *dashboard) Render() {
 	<div class="flex-col p-1 gap-1 border-rounded border-cyan">
 		<div class="flex gap-2">
-			@for i, tab := range d.tabs {
-				@if i == d.selected.Get() {
+			for i, tab := range d.tabs {
+				if i == d.selected.Get() {
 					@Badge(tab, "text-cyan")
-				} @else {
+				} else {
 					<span class="font-dim">{tab}</span>
 				}
 			}
 		</div>
 
-		@if d.selected.Get() == 0 {
+		if d.selected.Get() == 0 {
 			@OverviewTab()
-		} @else @if d.selected.Get() == 1 {
+		} else if d.selected.Get() == 1 {
 			@MetricsTab()
-		} @else {
+		} else {
 			@LogsTab()
 		}
 
