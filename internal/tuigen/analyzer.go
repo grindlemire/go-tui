@@ -436,8 +436,17 @@ func (a *Analyzer) analyzeLetBinding(let *LetBinding) {
 	// Register the binding
 	a.letBindings[let.Name] = false
 
-	// Analyze the element
-	a.analyzeElement(let.Element)
+	if let.Element != nil {
+		a.analyzeElement(let.Element)
+	}
+	if let.Call != nil {
+		a.analyzeComponentCall(let.Call)
+	}
+	if let.Expr != "" {
+		if strings.Contains(let.Expr, "tui.") {
+			a.usesTUI = true
+		}
+	}
 }
 
 // analyzeForLoop validates a for loop.

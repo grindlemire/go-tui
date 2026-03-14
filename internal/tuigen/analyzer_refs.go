@@ -147,7 +147,9 @@ func (a *Analyzer) collectLetBindings(nodes []Node) {
 		switch n := node.(type) {
 		case *LetBinding:
 			a.letBindings[n.Name] = false
-			a.collectLetBindings(n.Element.Children)
+			if n.Element != nil {
+				a.collectLetBindings(n.Element.Children)
+			}
 		case *Element:
 			a.collectLetBindings(n.Children)
 		case *ForLoop:
