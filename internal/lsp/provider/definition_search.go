@@ -8,7 +8,20 @@ import (
 
 // --- Shared AST traversal helpers ---
 
-// findLetBindingInNodes finds a @let binding by name in AST nodes.
+// letBindingNameOffset returns the column offset from Position to the variable name
+// for a LetBinding. For := short form, Position is already at the name (offset 0).
+// For @let, Position is at '@' (offset 5 for "@let "). For var, offset is 4 for "var ".
+func letBindingNameOffset(b *tuigen.LetBinding) int {
+	if b.IsShortForm {
+		return 0 // Position is at the variable name
+	}
+	if b.IsVarForm {
+		return len("var ") // Position is at "var"
+	}
+	return len("@let ") // Position is at "@"
+}
+
+// findLetBindingInNodes finds a let binding by name in AST nodes.
 func findLetBindingInNodes(nodes []tuigen.Node, name string) *tuigen.LetBinding {
 	for _, node := range nodes {
 		switch n := node.(type) {

@@ -306,11 +306,12 @@ func (r *referencesProvider) findLocalVariableReferences(ctx *CursorContext, var
 		}
 
 		if includeDecl {
+			nameOffset := letBindingNameOffset(letBinding)
 			refs = append(refs, Location{
 				URI: ctx.Document.URI,
 				Range: Range{
-					Start: Position{Line: letBinding.Position.Line - 1, Character: letBinding.Position.Column - 1 + len("@let ")},
-					End:   Position{Line: letBinding.Position.Line - 1, Character: letBinding.Position.Column - 1 + len("@let ") + len(varName)},
+					Start: Position{Line: letBinding.Position.Line - 1, Character: letBinding.Position.Column - 1 + nameOffset},
+					End:   Position{Line: letBinding.Position.Line - 1, Character: letBinding.Position.Column - 1 + nameOffset + len(varName)},
 				},
 			})
 		}
@@ -345,10 +346,10 @@ func (r *referencesProvider) findLoopVariableReferences(ctx *CursorContext, varN
 		declLine := loop.Position.Line - 1
 		var declCharStart, declCharEnd int
 		if loop.Index == varName {
-			declCharStart = loop.Position.Column - 1 + len("@for ")
+			declCharStart = loop.Position.Column - 1 + len("for ")
 			declCharEnd = declCharStart + len(varName)
 		} else if loop.Value == varName {
-			offset := len("@for ")
+			offset := len("for ")
 			if loop.Index != "" {
 				offset += len(loop.Index) + 2
 			}

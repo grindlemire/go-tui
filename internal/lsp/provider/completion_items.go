@@ -32,7 +32,7 @@ func (c *completionProvider) getComponentCompletions() []CompletionItem {
 			Kind:       CompletionItemKindFunction,
 			Detail:     detail,
 			InsertText: name + "()",
-			FilterText: "@" + name,
+			FilterText: name,
 		})
 	}
 	return items
@@ -67,7 +67,7 @@ func (c *completionProvider) getDSLKeywordCompletions() []CompletionItem {
 			InsertText: "let ${1:name} = ",
 			Documentation: &MarkupContent{
 				Kind:  "markdown",
-				Value: "Bind an element to a variable for later reference.\n\n```gsx\n@let header = <div>Header</div>\n```",
+				Value: "Bind an element to a variable for later reference.\n\n```gsx\nheader := <div>Header</div>\n```",
 			},
 		},
 	}

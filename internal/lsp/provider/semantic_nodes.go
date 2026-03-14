@@ -401,6 +401,10 @@ func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, in
 			col := len(lines[i]) - len(trimmed) + 2 // skip "} ", point at "else"
 			return i, col
 		}
+		if strings.HasPrefix(trimmed, "} @else") {
+			col := len(lines[i]) - len(trimmed) + 3 // skip "} @", point at "else"
+			return i, col
+		}
 	}
 	return -1, -1
 }

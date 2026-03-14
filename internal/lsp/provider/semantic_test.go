@@ -353,6 +353,35 @@ templ Cond(show bool) {
 			t.Error("false-positive: keyword token found at the 'else' position inside string literal on line 6")
 		}
 	})
+
+	// Verify legacy @else syntax gets a semantic token for the "else" keyword.
+	t.Run("legacy @else keyword highlighted", func(t *testing.T) {
+		content := `package main
+
+templ Cond(show bool) {
+	if show {
+		<span>Yes</span>
+	} @else {
+		<span>No</span>
+	}
+}
+`
+		doc := parseTestDoc(content)
+		spWithDocs := &semanticTokensProvider{
+			fnChecker: &stubFnChecker{names: map[string]bool{}},
+			docs:      &stubDocAccessor{docs: []*Document{doc}},
+		}
+		result, err := spWithDocs.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		// "else" in "} @else {" on line 5 (0-indexed), col 4 (after "\t} @")
+		if !hasTokenAt(tokens, 5, 4, 4, TokenTypeKeyword) {
+			t.Error("expected else keyword at 5:4 with length 4 for legacy @else syntax")
+		}
+	})
 }
 
 func TestSemanticTokens_ElementAttributes(t *testing.T) {
