@@ -405,6 +405,69 @@ templ Test(x int) {
 	}
 }
 
+func TestParser_GoStatementStopsAtClosingBrace(t *testing.T) {
+	// Simulate what happens when parseGoStatement is called inside an if body
+	// where the Go code and closing brace are on the same line.
+	// This tests the raw parsing of a body containing "log.Error(err) }"
+	// where } belongs to the parent, not the statement.
+	input := `package x
+templ Test() {
+	@if condition {
+		log.Error(err)
+	}
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	ifStmt, ok := file.Components[0].Body[0].(*IfStmt)
+	if !ok {
+		t.Fatalf("expected *IfStmt, got %T", file.Components[0].Body[0])
+	}
+
+	if len(ifStmt.Then) != 1 {
+		t.Fatalf("expected 1 then node, got %d", len(ifStmt.Then))
+	}
+
+	gc, ok := ifStmt.Then[0].(*GoCode)
+	if !ok {
+		t.Fatalf("expected *GoCode, got %T", ifStmt.Then[0])
+	}
+	if gc.Code != "log.Error(err)" {
+		t.Errorf("Code = %q, want %q", gc.Code, "log.Error(err)")
+	}
+}
+
+func TestParser_GoStatementMultilineBraces(t *testing.T) {
+	// Verify that multiline Go statements with braces (switch, select, etc.)
+	// are NOT prematurely truncated by the depth-0 } stop.
+	input := `package x
+templ Test(x int) {
+	switch x { case 1: y = "one"; case 2: y = "two" }
+	<span>{y}</span>
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	gc, ok := file.Components[0].Body[0].(*GoCode)
+	if !ok {
+		t.Fatalf("expected *GoCode, got %T", file.Components[0].Body[0])
+	}
+	want := `switch x { case 1: y = "one"; case 2: y = "two" }`
+	if gc.Code != want {
+		t.Errorf("Code = %q, want %q", gc.Code, want)
+	}
+}
+
 func TestParser_RawGoStatementsWithElements(t *testing.T) {
 	// Test that Go statements and elements can be mixed in component body
 	input := `package x

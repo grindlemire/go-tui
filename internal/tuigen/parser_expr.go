@@ -48,12 +48,25 @@ func (p *Parser) parseGoStatement() *GoCode {
 
 	for p.current.Type != TokenEOF {
 		switch p.current.Type {
-		case TokenLParen, TokenLBracket, TokenLBrace:
-			if p.current.Type == TokenLBrace && isForLoop {
+		case TokenLParen, TokenLBracket:
+			depth++
+		case TokenLBrace:
+			if isForLoop {
 				inForHeader = false // entered for body, semicolons can now terminate
 			}
 			depth++
-		case TokenRParen, TokenRBracket, TokenRBrace:
+		case TokenRParen, TokenRBracket:
+			depth--
+		case TokenRBrace:
+			if depth == 0 {
+				// Closing brace at depth 0 belongs to the parent (e.g., if/for body).
+				// Stop before consuming it so the parent parser can handle it.
+				code := strings.TrimSpace(p.lexer.SourceRange(startPos, p.current.StartPos))
+				if code == "" {
+					return nil
+				}
+				return &GoCode{Code: code, Position: pos}
+			}
 			depth--
 		case TokenNewline:
 			if depth == 0 {
