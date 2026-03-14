@@ -218,6 +218,17 @@ func (t *ANSITerminal) DisableMouse() {
 	t.out.Write(t.esc.Bytes())
 }
 
+// NegotiateKittyKeyboard attempts to enable Kitty keyboard protocol.
+// Full implementation in Task 5; this is the interface stub.
+func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
+	return false
+}
+
+// DisableKittyKeyboard pops the Kitty keyboard protocol mode from the stack.
+// Full implementation in Task 5; this is the interface stub.
+func (t *ANSITerminal) DisableKittyKeyboard() {
+}
+
 // BeginSyncUpdate starts a synchronized update block.
 // Output is buffered until EndSyncUpdate, then displayed atomically.
 func (t *ANSITerminal) BeginSyncUpdate() {
