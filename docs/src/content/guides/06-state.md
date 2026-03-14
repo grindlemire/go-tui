@@ -42,11 +42,11 @@ templ (m *myApp) Render() {
         <span class="text-cyan font-bold">{fmt.Sprintf("Count: %d", m.count.Get())}</span>
         <span>{"Hello, " + m.name.Get()}</span>
 
-        @if m.visible.Get() {
+        if m.visible.Get() {
             <span class="text-green">This is visible</span>
         }
 
-        @for i, item := range m.items.Get() {
+        for i, item := range m.items.Get() {
             <span>{fmt.Sprintf("%d. %s", i+1, item)}</span>
         }
     </div>
@@ -94,7 +94,7 @@ Both `.Set()` and `.Update()` must be called from the main event loop (key handl
 
 ## Conditional Rendering
 
-`@if` and `@else` let you show or hide elements based on state. The condition is a Go boolean expression, evaluated fresh on each render:
+`if` and `else` let you show or hide elements based on state. The condition is a Go boolean expression, evaluated fresh on each render:
 
 ```gsx
 templ (m *myApp) Render() {
@@ -102,20 +102,20 @@ templ (m *myApp) Render() {
         <span class="font-bold">Status</span>
         <div class="flex gap-1">
             <span class="font-dim">Sign:</span>
-            @if m.count.Get() > 0 {
+            if m.count.Get() > 0 {
                 <span class="text-green font-bold">Positive</span>
-            } @else @if m.count.Get() < 0 {
+            } else if m.count.Get() < 0 {
                 <span class="text-red font-bold">Negative</span>
-            } @else {
+            } else {
                 <span class="text-blue font-bold">Zero</span>
             }
         </div>
 
         <div class="flex gap-1">
             <span class="font-dim">Parity:</span>
-            @if m.count.Get()%2 == 0 {
+            if m.count.Get()%2 == 0 {
                 <span class="text-cyan">Even</span>
-            } @else {
+            } else {
                 <span class="text-magenta">Odd</span>
             }
         </div>
@@ -123,11 +123,11 @@ templ (m *myApp) Render() {
 }
 ```
 
-Chain `@else @if` for multiple branches. These conditions are re-evaluated on every render, so changes to state are reflected immediately.
+Chain `else if` for multiple branches. These conditions are re-evaluated on every render, so changes to state are reflected immediately.
 
 ## List Rendering
 
-`@for` with `range` renders a collection. Combine it with state to build dynamic lists where the data or selection can change:
+`for` with `range` renders a collection. Combine it with state to build dynamic lists where the data or selection can change:
 
 ```gsx
 package main
@@ -176,10 +176,10 @@ templ (l *listApp) Render() {
     <div class="flex-col p-1 border-rounded border-cyan">
         <span class="font-bold text-gradient-cyan-magenta">Pick a Language</span>
         <br />
-        @for i, item := range l.items {
-            @if i == l.selected.Get() {
+        for i, item := range l.items {
+            if i == l.selected.Get() {
                 <span class="text-cyan font-bold">{fmt.Sprintf("  > %s", item)}</span>
-            } @else {
+            } else {
                 <span class="font-dim">{fmt.Sprintf("    %s", item)}</span>
             }
         }
@@ -190,12 +190,12 @@ templ (l *listApp) Render() {
 }
 ```
 
-The `selected` state tracks which item has the cursor. Pressing `j` and `k` moves it up and down with wrapping. On each render, the `@for` loop checks every item against the selected index and applies highlighting to the match.
+The `selected` state tracks which item has the cursor. Pressing `j` and `k` moves it up and down with wrapping. On each render, the `for` loop checks every item against the selected index and applies highlighting to the match.
 
 For lists stored in state (e.g. `*tui.State[[]string]`), call `.Get()` in the range expression:
 
 ```gsx
-@for i, msg := range m.messages.Get() {
+for i, msg := range m.messages.Get() {
     <span>{fmt.Sprintf("[%d] %s", i, msg)}</span>
 }
 ```
@@ -234,13 +234,13 @@ func statusText(n int) string {
 
 These are normal Go short variable declarations. They're re-evaluated on each render, so they always reflect the latest state.
 
-### @let for reusable elements
+### Element bindings (:=) for reusable elements
 
-The `@let` directive is different from a Go variable assignment. It binds an **element** to a name so you can reuse it in multiple places:
+Element bindings are different from Go variable assignments. They bind an **element** to a name so you can reuse it in multiple places:
 
 ```gsx
 templ (m *myApp) Render() {
-    @let badge = <span class="bg-cyan text-black px-1 font-bold">{fmt.Sprintf("%d", m.count.Get())}</span>
+    badge := <span class="bg-cyan text-black px-1 font-bold">{fmt.Sprintf("%d", m.count.Get())}</span>
     <div class="flex-col gap-1 p-1">
         <div class="flex gap-1">
             <span>Current count:</span>
@@ -254,7 +254,7 @@ templ (m *myApp) Render() {
 }
 ```
 
-Use regular Go assignments for computed strings, numbers, and booleans. Use `@let` when you want to define a reusable element fragment.
+Use regular Go assignments for computed strings, numbers, and booleans. Use `:=` element bindings when you want to define a reusable element fragment.
 
 ## Batching Updates
 
@@ -414,9 +414,9 @@ templ (d *demoApp) Render() {
                 </div>
                 <div class="flex gap-1">
                     <span class="font-dim">Parity:</span>
-                    @if d.count.Get()%2 == 0 {
+                    if d.count.Get()%2 == 0 {
                         <span class="text-cyan">Even</span>
-                    } @else {
+                    } else {
                         <span class="text-magenta">Odd</span>
                     }
                 </div>
@@ -426,10 +426,10 @@ templ (d *demoApp) Render() {
         // Selectable list
         <div class="flex-col border-rounded p-1 gap-1">
             <span class="font-bold">Languages</span>
-            @for i, item := range d.items {
-                @if i == d.selected.Get() {
+            for i, item := range d.items {
+                if i == d.selected.Get() {
                     <span class="text-cyan font-bold">{fmt.Sprintf("  > %s", item)}</span>
-                } @else {
+                } else {
                     <span class="font-dim">{fmt.Sprintf("    %s", item)}</span>
                 }
             }

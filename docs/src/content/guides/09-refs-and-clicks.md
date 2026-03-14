@@ -43,7 +43,7 @@ go-tui provides three ref types for different use cases:
 | Type | Constructor | Use When |
 |------|------------|----------|
 | `*tui.Ref` | `tui.NewRef()` | You have a single element to reference |
-| `*tui.RefList` | `tui.NewRefList()` | You have elements in a `@for` loop, accessed by index |
+| `*tui.RefList` | `tui.NewRefList()` | You have elements in a `for` loop, accessed by index |
 | `*tui.RefMap[K]` | `tui.NewRefMap[string]()` | You have elements keyed by a value (string, int, etc.) |
 
 `Ref` stores one element. `RefList` stores elements by their loop index; use `.At(i)` to bind in the template and `.El(i)` to read back. `RefMap[K]` stores elements by an arbitrary key; use `.At(key)` to bind and `.El(key)` to read back.
@@ -96,7 +96,7 @@ The `HandleMouse` method on your component implements the `MouseListener` interf
 
 ## Refs in Loops
 
-When you use `ref=` inside a `@for` loop, the generator automatically uses the right ref type based on whether a `key` attribute is present.
+When you use `ref=` inside a `for` loop, the generator automatically uses the right ref type based on whether a `key` attribute is present.
 
 ### RefList (no key)
 
@@ -117,7 +117,7 @@ func ListApp() *listApp {
 ```
 
 ```gsx
-@for _, item := range a.items {
+for _, item := range a.items {
     <span ref={a.itemRefs} class="p-1">{item}</span>
 }
 ```
@@ -135,7 +135,7 @@ type tabApp struct {
 ```
 
 ```gsx
-@for _, p := range presets {
+for _, p := range presets {
     <button ref={a.presetBtns} key={p.name} class="px-1">{p.name}</button>
 }
 ```
@@ -401,10 +401,10 @@ templ (c *colorMixer) Render() {
         // Preset colors using RefMap with key
         <div class="flex gap-1 border-rounded p-1 items-center">
             <span class="font-bold">Presets:</span>
-            @for _, p := range presets {
-                @if p.name == c.activePreset.Get() {
+            for _, p := range presets {
+                if p.name == c.activePreset.Get() {
                     <button ref={c.presetBtns} key={p.name} class="px-1 font-bold text-cyan">{p.name}</button>
-                } @else {
+                } else {
                     <button ref={c.presetBtns} key={p.name} class="px-1 font-dim">{p.name}</button>
                 }
             }

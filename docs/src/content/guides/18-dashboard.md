@@ -477,10 +477,10 @@ Add the events panel inside the network row (replacing `// Events panel will go 
     scrollOffset={0, d.scrollY.Get()}
 >
     <span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
-    @for _, event := range d.events.Get() {
+    for _, event := range d.events.Get() {
         <span class="text-green">{event}</span>
     }
-    @if len(d.events.Get()) == 0 {
+    if len(d.events.Get()) == 0 {
         <span class="font-dim">Waiting for events...</span>
     }
 </div>
@@ -830,10 +830,10 @@ templ (d *dashboardApp) Render() {
                 scrollOffset={0, d.scrollY.Get()}
             >
                 <span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
-                @for _, event := range d.events.Get() {
+                for _, event := range d.events.Get() {
                     <span class="text-green">{event}</span>
                 }
-                @if len(d.events.Get()) == 0 {
+                if len(d.events.Get()) == 0 {
                     <span class="font-dim">Waiting for events...</span>
                 }
             </div>

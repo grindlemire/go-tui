@@ -284,7 +284,7 @@ templ ReportCard(people []person) {
                     <th>Score</th>
                 </tr>
                 <hr />
-                @for _, p := range people {
+                for _, p := range people {
                     <tr>
                         <td class="text-cyan grow">{p.Name}</td>
                         <td class="grow">{p.Role}</td>

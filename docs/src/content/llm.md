@@ -110,21 +110,21 @@ templ (p *panel) Render() {
 
 ```gsx
 // Conditionals
-@if condition {
+if condition {
     <span>True</span>
-} @else @if otherCondition {
+} else if otherCondition {
     <span>Other</span>
-} @else {
+} else {
     <span>Default</span>
 }
 
 // Loops
-@for i, item := range items {
+for i, item := range items {
     <span>{fmt.Sprintf("%d: %s", i, item)}</span>
 }
 
 // Local element binding
-@let badge = <span class="font-bold">{label}</span>
+badge := <span class="font-bold">{label}</span>
 <div>{badge}</div>
 ```
 

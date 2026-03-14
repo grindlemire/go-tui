@@ -10,7 +10,7 @@ A `.gsx` file can contain:
 - Type declarations and regular Go functions (`type`, `func`)
 - Pure template components (`templ Name(params) { ... }`)
 - Struct method components (`templ (s *Struct) Render() { ... }`)
-- Control flow directives (`@if`, `@for`, `@let`)
+- Control flow directives (`if`, `for`, `:=`)
 - HTML-like elements (`<div>`, `<span>`, etc.)
 
 ## File structure
@@ -46,8 +46,8 @@ Parameters use standard Go function parameter syntax. Any valid Go type works:
 ```gsx
 templ UserList(users []string, maxVisible int) {
     <div class="flex-col">
-        @for i, u := range users {
-            @if i < maxVisible {
+        for i, u := range users {
+            if i < maxVisible {
                 <span>{u}</span>
             }
         }
@@ -271,10 +271,10 @@ See the [Refs Reference](refs.md) for `Ref`, `RefList`, and `RefMap` details.
 
 ### Key attributes
 
-Inside `@for` loops, the `key` attribute tells the framework how to identify elements for `RefMap`:
+Inside `for` loops, the `key` attribute tells the framework how to identify elements for `RefMap`:
 
 ```gsx
-@for _, name := range items {
+for _, name := range items {
     <div ref={s.itemRefs} key={name}>{name}</div>
 }
 ```
@@ -445,14 +445,14 @@ Call components with the `@` prefix or as XML-like tags:
 
 ## Control flow
 
-### @if / @else
+### if / else
 
 Conditionally render elements:
 
 ```gsx
-@if s.loading.Get() {
+if s.loading.Get() {
     <span class="text-yellow">Loading...</span>
-} @else {
+} else {
     <span class="text-green">Ready</span>
 }
 ```
@@ -460,23 +460,23 @@ Conditionally render elements:
 Chain conditions:
 
 ```gsx
-@if count > 10 {
+if count > 10 {
     <span class="text-red">High</span>
-} @else @if count > 5 {
+} else if count > 5 {
     <span class="text-yellow">Medium</span>
-} @else {
+} else {
     <span class="text-green">Low</span>
 }
 ```
 
 The condition is any valid Go boolean expression.
 
-### @for
+### for
 
 Loop over collections:
 
 ```gsx
-@for i, item := range s.items.Get() {
+for i, item := range s.items.Get() {
     <span>{fmt.Sprintf("%d. %s", i+1, item)}</span>
 }
 ```
@@ -484,23 +484,23 @@ Loop over collections:
 Supports all standard Go range patterns:
 
 ```gsx
-@for _, v := range items {       <!-- index ignored -->
-@for i := range items {           <!-- value ignored -->
-@for i, v := range items {       <!-- both used -->
+for _, v := range items {       <!-- index ignored -->
+for i := range items {           <!-- value ignored -->
+for i, v := range items {       <!-- both used -->
 ```
 
-### @let
+### Local bindings (:=)
 
 Bind an element to a local variable for reuse:
 
 ```gsx
-@let badge = <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
+badge := <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
 <div class="flex gap-2">
     {badge}
 </div>
 ```
 
-`@let` binds to an element expression (starting with `<`), not arbitrary Go expressions.
+The `:=` binding assigns an element expression (starting with `<`) to a local variable, not arbitrary Go expressions.
 
 ## Tailwind class reference
 
@@ -724,6 +724,6 @@ tui fmt --check [path...] # check formatting without modifying
 4. Each `templ` block becomes a Go function or method returning `*tui.Element`.
 5. Elements become calls to `tui.New(options...)` with `AddChild` calls for children.
 6. Tailwind classes become element option arguments at compile time (not at runtime).
-7. Control flow (`@if`, `@for`, `@let`) becomes standard Go control flow.
+7. Control flow (`if`, `for`, `:=`) becomes standard Go control flow.
 
 Re-run `tui generate` after any `.gsx` change. The generated `_gsx.go` files should be committed to version control but never edited by hand.

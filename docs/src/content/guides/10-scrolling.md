@@ -72,7 +72,7 @@ templ (s *scrollApp) Render() {
         <span class="font-bold text-cyan">Scrollable List</span>
         <div class="overflow-y-scroll" height={15} ref={s.content}
              scrollOffset={0, s.scrollY.Get()}>
-            @for i, item := range s.items {
+            for i, item := range s.items {
                 <span>{fmt.Sprintf("  %s", item)}</span>
             }
         </div>
@@ -284,15 +284,15 @@ templ (l *logViewer) Render() {
     <div class="flex-col p-1 border-rounded border-cyan">
         <div class="flex justify-between">
             <span class="font-bold text-cyan">Log Viewer</span>
-            @if l.sticky.Get() {
+            if l.sticky.Get() {
                 <span class="text-green font-bold">FOLLOWING</span>
-            } @else {
+            } else {
                 <span class="text-yellow font-dim">PAUSED</span>
             }
         </div>
         <div class="overflow-y-scroll" height={12} ref={l.content}
              scrollOffset={0, l.scrollY.Get()}>
-            @for _, line := range l.lines.Get() {
+            for _, line := range l.lines.Get() {
                 <span class="font-dim">{line}</span>
             }
         </div>
@@ -483,10 +483,10 @@ templ (f *fileList) Render() {
         <span class="text-gradient-cyan-magenta font-bold">Files</span>
         <div class="overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
              height={12} ref={f.content} scrollOffset={0, f.scrollY.Get()}>
-            @for i, name := range f.files {
-                @if i == f.selected.Get() {
+            for i, name := range f.files {
+                if i == f.selected.Get() {
                     <span class="text-cyan font-bold bg-bright-black">{fmt.Sprintf(" > %s ", name)}</span>
-                } @else {
+                } else {
                     <span>{fmt.Sprintf("   %s", name)}</span>
                 }
             }

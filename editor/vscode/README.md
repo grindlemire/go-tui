@@ -6,7 +6,7 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
 
 - **Syntax Highlighting**: Full highlighting support for the GSX DSL
   - Component declarations: `templ Name(params) { ... }` and `templ (c *Type) Render() { ... }`
-  - Keywords: `@for`, `@if`, `@else`, `@let`
+  - Keywords: `for`, `if`, `else`, `:=`
   - Element tags: `<div>`, `<span>`, `<p>`, `<button>`, `<input>`, `<textarea>`, `<table>`, `<progress>`, etc.
   - Ref bindings: `ref={myRef}` on elements
   - Reactive state: `tui.NewState()`, `.Get()`, `.Set()`, `.Update()`
@@ -126,9 +126,9 @@ templ (c *counter) Render() {
 |-----------|---------|
 | Component | `templ Name(params) { ... }` |
 | Method component | `templ (c *Type) Render() { ... }` |
-| For loop | `@for i, v := range items { ... }` |
-| If/Else | `@if condition { ... } @else { ... }` |
-| Let binding | `@let label = <span>text</span>` |
+| For loop | `for i, v := range items { ... }` |
+| If/Else | `if condition { ... } else { ... }` |
+| Let binding | `label := <span>text</span>` |
 | Component call | `@ComponentName(args)` |
 | Element | `<div class="flex-col gap-1">children</div>` |
 | Self-closing element | `<hr />`, `<br />`, `<input />`, `<progress />` |

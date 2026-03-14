@@ -492,7 +492,7 @@ Each field is a vertical stack of label and input. The button row uses `justify-
 ```gsx
 templ FlexWrapGrid() {
     <div class="flex flex-wrap gap-1 grow content-center">
-        @for _, label := range labels {
+        for _, label := range labels {
             <div class="border-rounded p-1 w-16 flex-col items-center shrink-0">
                 <span>{label}</span>
             </div>

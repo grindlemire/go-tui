@@ -267,13 +267,13 @@ templ (c *counter) Render() {
 }
 ```
 
-### Reusable element fragments with @let
+### Reusable element fragments with :=
 
-`@let` binds an element to a name so you can reuse it in multiple places. It requires an element (starting with `<`), not a Go expression.
+The `:=` binding assigns an element to a name so you can reuse it in multiple places. It requires an element (starting with `<`), not a Go expression.
 
 ```gsx
 templ (s *stateApp) Render() {
-    @let countBadge = <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
+    countBadge := <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
     <div class="flex-col gap-1">
         {countBadge}
     </div>
@@ -284,9 +284,9 @@ templ (s *stateApp) Render() {
 
 ```gsx
 templ (a *myApp) Render() {
-    @if a.loading.Get() {
+    if a.loading.Get() {
         <span class="text-yellow">Loading...</span>
-    } @else {
+    } else {
         <span class="text-green">Ready</span>
     }
 }

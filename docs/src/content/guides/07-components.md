@@ -665,20 +665,20 @@ func (d *dashboard) KeyMap() tui.KeyMap {
 templ (d *dashboard) Render() {
     <div class="flex-col p-1 gap-1 border-rounded border-cyan">
         <div class="flex gap-2">
-            @for i, tab := range d.tabs {
-                @if i == d.selected.Get() {
+            for i, tab := range d.tabs {
+                if i == d.selected.Get() {
                     @Badge(tab, "text-cyan")
-                } @else {
+                } else {
                     <span class="font-dim">{tab}</span>
                 }
             }
         </div>
 
-        @if d.selected.Get() == 0 {
+        if d.selected.Get() == 0 {
             @OverviewTab()
-        } @else @if d.selected.Get() == 1 {
+        } else if d.selected.Get() == 1 {
             @MetricsTab()
-        } @else {
+        } else {
             @LogsTab()
         }
 

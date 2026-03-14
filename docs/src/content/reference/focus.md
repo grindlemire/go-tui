@@ -411,9 +411,9 @@ templ (p *panels) Render() {
 templ Panel(title string, active bool) {
     <div class="flex-col flex-1 border-rounded p-1" borderStyle={panelBorder(active)}>
         <span class={panelStyle(active)}>{title}</span>
-        @if active {
+        if active {
             <span class="text-cyan">{fmt.Sprintf("%s is active", title)}</span>
-        } @else {
+        } else {
             <span class="text-dim">Press Tab to focus</span>
         }
     </div>

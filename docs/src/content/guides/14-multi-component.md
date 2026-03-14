@@ -107,10 +107,10 @@ templ (s *sidebar) Render() {
     <div class="flex-col border-single shrink-0 px-1" width={20}>
         <span class="text-gradient-cyan-magenta font-bold">Folders</span>
         <hr />
-        @for i, cat := range categories {
-            @if i == s.selected.Get() {
+        for i, cat := range categories {
+            if i == s.selected.Get() {
                 <span class="text-cyan font-bold">{"> " + cat}</span>
-            } @else {
+            } else {
                 <span class="font-dim">{"  " + cat}</span>
             }
         }
@@ -150,10 +150,10 @@ templ (c *content) Render() {
         <span class="font-bold text-cyan">{c.category.Get() + "/"}</span>
         <hr />
         files := filesByCategory[c.category.Get()]
-        @for i, file := range files {
-            @if i == len(files)-1 {
+        for i, file := range files {
+            if i == len(files)-1 {
                 <span>{fmt.Sprintf("└── %s", file)}</span>
-            } @else {
+            } else {
                 <span>{fmt.Sprintf("├── %s", file)}</span>
             }
         }
@@ -223,7 +223,7 @@ func (s *searchBar) deactivate(ke tui.KeyEvent) {
 
 templ (s *searchBar) Render() {
     <div class="shrink-0">
-        @if s.active.Get() {
+        if s.active.Get() {
             <hr />
             <div class="px-1 flex gap-1">
                 <span class="text-cyan font-bold">Search:</span>
@@ -295,7 +295,7 @@ app.Mount(a, 0, func() tui.Component {
 
 This is why a child's local state survives parent re-renders. The sidebar's `selected` state persists because the framework returns the cached sidebar instance instead of creating a new one.
 
-When a component is no longer rendered (removed from the tree by an `@if` condition, for example), the framework's mark-and-sweep cleanup calls the cleanup function returned by `Init()` and removes the instance from cache.
+When a component is no longer rendered (removed from the tree by an `if` condition, for example), the framework's mark-and-sweep cleanup calls the cleanup function returned by `Init()` and removes the instance from cache.
 
 You don't call `Mount` directly. The code generator handles it. Write `@Sidebar(a.category)` in your `.gsx` file and the generated code does the rest.
 
@@ -510,16 +510,16 @@ func (s *sidebar) sidebarWidth() int {
 
 templ (s *sidebar) Render() {
     <div class="flex-col border-single shrink-0" width={s.sidebarWidth()}>
-        @if s.expanded.Get() {
+        if s.expanded.Get() {
             <div class="flex-col px-1">
                 <span class="text-gradient-cyan-magenta font-bold">Folders</span>
             </div>
             <hr />
             <div class="flex-col px-1 grow">
-                @for i, cat := range categories {
-                    @if i == s.selected.Get() {
+                for i, cat := range categories {
+                    if i == s.selected.Get() {
                         <span class="text-cyan font-bold">{"> " + cat}</span>
-                    } @else {
+                    } else {
                         <span class="font-dim">{"  " + cat}</span>
                     }
                 }
@@ -528,7 +528,7 @@ templ (s *sidebar) Render() {
             <div class="flex-col px-1">
                 <span class="font-dim text-cyan">Ctrl+B hide</span>
             </div>
-        } @else {
+        } else {
             <span class="text-cyan font-bold px-1">F</span>
         }
     </div>
@@ -590,7 +590,7 @@ func (s *searchBar) deactivate(ke tui.KeyEvent) {
 
 templ (s *searchBar) Render() {
     <div class="shrink-0">
-        @if s.active.Get() {
+        if s.active.Get() {
             <hr />
             <div class="px-1 flex gap-1">
                 <span class="text-cyan font-bold">Search:</span>
@@ -642,17 +642,17 @@ templ (c *content) Render() {
     <div class="flex-col grow px-2 overflow-hidden">
         <span class="font-bold text-cyan">{c.category.Get() + "/"}</span>
         <hr />
-        @for i, file := range c.filteredFiles() {
-            @if i == len(c.filteredFiles())-1 {
+        for i, file := range c.filteredFiles() {
+            if i == len(c.filteredFiles())-1 {
                 <span>{fmt.Sprintf("└── %s", file)}</span>
-            } @else {
+            } else {
                 <span>{fmt.Sprintf("├── %s", file)}</span>
             }
         }
-        @if len(c.filteredFiles()) == 0 {
+        if len(c.filteredFiles()) == 0 {
             <span class="font-dim">No matching files</span>
         }
-        @if c.query.Get() != "" {
+        if c.query.Get() != "" {
             <br />
             <span class="font-dim">{fmt.Sprintf("Filtering: \"%s\"", c.query.Get())}</span>
         }

@@ -18,7 +18,7 @@ function useValueProps() {
       tag: ".gsx",
       label: "templ-inspired syntax",
       summary: "HTML-like templates that compile to type-safe Go",
-      detail: ".gsx files with @if, @for, @let control flow intermingled with regular Go code that compile to type-safe Go.",
+      detail: ".gsx files with if, for, := control flow intermingled with regular Go code that compile to type-safe Go.",
       color: t.tertiary,
     },
     {
