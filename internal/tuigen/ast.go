@@ -208,6 +208,7 @@ type LetBinding struct {
 	Call            *ComponentCall // RHS is a component call (e.g., @MyComponent())
 	Expr            string         // RHS is a Go expression (e.g., fmt.Sprintf(...))
 	IsShortForm     bool           // true for :=, false for var or @let
+	IsVarForm       bool           // true for var form, false for @let form
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields

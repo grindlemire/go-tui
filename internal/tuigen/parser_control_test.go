@@ -326,6 +326,22 @@ templ Test() {
 }`,
 			wantCodes: []string{"x := 1", "y := 2", "z := x + y"},
 		},
+		"typed var declaration": {
+			input: `package x
+templ Test() {
+	var count int = 0
+	<span>{count}</span>
+}`,
+			wantCodes: []string{"var count int = 0"},
+		},
+		"var without initializer": {
+			input: `package x
+templ Test() {
+	var err error
+	<span>{err}</span>
+}`,
+			wantCodes: []string{"var err error"},
+		},
 		"defer statement": {
 			input: `package x
 templ Test() {

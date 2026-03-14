@@ -209,15 +209,19 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 				Modifiers: TokenModDeclaration | TokenModReadonly,
 			})
 		} else {
-			// @let syntax: position is at @, emit @let keyword + variable
+			// var or @let syntax: position is at the keyword start
+			kwLen := len("@let")
+			if n.IsVarForm {
+				kwLen = len("var")
+			}
 			*tokens = append(*tokens, SemanticToken{
 				Line:      n.Position.Line - 1,
 				StartChar: n.Position.Column - 1,
-				Length:    len("@let"),
+				Length:    kwLen,
 				TokenType: TokenTypeKeyword,
 				Modifiers: 0,
 			})
-			varStart := n.Position.Column - 1 + len("@let ")
+			varStart := n.Position.Column - 1 + kwLen + 1 // +1 for space
 			*tokens = append(*tokens, SemanticToken{
 				Line:      n.Position.Line - 1,
 				StartChar: varStart,

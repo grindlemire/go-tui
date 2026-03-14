@@ -248,6 +248,7 @@ func (p *Parser) parseShortBinding(name string, pos Position) *LetBinding {
 // parseVarBinding parses var name = <element> or var name = @Component().
 // Called when parser sees TokenVar followed by TokenIdent followed by TokenEquals
 // followed by TokenLAngle or TokenAtCall/TokenAtExpr.
+// Sets IsVarForm=true to distinguish from @let bindings in semantic highlighting.
 func (p *Parser) parseVarBinding() *LetBinding {
 	pos := p.position()
 	p.advance() // consume "var"
@@ -259,14 +260,16 @@ func (p *Parser) parseVarBinding() *LetBinding {
 	name := p.current.Literal
 	p.advance()
 
-	if !p.expect(TokenEquals) {
-		return nil
+	if p.current.Type != TokenEquals {
+		return nil // not a var-binding form; caller will restore state
 	}
+	p.advance()
 	p.skipNewlines()
 
 	binding := &LetBinding{
 		Name:        name,
 		IsShortForm: false,
+		IsVarForm:   true,
 		Position:    pos,
 	}
 
