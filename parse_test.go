@@ -463,6 +463,133 @@ func TestDecodeModifier(t *testing.T) {
 	}
 }
 
+func TestParseInput_KittyCSIu(t *testing.T) {
+	type tc struct {
+		input    []byte
+		expected KeyEvent
+	}
+
+	tests := map[string]tc{
+		"backspace": {
+			input:    []byte("\x1b[127;1u"),
+			expected: KeyEvent{Key: KeyBackspace},
+		},
+		"enter": {
+			input:    []byte("\x1b[13;1u"),
+			expected: KeyEvent{Key: KeyEnter},
+		},
+		"tab": {
+			input:    []byte("\x1b[9;1u"),
+			expected: KeyEvent{Key: KeyTab},
+		},
+		"escape": {
+			input:    []byte("\x1b[27;1u"),
+			expected: KeyEvent{Key: KeyEscape},
+		},
+		"ctrl+h (distinct from backspace)": {
+			input:    []byte("\x1b[104;5u"),
+			expected: KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl},
+		},
+		"ctrl+m (distinct from enter)": {
+			input:    []byte("\x1b[109;5u"),
+			expected: KeyEvent{Key: KeyRune, Rune: 'm', Mod: ModCtrl},
+		},
+		"ctrl+i (distinct from tab)": {
+			input:    []byte("\x1b[105;5u"),
+			expected: KeyEvent{Key: KeyRune, Rune: 'i', Mod: ModCtrl},
+		},
+		"ctrl+a": {
+			input:    []byte("\x1b[97;5u"),
+			expected: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl},
+		},
+		"shift+enter": {
+			input:    []byte("\x1b[13;2u"),
+			expected: KeyEvent{Key: KeyEnter, Mod: ModShift},
+		},
+		"alt+backspace": {
+			input:    []byte("\x1b[127;3u"),
+			expected: KeyEvent{Key: KeyBackspace, Mod: ModAlt},
+		},
+		"ctrl+shift+a": {
+			input:    []byte("\x1b[97;6u"),
+			expected: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl | ModShift},
+		},
+		"f1": {
+			input:    []byte("\x1b[57364;1u"),
+			expected: KeyEvent{Key: KeyF1},
+		},
+		"f12": {
+			input:    []byte("\x1b[57375;1u"),
+			expected: KeyEvent{Key: KeyF12},
+		},
+		"up arrow": {
+			input:    []byte("\x1b[57352;1u"),
+			expected: KeyEvent{Key: KeyUp},
+		},
+		"down arrow": {
+			input:    []byte("\x1b[57353;1u"),
+			expected: KeyEvent{Key: KeyDown},
+		},
+		"right arrow": {
+			input:    []byte("\x1b[57354;1u"),
+			expected: KeyEvent{Key: KeyRight},
+		},
+		"left arrow": {
+			input:    []byte("\x1b[57355;1u"),
+			expected: KeyEvent{Key: KeyLeft},
+		},
+		"home": {
+			input:    []byte("\x1b[57345;1u"),
+			expected: KeyEvent{Key: KeyHome},
+		},
+		"end": {
+			input:    []byte("\x1b[57346;1u"),
+			expected: KeyEvent{Key: KeyEnd},
+		},
+		"insert": {
+			input:    []byte("\x1b[57348;1u"),
+			expected: KeyEvent{Key: KeyInsert},
+		},
+		"delete": {
+			input:    []byte("\x1b[57349;1u"),
+			expected: KeyEvent{Key: KeyDelete},
+		},
+		"page up": {
+			input:    []byte("\x1b[57350;1u"),
+			expected: KeyEvent{Key: KeyPageUp},
+		},
+		"page down": {
+			input:    []byte("\x1b[57351;1u"),
+			expected: KeyEvent{Key: KeyPageDown},
+		},
+		"no modifier param": {
+			input:    []byte("\x1b[97u"),
+			expected: KeyEvent{Key: KeyRune, Rune: 'a'},
+		},
+		"space": {
+			input:    []byte("\x1b[32;1u"),
+			expected: KeyEvent{Key: KeyRune, Rune: ' '},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			events := parseInput(tt.input)
+			if len(events) != 1 {
+				t.Fatalf("parseInput(%q) returned %d events, want 1", tt.input, len(events))
+			}
+			ke, ok := events[0].(KeyEvent)
+			if !ok {
+				t.Fatalf("event is not KeyEvent")
+			}
+			if ke.Key != tt.expected.Key || ke.Rune != tt.expected.Rune || ke.Mod != tt.expected.Mod {
+				t.Errorf("parseInput(%q): got {Key: %v, Rune: %q, Mod: %v}, want {Key: %v, Rune: %q, Mod: %v}",
+					tt.input, ke.Key, ke.Rune, ke.Mod, tt.expected.Key, tt.expected.Rune, tt.expected.Mod)
+			}
+		})
+	}
+}
+
 func TestParseSS3(t *testing.T) {
 	type tc struct {
 		input    byte
