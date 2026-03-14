@@ -201,7 +201,19 @@ All twelve function keys are defined: `KeyF1`, `KeyF2`, `KeyF3`, `KeyF4`, `KeyF5
 | `KeyCtrlA` – `KeyCtrlZ` | `"Ctrl+A"` – `"Ctrl+Z"` |
 | `KeyCtrlSpace` | `"Ctrl+Space"` |
 
-All 26 letter combinations are defined: `KeyCtrlA` through `KeyCtrlZ`. These represent the Ctrl+letter sequences that terminals report as control codes.
+Most Ctrl+letter combinations have their own distinct constants (`KeyCtrlA` through `KeyCtrlZ`). Three are exceptions: `KeyCtrlH`, `KeyCtrlI`, and `KeyCtrlM` are aliases for `KeyBackspace`, `KeyTab`, and `KeyEnter` respectively, because the terminal sends the same byte for each pair. See the section below for details.
+
+### Terminal Byte Aliases
+
+Terminals encode some Ctrl+letter combinations using the same byte as a functional key. go-tui defines these as true aliases (identical constant values), so binding either name matches both:
+
+| Alias | Same as | Terminal byte |
+|-------|---------|---------------|
+| `KeyCtrlH` | `KeyBackspace` | `0x08` |
+| `KeyCtrlI` | `KeyTab` | `0x09` |
+| `KeyCtrlM` | `KeyEnter` | `0x0D` |
+
+Because these are the same constant, `OnKey(tui.KeyCtrlH, handler)` and `OnKey(tui.KeyBackspace, handler)` produce identical bindings. There is no way to distinguish Ctrl+H from Backspace at the terminal level, and the same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
 
 ## Modifier Flags
 

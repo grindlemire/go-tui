@@ -54,12 +54,15 @@ const (
 	KeyCtrlE
 	KeyCtrlF
 	KeyCtrlG
-	KeyCtrlH
-	KeyCtrlI
+	// KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases defined below.
+	// They share the same terminal byte as KeyBackspace, KeyTab,
+	// and KeyEnter respectively, so they must have the same value.
+	_
+	_
 	KeyCtrlJ
 	KeyCtrlK
 	KeyCtrlL
-	KeyCtrlM
+	_
 	KeyCtrlN
 	KeyCtrlO
 	KeyCtrlP
@@ -76,6 +79,14 @@ const (
 
 	// KeyCtrlSpace represents Ctrl+Space (NUL character, 0x00)
 	KeyCtrlSpace
+)
+
+// Terminal byte aliases: these Ctrl+letter combinations produce the same
+// byte as their functional key counterparts, so they are the same Key.
+const (
+	KeyCtrlH = KeyBackspace // 0x08
+	KeyCtrlI = KeyTab       // 0x09
+	KeyCtrlM = KeyEnter     // 0x0D
 )
 
 // String returns a human-readable representation of the key.
@@ -151,18 +162,14 @@ func (k Key) String() string {
 		return "Ctrl+F"
 	case KeyCtrlG:
 		return "Ctrl+G"
-	case KeyCtrlH:
-		return "Ctrl+H"
-	case KeyCtrlI:
-		return "Ctrl+I"
+	// KeyCtrlH == KeyBackspace, KeyCtrlI == KeyTab (same terminal byte)
 	case KeyCtrlJ:
 		return "Ctrl+J"
 	case KeyCtrlK:
 		return "Ctrl+K"
 	case KeyCtrlL:
 		return "Ctrl+L"
-	case KeyCtrlM:
-		return "Ctrl+M"
+	// KeyCtrlM == KeyEnter (same terminal byte)
 	case KeyCtrlN:
 		return "Ctrl+N"
 	case KeyCtrlO:
