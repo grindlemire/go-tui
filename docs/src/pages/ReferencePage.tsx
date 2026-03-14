@@ -35,11 +35,20 @@ export default function ReferencePage() {
   return (
     <div className="max-w-[1100px] xl:max-w-[1360px] mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
       <h1
-        className="text-3xl sm:text-5xl font-bold tracking-tight mb-8 sm:mb-12"
+        className="text-3xl sm:text-5xl font-bold tracking-tight mb-4 sm:mb-6"
         style={{ color: t.heading }}
       >
         API Reference
       </h1>
+
+      <div
+        className="inline-flex items-center gap-1.5 font-['Fira_Code',monospace] text-[11px] px-2.5 py-1 rounded-md mb-8 sm:mb-12"
+        style={{ color: t.textMuted, background: `${t.accent}12`, border: `1px solid ${t.accent}20` }}
+      >
+        <span style={{ color: t.accent, fontWeight: 600 }}>pre-1.0</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        Some APIs may evolve as the project matures
+      </div>
 
       <div className="flex gap-8 sm:gap-10">
         {/* Desktop Sidebar */}
