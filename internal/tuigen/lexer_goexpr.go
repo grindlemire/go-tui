@@ -106,29 +106,9 @@ func (l *Lexer) skipCharInExpr() {
 // PeekToken returns the next token without consuming it.
 // This is used by the parser to look ahead.
 func (l *Lexer) PeekToken() Token {
-	// Save current state
-	pos := l.pos
-	readPos := l.readPos
-	ch := l.ch
-	line := l.line
-	column := l.column
-	tokenLine := l.tokenLine
-	tokenColumn := l.tokenColumn
-	pendingComments := l.pendingComments
-
-	// Get next token
+	saved := l.SaveState()
 	tok := l.Next()
-
-	// Restore state
-	l.pos = pos
-	l.readPos = readPos
-	l.ch = ch
-	l.line = line
-	l.column = column
-	l.tokenLine = tokenLine
-	l.tokenColumn = tokenColumn
-	l.pendingComments = pendingComments
-
+	l.RestoreState(saved)
 	return tok
 }
 
