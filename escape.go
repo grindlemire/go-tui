@@ -190,6 +190,32 @@ func (e *escBuilder) DisableMouse() {
 	e.buf = append(e.buf, '?', '1', '0', '0', '0', 'l')
 }
 
+// KittyKeyboardPush pushes Kitty keyboard protocol mode onto the terminal's
+// keyboard mode stack. flags=1 enables key disambiguation.
+// Sequence: CSI > flags u
+func (e *escBuilder) KittyKeyboardPush(flags int) {
+	e.writeCSI()
+	e.buf = append(e.buf, '>')
+	e.writeInt(flags)
+	e.buf = append(e.buf, 'u')
+}
+
+// KittyKeyboardPop pops the most recent Kitty keyboard protocol mode from
+// the terminal's keyboard mode stack, restoring the previous mode.
+// Sequence: CSI < u
+func (e *escBuilder) KittyKeyboardPop() {
+	e.writeCSI()
+	e.buf = append(e.buf, '<', 'u')
+}
+
+// KittyKeyboardQuery queries the terminal for the current Kitty keyboard
+// protocol mode. The terminal responds with CSI ? flags u.
+// Sequence: CSI ? u
+func (e *escBuilder) KittyKeyboardQuery() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', 'u')
+}
+
 // ResetStyle resets all text attributes to default.
 func (e *escBuilder) ResetStyle() {
 	e.writeCSI()
