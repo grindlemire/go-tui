@@ -16,8 +16,8 @@ type ANSITerminal struct {
 	esc       *escBuilder   // Escape sequence builder
 	inFd      uintptr       // File descriptor for input (needed for raw mode)
 	outFd     uintptr       // File descriptor for output (needed for size query)
-	rawState      *rawModeState // Platform-specific raw mode state
-	kittyKeyboard bool          // true if Kitty keyboard protocol was successfully negotiated
+	rawState  *rawModeState // Platform-specific raw mode state
+	kittyKeyboard bool     // true if Kitty keyboard protocol was successfully negotiated
 }
 
 // NewANSITerminal creates a new ANSI terminal with auto-detected capabilities.
@@ -236,8 +236,9 @@ func (t *ANSITerminal) DisableKittyKeyboard() {
 // includes bit 1 (disambiguate).
 func parseKittyQueryResponse(data []byte) bool {
 	// Look for: \x1b [ ? <digits> u
+	// Loop bound ensures i+3 is always in bounds.
 	for i := 0; i < len(data)-3; i++ {
-		if data[i] == 0x1b && i+1 < len(data) && data[i+1] == '[' && i+2 < len(data) && data[i+2] == '?' {
+		if data[i] == 0x1b && data[i+1] == '[' && data[i+2] == '?' {
 			// Parse digits after '?'
 			j := i + 3
 			flags := 0
