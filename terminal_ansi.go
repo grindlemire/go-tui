@@ -9,13 +9,13 @@ import (
 // ANSITerminal implements Terminal using ANSI escape sequences.
 // It works with any terminal emulator that supports ANSI codes.
 type ANSITerminal struct {
-	out       io.Writer     // Output destination (usually os.Stdout)
-	in        io.Reader     // Input source (usually os.Stdin)
-	caps      Capabilities  // Terminal capabilities
-	lastStyle Style         // Last emitted style (for optimization)
-	esc       *escBuilder   // Escape sequence builder
-	inFd      uintptr       // File descriptor for input (needed for raw mode)
-	outFd     uintptr       // File descriptor for output (needed for size query)
+	out           io.Writer     // Output destination (usually os.Stdout)
+	in            io.Reader     // Input source (usually os.Stdin)
+	caps          Capabilities  // Terminal capabilities
+	lastStyle     Style         // Last emitted style (for optimization)
+	esc           *escBuilder   // Escape sequence builder
+	inFd          uintptr       // File descriptor for input (needed for raw mode)
+	outFd         uintptr       // File descriptor for output (needed for size query)
 	rawState      *rawModeState // Platform-specific raw mode state
 	kittyKeyboard bool          // true if Kitty keyboard protocol was successfully negotiated
 }
@@ -133,10 +133,10 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 func (t *ANSITerminal) Clear() {
 	t.esc.Reset()
 	t.esc.ResetStyle()
-	t.esc.MoveTo(0, 0)     // Home first
-	t.esc.ClearScreen()    // ESC[2J - clear visible screen
+	t.esc.MoveTo(0, 0)      // Home first
+	t.esc.ClearScreen()     // ESC[2J - clear visible screen
 	t.esc.ClearScrollback() // ESC[3J - also clear scrollback (helps with resize)
-	t.esc.MoveTo(0, 0)     // Ensure cursor at home after clear
+	t.esc.MoveTo(0, 0)      // Ensure cursor at home after clear
 	t.out.Write(t.esc.Bytes())
 	t.lastStyle = NewStyle()
 }
