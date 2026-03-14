@@ -27,6 +27,10 @@
   <a href="#editor-support">Editor Support</a>
 </p>
 
+<p align="center">
+  <strong>Pre-1.0</strong>: go-tui is under active development. Some APIs may evolve as the project matures.
+</p>
+
 ---
 
 ## Install
