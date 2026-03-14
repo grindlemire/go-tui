@@ -24,9 +24,11 @@ func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
 
 	// Read the response byte-by-byte to avoid consuming extra stdin data
 	// (e.g. keystrokes typed during startup). The expected response is
-	// CSI ? <digits> u, so we stop as soon as we see the 'u' terminator.
+	// CSI ? <digits> u, so we stop as soon as we see the 'u' terminator
+	// after the CSI ? prefix.
 	var resp [32]byte
 	n := 0
+	seenCSIQuestion := false
 	deadline := time.Now().Add(50 * time.Millisecond)
 
 	for n < len(resp) {
@@ -45,8 +47,12 @@ func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
 		}
 		resp[n] = b[0]
 		n++
-		// Minimum valid response is \x1b[?1u (5 bytes). Stop at 'u' terminator.
-		if b[0] == 'u' && n >= 5 {
+		// Track whether we've seen the CSI ? prefix
+		if n >= 3 && resp[n-3] == 0x1b && resp[n-2] == '[' && resp[n-1] == '?' {
+			seenCSIQuestion = true
+		}
+		// Stop at 'u' terminator only after seeing the response prefix
+		if seenCSIQuestion && b[0] == 'u' {
 			break
 		}
 	}
@@ -57,6 +63,11 @@ func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
 		return true
 	}
 
-	t.popKittyKeyboard()
+	// Pop to undo the push. Skip if we got no response at all (timeout
+	// with zero bytes), since the pop is a no-op per the Kitty spec but
+	// avoids an unnecessary write.
+	if n > 0 {
+		t.popKittyKeyboard()
+	}
 	return false
 }
