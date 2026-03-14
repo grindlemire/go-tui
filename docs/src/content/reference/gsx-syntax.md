@@ -500,7 +500,7 @@ badge := <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</s
 </div>
 ```
 
-The `:=` binding assigns an element expression (starting with `<`) to a local variable, not arbitrary Go expressions.
+Note the `:=` binding assigns both element expressions (starting with `<`) to a local variable as well as normal Go expressions.
 
 ## Tailwind class reference
 
@@ -668,6 +668,7 @@ Syntax: `{target}-gradient-{start}-{end}[-direction]`
 **Targets:** `text-gradient`, `bg-gradient`, `border-gradient`
 
 **Directions:**
+
 - `-h` -- horizontal (default)
 - `-v` -- vertical
 - `-dd` -- diagonal down
