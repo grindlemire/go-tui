@@ -27,6 +27,18 @@ func (p *Parser) Errors() *ErrorList {
 	return p.errors
 }
 
+// saveState captures the current parser state for speculative parsing.
+func (p *Parser) saveState() (Token, Token, LexerState) {
+	return p.current, p.peek, p.lexer.SaveState()
+}
+
+// restoreState restores the parser to a previously saved state.
+func (p *Parser) restoreState(current, peek Token, ls LexerState) {
+	p.current = current
+	p.peek = peek
+	p.lexer.RestoreState(ls)
+}
+
 // advance moves to the next token, skipping newlines where appropriate.
 func (p *Parser) advance() {
 	p.current = p.peek

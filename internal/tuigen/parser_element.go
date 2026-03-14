@@ -79,25 +79,51 @@ func (p *Parser) attachLeadingComments(node Node, comments *CommentGroup) {
 // nil gotcha where a typed nil pointer (e.g., (*ComponentCall)(nil)) converted
 // to an interface would pass `node != nil` checks in callers.
 func (p *Parser) parseBodyNode() Node {
+	// Try control flow and binding dispatch first
+	if node := p.parseControlFlowOrBinding(); node != nil {
+		return node
+	}
+
 	switch p.current.Type {
 	case TokenLAngle:
 		if el := p.parseElement(); el != nil {
 			return el
 		}
+	case TokenLBrace:
+		if node := p.parseGoExprOrChildrenSlot(); node != nil {
+			return node
+		}
+	case TokenIdent, TokenVar, TokenFor, TokenFunc, TokenReturn:
+		// Raw Go statement (e.g., fmt.Printf("x"), x := 1, for i := 0; ...)
+		// Note: go, defer, switch, select are lexed as TokenIdent
+		// TokenFor lands here for C-style for loops (isRangeForLoop returned false)
+		// TokenVar lands here for plain Go var declarations (not var name = <element>)
+		if stmt := p.parseGoStatement(); stmt != nil {
+			return stmt
+		}
+	default:
+		p.errors.AddErrorf(p.position(), "unexpected token %s in body", p.current.Type)
+		p.advance()
+	}
+	return nil
+}
+
+// parseControlFlowOrBinding attempts to parse a control flow node (if/for)
+// or a binding (name := <element>, var name = <element>) from the current token.
+// Returns the parsed node, or nil if the current token doesn't match.
+// When nil is returned, the token cursor is guaranteed to be unchanged (via save/restore).
+func (p *Parser) parseControlFlowOrBinding() Node {
+	switch p.current.Type {
 	case TokenAtLet:
 		if let := p.parseLet(); let != nil {
 			return let
 		}
 	case TokenFor:
 		if !p.isRangeForLoop() {
-			// Bare "for" that isn't range-based -> raw Go statement
-			if stmt := p.parseGoStatement(); stmt != nil {
-				return stmt
-			}
-		} else {
-			if f := p.parseFor(); f != nil {
-				return f
-			}
+			return nil // C-style for, let caller handle as GoCode
+		}
+		if f := p.parseFor(); f != nil {
+			return f
 		}
 	case TokenIf:
 		if i := p.parseIf(); i != nil {
@@ -111,19 +137,32 @@ func (p *Parser) parseBodyNode() Node {
 		if expr := p.parseComponentExpr(); expr != nil {
 			return expr
 		}
-	case TokenLBrace:
-		if node := p.parseGoExprOrChildrenSlot(); node != nil {
-			return node
+	case TokenVar:
+		if p.peek.Type == TokenIdent {
+			cur, peek, ls := p.saveState()
+			if let := p.parseVarBinding(); let != nil {
+				return let
+			}
+			p.restoreState(cur, peek, ls)
 		}
-	case TokenIdent, TokenFunc, TokenReturn:
-		// Raw Go statement (e.g., fmt.Printf("x"), x := 1, if err != nil {...})
-		// Note: go, defer, switch, select are lexed as TokenIdent
-		if stmt := p.parseGoStatement(); stmt != nil {
-			return stmt
+		return nil
+	case TokenIdent:
+		if p.peek.Type == TokenColonEquals {
+			cur, peek, ls := p.saveState()
+			name := p.current.Literal
+			pos := p.position()
+			p.advance() // consume ident
+			p.advance() // consume :=
+			p.skipNewlines()
+
+			if p.current.Type == TokenLAngle || p.current.Type == TokenAtCall || p.current.Type == TokenAtExpr {
+				if let := p.parseShortBinding(name, pos); let != nil {
+					return let
+				}
+			}
+			p.restoreState(cur, peek, ls)
 		}
-	default:
-		p.errors.AddErrorf(p.position(), "unexpected token %s in body", p.current.Type)
-		p.advance()
+		return nil
 	}
 	return nil
 }
@@ -367,44 +406,19 @@ func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 
 		// Parse child based on token type
 		var child Node
-		switch p.current.Type {
-		case TokenLAngle:
+
+		// Try control flow and binding dispatch first
+		if node := p.parseControlFlowOrBinding(); node != nil {
+			child = node
+		} else if p.current.Type == TokenLAngle {
 			// Nested element
-			// Check concrete type before assigning to interface to avoid typed nil
 			if elem := p.parseElement(); elem != nil {
 				child = elem
 			}
-		case TokenLBrace:
+		} else if p.current.Type == TokenLBrace {
 			// Go expression or children slot
-			// Note: parseGoExprOrChildrenSlot returns Node interface, so no typed nil issue
 			child = p.parseGoExprOrChildrenSlot()
-		case TokenAtLet:
-			if let := p.parseLet(); let != nil {
-				child = let
-			}
-		case TokenFor:
-			if !p.isRangeForLoop() {
-				if stmt := p.parseGoStatement(); stmt != nil {
-					child = stmt
-				}
-			} else {
-				if f := p.parseFor(); f != nil {
-					child = f
-				}
-			}
-		case TokenIf:
-			if i := p.parseIf(); i != nil {
-				child = i
-			}
-		case TokenAtCall:
-			if call := p.parseComponentCall(); call != nil {
-				child = call
-			}
-		case TokenAtExpr:
-			if expr := p.parseComponentExpr(); expr != nil {
-				child = expr
-			}
-		default:
+		} else {
 			// Coalesce consecutive text tokens into a single TextContent.
 			// In element content, we treat identifiers and various punctuation as text
 			// until we hit a special delimiter ({, <, @, newline, EOF, or closing tag).

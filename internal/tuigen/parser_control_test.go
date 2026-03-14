@@ -460,6 +460,224 @@ templ Test(x int) {
 	}
 }
 
+func TestParser_ShortBinding(t *testing.T) {
+	type tc struct {
+		name        string
+		input       string
+		wantName    string
+		wantElement string // expected element tag, empty if not element RHS
+		wantExpr    string // expected expression, empty if not expr RHS
+		wantCall    string // expected component call name, empty if not call RHS
+		wantShort   bool   // IsShortForm
+	}
+
+	tests := map[string]tc{
+		"short element binding": {
+			input:       "package x\ntempl Test() {\n\tlabel := <span>Hello</span>\n\t<div></div>\n}",
+			wantName:    "label",
+			wantElement: "span",
+			wantShort:   true,
+		},
+		"short component binding": {
+			input:       "package x\ntempl Test() {\n\tfoo := @MyComponent()\n\t<div></div>\n}",
+			wantName:    "foo",
+			wantCall:    "MyComponent",
+			wantShort:   true,
+		},
+		"var element binding": {
+			input:       "package x\ntempl Test() {\n\tvar label = <span>Hello</span>\n\t<div></div>\n}",
+			wantName:    "label",
+			wantElement: "span",
+			wantShort:   false,
+		},
+		"var component binding": {
+			input:       "package x\ntempl Test() {\n\tvar foo = @MyComponent()\n\t<div></div>\n}",
+			wantName:    "foo",
+			wantCall:    "MyComponent",
+			wantShort:   false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			let, ok := file.Components[0].Body[0].(*LetBinding)
+			if !ok {
+				t.Fatalf("expected *LetBinding, got %T", file.Components[0].Body[0])
+			}
+
+			if let.Name != tt.wantName {
+				t.Errorf("Name = %q, want %q", let.Name, tt.wantName)
+			}
+			if let.IsShortForm != tt.wantShort {
+				t.Errorf("IsShortForm = %v, want %v", let.IsShortForm, tt.wantShort)
+			}
+			if tt.wantElement != "" {
+				if let.Element == nil {
+					t.Fatal("Element is nil")
+				}
+				if let.Element.Tag != tt.wantElement {
+					t.Errorf("Element.Tag = %q, want %q", let.Element.Tag, tt.wantElement)
+				}
+			}
+			if tt.wantCall != "" {
+				if let.Call == nil {
+					t.Fatal("Call is nil")
+				}
+				if let.Call.Name != tt.wantCall {
+					t.Errorf("Call.Name = %q, want %q", let.Call.Name, tt.wantCall)
+				}
+			}
+		})
+	}
+}
+
+func TestParser_BareIfStatement(t *testing.T) {
+	input := `package x
+templ Test() {
+	if showHeader {
+		<span>Header</span>
+	}
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	ifStmt, ok := file.Components[0].Body[0].(*IfStmt)
+	if !ok {
+		t.Fatalf("expected *IfStmt, got %T", file.Components[0].Body[0])
+	}
+	if ifStmt.Condition != "showHeader" {
+		t.Errorf("Condition = %q, want 'showHeader'", ifStmt.Condition)
+	}
+}
+
+func TestParser_BareElseIf(t *testing.T) {
+	input := `package x
+templ Test() {
+	if a {
+		<span>A</span>
+	} else if b {
+		<span>B</span>
+	} else {
+		<span>C</span>
+	}
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	ifStmt, ok := file.Components[0].Body[0].(*IfStmt)
+	if !ok {
+		t.Fatalf("expected *IfStmt, got %T", file.Components[0].Body[0])
+	}
+	if ifStmt.Condition != "a" {
+		t.Errorf("Condition = %q, want 'a'", ifStmt.Condition)
+	}
+	if len(ifStmt.Else) != 1 {
+		t.Fatalf("len(Else) = %d, want 1", len(ifStmt.Else))
+	}
+	elseIf, ok := ifStmt.Else[0].(*IfStmt)
+	if !ok {
+		t.Fatalf("Else[0] expected *IfStmt, got %T", ifStmt.Else[0])
+	}
+	if elseIf.Condition != "b" {
+		t.Errorf("elseIf.Condition = %q, want 'b'", elseIf.Condition)
+	}
+	if len(elseIf.Else) != 1 {
+		t.Fatalf("len(elseIf.Else) = %d, want 1", len(elseIf.Else))
+	}
+}
+
+func TestParser_BareForLoop(t *testing.T) {
+	input := `package x
+templ Test() {
+	for i, item := range items {
+		<span>{item}</span>
+	}
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	forLoop, ok := file.Components[0].Body[0].(*ForLoop)
+	if !ok {
+		t.Fatalf("expected *ForLoop, got %T", file.Components[0].Body[0])
+	}
+	if forLoop.Index != "i" {
+		t.Errorf("Index = %q, want 'i'", forLoop.Index)
+	}
+	if forLoop.Value != "item" {
+		t.Errorf("Value = %q, want 'item'", forLoop.Value)
+	}
+	if forLoop.Iterable != "items" {
+		t.Errorf("Iterable = %q, want 'items'", forLoop.Iterable)
+	}
+}
+
+func TestParser_CStyleForLoopStaysGoCode(t *testing.T) {
+	input := `package x
+templ Test() {
+	for i := 0; i < 10; i++ { sum += i }
+	<span>{sum}</span>
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	gc, ok := file.Components[0].Body[0].(*GoCode)
+	if !ok {
+		t.Fatalf("expected *GoCode for C-style for loop, got %T", file.Components[0].Body[0])
+	}
+	if gc.Code != "for i := 0; i < 10; i++ { sum += i }" {
+		t.Errorf("Code = %q", gc.Code)
+	}
+}
+
+func TestParser_ShortBindingGoExprStaysGoCode(t *testing.T) {
+	// name := goExpr should still be parsed as GoCode, not LetBinding
+	input := `package x
+templ Test() {
+	formatted := fmt.Sprintf("%d", count)
+	<span>{formatted}</span>
+}`
+
+	l := NewLexer("test.gsx", input)
+	p := NewParser(l)
+	file, err := p.ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	gc, ok := file.Components[0].Body[0].(*GoCode)
+	if !ok {
+		t.Fatalf("expected *GoCode for Go expression, got %T", file.Components[0].Body[0])
+	}
+	_ = gc
+}
+
 func TestParser_RawGoStatementsWithElements(t *testing.T) {
 	// Test that Go statements and elements can be mixed in component body
 	input := `package x

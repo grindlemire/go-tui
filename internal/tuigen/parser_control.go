@@ -203,3 +203,95 @@ func (p *Parser) parseIf() *IfStmt {
 
 	return stmt
 }
+
+// parseShortBinding parses name := <element> or name := @Component().
+// Called when parser sees TokenIdent followed by TokenColonEquals followed by
+// TokenLAngle (element) or TokenAtCall/TokenAtExpr (component call).
+// The identifier and := have already been consumed; name and pos are passed in.
+func (p *Parser) parseShortBinding(name string, pos Position) *LetBinding {
+	// := was already consumed by caller
+	p.skipNewlines()
+
+	binding := &LetBinding{
+		Name:        name,
+		IsShortForm: true,
+		Position:    pos,
+	}
+
+	switch p.current.Type {
+	case TokenLAngle:
+		elem := p.parseElement()
+		if elem == nil {
+			return nil
+		}
+		binding.Element = elem
+	case TokenAtCall:
+		call := p.parseComponentCall()
+		if call == nil {
+			return nil
+		}
+		binding.Call = call
+	case TokenAtExpr:
+		expr := p.parseComponentExpr()
+		if expr == nil {
+			return nil
+		}
+		binding.Expr = expr.Expr
+	default:
+		p.errors.AddErrorf(p.position(), "expected element or component after :=")
+		return nil
+	}
+
+	return binding
+}
+
+// parseVarBinding parses var name = <element> or var name = @Component().
+// Called when parser sees TokenVar followed by TokenIdent followed by TokenEquals
+// followed by TokenLAngle or TokenAtCall/TokenAtExpr.
+func (p *Parser) parseVarBinding() *LetBinding {
+	pos := p.position()
+	p.advance() // consume "var"
+
+	if p.current.Type != TokenIdent {
+		p.errors.AddError(p.position(), "expected variable name after var")
+		return nil
+	}
+	name := p.current.Literal
+	p.advance()
+
+	if !p.expect(TokenEquals) {
+		return nil
+	}
+	p.skipNewlines()
+
+	binding := &LetBinding{
+		Name:        name,
+		IsShortForm: false,
+		Position:    pos,
+	}
+
+	switch p.current.Type {
+	case TokenLAngle:
+		elem := p.parseElement()
+		if elem == nil {
+			return nil
+		}
+		binding.Element = elem
+	case TokenAtCall:
+		call := p.parseComponentCall()
+		if call == nil {
+			return nil
+		}
+		binding.Call = call
+	case TokenAtExpr:
+		expr := p.parseComponentExpr()
+		if expr == nil {
+			return nil
+		}
+		binding.Expr = expr.Expr
+	default:
+		return nil
+	}
+
+	return binding
+}
