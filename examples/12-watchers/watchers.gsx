@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"time"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -132,25 +131,27 @@ templ (w *watcherApp) Render() {
 		<div class="flex gap-2 shrink-0">
 			<span class="font-bold">Stopwatch</span>
 			<span class="text-cyan font-bold">{formatDuration(w.stopwatchSec.Get())}</span>
-			@if w.stopwatchOn.Get() {
+			if w.stopwatchOn.Get() {
 				<span class="text-green font-bold">Running</span>
-			} @else {
+			} else {
 				<span class="text-yellow">Paused</span>
 			}
-			<span class="font-dim">[s] toggle  [r] reset</span>
+			<span class="font-dim">[s] toggle [r] reset</span>
 		</div>
 
-		<div class="flex-col border-rounded p-1 grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
-			ref={w.feed} scrollOffset={0, w.scrollY.Get()}>
+		<div
+			ref={w.feed}
+			class="flex-col border-rounded p-1 grow overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
+			scrollOffset={0, w.scrollY.Get()}>
 			<div class="flex gap-2">
 				<span class="font-bold">Live Feed</span>
 				<span class="font-dim">{fmt.Sprintf("(%d received)", w.msgCount.Get())}</span>
 			</div>
-			@for _, msg := range w.messages.Get() {
+			for _, msg := range w.messages.Get() {
 				<span class="text-green">{msg}</span>
 			}
-			@if len(w.messages.Get()) == 0 {
-				<span class="font-dim">Waiting for messages...</span>
+			if len(w.messages.Get()) == 0 {
+				<span class="font-dim">Waitingmessages...</span>
 			}
 		</div>
 

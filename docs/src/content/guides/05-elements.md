@@ -408,13 +408,13 @@ templ (e *elementsApp) Render() {
         <div class="flex-col border-rounded p-1 gap-1">
             <span class="text-gradient-cyan-magenta font-bold">Buttons</span>
             <div class="flex gap-2">
-                @for _, label := range buttonLabels {
-                    @if label == "Disabled" {
+                for _, label := range buttonLabels {
+                    if label == "Disabled" {
                         <button ref={e.btnRefs} key={label} class="font-dim" disabled={true}>{label}</button>
-                    } @else {
-                        @if label == e.selectedBtn.Get() {
+                    } else {
+                        if label == e.selectedBtn.Get() {
                             <button ref={e.btnRefs} key={label} class="font-bold text-cyan">{label}</button>
-                        } @else {
+                        } else {
                             <button ref={e.btnRefs} key={label}>{label}</button>
                         }
                     }
@@ -453,7 +453,7 @@ templ (e *elementsApp) Render() {
                             focusColor={tui.BrightRed}
                         />
                     </div>
-                    @if e.note.Get() != "" {
+                    if e.note.Get() != "" {
                         <span class="text-cyan font-bold">{fmt.Sprintf("Saved: %s", e.note.Get())}</span>
                     }
                 </div>

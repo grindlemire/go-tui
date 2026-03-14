@@ -1,6 +1,6 @@
 # GSX Syntax
 
-Demonstrates `.gsx` file structure including the `templ` keyword, component definitions, control flow with `@if`/`@for`/`@let`, and Go expressions inside templates.
+Demonstrates `.gsx` file structure including the `templ` keyword, component definitions, control flow with `if`/`for`/`:=` bindings, and Go expressions inside templates.
 
 ## Screenshot
 

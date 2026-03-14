@@ -2,6 +2,7 @@ package tuigen
 
 import (
 	"strings"
+	"unicode/utf8"
 )
 
 // parseGoExprNode parses a Go expression {expr} as a node.
@@ -48,12 +49,25 @@ func (p *Parser) parseGoStatement() *GoCode {
 
 	for p.current.Type != TokenEOF {
 		switch p.current.Type {
-		case TokenLParen, TokenLBracket, TokenLBrace:
-			if p.current.Type == TokenLBrace && isForLoop {
+		case TokenLParen, TokenLBracket:
+			depth++
+		case TokenLBrace:
+			if isForLoop {
 				inForHeader = false // entered for body, semicolons can now terminate
 			}
 			depth++
-		case TokenRParen, TokenRBracket, TokenRBrace:
+		case TokenRParen, TokenRBracket:
+			depth--
+		case TokenRBrace:
+			if depth == 0 {
+				// Closing brace at depth 0 belongs to the parent (e.g., if/for body).
+				// Stop before consuming it so the parent parser can handle it.
+				code := strings.TrimSpace(p.lexer.SourceRange(startPos, p.current.StartPos))
+				if code == "" {
+					return nil
+				}
+				return &GoCode{Code: code, Position: pos}
+			}
 			depth--
 		case TokenNewline:
 			if depth == 0 {
@@ -79,6 +93,39 @@ func (p *Parser) parseGoStatement() *GoCode {
 	return &GoCode{Code: code, Position: pos}
 }
 
+// isRangeForLoop checks whether the current for-loop header is a
+// `:= range` for-loop by scanning the source forward for ":= range" before "{".
+// This correctly excludes Go 1.22+ forms like `for range ch {` (no :=, channel
+// drain) which parseFor() cannot handle. Called when the parser sees bare "for"
+// and needs to decide between DSL ForLoop and raw Go GoCode.
+func (p *Parser) isRangeForLoop() bool {
+	pos := p.current.StartPos
+	src := p.lexer.Source()
+	for i := pos; i < len(src); i++ {
+		if src[i] == '{' {
+			return false
+		}
+		// Look for ":=" followed by whitespace and "range"
+		if src[i] == ':' && i+1 < len(src) && src[i+1] == '=' {
+			// Found :=, now skip whitespace and check for "range"
+			j := i + 2
+			for j < len(src) && (src[j] == ' ' || src[j] == '\t') {
+				j++
+			}
+			if j+5 <= len(src) && src[j:j+5] == "range" {
+				if j+5 == len(src) {
+					return true
+				}
+				r, _ := utf8.DecodeRuneInString(src[j+5:])
+				if !isLetter(r) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // parseComponentCall parses @ComponentName(args) or @ComponentName(args) { children }
 func (p *Parser) parseComponentCall() *ComponentCall {
 	pos := p.position()
@@ -93,6 +140,7 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	}
 
 	// Capture arguments as raw source until matching )
+	openLine := p.current.Line
 	argsStart := p.current.StartPos
 	parenDepth := 1
 	for parenDepth > 0 && p.current.Type != TokenEOF {
@@ -109,7 +157,16 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 			p.advance()
 		}
 	}
-	args := strings.TrimSpace(p.lexer.SourceRange(argsStart, p.current.StartPos))
+	rawArgs := p.lexer.SourceRange(argsStart, p.current.StartPos)
+	args := strings.TrimSpace(rawArgs)
+	multiLineArgs := p.current.Line != openLine
+
+	// Compute the source position of the first character of the trimmed args.
+	var argsPos Position
+	if args != "" {
+		leading := len(rawArgs) - len(strings.TrimLeft(rawArgs, " \t\n\r"))
+		argsPos = p.lexer.PositionAt(argsStart + leading)
+	}
 
 	if !p.expect(TokenRParen) {
 		return nil
@@ -120,6 +177,8 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	call := &ComponentCall{
 		Name:          name,
 		Args:          args,
+		ArgsPosition:  argsPos,
+		MultiLineArgs: multiLineArgs,
 		IsStructMount: p.inMethodTempl,
 		Position:      pos,
 	}

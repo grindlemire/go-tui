@@ -259,11 +259,11 @@ func waveStyle(charIndex int, phase float64) tui.Style {
 }
 ```
 
-Each character is spaced 36 degrees apart in hue. The `phase*60` term shifts the entire palette over time. In the template, a `@for` loop renders each character as its own `<span>` with a computed `textStyle`:
+Each character is spaced 36 degrees apart in hue. The `phase*60` term shifts the entire palette over time. In the template, a `for` loop renders each character as its own `<span>` with a computed `textStyle`:
 
 ```gsx
 <div class="flex gap-0">
-    @for i, ch := range waveChars {
+    for i, ch := range waveChars {
         <span textStyle={waveStyle(i, a.wavePhase.Get())}>{ch}</span>
     }
 </div>
@@ -478,7 +478,7 @@ templ (a *animationApp) Render() {
         <div class="flex-col border-rounded p-1 gap-1" borderStyle={pulseBorderStyle(a.pulsePhase.Get())}>
             <span class="font-bold text-cyan">3. Color Wave + Pulsing Border</span>
             <div class="flex gap-0">
-                @for i, ch := range waveChars {
+                for i, ch := range waveChars {
                     <span textStyle={waveStyle(i, a.wavePhase.Get())}>{ch}</span>
                 }
             </div>

@@ -176,7 +176,7 @@ func lineColor(line string) string {
 Use it in the template with a dynamic `class` attribute:
 
 ```gsx
-@for _, line := range s.lines.Get() {
+for _, line := range s.lines.Get() {
     <span class={lineColor(line)}>{line}</span>
 }
 ```
@@ -349,7 +349,7 @@ templ (s *streamingApp) Render() {
             scrollable={tui.ScrollVertical}
             scrollOffset={0, s.scrollY.Get()}
         >
-            @for _, line := range s.lines.Get() {
+            for _, line := range s.lines.Get() {
                 <span class={lineColor(line)}>{line}</span>
             }
         </div>
@@ -358,9 +358,9 @@ templ (s *streamingApp) Render() {
             <span class="font-dim">Elapsed:</span>
             <span class="text-cyan font-bold">{fmt.Sprintf("%ds", s.elapsed.Get())}</span>
             <span class="font-dim">Auto-scroll:</span>
-            @if s.stickToBottom.Get() {
+            if s.stickToBottom.Get() {
                 <span class="text-green font-bold">ON</span>
-            } @else {
+            } else {
                 <span class="text-yellow">OFF</span>
             }
         </div>

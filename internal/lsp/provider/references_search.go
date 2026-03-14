@@ -176,13 +176,13 @@ func findVariableUsagesInNodes(nodes []tuigen.Node, varName string, uri string, 
 			}
 		case *tuigen.ForLoop:
 			if n != nil {
-				iterableOffset := len("@for ") + len(n.Index) + len(", ") + len(n.Value) + len(" := range ")
+				iterableOffset := len("for ") + len(n.Index) + len(", ") + len(n.Value) + len(" := range ")
 				findVariableInCode(n.Iterable, varName, n.Position, iterableOffset, uri, refs)
 				findVariableUsagesInNodes(n.Body, varName, uri, refs)
 			}
 		case *tuigen.IfStmt:
 			if n != nil {
-				findVariableInCode(n.Condition, varName, n.Position, len("@if "), uri, refs)
+				findVariableInCode(n.Condition, varName, n.Position, len("if "), uri, refs)
 				findVariableUsagesInNodes(n.Then, varName, uri, refs)
 				findVariableUsagesInNodes(n.Else, varName, uri, refs)
 			}
@@ -227,13 +227,13 @@ func findVariableUsagesInNodesExcluding(nodes []tuigen.Node, varName string, uri
 			}
 		case *tuigen.ForLoop:
 			if n != nil {
-				iterableOffset := len("@for ") + len(n.Index) + len(", ") + len(n.Value) + len(" := range ")
+				iterableOffset := len("for ") + len(n.Index) + len(", ") + len(n.Value) + len(" := range ")
 				findVariableInCodeExcluding(n.Iterable, varName, n.Position, iterableOffset, uri, exclLine, exclCharStart, exclCharEnd, refs)
 				findVariableUsagesInNodesExcluding(n.Body, varName, uri, exclLine, exclCharStart, exclCharEnd, refs)
 			}
 		case *tuigen.IfStmt:
 			if n != nil {
-				findVariableInCodeExcluding(n.Condition, varName, n.Position, len("@if "), uri, exclLine, exclCharStart, exclCharEnd, refs)
+				findVariableInCodeExcluding(n.Condition, varName, n.Position, len("if "), uri, exclLine, exclCharStart, exclCharEnd, refs)
 				findVariableUsagesInNodesExcluding(n.Then, varName, uri, exclLine, exclCharStart, exclCharEnd, refs)
 				findVariableUsagesInNodesExcluding(n.Else, varName, uri, exclLine, exclCharStart, exclCharEnd, refs)
 			}

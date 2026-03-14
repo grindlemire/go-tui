@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -228,7 +227,7 @@ templ (d *dashboardApp) Render() {
 			<div class="flex-col border-rounded p-1 gap-1" flexGrow={1.0}>
 				<span class="text-gradient-cyan-magenta font-bold">Network Traffic</span>
 				<div class="flex gap-1">
-					<span class="font-dim">In: </span>
+					<span class="font-dim">In:</span>
 					<span class="text-cyan">{sparkline(d.sparkIn.Get())}</span>
 				</div>
 				<div class="flex gap-1">
@@ -249,11 +248,11 @@ templ (d *dashboardApp) Render() {
 				scrollOffset={0, d.scrollY.Get()}
 			>
 				<span class="text-gradient-cyan-magenta font-bold">Recent Events</span>
-				@for _, event := range d.events.Get() {
+				for _, event := range d.events.Get() {
 					<span class="text-green">{event}</span>
 				}
-				@if len(d.events.Get()) == 0 {
-					<span class="font-dim">Waiting for events...</span>
+				if len(d.events.Get()) == 0 {
+					<span class="font-dim">Waitingevents...</span>
 				}
 			</div>
 		</div>

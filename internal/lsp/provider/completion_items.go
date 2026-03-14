@@ -32,7 +32,7 @@ func (c *completionProvider) getComponentCompletions() []CompletionItem {
 			Kind:       CompletionItemKindFunction,
 			Detail:     detail,
 			InsertText: name + "()",
-			FilterText: "@" + name,
+			FilterText: name,
 		})
 	}
 	return items
@@ -47,7 +47,7 @@ func (c *completionProvider) getDSLKeywordCompletions() []CompletionItem {
 			InsertText: "for ${1:i}, ${2:item} := range ${3:items} {\n\t$0\n}",
 			Documentation: &MarkupContent{
 				Kind:  "markdown",
-				Value: "Loop over a collection.\n\n```gsx\n@for i, item := range items {\n    <span>{item}</span>\n}\n```",
+				Value: "Loop over a collection.\n\n```gsx\nfor i, item := range items {\n    <span>{item}</span>\n}\n```",
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func (c *completionProvider) getDSLKeywordCompletions() []CompletionItem {
 			InsertText: "if ${1:condition} {\n\t$0\n}",
 			Documentation: &MarkupContent{
 				Kind:  "markdown",
-				Value: "Conditionally render content.\n\n```gsx\n@if showHeader {\n    <span>Header</span>\n}\n```",
+				Value: "Conditionally render content.\n\n```gsx\nif showHeader {\n    <span>Header</span>\n}\n```",
 			},
 		},
 		{
@@ -67,7 +67,7 @@ func (c *completionProvider) getDSLKeywordCompletions() []CompletionItem {
 			InsertText: "let ${1:name} = ",
 			Documentation: &MarkupContent{
 				Kind:  "markdown",
-				Value: "Bind an element to a variable for later reference.\n\n```gsx\n@let header = <div>Header</div>\n```",
+				Value: "Bind an element to a variable for later reference.\n\n```gsx\nheader := <div>Header</div>\n```",
 			},
 		},
 	}

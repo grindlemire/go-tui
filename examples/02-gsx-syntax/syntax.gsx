@@ -69,13 +69,13 @@ func (l *listApp) KeyMap() tui.KeyMap {
 templ (l *listApp) Render() {
 	<div class="flex-col items-center justify-center h-full">
 		@Panel("Select an Item") {
-			@for i, item := range l.items {
+			for i, item := range l.items {
 				<span class={itemClass(i == l.selected.Get())}>
 					{itemLabel(i, item, i == l.selected.Get())}
 				</span>
 			}
 			<br />
-			@if l.selected.Get() >= 0 {
+			if l.selected.Get() >= 0 {
 				<span class="font-dim">{fmt.Sprintf("Selected: %s", l.items[l.selected.Get()])}</span>
 			}
 		}

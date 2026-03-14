@@ -30,9 +30,6 @@ const (
 
 	// DSL keywords (@ prefixed)
 	TokenAtLet  // @let
-	TokenAtFor  // @for
-	TokenAtIf   // @if
-	TokenAtElse // @else
 	TokenAtCall // @ComponentName (uppercase, component call)
 	TokenAtExpr // @expr (lowercase, renders a Component field/variable)
 
@@ -97,11 +94,8 @@ var tokenNames = map[TokenType]string{
 	TokenTypeKw:      "type",
 	TokenConst:       "const",
 	TokenVar:         "var",
-	TokenAtLet: "@let",
-	TokenAtFor:       "@for",
-	TokenAtIf:        "@if",
-	TokenAtElse:      "@else",
-	TokenAtCall:      "@Call",
+	TokenAtLet:  "@let",
+	TokenAtCall: "@Call",
 	TokenAtExpr:      "@Expr",
 	TokenIdent:       "Ident",
 	TokenInt:         "Int",

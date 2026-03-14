@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -89,7 +88,7 @@ templ (d *demoApp) Render() {
 				<span class="font-bold">Counter</span>
 				<span class="text-cyan font-bold">{fmt.Sprintf("%d", d.count.Get())}</span>
 				<div class="flex gap-1 justify-center">
-					<span class="font-dim">+/-  r:reset</span>
+					<span class="font-dim">+/- r:reset</span>
 				</div>
 			</div>
 
@@ -101,9 +100,9 @@ templ (d *demoApp) Render() {
 				</div>
 				<div class="flex gap-1">
 					<span class="font-dim">Parity:</span>
-					@if d.count.Get()%2 == 0 {
+					if d.count.Get()%2 == 0 {
 						<span class="text-cyan">Even</span>
-					} @else {
+					} else {
 						<span class="text-magenta">Odd</span>
 					}
 				</div>
@@ -112,10 +111,10 @@ templ (d *demoApp) Render() {
 
 		<div class="flex-col border-rounded p-1 gap-1">
 			<span class="font-bold">Languages</span>
-			@for i, item := range d.items {
-				@if i == d.selected.Get() {
+			for i, item := range d.items {
+				if i == d.selected.Get() {
 					<span class="text-cyan font-bold">{fmt.Sprintf("  > %s", item)}</span>
-				} @else {
+				} else {
 					<span class="font-dim">{fmt.Sprintf("    %s", item)}</span>
 				}
 			}

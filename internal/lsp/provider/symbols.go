@@ -154,10 +154,11 @@ func extractFuncName(code string) string {
 func nodeToSymbol(node tuigen.Node) *DocumentSymbol {
 	switch n := node.(type) {
 	case *tuigen.LetBinding:
-		fullRange := tuigenPosToRange(n.Position, len(n.Name)+5) // "@let " + name
+		nameOffset := letBindingNameOffset(n)
+		fullRange := tuigenPosToRange(n.Position, len(n.Name)+nameOffset)
 		selRange := clampSelectionRange(fullRange, Range{
-			Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + 5},
-			End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + 5 + len(n.Name)},
+			Start: Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + nameOffset},
+			End:   Position{Line: n.Position.Line - 1, Character: n.Position.Column - 1 + nameOffset + len(n.Name)},
 		})
 		return &DocumentSymbol{
 			Name:           n.Name,

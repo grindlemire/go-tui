@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"strings"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -50,7 +49,7 @@ func (s *searchBar) deactivate(ke tui.KeyEvent) {
 
 templ (s *searchBar) Render() {
 	<div class="shrink-0">
-		@if s.active.Get() {
+		if s.active.Get() {
 			<hr />
 			<div class="px-1 flex gap-1">
 				<span class="text-cyan font-bold">Search:</span>
@@ -102,17 +101,17 @@ templ (c *content) Render() {
 	<div class="flex-col grow px-2 overflow-hidden">
 		<span class="font-bold text-cyan">{c.category.Get() + "/"}</span>
 		<hr />
-		@for i, file := range c.filteredFiles() {
-			@if i == len(c.filteredFiles())-1 {
+		for i, file := range c.filteredFiles() {
+			if i == len(c.filteredFiles())-1 {
 				<span>{fmt.Sprintf("└── %s", file)}</span>
-			} @else {
+			} else {
 				<span>{fmt.Sprintf("├── %s", file)}</span>
 			}
 		}
-		@if len(c.filteredFiles()) == 0 {
+		if len(c.filteredFiles()) == 0 {
 			<span class="font-dim">No matching files</span>
 		}
-		@if c.query.Get() != "" {
+		if c.query.Get() != "" {
 			<br />
 			<span class="font-dim">{fmt.Sprintf("Filtering: \"%s\"", c.query.Get())}</span>
 		}

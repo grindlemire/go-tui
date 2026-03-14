@@ -44,9 +44,9 @@ elem := tui.New(
 To check whether an element has focus, call `IsFocused()`:
 
 ```go
-@if s.myRef.El() != nil && s.myRef.El().IsFocused() {
+if s.myRef.El() != nil && s.myRef.El().IsFocused() {
     <span class="text-cyan">Focused</span>
-} @else {
+} else {
     <span class="text-dim">Not focused</span>
 }
 ```
@@ -137,33 +137,33 @@ Read each member state in your template to change styles based on which section 
 ```gsx
 templ (f *myForm) Render() {
     <div class="flex gap-1 h-full">
-        @if f.sidebarActive.Get() {
+        if f.sidebarActive.Get() {
             <div class="flex-col border-rounded border-cyan p-1" width={20}>
                 <span class="text-cyan font-bold">Sidebar</span>
                 <span>Use Tab to switch</span>
             </div>
-        } @else {
+        } else {
             <div class="flex-col border-rounded border-black p-1" width={20}>
                 <span class="font-dim">Sidebar</span>
             </div>
         }
 
-        @if f.contentActive.Get() {
+        if f.contentActive.Get() {
             <div class="flex-col grow border-rounded border-cyan p-1">
                 <span class="text-cyan font-bold">Content</span>
                 <span>This panel is active</span>
             </div>
-        } @else {
+        } else {
             <div class="flex-col grow border-rounded border-black p-1">
                 <span class="font-dim">Content</span>
             </div>
         }
 
-        @if f.footerActive.Get() {
+        if f.footerActive.Get() {
             <div class="flex-col border-rounded border-cyan p-1" width={20}>
                 <span class="text-cyan font-bold">Footer</span>
             </div>
-        } @else {
+        } else {
             <div class="flex-col border-rounded border-black p-1" width={20}>
                 <span class="font-dim">Footer</span>
             </div>
@@ -248,13 +248,13 @@ templ (p *panelForm) Render() {
     <div class="flex-col gap-1 p-1">
         <span class="font-bold text-gradient-cyan-magenta">Focus Demo — Tab to switch, Space to interact</span>
         <div class="flex gap-1">
-            @for i, name := range p.panels {
-                @if i == p.focus.Current() {
+            for i, name := range p.panels {
+                if i == p.focus.Current() {
                     <div class="flex-col border-rounded border-cyan p-1" width={20}>
                         <span class="text-cyan font-bold">{name}</span>
                         <span class="text-bright-white">{fmt.Sprintf("Actions: %d", p.clickCount.Get())}</span>
                     </div>
-                } @else {
+                } else {
                     <div class="flex-col border-rounded border-black p-1" width={20}>
                         <span class="font-dim">{name}</span>
                     </div>

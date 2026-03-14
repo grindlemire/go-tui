@@ -1,6 +1,6 @@
 # State
 
-Demonstrates reactive state with `State[T]`, using `.Get()` in render and `.Set()`/`.Update()` to trigger automatic re-renders, plus `@if`/`@for`/`@let` for reactive children.
+Demonstrates reactive state with `State[T]`, using `.Get()` in render and `.Set()`/`.Update()` to trigger automatic re-renders, plus `if`/`for`/`:=` bindings for reactive children.
 
 ## Screenshot
 

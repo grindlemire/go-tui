@@ -200,14 +200,19 @@ type TextContent struct {
 func (t *TextContent) node()         {}
 func (t *TextContent) Pos() Position { return t.Position }
 
-// LetBinding represents @let name = <element>.
+// LetBinding represents a variable binding: name := <element>, name := @Component(), name := expr,
+// var name = <element>, or the legacy @let name = <element>.
 type LetBinding struct {
 	Name            string
-	Element         *Element
+	Element         *Element       // RHS is an element (e.g., <span>Hello</span>)
+	Call            *ComponentCall // RHS is a component call (e.g., @MyComponent())
+	Expr            string         // RHS is a Go expression (e.g., fmt.Sprintf(...))
+	IsShortForm     bool           // true for :=, false for var or @let
+	IsVarForm       bool           // true for var form, false for @let form
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
-	LeadingComments  *CommentGroup // Comments immediately before @let
+	LeadingComments  *CommentGroup // Comments immediately before binding
 	TrailingComments *CommentGroup // Comments on same line after element
 }
 
@@ -296,10 +301,12 @@ func (r *RawGoExpr) Pos() Position { return r.Position }
 
 // ComponentCall represents @ComponentName(args) { children }
 type ComponentCall struct {
-	Name            string // component name (e.g., "Card", "Header")
-	Args            string // raw Go expression for arguments
-	Children        []Node // child elements (may be empty if no children block)
-	IsStructMount   bool   // true when inside a method templ (generates app.Mount())
+	Name            string   // component name (e.g., "Card", "Header")
+	Args            string   // raw Go expression for arguments
+	ArgsPosition    Position // source position of the first character of Args
+	Children        []Node   // child elements (may be empty if no children block)
+	IsStructMount   bool     // true when inside a method templ (generates app.Mount())
+	MultiLineArgs   bool     // args span multiple source lines
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields

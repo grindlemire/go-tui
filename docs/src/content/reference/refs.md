@@ -7,8 +7,8 @@ Refs give you direct access to rendered elements from your event handlers. Attac
 go-tui provides three ref types to cover different use cases:
 
 - **`Ref`** -- a single element reference
-- **`RefList`** -- an ordered collection built from `@for` loops
-- **`RefMap[K]`** -- a keyed collection built from `@for` loops with a `key` attribute
+- **`RefList`** -- an ordered collection built from `for` loops
+- **`RefMap[K]`** -- a keyed collection built from `for` loops with a `key` attribute
 
 All three are thread-safe.
 
@@ -90,7 +90,7 @@ The generated code calls `s.header.Set(element)` after creating the element, mak
 
 ## RefList
 
-An ordered collection of element references, populated automatically when you use `ref=` inside a `@for` loop without a `key` attribute.
+An ordered collection of element references, populated automatically when you use `ref=` inside a `for` loop without a `key` attribute.
 
 ### NewRefList
 
@@ -120,7 +120,7 @@ func ListApp() *listApp {
 func (r *RefList) Append(el *Element)
 ```
 
-Adds an element to the list. Called by the generated code for each iteration of a `@for` loop where the element has a `ref` attribute.
+Adds an element to the list. Called by the generated code for each iteration of a `for` loop where the element has a `ref` attribute.
 
 ### All
 
@@ -161,12 +161,12 @@ Returns the number of elements in the list.
 
 ### Usage in .gsx
 
-Use `ref=` inside a `@for` loop **without** a `key` attribute. The analyzer detects the loop context and generates `Append` calls instead of `Set`:
+Use `ref=` inside a `for` loop **without** a `key` attribute. The analyzer detects the loop context and generates `Append` calls instead of `Set`:
 
 ```gsx
 templ (s *listApp) Render() {
     <div class="flex-col">
-        @for _, item := range s.items.Get() {
+        for _, item := range s.items.Get() {
             <span ref={s.itemRefs} class="p-1">{item}</span>
         }
     </div>
@@ -177,7 +177,7 @@ The same `ref` variable is used on every iteration. The generated code calls `s.
 
 ## RefMap[K]
 
-A keyed collection of element references, populated when you use `ref=` inside a `@for` loop **with** a `key` attribute. The `key` tells the generator to use `Put(key, el)` instead of `Append(el)`, so you can look up a specific element by its key rather than by position.
+A keyed collection of element references, populated when you use `ref=` inside a `for` loop **with** a `key` attribute. The `key` tells the generator to use `Put(key, el)` instead of `Append(el)`, so you can look up a specific element by its key rather than by position.
 
 ### NewRefMap
 
@@ -207,7 +207,7 @@ func TabApp() *tabApp {
 func (r *RefMap[K]) Put(key K, el *Element)
 ```
 
-Stores an element under the given key. Called by the generated code for each iteration of a `@for` loop where the element has both `ref` and `key` attributes.
+Stores an element under the given key. Called by the generated code for each iteration of a `for` loop where the element has both `ref` and `key` attributes.
 
 ### Get
 
@@ -242,12 +242,12 @@ Returns the number of entries in the map.
 
 ### Usage in .gsx
 
-Use `ref=` together with `key=` inside a `@for` loop. The `key` attribute provides the map key for each element:
+Use `ref=` together with `key=` inside a `for` loop. The `key` attribute provides the map key for each element:
 
 ```gsx
 templ (s *tabApp) Render() {
     <div class="flex gap-1">
-        @for _, name := range s.tabs.Get() {
+        for _, name := range s.tabs.Get() {
             <button ref={s.tabRefs} key={name} class="px-1">{name}</button>
         }
     </div>
@@ -393,7 +393,7 @@ templ (v *logViewer) Render() {
         scrollOffset={0, v.scrollY.Get()}
         flexGrow={1.0}
     >
-        @for _, line := range v.lines.Get() {
+        for _, line := range v.lines.Get() {
             <span>{line}</span>
         }
     </div>

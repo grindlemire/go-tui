@@ -414,6 +414,80 @@ func TestLexer_CommentCollection_PositionTracking(t *testing.T) {
 	}
 }
 
+func TestLexer_SaveRestoreState_PreservesComments(t *testing.T) {
+	// Verify that SaveState/RestoreState preserves pendingComments so that
+	// comments encountered during a failed speculative parse don't leak.
+	input := "a // comment\nb"
+
+	l := NewLexer("test.tui", input)
+
+	// Consume 'a', which triggers comment collection for "// comment"
+	tok := l.Next()
+	if tok.Type != TokenIdent || tok.Literal != "a" {
+		t.Fatalf("expected ident 'a', got %v %q", tok.Type, tok.Literal)
+	}
+
+	// Save state (no pending comments yet since comment was just collected)
+	saved := l.SaveState()
+
+	// Advance past the newline — this calls Next() which may collect more comments
+	tok = l.Next() // newline
+	if tok.Type != TokenNewline {
+		t.Fatalf("expected newline, got %v", tok.Type)
+	}
+	tok = l.Next() // 'b'
+	if tok.Type != TokenIdent || tok.Literal != "b" {
+		t.Fatalf("expected ident 'b', got %v %q", tok.Type, tok.Literal)
+	}
+
+	// At this point, the comment is in pendingComments
+	preRestoreComments := l.ConsumeComments()
+
+	// Restore and verify comments are back to the saved state (empty)
+	l.RestoreState(saved)
+	postRestoreComments := l.ConsumeComments()
+
+	if len(postRestoreComments) != 0 {
+		t.Errorf("after RestoreState, expected 0 pending comments, got %d (had %d before restore)",
+			len(postRestoreComments), len(preRestoreComments))
+	}
+}
+
+func TestLexer_SaveRestoreState_PreservesTokenPosition(t *testing.T) {
+	// Verify that tokenLine/tokenColumn/tokenStartPos are saved/restored
+	// so that tokens emitted after restore have correct positions.
+	input := "a b c"
+
+	l := NewLexer("test.tui", input)
+
+	// Consume 'a'
+	tok := l.Next()
+	if tok.Type != TokenIdent || tok.Literal != "a" {
+		t.Fatalf("expected ident 'a', got %v %q", tok.Type, tok.Literal)
+	}
+
+	saved := l.SaveState()
+
+	// Advance past 'b' to 'c'
+	l.Next() // 'b'
+	tok = l.Next() // 'c'
+	if tok.Literal != "c" {
+		t.Fatalf("expected 'c', got %q", tok.Literal)
+	}
+	cColumn := tok.Column
+
+	// Restore and re-advance
+	l.RestoreState(saved)
+	l.Next() // 'b' again
+	tok = l.Next() // 'c' again
+	if tok.Literal != "c" {
+		t.Fatalf("after restore, expected 'c', got %q", tok.Literal)
+	}
+	if tok.Column != cColumn {
+		t.Errorf("after restore, 'c' column = %d, want %d", tok.Column, cColumn)
+	}
+}
+
 func TestLexer_ExistingCommentBehavior(t *testing.T) {
 	// Verify that existing tests still pass - comments should be collected but
 	// tokens should still be returned correctly

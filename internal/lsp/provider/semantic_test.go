@@ -244,14 +244,14 @@ templ List(items []string) {
 			content: `package main
 
 templ Cond(show bool) {
-	@if show {
+	if show {
 		<span>Yes</span>
-	} @else {
+	} else {
 		<span>No</span>
 	}
 }
 `,
-			wantKeyword: 2, // templ + @if (at minimum)
+			wantKeyword: 2, // templ + if (at minimum)
 		},
 	}
 
@@ -286,12 +286,12 @@ templ Cond(show bool) {
 		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
 			t.Error("expected templ keyword at 2:0 with length 5")
 		}
-		if !hasTokenAt(tokens, 3, 1, 4, TokenTypeKeyword) {
-			t.Error("expected @for keyword at 3:1 with length 4")
+		if !hasTokenAt(tokens, 3, 2, 3, TokenTypeKeyword) {
+			t.Error("expected for keyword at 3:2 with length 3")
 		}
 	})
 
-	// Position assertions for "if/else keywords" — needs docs accessor for @else
+	// Position assertions for "if/else keywords" — needs docs accessor for else
 	t.Run("if/else keyword positions", func(t *testing.T) {
 		doc := parseTestDoc(tests["if/else keywords"].content)
 		spWithDocs := &semanticTokensProvider{
@@ -307,11 +307,79 @@ templ Cond(show bool) {
 		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
 			t.Error("expected templ keyword at 2:0 with length 5")
 		}
-		if !hasTokenAt(tokens, 3, 1, 3, TokenTypeKeyword) {
-			t.Error("expected @if keyword at 3:1 with length 3")
+		if !hasTokenAt(tokens, 3, 1, 2, TokenTypeKeyword) {
+			t.Error("expected if keyword at 3:1 with length 2")
 		}
-		if !hasTokenAt(tokens, 5, 3, 5, TokenTypeKeyword) {
-			t.Error("expected @else keyword at 5:3 with length 5")
+		if !hasTokenAt(tokens, 5, 3, 4, TokenTypeKeyword) {
+			t.Error("expected else keyword at 5:3 with length 4")
+		}
+	})
+
+	// Verify "else" inside a string does not produce a false-positive keyword token.
+	// The real else keyword is on line 7 ("} else {"), not inside the Sprintf on line 4.
+	t.Run("else inside string not matched", func(t *testing.T) {
+		content := `package main
+
+import "fmt"
+
+templ Cond(show bool) {
+	if show {
+		<span>{fmt.Sprintf("something else happened")}</span>
+	} else {
+		<span>fallback</span>
+	}
+}
+`
+		doc := parseTestDoc(content)
+		spWithDocs := &semanticTokensProvider{
+			fnChecker: &stubFnChecker{names: map[string]bool{}},
+			docs:      &stubDocAccessor{docs: []*Document{doc}},
+		}
+		result, err := spWithDocs.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		// The else keyword must be on line 7 (0-indexed) at col 3, not on line 6
+		// where "else" appears inside a string literal.
+		if !hasTokenAt(tokens, 7, 3, 4, TokenTypeKeyword) {
+			t.Error("expected else keyword at 7:3 with length 4")
+		}
+		// The old findElseKeyword would have matched "else" on line 6 inside the
+		// Sprintf string. Verify no keyword token points at that false position.
+		// "else" in the string starts around col 30+ on line 6.
+		if hasTokenAt(tokens, 6, 30, 4, TokenTypeKeyword) || hasTokenAt(tokens, 6, 31, 4, TokenTypeKeyword) || hasTokenAt(tokens, 6, 32, 4, TokenTypeKeyword) {
+			t.Error("false-positive: keyword token found at the 'else' position inside string literal on line 6")
+		}
+	})
+
+	// Verify legacy @else syntax gets a semantic token for the "else" keyword.
+	t.Run("legacy @else keyword highlighted", func(t *testing.T) {
+		content := `package main
+
+templ Cond(show bool) {
+	if show {
+		<span>Yes</span>
+	} @else {
+		<span>No</span>
+	}
+}
+`
+		doc := parseTestDoc(content)
+		spWithDocs := &semanticTokensProvider{
+			fnChecker: &stubFnChecker{names: map[string]bool{}},
+			docs:      &stubDocAccessor{docs: []*Document{doc}},
+		}
+		result, err := spWithDocs.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		// "else" in "} @else {" on line 5 (0-indexed), col 4 (after "\t} @")
+		if !hasTokenAt(tokens, 5, 4, 4, TokenTypeKeyword) {
+			t.Error("expected else keyword at 5:4 with length 4 for legacy @else syntax")
 		}
 	})
 }

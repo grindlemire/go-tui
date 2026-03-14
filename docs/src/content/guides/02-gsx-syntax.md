@@ -330,38 +330,38 @@ Call methods on the receiver or on state variables:
 
 ## Control Flow
 
-Three directives control rendering logic: `@if`, `@for`, and `@let`.
+Three directives control rendering logic: `if`, `for`, and `:=` bindings.
 
-### @if / @else
+### if / else
 
 Conditionally render elements based on a Go boolean expression:
 
 ```gsx
-@if s.count.Get() > 0 {
+if s.count.Get() > 0 {
     <span class="text-green">Positive</span>
-} @else {
+} else {
     <span class="text-red">Zero or negative</span>
 }
 ```
 
-You can chain conditions with `@else @if`:
+You can chain conditions with `else if`:
 
 ```gsx
-@if s.count.Get() > 10 {
+if s.count.Get() > 10 {
     <span class="text-green font-bold">High</span>
-} @else @if s.count.Get() > 0 {
+} else if s.count.Get() > 0 {
     <span class="text-yellow">Low</span>
-} @else {
+} else {
     <span class="text-red">Zero</span>
 }
 ```
 
-### @for
+### for
 
 Loop over slices, maps, or any Go iterable with `range`:
 
 ```gsx
-@for i, item := range items {
+for i, item := range items {
     <span>{fmt.Sprintf("%d. %s", i+1, item)}</span>
 }
 ```
@@ -369,7 +369,7 @@ Loop over slices, maps, or any Go iterable with `range`:
 You can ignore the index with `_`:
 
 ```gsx
-@for _, item := range items {
+for _, item := range items {
     <span>{item}</span>
 }
 ```
@@ -377,21 +377,21 @@ You can ignore the index with `_`:
 Loops and conditionals nest freely:
 
 ```gsx
-@for i, item := range items {
-    @if i == s.selected.Get() {
+for i, item := range items {
+    if i == s.selected.Get() {
         <span class="text-cyan font-bold">{"> " + item}</span>
-    } @else {
+    } else {
         <span>{"  " + item}</span>
     }
 }
 ```
 
-### @let
+### Element Bindings (:=)
 
 Bind an element to a local variable to avoid repeating complex expressions:
 
 ```gsx
-@let countText = <span class="font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
+countText := <span class="font-bold">{fmt.Sprintf("%d", s.count.Get())}</span>
 <div class="flex gap-1">
     <span>Count:</span>
     {countText}
@@ -575,7 +575,7 @@ func (l *listApp) KeyMap() tui.KeyMap {
 templ (l *listApp) Render() {
     <div class="flex-col items-center justify-center h-full">
         @Panel("Select an Item") {
-            @for i, item := range l.items {
+            for i, item := range l.items {
                 <span class={itemClass(i == l.selected.Get())}>
                     {itemLabel(i, item, i == l.selected.Get())}
                 </span>
@@ -583,7 +583,7 @@ templ (l *listApp) Render() {
 
             <br />
 
-            @if l.selected.Get() >= 0 {
+            if l.selected.Get() >= 0 {
                 <span class="font-dim">{fmt.Sprintf("Selected: %s", l.items[l.selected.Get()])}</span>
             }
         }

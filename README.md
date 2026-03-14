@@ -148,7 +148,7 @@ The [`examples/`](examples/) directory has runnable programs for each feature ar
 | [03-styling](examples/03-styling) | Colors, text styles, borders, conditional styling |
 | [04-layout](examples/04-layout) | Flexbox row/column, justify, align, reusable layouts |
 | [05-elements](examples/05-elements) | Built-in elements, disabled state, progress bars |
-| [06-state](examples/06-state) | `State[T]`, `@if`/`@for`/`@let`, reactive children |
+| [06-state](examples/06-state) | `State[T]`, `if`/`for`/`:=` bindings, reactive children |
 | [07-components](examples/07-components) | Component composition, tabs, `{children...}` slot |
 | [08-events](examples/08-events) | Keyboard event handling, `KeyMap`, `OnKey`/`OnRune` |
 | [09-refs-and-clicks](examples/09-refs-and-clicks) | Refs, click handling, mouse + keyboard |
