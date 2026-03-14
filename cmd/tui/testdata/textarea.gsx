@@ -1,8 +1,6 @@
 package testdata
 
-import (
-	tui "github.com/grindlemire/go-tui"
-)
+import tui "github.com/grindlemire/go-tui"
 
 type myForm struct {
 	app *tui.App
