@@ -150,6 +150,11 @@ func NewApp(opts ...AppOption) (*App, error) {
 		app.mouseEnabled = app.inlineHeight == 0
 	}
 
+	// Negotiate Kitty keyboard protocol unless legacy mode was requested
+	if !app.legacyKeyboard {
+		terminal.NegotiateKittyKeyboard(int(terminal.inFd))
+	}
+
 	// Get terminal size
 	width, termHeight := terminal.Size()
 
@@ -181,6 +186,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 			if app.inlineHeight == 0 {
 				terminal.ExitAltScreen()
 			}
+			terminal.DisableKittyKeyboard()
 			terminal.ExitRawMode()
 			return nil, fmt.Errorf("failed to enable interrupt: %w", err)
 		}
@@ -247,6 +253,11 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		app.mouseEnabled = app.inlineHeight == 0
 	}
 
+	// Negotiate Kitty keyboard protocol unless legacy mode was requested
+	if !app.legacyKeyboard {
+		terminal.NegotiateKittyKeyboard(int(terminal.inFd))
+	}
+
 	// Get terminal size
 	width, termHeight := terminal.Size()
 
@@ -278,6 +289,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 			if app.inlineHeight == 0 {
 				terminal.ExitAltScreen()
 			}
+			terminal.DisableKittyKeyboard()
 			terminal.ExitRawMode()
 			return nil, fmt.Errorf("failed to enable interrupt: %w", err)
 		}

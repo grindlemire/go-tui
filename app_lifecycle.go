@@ -52,6 +52,9 @@ func (a *App) Close() error {
 		a.terminal.ExitAltScreen()
 	}
 
+	// Disable Kitty keyboard protocol (pop from stack)
+	a.terminal.DisableKittyKeyboard()
+
 	// Exit raw mode
 	if err := a.terminal.ExitRawMode(); err != nil {
 		a.reader.Close()
