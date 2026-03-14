@@ -27,16 +27,33 @@ func (p *Parser) Errors() *ErrorList {
 	return p.errors
 }
 
+// parserState holds a snapshot of the parser for speculative parsing.
+type parserState struct {
+	current         Token
+	peek            Token
+	lexerState      LexerState
+	errorCount      int
+	pendingComments []*Comment
+}
+
 // saveState captures the current parser state for speculative parsing.
-func (p *Parser) saveState() (Token, Token, LexerState) {
-	return p.current, p.peek, p.lexer.SaveState()
+func (p *Parser) saveState() parserState {
+	return parserState{
+		current:         p.current,
+		peek:            p.peek,
+		lexerState:      p.lexer.SaveState(),
+		errorCount:      p.errors.Len(),
+		pendingComments: p.pendingComments,
+	}
 }
 
 // restoreState restores the parser to a previously saved state.
-func (p *Parser) restoreState(current, peek Token, ls LexerState) {
-	p.current = current
-	p.peek = peek
-	p.lexer.RestoreState(ls)
+func (p *Parser) restoreState(s parserState) {
+	p.current = s.current
+	p.peek = s.peek
+	p.lexer.RestoreState(s.lexerState)
+	p.errors.Truncate(s.errorCount)
+	p.pendingComments = s.pendingComments
 }
 
 // advance moves to the next token, skipping newlines where appropriate.

@@ -115,60 +115,60 @@ func (p *Parser) parseBodyNode() Node {
 func (p *Parser) parseControlFlowOrBinding() Node {
 	switch p.current.Type {
 	case TokenAtLet:
-		cur, peek, ls := p.saveState()
+		saved := p.saveState()
 		if let := p.parseLet(); let != nil {
 			return let
 		}
-		p.restoreState(cur, peek, ls)
+		p.restoreState(saved)
 	case TokenFor:
 		if !p.isRangeForLoop() {
 			return nil // C-style for, let caller handle as GoCode
 		}
-		cur, peek, ls := p.saveState()
+		saved := p.saveState()
 		if f := p.parseFor(); f != nil {
 			return f
 		}
-		p.restoreState(cur, peek, ls)
+		p.restoreState(saved)
 	case TokenIf:
-		cur, peek, ls := p.saveState()
+		saved := p.saveState()
 		if i := p.parseIf(); i != nil {
 			return i
 		}
-		p.restoreState(cur, peek, ls)
+		p.restoreState(saved)
 	case TokenAtCall:
-		cur, peek, ls := p.saveState()
+		saved := p.saveState()
 		if call := p.parseComponentCall(); call != nil {
 			return call
 		}
-		p.restoreState(cur, peek, ls)
+		p.restoreState(saved)
 	case TokenAtExpr:
 		if expr := p.parseComponentExpr(); expr != nil {
 			return expr
 		}
 	case TokenVar:
 		if p.peek.Type == TokenIdent {
-			cur, peek, ls := p.saveState()
+			saved := p.saveState()
 			if let := p.parseVarBinding(); let != nil {
 				return let
 			}
-			p.restoreState(cur, peek, ls)
+			p.restoreState(saved)
 		}
 		return nil
 	case TokenIdent:
 		if p.peek.Type == TokenColonEquals {
-			cur, peek, ls := p.saveState()
+			saved := p.saveState()
 			name := p.current.Literal
 			pos := p.position()
 			p.advance() // consume ident
 			p.advance() // consume :=
 			p.skipNewlines()
 
-			if p.current.Type == TokenLAngle || p.current.Type == TokenAtCall || p.current.Type == TokenAtExpr {
+			if (p.current.Type == TokenLAngle && p.peek.Type != TokenMinus) || p.current.Type == TokenAtCall || p.current.Type == TokenAtExpr {
 				if let := p.parseShortBinding(name, pos); let != nil {
 					return let
 				}
 			}
-			p.restoreState(cur, peek, ls)
+			p.restoreState(saved)
 		}
 		return nil
 	}
