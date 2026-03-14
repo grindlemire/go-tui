@@ -115,24 +115,32 @@ func (p *Parser) parseBodyNode() Node {
 func (p *Parser) parseControlFlowOrBinding() Node {
 	switch p.current.Type {
 	case TokenAtLet:
+		cur, peek, ls := p.saveState()
 		if let := p.parseLet(); let != nil {
 			return let
 		}
+		p.restoreState(cur, peek, ls)
 	case TokenFor:
 		if !p.isRangeForLoop() {
 			return nil // C-style for, let caller handle as GoCode
 		}
+		cur, peek, ls := p.saveState()
 		if f := p.parseFor(); f != nil {
 			return f
 		}
+		p.restoreState(cur, peek, ls)
 	case TokenIf:
+		cur, peek, ls := p.saveState()
 		if i := p.parseIf(); i != nil {
 			return i
 		}
+		p.restoreState(cur, peek, ls)
 	case TokenAtCall:
+		cur, peek, ls := p.saveState()
 		if call := p.parseComponentCall(); call != nil {
 			return call
 		}
+		p.restoreState(cur, peek, ls)
 	case TokenAtExpr:
 		if expr := p.parseComponentExpr(); expr != nil {
 			return expr
