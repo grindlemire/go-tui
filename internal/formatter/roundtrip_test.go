@@ -35,9 +35,9 @@ templ Hello(name string) {
 
 templ Cond(show bool) {
 	<div>
-		@if show {
+		if show {
 			<span>Yes</span>
-		} @else {
+		} else {
 			<span>No</span>
 		}
 	</div>
@@ -49,7 +49,7 @@ templ Cond(show bool) {
 
 templ List(items []string) {
 	<div class="flex-col">
-		@for _, item := range items {
+		for _, item := range items {
 			<span>{item}</span>
 		}
 	</div>
@@ -73,7 +73,7 @@ templ Divider() {
 import "fmt"
 
 templ Counter(count int) {
-	@let countText = <span>{fmt.Sprintf("Count: %d", count)}</span>
+	countText := <span>{fmt.Sprintf("Count: %d", count)}</span>
 	<div>{countText}</div>
 }
 `,

@@ -4,13 +4,13 @@ import (
 	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
-// printForLoop outputs a @for loop.
+// printForLoop outputs a for loop.
 func (p *printer) printForLoop(f *tuigen.ForLoop) {
 	// Leading comments
 	p.printLeadingComments(f.LeadingComments)
 
 	p.writeIndent()
-	p.write("@for ")
+	p.write("for ")
 
 	// Loop variables
 	if f.Index != "" {
@@ -35,13 +35,13 @@ func (p *printer) printForLoop(f *tuigen.ForLoop) {
 	p.newline()
 }
 
-// printIfStmt outputs an @if statement.
+// printIfStmt outputs an if statement.
 func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 	// Leading comments
 	p.printLeadingComments(stmt.LeadingComments)
 
 	p.writeIndent()
-	p.write("@if ")
+	p.write("if ")
 	p.write(stmt.Condition)
 	p.write(" {")
 	p.printTrailingComment(stmt.TrailingComments)
@@ -56,13 +56,13 @@ func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 	// Else branch
 	if len(stmt.Else) > 0 {
 		p.writeIndent()
-		p.write("} @else ")
+		p.write("} else ")
 
 		// Check for else-if chain
 		if len(stmt.Else) == 1 {
 			if elseIf, ok := stmt.Else[0].(*tuigen.IfStmt); ok {
 				// Print else-if without extra indent
-				p.write("@if ")
+				p.write("if ")
 				p.write(elseIf.Condition)
 				p.write(" {")
 				p.printTrailingComment(elseIf.TrailingComments)
@@ -103,11 +103,11 @@ func (p *printer) printIfStmt(stmt *tuigen.IfStmt) {
 // printElseBranch handles recursive else-if chains.
 func (p *printer) printElseBranch(nodes []tuigen.Node) {
 	p.writeIndent()
-	p.write("} @else ")
+	p.write("} else ")
 
 	if len(nodes) == 1 {
 		if elseIf, ok := nodes[0].(*tuigen.IfStmt); ok {
-			p.write("@if ")
+			p.write("if ")
 			p.write(elseIf.Condition)
 			p.write(" {")
 			p.printTrailingComment(elseIf.TrailingComments)
@@ -139,21 +139,38 @@ func (p *printer) printElseBranch(nodes []tuigen.Node) {
 	p.newline()
 }
 
-// printLetBinding outputs a @let binding.
+// printLetBinding outputs a let binding using := syntax.
 func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 	// Leading comments
 	p.printLeadingComments(let.LeadingComments)
 
 	p.writeIndent()
-	p.write("@let ")
-	p.write(let.Name)
-	p.write(" = ")
 
-	// Reset indent for the element since we're already indented
+	// Always emit := (migrates old @let to short form)
+	p.write(let.Name)
+	p.write(" := ")
+
+	if let.Call != nil {
+		p.write("@")
+		p.write(let.Call.Name)
+		p.write("(")
+		p.write(formatInlineBlockComments(let.Call.Args))
+		p.write(")")
+		p.newline()
+		return
+	}
+
+	if let.Expr != "" && let.Element == nil {
+		p.write("@")
+		p.write(let.Expr)
+		p.newline()
+		return
+	}
+
+	// Element RHS - print inline or multi-line
 	savedDepth := p.depth
 	p.depth = 0
 
-	// Print element inline or multi-line based on complexity
 	p.buf.WriteString("<")
 	p.buf.WriteString(let.Element.Tag)
 

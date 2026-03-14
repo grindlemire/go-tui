@@ -58,7 +58,7 @@ templ Hello(show bool) {
 
 templ Hello(show bool) {
 	// Comment before if
-	@if show {
+	if show {
 		<span>Hello</span>
 	}
 }
@@ -78,7 +78,7 @@ templ Hello(items []string) {
 
 templ Hello(items []string) {
 	// Comment before for
-	@for _, item := range items {
+	for _, item := range items {
 		<span>{item}</span>
 	}
 }
@@ -597,11 +597,11 @@ templ Main(items []string, selected int) {
 	// Container div
 	<div class="main">
 		// Loop through items
-		@for i, item := range items {
+		for i, item := range items {
 			// Conditional rendering
-			@if i == selected {
+			if i == selected {
 				<span class="selected">{item}</span>
-			} @else {
+			} else {
 				<span>{item}</span>
 			}
 		}
