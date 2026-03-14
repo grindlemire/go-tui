@@ -175,7 +175,7 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
   - `parser.go` — Parser struct, NewParser(), ParseFile(), error synchronization
   - `parser_component.go` — Component definition and parameter parsing
   - `parser_element.go` — Element parsing: attributes, children, self-closing tags
-  - `parser_control.go` — Control flow: @for, @if, @else, @let
+  - `parser_control.go` — Control flow: for, if, else, let/:= bindings
   - `parser_expr.go` — Go expression parsing within elements/attributes
 - **AST** (`internal/tuigen/`):
   - `ast.go` — 20+ node types: File, Component, Element, Attribute, ForLoop, IfStmt, LetBinding, GoExpr, ComponentCall, ChildrenSlot, GoFunc, GoDecl, etc.
@@ -188,7 +188,7 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
   - `generator_element.go` — Element code generation with option building, ref handling
   - `generator_children.go` — Child element generation, text handling
   - `generator_component.go` — Component function generation
-  - `generator_control.go` — Control flow code generation (@for, @if, @let)
+  - `generator_control.go` — Control flow code generation (for, if, let/:= bindings)
 - **Tailwind** (`internal/tuigen/`):
   - `tailwind.go` — ParseTailwindClasses(): converts class strings to element options
   - `tailwind_validation.go` — Class syntax validation
@@ -201,7 +201,7 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
 - `internal/formatter/formatter.go` — Formatter struct, New(), Format(), FormatWithResult()
 - `internal/formatter/printer.go` — printer struct: generates formatted .gsx from AST
 - `internal/formatter/printer_comments.go` — Comment formatting (leading/trailing/orphan)
-- `internal/formatter/printer_control.go` — Control structure formatting (@if, @for, @let)
+- `internal/formatter/printer_control.go` — Control structure formatting (if, for, let/:= bindings)
 - `internal/formatter/printer_elements.go` — Element/attribute formatting, multi-line layout
 - `internal/formatter/imports.go` — Import fixing via goimports integration
 
@@ -237,7 +237,7 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
   - `generate.go` / `generate_state.go` — Generate virtual Go from .gsx AST for gopls
 - **Schema** (`internal/lsp/schema/`):
   - `schema.go` — Element definitions (div, span, p, ul, li, button, input, table, progress, hr, br)
-  - `keywords.go` — Keyword definitions (templ, @for, @if, @else, @let)
+  - `keywords.go` — Keyword definitions (templ, for, if, else, :=)
   - `tailwind.go` — Tailwind class documentation and matching
 - **Logging** (`internal/lsp/log/`):
   - `log.go` — Logging with component prefixes (Server, Gopls, Generate, Mapping)
@@ -296,9 +296,9 @@ templ Header(title string) {
 // Conditionals
 templ Conditional(show bool) {
     <div class="flex-col">
-        @if show {
+        if show {
             <span>Visible</span>
-        } @else {
+        } else {
             <span>Hidden</span>
         }
     </div>
@@ -307,7 +307,7 @@ templ Conditional(show bool) {
 // Loops
 templ List(items []string) {
     <div class="flex-col gap-1">
-        @for i, item := range items {
+        for i, item := range items {
             <span>{fmt.Sprintf("%d: %s", i, item)}</span>
         }
     </div>
@@ -315,7 +315,7 @@ templ List(items []string) {
 
 // Local bindings (element references)
 templ Counter(count int) {
-    @let label = <span class="font-bold">{fmt.Sprintf("Count: %d", count)}</span>
+    label := <span class="font-bold">{fmt.Sprintf("Count: %d", count)}</span>
     <div>{label}</div>
 }
 
