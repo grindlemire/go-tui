@@ -62,6 +62,8 @@ func (e *EmulatorTerminal) EnterAltScreen()      { e.inAltScreen = true }
 func (e *EmulatorTerminal) ExitAltScreen()       { e.inAltScreen = false }
 func (e *EmulatorTerminal) EnableMouse()         { e.mouseEnabled = true }
 func (e *EmulatorTerminal) DisableMouse()        { e.mouseEnabled = false }
+func (e *EmulatorTerminal) NegotiateKittyKeyboard(stdinFd int) bool { return false }
+func (e *EmulatorTerminal) DisableKittyKeyboard() {}
 func (e *EmulatorTerminal) HideCursor()          { e.cursorHidden = true }
 func (e *EmulatorTerminal) ShowCursor()          { e.cursorHidden = false }
 func (e *EmulatorTerminal) SetCursor(x, y int)   { e.cursorCol = x; e.cursorRow = y }

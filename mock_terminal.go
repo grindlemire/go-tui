@@ -134,6 +134,15 @@ func (m *MockTerminal) DisableMouse() {
 	m.mouseEnabled = false
 }
 
+// NegotiateKittyKeyboard is a no-op for the mock terminal.
+func (m *MockTerminal) NegotiateKittyKeyboard(stdinFd int) bool {
+	return false
+}
+
+// DisableKittyKeyboard is a no-op for the mock terminal.
+func (m *MockTerminal) DisableKittyKeyboard() {
+}
+
 // Caps returns the terminal's capabilities.
 func (m *MockTerminal) Caps() Capabilities {
 	return m.caps

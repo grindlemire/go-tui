@@ -77,6 +77,16 @@ type Terminal interface {
 	// Call this before exiting to restore normal terminal behavior.
 	DisableMouse()
 
+	// NegotiateKittyKeyboard attempts to enable the Kitty keyboard protocol
+	// using push/pop stack semantics. stdinFd is needed to read the terminal's
+	// response. Returns true if the protocol was successfully negotiated.
+	NegotiateKittyKeyboard(stdinFd int) bool
+
+	// DisableKittyKeyboard pops the Kitty keyboard protocol mode from the
+	// terminal's stack, restoring the previous mode. No-op if Kitty mode
+	// was not negotiated.
+	DisableKittyKeyboard()
+
 	// Caps returns the terminal's capabilities.
 	Caps() Capabilities
 
