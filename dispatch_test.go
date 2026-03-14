@@ -900,3 +900,47 @@ func TestValidate_ConflictingStops(t *testing.T) {
 		t.Fatal("expected error for conflicting stops")
 	}
 }
+
+// --- Kitty keyboard protocol integration tests ---
+
+func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {
+	var calls []string
+
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnKey(KeyBackspace, func(ke KeyEvent) { calls = append(calls, "backspace") }),
+			OnKeyMod(KeyRune, ModCtrl, func(ke KeyEvent) {
+				if ke.Rune == 'h' {
+					calls = append(calls, "ctrl-h")
+				}
+			}),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Simulate Kitty-parsed backspace event
+	events := parseInput([]byte("\x1b[127;1u"))
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	table.dispatch(events[0].(KeyEvent))
+	if len(calls) != 1 || calls[0] != "backspace" {
+		t.Errorf("backspace: calls = %v, want [backspace]", calls)
+	}
+
+	// Simulate Kitty-parsed ctrl+h event (distinct!)
+	calls = nil
+	events = parseInput([]byte("\x1b[104;5u"))
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	table.dispatch(events[0].(KeyEvent))
+	if len(calls) != 1 || calls[0] != "ctrl-h" {
+		t.Errorf("ctrl-h: calls = %v, want [ctrl-h]", calls)
+	}
+}
