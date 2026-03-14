@@ -39,10 +39,10 @@ func parseInput(data []byte) []Event {
 					}
 				}
 				// CSI sequence
-				key, mod, consumed := parseCSISequence(data[i:])
+				key, mod, r, consumed := parseCSISequence(data[i:])
 				if consumed > 0 {
 					if key != KeyNone {
-						events = append(events, KeyEvent{Key: key, Mod: mod})
+						events = append(events, KeyEvent{Key: key, Rune: r, Mod: mod})
 					}
 					i += consumed
 					continue
@@ -175,11 +175,11 @@ func controlToKey(b byte) Key {
 }
 
 // parseCSISequence parses a CSI escape sequence starting at data[0].
-// Returns the key, modifier, and number of bytes consumed.
-// Returns (KeyNone, ModNone, 0) if parsing fails.
-func parseCSISequence(data []byte) (Key, Modifier, int) {
+// Returns the key, modifier, rune (for Kitty protocol), and number of bytes consumed.
+// Returns (KeyNone, ModNone, 0, 0) if parsing fails.
+func parseCSISequence(data []byte) (Key, Modifier, rune, int) {
 	if len(data) < 3 || data[0] != 0x1b || data[1] != '[' {
-		return KeyNone, ModNone, 0
+		return KeyNone, ModNone, 0, 0
 	}
 
 	// Parse parameters (numbers separated by ;)
@@ -211,16 +211,21 @@ func parseCSISequence(data []byte) (Key, Modifier, int) {
 			if hasParam {
 				params = append(params, currentParam)
 			}
+			if b == 'u' {
+				// Kitty keyboard protocol: CSI code ; modifiers u
+				key, r, mod := parseKittyKey(params)
+				return key, mod, r, i + 1
+			}
 			key, mod := parseCSI(params, b)
-			return key, mod, i + 1
+			return key, mod, 0, i + 1
 		}
 
 		// Unexpected character
-		return KeyNone, ModNone, 0
+		return KeyNone, ModNone, 0, 0
 	}
 
 	// Incomplete sequence
-	return KeyNone, ModNone, 0
+	return KeyNone, ModNone, 0, 0
 }
 
 // parseCSI parses a complete CSI sequence given parameters and final byte.
@@ -303,6 +308,68 @@ func parseCSI(params []int, final byte) (Key, Modifier) {
 	}
 
 	return KeyNone, ModNone
+}
+
+// kittySpecialKeys maps Kitty keyboard protocol code points to Key constants.
+// These are Unicode code points assigned by the protocol for functional keys
+// that don't have a natural Unicode representation.
+var kittySpecialKeys = map[int]Key{
+	9:     KeyTab,
+	13:    KeyEnter,
+	27:    KeyEscape,
+	127:   KeyBackspace,
+	57345: KeyHome,
+	57346: KeyEnd,
+	57348: KeyInsert,
+	57349: KeyDelete,
+	57350: KeyPageUp,
+	57351: KeyPageDown,
+	57352: KeyUp,
+	57353: KeyDown,
+	57354: KeyRight,
+	57355: KeyLeft,
+	57358: KeyBackspace, // alternate backspace
+	57359: KeyEnter,     // keypad enter
+	57360: KeyTab,       // alternate tab
+	57364: KeyF1,
+	57365: KeyF2,
+	57366: KeyF3,
+	57367: KeyF4,
+	57368: KeyF5,
+	57369: KeyF6,
+	57370: KeyF7,
+	57371: KeyF8,
+	57372: KeyF9,
+	57373: KeyF10,
+	57374: KeyF11,
+	57375: KeyF12,
+}
+
+// parseKittyKey parses a Kitty keyboard protocol CSI u sequence.
+// Format: CSI code ; modifiers u
+// Returns (key, rune, modifier).
+func parseKittyKey(params []int) (Key, rune, Modifier) {
+	code := 0
+	if len(params) > 0 {
+		code = params[0]
+	}
+
+	mod := ModNone
+	if len(params) > 1 {
+		mod = decodeModifier(params[1])
+	}
+
+	// Map special Kitty code points to existing Key constants
+	if key, ok := kittySpecialKeys[code]; ok {
+		return key, 0, mod
+	}
+
+	// Regular Unicode code point
+	if code >= 32 {
+		return KeyRune, rune(code), mod
+	}
+
+	return KeyNone, 0, ModNone
 }
 
 // parseSS3 parses an SS3 function key sequence.
