@@ -2,6 +2,7 @@ package tuigen
 
 import (
 	"strings"
+	"unicode/utf8"
 )
 
 // parseGoExprNode parses a Go expression {expr} as a node.
@@ -112,7 +113,11 @@ func (p *Parser) isRangeForLoop() bool {
 				j++
 			}
 			if j+5 <= len(src) && src[j:j+5] == "range" {
-				if j+5 == len(src) || !isLetter(rune(src[j+5])) {
+				if j+5 == len(src) {
+					return true
+				}
+				r, _ := utf8.DecodeRuneInString(src[j+5:])
+				if !isLetter(r) {
 					return true
 				}
 			}
