@@ -389,13 +389,13 @@ func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, in
 	lines := strings.Split(doc.Content, "\n")
 	startLine := ifStmt.Position.Line - 1 // 0-indexed
 	for i := startLine; i < len(lines); i++ {
-		// Look for bare "else" with word boundary check
-		idx := strings.Index(lines[i], "else")
-		if idx >= 0 {
-			if (idx == 0 || !isWordCharByte(lines[i][idx-1])) &&
-				(idx+4 >= len(lines[i]) || !isWordCharByte(lines[i][idx+4])) {
-				return i, idx
-			}
+		// The else keyword in .gsx always appears as "} else" at the statement level,
+		// meaning only whitespace precedes the "}". We require the "}" to be the first
+		// non-whitespace character on the line to avoid matching inside strings/expressions.
+		trimmed := strings.TrimLeft(lines[i], " \t")
+		if strings.HasPrefix(trimmed, "} else") {
+			col := len(lines[i]) - len(trimmed) + 2 // skip "} ", point at "else"
+			return i, col
 		}
 	}
 	return -1, -1
