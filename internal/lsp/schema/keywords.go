@@ -103,23 +103,23 @@ templ (c *card) Render() {
 	}
 
 	kwFor = &KeywordDef{
-		Name:        "@for",
+		Name:        "for",
 		Description: "Loop over items",
-		Syntax:      "@for index, item := range collection { ... }",
-		Documentation: `## @for
+		Syntax:      "for index, item := range collection { ... }",
+		Documentation: `## for
 
 Iterates over a collection, rendering elements for each item.
 
 **Syntax:**
 ` + "```gsx" + `
-@for index, item := range collection {
+for index, item := range collection {
     <element>...</element>
 }
 ` + "```" + `
 
 **Example:**
 ` + "```gsx" + `
-@for i, name := range names {
+for i, name := range names {
     <li>{fmt.Sprintf("%d. %s", i+1, name)}</li>
 }
 ` + "```" + `
@@ -130,78 +130,79 @@ Iterates over a collection, rendering elements for each item.
 	}
 
 	kwIf = &KeywordDef{
-		Name:        "@if",
+		Name:        "if",
 		Description: "Conditional rendering",
-		Syntax:      "@if condition { ... } @else { ... }",
-		Documentation: `## @if
+		Syntax:      "if condition { ... } else { ... }",
+		Documentation: `## if
 
 Conditionally renders elements based on a boolean expression.
 
 **Syntax:**
 ` + "```gsx" + `
-@if condition {
+if condition {
     <element>...</element>
-} @else {
+} else {
     <element>...</element>
 }
 ` + "```" + `
 
 **Example:**
 ` + "```gsx" + `
-@if user.IsAdmin {
+if user.IsAdmin {
     <span class="text-green">Admin</span>
-} @else {
+} else {
     <span class="text-dim">User</span>
 }
 ` + "```" + `
 
 - Condition must be a Go boolean expression
-- @else clause is optional`,
+- else clause is optional`,
 	}
 
 	kwElse = &KeywordDef{
-		Name:        "@else",
+		Name:        "else",
 		Description: "Else branch of conditional",
-		Syntax:      "} @else { ... }",
-		Documentation: `## @else
+		Syntax:      "} else { ... }",
+		Documentation: `## else
 
-The else branch of a conditional @if statement.
+The else branch of a conditional if statement.
 
 **Syntax:**
 ` + "```gsx" + `
-@if condition {
+if condition {
     <element>...</element>
-} @else {
+} else {
     <element>...</element>
 }
 ` + "```" + `
 
-- Must follow an @if block
+- Must follow an if block
 - Contains elements to render when condition is false`,
 	}
 
 	kwLet = &KeywordDef{
-		Name:        "@let",
+		Name:        ":=",
 		Description: "Bind element to variable",
-		Syntax:      "@let varName = <element>",
-		Documentation: `## @let
+		Syntax:      "varName := <element>",
+		Documentation: `## := (binding)
 
 Creates a local binding within a component body.
 
 **Syntax:**
 ` + "```gsx" + `
-@let varName = <element>
+varName := <element>
 ` + "```" + `
 
 **Examples:**
 ` + "```gsx" + `
-@let header = <div class="font-bold">{title}</div>
+header := <div class="font-bold">{title}</div>
 {header}
 ` + "```" + `
 
-- Binds element trees to variables
+- Binds element trees or component calls to variables
 - Variables are scoped to the component body
-- Useful for reusable sub-elements`,
+- Useful for reusable sub-elements
+- Legacy syntax: ` + "`@let varName = <element>`" + ` (auto-migrated by ` + "`tui fmt`" + `)`,
 	}
 
 	kwPackage = &KeywordDef{

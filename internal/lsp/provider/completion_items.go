@@ -47,7 +47,7 @@ func (c *completionProvider) getDSLKeywordCompletions() []CompletionItem {
 			InsertText: "for ${1:i}, ${2:item} := range ${3:items} {\n\t$0\n}",
 			Documentation: &MarkupContent{
 				Kind:  "markdown",
-				Value: "Loop over a collection.\n\n```gsx\n@for i, item := range items {\n    <span>{item}</span>\n}\n```",
+				Value: "Loop over a collection.\n\n```gsx\nfor i, item := range items {\n    <span>{item}</span>\n}\n```",
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func (c *completionProvider) getDSLKeywordCompletions() []CompletionItem {
 			InsertText: "if ${1:condition} {\n\t$0\n}",
 			Documentation: &MarkupContent{
 				Kind:  "markdown",
-				Value: "Conditionally render content.\n\n```gsx\n@if showHeader {\n    <span>Header</span>\n}\n```",
+				Value: "Conditionally render content.\n\n```gsx\nif showHeader {\n    <span>Header</span>\n}\n```",
 			},
 		},
 		{
