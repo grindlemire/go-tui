@@ -120,7 +120,7 @@ func wrapLabels() []string {
 templ FlexWrapGrid(mode alignMode) {
 	<div class="flex-col h-full p-1">
 		<div class="flex flex-wrap gap-1 grow" alignContent={mode.content}>
-			@for _, label := range wrapLabels() {
+			for _, label := range wrapLabels() {
 				<div class="border-rounded p-1 w-16 flex-col items-center shrink-0">
 					<span>{label}</span>
 				</div>
@@ -134,10 +134,10 @@ templ FlexWrapGrid(mode alignMode) {
 
 templ ViewHeader(viewIndex int) {
 	<div class="flex gap-1 p-1 border-single">
-		@for i, name := range viewNames() {
-			@if i == viewIndex {
+		for i, name := range viewNames() {
+			if i == viewIndex {
 				<span class="font-bold text-cyan">{fmt.Sprintf("[%s]", name)}</span>
-			} @else {
+			} else {
 				<span class="font-dim">{name}</span>
 			}
 		}
@@ -154,13 +154,13 @@ templ (l *layoutApp) Render() {
 	<div class="flex-col h-full w-full" deps={l.viewIndex, l.modeIndex}>
 		@ViewHeader(l.viewIndex.Get())
 		<div class="grow flex-col">
-			@if l.viewIndex.Get() == 0 {
+			if l.viewIndex.Get() == 0 {
 				@Dashboard()
-			} @else @if l.viewIndex.Get() == 1 {
+			} else if l.viewIndex.Get() == 1 {
 				@SidebarLayout()
-			} @else @if l.viewIndex.Get() == 2 {
+			} else if l.viewIndex.Get() == 2 {
 				@CenteredCard()
-			} @else {
+			} else {
 				@FlexWrapGrid(alignModes()[l.modeIndex.Get()])
 			}
 		</div>

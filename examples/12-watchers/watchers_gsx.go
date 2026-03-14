@@ -212,20 +212,17 @@ func (w *watcherApp) Render(app *tui.App) *tui.Element {
 	}
 	if len(w.messages.Get()) == 0 {
 		__tui_13 := tui.New(
+			tui.WithText("Waitingmessages..."),
 			tui.WithTextStyle(tui.NewStyle().Dim()),
 		)
-		__tui_14 := tui.New(tui.WithText("Waiting"))
-		__tui_13.AddChild(__tui_14)
-		__tui_15 := tui.New(tui.WithText("messages..."))
-		__tui_13.AddChild(__tui_15)
 		__tui_8.AddChild(__tui_13)
 	}
 	__tui_0.AddChild(__tui_8)
-	__tui_16 := tui.New(
+	__tui_14 := tui.New(
 		tui.WithText("s stopwatch | r reset | q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_16)
+	__tui_0.AddChild(__tui_14)
 
 	return __tui_0
 }

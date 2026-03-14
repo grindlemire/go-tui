@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"time"
-
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -83,11 +82,11 @@ templ (c *counterApp) Render() {
 				</span>
 			}
 			@Card("Status") {
-				@if c.count.Get() > 0 {
+				if c.count.Get() > 0 {
 					<span class="text-green font-bold">Positive</span>
-				} @else @if c.count.Get() < 0 {
+				} else if c.count.Get() < 0 {
 					<span class="text-red font-bold">Negative</span>
-				} @else {
+				} else {
 					<span class="text-blue font-bold">Zero</span>
 				}
 			}
