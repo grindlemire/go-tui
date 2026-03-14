@@ -200,14 +200,18 @@ type TextContent struct {
 func (t *TextContent) node()         {}
 func (t *TextContent) Pos() Position { return t.Position }
 
-// LetBinding represents @let name = <element>.
+// LetBinding represents a variable binding: name := <element>, name := @Component(), name := expr,
+// var name = <element>, or the legacy @let name = <element>.
 type LetBinding struct {
 	Name            string
-	Element         *Element
+	Element         *Element       // RHS is an element (e.g., <span>Hello</span>)
+	Call            *ComponentCall // RHS is a component call (e.g., @MyComponent())
+	Expr            string         // RHS is a Go expression (e.g., fmt.Sprintf(...))
+	IsShortForm     bool           // true for :=, false for var or @let
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields
-	LeadingComments  *CommentGroup // Comments immediately before @let
+	LeadingComments  *CommentGroup // Comments immediately before binding
 	TrailingComments *CommentGroup // Comments on same line after element
 }
 
