@@ -139,7 +139,7 @@ The `.gsx` compiler runs at build time and produces regular Go files. At runtime
 
 ## Examples
 
-The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01 through 20 accompany the [guides](https://go-tui.dev).
+The [`examples/`](examples/) directory has runnable programs for each feature area. Examples 01 through 21 accompany the [guides](https://go-tui.dev).
 
 | Example | What it covers |
 |---------|----------------|
@@ -163,6 +163,7 @@ The [`examples/`](examples/) directory has runnable programs for each feature ar
 | [18-dashboard](examples/18-dashboard) | Metrics, sparklines, scrollable event log |
 | [19-print](examples/19-print) | One-shot rendering, print and exit |
 | [20-animation](examples/20-animation) | Frame-cycling spinners, eased progress, color wave, pulsing border |
+| [21-directory-tree](examples/21-directory-tree) | Foldable directory tree, lazy loading, scroll-to-cursor, path highlighting |
 
 See also [`ai-chat`](examples/ai-chat) and [`docs-example`](examples/docs-example).
 
