@@ -16,7 +16,8 @@ type ANSITerminal struct {
 	esc       *escBuilder   // Escape sequence builder
 	inFd      uintptr       // File descriptor for input (needed for raw mode)
 	outFd     uintptr       // File descriptor for output (needed for size query)
-	rawState  *rawModeState // Platform-specific raw mode state
+	rawState      *rawModeState // Platform-specific raw mode state
+	kittyKeyboard bool          // true if Kitty keyboard protocol was successfully negotiated
 }
 
 // NewANSITerminal creates a new ANSI terminal with auto-detected capabilities.
@@ -218,15 +219,41 @@ func (t *ANSITerminal) DisableMouse() {
 	t.out.Write(t.esc.Bytes())
 }
 
-// NegotiateKittyKeyboard attempts to enable Kitty keyboard protocol.
-// Full implementation in Task 5; this is the interface stub.
-func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
-	return false
+// DisableKittyKeyboard pops the Kitty keyboard protocol mode from the stack.
+func (t *ANSITerminal) DisableKittyKeyboard() {
+	if !t.kittyKeyboard {
+		return
+	}
+	t.esc.Reset()
+	t.esc.KittyKeyboardPop()
+	t.out.Write(t.esc.Bytes())
+	t.kittyKeyboard = false
+	t.caps.KittyKeyboard = false
 }
 
-// DisableKittyKeyboard pops the Kitty keyboard protocol mode from the stack.
-// Full implementation in Task 5; this is the interface stub.
-func (t *ANSITerminal) DisableKittyKeyboard() {
+// parseKittyQueryResponse checks if the response bytes contain a valid
+// Kitty keyboard protocol query response (CSI ? flags u) where flags
+// includes bit 1 (disambiguate).
+func parseKittyQueryResponse(data []byte) bool {
+	// Look for: \x1b [ ? <digits> u
+	for i := 0; i < len(data)-3; i++ {
+		if data[i] == 0x1b && i+1 < len(data) && data[i+1] == '[' && i+2 < len(data) && data[i+2] == '?' {
+			// Parse digits after '?'
+			j := i + 3
+			flags := 0
+			hasDigit := false
+			for j < len(data) && data[j] >= '0' && data[j] <= '9' {
+				flags = flags*10 + int(data[j]-'0')
+				hasDigit = true
+				j++
+			}
+			// Check for 'u' terminator and that flag 1 (disambiguate) is set
+			if hasDigit && j < len(data) && data[j] == 'u' && flags&1 != 0 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // BeginSyncUpdate starts a synchronized update block.

@@ -590,6 +590,35 @@ func TestParseInput_KittyCSIu(t *testing.T) {
 	}
 }
 
+func TestParseKittyQueryResponse(t *testing.T) {
+	type tc struct {
+		input    []byte
+		expected bool
+	}
+
+	tests := map[string]tc{
+		"valid flag 1":        {input: []byte("\x1b[?1u"), expected: true},
+		"valid flag 3":        {input: []byte("\x1b[?3u"), expected: true},
+		"valid flag 5":        {input: []byte("\x1b[?5u"), expected: true},
+		"flag 0 no disambig":  {input: []byte("\x1b[?0u"), expected: false},
+		"flag 2 no disambig":  {input: []byte("\x1b[?2u"), expected: false},
+		"empty":               {input: []byte{}, expected: false},
+		"no question mark":    {input: []byte("\x1b[1u"), expected: false},
+		"no digits":           {input: []byte("\x1b[?u"), expected: false},
+		"wrong terminator":    {input: []byte("\x1b[?1x"), expected: false},
+		"with prefix garbage": {input: []byte("garbage\x1b[?1u"), expected: true},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseKittyQueryResponse(tt.input)
+			if got != tt.expected {
+				t.Errorf("parseKittyQueryResponse(%q) = %v, want %v", tt.input, got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestParseSS3(t *testing.T) {
 	type tc struct {
 		input    byte
