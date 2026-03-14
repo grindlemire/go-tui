@@ -135,6 +135,7 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	}
 
 	// Capture arguments as raw source until matching )
+	openLine := p.current.Line
 	argsStart := p.current.StartPos
 	parenDepth := 1
 	for parenDepth > 0 && p.current.Type != TokenEOF {
@@ -151,7 +152,16 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 			p.advance()
 		}
 	}
-	args := strings.TrimSpace(p.lexer.SourceRange(argsStart, p.current.StartPos))
+	rawArgs := p.lexer.SourceRange(argsStart, p.current.StartPos)
+	args := strings.TrimSpace(rawArgs)
+	multiLineArgs := p.current.Line != openLine
+
+	// Compute the source position of the first character of the trimmed args.
+	var argsPos Position
+	if args != "" {
+		leading := len(rawArgs) - len(strings.TrimLeft(rawArgs, " \t\n\r"))
+		argsPos = p.lexer.PositionAt(argsStart + leading)
+	}
 
 	if !p.expect(TokenRParen) {
 		return nil
@@ -162,6 +172,8 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	call := &ComponentCall{
 		Name:          name,
 		Args:          args,
+		ArgsPosition:  argsPos,
+		MultiLineArgs: multiLineArgs,
 		IsStructMount: p.inMethodTempl,
 		Position:      pos,
 	}

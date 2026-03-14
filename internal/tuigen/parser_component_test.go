@@ -210,10 +210,11 @@ templ Test(fn func(a, b int) (string, error)) {
 
 func TestParser_ComponentCall(t *testing.T) {
 	type tc struct {
-		input        string
-		wantName     string
-		wantArgs     string
-		wantChildren int
+		input         string
+		wantName      string
+		wantArgs      string
+		wantChildren  int
+		wantMultiLine bool
 	}
 
 	tests := map[string]tc{
@@ -258,6 +259,34 @@ templ App() {
 			wantArgs:     "",
 			wantChildren: 1,
 		},
+		"call with multi-line args": {
+			input: `package x
+templ App() {
+	@Header(
+		"Welcome",
+		true,
+	)
+}`,
+			wantName:      "Header",
+			wantArgs:      "\"Welcome\",\n\t\ttrue,",
+			wantMultiLine: true,
+			wantChildren:  0,
+		},
+		"call with multi-line args and children": {
+			input: `package x
+templ App() {
+	@Card(
+		"Title",
+		42,
+	) {
+		<span>Child</span>
+	}
+}`,
+			wantName:      "Card",
+			wantArgs:      "\"Title\",\n\t\t42,",
+			wantMultiLine: true,
+			wantChildren:  1,
+		},
 	}
 
 	for name, tt := range tests {
@@ -289,6 +318,9 @@ templ App() {
 			}
 			if call.Args != tt.wantArgs {
 				t.Errorf("Args = %q, want %q", call.Args, tt.wantArgs)
+			}
+			if call.MultiLineArgs != tt.wantMultiLine {
+				t.Errorf("MultiLineArgs = %v, want %v", call.MultiLineArgs, tt.wantMultiLine)
 			}
 			if len(call.Children) != tt.wantChildren {
 				t.Errorf("len(Children) = %d, want %d", len(call.Children), tt.wantChildren)

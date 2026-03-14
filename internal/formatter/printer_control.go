@@ -1,6 +1,8 @@
 package formatter
 
 import (
+	"strings"
+
 	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
@@ -227,7 +229,26 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 	p.write("@")
 	p.write(call.Name)
 	p.write("(")
-	p.write(formatInlineBlockComments(call.Args))
+
+	if call.MultiLineArgs {
+		args := splitTopLevelArgs(call.Args)
+		p.newline()
+		p.depth++
+		for i, arg := range args {
+			p.writeIndent()
+			p.write(arg)
+			p.write(",")
+			if i < len(args)-1 {
+				p.newline()
+			}
+		}
+		p.depth--
+		p.newline()
+		p.writeIndent()
+	} else {
+		p.write(formatInlineBlockComments(call.Args))
+	}
+
 	p.write(")")
 
 	if len(call.Children) > 0 {
@@ -245,6 +266,68 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 		p.printTrailingComment(call.TrailingComments)
 	}
 	p.newline()
+}
+
+// splitTopLevelArgs splits a Go argument string by top-level commas,
+// respecting nested parentheses, brackets, braces, and string literals.
+func splitTopLevelArgs(args string) []string {
+	var result []string
+	depth := 0
+	inString := false
+	inRune := false
+	inBacktick := false
+	start := 0
+
+	for i := 0; i < len(args); i++ {
+		ch := args[i]
+		switch {
+		case inBacktick:
+			if ch == '`' {
+				inBacktick = false
+			}
+		case inString:
+			if ch == '\\' {
+				i++ // skip escaped char
+			} else if ch == '"' {
+				inString = false
+			}
+		case inRune:
+			if ch == '\\' {
+				i++
+			} else if ch == '\'' {
+				inRune = false
+			}
+		default:
+			switch ch {
+			case '"':
+				inString = true
+			case '\'':
+				inRune = true
+			case '`':
+				inBacktick = true
+			case '(', '[', '{':
+				depth++
+			case ')', ']', '}':
+				depth--
+			case ',':
+				if depth == 0 {
+					arg := strings.TrimSpace(args[start:i])
+					if arg != "" {
+						result = append(result, arg)
+					}
+					start = i + 1
+				}
+			}
+		}
+	}
+
+	// Last argument (may have trailing comma already trimmed by parser)
+	last := strings.TrimSpace(args[start:])
+	if last != "" {
+		result = append(result, last)
+	}
+
+	return result
 }
 
 // printGoFunc outputs a top-level Go function.

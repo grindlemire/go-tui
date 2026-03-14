@@ -281,8 +281,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 			Modifiers: 0,
 		})
 		if n.Args != "" {
-			argPos := tuigen.Position{Line: n.Position.Line, Column: n.Position.Column + len(n.Name) + 1}
-			s.collectVariableTokensInCode(n.Args, argPos, paramNames, localVars, tokens)
+			s.collectTokensInGoCodeDirect(n.Args, n.ArgsPosition, paramNames, localVars, tokens)
 		}
 		for _, child := range n.Children {
 			s.collectTokensFromNode(child, paramNames, localVars, tokens)

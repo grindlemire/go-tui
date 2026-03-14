@@ -301,10 +301,12 @@ func (r *RawGoExpr) Pos() Position { return r.Position }
 
 // ComponentCall represents @ComponentName(args) { children }
 type ComponentCall struct {
-	Name            string // component name (e.g., "Card", "Header")
-	Args            string // raw Go expression for arguments
-	Children        []Node // child elements (may be empty if no children block)
-	IsStructMount   bool   // true when inside a method templ (generates app.Mount())
+	Name            string   // component name (e.g., "Card", "Header")
+	Args            string   // raw Go expression for arguments
+	ArgsPosition    Position // source position of the first character of Args
+	Children        []Node   // child elements (may be empty if no children block)
+	IsStructMount   bool     // true when inside a method templ (generates app.Mount())
+	MultiLineArgs   bool     // args span multiple source lines
 	Position        Position
 	BlankLineBefore bool // blank line before this node in source
 	// Comment fields

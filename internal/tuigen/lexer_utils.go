@@ -219,6 +219,21 @@ func (l *Lexer) SourcePos() int {
 	return l.pos
 }
 
+// PositionAt converts a byte offset in the source to a 1-based line/column Position.
+func (l *Lexer) PositionAt(offset int) Position {
+	line := 1
+	col := 1
+	for i := 0; i < offset && i < len(l.source); i++ {
+		if l.source[i] == '\n' {
+			line++
+			col = 1
+		} else {
+			col++
+		}
+	}
+	return Position{Line: line, Column: col}
+}
+
 // SourceRange extracts a substring of the original source from start to end positions.
 // Used by the parser to capture raw Go code without tokenization.
 func (l *Lexer) SourceRange(start, end int) string {

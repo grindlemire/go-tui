@@ -276,6 +276,94 @@ templ Card(title string) {
 }
 `,
 		},
+		"component call with multi-line args": {
+			input: `package main
+
+templ Parent() {
+	@Child(
+		"arg1",
+		"arg2",
+	)
+}
+
+templ Child(a string, b string) {
+	<span>{a}</span>
+}
+`,
+			want: `package main
+
+templ Parent() {
+	@Child(
+		"arg1",
+		"arg2",
+	)
+}
+
+templ Child(a string, b string) {
+	<span>{a}</span>
+}
+`,
+		},
+		"component call with multi-line args and children": {
+			input: `package main
+
+templ Parent() {
+	@Card(
+		"Title",
+		42,
+	) {
+		<span>Content</span>
+	}
+}
+
+templ Card(title string, count int) {
+	<div>{title}</div>
+}
+`,
+			want: `package main
+
+templ Parent() {
+	@Card(
+		"Title",
+		42,
+	) {
+		<span>Content</span>
+	}
+}
+
+templ Card(title string, count int) {
+	<div>{title}</div>
+}
+`,
+		},
+		"component call multi-line args reformat indentation": {
+			input: `package main
+
+templ Parent() {
+@Child(
+"arg1",
+      "arg2",
+)
+}
+
+templ Child(a string, b string) {
+<span>{a}</span>
+}
+`,
+			want: `package main
+
+templ Parent() {
+	@Child(
+		"arg1",
+		"arg2",
+	)
+}
+
+templ Child(a string, b string) {
+	<span>{a}</span>
+}
+`,
+		},
 		"multiple attributes": {
 			input: `package main
 
