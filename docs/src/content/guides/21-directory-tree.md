@@ -261,17 +261,17 @@ The component implements `KeyListener` with vim-style bindings. `j`/`k` and arro
 ```go
 func (d *directoryTree) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.moveUp() }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { d.moveUp() }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.moveDown() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { d.moveDown() }),
-        tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { d.toggle() }),
-        tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { d.toggle() }),
-        tui.OnRune('l', func(ke tui.KeyEvent) { d.toggle() }),
-        tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { d.collapseOrParent() }),
-        tui.OnRune('h', func(ke tui.KeyEvent) { d.collapseOrParent() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.moveUp() }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.moveUp() }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.moveDown() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.moveDown() }),
+        tui.On(tui.KeyEnter, func(ke tui.KeyEvent) { d.toggle() }),
+        tui.On(tui.KeyRight, func(ke tui.KeyEvent) { d.toggle() }),
+        tui.On(tui.Rune('l'), func(ke tui.KeyEvent) { d.toggle() }),
+        tui.On(tui.KeyLeft, func(ke tui.KeyEvent) { d.collapseOrParent() }),
+        tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { d.collapseOrParent() }),
     }
 }
 ```
@@ -584,17 +584,17 @@ func (d *directoryTree) Watchers() []tui.Watcher {
 
 func (d *directoryTree) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.moveUp() }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { d.moveUp() }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.moveDown() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { d.moveDown() }),
-        tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { d.toggle() }),
-        tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { d.toggle() }),
-        tui.OnRune('l', func(ke tui.KeyEvent) { d.toggle() }),
-        tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { d.collapseOrParent() }),
-        tui.OnRune('h', func(ke tui.KeyEvent) { d.collapseOrParent() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.moveUp() }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.moveUp() }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.moveDown() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.moveDown() }),
+        tui.On(tui.KeyEnter, func(ke tui.KeyEvent) { d.toggle() }),
+        tui.On(tui.KeyRight, func(ke tui.KeyEvent) { d.toggle() }),
+        tui.On(tui.Rune('l'), func(ke tui.KeyEvent) { d.toggle() }),
+        tui.On(tui.KeyLeft, func(ke tui.KeyEvent) { d.collapseOrParent() }),
+        tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { d.collapseOrParent() }),
     }
 }
 

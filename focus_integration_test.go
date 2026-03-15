@@ -51,7 +51,7 @@ func (c *testInputComponent) HandleEvent(e Event) bool { return false }
 
 func (c *testInputComponent) KeyMap() KeyMap {
 	return KeyMap{
-		OnRunesFocused(func(ke KeyEvent) {
+		OnFocused(AnyRune, func(ke KeyEvent) {
 			c.text.Set(c.text.Get() + string(ke.Rune))
 		}),
 	}
@@ -72,10 +72,10 @@ func (c *testAppComponent) Render(app *App) *Element {
 
 func (c *testAppComponent) KeyMap() KeyMap {
 	return KeyMap{
-		OnRune('q', func(ke KeyEvent) {
+		On(Rune('q'), func(ke KeyEvent) {
 			ke.App().Stop()
 		}),
-		OnKey(KeyTab, func(ke KeyEvent) {
+		On(KeyTab, func(ke KeyEvent) {
 			ke.App().FocusNext()
 		}),
 	}

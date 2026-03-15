@@ -348,10 +348,10 @@ func (s *streamDemo) streamPhrase() {
 
 func (s *streamDemo) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKeyStop(tui.KeyEnter, func(ke tui.KeyEvent) { s.streamPhrase() }),
-        tui.OnKeyStop(tui.KeyTab, func(ke tui.KeyEvent) { s.streamWithElement() }),
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnStop(tui.KeyEnter, func(ke tui.KeyEvent) { s.streamPhrase() }),
+        tui.OnStop(tui.KeyTab, func(ke tui.KeyEvent) { s.streamWithElement() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
 }
 

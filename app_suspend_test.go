@@ -403,11 +403,11 @@ func TestKeyCtrlZ_OverrideByStopper(t *testing.T) {
 
 	overrideCalled := false
 
-	// Build a dispatch table with a Stop handler for KeyCtrlZ
+	// Build a dispatch table with a Stop handler for Ctrl+Z (normalized)
 	table := &dispatchTable{
 		entries: []dispatchEntry{
 			{
-				pattern: KeyPattern{Key: KeyCtrlZ},
+				pattern: KeyPattern{Rune: 'z', Mod: ModCtrl},
 				handler: func(ke KeyEvent) { overrideCalled = true },
 				stop:    true,
 			},
@@ -425,7 +425,7 @@ func TestKeyCtrlZ_OverrideByStopper(t *testing.T) {
 		dirty:         atomic.Bool{},
 	}
 
-	ke := KeyEvent{Key: KeyCtrlZ, app: app}
+	ke := KeyEvent{Key: KeyRune, Rune: 'z', Mod: ModCtrl, app: app}
 
 	// Dispatch through table - should be consumed by Stop handler
 	stopped := app.dispatchTable.dispatch(ke)

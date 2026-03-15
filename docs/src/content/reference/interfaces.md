@@ -54,20 +54,20 @@ type KeyListener interface {
 
 Provides keyboard bindings for the component. `KeyMap()` is called during event dispatch when the framework walks the component tree, so it can return different bindings depending on the component's current state.
 
-`KeyMap` is a `[]KeyBinding`. Bindings are checked in order; the first match wins. Use `OnKey`, `OnRune`, `OnKeyStop`, `OnRuneStop`, and `OnRunes` helpers to build bindings.
+`KeyMap` is a `[]KeyBinding`. Bindings are checked in order; the first match wins. Use `On`, `OnStop`, and `OnFocused` with a `KeyMatcher` (Key constants, `Rune()`, or `AnyRune`) to build bindings.
 
 **When to implement:** When your component needs to respond to keyboard input.
 
 ```go
 func (c *counter) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRune('+', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
             c.count.Update(func(v int) int { return v + 1 })
         }),
-        tui.OnRune('-', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
             c.count.Update(func(v int) int { return v - 1 })
         }),
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
     }

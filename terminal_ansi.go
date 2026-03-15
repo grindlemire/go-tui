@@ -9,14 +9,15 @@ import (
 // ANSITerminal implements Terminal using ANSI escape sequences.
 // It works with any terminal emulator that supports ANSI codes.
 type ANSITerminal struct {
-	out       io.Writer     // Output destination (usually os.Stdout)
-	in        io.Reader     // Input source (usually os.Stdin)
-	caps      Capabilities  // Terminal capabilities
-	lastStyle Style         // Last emitted style (for optimization)
-	esc       *escBuilder   // Escape sequence builder
-	inFd      uintptr       // File descriptor for input (needed for raw mode)
-	outFd     uintptr       // File descriptor for output (needed for size query)
-	rawState  *rawModeState // Platform-specific raw mode state
+	out           io.Writer     // Output destination (usually os.Stdout)
+	in            io.Reader     // Input source (usually os.Stdin)
+	caps          Capabilities  // Terminal capabilities
+	lastStyle     Style         // Last emitted style (for optimization)
+	esc           *escBuilder   // Escape sequence builder
+	inFd          uintptr       // File descriptor for input (needed for raw mode)
+	outFd         uintptr       // File descriptor for output (needed for size query)
+	rawState      *rawModeState // Platform-specific raw mode state
+	kittyKeyboard bool          // true if Kitty keyboard protocol was successfully negotiated
 }
 
 // NewANSITerminal creates a new ANSI terminal with auto-detected capabilities.
@@ -108,17 +109,15 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 			t.lastStyle = ch.Cell.Style
 		}
 
-		// Write the character (skip continuation cells)
-		if !ch.Cell.IsContinuation() {
-			if ch.Cell.Rune != 0 {
-				t.esc.WriteRune(ch.Cell.Rune)
-			} else {
-				t.esc.WriteRune(' ')
-			}
+		// Write the character
+		if ch.Cell.Rune != 0 {
+			t.esc.WriteRune(ch.Cell.Rune)
+		} else {
+			t.esc.WriteRune(' ')
 		}
 
 		lastX = ch.X
-		if !ch.Cell.IsContinuation() && ch.Cell.Width > 1 {
+		if ch.Cell.Width > 1 {
 			// Wide character advances cursor by its width
 			lastX = ch.X + int(ch.Cell.Width) - 1
 		}
@@ -132,10 +131,10 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 func (t *ANSITerminal) Clear() {
 	t.esc.Reset()
 	t.esc.ResetStyle()
-	t.esc.MoveTo(0, 0)     // Home first
-	t.esc.ClearScreen()    // ESC[2J - clear visible screen
+	t.esc.MoveTo(0, 0)      // Home first
+	t.esc.ClearScreen()     // ESC[2J - clear visible screen
 	t.esc.ClearScrollback() // ESC[3J - also clear scrollback (helps with resize)
-	t.esc.MoveTo(0, 0)     // Ensure cursor at home after clear
+	t.esc.MoveTo(0, 0)      // Ensure cursor at home after clear
 	t.out.Write(t.esc.Bytes())
 	t.lastStyle = NewStyle()
 }
@@ -216,6 +215,49 @@ func (t *ANSITerminal) DisableMouse() {
 	t.esc.Reset()
 	t.esc.DisableMouse()
 	t.out.Write(t.esc.Bytes())
+}
+
+// DisableKittyKeyboard pops the Kitty keyboard protocol mode from the stack.
+func (t *ANSITerminal) DisableKittyKeyboard() {
+	if !t.kittyKeyboard {
+		return
+	}
+	t.popKittyKeyboard()
+	t.kittyKeyboard = false
+	t.caps.KittyKeyboard = false
+}
+
+// popKittyKeyboard sends the pop escape sequence to undo a Kitty push.
+func (t *ANSITerminal) popKittyKeyboard() {
+	t.esc.Reset()
+	t.esc.KittyKeyboardPop()
+	t.out.Write(t.esc.Bytes())
+}
+
+// parseKittyQueryResponse checks if the response bytes contain a valid
+// Kitty keyboard protocol query response (CSI ? flags u) where flags
+// includes bit 1 (disambiguate).
+func parseKittyQueryResponse(data []byte) bool {
+	// Look for: \x1b [ ? <digits> u
+	// Loop bound ensures i+3 is always in bounds.
+	for i := 0; i < len(data)-3; i++ {
+		if data[i] == 0x1b && data[i+1] == '[' && data[i+2] == '?' {
+			// Parse digits after '?'
+			j := i + 3
+			flags := 0
+			hasDigit := false
+			for j < len(data) && data[j] >= '0' && data[j] <= '9' {
+				flags = flags*10 + int(data[j]-'0')
+				hasDigit = true
+				j++
+			}
+			// Check for 'u' terminator and that flag 1 (disambiguate) is set
+			if hasDigit && j < len(data) && data[j] == 'u' && flags&1 != 0 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // BeginSyncUpdate starts a synchronized update block.

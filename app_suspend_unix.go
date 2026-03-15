@@ -41,6 +41,9 @@ func (a *App) suspendTerminal() {
 		a.terminal.ExitAltScreen()
 	}
 
+	// Disable Kitty keyboard protocol (pop from stack)
+	a.terminal.DisableKittyKeyboard()
+
 	a.terminal.ExitRawMode()
 }
 
@@ -48,6 +51,18 @@ func (a *App) suspendTerminal() {
 // Must be called from the main event loop.
 func (a *App) resumeTerminal() {
 	a.terminal.EnterRawMode()
+
+	// Re-negotiate Kitty keyboard protocol.
+	// Pause the event reader so it doesn't consume the query response.
+	if !a.legacyKeyboard {
+		if pr, ok := a.reader.(PausableReader); ok {
+			pr.Pause()
+		}
+		a.terminal.NegotiateKittyKeyboard()
+		if pr, ok := a.reader.(PausableReader); ok {
+			pr.Resume()
+		}
+	}
 
 	if a.inAlternateScreen {
 		// Dynamic alternate screen overlay: recalculate saved inline

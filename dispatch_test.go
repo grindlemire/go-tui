@@ -73,9 +73,9 @@ func TestDispatchEntry_Matches(t *testing.T) {
 			event:   KeyEvent{Key: KeyEscape},
 			want:    false,
 		},
-		"AnyRune does not match ctrl key": {
+		"AnyRune does not match function key": {
 			pattern: KeyPattern{AnyRune: true},
-			event:   KeyEvent{Key: KeyCtrlC},
+			event:   KeyEvent{Key: KeyF1},
 			want:    false,
 		},
 		"exact rune matches same rune": {
@@ -103,9 +103,9 @@ func TestDispatchEntry_Matches(t *testing.T) {
 			event:   KeyEvent{Key: KeyEnter},
 			want:    false,
 		},
-		"exact key matches ctrl key": {
-			pattern: KeyPattern{Key: KeyCtrlC},
-			event:   KeyEvent{Key: KeyCtrlC},
+		"rune with mod matches ctrl+c": {
+			pattern: KeyPattern{Rune: 'c', Mod: ModCtrl},
+			event:   KeyEvent{Key: KeyRune, Rune: 'c', Mod: ModCtrl},
 			want:    true,
 		},
 		"modifier required and present": {
@@ -123,29 +123,39 @@ func TestDispatchEntry_Matches(t *testing.T) {
 			event:   KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl},
 			want:    false,
 		},
-		"no modifier required rejects event with mods": {
-			pattern: KeyPattern{Key: KeyEscape, RequireNoMods: true},
+		"ExcludeMods rejects event with excluded mod": {
+			pattern: KeyPattern{Key: KeyEscape, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyEscape, Mod: ModShift},
 			want:    false,
 		},
-		"no RequireNoMods ignores event mods": {
+		"no ExcludeMods ignores event mods": {
 			pattern: KeyPattern{Key: KeyEscape},
 			event:   KeyEvent{Key: KeyEscape, Mod: ModShift},
 			want:    true,
 		},
-		"RequireNoMods matches event with no modifiers": {
-			pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods matches event with no modifiers": {
+			pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyTab, Mod: ModNone},
 			want:    true,
 		},
-		"RequireNoMods rejects event with shift": {
-			pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods rejects event with shift": {
+			pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyTab, Mod: ModShift},
 			want:    false,
 		},
-		"RequireNoMods rejects event with alt": {
-			pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods rejects event with alt": {
+			pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyTab, Mod: ModAlt},
+			want:    false,
+		},
+		"ExcludeMods Ctrl|Alt allows shift": {
+			pattern: KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			event:   KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModShift},
+			want:    true,
+		},
+		"ExcludeMods Ctrl|Alt blocks ctrl": {
+			pattern: KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			event:   KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl},
 			want:    false,
 		},
 		"empty pattern matches nothing": {
@@ -173,17 +183,17 @@ func TestDispatch_BroadcastMultipleHandlers(t *testing.T) {
 
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyCtrlC, func(ke KeyEvent) { calls = append(calls, 1) }),
+			On(Rune('c').Ctrl(), func(ke KeyEvent) { calls = append(calls, 1) }),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyCtrlC, func(ke KeyEvent) { calls = append(calls, 2) }),
+			On(Rune('c').Ctrl(), func(ke KeyEvent) { calls = append(calls, 2) }),
 		},
 	}
 	comp3 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyCtrlC, func(ke KeyEvent) { calls = append(calls, 3) }),
+			On(Rune('c').Ctrl(), func(ke KeyEvent) { calls = append(calls, 3) }),
 		},
 	}
 
@@ -193,7 +203,7 @@ func TestDispatch_BroadcastMultipleHandlers(t *testing.T) {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
-	table.dispatch(KeyEvent{Key: KeyCtrlC})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'c', Mod: ModCtrl})
 
 	if len(calls) != 3 {
 		t.Fatalf("got %d handler calls, want 3", len(calls))
@@ -208,17 +218,17 @@ func TestDispatch_StopPreventsLaterHandlers(t *testing.T) {
 
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEscape, func(ke KeyEvent) { calls = append(calls, 1) }),
+			On(KeyEscape, func(ke KeyEvent) { calls = append(calls, 1) }),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEscape, func(ke KeyEvent) { calls = append(calls, 2) }),
+			OnStop(KeyEscape, func(ke KeyEvent) { calls = append(calls, 2) }),
 		},
 	}
 	comp3 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEscape, func(ke KeyEvent) { calls = append(calls, 3) }),
+			On(KeyEscape, func(ke KeyEvent) { calls = append(calls, 3) }),
 		},
 	}
 
@@ -244,12 +254,12 @@ func TestDispatch_TreeOrder(t *testing.T) {
 
 	parent := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEnter, func(ke KeyEvent) { calls = append(calls, "parent") }),
+			On(KeyEnter, func(ke KeyEvent) { calls = append(calls, "parent") }),
 		},
 	}
 	child := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEnter, func(ke KeyEvent) { calls = append(calls, "child") }),
+			On(KeyEnter, func(ke KeyEvent) { calls = append(calls, "child") }),
 		},
 	}
 
@@ -276,13 +286,13 @@ func TestDispatch_UnifiedOrdering_ExactAndAnyRune(t *testing.T) {
 	// comp1 has an exact rune handler for 'a'
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRune('a', func(ke KeyEvent) { calls = append(calls, "exact-a") }),
+			On(Rune('a'), func(ke KeyEvent) { calls = append(calls, "exact-a") }),
 		},
 	}
 	// comp2 has an AnyRune handler
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRunes(func(ke KeyEvent) { calls = append(calls, "any-rune") }),
+			On(AnyRune, func(ke KeyEvent) { calls = append(calls, "any-rune") }),
 		},
 	}
 
@@ -308,7 +318,7 @@ func TestDispatch_AnyRuneMatchesPrintableOnly(t *testing.T) {
 
 	comp := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRunes(func(ke KeyEvent) { called = true }),
+			On(AnyRune, func(ke KeyEvent) { called = true }),
 		},
 	}
 
@@ -331,11 +341,11 @@ func TestDispatch_AnyRuneMatchesPrintableOnly(t *testing.T) {
 		t.Error("AnyRune should not match special key")
 	}
 
-	// Ctrl key should not match
+	// Function key should not match
 	called = false
-	table.dispatch(KeyEvent{Key: KeyCtrlC})
+	table.dispatch(KeyEvent{Key: KeyF1})
 	if called {
-		t.Error("AnyRune should not match ctrl key")
+		t.Error("AnyRune should not match function key")
 	}
 }
 
@@ -373,7 +383,7 @@ func TestDispatch_ExactRuneMatch(t *testing.T) {
 			called := false
 			comp := &mockKeyComponent{
 				keyMap: KeyMap{
-					OnRune(tt.patternRune, func(ke KeyEvent) { called = true }),
+					On(Rune(tt.patternRune), func(ke KeyEvent) { called = true }),
 				},
 			}
 
@@ -409,9 +419,9 @@ func TestDispatch_ExactKeyMatch(t *testing.T) {
 			eventKey:   KeyEnter,
 			wantCalled: false,
 		},
-		"ctrl key fires": {
-			patternKey: KeyCtrlC,
-			eventKey:   KeyCtrlC,
+		"function key fires": {
+			patternKey: KeyF1,
+			eventKey:   KeyF1,
 			wantCalled: true,
 		},
 	}
@@ -421,7 +431,7 @@ func TestDispatch_ExactKeyMatch(t *testing.T) {
 			called := false
 			comp := &mockKeyComponent{
 				keyMap: KeyMap{
-					OnKey(tt.patternKey, func(ke KeyEvent) { called = true }),
+					On(tt.patternKey, func(ke KeyEvent) { called = true }),
 				},
 			}
 
@@ -444,12 +454,12 @@ func TestDispatch_ExactKeyMatch(t *testing.T) {
 func TestDispatch_ConflictValidation_TwoStopHandlersSamePattern(t *testing.T) {
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
+			OnStop(KeyEscape, func(ke KeyEvent) {}),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
+			OnStop(KeyEscape, func(ke KeyEvent) {}),
 		},
 	}
 
@@ -463,12 +473,12 @@ func TestDispatch_ConflictValidation_TwoStopHandlersSamePattern(t *testing.T) {
 func TestDispatch_NoConflict_StopPlusBroadcast(t *testing.T) {
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
+			OnStop(KeyEscape, func(ke KeyEvent) {}),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEscape, func(ke KeyEvent) {}),
+			On(KeyEscape, func(ke KeyEvent) {}),
 		},
 	}
 
@@ -482,12 +492,12 @@ func TestDispatch_NoConflict_StopPlusBroadcast(t *testing.T) {
 func TestDispatch_NoConflict_TwoBroadcastHandlers(t *testing.T) {
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyCtrlC, func(ke KeyEvent) {}),
+			On(Rune('c').Ctrl(), func(ke KeyEvent) {}),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyCtrlC, func(ke KeyEvent) {}),
+			On(Rune('c').Ctrl(), func(ke KeyEvent) {}),
 		},
 	}
 
@@ -501,12 +511,12 @@ func TestDispatch_NoConflict_TwoBroadcastHandlers(t *testing.T) {
 func TestDispatch_ConflictValidation_TwoStopAnyRune(t *testing.T) {
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRunesStop(func(ke KeyEvent) {}),
+			OnStop(AnyRune, func(ke KeyEvent) {}),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRunesStop(func(ke KeyEvent) {}),
+			OnStop(AnyRune, func(ke KeyEvent) {}),
 		},
 	}
 
@@ -520,12 +530,12 @@ func TestDispatch_ConflictValidation_TwoStopAnyRune(t *testing.T) {
 func TestDispatch_ConflictValidation_DifferentPatterns(t *testing.T) {
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
+			OnStop(KeyEscape, func(ke KeyEvent) {}),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEnter, func(ke KeyEvent) {}),
+			OnStop(KeyEnter, func(ke KeyEvent) {}),
 		},
 	}
 
@@ -582,13 +592,13 @@ func TestDispatch_MixedComponents(t *testing.T) {
 
 	keyComp := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEnter, func(ke KeyEvent) { calls = append(calls, 1) }),
+			On(KeyEnter, func(ke KeyEvent) { calls = append(calls, 1) }),
 		},
 	}
 	noKeyComp := &mockNoKeyComponent{}
 	keyComp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEnter, func(ke KeyEvent) { calls = append(calls, 2) }),
+			On(KeyEnter, func(ke KeyEvent) { calls = append(calls, 2) }),
 		},
 	}
 
@@ -632,7 +642,7 @@ func TestDispatch_NonMatchingKeyPassesThrough(t *testing.T) {
 	called := false
 	comp := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyEscape, func(ke KeyEvent) { called = true }),
+			On(KeyEscape, func(ke KeyEvent) { called = true }),
 		},
 	}
 
@@ -654,8 +664,8 @@ func TestDispatch_StopOnlyAffectsMatchingPattern(t *testing.T) {
 
 	comp := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKeyStop(KeyEscape, func(ke KeyEvent) { calls = append(calls, "escape") }),
-			OnKey(KeyEnter, func(ke KeyEvent) { calls = append(calls, "enter") }),
+			OnStop(KeyEscape, func(ke KeyEvent) { calls = append(calls, "escape") }),
+			On(KeyEnter, func(ke KeyEvent) { calls = append(calls, "enter") }),
 		},
 	}
 
@@ -677,9 +687,9 @@ func TestDispatch_MultipleBindingsPerComponent(t *testing.T) {
 
 	comp := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnKey(KeyCtrlC, func(ke KeyEvent) { calls = append(calls, "ctrl-c") }),
-			OnRune('/', func(ke KeyEvent) { calls = append(calls, "slash") }),
-			OnRunesStop(func(ke KeyEvent) { calls = append(calls, "any-rune") }),
+			On(KeyF1, func(ke KeyEvent) { calls = append(calls, "f1") }),
+			On(Rune('/'), func(ke KeyEvent) { calls = append(calls, "slash") }),
+			OnStop(AnyRune, func(ke KeyEvent) { calls = append(calls, "any-rune") }),
 		},
 	}
 
@@ -689,10 +699,10 @@ func TestDispatch_MultipleBindingsPerComponent(t *testing.T) {
 		t.Fatalf("buildDispatchTable: %v", err)
 	}
 
-	// Press ctrl+c
-	table.dispatch(KeyEvent{Key: KeyCtrlC})
-	if len(calls) != 1 || calls[0] != "ctrl-c" {
-		t.Errorf("ctrl+c: calls = %v, want [ctrl-c]", calls)
+	// Press F1
+	table.dispatch(KeyEvent{Key: KeyF1})
+	if len(calls) != 1 || calls[0] != "f1" {
+		t.Errorf("F1: calls = %v, want [f1]", calls)
 	}
 
 	// Press '/' — matches both exact rune and AnyRune, but AnyRune has Stop
@@ -718,23 +728,23 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 	tests := []tc{
 		{
 			name:       "single component with one binding",
-			components: []Component{&mockKeyComponent{keyMap: KeyMap{OnKey(KeyCtrlC, func(ke KeyEvent) {})}}},
+			components: []Component{&mockKeyComponent{keyMap: KeyMap{On(Rune('c').Ctrl(), func(ke KeyEvent) {})}}},
 			wantCount:  1,
 		},
 		{
 			name: "single component with three bindings",
 			components: []Component{&mockKeyComponent{keyMap: KeyMap{
-				OnKey(KeyCtrlC, func(ke KeyEvent) {}),
-				OnRune('q', func(ke KeyEvent) {}),
-				OnRunes(func(ke KeyEvent) {}),
+				On(Rune('c').Ctrl(), func(ke KeyEvent) {}),
+				On(Rune('q'), func(ke KeyEvent) {}),
+				On(AnyRune, func(ke KeyEvent) {}),
 			}}},
 			wantCount: 3,
 		},
 		{
 			name: "two components with bindings",
 			components: []Component{
-				&mockKeyComponent{keyMap: KeyMap{OnKey(KeyCtrlC, func(ke KeyEvent) {})}},
-				&mockKeyComponent{keyMap: KeyMap{OnKey(KeyEnter, func(ke KeyEvent) {})}},
+				&mockKeyComponent{keyMap: KeyMap{On(Rune('c').Ctrl(), func(ke KeyEvent) {})}},
+				&mockKeyComponent{keyMap: KeyMap{On(KeyEnter, func(ke KeyEvent) {})}},
 			},
 			wantCount: 2,
 		},
@@ -742,7 +752,7 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 			name: "nil keymap component skipped",
 			components: []Component{
 				&mockKeyComponent{keyMap: nil},
-				&mockKeyComponent{keyMap: KeyMap{OnKey(KeyEnter, func(ke KeyEvent) {})}},
+				&mockKeyComponent{keyMap: KeyMap{On(KeyEnter, func(ke KeyEvent) {})}},
 			},
 			wantCount: 1,
 		},
@@ -750,7 +760,7 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 			name: "non-key-listener component skipped",
 			components: []Component{
 				&mockNoKeyComponent{},
-				&mockKeyComponent{keyMap: KeyMap{OnKey(KeyEnter, func(ke KeyEvent) {})}},
+				&mockKeyComponent{keyMap: KeyMap{On(KeyEnter, func(ke KeyEvent) {})}},
 			},
 			wantCount: 1,
 		},
@@ -769,6 +779,7 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 		})
 	}
 }
+
 
 // --- Validate tests ---
 
@@ -812,5 +823,173 @@ func TestValidate_ConflictingStops(t *testing.T) {
 	err := table.validate()
 	if err == nil {
 		t.Fatal("expected error for conflicting stops")
+	}
+}
+
+// --- Normalization integration tests ---
+
+func TestDispatch_NormalizedCtrlLetter_LegacyAndKitty(t *testing.T) {
+	called := 0
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			On(Rune('a').Ctrl(), func(ke KeyEvent) { called++ }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Legacy path: byte 0x01 -> {KeyRune, 'a', ModCtrl}
+	legacyEvents := parseInput([]byte{0x01})
+	table.dispatch(legacyEvents[0].(KeyEvent))
+	if called != 1 {
+		t.Errorf("legacy Ctrl+A: called = %d, want 1", called)
+	}
+
+	// Kitty path: CSI 97;5u -> {KeyRune, 'a', ModCtrl}
+	kittyEvents := parseInput([]byte("\x1b[97;5u"))
+	table.dispatch(kittyEvents[0].(KeyEvent))
+	if called != 2 {
+		t.Errorf("kitty Ctrl+A: called = %d, want 2", called)
+	}
+}
+
+func TestDispatch_ExcludeMods_OnRunesIgnoresCtrl(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			On(AnyRune, func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Plain rune matches
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'a'})
+	if !called {
+		t.Error("On(AnyRune) should match plain rune")
+	}
+
+	// Ctrl+rune does NOT match
+	called = false
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl})
+	if called {
+		t.Error("On(AnyRune) should not match Ctrl+rune")
+	}
+
+	// Shift+rune DOES match (Shift is character-forming)
+	called = false
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'A', Mod: ModShift})
+	if !called {
+		t.Error("On(AnyRune) should match Shift+rune")
+	}
+}
+
+func TestDispatch_OnRune_WithModifier(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			On(Rune('s').Ctrl(), func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Plain 's' should NOT match (wrong modifier)
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 's'})
+	if called {
+		t.Error("On(Rune('s').Ctrl()) should not match plain 's'")
+	}
+
+	// Ctrl+S should match
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 's', Mod: ModCtrl})
+	if !called {
+		t.Error("On(Rune('s').Ctrl()) should match Ctrl+S")
+	}
+}
+
+func TestDispatch_OnKey_WithModifier(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			On(KeyTab.Shift(), func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Plain Tab should NOT match
+	table.dispatch(KeyEvent{Key: KeyTab})
+	if called {
+		t.Error("On(KeyTab.Shift()) should not match plain Tab")
+	}
+
+	// Shift+Tab should match
+	table.dispatch(KeyEvent{Key: KeyTab, Mod: ModShift})
+	if !called {
+		t.Error("On(KeyTab.Shift()) should match Shift+Tab")
+	}
+}
+
+// --- Kitty keyboard protocol integration tests ---
+
+func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {
+	var calls []string
+
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			On(KeyBackspace, func(ke KeyEvent) { calls = append(calls, "backspace") }),
+			On(Rune('h').Ctrl(), func(ke KeyEvent) { calls = append(calls, "ctrl-h") }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Simulate Kitty-parsed backspace event
+	events := parseInput([]byte("\x1b[127;1u"))
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	table.dispatch(events[0].(KeyEvent))
+	if len(calls) != 1 || calls[0] != "backspace" {
+		t.Errorf("backspace: calls = %v, want [backspace]", calls)
+	}
+
+	// Simulate Kitty-parsed ctrl+h event (distinct!)
+	calls = nil
+	events = parseInput([]byte("\x1b[104;5u"))
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	table.dispatch(events[0].(KeyEvent))
+	if len(calls) != 1 || calls[0] != "ctrl-h" {
+		t.Errorf("ctrl-h: calls = %v, want [ctrl-h]", calls)
+	}
+
+	// Legacy backspace byte (0x08) matches backspace handler
+	calls = nil
+	events = parseInput([]byte{0x08})
+	table.dispatch(events[0].(KeyEvent))
+	if len(calls) != 1 || calls[0] != "backspace" {
+		t.Errorf("legacy 0x08: calls = %v, want [backspace]", calls)
 	}
 }

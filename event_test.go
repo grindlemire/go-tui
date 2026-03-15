@@ -14,7 +14,7 @@ func TestKeyEvent_IsRune(t *testing.T) {
 		"escape event":     {event: KeyEvent{Key: KeyEscape}, expected: false},
 		"arrow event":      {event: KeyEvent{Key: KeyUp}, expected: false},
 		"function event":   {event: KeyEvent{Key: KeyF1}, expected: false},
-		"ctrl event":       {event: KeyEvent{Key: KeyCtrlA}, expected: false},
+		"function key event": {event: KeyEvent{Key: KeyF1}, expected: false},
 		"rune with mod":    {event: KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl}, expected: true},
 	}
 

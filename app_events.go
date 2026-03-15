@@ -99,7 +99,7 @@ func (a *App) readInputEvents() {
 						return // Event consumed by a Stop handler
 					}
 					// Fallback: Ctrl+Z triggers suspend if not consumed
-					if keyEvent.Key == KeyCtrlZ {
+					if keyEvent.Key == KeyRune && keyEvent.Rune == 'z' && keyEvent.Mod == ModCtrl {
 						a.suspend()
 						return
 					}
@@ -111,7 +111,7 @@ func (a *App) readInputEvents() {
 						return // Event consumed by global handler
 					}
 					// Fallback: Ctrl+Z triggers suspend if not consumed by global handler
-					if keyEvent.Key == KeyCtrlZ {
+					if keyEvent.Key == KeyRune && keyEvent.Rune == 'z' && keyEvent.Mod == ModCtrl {
 						a.suspend()
 						return
 					}

@@ -22,14 +22,14 @@ func Counter() *counterApp {
 
 func (c *counterApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRune('+', func(ke tui.KeyEvent) {
+		tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
 			c.count.Update(func(v int) int { return v + 1 })
 		}),
-		tui.OnRune('-', func(ke tui.KeyEvent) {
+		tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
 			c.count.Update(func(v int) int { return v - 1 })
 		}),
-		tui.OnRune('0', func(ke tui.KeyEvent) { c.count.Set(0) }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('0'), func(ke tui.KeyEvent) { c.count.Set(0) }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
 

@@ -47,7 +47,7 @@ func MyApp() *myApp {
 
 func (a *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
 }
 
@@ -82,7 +82,7 @@ func Sidebar(category *tui.State[string]) *sidebar {
 
 func (s *sidebar) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRune('j', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) {
             s.selected.Update(func(v int) int {
                 if v >= len(categories)-1 {
                     return 0
@@ -91,7 +91,7 @@ func (s *sidebar) KeyMap() tui.KeyMap {
             })
             s.category.Set(categories[s.selected.Get()])
         }),
-        tui.OnRune('k', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) {
             s.selected.Update(func(v int) int {
                 if v <= 0 {
                     return len(categories) - 1
@@ -194,10 +194,10 @@ func (s *searchBar) KeyMap() tui.KeyMap {
         return nil
     }
     return tui.KeyMap{
-        tui.OnRunesStop(s.appendChar),
-        tui.OnKeyStop(tui.KeyBackspace, s.deleteChar),
-        tui.OnKeyStop(tui.KeyEnter, s.submit),
-        tui.OnKeyStop(tui.KeyEscape, s.deactivate),
+        tui.OnStop(tui.AnyRune,s.appendChar),
+        tui.OnStop(tui.KeyBackspace, s.deleteChar),
+        tui.OnStop(tui.KeyEnter, s.submit),
+        tui.OnStop(tui.KeyEscape, s.deactivate),
     }
 }
 
@@ -235,20 +235,20 @@ templ (s *searchBar) Render() {
 }
 ```
 
-The `Stop` variants (`OnRunesStop`, `OnKeyStop`) prevent the event from reaching other components. When the search bar is active, pressing `j` types a `j` into the search field instead of moving the sidebar cursor. When it's inactive, it returns `nil` and stays out of the way entirely.
+The `OnStop` variants prevent the event from reaching other components. When the search bar is active, pressing `j` types a `j` into the search field instead of moving the sidebar cursor. When it's inactive, it returns `nil` and stays out of the way entirely.
 
 The root component can also have conditional bindings. For example, only registering `/` to open search and `q` to quit when search is not active:
 
 ```go
 func (a *myApp) KeyMap() tui.KeyMap {
     km := tui.KeyMap{
-        tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
     if !a.searchActive.Get() {
-        km = append(km, tui.OnRune('/', func(ke tui.KeyEvent) {
+        km = append(km, tui.On(tui.Rune('/'), func(ke tui.KeyEvent) {
             a.searchActive.Set(true)
         }))
-        km = append(km, tui.OnRune('q', func(ke tui.KeyEvent) {
+        km = append(km, tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
             ke.App().Stop()
         }))
     }
@@ -271,7 +271,7 @@ myApp (root)
 └── SearchBar
 ```
 
-The dispatch order is: `myApp` first, then `Sidebar`, then `Content`, then `SearchBar`. If the search bar registers `OnRunesStop` for all runes, those handlers run after the root and sidebar handlers for the same key. But because the search bar's handler has `Stop=true`, it prevents any subsequent handlers from firing. Since the search bar is last in tree order for this layout, the stop flag mainly serves as documentation of intent and future-proofing.
+The dispatch order is: `myApp` first, then `Sidebar`, then `Content`, then `SearchBar`. If the search bar registers `OnStop(tui.AnyRune, ...)` for all runes, those handlers run after the root and sidebar handlers for the same key. But because the search bar's handler has `Stop=true`, it prevents any subsequent handlers from firing. Since the search bar is last in tree order for this layout, the stop flag mainly serves as documentation of intent and future-proofing.
 
 If you need a child component to intercept a key before its parent sees it, restructure the tree so the intercepting component appears first in BFS order, or have the parent check state before registering its bindings (the conditional KeyMap pattern above).
 
@@ -405,13 +405,13 @@ func MyApp() *myApp {
 
 func (a *myApp) KeyMap() tui.KeyMap {
     km := tui.KeyMap{
-        tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
     if !a.searchActive.Get() {
-        km = append(km, tui.OnRune('/', func(ke tui.KeyEvent) {
+        km = append(km, tui.On(tui.Rune('/'), func(ke tui.KeyEvent) {
             a.searchActive.Set(true)
         }))
-        km = append(km, tui.OnRune('q', func(ke tui.KeyEvent) {
+        km = append(km, tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
             ke.App().Stop()
         }))
     }
@@ -462,16 +462,16 @@ func Sidebar(category *tui.State[string]) *sidebar {
 
 func (s *sidebar) KeyMap() tui.KeyMap {
     km := tui.KeyMap{
-        tui.OnKey(tui.KeyCtrlB, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyCtrlB, func(ke tui.KeyEvent) {
             s.expanded.Set(!s.expanded.Get())
         }),
     }
     if s.expanded.Get() {
-        km = append(km, tui.OnRune('j', func(ke tui.KeyEvent) { s.moveDown() }))
-        km = append(km, tui.OnRune('k', func(ke tui.KeyEvent) { s.moveUp() }))
-        km = append(km, tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.moveDown() }))
-        km = append(km, tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.moveUp() }))
-        km = append(km, tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) {
+        km = append(km, tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { s.moveDown() }))
+        km = append(km, tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { s.moveUp() }))
+        km = append(km, tui.On(tui.KeyDown, func(ke tui.KeyEvent) { s.moveDown() }))
+        km = append(km, tui.On(tui.KeyUp, func(ke tui.KeyEvent) { s.moveUp() }))
+        km = append(km, tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
             idx := s.selected.Get()
             if idx >= 0 && idx < len(categories) {
                 s.category.Set(categories[idx])
@@ -561,10 +561,10 @@ func (s *searchBar) KeyMap() tui.KeyMap {
         return nil
     }
     return tui.KeyMap{
-        tui.OnRunesStop(s.appendChar),
-        tui.OnKeyStop(tui.KeyBackspace, s.deleteChar),
-        tui.OnKeyStop(tui.KeyEnter, s.submit),
-        tui.OnKeyStop(tui.KeyEscape, s.deactivate),
+        tui.OnStop(tui.AnyRune,s.appendChar),
+        tui.OnStop(tui.KeyBackspace, s.deleteChar),
+        tui.OnStop(tui.KeyEnter, s.submit),
+        tui.OnStop(tui.KeyEscape, s.deactivate),
     }
 }
 
