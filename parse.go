@@ -272,26 +272,17 @@ func parseCSI(params []int, final byte) (Key, Modifier) {
 // kittySpecialKeys maps Kitty keyboard protocol code points to Key constants.
 // These are Unicode code points assigned by the protocol for functional keys
 // that don't have a natural Unicode representation.
+//
+// Only code points sent in flag-1 (disambiguate) mode are included here.
+// Code points in the 57xxx range (F-keys, navigation, keypad alternatives)
+// are only sent in flag-2+ "report all keys" mode. Under flag 1, F-keys
+// arrive as standard sequences (CSI 11~, SS3 P, etc.) handled by
+// parseCSI/parseSS3, and keypad keys use their legacy code points (9, 13, 127).
 var kittySpecialKeys = map[int]Key{
-	9:     KeyTab,
-	13:    KeyEnter,
-	27:    KeyEscape,
-	127:   KeyBackspace,
-	57358: KeyBackspace, // alternate backspace
-	57359: KeyEnter,     // keypad enter
-	57360: KeyTab,       // alternate tab
-	57364: KeyF1,
-	57365: KeyF2,
-	57366: KeyF3,
-	57367: KeyF4,
-	57368: KeyF5,
-	57369: KeyF6,
-	57370: KeyF7,
-	57371: KeyF8,
-	57372: KeyF9,
-	57373: KeyF10,
-	57374: KeyF11,
-	57375: KeyF12,
+	9:   KeyTab,
+	13:  KeyEnter,
+	27:  KeyEscape,
+	127: KeyBackspace,
 }
 
 // parseKittyKey parses a Kitty keyboard protocol CSI u sequence.

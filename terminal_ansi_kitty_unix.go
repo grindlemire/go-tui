@@ -50,6 +50,11 @@ func (t *ANSITerminal) NegotiateKittyKeyboard() bool {
 		// Track whether we've seen the CSI ? prefix
 		if n >= 3 && resp[n-3] == 0x1b && resp[n-2] == '[' && resp[n-1] == '?' {
 			seenCSIQuestion = true
+		} else if seenCSIQuestion && b[0] != 'u' && !(b[0] >= '0' && b[0] <= '9') {
+			// Reset if we see a byte that can't be part of CSI ? <digits> u.
+			// This prevents user keystrokes containing ESC [ ? from
+			// prematurely terminating the read loop.
+			seenCSIQuestion = false
 		}
 		// Stop at 'u' terminator only after seeing the response prefix
 		if seenCSIQuestion && b[0] == 'u' {

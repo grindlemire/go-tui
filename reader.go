@@ -38,7 +38,10 @@ func NewEventReader(in *os.File) (EventReader, error) {
 }
 
 // Pause causes PollEvent to return immediately without reading stdin.
-// Interrupts any in-progress blocking read.
+// Interrupts any in-progress blocking read via the interrupt pipe.
+// If EnableInterrupt has not been called, the in-progress PollEvent will
+// unblock only on its next timeout cycle; Kitty negotiation may race
+// with the stuck read until then.
 func (r *stdinReader) Pause() {
 	r.paused.Store(true)
 	if r.hasInterrupt {

@@ -163,6 +163,13 @@ type RuneSpec struct {
 // Rune returns a RuneSpec that matches a specific printable character.
 // r must be a non-zero printable rune; Rune(0) will never match any event.
 // Without modifiers, allows Shift (character-forming) but excludes Ctrl and Alt.
+//
+// Rune('a').Ctrl() works in both legacy and Kitty keyboard modes. In legacy
+// mode, Ctrl+letter bytes (0x01-0x1A) are normalized to {KeyRune, letter, ModCtrl}
+// by the parser, producing the same event as Kitty mode's CSI u encoding.
+// Modifier combinations beyond what the terminal can distinguish (e.g.
+// Ctrl+Shift+letter in legacy mode, where both produce the same control byte)
+// will match whichever event the terminal actually sends.
 func Rune(r rune) RuneSpec {
 	return RuneSpec{r: r}
 }

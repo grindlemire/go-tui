@@ -521,19 +521,12 @@ func TestParseInput_KittyCSIu(t *testing.T) {
 			input:    []byte("\x1b[97;6u"),
 			expected: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl | ModShift},
 		},
-		"f1": {
-			input:    []byte("\x1b[57364;1u"),
-			expected: KeyEvent{Key: KeyF1},
-		},
-		"f12": {
-			input:    []byte("\x1b[57375;1u"),
-			expected: KeyEvent{Key: KeyF12},
-		},
-		// Navigation key code points (57345-57355) are omitted here because
-		// Kitty only sends them in flag-2+ ("report all keys") mode. Under
-		// flag 1 (disambiguate only, the mode we negotiate), arrow and nav
-		// keys arrive as standard CSI sequences (e.g. ESC[A for Up) and are
-		// parsed by parseCSI, not parseKittyKey.
+		// Code points in the 57xxx range (F-keys, navigation, keypad
+		// alternatives) are only sent in flag-2+ ("report all keys") mode.
+		// Under flag 1 (disambiguate only, the mode we negotiate), these
+		// keys arrive as standard CSI/SS3 sequences (e.g. ESC[A for Up,
+		// ESC[11~ for F1) and are parsed by parseCSI/parseSS3, not
+		// parseKittyKey.
 		"no modifier param": {
 			input:    []byte("\x1b[97u"),
 			expected: KeyEvent{Key: KeyRune, Rune: 'a'},
