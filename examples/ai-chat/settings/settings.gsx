@@ -50,7 +50,7 @@ func NewSettingsApp(
 
 func (s *SettingsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRuneMod('s', tui.ModCtrl, func(ke tui.KeyEvent) { s.close() }),
+		tui.OnRune('s', func(ke tui.KeyEvent) { s.close() }, tui.ModCtrl),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { s.close() }),
 		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { s.close() }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { s.nextSection() }),

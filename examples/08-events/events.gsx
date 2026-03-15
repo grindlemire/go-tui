@@ -29,12 +29,12 @@ func (e *explorer) KeyMap() tui.KeyMap {
 			e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
 		}),
 		// With Kitty keyboard protocol, Ctrl+H/I/M arrive as KeyRune
-		// events with ModCtrl and are matched by OnRuneMod.
+		// events with ModCtrl and are matched by OnRune with ModCtrl.
 		// Without Kitty, they are indistinguishable from Backspace/Tab/Enter
 		// and match the OnKey handlers below instead.
-		tui.OnRuneMod('h', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+'h' (rune)") }),
-		tui.OnRuneMod('i', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+'i' (rune)") }),
-		tui.OnRuneMod('m', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+'m' (rune)") }),
+		tui.OnRune('h', func(ke tui.KeyEvent) { e.record("Ctrl+'h' (rune)") }, tui.ModCtrl),
+		tui.OnRune('i', func(ke tui.KeyEvent) { e.record("Ctrl+'i' (rune)") }, tui.ModCtrl),
+		tui.OnRune('m', func(ke tui.KeyEvent) { e.record("Ctrl+'m' (rune)") }, tui.ModCtrl),
 		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
 		tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
@@ -43,8 +43,8 @@ func (e *explorer) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
 		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
 		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { e.record("Right") }),
-		tui.OnRuneMod('a', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+A") }),
-		tui.OnRuneMod('s', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+S") }),
+		tui.OnRune('a', func(ke tui.KeyEvent) { e.record("Ctrl+A") }, tui.ModCtrl),
+		tui.OnRune('s', func(ke tui.KeyEvent) { e.record("Ctrl+S") }, tui.ModCtrl),
 	}
 }
 

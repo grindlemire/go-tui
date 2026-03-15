@@ -54,15 +54,15 @@ func (a *myApp) KeyMap() tui.KeyMap {
 	if a.showSettings.Get() {
 		return tui.KeyMap{
 			tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { a.toggleSettings() }),
-			tui.OnRuneMod('c', tui.ModCtrl, func(ke tui.KeyEvent) { ke.App().Stop() }),
+			tui.OnRune('c', func(ke tui.KeyEvent) { ke.App().Stop() }, tui.ModCtrl),
 		}
 	}
 
 	km := a.textarea.KeyMap()
 	km = append(km,
-		tui.OnRuneModStop('s', tui.ModCtrl, func(ke tui.KeyEvent) { a.toggleSettings() }),
+		tui.OnRuneStop('s', func(ke tui.KeyEvent) { a.toggleSettings() }, tui.ModCtrl),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRuneMod('c', tui.ModCtrl, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRune('c', func(ke tui.KeyEvent) { ke.App().Stop() }, tui.ModCtrl),
 	)
 	return km
 }

@@ -183,17 +183,17 @@ func TestDispatch_BroadcastMultipleHandlers(t *testing.T) {
 
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRuneMod('c', ModCtrl, func(ke KeyEvent) { calls = append(calls, 1) }),
+			OnRune('c', func(ke KeyEvent) { calls = append(calls, 1) }, ModCtrl),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRuneMod('c', ModCtrl, func(ke KeyEvent) { calls = append(calls, 2) }),
+			OnRune('c', func(ke KeyEvent) { calls = append(calls, 2) }, ModCtrl),
 		},
 	}
 	comp3 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRuneMod('c', ModCtrl, func(ke KeyEvent) { calls = append(calls, 3) }),
+			OnRune('c', func(ke KeyEvent) { calls = append(calls, 3) }, ModCtrl),
 		},
 	}
 
@@ -492,12 +492,12 @@ func TestDispatch_NoConflict_StopPlusBroadcast(t *testing.T) {
 func TestDispatch_NoConflict_TwoBroadcastHandlers(t *testing.T) {
 	comp1 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
+			OnRune('c', func(ke KeyEvent) {}, ModCtrl),
 		},
 	}
 	comp2 := &mockKeyComponent{
 		keyMap: KeyMap{
-			OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
+			OnRune('c', func(ke KeyEvent) {}, ModCtrl),
 		},
 	}
 
@@ -728,13 +728,13 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 	tests := []tc{
 		{
 			name:       "single component with one binding",
-			components: []Component{&mockKeyComponent{keyMap: KeyMap{OnRuneMod('c', ModCtrl, func(ke KeyEvent) {})}}},
+			components: []Component{&mockKeyComponent{keyMap: KeyMap{OnRune('c', func(ke KeyEvent) {}, ModCtrl)}}},
 			wantCount:  1,
 		},
 		{
 			name: "single component with three bindings",
 			components: []Component{&mockKeyComponent{keyMap: KeyMap{
-				OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
+				OnRune('c', func(ke KeyEvent) {}, ModCtrl),
 				OnRune('q', func(ke KeyEvent) {}),
 				OnRunes(func(ke KeyEvent) {}),
 			}}},
@@ -743,7 +743,7 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 		{
 			name: "two components with bindings",
 			components: []Component{
-				&mockKeyComponent{keyMap: KeyMap{OnRuneMod('c', ModCtrl, func(ke KeyEvent) {})}},
+				&mockKeyComponent{keyMap: KeyMap{OnRune('c', func(ke KeyEvent) {}, ModCtrl)}},
 				&mockKeyComponent{keyMap: KeyMap{OnKey(KeyEnter, func(ke KeyEvent) {})}},
 			},
 			wantCount: 2,
@@ -834,7 +834,7 @@ func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {
 	comp := &mockKeyComponent{
 		keyMap: KeyMap{
 			OnKey(KeyBackspace, func(ke KeyEvent) { calls = append(calls, "backspace") }),
-			OnRuneMod('h', ModCtrl, func(ke KeyEvent) { calls = append(calls, "ctrl-h") }),
+			OnRune('h', func(ke KeyEvent) { calls = append(calls, "ctrl-h") }, ModCtrl),
 		},
 	}
 
