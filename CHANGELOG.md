@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.0](https://github.com/grindlemire/go-tui/compare/v0.5.0...v0.6.0) (2026-03-15)
+
+
+### Features
+
+* add KeyMatcher interface with On/OnStop/OnFocused constructors ([99c8002](https://github.com/grindlemire/go-tui/commit/99c8002d0eef138281becdb924c558a3cc7c2002))
+* add Kitty keyboard negotiation to Terminal interface ([044e266](https://github.com/grindlemire/go-tui/commit/044e266af46f56345ba033a4213a8c7e287c78a5))
+* add Kitty keyboard protocol escape sequences ([56e6938](https://github.com/grindlemire/go-tui/commit/56e693807502dfad2222759e22a9caeead498409))
+* add Kitty keyboard protocol for Ctrl+H/I/M disambiguation ([591fbde](https://github.com/grindlemire/go-tui/commit/591fbde4cffe63a7c765434138cbc649076847cc))
+* add KittyKeyboard capability and WithLegacyKeyboard option ([19cb4fc](https://github.com/grindlemire/go-tui/commit/19cb4fcc70be5d19e71f4d04bf668d3ac62ed6b5))
+* implement Kitty keyboard protocol negotiation in ANSITerminal ([cac462e](https://github.com/grindlemire/go-tui/commit/cac462e2b262374c85fc298326f4d47f86e52411))
+* include kitty-keyboard in capabilities string ([4a55000](https://github.com/grindlemire/go-tui/commit/4a550005463195d96528206e9900bd9860c57ae4))
+* parse Kitty keyboard protocol CSI u sequences ([4f48121](https://github.com/grindlemire/go-tui/commit/4f48121211c9c5d565526e713a19c0f79ff9d742))
+* wire Kitty keyboard negotiation into app lifecycle ([5d7aaaa](https://github.com/grindlemire/go-tui/commit/5d7aaaa208c37db6b273f09e9aeb8ce7525c4c3c))
+
+
+### Bug Fixes
+
+* add trailing newline to reader_types.go and document Rune(0) behavior ([fb52f4e](https://github.com/grindlemire/go-tui/commit/fb52f4e107dd92fa34f19b374129186722e3c9db))
+* address code review findings for Kitty keyboard and terminal flush ([cdddab8](https://github.com/grindlemire/go-tui/commit/cdddab89007da25f2ac07e26a161144b5b83434a))
+* address code review findings for Kitty keyboard implementation ([1f9def9](https://github.com/grindlemire/go-tui/commit/1f9def97f96e8c608919802d611828acb8c26907))
+* handle Kitty keyboard on suspend/resume and clean up minor issues ([6f54fa4](https://github.com/grindlemire/go-tui/commit/6f54fa4c46b688c34da5a1435bb98337118506d6))
+* make KeyCtrlH/I/M aliases for KeyBackspace/Tab/Enter ([4decb9a](https://github.com/grindlemire/go-tui/commit/4decb9a8d987ac9b427b434e8ce0b904cea58513))
+* remove flag-2+ dead code from kittySpecialKeys and harden Kitty negotiation ([1dd9c19](https://github.com/grindlemire/go-tui/commit/1dd9c19b51443462d6d6c201caaeed077729378e))
+* struct alignment via gofmt, smarter response terminator detection ([40551c0](https://github.com/grindlemire/go-tui/commit/40551c0c993de345b0a004fbca121aeb681e1b6b))
+
 ## [0.5.0](https://github.com/grindlemire/go-tui/compare/v0.4.0...v0.5.0) (2026-03-14)
 
 
