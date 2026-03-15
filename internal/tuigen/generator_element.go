@@ -15,7 +15,7 @@ func (g *Generator) generateElement(elem *Element, parentVar string) string {
 // isComponentElement returns true if the tag represents a Component that
 // must be mounted via app.Mount() rather than constructed with tui.New().
 func isComponentElement(tag string) bool {
-	return tag == "textarea" || tag == "input"
+	return tag == "textarea" || tag == "input" || tag == "modal"
 }
 
 // generateElementWithRefs generates code for an element with ref handling.
@@ -380,6 +380,18 @@ var inputHandlerAttributes = map[string]string{
 	"onChange": "tui.WithInputOnChange",
 }
 
+// modalAttributeToOption maps modal-specific attributes to tui.WithModal* options.
+var modalAttributeToOption = map[string]string{
+	"open":                 "tui.WithModalOpen(%s)",
+	"backdrop":             "tui.WithModalBackdrop(%s)",
+	"closeOnEscape":        "tui.WithModalCloseOnEscape(%s)",
+	"closeOnBackdropClick": "tui.WithModalCloseOnBackdropClick(%s)",
+	"trapFocus":            "tui.WithModalTrapFocus(%s)",
+}
+
+// modalHandlerAttributes maps modal event attributes to handler option funcs.
+var modalHandlerAttributes = map[string]string{}
+
 // componentConstructor returns the tui.New* constructor for a component element tag.
 func componentConstructor(tag string) string {
 	switch tag {
@@ -387,6 +399,8 @@ func componentConstructor(tag string) string {
 		return "tui.NewTextArea"
 	case "input":
 		return "tui.NewInput"
+	case "modal":
+		return "tui.NewModal"
 	default:
 		// Produce an identifier that won't compile, surfacing the mistake immediately.
 		return fmt.Sprintf("UNKNOWN_COMPONENT_%s", tag)
@@ -407,6 +421,15 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)
+
+	// For modal, also collect class-derived element options
+	if elem.Tag == "modal" {
+		classOpts := g.buildModalClassOptions(elem)
+		if len(classOpts) > 0 {
+			inner := strings.Join(classOpts, ", ")
+			elemOpts.options = append(elemOpts.options, fmt.Sprintf("tui.WithModalElementOptions(%s)", inner))
+		}
+	}
 
 	g.writef("%s := app.MountPersistent(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
 	g.indent++
@@ -438,6 +461,11 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 		} else {
 			g.writef("%s.Set(%s)\n", refName, varName)
 		}
+	}
+
+	// Generate children for component elements that accept them (modal)
+	if len(elem.Children) > 0 {
+		g.generateChildrenWithRefs(varName, elem.Children, inLoop, false)
 	}
 
 	if parentVar != "" {
@@ -480,6 +508,12 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 						value = fmt.Sprintf("tui.NewState(%s)", value)
 					}
 				}
+				// open attribute expects *State[bool]; wrap bool literals
+				if attr.Name == "open" && elem.Tag == "modal" {
+					if _, isBool := attr.Value.(*BoolLit); isBool {
+						value = fmt.Sprintf("tui.NewState(%s)", value)
+					}
+				}
 				result.options = append(result.options, fmt.Sprintf(template, value))
 			}
 			continue
@@ -489,6 +523,30 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 	return result
 }
 
+// buildModalClassOptions extracts element options from the class attribute
+// for a modal element. These get wrapped in WithModalElementOptions.
+func (g *Generator) buildModalClassOptions(elem *Element) []string {
+	var opts []string
+	for _, attr := range elem.Attributes {
+		if attr.Name != "class" {
+			continue
+		}
+		classValue := g.getClassAttributeValue(attr)
+		if classValue == "" {
+			continue
+		}
+		twResult := ParseTailwindClasses(classValue)
+		opts = append(opts, twResult.Options...)
+		if len(twResult.TextMethods) > 0 {
+			textStyleOpt := BuildTextStyleOption(twResult.TextMethods)
+			if textStyleOpt != "" {
+				opts = append(opts, textStyleOpt)
+			}
+		}
+	}
+	return opts
+}
+
 // componentAttributeMaps returns the attribute and handler maps for a component element tag.
 func componentAttributeMaps(tag string) (attrMap map[string]string, handlerMap map[string]string) {
 	switch tag {
@@ -496,6 +554,8 @@ func componentAttributeMaps(tag string) (attrMap map[string]string, handlerMap m
 		return inputAttributeToOption, inputHandlerAttributes
 	case "textarea":
 		return textareaAttributeToOption, textareaHandlerAttributes
+	case "modal":
+		return modalAttributeToOption, modalHandlerAttributes
 	default:
 		// Unknown tags won't have any attribute mappings; componentConstructor
 		// will produce a compile error in the generated code.
