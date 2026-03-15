@@ -181,6 +181,23 @@ func (a *App) RenderFull() {
 		a.root.Render(a.buffer, width, height)
 	}
 
+	// Render overlay elements (modals) on top of the main tree
+	for _, ov := range a.overlays {
+		switch ov.backdrop {
+		case "dim":
+			a.buffer.ApplyDim()
+		case "blank":
+			a.buffer.FillBlank()
+		}
+		for _, child := range ov.element.children {
+			if child.background == nil {
+				bg := NewStyle()
+				child.background = &bg
+			}
+		}
+		ov.element.Render(a.buffer, width, height)
+	}
+
 	// Full render to terminal
 	RenderFull(a.terminal, a.buffer)
 }

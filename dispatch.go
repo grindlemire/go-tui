@@ -174,6 +174,11 @@ func (dt *dispatchTable) validate() error {
 		if entry.pattern.FocusRequired {
 			continue
 		}
+		// Preemptive entries (modal overlay) run in a separate dispatch pass
+		// and cannot conflict with normal stop handlers.
+		if entry.preempt {
+			continue
+		}
 		// Strip FocusRequired for comparison so focus-gated and broadcast entries
 		// with the same key don't conflict
 		comparePattern := entry.pattern

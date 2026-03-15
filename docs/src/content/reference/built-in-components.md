@@ -576,6 +576,22 @@ When closed, it returns a hidden placeholder element with no key bindings.
 
 The `class` attribute on `<modal>` controls how the dialog is positioned within the full-screen overlay. Use `justify-center items-center` for a centered dialog or `justify-end items-stretch` for a bottom sheet.
 
+### Inline Mode
+
+Modals are not supported in inline mode (`WithInlineHeight`). The overlay system requires a full-screen buffer for backdrop effects, centering, and mouse hit testing. Modal overlays registered while in inline mode are silently ignored.
+
+To show a modal from an inline app, switch to the alternate screen first:
+
+```go
+app.EnterAlternateScreen()
+s.showDialog.Set(true)
+// ... user interacts with modal ...
+// on close:
+app.ExitAlternateScreen()
+```
+
+See the [Inline Mode Guide](../guides/15-inline-mode) for the full pattern.
+
 ## Cross-References
 
 - [Component Interfaces Reference](interfaces.md) — `Component`, `KeyListener`, `WatcherProvider`, `Focusable`, `AppBinder`

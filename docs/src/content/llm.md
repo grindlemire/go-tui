@@ -599,6 +599,8 @@ app, _ := tui.NewApp(
 )
 ```
 
+Inline mode limitations: modals (`<modal>`) are not supported because the buffer covers only a partial terminal region. Use `app.EnterAlternateScreen()` to switch to full-screen before opening a modal, then `app.ExitAlternateScreen()` when it closes.
+
 ### StreamAbove
 
 `app.StreamAbove()` returns a `*StreamWriter` for character-by-character streaming above the inline widget. The writer implements `io.WriteCloser` and adds `WriteStyled` and `WriteGradient` methods. Goroutine-safe. Close it when done to finalize the partial line.
@@ -676,6 +678,8 @@ w.Close()
 ```
 
 ## Modal Example
+
+**Important:** Modals require full-screen mode. They are silently ignored in inline mode (`WithInlineHeight`). To show a modal from an inline app, call `app.EnterAlternateScreen()` first, then `app.ExitAlternateScreen()` when the modal closes.
 
 ```gsx
 <modal open={s.showConfirm} class="justify-center items-center" backdrop="dim">
