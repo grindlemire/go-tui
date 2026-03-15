@@ -61,6 +61,9 @@ type App struct {
 	inlineSession      *inlineSession
 	activeStreamWriter *inlineStreamWriter
 
+	// Overlay rendering
+	overlays []*overlayEntry
+
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay
 	savedInlineHeight   int  // Preserved inlineHeight when entering alternate
