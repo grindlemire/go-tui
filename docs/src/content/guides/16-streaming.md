@@ -128,7 +128,7 @@ func (s *streamingApp) scrollBy(delta int) {
 The Space key toggles auto-scroll, and End re-enables it:
 
 ```go
-tui.OnRune(' ', func(ke tui.KeyEvent) {
+tui.On(tui.Rune(' '), func(ke tui.KeyEvent) {
     if s.stickToBottom.Get() {
         s.stickToBottom.Set(false)
     } else {
@@ -136,7 +136,7 @@ tui.OnRune(' ', func(ke tui.KeyEvent) {
         s.stickToBottom.Set(true)
     }
 }),
-tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) {
+tui.On(tui.KeyEnd, func(ke tui.KeyEvent) {
     s.scrollY.Set(math.MaxInt)
     s.stickToBottom.Set(true)
 }),
@@ -254,23 +254,23 @@ func (s *streamingApp) scrollBy(delta int) {
 
 func (s *streamingApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
-        tui.OnKey(tui.KeyPageUp, func(ke tui.KeyEvent) { s.scrollBy(-10) }),
-        tui.OnKey(tui.KeyPageDown, func(ke tui.KeyEvent) { s.scrollBy(10) }),
-        tui.OnKey(tui.KeyHome, func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { s.scrollBy(1) }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
+        tui.On(tui.KeyPageUp, func(ke tui.KeyEvent) { s.scrollBy(-10) }),
+        tui.On(tui.KeyPageDown, func(ke tui.KeyEvent) { s.scrollBy(10) }),
+        tui.On(tui.KeyHome, func(ke tui.KeyEvent) {
             s.scrollY.Set(0)
             s.stickToBottom.Set(false)
         }),
-        tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEnd, func(ke tui.KeyEvent) {
             s.scrollY.Set(math.MaxInt)
             s.stickToBottom.Set(true)
         }),
-        tui.OnRune(' ', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune(' '), func(ke tui.KeyEvent) {
             if s.stickToBottom.Get() {
                 s.stickToBottom.Set(false)
             } else {

@@ -58,7 +58,7 @@ func (e KeyEvent) App() *App
 Returns the `App` that dispatched this event. Use it in key handlers to call app-level methods.
 
 ```go
-tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
     ke.App().Stop()
 })
 ```
@@ -72,7 +72,7 @@ func (e KeyEvent) IsRune() bool
 Returns `true` if the event is a printable character (i.e., `Key == KeyRune`).
 
 ```go
-tui.OnRunes(func(ke tui.KeyEvent) {
+tui.On(tui.AnyRune, func(ke tui.KeyEvent) {
     if ke.IsRune() {
         fmt.Printf("typed: %c\n", ke.Rune)
     }
@@ -213,7 +213,7 @@ Terminals encode some Ctrl+letter combinations using the same byte as a function
 | `KeyCtrlI` | `KeyTab` | `0x09` |
 | `KeyCtrlM` | `KeyEnter` | `0x0D` |
 
-Because these are the same constant, `OnKey(tui.KeyCtrlH, handler)` and `OnKey(tui.KeyBackspace, handler)` produce identical bindings in legacy mode. When the Kitty keyboard protocol is active (negotiated automatically on supported terminals), these become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. The same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
+Because these are the same constant, `On(tui.KeyCtrlH, handler)` and `On(tui.KeyBackspace, handler)` produce identical bindings in legacy mode. When the Kitty keyboard protocol is active (negotiated automatically on supported terminals), these become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. The same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
 
 > **Note:** Some terminals send Ctrl+H as the legacy backspace byte even with Kitty protocol active, so Ctrl+H and Backspace may remain indistinguishable depending on the terminal. Ctrl+I and Ctrl+M are typically disambiguated correctly.
 
@@ -307,10 +307,10 @@ A `KeyMap` is a slice of key bindings. Components return one from their `KeyMap(
 ```go
 func (a *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
-        tui.OnRune('q', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
     }
@@ -355,91 +355,85 @@ You don't usually construct `KeyPattern` directly. Use the helper functions belo
 
 ## KeyMap Helper Functions
 
-These functions build `KeyBinding` values for common use cases. Each has a "broadcast" variant (event continues propagating) and a "stop" variant (event is consumed).
+These functions build `KeyBinding` values for common use cases. They accept a `KeyMatcher` that describes which key events to match.
 
-### OnKey
+### KeyMatcher
+
+A `KeyMatcher` describes which key events a binding should match. Three implementations are available:
+
+- **Key constants** (`tui.KeyEscape`, `tui.KeyEnter`, etc.) match specific special keys directly.
+- **`tui.Rune(r rune)`** returns a `RuneSpec` that matches a specific printable character.
+- **`tui.AnyRune`** matches any printable character.
+
+Both `Key` and `RuneSpec` support modifier methods that return a new matcher requiring the specified modifier:
 
 ```go
-func OnKey(key Key, handler func(KeyEvent)) KeyBinding
+tui.KeyUp.Shift()       // Match Shift+Up
+tui.KeyUp.Ctrl()        // Match Ctrl+Up
+tui.KeyUp.Alt()         // Match Alt+Up
+tui.Rune('s').Ctrl()    // Match Ctrl+S
+tui.Rune('x').Alt()     // Match Alt+X
 ```
 
-Creates a binding for a specific special key. The event continues propagating to later bindings.
+### On
 
 ```go
-tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) {
+func On(m KeyMatcher, handler func(KeyEvent)) KeyBinding
+```
+
+Creates a binding that matches the given key pattern. The event continues propagating to later bindings.
+
+```go
+tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
     a.submit()
 })
-```
 
-### OnKeyStop
-
-```go
-func OnKeyStop(key Key, handler func(KeyEvent)) KeyBinding
-```
-
-Same as `OnKey`, but stops propagation after the handler runs. No later bindings will fire for this event.
-
-```go
-tui.OnKeyStop(tui.KeyEnter, func(ke tui.KeyEvent) {
-    a.submit() // this component owns Enter exclusively
-})
-```
-
-### OnRune
-
-```go
-func OnRune(r rune, handler func(KeyEvent)) KeyBinding
-```
-
-Creates a binding for a specific printable character. The event continues propagating.
-
-```go
-tui.OnRune('+', func(ke tui.KeyEvent) {
+tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
     a.count.Update(func(v int) int { return v + 1 })
 })
-```
 
-### OnRuneStop
-
-```go
-func OnRuneStop(r rune, handler func(KeyEvent)) KeyBinding
-```
-
-Same as `OnRune`, but stops propagation.
-
-```go
-tui.OnRuneStop('/', func(ke tui.KeyEvent) {
-    a.activateSearch() // capture '/' before anything else sees it
-})
-```
-
-### OnRunes
-
-```go
-func OnRunes(handler func(KeyEvent)) KeyBinding
-```
-
-Creates a catch-all binding for any printable character. Useful for text input where you want to capture all typed characters.
-
-```go
-tui.OnRunes(func(ke tui.KeyEvent) {
+tui.On(tui.AnyRune, func(ke tui.KeyEvent) {
     a.buffer.Update(func(s string) string {
         return s + string(ke.Rune)
     })
 })
 ```
 
-### OnRunesStop
+### OnStop
 
 ```go
-func OnRunesStop(handler func(KeyEvent)) KeyBinding
+func OnStop(m KeyMatcher, handler func(KeyEvent)) KeyBinding
 ```
 
-Catch-all that also stops propagation. Use this when a component needs exclusive access to all character keys, like a search input that's actively receiving typed text.
+Same as `On`, but stops propagation after the handler runs. No later bindings will fire for this event.
 
 ```go
-tui.OnRunesStop(func(ke tui.KeyEvent) {
+tui.OnStop(tui.KeyEnter, func(ke tui.KeyEvent) {
+    a.submit() // this component owns Enter exclusively
+})
+
+tui.OnStop(tui.Rune('/'), func(ke tui.KeyEvent) {
+    a.activateSearch() // capture '/' before anything else sees it
+})
+
+tui.OnStop(tui.AnyRune, func(ke tui.KeyEvent) {
     a.searchQuery.Update(func(s string) string {
+        return s + string(ke.Rune)
+    })
+})
+```
+
+### OnFocused
+
+```go
+func OnFocused(m KeyMatcher, handler func(KeyEvent)) KeyBinding
+```
+
+Creates a binding that only fires when the component has focus. Stops propagation when it matches. Useful for focus-gated input handling.
+
+```go
+tui.OnFocused(tui.AnyRune, func(ke tui.KeyEvent) {
+    a.textInput.Update(func(s string) string {
         return s + string(ke.Rune)
     })
 })
@@ -461,10 +455,10 @@ Implement this on a struct component to handle keyboard input. The framework cal
 func (a *myApp) KeyMap() tui.KeyMap {
     if a.searchActive.Get() {
         return tui.KeyMap{
-            tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) {
+            tui.OnStop(tui.KeyEscape, func(ke tui.KeyEvent) {
                 a.searchActive.Set(false)
             }),
-            tui.OnRunesStop(func(ke tui.KeyEvent) {
+            tui.OnStop(tui.AnyRune, func(ke tui.KeyEvent) {
                 a.searchQuery.Update(func(s string) string {
                     return s + string(ke.Rune)
                 })
@@ -472,10 +466,10 @@ func (a *myApp) KeyMap() tui.KeyMap {
         }
     }
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
-        tui.OnRune('/', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('/'), func(ke tui.KeyEvent) {
             a.searchActive.Set(true)
         }),
     }

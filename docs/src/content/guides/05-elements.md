@@ -287,28 +287,28 @@ func (e *elementsApp) scrollBy(delta int) {
 
 func (e *elementsApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusPrev() }, tui.ModShift),
-        tui.OnRune('+', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+        tui.On(tui.KeyTab.Shift(), func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
+        tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
             v := e.progress.Get() + 5
             if v > 100 {
                 v = 100
             }
             e.progress.Set(v)
         }),
-        tui.OnRune('-', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
             v := e.progress.Get() - 5
             if v < 0 {
                 v = 0
             }
             e.progress.Set(v)
         }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { e.scrollBy(1) }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { e.scrollBy(-1) }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.scrollBy(1) }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { e.scrollBy(-1) }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { e.scrollBy(1) }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { e.scrollBy(-1) }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { e.scrollBy(1) }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { e.scrollBy(-1) }),
     }
 }
 

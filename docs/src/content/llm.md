@@ -72,8 +72,8 @@ func Counter() *counter {
 
 func (c *counter) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('+', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
             c.count.Update(func(v int) int { return v + 1 })
         }),
     }
@@ -441,12 +441,12 @@ type AppBinder interface {
 ```go
 func (c *myComp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, handler),    // Special key, propagates
-        tui.OnKeyStop(tui.KeyEnter, handler), // Special key, stops propagation
-        tui.OnRune('q', handler),             // Specific character
-        tui.OnRuneStop('/', handler),          // Specific char, stops propagation
-        tui.OnRunes(handler),                  // Any printable character
-        tui.OnRunesStop(handler),              // Any printable, stops propagation
+        tui.On(tui.KeyEscape, handler),           // Special key, propagates
+        tui.OnStop(tui.KeyEnter, handler),        // Special key, stops propagation
+        tui.On(tui.Rune('q'), handler),           // Specific character
+        tui.OnStop(tui.Rune('/'), handler),        // Specific char, stops propagation
+        tui.On(tui.AnyRune, handler),              // Any printable character
+        tui.OnStop(tui.AnyRune, handler),          // Any printable, stops propagation
     }
 }
 ```
@@ -716,7 +716,7 @@ func Producer() *producer {
 }
 func (p *producer) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRune('e', func(ke tui.KeyEvent) { p.bus.Emit("event!") }),
+        tui.On(tui.Rune('e'), func(ke tui.KeyEvent) { p.bus.Emit("event!") }),
     }
 }
 

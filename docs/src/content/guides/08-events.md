@@ -11,11 +11,11 @@ To handle keyboard input, implement the `KeyListener` interface on your struct c
 ```go
 func (a *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('+', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
             a.count.Update(func(v int) int { return v + 1 })
         }),
-        tui.OnRune('-', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
             a.count.Update(func(v int) int { return v - 1 })
         }),
     }
@@ -26,34 +26,33 @@ The framework calls `KeyMap()` on every render cycle, so your bindings can chang
 
 ## Key Bindings
 
-Six helper functions cover the common binding patterns:
+Three helper functions cover the binding patterns, each accepting a `KeyMatcher`:
 
-| Function | Matches | Stops Propagation |
+| Function | Propagation | Use When |
 |---|---|---|
-| `OnKey(key, handler)` | A specific special key | No |
-| `OnKeyStop(key, handler)` | A specific special key | Yes |
-| `OnRune(r, handler)` | A specific printable character | No |
-| `OnRuneStop(r, handler)` | A specific printable character | Yes |
-| `OnRunes(handler)` | Any printable character | No |
-| `OnRunesStop(handler)` | Any printable character | Yes |
+| `On(matcher, handler)` | Continues | Default binding; other components can also handle the event |
+| `OnStop(matcher, handler)` | Stops | Exclusive ownership; no other component sees the event |
+| `OnFocused(matcher, handler)` | Stops (focus-gated) | Only fires when the component has focus |
 
-`OnKey` matches special keys like Escape, Enter, and arrow keys. `OnRune` matches a specific printable character. `OnRunes` catches all printable characters, which is useful for text input.
+A `KeyMatcher` can be a Key constant (`tui.KeyEscape`), a specific rune (`tui.Rune('q')`), or the catch-all `tui.AnyRune`. Key and RuneSpec both support `.Ctrl()`, `.Alt()`, and `.Shift()` modifier methods.
 
-The "Stop" variants prevent other components from seeing the event after your handler runs. The non-Stop variants let the event continue through the component tree. More on propagation in a later section.
+`On` with a Key constant matches special keys like Escape, Enter, and arrow keys. `On` with `Rune('x')` matches a specific printable character. `On` with `AnyRune` catches all printable characters, which is useful for text input.
 
-A quick example showing the difference between `OnKey` and `OnRune`:
+The `OnStop` variant prevents other components from seeing the event after your handler runs. `On` lets the event continue through the component tree. More on propagation in a later section.
+
+A quick example showing the difference between key and rune matching:
 
 ```go
 func (a *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
         // Match the Escape key (special key)
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 
         // Match the 'q' character (printable rune)
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 
         // Match any printable character
-        tui.OnRunes(func(ke tui.KeyEvent) {
+        tui.On(tui.AnyRune,func(ke tui.KeyEvent) {
             a.lastChar.Set(string(ke.Rune))
         }),
     }
@@ -76,7 +75,7 @@ go-tui defines constants for every non-printable key the terminal can report:
 **Function keys:**
 `KeyF1` through `KeyF12`
 
-Printable characters (letters, numbers, symbols) come through as `KeyRune` with the character in the `Rune` field. You generally don't check for `KeyRune` directly; the `OnRune` and `OnRunes` helpers handle that for you.
+Printable characters (letters, numbers, symbols) come through as `KeyRune` with the character in the `Rune` field. You generally don't check for `KeyRune` directly; the `Rune()` and `AnyRune` matchers handle that for you.
 
 ### Terminal Byte Aliases
 
@@ -88,14 +87,14 @@ Three Ctrl+letter combinations produce the same byte as a functional key:
 | `KeyCtrlI` | `KeyTab` | `0x09` |
 | `KeyCtrlM` | `KeyEnter` | `0x0D` |
 
-In legacy mode, these are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `OnKey(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `OnKey(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H.
+In legacy mode, these are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `On(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `On(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H.
 
-If the terminal supports the Kitty keyboard protocol (negotiated automatically on startup), these keys become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. Use `OnKey(tui.KeyRune, handler, tui.ModCtrl)` and check `ke.Rune` to handle Ctrl+H separately from Backspace when the Kitty protocol is active.
+If the terminal supports the Kitty keyboard protocol (negotiated automatically on startup), these keys become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. Use `On(tui.Rune('h').Ctrl(), handler)` to handle Ctrl+H separately from Backspace when the Kitty protocol is active.
 
 ```go
 // In legacy mode, these two bindings are identical:
-tui.OnKey(tui.KeyCtrlH, handler)    // matches Backspace AND Ctrl+H
-tui.OnKey(tui.KeyBackspace, handler) // matches Backspace AND Ctrl+H
+tui.On(tui.KeyCtrlH, handler)    // matches Backspace AND Ctrl+H
+tui.On(tui.KeyBackspace, handler) // matches Backspace AND Ctrl+H
 ```
 
 Use whichever name best communicates your intent. If you're building a text editor where Backspace deletes a character, use `KeyBackspace`. If you're binding Ctrl+H to open a help panel, use `KeyCtrlH`, but keep in mind that in legacy mode Backspace will also trigger it.
@@ -119,7 +118,7 @@ ke.App()     // The running App instance
 `ke.Is()` combines key and modifier checks:
 
 ```go
-tui.OnKey(tui.KeyCtrlS, func(ke tui.KeyEvent) {
+tui.On(tui.KeyCtrlS, func(ke tui.KeyEvent) {
     // Fires on Ctrl+S
     save()
 }),
@@ -143,7 +142,7 @@ if ke.Mod.Has(tui.ModAlt) {
 }
 ```
 
-Control keys have their own constants (`KeyCtrlA` through `KeyCtrlZ`), so you don't typically combine `ModCtrl` with `OnRune`. Use `OnKey(tui.KeyCtrlS, ...)` rather than trying to match `ModCtrl` + `'s'`.
+Control keys have their own constants (`KeyCtrlA` through `KeyCtrlZ`), but you can also use the modifier method: `tui.Rune('s').Ctrl()` is equivalent to using `tui.KeyCtrlS` directly.
 
 ## Stop Propagation
 
@@ -155,10 +154,10 @@ This matters when you have nested components. Consider a parent that uses `j`/`k
 // Parent: uses j/k for navigation (non-stop)
 func (a *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { a.selectNext() }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { a.selectPrev() }),
-        tui.OnRune('/', func(ke tui.KeyEvent) { a.searchActive.Set(true) }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { a.selectNext() }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { a.selectPrev() }),
+        tui.On(tui.Rune('/'), func(ke tui.KeyEvent) { a.searchActive.Set(true) }),
     }
 }
 ```
@@ -170,15 +169,15 @@ func (s *searchBar) KeyMap() tui.KeyMap {
         return nil
     }
     return tui.KeyMap{
-        tui.OnRunesStop(s.appendChar),
-        tui.OnKeyStop(tui.KeyBackspace, s.deleteChar),
-        tui.OnKeyStop(tui.KeyEnter, s.submit),
-        tui.OnKeyStop(tui.KeyEscape, s.deactivate),
+        tui.OnStop(tui.AnyRune,s.appendChar),
+        tui.OnStop(tui.KeyBackspace, s.deleteChar),
+        tui.OnStop(tui.KeyEnter, s.submit),
+        tui.OnStop(tui.KeyEscape, s.deactivate),
     }
 }
 ```
 
-When search is inactive, `KeyMap()` returns `nil` and the parent handles `j`/`k` normally. When search becomes active, the child's `OnRunesStop` grabs every printable character before the parent sees it. Pressing `j` types a "j" into the search bar instead of moving the selection.
+When search is inactive, `KeyMap()` returns `nil` and the parent handles `j`/`k` normally. When search becomes active, the child's `OnStop(tui.AnyRune, ...)` grabs every printable character before the parent sees it. Pressing `j` types a "j" into the search bar instead of moving the selection.
 
 This conditional KeyMap pattern is the standard way to build modal interfaces. The `KeyMap()` method runs on each render, so switching `active` to false immediately removes the child's bindings.
 
@@ -310,7 +309,7 @@ Most apps won't need this. The `KeyMap` system on components covers almost every
 
 ## Complete Example
 
-This keyboard explorer tracks which keys have been pressed, using `OnRunes` as a catch-all for printable characters and `OnKey` for special keys:
+This keyboard explorer tracks which keys have been pressed, using `On(tui.AnyRune, ...)` as a catch-all for printable characters and `On` with Key constants for special keys:
 
 ```gsx
 package main
@@ -339,23 +338,23 @@ func (e *explorer) record(name string) {
 
 func (e *explorer) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRunes(func(ke tui.KeyEvent) {
+        tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.AnyRune,func(ke tui.KeyEvent) {
             e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
         }),
         // KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases for KeyBackspace,
         // KeyTab, and KeyEnter (same terminal byte), so you can use
         // either name here and both will match.
-        tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
-        tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
-        tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
-        tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { e.record("Right") }),
-        tui.OnKey(tui.KeyCtrlA, func(ke tui.KeyEvent) { e.record("Ctrl+A") }),
-        tui.OnKey(tui.KeyCtrlS, func(ke tui.KeyEvent) { e.record("Ctrl+S") }),
+        tui.On(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
+        tui.On(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
+        tui.On(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
+        tui.On(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
+        tui.On(tui.KeyRight, func(ke tui.KeyEvent) { e.record("Right") }),
+        tui.On(tui.KeyCtrlA, func(ke tui.KeyEvent) { e.record("Ctrl+A") }),
+        tui.On(tui.KeyCtrlS, func(ke tui.KeyEvent) { e.record("Ctrl+S") }),
     }
 }
 

@@ -124,11 +124,11 @@ func Counter() *counter {
 
 func (c *counter) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('+', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
             c.count.Update(func(v int) int { return v + 1 })
         }),
-        tui.OnRune('-', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
             c.count.Update(func(v int) int { return v - 1 })
         }),
     }
@@ -216,14 +216,14 @@ type KeyListener interface {
 func (s *search) KeyMap() tui.KeyMap {
     if s.active.Get() {
         return tui.KeyMap{
-            tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { s.active.Set(false) }),
-            tui.OnRunesStop(func(ke tui.KeyEvent) {
+            tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { s.active.Set(false) }),
+            tui.OnStop(tui.AnyRune,func(ke tui.KeyEvent) {
                 s.query.Update(func(q string) string { return q + string(ke.Rune) })
             }),
         }
     }
     return tui.KeyMap{
-        tui.OnRune('/', func(ke tui.KeyEvent) { s.active.Set(true) }),
+        tui.On(tui.Rune('/'), func(ke tui.KeyEvent) { s.active.Set(true) }),
     }
 }
 ```
@@ -373,7 +373,7 @@ func UserProfile(name, role, email string) *userProfile {
 
 func (u *userProfile) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
 }
 
@@ -417,10 +417,10 @@ func Sidebar(category *tui.State[string]) *sidebar {
 
 func (s *sidebar) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRune('j', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) {
             s.selected.Update(func(v int) int { return v + 1 })
         }),
-        tui.OnRune('k', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) {
             s.selected.Update(func(v int) int { return v - 1 })
         }),
     }
@@ -445,7 +445,7 @@ func MyApp() *myApp {
 
 func (a *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
 }
 
@@ -653,8 +653,8 @@ func Dashboard() *dashboard {
 
 func (d *dashboard) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyTab, func(ke tui.KeyEvent) {
             d.selected.Update(func(v int) int {
                 return (v + 1) % len(d.tabs)
             })

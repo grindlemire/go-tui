@@ -66,13 +66,9 @@ Wire these up in your `KeyMap` to give users Tab/Shift+Tab navigation:
 ```go
 func (f *myForm) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
-        // Note: Shift+Tab arrives as KeyTab with ModShift
-        {
-            Pattern: tui.KeyPattern{Key: tui.KeyTab, Mod: tui.ModShift},
-            Handler: func(ke tui.KeyEvent) { ke.App().FocusPrev() },
-        },
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+        tui.On(tui.KeyTab.Shift(), func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
     }
 }
 ```
@@ -124,7 +120,7 @@ func MyForm() *myForm {
 ```go
 func (f *myForm) KeyMap() tui.KeyMap {
     return append(f.focus.KeyMap(), []tui.KeyBinding{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
         // section-specific bindings...
     }...)
 }
@@ -237,8 +233,8 @@ func PanelForm() *panelForm {
 
 func (p *panelForm) KeyMap() tui.KeyMap {
     return append(p.focus.KeyMap(), []tui.KeyBinding{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune(' ', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune(' '), func(ke tui.KeyEvent) {
             p.clickCount.Update(func(v int) int { return v + 1 })
         }),
     }...)

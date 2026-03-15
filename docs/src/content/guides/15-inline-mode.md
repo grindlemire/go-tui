@@ -93,7 +93,7 @@ func (c *chatInput) send(text string) {
 func (c *chatInput) KeyMap() tui.KeyMap {
     km := c.textarea.KeyMap()
     km = append(km,
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
     )
     return km
 }
@@ -256,16 +256,16 @@ func (a *myApp) toggleSettings() {
 func (a *myApp) KeyMap() tui.KeyMap {
     if a.showSettings.Get() {
         return tui.KeyMap{
-            tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { a.toggleSettings() }),
-            tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+            tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { a.toggleSettings() }),
+            tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
         }
     }
 
     km := a.textarea.KeyMap()
     km = append(km,
-        tui.OnKeyStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { a.toggleSettings() }),
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { a.toggleSettings() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
     )
     return km
 }

@@ -266,7 +266,7 @@ func formatLabel(s string) string {
 ` + "```gsx" + `
 func (s *sidebar) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnRune('b', s.toggle, tui.ModCtrl),
+        tui.On(tui.Rune('b').Ctrl(), s.toggle),
     }
 }
 ` + "```" + `

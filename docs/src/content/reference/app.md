@@ -245,7 +245,7 @@ func (a *App) Stop()
 Signals the `Run` loop to exit gracefully. All watchers receive a stop signal and their goroutines exit. Safe to call multiple times (idempotent).
 
 ```go
-tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
     ke.App().Stop()
 })
 ```
@@ -630,7 +630,7 @@ To prevent Ctrl+Z from suspending, bind `KeyCtrlZ` with a Stop handler in a comp
 ```go
 func (c *myComponent) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKeyStop(tui.KeyCtrlZ, func(ke tui.KeyEvent) {
+        tui.OnStop(tui.KeyCtrlZ, func(ke tui.KeyEvent) {
             // Custom behavior instead of suspend
         }),
     }

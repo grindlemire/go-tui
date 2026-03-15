@@ -69,11 +69,11 @@ func (s *stopwatch) tick() {
 
 func (s *stopwatch) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune(' ', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune(' '), func(ke tui.KeyEvent) {
             s.running.Set(!s.running.Get())
         }),
-        tui.OnRune('r', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
             s.seconds.Set(0)
             s.running.Set(false)
         }),
@@ -149,7 +149,7 @@ func (f *feedApp) addMessage(msg string) {
 
 func (f *feedApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
 }
 
@@ -260,10 +260,10 @@ func Controls() *controls {
 
 func (c *controls) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('1', func(ke tui.KeyEvent) { c.bus.Emit("build started") }),
-        tui.OnRune('2', func(ke tui.KeyEvent) { c.bus.Emit("tests passed") }),
-        tui.OnRune('3', func(ke tui.KeyEvent) { c.bus.Emit("deployed to staging") }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('1'), func(ke tui.KeyEvent) { c.bus.Emit("build started") }),
+        tui.On(tui.Rune('2'), func(ke tui.KeyEvent) { c.bus.Emit("tests passed") }),
+        tui.On(tui.Rune('3'), func(ke tui.KeyEvent) { c.bus.Emit("deployed to staging") }),
     }
 }
 
@@ -445,8 +445,8 @@ func (d *dashboard) autoScrollToBottom(_ []string) {
 
 func (d *dashboard) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
     }
 }
 
@@ -571,12 +571,12 @@ func WatcherApp() *watcherApp {
 
 func (w *watcherApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('s', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('s'), func(ke tui.KeyEvent) {
             w.stopwatchOn.Set(!w.stopwatchOn.Get())
         }),
-        tui.OnRune('r', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
             w.stopwatchSec.Set(0)
             w.stopwatchOn.Set(false)
         }),

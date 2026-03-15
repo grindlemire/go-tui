@@ -66,9 +66,9 @@ There are two ways to change state: `.Set()` for replacing the value outright, a
 ```go
 func (m *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('r', func(ke tui.KeyEvent) { m.count.Set(0) }),
-        tui.OnRune('h', func(ke tui.KeyEvent) { m.visible.Set(!m.visible.Get()) }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { m.count.Set(0) }),
+        tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { m.visible.Set(!m.visible.Get()) }),
     }
 }
 ```
@@ -80,10 +80,10 @@ Use `.Set()` when you have the exact value you want. Setting the count to zero, 
 `.Update()` takes a function that receives the current value and returns the new value. It's shorthand for `s.Set(fn(s.Get()))`:
 
 ```go
-tui.OnRune('+', func(ke tui.KeyEvent) {
+tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
     m.count.Update(func(v int) int { return v + 1 })
 }),
-tui.OnRune('-', func(ke tui.KeyEvent) {
+tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
     m.count.Update(func(v int) int { return v - 1 })
 }),
 ```
@@ -152,8 +152,8 @@ func ListApp() *listApp {
 
 func (l *listApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) {
             l.selected.Update(func(v int) int {
                 if v >= len(l.items)-1 {
                     return 0
@@ -161,7 +161,7 @@ func (l *listApp) KeyMap() tui.KeyMap {
                 return v + 1
             })
         }),
-        tui.OnRune('k', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) {
             l.selected.Update(func(v int) int {
                 if v <= 0 {
                     return len(l.items) - 1
@@ -333,23 +333,23 @@ func Demo() *demoApp {
 
 func (d *demoApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('+', func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
             d.count.Update(func(v int) int { return v + 1 })
         }),
-        tui.OnRune('-', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
             d.count.Update(func(v int) int { return v - 1 })
         }),
-        tui.OnRune('r', func(ke tui.KeyEvent) {
+        tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
             ke.App().Batch(func() {
                 d.count.Set(0)
                 d.selected.Set(0)
             })
         }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { d.selectNext() }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { d.selectPrev() }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.selectNext() }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.selectPrev() }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
     }
 }
 
