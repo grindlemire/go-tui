@@ -18,6 +18,11 @@ type colorMixer struct {
 	blueDnBtn  *tui.Ref
 	presetBtns   *tui.RefMap[string]
 	activePreset *tui.State[string]
+
+	resetBtn        *tui.Ref
+	showResetModal  *tui.State[bool]
+	resetConfirmBtn *tui.Ref
+	resetCancelBtn  *tui.Ref
 }
 
 func ColorMixer() *colorMixer {
@@ -33,6 +38,11 @@ func ColorMixer() *colorMixer {
 		blueDnBtn:  tui.NewRef(),
 		presetBtns:   tui.NewRefMap[string](),
 		activePreset: tui.NewState(""),
+
+		resetBtn:        tui.NewRef(),
+		showResetModal:  tui.NewState(false),
+		resetConfirmBtn: tui.NewRef(),
+		resetCancelBtn:  tui.NewRef(),
 	}
 }
 
@@ -73,6 +83,14 @@ func (c *colorMixer) adjustBlue(delta int) {
 	c.activePreset.Set("")
 }
 
+func (c *colorMixer) resetColors() {
+	c.red.Set(128)
+	c.green.Set(64)
+	c.blue.Set(200)
+	c.activePreset.Set("")
+	c.showResetModal.Set(false)
+}
+
 func (c *colorMixer) applyPreset(name string) {
 	for _, p := range presets {
 		if p.name == name {
@@ -107,6 +125,9 @@ func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
 		tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
 		tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
 		tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
+		tui.Click(c.resetBtn, func() { c.showResetModal.Set(true) }),
+		tui.Click(c.resetConfirmBtn, func() { c.resetColors() }),
+		tui.Click(c.resetCancelBtn, func() { c.showResetModal.Set(false) }),
 	) {
 		return true
 	}
@@ -213,8 +234,24 @@ templ (c *colorMixer) Render() {
 			}
 		</div>
 
+		<div class="flex gap-2 justify-center">
+			<button ref={c.resetBtn} class="px-1 text-red">Reset</button>
+		</div>
+
 		<div class="flex justify-center">
 			<span class="font-dim">r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
 		</div>
+
+		// Confirmation modal for resetting colors
+		<modal open={c.showResetModal} class="justify-center items-center">
+			<div class="border-rounded p-2 flex-col gap-1 w-36 items-center">
+				<span class="font-bold text-yellow">Reset Colors?</span>
+				<span class="font-dim">This will restore default values.</span>
+				<div class="flex gap-2 justify-center">
+					<button ref={c.resetConfirmBtn} class="px-2 text-red font-bold">Yes, Reset</button>
+					<button ref={c.resetCancelBtn} class="px-2 text-green font-bold">Cancel</button>
+				</div>
+			</div>
+		</modal>
 	</div>
 }

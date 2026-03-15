@@ -22,6 +22,11 @@ type colorMixer struct {
 	blueDnBtn    *tui.Ref
 	presetBtns   *tui.RefMap[string]
 	activePreset *tui.State[string]
+
+	resetBtn        *tui.Ref
+	showResetModal  *tui.State[bool]
+	resetConfirmBtn *tui.Ref
+	resetCancelBtn  *tui.Ref
 }
 
 type preset struct {
@@ -49,6 +54,11 @@ func ColorMixer() *colorMixer {
 		blueDnBtn:    tui.NewRef(),
 		presetBtns:   tui.NewRefMap[string](),
 		activePreset: tui.NewState(""),
+
+		resetBtn:        tui.NewRef(),
+		showResetModal:  tui.NewState(false),
+		resetConfirmBtn: tui.NewRef(),
+		resetCancelBtn:  tui.NewRef(),
 	}
 }
 
@@ -75,6 +85,14 @@ func (c *colorMixer) adjustGreen(delta int) {
 func (c *colorMixer) adjustBlue(delta int) {
 	c.blue.Set(clamp(c.blue.Get()+delta, 0, 255))
 	c.activePreset.Set("")
+}
+
+func (c *colorMixer) resetColors() {
+	c.red.Set(128)
+	c.green.Set(64)
+	c.blue.Set(200)
+	c.activePreset.Set("")
+	c.showResetModal.Set(false)
 }
 
 func (c *colorMixer) applyPreset(name string) {
@@ -111,6 +129,9 @@ func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
 		tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
 		tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
 		tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
+		tui.Click(c.resetBtn, func() { c.showResetModal.Set(true) }),
+		tui.Click(c.resetConfirmBtn, func() { c.resetColors() }),
+		tui.Click(c.resetCancelBtn, func() { c.showResetModal.Set(false) }),
 	) {
 		return true
 	}
@@ -423,14 +444,76 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_0.AddChild(__tui_48)
 	__tui_54 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_55 := tui.New(
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red)),
+	)
+	c.resetBtn.Set(__tui_55)
+	__tui_56 := tui.New(tui.WithText("Reset"))
+	__tui_55.AddChild(__tui_56)
+	__tui_54.AddChild(__tui_55)
+	__tui_0.AddChild(__tui_54)
+	__tui_57 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_58 := tui.New(
 		tui.WithText("r/g/b increase | R/G/B decrease | click buttons/presets | q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_54.AddChild(__tui_55)
-	__tui_0.AddChild(__tui_54)
+	__tui_57.AddChild(__tui_58)
+	__tui_0.AddChild(__tui_57)
+	__tui_59 := app.MountPersistent(c, 0, func() tui.Component {
+		return tui.NewModal(
+			tui.WithModalOpen(c.showResetModal),
+			tui.WithModalElementOptions(tui.WithJustify(tui.JustifyCenter), tui.WithAlign(tui.AlignCenter)),
+		)
+	})
+	__tui_60 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(2),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
+		tui.WithGap(1),
+		tui.WithWidth(36),
+		tui.WithAlign(tui.AlignCenter),
+	)
+	__tui_61 := tui.New(
+		tui.WithText("Reset Colors?"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Yellow)),
+	)
+	__tui_60.AddChild(__tui_61)
+	__tui_62 := tui.New(
+		tui.WithText("This will restore default values."),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_60.AddChild(__tui_62)
+	__tui_63 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_64 := tui.New(
+		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+	)
+	c.resetConfirmBtn.Set(__tui_64)
+	__tui_65 := tui.New(tui.WithText("Yes, Reset"))
+	__tui_64.AddChild(__tui_65)
+	__tui_63.AddChild(__tui_64)
+	__tui_66 := tui.New(
+		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+	)
+	c.resetCancelBtn.Set(__tui_66)
+	__tui_67 := tui.New(tui.WithText("Cancel"))
+	__tui_66.AddChild(__tui_67)
+	__tui_63.AddChild(__tui_66)
+	__tui_60.AddChild(__tui_63)
+	__tui_59.AddChild(__tui_60)
+	__tui_0.AddChild(__tui_59)
 
 	return __tui_0
 }
@@ -447,6 +530,9 @@ func (c *colorMixer) BindApp(app *tui.App) {
 	}
 	if c.activePreset != nil {
 		c.activePreset.BindApp(app)
+	}
+	if c.showResetModal != nil {
+		c.showResetModal.BindApp(app)
 	}
 }
 
