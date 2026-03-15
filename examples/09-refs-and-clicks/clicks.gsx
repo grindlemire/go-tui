@@ -117,6 +117,17 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 			}
 			ke.App().Stop()
 		}),
+		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
+			if !c.showResetModal.Get() {
+				return
+			}
+			focused := ke.App().Focused()
+			if el := c.resetConfirmBtn.El(); el != nil && focused == el {
+				c.resetColors()
+			} else if el := c.resetCancelBtn.El(); el != nil && focused == el {
+				c.showResetModal.Set(false)
+			}
+		}),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
 			if c.showResetModal.Get() {
 				return
