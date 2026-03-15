@@ -406,6 +406,64 @@ func TestFocusManager_SetFocusNonFocusable(t *testing.T) {
 	}
 }
 
+func TestFocusManager_Scope(t *testing.T) {
+	// Build a tree: root -> [scopeParent -> [child1, child2], outside]
+	root := New()
+	scopeParent := New()
+	child1 := New(WithFocusable(true))
+	child2 := New(WithFocusable(true))
+	outside := New(WithFocusable(true))
+	scopeParent.AddChild(child1)
+	scopeParent.AddChild(child2)
+	root.AddChild(scopeParent)
+	root.AddChild(outside)
+
+	fm := newFocusManager()
+	fm.Register(child1)
+	fm.Register(child2)
+	fm.Register(outside)
+
+	// Without scope, Next should reach all elements
+	fm.Next() // -> child1
+	if fm.Focused() != child1 {
+		t.Fatal("expected child1 focused first")
+	}
+	fm.Next() // -> child2
+	if fm.Focused() != child2 {
+		t.Fatal("expected child2 focused second")
+	}
+	fm.Next() // -> outside
+	if fm.Focused() != outside {
+		t.Fatal("expected outside focused third")
+	}
+
+	// Set scope to scopeParent: only child1 and child2 should be reachable
+	fm.ClearFocus()
+	fm.ScopeTo(scopeParent)
+	fm.Next() // -> child1
+	if fm.Focused() != child1 {
+		t.Fatal("expected child1 when scoped")
+	}
+	fm.Next() // -> child2
+	if fm.Focused() != child2 {
+		t.Fatal("expected child2 when scoped")
+	}
+	fm.Next() // -> should wrap to child1, skipping outside
+	if fm.Focused() != child1 {
+		t.Fatalf("expected child1 after wrap, got %v", fm.Focused())
+	}
+
+	// Clear scope: outside should be reachable again
+	fm.ClearScope()
+	fm.ClearFocus()
+	fm.Next()
+	fm.Next()
+	fm.Next()
+	if fm.Focused() != outside {
+		t.Fatal("expected outside reachable after ClearScope")
+	}
+}
+
 func TestFocusManager_Register(t *testing.T) {
 	type tc struct {
 		initialElements []*mockFocusable
