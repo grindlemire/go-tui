@@ -946,6 +946,86 @@ func TestDispatch_OnKey_WithModifier(t *testing.T) {
 	}
 }
 
+// --- Preemptive dispatch tests ---
+
+func TestDispatch_PreemptBlocksNormalHandlers(t *testing.T) {
+	var calls []string
+
+	// Parent component with a normal stop handler for Escape
+	parent := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnStop(KeyEscape, func(ke KeyEvent) { calls = append(calls, "parent") }),
+		},
+	}
+	// Modal component with a preemptive stop handler for Escape
+	modal := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnPreemptStop(KeyEscape, func(ke KeyEvent) { calls = append(calls, "modal") }),
+		},
+	}
+
+	root := buildTestTree(parent, modal)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	table.dispatch(KeyEvent{Key: KeyEscape})
+
+	if len(calls) != 1 {
+		t.Fatalf("got %d handler calls, want 1; calls = %v", len(calls), calls)
+	}
+	if calls[0] != "modal" {
+		t.Errorf("calls = %v, want [modal]", calls)
+	}
+}
+
+func TestDispatch_PreemptAnyKeyBlocksAllNormal(t *testing.T) {
+	parentCalled := false
+
+	parent := &mockKeyComponent{
+		keyMap: KeyMap{
+			On(Rune('q'), func(ke KeyEvent) { parentCalled = true }),
+		},
+	}
+	modal := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnPreemptStop(AnyKey, func(ke KeyEvent) {}),
+		},
+	}
+
+	root := buildTestTree(parent, modal)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'q'})
+
+	if parentCalled {
+		t.Error("parent handler should not fire when preemptive AnyKey catches the event")
+	}
+}
+
+func TestDispatch_NoConflict_PreemptStopAndNormalStop(t *testing.T) {
+	parent := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnStop(KeyEscape, func(ke KeyEvent) {}),
+		},
+	}
+	modal := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnPreemptStop(KeyEscape, func(ke KeyEvent) {}),
+		},
+	}
+
+	root := buildTestTree(parent, modal)
+	_, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("preemptive + normal stop should not conflict: %v", err)
+	}
+}
+
 // --- Kitty keyboard protocol integration tests ---
 
 func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {

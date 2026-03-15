@@ -127,6 +127,142 @@ func TestModal_KeyMap_NoTabWhenTrapFocusDisabled(t *testing.T) {
 	}
 }
 
+func TestModal_HandleMouse_BackdropClick(t *testing.T) {
+	open := NewState(true)
+	m := NewModal(WithModalOpen(open))
+	m.BindApp(testApp)
+
+	// Render the modal to set up the element and overlay
+	el := m.Render(testApp)
+	// Trigger layout by rendering into a buffer
+	buf := NewBuffer(80, 24)
+	el.Render(buf, 80, 24)
+
+	// Click on the overlay element itself (backdrop area, no children)
+	consumed := m.HandleMouse(MouseEvent{
+		Button: MouseLeft,
+		Action: MousePress,
+		X:      0,
+		Y:      0,
+	})
+
+	if !consumed {
+		t.Error("expected backdrop click to be consumed")
+	}
+	if open.Get() {
+		t.Error("expected open to be false after backdrop click")
+	}
+
+	testApp.clearOverlays()
+}
+
+func TestModal_HandleMouse_BackdropClickDisabled(t *testing.T) {
+	open := NewState(true)
+	m := NewModal(WithModalOpen(open), WithModalCloseOnBackdropClick(false))
+	m.BindApp(testApp)
+
+	el := m.Render(testApp)
+	buf := NewBuffer(80, 24)
+	el.Render(buf, 80, 24)
+
+	consumed := m.HandleMouse(MouseEvent{
+		Button: MouseLeft,
+		Action: MousePress,
+		X:      0,
+		Y:      0,
+	})
+
+	if consumed {
+		t.Error("expected backdrop click to not be consumed when disabled")
+	}
+	if !open.Get() {
+		t.Error("expected open to remain true when backdrop click is disabled")
+	}
+
+	testApp.clearOverlays()
+}
+
+func TestModal_HandleMouse_ChildOnActivate(t *testing.T) {
+	open := NewState(true)
+	activated := false
+	m := NewModal(
+		WithModalOpen(open),
+		WithModalElementOptions(WithDirection(Column)),
+	)
+	m.BindApp(testApp)
+
+	el := m.Render(testApp)
+	// Add a child button with onActivate and explicit size
+	btn := New(WithOnActivate(func() { activated = true }), WithWidth(10), WithHeight(1))
+	el.AddChild(btn)
+
+	// Trigger layout
+	buf := NewBuffer(80, 24)
+	el.Render(buf, 80, 24)
+
+	// Click within the button's rendered bounds
+	btnRect := btn.Rect()
+	consumed := m.HandleMouse(MouseEvent{
+		Button: MouseLeft,
+		Action: MousePress,
+		X:      btnRect.X,
+		Y:      btnRect.Y,
+	})
+
+	if !consumed {
+		t.Error("expected child click to be consumed")
+	}
+	if !activated {
+		t.Error("expected onActivate to be called")
+	}
+
+	testApp.clearOverlays()
+}
+
+func TestModal_KeyMap_EnterActivatesFocused(t *testing.T) {
+	open := NewState(true)
+	activated := false
+
+	m := NewModal(WithModalOpen(open))
+	m.BindApp(testApp)
+
+	// Create a focusable element with onActivate
+	btn := New(WithOnActivate(func() { activated = true }), WithFocusable(true))
+	testApp.focus = newFocusManager()
+	testApp.focus.Register(btn)
+	testApp.focus.Next() // focus the button
+
+	km := m.KeyMap()
+	// Find the Enter binding
+	for _, b := range km {
+		if b.Pattern.Key == KeyEnter {
+			b.Handler(KeyEvent{Key: KeyEnter})
+			break
+		}
+	}
+
+	if !activated {
+		t.Error("expected Enter to trigger onActivate on focused element")
+	}
+}
+
+func TestModal_HandleMouse_ClosedNoOp(t *testing.T) {
+	open := NewState(false)
+	m := NewModal(WithModalOpen(open))
+	m.BindApp(testApp)
+
+	consumed := m.HandleMouse(MouseEvent{
+		Button: MouseLeft,
+		Action: MousePress,
+		X:      5,
+		Y:      5,
+	})
+
+	if consumed {
+		t.Error("expected mouse event to not be consumed when modal is closed")
+	}
+}
+
 func TestModal_Options(t *testing.T) {
 	type tc struct {
 		opts     []ModalOption

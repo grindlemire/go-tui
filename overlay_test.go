@@ -56,5 +56,3 @@ func TestApply_SetsOptions(t *testing.T) {
 		t.Error("expected hidden after Apply")
 	}
 }
-
-// containsSubstring already defined in escape_style_test.go
