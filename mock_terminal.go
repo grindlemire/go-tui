@@ -139,8 +139,16 @@ func (m *MockTerminal) NegotiateKittyKeyboard() bool {
 	return false
 }
 
+// EnableKittyKeyboard is a no-op for the mock terminal.
+func (m *MockTerminal) EnableKittyKeyboard() {
+}
+
 // DisableKittyKeyboard is a no-op for the mock terminal.
 func (m *MockTerminal) DisableKittyKeyboard() {
+}
+
+// ResetStyle is a no-op for the mock terminal.
+func (m *MockTerminal) ResetStyle() {
 }
 
 // Caps returns the terminal's capabilities.

@@ -217,6 +217,17 @@ func (t *ANSITerminal) DisableMouse() {
 	t.out.Write(t.esc.Bytes())
 }
 
+// EnableKittyKeyboard pushes Kitty keyboard protocol mode onto the terminal's
+// stack without querying. Use this on resume when the terminal is already known
+// to support the protocol.
+func (t *ANSITerminal) EnableKittyKeyboard() {
+	t.esc.Reset()
+	t.esc.KittyKeyboardPush(1)
+	t.out.Write(t.esc.Bytes())
+	t.kittyKeyboard = true
+	t.caps.KittyKeyboard = true
+}
+
 // DisableKittyKeyboard pops the Kitty keyboard protocol mode from the stack.
 func (t *ANSITerminal) DisableKittyKeyboard() {
 	if !t.kittyKeyboard {

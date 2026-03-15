@@ -83,10 +83,21 @@ type Terminal interface {
 	// was successfully negotiated.
 	NegotiateKittyKeyboard() bool
 
+	// EnableKittyKeyboard pushes Kitty keyboard protocol mode onto the
+	// terminal's stack without querying. Use this on resume when the terminal
+	// is already known to support the protocol (avoids stdin query/response
+	// races after SIGCONT).
+	EnableKittyKeyboard()
+
 	// DisableKittyKeyboard pops the Kitty keyboard protocol mode from the
 	// terminal's stack, restoring the previous mode. No-op if Kitty mode
 	// was not negotiated.
 	DisableKittyKeyboard()
+
+	// ResetStyle invalidates cached style state, forcing the next Flush to
+	// emit style codes unconditionally. Call this after terminal state may
+	// have been disrupted (e.g., suspend/resume).
+	ResetStyle()
 
 	// Caps returns the terminal's capabilities.
 	Caps() Capabilities

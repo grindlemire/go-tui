@@ -52,16 +52,14 @@ func (a *App) suspendTerminal() {
 func (a *App) resumeTerminal() {
 	a.terminal.EnterRawMode()
 
-	// Re-negotiate Kitty keyboard protocol.
-	// Pause the event reader so it doesn't consume the query response.
+	// Re-enable Kitty keyboard protocol. We use EnableKittyKeyboard (push
+	// without query) instead of NegotiateKittyKeyboard to avoid a stdin
+	// query/response race: after SIGCONT the terminal may be slow to respond,
+	// and a late response leaks onto stdin where the reader parses it as
+	// keypresses (e.g., "[?1u" typed into a textarea). Since we already
+	// negotiated successfully at startup, we know the terminal supports it.
 	if !a.legacyKeyboard {
-		if pr, ok := a.reader.(PausableReader); ok {
-			pr.Pause()
-		}
-		a.terminal.NegotiateKittyKeyboard()
-		if pr, ok := a.reader.(PausableReader); ok {
-			pr.Resume()
-		}
+		a.terminal.EnableKittyKeyboard()
 	}
 
 	if a.inAlternateScreen {
@@ -85,6 +83,11 @@ func (a *App) resumeTerminal() {
 		if a.inlineStartRow < 0 {
 			a.inlineStartRow = 0
 		}
+		// Reset style tracking: the terminal's SGR state is unknown after
+		// going through cooked mode and shell interaction. Without this,
+		// Flush may skip emitting style codes for cells whose style matches
+		// the stale lastStyle, producing wrong colors on the first frame.
+		a.terminal.ResetStyle()
 	} else {
 		a.terminal.EnterAltScreen()
 		a.terminal.Clear()
@@ -123,6 +126,9 @@ func (a *App) suspend() {
 	// Process has been resumed by SIGCONT.
 	// Resume inline to avoid a race with the event queue.
 	a.resumeTerminal()
+
+	// Note: selfSuspended is cleared by the SIGCONT handler goroutine via
+	// CompareAndSwap. If the handler hasn't run yet, clear it as a fallback.
 	a.selfSuspended.Store(false)
 }
 
@@ -147,9 +153,15 @@ func (a *App) registerSuspendSignals() func() {
 		for {
 			select {
 			case <-contCh:
-				if a.selfSuspended.Load() {
-					// Our own suspend() will call resumeTerminal()
-					// inline. Nothing to do here.
+				// Use CompareAndSwap to avoid a race with suspend().
+				// After SIGCONT, both this goroutine and the main goroutine
+				// (in suspend()) resume simultaneously. If we used Load(),
+				// suspend() might clear the flag before we check it, causing
+				// a spurious double-resume. CAS atomically checks and clears,
+				// so exactly one side wins.
+				if a.selfSuspended.CompareAndSwap(true, false) {
+					// Self-initiated suspend: suspend() calls
+					// resumeTerminal() inline. Nothing to do here.
 					continue
 				}
 				// SIGCONT after an external SIGTSTP (kill -TSTP).

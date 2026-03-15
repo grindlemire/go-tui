@@ -59,6 +59,16 @@ func (r *recordingTerminal) EnableMouse() {
 	r.MockTerminal.EnableMouse()
 }
 
+func (r *recordingTerminal) EnableKittyKeyboard() {
+	r.calls = append(r.calls, "EnableKittyKeyboard")
+	r.MockTerminal.EnableKittyKeyboard()
+}
+
+func (r *recordingTerminal) ResetStyle() {
+	r.calls = append(r.calls, "ResetStyle")
+	r.MockTerminal.ResetStyle()
+}
+
 func (r *recordingTerminal) Clear() {
 	r.calls = append(r.calls, "Clear")
 	r.MockTerminal.Clear()
@@ -156,7 +166,7 @@ func TestResumeSequence_FullScreen(t *testing.T) {
 		t.Fatal("expected onResume to be called")
 	}
 
-	expected := []string{"EnterRawMode", "EnterAltScreen", "Clear", "HideCursor", "EnableMouse"}
+	expected := []string{"EnterRawMode", "EnableKittyKeyboard", "EnterAltScreen", "Clear", "HideCursor", "EnableMouse"}
 	if len(term.calls) != len(expected) {
 		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
 	}
@@ -190,6 +200,18 @@ func TestResumeSequence_InlineMode(t *testing.T) {
 		if call == "EnterAltScreen" || call == "Clear" {
 			t.Fatalf("should not call %s in inline mode", call)
 		}
+	}
+
+	// Should call ResetStyle to invalidate stale style tracking
+	hasResetStyle := false
+	for _, call := range term.calls {
+		if call == "ResetStyle" {
+			hasResetStyle = true
+			break
+		}
+	}
+	if !hasResetStyle {
+		t.Fatal("expected ResetStyle to be called in inline mode resume")
 	}
 
 	// Should recalculate inlineStartRow from terminal size
@@ -348,7 +370,7 @@ func TestResumeSequence_DynamicAltScreen(t *testing.T) {
 	app.resumeTerminal()
 
 	// Should re-enter alt screen overlay, then hide cursor (cursorVisible defaults to false)
-	expected := []string{"EnterRawMode", "EnterAltScreen", "Clear", "HideCursor"}
+	expected := []string{"EnterRawMode", "EnableKittyKeyboard", "EnterAltScreen", "Clear", "HideCursor"}
 	if len(term.calls) != len(expected) {
 		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)
 	}
@@ -382,13 +404,20 @@ func TestSelfSuspendedPreventsDoubleResume(t *testing.T) {
 	// from enqueuing a duplicate resume.
 	app.selfSuspended.Store(true)
 
-	// The SIGCONT handler goroutine would check this flag and skip.
-	// Verify the flag is readable.
-	if !app.selfSuspended.Load() {
-		t.Fatal("expected selfSuspended to be true")
+	// The SIGCONT handler uses CompareAndSwap(true, false) to atomically
+	// check and clear the flag. Verify CAS succeeds when flag is true.
+	if !app.selfSuspended.CompareAndSwap(true, false) {
+		t.Fatal("expected CAS(true, false) to succeed")
+	}
+
+	// After CAS clears the flag, a second CAS should fail (simulates
+	// suspend()'s fallback Store(false) being redundant).
+	if app.selfSuspended.CompareAndSwap(true, false) {
+		t.Fatal("expected CAS(true, false) to fail after flag was cleared")
 	}
 
 	// Call resumeTerminal once (as suspend() would)
+	app.selfSuspended.Store(true) // reset for the resume simulation
 	app.resumeTerminal()
 	app.selfSuspended.Store(false)
 
