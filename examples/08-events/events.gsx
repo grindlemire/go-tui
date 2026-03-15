@@ -25,16 +25,20 @@ func (e *explorer) record(name string) {
 func (e *explorer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnRunes(func(ke tui.KeyEvent) {
 			e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
 		}),
-		// KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases for KeyBackspace,
-		// KeyTab, and KeyEnter (same terminal byte), so you can use
-		// either name here and both will match if your terminal allows both through.
+		// With Kitty keyboard protocol, Ctrl+H/I/M arrive as KeyRune
+		// events with ModCtrl and are matched by OnRuneMod.
+		// Without Kitty, they are indistinguishable from Backspace/Tab/Enter
+		// and match the OnKey handlers below instead.
+		tui.OnRuneMod('h', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+'h' (rune)") }),
+		tui.OnRuneMod('i', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+'i' (rune)") }),
+		tui.OnRuneMod('m', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+'m' (rune)") }),
 		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
 		tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
+		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
 		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),

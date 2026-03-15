@@ -81,6 +81,26 @@ func OnRuneStop(r rune, handler func(KeyEvent)) KeyBinding {
 	}
 }
 
+// OnRuneMod creates a broadcast binding for a specific rune with specific modifiers.
+// Example: OnRuneMod('s', ModCtrl, handler) matches Ctrl+S as a rune event
+// (requires Kitty keyboard protocol).
+func OnRuneMod(r rune, mod Modifier, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{
+		Pattern: KeyPattern{Rune: r, Mod: mod},
+		Handler: handler,
+		Stop:    false,
+	}
+}
+
+// OnRuneModStop creates a stop-propagation binding for a specific rune with specific modifiers.
+func OnRuneModStop(r rune, mod Modifier, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{
+		Pattern: KeyPattern{Rune: r, Mod: mod},
+		Handler: handler,
+		Stop:    true,
+	}
+}
+
 // OnRunes creates a broadcast binding for all printable characters.
 func OnRunes(handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{

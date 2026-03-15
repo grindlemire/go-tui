@@ -215,6 +215,8 @@ Terminals encode some Ctrl+letter combinations using the same byte as a function
 
 Because these are the same constant, `OnKey(tui.KeyCtrlH, handler)` and `OnKey(tui.KeyBackspace, handler)` produce identical bindings in legacy mode. When the Kitty keyboard protocol is active (negotiated automatically on supported terminals), these become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. The same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
 
+> **Note:** Some terminals send Ctrl+H as the legacy backspace byte even with Kitty protocol active, so Ctrl+H and Backspace may remain indistinguishable depending on the terminal. Ctrl+I and Ctrl+M are typically disambiguated correctly.
+
 ## Modifier Flags
 
 ```go

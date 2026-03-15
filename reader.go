@@ -4,6 +4,7 @@ package tui
 
 import (
 	"os"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -18,10 +19,13 @@ type stdinReader struct {
 	// Interrupt mechanism for blocking mode
 	interruptPipe [2]int // [0]=read, [1]=write
 	hasInterrupt  bool   // Whether interrupt is enabled
+
+	paused atomic.Bool // When true, PollEvent returns immediately
 }
 
-// Ensure stdinReader implements InterruptibleReader.
+// Ensure stdinReader implements InterruptibleReader and PausableReader.
 var _ InterruptibleReader = (*stdinReader)(nil)
+var _ PausableReader = (*stdinReader)(nil)
 
 // NewEventReader creates an EventReader for the given terminal input.
 // The terminal should already be in raw mode.
@@ -33,9 +37,27 @@ func NewEventReader(in *os.File) (EventReader, error) {
 	return r, nil
 }
 
+// Pause causes PollEvent to return immediately without reading stdin.
+// Interrupts any in-progress blocking read.
+func (r *stdinReader) Pause() {
+	r.paused.Store(true)
+	if r.hasInterrupt {
+		r.Interrupt()
+	}
+}
+
+// Resume allows PollEvent to read stdin again.
+func (r *stdinReader) Resume() {
+	r.paused.Store(false)
+}
+
 // PollEvent reads the next event with a timeout.
 // Returns (event, true) if an event was read, or (nil, false) on timeout.
 func (r *stdinReader) PollEvent(timeout time.Duration) (Event, bool) {
+	if r.paused.Load() {
+		return nil, false
+	}
+
 	// Return pending events first
 	if len(r.pending) > 0 {
 		ev := r.pending[0]

@@ -28,3 +28,18 @@ type InterruptibleReader interface {
 	// Safe to call even if not currently blocking.
 	Interrupt() error
 }
+
+// PausableReader extends EventReader with the ability to temporarily pause
+// stdin reads. While paused, PollEvent returns (nil, false) immediately.
+// This is used to give exclusive stdin access to Kitty keyboard negotiation
+// during suspend/resume.
+type PausableReader interface {
+	EventReader
+
+	// Pause causes PollEvent to return immediately without reading stdin.
+	// Interrupts any in-progress blocking read.
+	Pause()
+
+	// Resume allows PollEvent to read stdin again.
+	Resume()
+}
