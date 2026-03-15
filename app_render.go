@@ -64,24 +64,26 @@ func (a *App) Render() {
 		a.root.Render(a.buffer, width, renderHeight)
 	}
 
-	// Apply focus scoping before overlay render so Focus() border
-	// highlights are visible when the overlay elements are drawn.
+	// Apply focus scoping so overlay elements get correct focus borders.
 	focusScoped := false
 	for i := len(a.overlays) - 1; i >= 0; i-- {
 		if a.overlays[i].trapFocus {
 			a.focus.ScopeTo(a.overlays[i].element)
 			focusScoped = true
+			// Move focus into the modal only on the first frame after open.
+			// This avoids calling Next()/MarkDirty() on every render frame.
+			if a.overlays[i].needsFocusInit {
+				a.overlays[i].needsFocusInit = false
+				current := a.focus.Focused()
+				if current == nil || !a.focus.isInScope(current) {
+					a.focus.Next()
+				}
+			}
 			break
 		}
 	}
 	if !focusScoped && a.focus.scope != nil {
 		a.focus.ClearScope()
-	}
-	if focusScoped {
-		current := a.focus.Focused()
-		if current == nil || !a.focus.isInScope(current) {
-			a.focus.Next()
-		}
 	}
 
 	// Render overlay elements (modals) on top of the main tree
@@ -176,9 +178,25 @@ func (a *App) RenderFull() {
 	// Clear buffer
 	a.buffer.Clear()
 
+	// Clear overlay registrations from previous frame
+	a.clearOverlays()
+
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, height)
+	}
+
+	// Apply focus scoping for overlays
+	focusScoped := false
+	for i := len(a.overlays) - 1; i >= 0; i-- {
+		if a.overlays[i].trapFocus {
+			a.focus.ScopeTo(a.overlays[i].element)
+			focusScoped = true
+			break
+		}
+	}
+	if !focusScoped && a.focus.scope != nil {
+		a.focus.ClearScope()
 	}
 
 	// Render overlay elements (modals) on top of the main tree

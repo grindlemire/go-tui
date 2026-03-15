@@ -60,8 +60,18 @@ func TestModal_KeyMap_Escape(t *testing.T) {
 	if len(km) == 0 {
 		t.Fatal("expected non-empty KeyMap when open")
 	}
-	// Simulate Escape
-	km[0].Handler(KeyEvent{Key: KeyEscape})
+	// Find and invoke the Escape binding
+	fired := false
+	for _, b := range km {
+		if b.Pattern.Key == KeyEscape {
+			b.Handler(KeyEvent{Key: KeyEscape})
+			fired = true
+			break
+		}
+	}
+	if !fired {
+		t.Fatal("no Escape binding found in KeyMap")
+	}
 	if open.Get() {
 		t.Error("expected open to be false after Escape")
 	}

@@ -112,6 +112,26 @@ func (f *focusManager) IsFocused(elem Focusable) bool {
 	return f.elements[f.current] == elem
 }
 
+// focusedIndex returns the current focus index, or -1 if nothing is focused.
+func (f *focusManager) focusedIndex() int {
+	return f.current
+}
+
+// setFocusIndex restores focus to the element at the given index.
+// Used by modal to restore focus after close, since element references
+// become stale after re-render (refreshFromTree preserves index).
+func (f *focusManager) setFocusIndex(idx int) {
+	if idx < 0 || idx >= len(f.elements) {
+		return
+	}
+	if f.current >= 0 && f.current < len(f.elements) && f.current != idx {
+		f.elements[f.current].Blur()
+	}
+	f.current = idx
+	f.focusApplied = true
+	f.elements[idx].Focus()
+}
+
 // SetFocus moves focus to the specified element.
 // Does nothing if the element is not registered or not focusable.
 func (f *focusManager) SetFocus(elem Focusable) {

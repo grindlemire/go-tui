@@ -12,10 +12,10 @@ type Modal struct {
 	elementOpts     []Option
 
 	// Internal state
-	app           *App
-	element       *Element
-	previousFocus Focusable
-	wasOpen       bool
+	app              *App
+	element          *Element
+	previousFocusIdx int // focus index before modal opened (-1 = none)
+	wasOpen          bool
 }
 
 var (
@@ -28,10 +28,11 @@ var (
 // NewModal creates a new Modal with the given options.
 func NewModal(opts ...ModalOption) *Modal {
 	m := &Modal{
-		backdrop:        "dim",
-		closeOnEscape:   true,
-		closeOnBackdrop: true,
-		trapFocus:       true,
+		backdrop:         "dim",
+		closeOnEscape:    true,
+		closeOnBackdrop:  true,
+		trapFocus:        true,
+		previousFocusIdx: -1,
 	}
 	for _, opt := range opts {
 		opt(m)
@@ -60,9 +61,9 @@ func (m *Modal) Render(app *App) *Element {
 			if m.trapFocus && m.app != nil {
 				m.app.focus.ClearScope()
 			}
-			if m.previousFocus != nil && m.app != nil {
-				m.app.focus.SetFocus(m.previousFocus)
-				m.previousFocus = nil
+			if m.previousFocusIdx >= 0 && m.app != nil {
+				m.app.focus.setFocusIndex(m.previousFocusIdx)
+				m.previousFocusIdx = -1
 			}
 			m.wasOpen = false
 		}
@@ -76,16 +77,20 @@ func (m *Modal) Render(app *App) *Element {
 		opt(m.element)
 	}
 
-	// Register overlay for the App's render pass
-	app.registerOverlay(m.element, m.backdrop, m.trapFocus)
-
-	// Handle open transition (save focus, scope)
+	// Handle open transition: save previous focus index
+	needsFocusInit := false
 	if !m.wasOpen {
 		if m.app != nil {
-			m.previousFocus = m.app.focus.Focused()
+			m.previousFocusIdx = m.app.focus.focusedIndex()
 		}
 		m.wasOpen = true
+		needsFocusInit = true
 	}
+
+	// Register overlay for the App's render pass.
+	// needsFocusInit tells the render pass to move focus into the modal
+	// on the first frame (after children are attached).
+	app.registerOverlay(m.element, m.backdrop, m.trapFocus, needsFocusInit)
 
 	return m.element
 }
