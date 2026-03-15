@@ -2,7 +2,7 @@ package tui
 
 import "testing"
 
-func TestKeyMap_OnKey(t *testing.T) {
+func TestKeyMap_On_Key(t *testing.T) {
 	type tc struct {
 		key      Key
 		wantKey  Key
@@ -10,17 +10,17 @@ func TestKeyMap_OnKey(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"OnKey sets key and broadcast": {
+		"On sets key and broadcast": {
 			key:      KeyEscape,
 			wantKey:  KeyEscape,
 			wantStop: false,
 		},
-		"OnKey with function key": {
+		"On with function key": {
 			key:      KeyF1,
 			wantKey:  KeyF1,
 			wantStop: false,
 		},
-		"OnKey with enter": {
+		"On with enter": {
 			key:      KeyEnter,
 			wantKey:  KeyEnter,
 			wantStop: false,
@@ -30,21 +30,21 @@ func TestKeyMap_OnKey(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			handler := func(ke KeyEvent) {}
-			binding := OnKey(tt.key, handler)
+			binding := On(tt.key, handler)
 			if binding.Pattern.Key != tt.wantKey {
-				t.Errorf("OnKey(%v).Pattern.Key = %v, want %v", tt.key, binding.Pattern.Key, tt.wantKey)
+				t.Errorf("On(%v).Pattern.Key = %v, want %v", tt.key, binding.Pattern.Key, tt.wantKey)
 			}
 			if binding.Stop != tt.wantStop {
-				t.Errorf("OnKey(%v).Stop = %v, want %v", tt.key, binding.Stop, tt.wantStop)
+				t.Errorf("On(%v).Stop = %v, want %v", tt.key, binding.Stop, tt.wantStop)
 			}
 			if binding.Handler == nil {
-				t.Error("OnKey().Handler should not be nil")
+				t.Error("On().Handler should not be nil")
 			}
 		})
 	}
 }
 
-func TestKeyMap_OnKeyStop(t *testing.T) {
+func TestKeyMap_OnStop_Key(t *testing.T) {
 	type tc struct {
 		key      Key
 		wantKey  Key
@@ -52,12 +52,12 @@ func TestKeyMap_OnKeyStop(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"OnKeyStop sets key and stop": {
+		"OnStop sets key and stop": {
 			key:      KeyBackspace,
 			wantKey:  KeyBackspace,
 			wantStop: true,
 		},
-		"OnKeyStop with escape": {
+		"OnStop with escape": {
 			key:      KeyEscape,
 			wantKey:  KeyEscape,
 			wantStop: true,
@@ -67,18 +67,18 @@ func TestKeyMap_OnKeyStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			handler := func(ke KeyEvent) {}
-			binding := OnKeyStop(tt.key, handler)
+			binding := OnStop(tt.key, handler)
 			if binding.Pattern.Key != tt.wantKey {
-				t.Errorf("OnKeyStop(%v).Pattern.Key = %v, want %v", tt.key, binding.Pattern.Key, tt.wantKey)
+				t.Errorf("OnStop(%v).Pattern.Key = %v, want %v", tt.key, binding.Pattern.Key, tt.wantKey)
 			}
 			if binding.Stop != tt.wantStop {
-				t.Errorf("OnKeyStop(%v).Stop = %v, want %v", tt.key, binding.Stop, tt.wantStop)
+				t.Errorf("OnStop(%v).Stop = %v, want %v", tt.key, binding.Stop, tt.wantStop)
 			}
 		})
 	}
 }
 
-func TestKeyMap_OnRune(t *testing.T) {
+func TestKeyMap_On_Rune(t *testing.T) {
 	type tc struct {
 		r        rune
 		wantRune rune
@@ -86,17 +86,17 @@ func TestKeyMap_OnRune(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"OnRune sets rune and broadcast": {
+		"On(Rune) sets rune and broadcast": {
 			r:        'q',
 			wantRune: 'q',
 			wantStop: false,
 		},
-		"OnRune with slash": {
+		"On(Rune) with slash": {
 			r:        '/',
 			wantRune: '/',
 			wantStop: false,
 		},
-		"OnRune with unicode": {
+		"On(Rune) with unicode": {
 			r:        '日',
 			wantRune: '日',
 			wantStop: false,
@@ -106,21 +106,21 @@ func TestKeyMap_OnRune(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			handler := func(ke KeyEvent) {}
-			binding := OnRune(tt.r, handler)
+			binding := On(Rune(tt.r), handler)
 			if binding.Pattern.Rune != tt.wantRune {
-				t.Errorf("OnRune(%q).Pattern.Rune = %q, want %q", tt.r, binding.Pattern.Rune, tt.wantRune)
+				t.Errorf("On(Rune(%q)).Pattern.Rune = %q, want %q", tt.r, binding.Pattern.Rune, tt.wantRune)
 			}
 			if binding.Stop != tt.wantStop {
-				t.Errorf("OnRune(%q).Stop = %v, want %v", tt.r, binding.Stop, tt.wantStop)
+				t.Errorf("On(Rune(%q)).Stop = %v, want %v", tt.r, binding.Stop, tt.wantStop)
 			}
 			if binding.Pattern.AnyRune {
-				t.Errorf("OnRune(%q).Pattern.AnyRune should be false", tt.r)
+				t.Errorf("On(Rune(%q)).Pattern.AnyRune should be false", tt.r)
 			}
 		})
 	}
 }
 
-func TestKeyMap_OnRuneStop(t *testing.T) {
+func TestKeyMap_OnStop_Rune(t *testing.T) {
 	type tc struct {
 		r        rune
 		wantRune rune
@@ -128,7 +128,7 @@ func TestKeyMap_OnRuneStop(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"OnRuneStop sets rune and stop": {
+		"OnStop(Rune) sets rune and stop": {
 			r:        'x',
 			wantRune: 'x',
 			wantStop: true,
@@ -138,28 +138,28 @@ func TestKeyMap_OnRuneStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			handler := func(ke KeyEvent) {}
-			binding := OnRuneStop(tt.r, handler)
+			binding := OnStop(Rune(tt.r), handler)
 			if binding.Pattern.Rune != tt.wantRune {
-				t.Errorf("OnRuneStop(%q).Pattern.Rune = %q, want %q", tt.r, binding.Pattern.Rune, tt.wantRune)
+				t.Errorf("OnStop(Rune(%q)).Pattern.Rune = %q, want %q", tt.r, binding.Pattern.Rune, tt.wantRune)
 			}
 			if binding.Stop != tt.wantStop {
-				t.Errorf("OnRuneStop(%q).Stop = %v, want %v", tt.r, binding.Stop, tt.wantStop)
+				t.Errorf("OnStop(Rune(%q)).Stop = %v, want %v", tt.r, binding.Stop, tt.wantStop)
 			}
 			if binding.Pattern.AnyRune {
-				t.Errorf("OnRuneStop(%q).Pattern.AnyRune should be false", tt.r)
+				t.Errorf("OnStop(Rune(%q)).Pattern.AnyRune should be false", tt.r)
 			}
 		})
 	}
 }
 
-func TestKeyMap_OnRunes(t *testing.T) {
+func TestKeyMap_On_AnyRune(t *testing.T) {
 	type tc struct {
 		wantAnyRune bool
 		wantStop    bool
 	}
 
 	tests := map[string]tc{
-		"OnRunes sets AnyRune and broadcast": {
+		"On(AnyRune) sets AnyRune and broadcast": {
 			wantAnyRune: true,
 			wantStop:    false,
 		},
@@ -168,31 +168,31 @@ func TestKeyMap_OnRunes(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			handler := func(ke KeyEvent) {}
-			binding := OnRunes(handler)
+			binding := On(AnyRune, handler)
 			if binding.Pattern.AnyRune != tt.wantAnyRune {
-				t.Errorf("OnRunes().Pattern.AnyRune = %v, want %v", binding.Pattern.AnyRune, tt.wantAnyRune)
+				t.Errorf("On(AnyRune).Pattern.AnyRune = %v, want %v", binding.Pattern.AnyRune, tt.wantAnyRune)
 			}
 			if binding.Stop != tt.wantStop {
-				t.Errorf("OnRunes().Stop = %v, want %v", binding.Stop, tt.wantStop)
+				t.Errorf("On(AnyRune).Stop = %v, want %v", binding.Stop, tt.wantStop)
 			}
 			if binding.Pattern.Key != KeyNone {
-				t.Errorf("OnRunes().Pattern.Key = %v, want KeyNone", binding.Pattern.Key)
+				t.Errorf("On(AnyRune).Pattern.Key = %v, want KeyNone", binding.Pattern.Key)
 			}
 			if binding.Pattern.Rune != 0 {
-				t.Errorf("OnRunes().Pattern.Rune = %q, want 0", binding.Pattern.Rune)
+				t.Errorf("On(AnyRune).Pattern.Rune = %q, want 0", binding.Pattern.Rune)
 			}
 		})
 	}
 }
 
-func TestKeyMap_OnRunesStop(t *testing.T) {
+func TestKeyMap_OnStop_AnyRune(t *testing.T) {
 	type tc struct {
 		wantAnyRune bool
 		wantStop    bool
 	}
 
 	tests := map[string]tc{
-		"OnRunesStop sets AnyRune and stop": {
+		"OnStop(AnyRune) sets AnyRune and stop": {
 			wantAnyRune: true,
 			wantStop:    true,
 		},
@@ -201,12 +201,12 @@ func TestKeyMap_OnRunesStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			handler := func(ke KeyEvent) {}
-			binding := OnRunesStop(handler)
+			binding := OnStop(AnyRune, handler)
 			if binding.Pattern.AnyRune != tt.wantAnyRune {
-				t.Errorf("OnRunesStop().Pattern.AnyRune = %v, want %v", binding.Pattern.AnyRune, tt.wantAnyRune)
+				t.Errorf("OnStop(AnyRune).Pattern.AnyRune = %v, want %v", binding.Pattern.AnyRune, tt.wantAnyRune)
 			}
 			if binding.Stop != tt.wantStop {
-				t.Errorf("OnRunesStop().Stop = %v, want %v", binding.Stop, tt.wantStop)
+				t.Errorf("OnStop(AnyRune).Stop = %v, want %v", binding.Stop, tt.wantStop)
 			}
 		})
 	}
@@ -223,48 +223,48 @@ func TestKeyMap_PatternFields(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"OnKey only sets Key field": {
-			binding:     OnKey(KeyF2, func(ke KeyEvent) {}),
+		"On(Key) only sets Key field": {
+			binding:     On(KeyF2, func(ke KeyEvent) {}),
 			wantKey:     KeyF2,
 			wantRune:    0,
 			wantAnyRune: false,
 			wantMods:    ModNone,
 			wantStop:    false,
 		},
-		"OnRune only sets Rune field": {
-			binding:     OnRune('/', func(ke KeyEvent) {}),
+		"On(Rune) only sets Rune field": {
+			binding:     On(Rune('/'), func(ke KeyEvent) {}),
 			wantKey:     KeyNone,
 			wantRune:    '/',
 			wantAnyRune: false,
 			wantMods:    ModNone,
 			wantStop:    false,
 		},
-		"OnRunes only sets AnyRune field": {
-			binding:     OnRunes(func(ke KeyEvent) {}),
+		"On(AnyRune) only sets AnyRune field": {
+			binding:     On(AnyRune, func(ke KeyEvent) {}),
 			wantKey:     KeyNone,
 			wantRune:    0,
 			wantAnyRune: true,
 			wantMods:    ModNone,
 			wantStop:    false,
 		},
-		"OnKeyStop sets Key and Stop": {
-			binding:     OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
+		"OnStop(Key) sets Key and Stop": {
+			binding:     OnStop(KeyEscape, func(ke KeyEvent) {}),
 			wantKey:     KeyEscape,
 			wantRune:    0,
 			wantAnyRune: false,
 			wantMods:    ModNone,
 			wantStop:    true,
 		},
-		"OnRuneStop sets Rune and Stop": {
-			binding:     OnRuneStop('q', func(ke KeyEvent) {}),
+		"OnStop(Rune) sets Rune and Stop": {
+			binding:     OnStop(Rune('q'), func(ke KeyEvent) {}),
 			wantKey:     KeyNone,
 			wantRune:    'q',
 			wantAnyRune: false,
 			wantMods:    ModNone,
 			wantStop:    true,
 		},
-		"OnRunesStop sets AnyRune and Stop": {
-			binding:     OnRunesStop(func(ke KeyEvent) {}),
+		"OnStop(AnyRune) sets AnyRune and Stop": {
+			binding:     OnStop(AnyRune, func(ke KeyEvent) {}),
 			wantKey:     KeyNone,
 			wantRune:    0,
 			wantAnyRune: true,
@@ -315,16 +315,16 @@ func TestKeyMap_SliceType(t *testing.T) {
 		},
 		"single binding": {
 			km: KeyMap{
-				OnRune('c', func(ke KeyEvent) {}, ModCtrl),
+				On(Rune('c').Ctrl(), func(ke KeyEvent) {}),
 			},
 			want: 1,
 		},
 		"multiple bindings": {
 			km: KeyMap{
-				OnRune('c', func(ke KeyEvent) {}, ModCtrl),
-				OnRune('/', func(ke KeyEvent) {}),
-				OnRunesStop(func(ke KeyEvent) {}),
-				OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
+				On(Rune('c').Ctrl(), func(ke KeyEvent) {}),
+				On(Rune('/'), func(ke KeyEvent) {}),
+				OnStop(AnyRune, func(ke KeyEvent) {}),
+				OnStop(KeyEscape, func(ke KeyEvent) {}),
 			},
 			want: 4,
 		},
@@ -339,40 +339,40 @@ func TestKeyMap_SliceType(t *testing.T) {
 	}
 }
 
-func TestKeyMap_OnKey_VariadicMod(t *testing.T) {
+func TestKeyMap_On_WithModifier(t *testing.T) {
 	// Without modifier: ExcludeMods set
-	binding := OnKey(KeyTab, func(ke KeyEvent) {})
+	binding := On(KeyTab, func(ke KeyEvent) {})
 	if binding.Pattern.ExcludeMods != ModCtrl|ModAlt|ModShift {
-		t.Errorf("OnKey without mod: ExcludeMods = %v, want all", binding.Pattern.ExcludeMods)
+		t.Errorf("On(KeyTab): ExcludeMods = %v, want all", binding.Pattern.ExcludeMods)
 	}
 	if binding.Pattern.Mod != ModNone {
-		t.Errorf("OnKey without mod: Mod = %v, want None", binding.Pattern.Mod)
+		t.Errorf("On(KeyTab): Mod = %v, want None", binding.Pattern.Mod)
 	}
 
-	// With modifier: Mod set, ExcludeMods cleared
-	binding = OnKey(KeyTab, func(ke KeyEvent) {}, ModShift)
+	// With modifier via Key.Shift()
+	binding = On(KeyTab.Shift(), func(ke KeyEvent) {})
 	if binding.Pattern.Mod != ModShift {
-		t.Errorf("OnKey with ModShift: Mod = %v, want Shift", binding.Pattern.Mod)
+		t.Errorf("On(KeyTab.Shift()): Mod = %v, want Shift", binding.Pattern.Mod)
 	}
 	if binding.Pattern.ExcludeMods != ModNone {
-		t.Errorf("OnKey with ModShift: ExcludeMods = %v, want None", binding.Pattern.ExcludeMods)
+		t.Errorf("On(KeyTab.Shift()): ExcludeMods = %v, want None", binding.Pattern.ExcludeMods)
 	}
 }
 
-func TestKeyMap_OnRune_VariadicMod(t *testing.T) {
+func TestKeyMap_On_RuneWithModifier(t *testing.T) {
 	// Without modifier: ExcludeMods set to Ctrl|Alt
-	binding := OnRune('a', func(ke KeyEvent) {})
+	binding := On(Rune('a'), func(ke KeyEvent) {})
 	if binding.Pattern.ExcludeMods != ModCtrl|ModAlt {
-		t.Errorf("OnRune without mod: ExcludeMods = %v, want Ctrl|Alt", binding.Pattern.ExcludeMods)
+		t.Errorf("On(Rune('a')): ExcludeMods = %v, want Ctrl|Alt", binding.Pattern.ExcludeMods)
 	}
 
-	// With modifier: Mod set, ExcludeMods cleared
-	binding = OnRune('a', func(ke KeyEvent) {}, ModCtrl)
+	// With modifier via Rune.Ctrl()
+	binding = On(Rune('a').Ctrl(), func(ke KeyEvent) {})
 	if binding.Pattern.Mod != ModCtrl {
-		t.Errorf("OnRune with ModCtrl: Mod = %v, want Ctrl", binding.Pattern.Mod)
+		t.Errorf("On(Rune('a').Ctrl()): Mod = %v, want Ctrl", binding.Pattern.Mod)
 	}
 	if binding.Pattern.ExcludeMods != ModNone {
-		t.Errorf("OnRune with ModCtrl: ExcludeMods = %v, want None", binding.Pattern.ExcludeMods)
+		t.Errorf("On(Rune('a').Ctrl()): ExcludeMods = %v, want None", binding.Pattern.ExcludeMods)
 	}
 }
 

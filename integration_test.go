@@ -24,10 +24,10 @@ func newIntRoot() *intRoot {
 
 func (r *intRoot) KeyMap() KeyMap {
 	km := KeyMap{
-		OnRune('c', func(ke KeyEvent) {}, ModCtrl),
+		On(Rune('c').Ctrl(), func(ke KeyEvent) {}),
 	}
 	if !r.searchActive.Get() {
-		km = append(km, OnRune('/', func(ke KeyEvent) {
+		km = append(km, On(Rune('/'), func(ke KeyEvent) {
 			r.searchActive.Set(true)
 		}))
 	}
@@ -72,9 +72,9 @@ func newIntSidebar(query *State[string]) *intSidebar {
 
 func (s *intSidebar) KeyMap() KeyMap {
 	return KeyMap{
-		OnRune('b', func(ke KeyEvent) {
+		On(Rune('b').Ctrl(), func(ke KeyEvent) {
 			s.expanded.Set(!s.expanded.Get())
-		}, ModCtrl),
+		}),
 	}
 }
 
@@ -102,10 +102,10 @@ func (s *intSearch) KeyMap() KeyMap {
 		return nil
 	}
 	return KeyMap{
-		OnRunesStop(func(ke KeyEvent) {
+		OnStop(AnyRune, func(ke KeyEvent) {
 			s.query.Set(s.query.Get() + string(ke.Rune))
 		}),
-		OnKeyStop(KeyEscape, func(ke KeyEvent) {
+		OnStop(KeyEscape, func(ke KeyEvent) {
 			s.active.Set(false)
 			s.query.Set("")
 		}),
