@@ -248,6 +248,18 @@ func (s *semanticTokensProvider) collectTokensInGoCode(code string, pos tuigen.P
 				continue
 			}
 
+			// Go keywords (func, return, if, for, range, defer, go, etc.)
+			if GoKeywords[ident] {
+				*tokens = append(*tokens, SemanticToken{
+					Line:      pos.Line - 1,
+					StartChar: charPos,
+					Length:    len(ident),
+					TokenType: TokenTypeKeyword,
+					Modifiers: 0,
+				})
+				continue
+			}
+
 			if paramNames[ident] {
 				*tokens = append(*tokens, SemanticToken{
 					Line:      pos.Line - 1,

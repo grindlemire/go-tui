@@ -71,6 +71,34 @@ var GoBuiltinTypes = map[string]bool{
 	"comparable": true,
 }
 
+// GoKeywords is the set of Go keywords that should be highlighted as keywords
+// when they appear in Go expressions inside .gsx files.
+var GoKeywords = map[string]bool{
+	"func":        true,
+	"return":      true,
+	"if":          true,
+	"else":        true,
+	"for":         true,
+	"range":       true,
+	"switch":      true,
+	"case":        true,
+	"default":     true,
+	"defer":       true,
+	"go":          true,
+	"select":      true,
+	"chan":         true,
+	"map":         true,
+	"struct":      true,
+	"interface":   true,
+	"type":        true,
+	"var":         true,
+	"const":       true,
+	"break":       true,
+	"continue":    true,
+	"fallthrough": true,
+	"goto":        true,
+}
+
 // SemanticTokens represents the result of a semantic tokens request.
 type SemanticTokens struct {
 	Data []int `json:"data"`
