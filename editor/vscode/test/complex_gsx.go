@@ -60,32 +60,32 @@ func ComplexApp() *complexApp {
 func (c *complexApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		// Quit handlers
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 
 		// Counter controls
-		tui.OnRune('+', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
-		tui.OnRune('-', func(ke tui.KeyEvent) { c.count.Set(c.count.Get() - 1) }),
-		tui.OnRune('r', func(ke tui.KeyEvent) { c.count.Set(0) }),
+		tui.On(tui.Rune('+'), func(ke tui.KeyEvent) { c.count.Set(c.count.Get() + 1) }),
+		tui.On(tui.Rune('-'), func(ke tui.KeyEvent) { c.count.Set(c.count.Get() - 1) }),
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.count.Set(0) }),
 
 		// Navigation
-		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) {
 			if c.selected.Get() > 0 {
 				c.selected.Set(c.selected.Get() - 1)
 			}
 		}),
-		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) {
 			if c.selected.Get() < len(c.items.Get())-1 {
 				c.selected.Set(c.selected.Get() + 1)
 			}
 		}),
 
 		// Toggle visibility
-		tui.OnRune('h', func(ke tui.KeyEvent) { c.showHeader.Set(!c.showHeader.Get()) }),
-		tui.OnRune('f', func(ke tui.KeyEvent) { c.showFooter.Set(!c.showFooter.Get()) }),
+		tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { c.showHeader.Set(!c.showHeader.Get()) }),
+		tui.On(tui.Rune('f'), func(ke tui.KeyEvent) { c.showFooter.Set(!c.showFooter.Get()) }),
 
 		// Catch-all for other runes
-		tui.OnRunes(func(ke tui.KeyEvent) {
+		tui.On(tui.AnyRune, func(ke tui.KeyEvent) {
 			// Handle any other character input
 		}),
 	}

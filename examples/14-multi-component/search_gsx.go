@@ -37,10 +37,10 @@ func (s *searchBar) KeyMap() tui.KeyMap {
 		return nil
 	}
 	return tui.KeyMap{
-		tui.OnRunesStop(s.appendChar),
-		tui.OnKeyStop(tui.KeyBackspace, s.deleteChar),
-		tui.OnKeyStop(tui.KeyEnter, s.submit),
-		tui.OnKeyStop(tui.KeyEscape, s.deactivate),
+		tui.OnStop(tui.AnyRune, s.appendChar),
+		tui.OnStop(tui.KeyBackspace, s.deleteChar),
+		tui.OnStop(tui.KeyEnter, s.submit),
+		tui.OnStop(tui.KeyEscape, s.deactivate),
 	}
 }
 

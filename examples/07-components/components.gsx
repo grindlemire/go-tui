@@ -86,8 +86,8 @@ func Dashboard() *dashboard {
 
 func (d *dashboard) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyTab, func(ke tui.KeyEvent) {
 			d.selected.Update(func(v int) int {
 				return (v + 1) % len(d.tabs)
 			})
