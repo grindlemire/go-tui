@@ -102,6 +102,9 @@ type Element struct {
 	// Visibility
 	hidden bool
 
+	// Overlay flag - element renders in overlay pass, not in normal tree
+	overlay bool
+
 	// Overflow clipping
 	overflow OverflowMode
 

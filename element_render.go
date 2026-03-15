@@ -144,10 +144,16 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 	} else if e.overflow == OverflowHidden {
 		clipRect := e.ContentRect()
 		for _, child := range e.children {
+			if child.overlay {
+				continue
+			}
 			renderClippedElement(buf, child, clipRect, 0, 0, clipRect.X, clipRect.Y, rc.childInherited)
 		}
 	} else {
 		for _, child := range e.children {
+			if child.overlay {
+				continue
+			}
 			renderElement(buf, child, rc.childInherited)
 		}
 	}
