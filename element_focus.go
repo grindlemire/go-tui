@@ -67,6 +67,16 @@ func (e *Element) Blur() {
 	}
 }
 
+// Activate triggers the onActivate callback if set.
+// Returns true if the callback existed and was called.
+func (e *Element) Activate() bool {
+	if e.onActivate != nil {
+		e.onActivate()
+		return true
+	}
+	return false
+}
+
 // SetFocusable sets whether this element can receive focus.
 // Also sets tabStop to the same value.
 func (e *Element) SetFocusable(focusable bool) {

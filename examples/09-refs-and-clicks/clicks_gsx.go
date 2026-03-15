@@ -23,10 +23,8 @@ type colorMixer struct {
 	presetBtns   *tui.RefMap[string]
 	activePreset *tui.State[string]
 
-	resetBtn        *tui.Ref
-	showResetModal  *tui.State[bool]
-	resetConfirmBtn *tui.Ref
-	resetCancelBtn  *tui.Ref
+	resetBtn       *tui.Ref
+	showResetModal *tui.State[bool]
 }
 
 type preset struct {
@@ -55,10 +53,8 @@ func ColorMixer() *colorMixer {
 		presetBtns:   tui.NewRefMap[string](),
 		activePreset: tui.NewState(""),
 
-		resetBtn:        tui.NewRef(),
-		showResetModal:  tui.NewState(false),
-		resetConfirmBtn: tui.NewRef(),
-		resetCancelBtn:  tui.NewRef(),
+		resetBtn:       tui.NewRef(),
+		showResetModal: tui.NewState(false),
 	}
 }
 
@@ -109,65 +105,14 @@ func (c *colorMixer) applyPreset(name string) {
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return // let the modal handle Escape
-			}
-			ke.App().Stop()
-		}),
-		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			ke.App().Stop()
-		}),
-		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
-			if !c.showResetModal.Get() {
-				return
-			}
-			focused := ke.App().Focused()
-			if el := c.resetConfirmBtn.El(); el != nil && focused == el {
-				c.resetColors()
-			} else if el := c.resetCancelBtn.El(); el != nil && focused == el {
-				c.showResetModal.Set(false)
-			}
-		}),
-		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.showResetModal.Set(true)
-		}),
-		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.adjustRed(-16)
-		}),
-		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.adjustGreen(16)
-		}),
-		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.adjustGreen(-16)
-		}),
-		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.adjustBlue(16)
-		}),
-		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.adjustBlue(-16)
-		}),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
+		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
+		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
+		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
+		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
+		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
 	}
 }
 
@@ -181,8 +126,6 @@ func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
 		tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
 		tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
 		tui.Click(c.resetBtn, func() { c.showResetModal.Set(true) }),
-		tui.Click(c.resetConfirmBtn, func() { c.resetColors() }),
-		tui.Click(c.resetCancelBtn, func() { c.showResetModal.Set(false) }),
 	) {
 		return true
 	}
@@ -520,7 +463,6 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 	__tui_59 := app.MountPersistent(c, 0, func() tui.Component {
 		return tui.NewModal(
 			tui.WithModalOpen(c.showResetModal),
-			tui.WithModalBackdrop("blank"),
 			tui.WithModalElementOptions(tui.WithJustify(tui.JustifyCenter), tui.WithAlign(tui.AlignCenter)),
 		)
 	})
@@ -551,9 +493,9 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithOnActivate(func() { c.showResetModal.Set(false) }),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
-	c.resetCancelBtn.Set(__tui_64)
 	__tui_65 := tui.New(tui.WithText("Cancel"))
 	__tui_64.AddChild(__tui_65)
 	__tui_63.AddChild(__tui_64)
@@ -561,9 +503,9 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithOnActivate(func() { c.resetColors() }),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 	)
-	c.resetConfirmBtn.Set(__tui_66)
 	__tui_67 := tui.New(tui.WithText("Yes, Reset"))
 	__tui_66.AddChild(__tui_67)
 	__tui_63.AddChild(__tui_66)

@@ -14,19 +14,15 @@ type demoApp struct {
 	selected *tui.State[int]
 	items    []string
 
-	showReset      *tui.State[bool]
-	resetBtn       *tui.Ref
-	resetCancelBtn *tui.Ref
+	showReset *tui.State[bool]
 }
 
 func Demo() *demoApp {
 	return &demoApp{
-		count:          tui.NewState(0),
-		selected:       tui.NewState(0),
-		items:          []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
-		showReset:      tui.NewState(false),
-		resetBtn:       tui.NewRef(),
-		resetCancelBtn: tui.NewRef(),
+		count:     tui.NewState(0),
+		selected:  tui.NewState(0),
+		items:     []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
+		showReset: tui.NewState(false),
 	}
 }
 
@@ -38,65 +34,20 @@ func (d *demoApp) resetAll() {
 
 func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
-			ke.App().Stop()
-		}),
-		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
-			if !d.showReset.Get() {
-				return
-			}
-			focused := ke.App().Focused()
-			if el := d.resetBtn.El(); el != nil && focused == el {
-				d.resetAll()
-			} else if el := d.resetCancelBtn.El(); el != nil && focused == el {
-				d.showReset.Set(false)
-			}
-		}),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
 			d.count.Update(func(v int) int { return v + 1 })
 		}),
 		tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
 			d.count.Update(func(v int) int { return v - 1 })
 		}),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
 			d.showReset.Set(true)
 		}),
-		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
-			d.selectNext()
-		}),
-		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
-			d.selectPrev()
-		}),
-		tui.On(tui.KeyDown, func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
-			d.selectNext()
-		}),
-		tui.On(tui.KeyUp, func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
-			d.selectPrev()
-		}),
+		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.selectPrev() }),
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
 	}
 }
 
@@ -299,9 +250,9 @@ func (d *demoApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithOnActivate(func() { d.showReset.Set(false) }),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
-	d.resetCancelBtn.Set(__tui_26)
 	__tui_27 := tui.New(tui.WithText("Cancel"))
 	__tui_26.AddChild(__tui_27)
 	__tui_24.AddChild(__tui_26)
@@ -309,9 +260,9 @@ func (d *demoApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithOnActivate(func() { d.resetAll() }),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 	)
-	d.resetBtn.Set(__tui_28)
 	__tui_29 := tui.New(tui.WithText("Reset All"))
 	__tui_28.AddChild(__tui_29)
 	__tui_24.AddChild(__tui_28)

@@ -10,19 +10,15 @@ type demoApp struct {
 	selected *tui.State[int]
 	items    []string
 
-	showReset      *tui.State[bool]
-	resetBtn       *tui.Ref
-	resetCancelBtn *tui.Ref
+	showReset *tui.State[bool]
 }
 
 func Demo() *demoApp {
 	return &demoApp{
-		count:          tui.NewState(0),
-		selected:       tui.NewState(0),
-		items:          []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
-		showReset:      tui.NewState(false),
-		resetBtn:       tui.NewRef(),
-		resetCancelBtn: tui.NewRef(),
+		count:     tui.NewState(0),
+		selected:  tui.NewState(0),
+		items:     []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
+		showReset: tui.NewState(false),
 	}
 }
 
@@ -34,51 +30,20 @@ func (d *demoApp) resetAll() {
 
 func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
-			if d.showReset.Get() {
-				return
-			}
-			ke.App().Stop()
-		}),
-		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
-			if !d.showReset.Get() {
-				return
-			}
-			focused := ke.App().Focused()
-			if el := d.resetBtn.El(); el != nil && focused == el {
-				d.resetAll()
-			} else if el := d.resetCancelBtn.El(); el != nil && focused == el {
-				d.showReset.Set(false)
-			}
-		}),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
 			d.count.Update(func(v int) int { return v + 1 })
 		}),
 		tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
 			d.count.Update(func(v int) int { return v - 1 })
 		}),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
 			d.showReset.Set(true)
 		}),
-		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
-			d.selectNext()
-		}),
-		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
-			d.selectPrev()
-		}),
-		tui.On(tui.KeyDown, func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
-			d.selectNext()
-		}),
-		tui.On(tui.KeyUp, func(ke tui.KeyEvent) {
-			if d.showReset.Get() { return }
-			d.selectPrev()
-		}),
+		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.selectPrev() }),
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
 	}
 }
 
@@ -168,8 +133,8 @@ templ (d *demoApp) Render() {
 		<modal open={d.showReset} class="justify-end items-stretch" backdrop="dim" closeOnBackdropClick={false}>
 			<div class="border-single p-1 flex gap-4 items-center justify-center">
 				<span class="font-bold text-yellow">Reset counter and selection to defaults?</span>
-				<button ref={d.resetCancelBtn} class="px-2 border-rounded focusable text-green font-bold">Cancel</button>
-				<button ref={d.resetBtn} class="px-2 border-rounded focusable text-red font-bold">Reset All</button>
+				<button class="px-2 border-rounded focusable text-green font-bold" onActivate={func() { d.showReset.Set(false) }}>Cancel</button>
+				<button class="px-2 border-rounded focusable text-red font-bold" onActivate={func() { d.resetAll() }}>Reset All</button>
 			</div>
 		</modal>
 	</div>

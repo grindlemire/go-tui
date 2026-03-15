@@ -279,6 +279,16 @@ func WithTabStop(tabStop bool) Option {
 	}
 }
 
+// WithOnActivate sets a callback for when this element is activated (Enter while focused).
+// Implicitly sets focusable = true and tabStop = true.
+func WithOnActivate(fn func()) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.tabStop = true
+		e.onActivate = fn
+	}
+}
+
 // --- Scroll Options ---
 
 // WithScrollable enables scrolling in the specified mode.
