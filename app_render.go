@@ -72,6 +72,15 @@ func (a *App) Render() {
 		case "blank":
 			a.buffer.FillBlank()
 		}
+		// Ensure overlay content children have an opaque background so the
+		// backdrop effect doesn't bleed through the dialog body. The overlay
+		// element itself stays transparent for backdrop click detection.
+		defaultBg := NewStyle()
+		for _, child := range ov.element.children {
+			if child.background == nil {
+				child.background = &defaultBg
+			}
+		}
 		ov.element.Render(a.buffer, width, renderHeight)
 	}
 
