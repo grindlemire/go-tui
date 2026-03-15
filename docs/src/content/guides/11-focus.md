@@ -195,6 +195,14 @@ element.SetOnBlur(func(el *tui.Element) {
 
 Both `SetOnFocus` and `SetOnBlur` implicitly set the element as focusable.
 
+## Modal Focus Trapping
+
+When a `<modal>` has `trapFocus` enabled (the default), Tab and Shift+Tab only cycle through focusable elements inside the modal. Elements outside the modal are unreachable until it closes.
+
+The modal also handles Enter by triggering the focused element's `onActivate` callback, and blocks all parent key handlers via preemptive dispatch. When the modal closes, focus returns to the previously focused element.
+
+Focusable elements with borders receive an automatic cyan border highlight when focused. You can override this behavior by providing your own `onFocus` and `onBlur` handlers.
+
 ## Complete Example
 
 This form has three panels that highlight when active. Tab and Shift+Tab cycle between them using `FocusGroup`:
