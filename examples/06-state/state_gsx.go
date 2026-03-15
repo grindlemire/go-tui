@@ -13,35 +13,90 @@ type demoApp struct {
 	count    *tui.State[int]
 	selected *tui.State[int]
 	items    []string
+
+	showReset      *tui.State[bool]
+	resetBtn       *tui.Ref
+	resetCancelBtn *tui.Ref
 }
 
 func Demo() *demoApp {
 	return &demoApp{
-		count:    tui.NewState(0),
-		selected: tui.NewState(0),
-		items:    []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
+		count:          tui.NewState(0),
+		selected:       tui.NewState(0),
+		items:          []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
+		showReset:      tui.NewState(false),
+		resetBtn:       tui.NewRef(),
+		resetCancelBtn: tui.NewRef(),
 	}
+}
+
+func (d *demoApp) resetAll() {
+	d.count.Set(0)
+	d.selected.Set(0)
+	d.showReset.Set(false)
 }
 
 func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
+			ke.App().Stop()
+		}),
+		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
+			if !d.showReset.Get() {
+				return
+			}
+			focused := ke.App().Focused()
+			if el := d.resetBtn.El(); el != nil && focused == el {
+				d.resetAll()
+			} else if el := d.resetCancelBtn.El(); el != nil && focused == el {
+				d.showReset.Set(false)
+			}
+		}),
 		tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
 			d.count.Update(func(v int) int { return v + 1 })
 		}),
 		tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
 			d.count.Update(func(v int) int { return v - 1 })
 		}),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
-			ke.App().Batch(func() {
-				d.count.Set(0)
-				d.selected.Set(0)
-			})
+			if d.showReset.Get() {
+				return
+			}
+			d.showReset.Set(true)
 		}),
-		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.selectNext() }),
-		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.selectPrev() }),
-		tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
-		tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
+		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
+			d.selectNext()
+		}),
+		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
+			d.selectPrev()
+		}),
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
+			d.selectNext()
+		}),
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) {
+			if d.showReset.Get() {
+				return
+			}
+			d.selectPrev()
+		}),
 	}
 }
 
@@ -219,6 +274,49 @@ func (d *demoApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_21.AddChild(__tui_22)
 	__tui_0.AddChild(__tui_21)
+	__tui_23 := app.MountPersistent(d, 0, func() tui.Component {
+		return tui.NewModal(
+			tui.WithModalOpen(d.showReset),
+			tui.WithModalBackdrop("dim"),
+			tui.WithModalCloseOnBackdropClick(false),
+			tui.WithModalElementOptions(tui.WithJustify(tui.JustifyEnd), tui.WithAlign(tui.AlignStretch)),
+		)
+	})
+	__tui_24 := tui.New(
+		tui.WithBorder(tui.BorderSingle),
+		tui.WithPadding(1),
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(4),
+		tui.WithAlign(tui.AlignCenter),
+		tui.WithJustify(tui.JustifyCenter),
+	)
+	__tui_25 := tui.New(
+		tui.WithText("Reset counter and selection to defaults?"),
+		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Yellow)),
+	)
+	__tui_24.AddChild(__tui_25)
+	__tui_26 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithFocusable(true),
+		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
+	)
+	d.resetCancelBtn.Set(__tui_26)
+	__tui_27 := tui.New(tui.WithText("Cancel"))
+	__tui_26.AddChild(__tui_27)
+	__tui_24.AddChild(__tui_26)
+	__tui_28 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithFocusable(true),
+		tui.WithPaddingTRBL(0, 2, 0, 2),
+		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
+	)
+	d.resetBtn.Set(__tui_28)
+	__tui_29 := tui.New(tui.WithText("Reset All"))
+	__tui_28.AddChild(__tui_29)
+	__tui_24.AddChild(__tui_28)
+	__tui_23.AddChild(__tui_24)
+	__tui_0.AddChild(__tui_23)
 
 	return __tui_0
 }
@@ -239,6 +337,9 @@ func (d *demoApp) BindApp(app *tui.App) {
 	}
 	if d.selected != nil {
 		d.selected.BindApp(app)
+	}
+	if d.showReset != nil {
+		d.showReset.BindApp(app)
 	}
 }
 

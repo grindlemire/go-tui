@@ -82,8 +82,48 @@ func TestModal_KeyMap_EscapeDisabled(t *testing.T) {
 	m := NewModal(WithModalOpen(open), WithModalCloseOnEscape(false))
 
 	km := m.KeyMap()
-	if km != nil {
-		t.Error("expected nil KeyMap when closeOnEscape is false")
+	// Should still have Tab bindings (from trapFocus) but no Escape
+	for _, b := range km {
+		if b.Pattern.Key == KeyEscape {
+			t.Error("expected no Escape binding when closeOnEscape is false")
+		}
+	}
+}
+
+func TestModal_KeyMap_TabFocusCycling(t *testing.T) {
+	open := NewState(true)
+	m := NewModal(WithModalOpen(open))
+	m.BindApp(testApp)
+
+	km := m.KeyMap()
+	hasTab := false
+	hasShiftTab := false
+	for _, b := range km {
+		if b.Pattern.Key == KeyTab && b.Pattern.Mod == 0 {
+			hasTab = true
+		}
+		if b.Pattern.Key == KeyTab && b.Pattern.Mod == ModShift {
+			hasShiftTab = true
+		}
+	}
+	if !hasTab {
+		t.Error("expected Tab binding when trapFocus is true")
+	}
+	if !hasShiftTab {
+		t.Error("expected Shift+Tab binding when trapFocus is true")
+	}
+}
+
+func TestModal_KeyMap_NoTabWhenTrapFocusDisabled(t *testing.T) {
+	open := NewState(true)
+	m := NewModal(WithModalOpen(open), WithModalTrapFocus(false))
+	m.BindApp(testApp)
+
+	km := m.KeyMap()
+	for _, b := range km {
+		if b.Pattern.Key == KeyTab {
+			t.Error("expected no Tab binding when trapFocus is false")
+		}
 	}
 }
 

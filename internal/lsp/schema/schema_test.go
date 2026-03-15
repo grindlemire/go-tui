@@ -380,7 +380,7 @@ func TestAllElementTags(t *testing.T) {
 	}
 
 	// Ensure all expected tags are present
-	expected := []string{"div", "span", "p", "ul", "li", "button", "input", "textarea", "table", "progress", "hr", "br"}
+	expected := []string{"div", "span", "p", "ul", "li", "button", "input", "textarea", "table", "progress", "hr", "br", "modal"}
 	tagSet := make(map[string]bool)
 	for _, tag := range tags {
 		tagSet[tag] = true

@@ -91,16 +91,28 @@ func (m *Modal) Render(app *App) *Element {
 }
 
 // KeyMap returns key bindings for the modal.
-// Escape closes the modal when closeOnEscape is true.
+// Handles Escape to close, and Tab/Shift+Tab for focus cycling within the modal.
 func (m *Modal) KeyMap() KeyMap {
-	if m.open == nil || !m.open.Get() || !m.closeOnEscape {
+	if m.open == nil || !m.open.Get() {
 		return nil
 	}
-	return KeyMap{
-		OnStop(KeyEscape, func(ke KeyEvent) {
+	var km KeyMap
+	if m.closeOnEscape {
+		km = append(km, OnStop(KeyEscape, func(ke KeyEvent) {
 			m.open.Set(false)
-		}),
+		}))
 	}
+	if m.trapFocus && m.app != nil {
+		km = append(km,
+			OnStop(KeyTab, func(ke KeyEvent) {
+				m.app.FocusNext()
+			}),
+			OnStop(KeyTab.Shift(), func(ke KeyEvent) {
+				m.app.FocusPrev()
+			}),
+		)
+	}
+	return km
 }
 
 // HandleMouse handles backdrop click events.
