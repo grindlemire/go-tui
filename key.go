@@ -111,6 +111,88 @@ func (k Key) String() string {
 	}
 }
 
+// KeyMatcher describes what key events to match.
+// Sealed to this package via unexported method.
+type KeyMatcher interface {
+	keyPattern() KeyPattern
+}
+
+// KeySpec matches a special key with specific modifiers.
+type KeySpec struct {
+	key Key
+	mod Modifier
+}
+
+func (s KeySpec) keyPattern() KeyPattern {
+	if s.mod != 0 {
+		return KeyPattern{Key: s.key, Mod: s.mod}
+	}
+	return KeyPattern{Key: s.key, ExcludeMods: ModCtrl | ModAlt | ModShift}
+}
+
+// Ctrl returns a KeySpec requiring the Ctrl modifier.
+func (s KeySpec) Ctrl() KeySpec { s.mod |= ModCtrl; return s }
+
+// Alt returns a KeySpec requiring the Alt modifier.
+func (s KeySpec) Alt() KeySpec { s.mod |= ModAlt; return s }
+
+// Shift returns a KeySpec requiring the Shift modifier.
+func (s KeySpec) Shift() KeySpec { s.mod |= ModShift; return s }
+
+// keyPattern makes Key satisfy KeyMatcher directly.
+// Matches the bare key with no modifiers (excludes Ctrl/Alt/Shift).
+func (k Key) keyPattern() KeyPattern {
+	return KeyPattern{Key: k, ExcludeMods: ModCtrl | ModAlt | ModShift}
+}
+
+// Ctrl returns a KeySpec for this key with the Ctrl modifier.
+func (k Key) Ctrl() KeySpec { return KeySpec{key: k, mod: ModCtrl} }
+
+// Alt returns a KeySpec for this key with the Alt modifier.
+func (k Key) Alt() KeySpec { return KeySpec{key: k, mod: ModAlt} }
+
+// Shift returns a KeySpec for this key with the Shift modifier.
+func (k Key) Shift() KeySpec { return KeySpec{key: k, mod: ModShift} }
+
+// RuneSpec matches a specific printable character with optional modifiers.
+type RuneSpec struct {
+	r   rune
+	mod Modifier
+}
+
+// Rune returns a RuneSpec that matches a specific printable character.
+// Without modifiers, allows Shift (character-forming) but excludes Ctrl and Alt.
+func Rune(r rune) RuneSpec {
+	return RuneSpec{r: r}
+}
+
+func (s RuneSpec) keyPattern() KeyPattern {
+	if s.mod != 0 {
+		return KeyPattern{Rune: s.r, Mod: s.mod}
+	}
+	return KeyPattern{Rune: s.r, ExcludeMods: ModCtrl | ModAlt}
+}
+
+// Ctrl returns a RuneSpec requiring the Ctrl modifier.
+func (s RuneSpec) Ctrl() RuneSpec { s.mod |= ModCtrl; return s }
+
+// Alt returns a RuneSpec requiring the Alt modifier.
+func (s RuneSpec) Alt() RuneSpec { s.mod |= ModAlt; return s }
+
+// Shift returns a RuneSpec requiring the Shift modifier.
+func (s RuneSpec) Shift() RuneSpec { s.mod |= ModShift; return s }
+
+// anyRuneSpec matches any printable character.
+type anyRuneSpec struct{}
+
+func (anyRuneSpec) keyPattern() KeyPattern {
+	return KeyPattern{AnyRune: true, ExcludeMods: ModCtrl | ModAlt}
+}
+
+// AnyRune matches any printable character.
+// Allows Shift (character-forming) but excludes Ctrl and Alt.
+var AnyRune KeyMatcher = anyRuneSpec{}
+
 // Modifier represents keyboard modifier flags.
 type Modifier uint8
 

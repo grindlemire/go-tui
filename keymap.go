@@ -21,6 +21,25 @@ type KeyPattern struct {
 	FocusRequired bool     // When true, only dispatch when owning component is focused
 }
 
+// On creates a broadcast binding. Other handlers for the same key will also fire.
+func On(m KeyMatcher, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{Pattern: m.keyPattern(), Handler: handler}
+}
+
+// OnStop creates a stop-propagation binding.
+// No handlers registered after this one (in tree order) will fire for this event.
+func OnStop(m KeyMatcher, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{Pattern: m.keyPattern(), Handler: handler, Stop: true}
+}
+
+// OnFocused creates a focus-gated stop-propagation binding.
+// Only fires when the owning component's element is focused.
+func OnFocused(m KeyMatcher, handler func(KeyEvent)) KeyBinding {
+	p := m.keyPattern()
+	p.FocusRequired = true
+	return KeyBinding{Pattern: p, Handler: handler, Stop: true}
+}
+
 // OnKey creates a broadcast binding for a specific key.
 // Without modifiers, excludes Ctrl/Alt/Shift so only unmodified presses match.
 // With modifiers (e.g. OnKey(KeyTab, handler, ModShift)), matches that exact combo.
