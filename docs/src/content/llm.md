@@ -203,6 +203,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `<ul>` | Unordered list container | Column |
 | `<li>` | List item (auto bullet prefix) | — |
 | `<button>` | Clickable element | — |
+| `<modal>` | Full-screen overlay dialog with backdrop | — |
 | `<table>` | Table container | Column |
 
 ### Self-Closing (Void) Elements
@@ -259,6 +260,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `deps` | expression | Explicit state dependencies |
 | `focusable` | `bool` | Enable focus |
 | `onFocus` / `onBlur` | `func(*tui.Element)` | Focus callbacks |
+| `onActivate` | `func()` | Enter activation callback |
 
 ### Scroll
 
@@ -268,6 +270,22 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `scrollOffset` | `int, int` | x, y scroll position |
 | `scrollbarStyle` | `tui.Style` | Track style |
 | `scrollbarThumbStyle` | `tui.Style` | Thumb style |
+
+### Modal
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `open` | `*State[bool]` | Controls modal visibility (required) |
+| `backdrop` | `string` | `"dim"` (default), `"blank"`, or `"none"` |
+| `closeOnEscape` | `bool` | Escape closes modal (default `true`) |
+| `closeOnBackdropClick` | `bool` | Backdrop click closes modal (default `true`) |
+| `trapFocus` | `bool` | Restrict Tab to modal children (default `true`) |
+
+### Activation
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `onActivate` | `func()` | Called when Enter is pressed while focused |
 
 ## Tailwind Classes (Complete Reference)
 
@@ -447,6 +465,9 @@ func (c *myComp) KeyMap() tui.KeyMap {
         tui.OnStop(tui.Rune('/'), handler),        // Specific char, stops propagation
         tui.On(tui.AnyRune, handler),              // Any printable character
         tui.OnStop(tui.AnyRune, handler),          // Any printable, stops propagation
+
+        // Preemptive binding (fires before normal handlers; used by modal)
+        tui.OnPreemptStop(tui.AnyKey, func(ke tui.KeyEvent) {}),  // catch-all blocker
     }
 }
 ```
@@ -513,6 +534,11 @@ content := tui.NewState(false)
 fg := tui.MustNewFocusGroup(sidebar, content)
 fg.Next() / fg.Prev() / fg.Current()
 // fg.KeyMap() returns Tab/Shift+Tab bindings
+
+// Modal focus trapping (automatic when trapFocus is enabled)
+// Tab/Shift+Tab cycle within modal children only
+// Enter triggers focused element's onActivate callback
+// All parent key handlers are blocked via preemptive dispatch
 ```
 
 ## State Batching
@@ -647,6 +673,30 @@ w.Close()
         <div class="grow border-rounded p-1"><span>Narrow</span></div>
     </div>
 </div>
+```
+
+## Modal Example
+
+```gsx
+<modal open={s.showConfirm} class="justify-center items-center" backdrop="dim">
+    <div class="border-rounded p-2 flex-col gap-1 w-40">
+        <span class="font-bold text-yellow">Confirm?</span>
+        <button class="px-2 border-rounded focusable" onActivate={s.cancel}>Cancel</button>
+        <button class="px-2 border-rounded focusable" onActivate={s.confirm}>OK</button>
+    </div>
+</modal>
+```
+
+Bottom sheet variant:
+
+```gsx
+<modal open={s.showSheet} class="justify-end items-stretch" closeOnBackdropClick={false}>
+    <div class="border-single p-1 flex gap-4 items-center justify-center">
+        <span class="font-bold">Action?</span>
+        <button class="px-2 border-rounded focusable" onActivate={s.cancel}>Cancel</button>
+        <button class="px-2 border-rounded focusable" onActivate={s.doAction}>Go</button>
+    </div>
+</modal>
 ```
 
 ## Testing

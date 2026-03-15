@@ -9,14 +9,27 @@ type demoApp struct {
 	count    *tui.State[int]
 	selected *tui.State[int]
 	items    []string
+
+	showReset *tui.State[bool]
 }
 
 func Demo() *demoApp {
 	return &demoApp{
-		count:    tui.NewState(0),
-		selected: tui.NewState(0),
-		items:    []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
+		count:     tui.NewState(0),
+		selected:  tui.NewState(0),
+		items:     []string{"Rust", "Go", "TypeScript", "Python", "Zig"},
+		showReset: tui.NewState(false),
 	}
+}
+
+func (d *demoApp) resetAll() {
+	d.count.Set(0)
+	d.selected.Set(0)
+	d.showReset.Set(false)
+}
+
+func (d *demoApp) cancelReset() {
+	d.showReset.Set(false)
 }
 
 func (d *demoApp) KeyMap() tui.KeyMap {
@@ -29,10 +42,7 @@ func (d *demoApp) KeyMap() tui.KeyMap {
 			d.count.Update(func(v int) int { return v - 1 })
 		}),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
-			ke.App().Batch(func() {
-				d.count.Set(0)
-				d.selected.Set(0)
-			})
+			d.showReset.Set(true)
 		}),
 		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.selectNext() }),
 		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.selectPrev() }),
@@ -123,5 +133,13 @@ templ (d *demoApp) Render() {
 		<div class="flex justify-center">
 			<span class="font-dim">+/- count | j/k navigate | r reset | esc quit</span>
 		</div>
+
+		<modal open={d.showReset} class="justify-end items-stretch" backdrop="dim" closeOnBackdropClick={false}>
+			<div class="border-single p-1 flex gap-4 items-center justify-center">
+				<span class="font-bold text-yellow">Reset counter and selection to defaults?</span>
+				<button class="px-2 border-rounded focusable text-green font-bold" onActivate={d.cancelReset}>Cancel</button>
+				<button class="px-2 border-rounded focusable text-red font-bold" onActivate={d.resetAll}>Reset All</button>
+			</div>
+		</modal>
 	</div>
 }

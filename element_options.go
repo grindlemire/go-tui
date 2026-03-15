@@ -279,6 +279,16 @@ func WithTabStop(tabStop bool) Option {
 	}
 }
 
+// WithOnActivate sets a callback for when this element is activated (Enter while focused).
+// Implicitly sets focusable = true and tabStop = true.
+func WithOnActivate(fn func()) Option {
+	return func(e *Element) {
+		e.focusable = true
+		e.tabStop = true
+		e.onActivate = fn
+	}
+}
+
 // --- Scroll Options ---
 
 // WithScrollable enables scrolling in the specified mode.
@@ -407,6 +417,13 @@ func WithBackgroundGradient(g Gradient) Option {
 func WithBorderGradient(g Gradient) Option {
 	return func(e *Element) {
 		e.borderGradient = &g
+	}
+}
+
+// WithOverlay marks the element as an overlay that renders in the overlay pass.
+func WithOverlay(overlay bool) Option {
+	return func(e *Element) {
+		e.overlay = overlay
 	}
 }
 

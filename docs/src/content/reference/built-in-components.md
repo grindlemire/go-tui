@@ -519,6 +519,63 @@ func main() {
 
 For an inline chat pattern with `PrintAbove`, see the [Inline Mode Guide](../guides/12-inline-mode.md).
 
+## Modal
+
+Modal renders a full-screen overlay with a backdrop effect, focus trapping, and preemptive key handling.
+
+### Constructor
+
+```go
+func NewModal(opts ...ModalOption) *Modal
+```
+
+### ModalOption Functions
+
+| Function | Description |
+|----------|-------------|
+| `WithModalOpen(state *State[bool])` | Bind visibility to a boolean state (required) |
+| `WithModalBackdrop(b string)` | Backdrop style: `"dim"` (default), `"blank"`, or `"none"` |
+| `WithModalCloseOnEscape(v bool)` | Escape closes the modal (default `true`) |
+| `WithModalCloseOnBackdropClick(v bool)` | Backdrop click closes the modal (default `true`) |
+| `WithModalTrapFocus(v bool)` | Restrict Tab navigation to modal children (default `true`) |
+| `WithModalElementOptions(opts ...Option)` | Pass layout options to the overlay container (used by generated code for `class` attributes) |
+
+### Behavior
+
+When open, the modal:
+
+- Applies the backdrop effect (dim, blank, or none) to the buffer before rendering the overlay
+- Traps Tab/Shift+Tab within its focusable children
+- Handles Enter by calling `Activate()` on the focused element
+- Blocks all parent key handlers via preemptive dispatch
+- Closes on Escape (if `closeOnEscape` is true)
+- Closes on backdrop click (if `closeOnBackdropClick` is true)
+- Walks clicked elements up to find `onActivate` callbacks for mouse support
+
+When closed, it returns a hidden placeholder element with no key bindings.
+
+### Interfaces Implemented
+
+| Interface | Purpose |
+|-----------|---------|
+| `Component` | `Render(app *App) *Element` returns the overlay element |
+| `KeyListener` | `KeyMap()` returns Escape, Tab, Enter, and catch-all bindings |
+| `MouseListener` | `HandleMouse()` handles backdrop click and onActivate delegation |
+| `AppBinder` | `BindApp()` wires the open state to the app |
+
+### GSX Usage
+
+```gsx
+<modal open={s.showDialog} class="justify-center items-center" backdrop="dim">
+    <div class="border-rounded p-2 flex-col gap-1 w-40">
+        <span class="font-bold">Title</span>
+        <button class="px-2 border-rounded focusable" onActivate={s.onConfirm}>OK</button>
+    </div>
+</modal>
+```
+
+The `class` attribute on `<modal>` controls how the dialog is positioned within the full-screen overlay. Use `justify-center items-center` for a centered dialog or `justify-end items-stretch` for a bottom sheet.
+
 ## Cross-References
 
 - [Component Interfaces Reference](interfaces.md) — `Component`, `KeyListener`, `WatcherProvider`, `Focusable`, `AppBinder`

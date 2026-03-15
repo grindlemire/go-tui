@@ -70,12 +70,15 @@ type Element struct {
 	noWrap       bool // true = wrapping disabled; false (default) = wrapping enabled
 
 	// Focus properties
-	focusable bool
-	tabStop   bool // whether this element appears in Tab/Shift+Tab navigation
-	focused   bool
-	autoFocus bool // request initial focus on this element
-	onFocus   func(*Element)
-	onBlur    func(*Element)
+	focusable        bool
+	tabStop          bool // whether this element appears in Tab/Shift+Tab navigation
+	focused          bool
+	autoFocus        bool // request initial focus on this element
+	onFocus          func(*Element)
+	onBlur           func(*Element)
+	onActivate       func() // called when Enter is pressed while focused (e.g. modal buttons)
+	savedBorderStyle Style  // border style saved before focus highlight
+	hasSavedBorder   bool   // true if savedBorderStyle is valid
 
 	// Tree notification
 	onChildAdded     func(*Element)
@@ -101,6 +104,9 @@ type Element struct {
 
 	// Visibility
 	hidden bool
+
+	// Overlay flag - element renders in overlay pass, not in normal tree
+	overlay bool
 
 	// Overflow clipping
 	overflow OverflowMode

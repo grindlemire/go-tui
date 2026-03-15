@@ -190,6 +190,17 @@ These hold text content and support text styling but not flex container attribut
 <textarea value={s.note} placeholder="Write here..." width={40} maxHeight={6} border={tui.BorderRounded} />
 ```
 
+**`<modal>`** -- Full-screen overlay dialog. Bind `open` to a `*State[bool]` for visibility. Accepts children for the dialog content. Supports `backdrop`, `closeOnEscape`, `closeOnBackdropClick`, `trapFocus`, and `class` for positioning.
+
+```gsx
+<modal open={s.showDialog} class="justify-center items-center">
+    <div class="border-rounded p-2 flex-col gap-1 w-40">
+        <span class="font-bold">Title</span>
+        <button class="focusable border-rounded" onActivate={s.confirm}>OK</button>
+    </div>
+</modal>
+```
+
 ### Display elements
 
 **`<progress />`** -- Progress bar. Self-closing. Accepts `value`, `max`, and `width`.
@@ -357,8 +368,19 @@ Available on: `span`, `p`, `button`.
 | `focusable` | bool | `tui.WithFocusable(b)` |
 | `onFocus` | `func(*tui.Element)` | `tui.WithOnFocus(fn)` |
 | `onBlur` | `func(*tui.Element)` | `tui.WithOnBlur(fn)` |
+| `onActivate` | `func()` | `tui.WithOnActivate(fn)` |
 
 Available on: `div`, `ul`, `li`, `table`, `span`, `p`, `button`, `input`.
+
+### Modal attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `open` | `*State[bool]` | Controls modal visibility (required) |
+| `backdrop` | `string` | `"dim"` (default), `"blank"`, or `"none"` |
+| `closeOnEscape` | `bool` | Escape closes modal (default `true`) |
+| `closeOnBackdropClick` | `bool` | Backdrop click closes modal (default `true`) |
+| `trapFocus` | `bool` | Restrict Tab to modal children (default `true`) |
 
 ### Scroll attributes
 

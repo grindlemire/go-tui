@@ -407,6 +407,23 @@ func (b *Buffer) FillGradient(rect Rect, r rune, g Gradient, baseStyle Style) {
 	}
 }
 
+// ApplyDim applies the dim attribute to every cell in the back buffer.
+// Used by modal backdrop to visually fade background content.
+func (b *Buffer) ApplyDim() {
+	for i := range b.back {
+		b.back[i].Style.Attrs |= AttrDim
+	}
+}
+
+// FillBlank fills the entire back buffer with default-styled spaces.
+// Used by modal backdrop="blank" to hide background content entirely.
+func (b *Buffer) FillBlank() {
+	defaultCell := NewCell(' ', NewStyle())
+	for i := range b.back {
+		b.back[i] = defaultCell
+	}
+}
+
 // Clear clears the entire back buffer to spaces with default style.
 func (b *Buffer) Clear() {
 	b.ClearRect(b.Rect())
