@@ -48,6 +48,7 @@ A few things change when inline mode is active:
 - The alternate screen is **not** used, so terminal history is preserved
 - Mouse events are **disabled** by default, which allows the user's native terminal scrollback to work
 - If you need mouse events, add `tui.WithMouse()` explicitly
+- **Modals are not supported** in inline mode. The `<modal>` element requires a full-screen buffer for backdrop effects, centering, and mouse hit testing. If you need a modal from inline mode, call `app.EnterAlternateScreen()` first (see [Combining Inline and Alternate Screen](#combining-inline-and-alternate-screen) below). Modal overlays registered while in inline mode are silently ignored.
 
 ## PrintAbove
 

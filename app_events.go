@@ -29,7 +29,9 @@ func (a *App) Dispatch(event Event) bool {
 		return true
 	}
 
-	// Handle MouseEvent by hit-testing to find the element under the cursor
+	// Handle MouseEvent by hit-testing to find the element under the cursor.
+	// Coordinates are already translated to buffer-space by readInputEvents
+	// when in inline mode.
 	if mouse, ok := event.(MouseEvent); ok {
 		mouse.app = a
 		if a.root == nil {
@@ -123,6 +125,16 @@ func (a *App) readInputEvents() {
 			// components before falling through to element hit-testing.
 			if mouseEvent, isMouse := ev.(MouseEvent); isMouse {
 				mouseEvent.app = a
+				// In inline mode, translate terminal-space Y to buffer-space Y
+				// before any dispatch path sees the event. Both HandleClicks
+				// (via ContainsPoint) and ElementAtPoint use buffer-relative
+				// coordinates.
+				if !a.inAlternateScreen && a.inlineHeight > 0 {
+					mouseEvent.Y -= a.inlineStartRow
+					if mouseEvent.Y < 0 || mouseEvent.Y >= a.inlineHeight {
+						return // click outside the inline region
+					}
+				}
 				if a.dispatchMouseToComponents(mouseEvent) {
 					return
 				}

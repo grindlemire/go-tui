@@ -264,7 +264,7 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
 
 - `modal.go` -- Modal struct, Render, KeyMap, HandleMouse
 - `modal_options.go` -- ModalOption funcs
-- `app_overlay.go` -- Overlay registration (overlayEntry, registerOverlay, clearOverlays)
+- `app_overlay.go` -- Overlay registration (overlayEntry, registerOverlay, clearOverlays); inline mode guard
 - `app_render.go:67-106` -- Overlay render pass: focus scoping, backdrop, render
 - `element.go:103-106` -- Overlay flag on Element
 - `element_options.go` -- WithOverlay option
@@ -275,6 +275,9 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
 - `focus.go` -- ScopeTo, ClearScope, isInScope for focus trapping
 - `dispatch.go` -- Preemptive dispatch pass for modal key blocking
 - `keymap.go` -- OnPreemptStop, AnyKey, Preempt flag on KeyBinding
+- **Note:** Modals are not supported in inline mode. `registerOverlay` silently skips
+  the overlay and logs via `debug.Log` when `inlineHeight > 0` and the app is not in
+  alternate screen mode. Use `EnterAlternateScreen()` first.
 
 ### Writing tests
 
