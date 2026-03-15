@@ -130,6 +130,13 @@ var Elements = map[string]*ElementDef{
 			{Name: "class", Type: "string", Description: "Tailwind-style CSS classes", Category: "generic"},
 		},
 	},
+	"modal": {
+		Tag:         "modal",
+		Description: "A modal overlay that renders on top of all other content. Supports backdrop dimming, focus trapping, and close-on-escape.",
+		Attributes:  modalAttrs(),
+		SelfClosing: false,
+		Category:    "input",
+	},
 }
 
 // EventHandlers maps event attribute names to their definitions.
@@ -389,6 +396,21 @@ func textareaAttrs() []AttributeDef {
 		{Name: "submitKey", Type: "expression", Description: "Key that triggers submit (default KeyEnter)", Category: "event"},
 		{Name: "onSubmit", Type: "func", Description: "Callback when submit key is pressed: func(string)", Category: "event"},
 		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this text area on startup", Category: "event"},
+		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
+	}
+}
+
+// modalAttrs returns attributes for modal elements.
+func modalAttrs() []AttributeDef {
+	return []AttributeDef{
+		{Name: "id", Type: "string", Description: "Unique identifier for the element", Category: "generic"},
+		{Name: "class", Type: "string", Description: "Tailwind-style CSS classes for positioning and styling", Category: "generic"},
+		{Name: "open", Type: "expression", Description: "Bind to a *State[bool] to control modal visibility (required)", Category: "generic"},
+		{Name: "backdrop", Type: "string", Description: "Backdrop style: \"dim\" (default), \"blank\", or \"none\"", Category: "visual"},
+		{Name: "closeOnEscape", Type: "bool", Description: "Escape key closes the modal (default true)", Category: "event"},
+		{Name: "closeOnBackdropClick", Type: "bool", Description: "Clicking backdrop closes the modal (default true)", Category: "event"},
+		{Name: "trapFocus", Type: "bool", Description: "Tab/Shift+Tab restricted to modal children (default true)", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
