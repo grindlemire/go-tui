@@ -91,6 +91,10 @@ func (c *colorMixer) resetColors() {
 	c.showResetModal.Set(false)
 }
 
+func (c *colorMixer) cancelReset() {
+	c.showResetModal.Set(false)
+}
+
 func (c *colorMixer) applyPreset(name string) {
 	for _, p := range presets {
 		if p.name == name {
@@ -493,7 +497,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
-		tui.WithOnActivate(func() { c.showResetModal.Set(false) }),
+		tui.WithOnActivate(c.cancelReset),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
 	__tui_65 := tui.New(tui.WithText("Cancel"))
@@ -503,7 +507,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
-		tui.WithOnActivate(func() { c.resetColors() }),
+		tui.WithOnActivate(c.resetColors),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 	)
 	__tui_67 := tui.New(tui.WithText("Yes, Reset"))

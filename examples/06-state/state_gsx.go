@@ -32,6 +32,10 @@ func (d *demoApp) resetAll() {
 	d.showReset.Set(false)
 }
 
+func (d *demoApp) cancelReset() {
+	d.showReset.Set(false)
+}
+
 func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
@@ -250,7 +254,7 @@ func (d *demoApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
-		tui.WithOnActivate(func() { d.showReset.Set(false) }),
+		tui.WithOnActivate(d.cancelReset),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Green).Bold()),
 	)
 	__tui_27 := tui.New(tui.WithText("Cancel"))
@@ -260,7 +264,7 @@ func (d *demoApp) Render(app *tui.App) *tui.Element {
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithFocusable(true),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
-		tui.WithOnActivate(func() { d.resetAll() }),
+		tui.WithOnActivate(d.resetAll),
 		tui.WithTextStyle(tui.NewStyle().Foreground(tui.Red).Bold()),
 	)
 	__tui_29 := tui.New(tui.WithText("Reset All"))

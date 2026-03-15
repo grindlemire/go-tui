@@ -28,6 +28,10 @@ func (d *demoApp) resetAll() {
 	d.showReset.Set(false)
 }
 
+func (d *demoApp) cancelReset() {
+	d.showReset.Set(false)
+}
+
 func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
@@ -133,8 +137,8 @@ templ (d *demoApp) Render() {
 		<modal open={d.showReset} class="justify-end items-stretch" backdrop="dim" closeOnBackdropClick={false}>
 			<div class="border-single p-1 flex gap-4 items-center justify-center">
 				<span class="font-bold text-yellow">Reset counter and selection to defaults?</span>
-				<button class="px-2 border-rounded focusable text-green font-bold" onActivate={func() { d.showReset.Set(false) }}>Cancel</button>
-				<button class="px-2 border-rounded focusable text-red font-bold" onActivate={func() { d.resetAll() }}>Reset All</button>
+				<button class="px-2 border-rounded focusable text-green font-bold" onActivate={d.cancelReset}>Cancel</button>
+				<button class="px-2 border-rounded focusable text-red font-bold" onActivate={d.resetAll}>Reset All</button>
 			</div>
 		</modal>
 	</div>

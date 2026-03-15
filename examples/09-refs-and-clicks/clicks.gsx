@@ -87,6 +87,10 @@ func (c *colorMixer) resetColors() {
 	c.showResetModal.Set(false)
 }
 
+func (c *colorMixer) cancelReset() {
+	c.showResetModal.Set(false)
+}
+
 func (c *colorMixer) applyPreset(name string) {
 	for _, p := range presets {
 		if p.name == name {
@@ -242,8 +246,8 @@ templ (c *colorMixer) Render() {
 				<span class="font-bold text-yellow">Reset Colors?</span>
 				<span class="font-dim">This will restore default values.</span>
 				<div class="flex gap-2 justify-center">
-					<button class="px-2 text-green font-bold border-single focusable" onActivate={func() { c.showResetModal.Set(false) }}>Cancel</button>
-					<button class="px-2 text-red font-bold border-single focusable" onActivate={func() { c.resetColors() }}>Yes, Reset</button>
+					<button class="px-2 text-green font-bold border-single focusable" onActivate={c.cancelReset}>Cancel</button>
+					<button class="px-2 text-red font-bold border-single focusable" onActivate={c.resetColors}>Yes, Reset</button>
 				</div>
 			</div>
 		</modal>
