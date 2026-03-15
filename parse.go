@@ -39,10 +39,10 @@ func parseInput(data []byte) []Event {
 					}
 				}
 				// CSI sequence
-				key, mod, consumed := parseCSISequence(data[i:])
+				key, mod, r, consumed := parseCSISequence(data[i:])
 				if consumed > 0 {
 					if key != KeyNone {
-						events = append(events, KeyEvent{Key: key, Mod: mod})
+						events = append(events, KeyEvent{Key: key, Rune: r, Mod: mod})
 					}
 					i += consumed
 					continue
@@ -83,8 +83,8 @@ func parseInput(data []byte) []Event {
 
 		// Control characters (0x00-0x1F, except 0x1b which is handled above)
 		if b < 0x20 {
-			key := controlToKey(b)
-			events = append(events, KeyEvent{Key: key})
+			key, r, mod := controlToKey(b)
+			events = append(events, KeyEvent{Key: key, Rune: r, Mod: mod})
 			i++
 			continue
 		}
@@ -110,76 +110,35 @@ func parseInput(data []byte) []Event {
 	return events
 }
 
-// controlToKey converts a control character (0x00-0x1F) to a Key.
-func controlToKey(b byte) Key {
+// controlToKey converts a control character (0x00-0x1F) to a normalized key event.
+// Ambiguous bytes (0x08, 0x09, 0x0D, 0x1B) keep their semantic Key.
+// All other Ctrl+letter bytes produce {KeyRune, letter, ModCtrl}.
+func controlToKey(b byte) (Key, rune, Modifier) {
 	switch b {
-	case 0x00: // Ctrl+Space or Ctrl+@
-		return KeyCtrlSpace
-	case 0x01: // Ctrl+A
-		return KeyCtrlA
-	case 0x02: // Ctrl+B
-		return KeyCtrlB
-	case 0x03: // Ctrl+C
-		return KeyCtrlC
-	case 0x04: // Ctrl+D
-		return KeyCtrlD
-	case 0x05: // Ctrl+E
-		return KeyCtrlE
-	case 0x06: // Ctrl+F
-		return KeyCtrlF
-	case 0x07: // Ctrl+G (bell)
-		return KeyCtrlG
-	case 0x08: // Ctrl+H (backspace on some terminals)
-		return KeyBackspace
-	case 0x09: // Ctrl+I (tab)
-		return KeyTab
-	case 0x0a: // Ctrl+J (newline/enter on some terminals)
-		return KeyCtrlJ
-	case 0x0b: // Ctrl+K
-		return KeyCtrlK
-	case 0x0c: // Ctrl+L
-		return KeyCtrlL
-	case 0x0d: // Ctrl+M (carriage return/enter)
-		return KeyEnter
-	case 0x0e: // Ctrl+N
-		return KeyCtrlN
-	case 0x0f: // Ctrl+O
-		return KeyCtrlO
-	case 0x10: // Ctrl+P
-		return KeyCtrlP
-	case 0x11: // Ctrl+Q
-		return KeyCtrlQ
-	case 0x12: // Ctrl+R
-		return KeyCtrlR
-	case 0x13: // Ctrl+S
-		return KeyCtrlS
-	case 0x14: // Ctrl+T
-		return KeyCtrlT
-	case 0x15: // Ctrl+U
-		return KeyCtrlU
-	case 0x16: // Ctrl+V
-		return KeyCtrlV
-	case 0x17: // Ctrl+W
-		return KeyCtrlW
-	case 0x18: // Ctrl+X
-		return KeyCtrlX
-	case 0x19: // Ctrl+Y
-		return KeyCtrlY
-	case 0x1a: // Ctrl+Z
-		return KeyCtrlZ
-	case 0x1b: // Escape
-		return KeyEscape
+	case 0x08:
+		return KeyBackspace, 0, ModNone
+	case 0x09:
+		return KeyTab, 0, ModNone
+	case 0x0d:
+		return KeyEnter, 0, ModNone
+	case 0x1b:
+		return KeyEscape, 0, ModNone
+	case 0x00:
+		return KeyRune, ' ', ModCtrl // Ctrl+Space
 	default:
-		return KeyNone
+		if b >= 0x01 && b <= 0x1a {
+			return KeyRune, rune('a' + b - 1), ModCtrl
+		}
+		return KeyNone, 0, ModNone
 	}
 }
 
 // parseCSISequence parses a CSI escape sequence starting at data[0].
-// Returns the key, modifier, and number of bytes consumed.
-// Returns (KeyNone, ModNone, 0) if parsing fails.
-func parseCSISequence(data []byte) (Key, Modifier, int) {
+// Returns the key, modifier, rune (for Kitty protocol), and number of bytes consumed.
+// Returns (KeyNone, ModNone, 0, 0) if parsing fails.
+func parseCSISequence(data []byte) (Key, Modifier, rune, int) {
 	if len(data) < 3 || data[0] != 0x1b || data[1] != '[' {
-		return KeyNone, ModNone, 0
+		return KeyNone, ModNone, 0, 0
 	}
 
 	// Parse parameters (numbers separated by ;)
@@ -211,16 +170,21 @@ func parseCSISequence(data []byte) (Key, Modifier, int) {
 			if hasParam {
 				params = append(params, currentParam)
 			}
+			if b == 'u' {
+				// Kitty keyboard protocol: CSI code ; modifiers u
+				key, r, mod := parseKittyKey(params)
+				return key, mod, r, i + 1
+			}
 			key, mod := parseCSI(params, b)
-			return key, mod, i + 1
+			return key, mod, 0, i + 1
 		}
 
 		// Unexpected character
-		return KeyNone, ModNone, 0
+		return KeyNone, ModNone, 0, 0
 	}
 
 	// Incomplete sequence
-	return KeyNone, ModNone, 0
+	return KeyNone, ModNone, 0, 0
 }
 
 // parseCSI parses a complete CSI sequence given parameters and final byte.
@@ -303,6 +267,53 @@ func parseCSI(params []int, final byte) (Key, Modifier) {
 	}
 
 	return KeyNone, ModNone
+}
+
+// kittySpecialKeys maps Kitty keyboard protocol code points to Key constants.
+// These are Unicode code points assigned by the protocol for functional keys
+// that don't have a natural Unicode representation.
+//
+// Only code points sent in flag-1 (disambiguate) mode are included here.
+// Code points in the 57xxx range (F-keys, navigation, keypad alternatives)
+// are only sent in flag-2+ "report all keys" mode. Under flag 1, F-keys
+// arrive as standard sequences (CSI 11~, SS3 P, etc.) handled by
+// parseCSI/parseSS3, and keypad keys use their legacy code points (9, 13, 127).
+var kittySpecialKeys = map[int]Key{
+	9:   KeyTab,
+	13:  KeyEnter,
+	27:  KeyEscape,
+	127: KeyBackspace,
+}
+
+// parseKittyKey parses a Kitty keyboard protocol CSI u sequence.
+// Format: CSI code ; modifiers u
+// Returns (key, rune, modifier).
+func parseKittyKey(params []int) (Key, rune, Modifier) {
+	code := 0
+	if len(params) > 0 {
+		code = params[0]
+	}
+
+	mod := ModNone
+	if len(params) > 1 {
+		mod = decodeModifier(params[1])
+	}
+
+	// Map special Kitty code points to existing Key constants
+	if key, ok := kittySpecialKeys[code]; ok {
+		return key, 0, mod
+	}
+
+	// Regular Unicode code point (printable range)
+	if code >= 32 {
+		return KeyRune, rune(code), mod
+	}
+
+	// Code points 1-31 (excluding 9, 13, 27 handled above) are C0 control
+	// codes. Kitty normally sends these with a modifier param (e.g. mod=5
+	// for Ctrl), which maps them to printable code points instead. If a bare
+	// C0 code somehow arrives here, we drop it rather than misinterpret it.
+	return KeyNone, 0, ModNone
 }
 
 // parseSS3 parses an SS3 function key sequence.

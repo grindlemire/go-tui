@@ -50,19 +50,19 @@ func NewSettingsApp(
 
 func (s *SettingsApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyCtrlS, func(ke tui.KeyEvent) { s.close() }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { s.close() }),
-		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { s.close() }),
-		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { s.nextSection() }),
-		tui.OnKeyStop(tui.KeyLeft, func(ke tui.KeyEvent) { s.handleLeft() }),
-		tui.OnKeyStop(tui.KeyRight, func(ke tui.KeyEvent) { s.handleRight() }),
-		tui.OnKeyStop(tui.KeyUp, func(ke tui.KeyEvent) { s.handleUp() }),
-		tui.OnKeyStop(tui.KeyDown, func(ke tui.KeyEvent) { s.handleDown() }),
-		tui.OnRune('h', func(ke tui.KeyEvent) { s.handleLeft() }),
-		tui.OnRune('l', func(ke tui.KeyEvent) { s.handleRight() }),
-		tui.OnRune('k', func(ke tui.KeyEvent) { s.handleUp() }),
-		tui.OnRune('j', func(ke tui.KeyEvent) { s.handleDown() }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { s.close() }),
+		tui.On(tui.Rune('s').Ctrl(), func(ke tui.KeyEvent) { s.close() }),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { s.close() }),
+		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) { s.close() }),
+		tui.On(tui.KeyTab, func(ke tui.KeyEvent) { s.nextSection() }),
+		tui.OnStop(tui.KeyLeft, func(ke tui.KeyEvent) { s.handleLeft() }),
+		tui.OnStop(tui.KeyRight, func(ke tui.KeyEvent) { s.handleRight() }),
+		tui.OnStop(tui.KeyUp, func(ke tui.KeyEvent) { s.handleUp() }),
+		tui.OnStop(tui.KeyDown, func(ke tui.KeyEvent) { s.handleDown() }),
+		tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { s.handleLeft() }),
+		tui.On(tui.Rune('l'), func(ke tui.KeyEvent) { s.handleRight() }),
+		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { s.handleUp() }),
+		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { s.handleDown() }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { s.close() }),
 	}
 }
 

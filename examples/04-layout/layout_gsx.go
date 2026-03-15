@@ -43,18 +43,18 @@ func LayoutApp() *layoutApp {
 
 func (l *layoutApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyTab, func(ke tui.KeyEvent) {
 			l.viewIndex.Update(func(v int) int { return (v + 1) % len(viewNames()) })
 		}),
-		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyTab.Shift(), func(ke tui.KeyEvent) {
 			l.viewIndex.Update(func(v int) int { return (v - 1 + len(viewNames())) % len(viewNames()) })
 		}),
-		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyRight, func(ke tui.KeyEvent) {
 			l.modeIndex.Update(func(v int) int { return (v + 1) % len(alignModes()) })
 		}),
-		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyLeft, func(ke tui.KeyEvent) {
 			l.modeIndex.Update(func(v int) int { return (v - 1 + len(alignModes())) % len(alignModes()) })
 		}),
 	}

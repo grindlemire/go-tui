@@ -151,13 +151,13 @@ The color mixer example wires both keyboard shortcuts and clickable buttons to t
 ```go
 func (c *colorMixer) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('r', func(ke tui.KeyEvent) { c.adjustRed(16) }),
-        tui.OnRune('R', func(ke tui.KeyEvent) { c.adjustRed(-16) }),
-        tui.OnRune('g', func(ke tui.KeyEvent) { c.adjustGreen(16) }),
-        tui.OnRune('G', func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
-        tui.OnRune('b', func(ke tui.KeyEvent) { c.adjustBlue(16) }),
-        tui.OnRune('B', func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.adjustRed(16) }),
+        tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
+        tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
+        tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
+        tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
+        tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
     }
 }
 
@@ -284,14 +284,14 @@ func (c *colorMixer) applyPreset(name string) {
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('r', func(ke tui.KeyEvent) { c.adjustRed(16) }),
-        tui.OnRune('R', func(ke tui.KeyEvent) { c.adjustRed(-16) }),
-        tui.OnRune('g', func(ke tui.KeyEvent) { c.adjustGreen(16) }),
-        tui.OnRune('G', func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
-        tui.OnRune('b', func(ke tui.KeyEvent) { c.adjustBlue(16) }),
-        tui.OnRune('B', func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.adjustRed(16) }),
+        tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
+        tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
+        tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
+        tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
+        tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
     }
 }
 

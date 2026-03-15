@@ -225,45 +225,39 @@ func (t *TextArea) HandleEvent(e Event) bool {
 
 // KeyMap returns the key bindings for the text area.
 func (t *TextArea) KeyMap() KeyMap {
-	// Determine which key inserts newline vs submits
-	// Default: Enter submits, Ctrl+J inserts newline
-	// Alternative (if submitKey is not KeyEnter): submitKey submits, Enter inserts newline
-	var newlineKey, submitKeyBinding Key
-	if t.submitKey == KeyEnter {
-		submitKeyBinding = KeyEnter
-		newlineKey = KeyCtrlJ
-	} else {
-		submitKeyBinding = t.submitKey
-		newlineKey = KeyEnter
+	km := KeyMap{
+		OnFocused(AnyRune, t.insertChar),
+		OnFocused(KeyBackspace, t.backspace),
+		OnFocused(KeyDelete, t.delete),
+		OnFocused(KeyLeft, t.moveLeft),
+		OnFocused(KeyRight, t.moveRight),
+		OnFocused(KeyUp, t.moveUp),
+		OnFocused(KeyDown, t.moveDown),
+		OnFocused(KeyHome, t.moveHome),
+		OnFocused(KeyEnd, t.moveEnd),
 	}
 
-	return KeyMap{
-		// Text input (focus-gated)
-		OnRunesFocused(t.insertChar),
+	if t.submitKey == KeyEnter {
+		km = append(km,
+			OnFocused(Rune('j').Ctrl(), t.insertNewline),
+			OnFocused(KeyEnter, t.submit),
+		)
+	} else {
+		km = append(km,
+			OnFocused(KeyEnter, t.insertNewline),
+			OnFocused(t.submitKey, t.submit),
+		)
+	}
 
-		// Editing (focus-gated)
-		OnKeyFocused(KeyBackspace, t.backspace),
-		OnKeyFocused(KeyDelete, t.delete),
-
-		// Navigation (focus-gated)
-		OnKeyFocused(KeyLeft, t.moveLeft),
-		OnKeyFocused(KeyRight, t.moveRight),
-		OnKeyFocused(KeyUp, t.moveUp),
-		OnKeyFocused(KeyDown, t.moveDown),
-		OnKeyFocused(KeyHome, t.moveHome),
-		OnKeyFocused(KeyEnd, t.moveEnd),
-
-		// Newline and submit (focus-gated)
-		OnKeyFocused(newlineKey, t.insertNewline),
-		OnKeyFocused(submitKeyBinding, t.submit),
-
-		// Blur on Escape (focus-gated)
-		OnKeyFocused(KeyEscape, func(ke KeyEvent) {
+	km = append(km,
+		OnFocused(KeyEscape, func(ke KeyEvent) {
 			if app := ke.App(); app != nil {
 				app.BlurFocused()
 			}
 		}),
-	}
+	)
+
+	return km
 }
 
 // --- WatcherProvider Interface ---

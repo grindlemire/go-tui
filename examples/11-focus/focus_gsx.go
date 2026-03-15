@@ -35,8 +35,8 @@ func PanelForm() *panelForm {
 
 func (p *panelForm) KeyMap() tui.KeyMap {
 	return append(p.focus.KeyMap(), []tui.KeyBinding{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune(' ', func(ke tui.KeyEvent) {
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune(' '), func(ke tui.KeyEvent) {
 			p.clickCount.Update(func(v int) int { return v + 1 })
 		}),
 	}...)

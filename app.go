@@ -48,6 +48,7 @@ type App struct {
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
 	cursorVisible    bool          // Whether cursor is visible (default false)
+	legacyKeyboard   bool          // Force legacy keyboard mode (skip Kitty protocol negotiation)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
 	onResume         func()        // Called after resuming (SIGCONT)
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
@@ -149,6 +150,11 @@ func NewApp(opts ...AppOption) (*App, error) {
 		app.mouseEnabled = app.inlineHeight == 0
 	}
 
+	// Negotiate Kitty keyboard protocol unless legacy mode was requested
+	if !app.legacyKeyboard {
+		terminal.NegotiateKittyKeyboard()
+	}
+
 	// Get terminal size
 	width, termHeight := terminal.Size()
 
@@ -180,6 +186,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 			if app.inlineHeight == 0 {
 				terminal.ExitAltScreen()
 			}
+			terminal.DisableKittyKeyboard()
 			terminal.ExitRawMode()
 			return nil, fmt.Errorf("failed to enable interrupt: %w", err)
 		}
@@ -246,6 +253,11 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		app.mouseEnabled = app.inlineHeight == 0
 	}
 
+	// Negotiate Kitty keyboard protocol unless legacy mode was requested
+	if !app.legacyKeyboard {
+		terminal.NegotiateKittyKeyboard()
+	}
+
 	// Get terminal size
 	width, termHeight := terminal.Size()
 
@@ -277,6 +289,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 			if app.inlineHeight == 0 {
 				terminal.ExitAltScreen()
 			}
+			terminal.DisableKittyKeyboard()
 			terminal.ExitRawMode()
 			return nil, fmt.Errorf("failed to enable interrupt: %w", err)
 		}

@@ -23,13 +23,13 @@ func MyApp() *myApp {
 
 func (a *myApp) KeyMap() tui.KeyMap {
 	km := tui.KeyMap{
-		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('c').Ctrl(), func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 	if !a.searchActive.Get() {
-		km = append(km, tui.OnRune('/', func(ke tui.KeyEvent) {
+		km = append(km, tui.On(tui.Rune('/'), func(ke tui.KeyEvent) {
 			a.searchActive.Set(true)
 		}))
-		km = append(km, tui.OnRune('q', func(ke tui.KeyEvent) {
+		km = append(km, tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
 			ke.App().Stop()
 		}))
 	}

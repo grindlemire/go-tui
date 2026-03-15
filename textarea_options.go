@@ -82,7 +82,7 @@ func WithTextAreaFocusGradient(g Gradient) TextAreaOption {
 
 // WithTextAreaSubmitKey sets the key that triggers submit.
 // Default is KeyEnter (Enter submits, Ctrl+J inserts newline).
-// For long-form text, use a different key like KeyCtrlS (Ctrl+S submits, Enter inserts newline).
+// For long-form text, use a different key (e.g. a function key) so Enter inserts newline.
 func WithTextAreaSubmitKey(k Key) TextAreaOption {
 	return func(t *TextArea) {
 		t.submitKey = k

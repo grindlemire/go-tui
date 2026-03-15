@@ -32,14 +32,14 @@ func Counter() *counterApp {
 
 func (c *counterApp) KeyMap() tui.KeyMap {
 \treturn tui.KeyMap{
-\t\ttui.OnRune('+', func(ke tui.KeyEvent) {
+\t\ttui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
 \t\t\tc.count.Update(func(v int) int { return v + 1 })
 \t\t}),
-\t\ttui.OnRune('-', func(ke tui.KeyEvent) {
+\t\ttui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
 \t\t\tc.count.Update(func(v int) int { return v - 1 })
 \t\t}),
-\t\ttui.OnRune('r', func(ke tui.KeyEvent) { c.count.Set(0) }),
-\t\ttui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+\t\ttui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.count.Set(0) }),
+\t\ttui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 \t}
 }
 
@@ -163,7 +163,7 @@ const gsxStepDefs: Omit<Step, "color">[] = [
     id: "events",
     label: "Keyboard Events",
     description:
-      "KeyMap binds keys to actions. OnRune matches character keys; Update and Set mutate state and trigger re-renders.",
+      "KeyMap binds keys to actions. On with Rune() matches character keys; Update and Set mutate state and trigger re-renders.",
     lines: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
   },
   {

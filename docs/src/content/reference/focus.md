@@ -202,7 +202,7 @@ Moves focus to the next focusable element in document order (depth-first travers
 ```go
 func (s *myApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyTab, func(ke tui.KeyEvent) {
             ke.App().FocusNext()
         }),
     }
@@ -218,7 +218,7 @@ func (a *App) FocusPrev()
 Moves focus to the previous focusable element. Wraps around to the last element when reaching the beginning.
 
 ```go
-tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
+tui.On(tui.KeyTab, func(ke tui.KeyEvent) {
     if ke.Mod.Has(tui.ModShift) {
         ke.App().FocusPrev()
     } else {
@@ -323,7 +323,7 @@ func (s *myApp) KeyMap() tui.KeyMap {
         s.focusGroup.KeyMap()[0],
         s.focusGroup.KeyMap()[1],
         // Then app-level bindings
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
     }
@@ -336,7 +336,7 @@ Or spread the entire KeyMap:
 func (s *myApp) KeyMap() tui.KeyMap {
     km := s.focusGroup.KeyMap()
     km = append(km,
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
     )
@@ -379,7 +379,7 @@ func Panels() *panels {
 func (p *panels) KeyMap() tui.KeyMap {
     km := p.focusGroup.KeyMap()
     km = append(km,
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
             ke.App().Stop()
         }),
     )

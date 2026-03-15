@@ -70,7 +70,7 @@ func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, erro
 func (e *dispatchEntry) matchesKey(ke KeyEvent) bool {
 	p := e.pattern
 
-	if p.RequireNoMods && ke.Mod != 0 {
+	if p.ExcludeMods != 0 && ke.Mod&p.ExcludeMods != 0 {
 		return false
 	}
 	if p.Mod != 0 && ke.Mod != p.Mod {

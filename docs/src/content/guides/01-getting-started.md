@@ -60,8 +60,8 @@ func Hello() *helloApp {
 
 func (h *helloApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
 
@@ -80,7 +80,7 @@ This defines a struct component called `helloApp`. The `templ` keyword declares 
 
 The outer `<div>` fills the full terminal height (`h-full`) and centers its children both horizontally (`items-center`) and vertically (`justify-center`). The inner `<div>` draws a rounded cyan border with padding and arranges its children in a column.
 
-The `KeyMap()` method defines keyboard bindings. `tui.OnKey` matches special keys like Escape, and `tui.OnRune` matches printable characters. Each handler receives a `KeyEvent` with access to the app instance, so `ke.App().Stop()` exits the event loop and shuts down cleanly.
+The `KeyMap()` method defines keyboard bindings. `tui.On` with a Key constant matches special keys like Escape, and `tui.On` with `tui.Rune('x')` matches printable characters. Each handler receives a `KeyEvent` with access to the app instance, so `ke.App().Stop()` exits the event loop and shuts down cleanly.
 
 ### 3. Write main.go
 

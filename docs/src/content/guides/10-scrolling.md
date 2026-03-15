@@ -90,15 +90,15 @@ Wire up key bindings that adjust the scroll position through the ref. A common p
 ```go
 func (s *scrollApp) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { s.scrollBy(1) }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { s.scrollBy(-1) }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
-        tui.OnKey(tui.KeyPageDown, func(ke tui.KeyEvent) { s.scrollBy(10) }),
-        tui.OnKey(tui.KeyPageUp, func(ke tui.KeyEvent) { s.scrollBy(-10) }),
-        tui.OnKey(tui.KeyHome, func(ke tui.KeyEvent) { s.scrollY.Set(0) }),
-        tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) { s.scrollToEnd() }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { s.scrollBy(1) }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { s.scrollBy(1) }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { s.scrollBy(-1) }),
+        tui.On(tui.KeyPageDown, func(ke tui.KeyEvent) { s.scrollBy(10) }),
+        tui.On(tui.KeyPageUp, func(ke tui.KeyEvent) { s.scrollBy(-10) }),
+        tui.On(tui.KeyHome, func(ke tui.KeyEvent) { s.scrollY.Set(0) }),
+        tui.On(tui.KeyEnd, func(ke tui.KeyEvent) { s.scrollToEnd() }),
     }
 }
 
@@ -265,12 +265,12 @@ func (l *logViewer) scrollBy(delta int) {
 
 func (l *logViewer) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { l.scrollBy(1) }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { l.scrollBy(-1) }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { l.scrollBy(1) }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { l.scrollBy(-1) }),
-        tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) {
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { l.scrollBy(1) }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { l.scrollBy(-1) }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { l.scrollBy(1) }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { l.scrollBy(-1) }),
+        tui.On(tui.KeyEnd, func(ke tui.KeyEvent) {
             if el := l.content.El(); el != nil {
                 _, maxY := el.MaxScroll()
                 l.scrollY.Set(maxY)
@@ -454,15 +454,15 @@ func (f *fileList) moveTo(idx int) {
 
 func (f *fileList) KeyMap() tui.KeyMap {
     return tui.KeyMap{
-        tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-        tui.OnRune('j', func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() + 1) }),
-        tui.OnRune('k', func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 1) }),
-        tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() + 1) }),
-        tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 1) }),
-        tui.OnKey(tui.KeyPageDown, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() + 10) }),
-        tui.OnKey(tui.KeyPageUp, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 10) }),
-        tui.OnKey(tui.KeyHome, func(ke tui.KeyEvent) { f.moveTo(0) }),
-        tui.OnKey(tui.KeyEnd, func(ke tui.KeyEvent) { f.moveTo(len(f.files) - 1) }),
+        tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() + 1) }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 1) }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() + 1) }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 1) }),
+        tui.On(tui.KeyPageDown, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() + 10) }),
+        tui.On(tui.KeyPageUp, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 10) }),
+        tui.On(tui.KeyHome, func(ke tui.KeyEvent) { f.moveTo(0) }),
+        tui.On(tui.KeyEnd, func(ke tui.KeyEvent) { f.moveTo(len(f.files) - 1) }),
     }
 }
 
