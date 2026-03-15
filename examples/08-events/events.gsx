@@ -24,27 +24,27 @@ func (e *explorer) record(name string) {
 
 func (e *explorer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnRuneStop('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRunes(func(ke tui.KeyEvent) {
+		tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.AnyRune, func(ke tui.KeyEvent) {
 			e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
 		}),
 		// With Kitty keyboard protocol, Ctrl+H/I/M arrive as KeyRune
-		// events with ModCtrl and are matched by OnRune with ModCtrl.
+		// events with ModCtrl and are matched by On with Rune('x').Ctrl().
 		// Without Kitty, they are indistinguishable from Backspace/Tab/Enter
-		// and match the OnKey handlers below instead.
-		tui.OnRune('h', func(ke tui.KeyEvent) { e.record("Ctrl+'h' (rune)") }, tui.ModCtrl),
-		tui.OnRune('i', func(ke tui.KeyEvent) { e.record("Ctrl+'i' (rune)") }, tui.ModCtrl),
-		tui.OnRune('m', func(ke tui.KeyEvent) { e.record("Ctrl+'m' (rune)") }, tui.ModCtrl),
-		tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
-		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
-		tui.OnKey(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
-		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
-		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
-		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { e.record("Right") }),
-		tui.OnRune('a', func(ke tui.KeyEvent) { e.record("Ctrl+A") }, tui.ModCtrl),
-		tui.OnRune('s', func(ke tui.KeyEvent) { e.record("Ctrl+S") }, tui.ModCtrl),
+		// and match the On handlers below instead.
+		tui.On(tui.Rune('h').Ctrl(), func(ke tui.KeyEvent) { e.record("Ctrl+'h' (rune)") }),
+		tui.On(tui.Rune('i').Ctrl(), func(ke tui.KeyEvent) { e.record("Ctrl+'i' (rune)") }),
+		tui.On(tui.Rune('m').Ctrl(), func(ke tui.KeyEvent) { e.record("Ctrl+'m' (rune)") }),
+		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
+		tui.On(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
+		tui.On(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) { e.record("Up") }),
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
+		tui.On(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
+		tui.On(tui.KeyRight, func(ke tui.KeyEvent) { e.record("Right") }),
+		tui.On(tui.Rune('a').Ctrl(), func(ke tui.KeyEvent) { e.record("Ctrl+A") }),
+		tui.On(tui.Rune('s').Ctrl(), func(ke tui.KeyEvent) { e.record("Ctrl+S") }),
 	}
 }
 

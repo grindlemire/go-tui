@@ -25,16 +25,16 @@ func Sidebar(category *tui.State[string]) *sidebar {
 
 func (s *sidebar) KeyMap() tui.KeyMap {
 	km := tui.KeyMap{
-		tui.OnRune('b', func(ke tui.KeyEvent) {
+		tui.On(tui.Rune('b').Ctrl(), func(ke tui.KeyEvent) {
 			s.expanded.Set(!s.expanded.Get())
-		}, tui.ModCtrl),
+		}),
 	}
 	if s.expanded.Get() {
-		km = append(km, tui.OnRune('j', func(ke tui.KeyEvent) { s.moveDown() }))
-		km = append(km, tui.OnRune('k', func(ke tui.KeyEvent) { s.moveUp() }))
-		km = append(km, tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { s.moveDown() }))
-		km = append(km, tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { s.moveUp() }))
-		km = append(km, tui.OnKey(tui.KeyEnter, func(ke tui.KeyEvent) {
+		km = append(km, tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { s.moveDown() }))
+		km = append(km, tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { s.moveUp() }))
+		km = append(km, tui.On(tui.KeyDown, func(ke tui.KeyEvent) { s.moveDown() }))
+		km = append(km, tui.On(tui.KeyUp, func(ke tui.KeyEvent) { s.moveUp() }))
+		km = append(km, tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
 			idx := s.selected.Get()
 			if idx >= 0 && idx < len(categories) {
 				s.category.Set(categories[idx])

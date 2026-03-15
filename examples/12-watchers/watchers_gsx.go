@@ -53,12 +53,12 @@ func WatcherApp() *watcherApp {
 
 func (w *watcherApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('s', func(ke tui.KeyEvent) {
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('s'), func(ke tui.KeyEvent) {
 			w.stopwatchOn.Set(!w.stopwatchOn.Get())
 		}),
-		tui.OnRune('r', func(ke tui.KeyEvent) {
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
 			w.stopwatchSec.Set(0)
 			w.stopwatchOn.Set(false)
 		}),

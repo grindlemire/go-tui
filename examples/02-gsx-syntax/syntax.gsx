@@ -46,8 +46,8 @@ func ListApp() *listApp {
 
 func (l *listApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) {
 			l.selected.Update(func(v int) int {
 				if v > 0 {
 					return v - 1
@@ -55,7 +55,7 @@ func (l *listApp) KeyMap() tui.KeyMap {
 				return v
 			})
 		}),
-		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) {
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) {
 			l.selected.Update(func(v int) int {
 				if v < len(l.items)-1 {
 					return v + 1

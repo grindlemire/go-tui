@@ -21,23 +21,23 @@ func Demo() *demoApp {
 
 func (d *demoApp) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnRune('+', func(ke tui.KeyEvent) {
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('+'), func(ke tui.KeyEvent) {
 			d.count.Update(func(v int) int { return v + 1 })
 		}),
-		tui.OnRune('-', func(ke tui.KeyEvent) {
+		tui.On(tui.Rune('-'), func(ke tui.KeyEvent) {
 			d.count.Update(func(v int) int { return v - 1 })
 		}),
-		tui.OnRune('r', func(ke tui.KeyEvent) {
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
 			ke.App().Batch(func() {
 				d.count.Set(0)
 				d.selected.Set(0)
 			})
 		}),
-		tui.OnRune('j', func(ke tui.KeyEvent) { d.selectNext() }),
-		tui.OnRune('k', func(ke tui.KeyEvent) { d.selectPrev() }),
-		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
-		tui.OnKey(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
+		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { d.selectPrev() }),
+		tui.On(tui.KeyDown, func(ke tui.KeyEvent) { d.selectNext() }),
+		tui.On(tui.KeyUp, func(ke tui.KeyEvent) { d.selectPrev() }),
 	}
 }
 
