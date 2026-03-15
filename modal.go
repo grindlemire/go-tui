@@ -148,9 +148,8 @@ func (m *Modal) HandleMouse(me MouseEvent) bool {
 	if hit == m.element {
 		if m.closeOnBackdrop {
 			m.open.Set(false)
-			return true
 		}
-		return false
+		return true // always consume backdrop clicks
 	}
 	// Check if the clicked element (or an ancestor up to the overlay) has onActivate
 	for el := hit; el != nil && el != m.element; el = el.parent {
@@ -159,5 +158,7 @@ func (m *Modal) HandleMouse(me MouseEvent) bool {
 			return true
 		}
 	}
-	return false
+	// Click landed inside the modal on non-activatable content.
+	// Consume it to prevent leaking to parent handlers.
+	return true
 }

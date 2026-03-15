@@ -172,8 +172,8 @@ func TestModal_HandleMouse_BackdropClickDisabled(t *testing.T) {
 		Y:      0,
 	})
 
-	if consumed {
-		t.Error("expected backdrop click to not be consumed when disabled")
+	if !consumed {
+		t.Error("expected backdrop click to be consumed even when close is disabled")
 	}
 	if !open.Get() {
 		t.Error("expected open to remain true when backdrop click is disabled")
