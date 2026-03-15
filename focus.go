@@ -35,6 +35,7 @@ type focusManager struct {
 	elements     []Focusable // Registered focusable elements in order
 	current      int         // Index of currently focused element (-1 = none)
 	focusApplied bool        // true after focus has been set (prevents re-applying autoFocus)
+	scope        *Element    // if set, only elements within this subtree are navigable
 }
 
 // newFocusManager creates an empty focusManager.
@@ -111,6 +112,28 @@ func (f *focusManager) IsFocused(elem Focusable) bool {
 	return f.elements[f.current] == elem
 }
 
+// focusedIndex returns the current focus index, or -1 if nothing is focused.
+func (f *focusManager) focusedIndex() int {
+	return f.current
+}
+
+// setFocusIndex restores focus to the element at the given index.
+// Used by modal to restore focus after close. The Blur/Focus calls here
+// target stale elements from the previous render tree, but are harmless;
+// refreshFromTree runs immediately after and calls Focus on the fresh
+// element at the preserved index.
+func (f *focusManager) setFocusIndex(idx int) {
+	if idx < 0 || idx >= len(f.elements) {
+		return
+	}
+	if f.current >= 0 && f.current < len(f.elements) && f.current != idx {
+		f.elements[f.current].Blur()
+	}
+	f.current = idx
+	f.focusApplied = true
+	f.elements[idx].Focus()
+}
+
 // SetFocus moves focus to the specified element.
 // Does nothing if the element is not registered or not focusable.
 func (f *focusManager) SetFocus(elem Focusable) {
@@ -164,7 +187,7 @@ func (f *focusManager) Next() {
 			f.current = -1
 			return
 		}
-		if f.elements[nextIdx].IsTabStop() {
+		if f.elements[nextIdx].IsTabStop() && f.isInScope(f.elements[nextIdx]) {
 			f.current = nextIdx
 			f.elements[nextIdx].Focus()
 			return
@@ -203,7 +226,7 @@ func (f *focusManager) Prev() {
 			f.current = -1
 			return
 		}
-		if f.elements[prevIdx].IsTabStop() {
+		if f.elements[prevIdx].IsTabStop() && f.isInScope(f.elements[prevIdx]) {
 			f.current = prevIdx
 			f.elements[prevIdx].Focus()
 			return
@@ -212,6 +235,35 @@ func (f *focusManager) Prev() {
 
 	// No focusable elements found
 	f.current = -1
+}
+
+// ScopeTo restricts Tab/Shift+Tab navigation to focusable elements
+// within the given element's subtree. Used by modal focus trapping.
+func (f *focusManager) ScopeTo(el *Element) {
+	f.scope = el
+}
+
+// ClearScope removes focus navigation restriction.
+func (f *focusManager) ClearScope() {
+	f.scope = nil
+}
+
+// isInScope returns true if the focusable element is within the current scope.
+// If no scope is set, all elements are in scope.
+func (f *focusManager) isInScope(elem Focusable) bool {
+	if f.scope == nil {
+		return true
+	}
+	el, ok := elem.(*Element)
+	if !ok {
+		return false
+	}
+	for e := el; e != nil; e = e.parent {
+		if e == f.scope {
+			return true
+		}
+	}
+	return false
 }
 
 // ClearFocus blurs the currently focused element and sets focus to none.
@@ -297,7 +349,7 @@ func (f *focusManager) applyAutoFocus(root *Element) {
 func (f *focusManager) focusNextFrom(startIdx int) {
 	for i := 0; i < len(f.elements); i++ {
 		idx := (startIdx + i) % len(f.elements)
-		if f.elements[idx].IsTabStop() {
+		if f.elements[idx].IsTabStop() && f.isInScope(f.elements[idx]) {
 			f.current = idx
 			f.elements[idx].Focus()
 			return

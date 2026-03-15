@@ -92,6 +92,9 @@ Use this section to quickly find the right files for a given change.
 - `component.go` — Component, KeyListener, MouseListener, Initializer, WatcherProvider interfaces
 - `events.go` — Events[T] generic event bus for cross-component communication
 - `mount.go` — Component caching and lifecycle (Mount, PropsUpdater)
+- `modal.go` -- Modal struct, Render, KeyMap (Escape/Tab/Enter/catch-all), HandleMouse (backdrop + onActivate click)
+- `modal_options.go` -- ModalOption funcs: WithModalOpen, WithModalBackdrop, WithModalCloseOnEscape, WithModalCloseOnBackdropClick, WithModalTrapFocus, WithModalElementOptions
+- `app_overlay.go` -- Overlay registration: overlayEntry, registerOverlay, clearOverlays
 
 ### Changing layout behavior (flexbox algorithm)
 
@@ -257,6 +260,25 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
 - `internal/tuigen/tailwind.go` — Tailwind class → option mapping
 - `element_options.go` — New Option funcs for generated code to call
 
+### Changing modal/overlay behavior
+
+- `modal.go` -- Modal struct, Render, KeyMap, HandleMouse
+- `modal_options.go` -- ModalOption funcs
+- `app_overlay.go` -- Overlay registration (overlayEntry, registerOverlay, clearOverlays); inline mode guard
+- `app_render.go:67-106` -- Overlay render pass: focus scoping, backdrop, render
+- `element.go:103-106` -- Overlay flag on Element
+- `element_options.go` -- WithOverlay option
+- `element_layout.go` -- Overlay children filtered from layout
+- `element_render.go` -- Overlay children skipped in normal render
+- `element_focus.go` -- Auto focus border highlighting, onActivate
+- `buffer.go` -- ApplyDim, FillBlank for backdrop effects
+- `focus.go` -- ScopeTo, ClearScope, isInScope for focus trapping
+- `dispatch.go` -- Preemptive dispatch pass for modal key blocking
+- `keymap.go` -- OnPreemptStop, AnyKey, Preempt flag on KeyBinding
+- **Note:** Modals are not supported in inline mode. `registerOverlay` silently skips
+  the overlay and logs via `debug.Log` when `inlineHeight > 0` and the app is not in
+  alternate screen mode. Use `EnterAlternateScreen()` first.
+
 ### Writing tests
 
 - `mock_terminal.go` — MockTerminal: captures operations, maintains internal cell buffer
@@ -352,6 +374,7 @@ func helper(s string) string {
 | `<progress>` | Progress bar |
 | `<hr>` | Horizontal rule (self-closing) |
 | `<br>` | Line break (self-closing) |
+| `<modal>` | Modal overlay dialog |
 
 ### Common Attributes
 
@@ -403,6 +426,7 @@ func helper(s string) string {
 | `focusable` | `bool` | Whether the element can receive focus |
 | `onFocus` | `func()` | Called when the element gains focus |
 | `onBlur` | `func()` | Called when the element loses focus |
+| `onActivate` | `func()` | Called when Enter is pressed while focused |
 
 ### Scroll Attributes
 
@@ -411,6 +435,16 @@ func helper(s string) string {
 | `scrollable` | `bool` | Enable scrolling for overflow content |
 | `scrollbarStyle` | `tui.Style` | Style for the scrollbar track |
 | `scrollbarThumbStyle` | `tui.Style` | Style for the scrollbar thumb |
+
+### Modal Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `open` | `expression` | Bind to a `*State[bool]` to control visibility (required) |
+| `backdrop` | `string` | Backdrop style: `"dim"` (default), `"blank"`, or `"none"` |
+| `closeOnEscape` | `bool` | Escape key closes the modal (default true) |
+| `closeOnBackdropClick` | `bool` | Clicking backdrop closes the modal (default true) |
+| `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children (default true) |
 
 ### Input-specific Attributes
 
@@ -665,6 +699,13 @@ m := tui.NewRefMap[string]()  // Keyed element refs
 bus := tui.NewEvents[MyEvent]("topic-name")
 bus.Emit(MyEvent{...})
 unsub := bus.Subscribe(func(e MyEvent) { ... })
+
+// tui.AnyKey - matches any key event (special or printable)
+// Used by modal to block parent component key handlers
+var AnyKey KeyMatcher
+
+// Preemptive key bindings
+tui.OnPreemptStop(matcher, handler)  // Fires before normal handlers, stops propagation
 ```
 
 ## Component Interfaces
@@ -696,9 +737,12 @@ func (c *myComponent) KeyMap() tui.KeyMap {
         tui.OnKeyStop(tui.KeyEscape, c.onEscape),   // Specific key, stop propagation
         tui.OnRune('q', func(ke tui.KeyEvent) { ... }), // Specific character
         tui.OnRunesStop(c.onTyping),                  // All printable chars, exclusive
+        tui.OnPreemptStop(tui.AnyKey, c.onBlock),    // Preemptive, stops propagation
     }
 }
 ```
+
+The `OnPreemptStop` variant fires in a preemptive pass before all normal handlers. Used by the Modal component to block parent key handlers when the modal is open.
 
 ### Mouse Click Handling
 
@@ -767,6 +811,7 @@ The layout engine (`internal/layout`) implements CSS flexbox with:
 - **Ref System**: Type-safe element references (`Ref`, `RefList`, `RefMap[K]`) for event handling and hit testing
 - **Event Bus**: Generic `Events[T]` for topic-based pub/sub between components
 - **Key Dispatch**: Priority-ordered key binding dispatch by tree position via `KeyListener`/`KeyMap`
+- **Preemptive Dispatch**: Modal key bindings fire before normal tree-order dispatch, blocking parent handlers when the overlay is open
 
 ## Testing
 

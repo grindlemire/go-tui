@@ -7,8 +7,9 @@ Focus determines which element receives keyboard input. go-tui provides three la
 - **Element-level** -- individual elements marked as focusable, with `Focus()` and `Blur()` methods
 - **focusManager** -- internal tracking used by `App` to cycle through focusable elements with `FocusNext()` and `FocusPrev()`
 - **FocusGroup** -- a state-driven helper for Tab/Shift+Tab cycling between logical sections of your UI
+- **Modal focus trapping** -- when a modal is open with `trapFocus`, Tab/Shift+Tab only cycle through elements inside the modal overlay
 
-Most applications use element-level focus through `.gsx` attributes and `App`-level navigation. `FocusGroup` is useful when you need to toggle between distinct panels or sections rather than individual elements.
+Most applications use element-level focus through `.gsx` attributes and `App`-level navigation. `FocusGroup` is useful when you need to toggle between distinct panels or sections rather than individual elements. Modals provide automatic focus trapping that restricts navigation to the overlay content.
 
 ## Focusable Interface
 

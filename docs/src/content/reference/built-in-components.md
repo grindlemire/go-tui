@@ -2,9 +2,9 @@
 
 ## Overview
 
-go-tui ships with two built-in input components: `Input` (single-line) and `TextArea` (multi-line). Both handle text entry, cursor management, and focus.
+go-tui ships with three built-in components: `Input` (single-line text), `TextArea` (multi-line text), and `Modal` (overlay dialog). Input and TextArea handle text entry, cursor management, and focus. Modal handles backdrop rendering, focus trapping, and preemptive key blocking.
 
-Both implement `Component`, `KeyListener`, `WatcherProvider`, `Focusable`, and `AppBinder`. Use them standalone or embed them in a larger UI.
+All three implement `Component`, `KeyListener`, and `AppBinder`. Use them standalone or embed them in a larger UI.
 
 ## Input
 
@@ -60,6 +60,26 @@ In `.gsx`:
 ```gsx
 <input value={s.name} placeholder="Type your name..." border={tui.BorderRounded} />
 ```
+
+### GSX Attributes
+
+All `<input>` attributes and their types:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `value` | `*State[string]` | Two-way text binding |
+| `placeholder` | `string` | Text shown when empty and unfocused |
+| `placeholderStyle` | `tui.Style` | Placeholder styling (default: dim) |
+| `width` | `int` | Width in characters (default 20) |
+| `border` | `tui.BorderStyle` | Border style |
+| `textStyle` | `tui.Style` | Text styling |
+| `cursor` | `rune` | Cursor character (default '▌') |
+| `focusColor` | `tui.Color` | Border color when focused (default Cyan) |
+| `borderGradient` | `tui.Gradient` | Border gradient when unfocused |
+| `focusGradient` | `tui.Gradient` | Border gradient when focused |
+| `onSubmit` | `func(string)` | Called when Enter is pressed |
+| `onChange` | `func(string)` | Called when text changes |
+| `autoFocus` | `bool` | Focus this input on startup |
 
 ### Focus Border Styling
 
@@ -166,6 +186,27 @@ Creates a new `TextArea` with the given options. Default values:
 | Cursor      | `'▌'`        | Block cursor character                   |
 | FocusColor  | `Cyan`       | Border color when focused                |
 | SubmitKey   | `KeyEnter`   | Enter submits, Ctrl+J inserts newline    |
+
+### GSX Attributes
+
+All `<textarea>` attributes and their types:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `value` | `*State[string]` | Two-way text binding |
+| `placeholder` | `string` | Text shown when empty and unfocused |
+| `placeholderStyle` | `tui.Style` | Placeholder styling (default: dim) |
+| `width` | `int` | Width in characters (default 40) |
+| `maxHeight` | `int` | Maximum visible rows (0 = unlimited) |
+| `border` | `tui.BorderStyle` | Border style |
+| `textStyle` | `tui.Style` | Text styling |
+| `cursor` | `rune` | Cursor character (default '▌') |
+| `focusColor` | `tui.Color` | Border color when focused (default Cyan) |
+| `borderGradient` | `tui.Gradient` | Border gradient when unfocused |
+| `focusGradient` | `tui.Gradient` | Border gradient when focused |
+| `submitKey` | `tui.Key` | Key that triggers submit (default KeyEnter) |
+| `onSubmit` | `func(string)` | Called when submit key is pressed |
+| `autoFocus` | `bool` | Focus this text area on startup |
 
 ### State Access Methods
 
@@ -286,11 +327,11 @@ When `submitKey` is set to something other than `KeyEnter`, the behavior flips: 
 
 `TextArea` implements `WatcherProvider` and returns a timer watcher that toggles the cursor visibility every 500ms while focused. The cursor resets to visible on every keystroke so the user always sees where they're typing.
 
-## TextAreaOption Functions
+### TextAreaOption Functions
 
 Options follow the functional options pattern. Each returns a `TextAreaOption` (which is `func(*TextArea)`).
 
-### WithTextAreaWidth
+#### WithTextAreaWidth
 
 ```go
 func WithTextAreaWidth(cells int) TextAreaOption
@@ -302,7 +343,7 @@ Sets the width in characters. Text wraps at this boundary. Default: 40.
 ta := tui.NewTextArea(tui.WithTextAreaWidth(80))
 ```
 
-### WithTextAreaMaxHeight
+#### WithTextAreaMaxHeight
 
 ```go
 func WithTextAreaMaxHeight(rows int) TextAreaOption
@@ -314,7 +355,7 @@ Caps the visible height to `rows` lines of text. Set to 0 (the default) for unli
 ta := tui.NewTextArea(tui.WithTextAreaMaxHeight(10))
 ```
 
-### WithTextAreaBorder
+#### WithTextAreaBorder
 
 ```go
 func WithTextAreaBorder(b BorderStyle) TextAreaOption
@@ -326,7 +367,7 @@ Sets the border style around the text area. Default: `BorderNone`.
 ta := tui.NewTextArea(tui.WithTextAreaBorder(tui.BorderRounded))
 ```
 
-### WithTextAreaTextStyle
+#### WithTextAreaTextStyle
 
 ```go
 func WithTextAreaTextStyle(s Style) TextAreaOption
@@ -340,7 +381,7 @@ ta := tui.NewTextArea(
 )
 ```
 
-### WithTextAreaPlaceholder
+#### WithTextAreaPlaceholder
 
 ```go
 func WithTextAreaPlaceholder(text string) TextAreaOption
@@ -352,7 +393,7 @@ Sets placeholder text shown when the TextArea is empty and unfocused. Default: e
 ta := tui.NewTextArea(tui.WithTextAreaPlaceholder("Enter your message..."))
 ```
 
-### WithTextAreaPlaceholderStyle
+#### WithTextAreaPlaceholderStyle
 
 ```go
 func WithTextAreaPlaceholderStyle(s Style) TextAreaOption
@@ -366,7 +407,7 @@ ta := tui.NewTextArea(
 )
 ```
 
-### WithTextAreaCursor
+#### WithTextAreaCursor
 
 ```go
 func WithTextAreaCursor(r rune) TextAreaOption
@@ -378,7 +419,7 @@ Sets the cursor character. Default: `'▌'` (left half block).
 ta := tui.NewTextArea(tui.WithTextAreaCursor('█'))
 ```
 
-### WithTextAreaSubmitKey
+#### WithTextAreaSubmitKey
 
 ```go
 func WithTextAreaSubmitKey(k Key) TextAreaOption
@@ -393,7 +434,7 @@ When the submit key is `KeyEnter`, pressing Enter triggers submit and Ctrl+J ins
 ta := tui.NewTextArea(tui.WithTextAreaSubmitKey(tui.KeyCtrlS))
 ```
 
-### WithTextAreaOnSubmit
+#### WithTextAreaOnSubmit
 
 ```go
 func WithTextAreaOnSubmit(fn func(string)) TextAreaOption
@@ -409,7 +450,7 @@ ta := tui.NewTextArea(
 )
 ```
 
-### WithTextAreaValue
+#### WithTextAreaValue
 
 ```go
 func WithTextAreaValue(state *State[string]) TextAreaOption
@@ -430,7 +471,7 @@ In `.gsx`:
 <textarea value={s.note} placeholder="Write a note..." border={tui.BorderRounded} />
 ```
 
-### WithTextAreaFocusColor
+#### WithTextAreaFocusColor
 
 ```go
 func WithTextAreaFocusColor(c Color) TextAreaOption
@@ -445,7 +486,7 @@ ta := tui.NewTextArea(
 )
 ```
 
-### WithTextAreaBorderGradient
+##### WithTextAreaBorderGradient
 
 ```go
 func WithTextAreaBorderGradient(g Gradient) TextAreaOption
@@ -460,7 +501,7 @@ ta := tui.NewTextArea(
 )
 ```
 
-### WithTextAreaFocusGradient
+#### WithTextAreaFocusGradient
 
 ```go
 func WithTextAreaFocusGradient(g Gradient) TextAreaOption
@@ -475,9 +516,9 @@ ta := tui.NewTextArea(
 )
 ```
 
-## Complete Example
+### Example
 
-A simple note-taking input using `TextArea` with a rounded border and Ctrl+S to submit:
+A note-taking input using `TextArea` with a rounded border and Ctrl+S to submit:
 
 ```go
 package main
@@ -518,6 +559,92 @@ func main() {
 ```
 
 For an inline chat pattern with `PrintAbove`, see the [Inline Mode Guide](../guides/12-inline-mode.md).
+
+## Modal
+
+Modal renders a full-screen overlay with a backdrop effect, focus trapping, and preemptive key handling.
+
+### Constructor
+
+```go
+func NewModal(opts ...ModalOption) *Modal
+```
+
+### ModalOption Functions
+
+| Function | Description |
+|----------|-------------|
+| `WithModalOpen(state *State[bool])` | Bind visibility to a boolean state (required) |
+| `WithModalBackdrop(b string)` | Backdrop style: `"dim"` (default), `"blank"`, or `"none"` |
+| `WithModalCloseOnEscape(v bool)` | Escape closes the modal (default `true`) |
+| `WithModalCloseOnBackdropClick(v bool)` | Backdrop click closes the modal (default `true`) |
+| `WithModalTrapFocus(v bool)` | Restrict Tab navigation to modal children (default `true`) |
+| `WithModalElementOptions(opts ...Option)` | Pass layout options to the overlay container (used by generated code for `class` attributes) |
+
+### GSX Attributes
+
+All `<modal>` attributes and their types:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `open` | `*State[bool]` | Controls visibility (required) |
+| `backdrop` | `string` | `"dim"` (default), `"blank"`, or `"none"` |
+| `closeOnEscape` | `bool` | Escape closes the modal (default true) |
+| `closeOnBackdropClick` | `bool` | Backdrop click closes the modal (default true) |
+| `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children (default true) |
+| `class` | `string` | Tailwind classes for positioning (e.g. `"justify-center items-center"`) |
+
+### Behavior
+
+When open, the modal:
+
+- Applies the backdrop effect (dim, blank, or none) to the buffer before rendering the overlay
+- Traps Tab/Shift+Tab within its focusable children
+- Handles Enter by calling `Activate()` on the focused element
+- Blocks all parent key handlers via preemptive dispatch
+- Closes on Escape (if `closeOnEscape` is true)
+- Closes on backdrop click (if `closeOnBackdropClick` is true)
+- Walks clicked elements up to find `onActivate` callbacks for mouse support
+
+When closed, it returns a hidden placeholder element with no key bindings.
+
+### Interfaces Implemented
+
+| Interface | Purpose |
+|-----------|---------|
+| `Component` | `Render(app *App) *Element` returns the overlay element |
+| `KeyListener` | `KeyMap()` returns Escape, Tab, Enter, and catch-all bindings |
+| `MouseListener` | `HandleMouse()` handles backdrop click and onActivate delegation |
+| `AppBinder` | `BindApp()` wires the open state to the app |
+
+### GSX Usage
+
+```gsx
+<modal open={s.showDialog} class="justify-center items-center" backdrop="dim">
+    <div class="border-rounded p-2 flex-col gap-1 w-40">
+        <span class="font-bold">Title</span>
+        <button class="px-2 border-rounded focusable" onActivate={s.onConfirm}>OK</button>
+    </div>
+</modal>
+```
+
+The `class` attribute on `<modal>` controls how the dialog is positioned within the full-screen overlay. Use `justify-center items-center` for a centered dialog or `justify-end items-stretch` for a bottom sheet.
+
+### Inline Mode
+
+Modals are not supported in inline mode (`WithInlineHeight`). The overlay system requires a full-screen buffer for backdrop effects, centering, and mouse hit testing. Modal overlays registered while in inline mode are silently ignored.
+
+To show a modal from an inline app, switch to the alternate screen first:
+
+```go
+app.EnterAlternateScreen()
+s.showDialog.Set(true)
+// ... user interacts with modal ...
+// on close:
+app.ExitAlternateScreen()
+```
+
+See the [Inline Mode Guide](../guides/15-inline-mode) for the full pattern.
 
 ## Cross-References
 

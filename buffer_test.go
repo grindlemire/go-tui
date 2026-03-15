@@ -464,6 +464,40 @@ func TestBuffer_SetStringGradient(t *testing.T) {
 	}
 }
 
+func TestBuffer_ApplyDim(t *testing.T) {
+	buf := NewBuffer(3, 2)
+	buf.SetRune(0, 0, 'A', NewStyle().Bold())
+	buf.SetRune(1, 0, 'B', NewStyle())
+
+	buf.ApplyDim()
+
+	cell := buf.Cell(0, 0)
+	if !cell.Style.HasAttr(AttrDim) {
+		t.Error("expected cell to have dim attribute after ApplyDim")
+	}
+	if !cell.Style.HasAttr(AttrBold) {
+		t.Error("expected cell to retain bold attribute after ApplyDim")
+	}
+	if cell.Rune != 'A' {
+		t.Errorf("expected rune 'A', got %q", cell.Rune)
+	}
+}
+
+func TestBuffer_FillBlank(t *testing.T) {
+	buf := NewBuffer(3, 2)
+	buf.SetRune(0, 0, 'A', NewStyle().Bold())
+
+	buf.FillBlank()
+
+	cell := buf.Cell(0, 0)
+	if cell.Rune != ' ' {
+		t.Errorf("expected space after FillBlank, got %q", cell.Rune)
+	}
+	if cell.Style != NewStyle() {
+		t.Error("expected default style after FillBlank")
+	}
+}
+
 func TestBuffer_FillGradient(t *testing.T) {
 	type tc struct {
 		rect     Rect

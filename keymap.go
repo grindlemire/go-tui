@@ -9,6 +9,7 @@ type KeyBinding struct {
 	Pattern KeyPattern
 	Handler func(KeyEvent)
 	Stop    bool // If true, prevent later handlers from firing for this key
+	Preempt bool // If true, fires before normal handlers (used by modal to block parent keys)
 }
 
 // KeyPattern identifies which key events match a binding.
@@ -16,6 +17,7 @@ type KeyPattern struct {
 	Key           Key      // Specific key (KeyEscape, KeyBackspace, etc.), or 0
 	Rune          rune     // Specific rune, or 0
 	AnyRune       bool     // Match any printable character
+	AnyKey        bool     // Match any key event (rune or special key)
 	Mod           Modifier // Required modifiers (when non-zero, event must have exactly these mods)
 	ExcludeMods   Modifier // Reject event if any of these modifiers are present
 	FocusRequired bool     // When true, only dispatch when owning component is focused
@@ -30,6 +32,13 @@ func On(m KeyMatcher, handler func(KeyEvent)) KeyBinding {
 // No handlers registered after this one (in tree order) will fire for this event.
 func OnStop(m KeyMatcher, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{Pattern: m.keyPattern(), Handler: handler, Stop: true}
+}
+
+// OnPreemptStop creates a preemptive stop-propagation binding.
+// Fires before all normal handlers, preventing them from seeing the event.
+// Used by modal overlays to block parent component key handlers.
+func OnPreemptStop(m KeyMatcher, handler func(KeyEvent)) KeyBinding {
+	return KeyBinding{Pattern: m.keyPattern(), Handler: handler, Stop: true, Preempt: true}
 }
 
 // OnFocused creates a focus-gated stop-propagation binding.

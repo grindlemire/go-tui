@@ -96,6 +96,7 @@ var knownTags = map[string]bool{
 	"textarea": true,
 	"hr":       true,
 	"br":       true,
+	"modal":    true,
 }
 
 // voidElements lists elements that cannot have children.
@@ -171,6 +172,16 @@ var knownAttributes = map[string]bool{
 	// Element refs
 	"ref": true, // ref={varName} for element references
 	"key": true, // key={expr} for map-based refs in loops
+
+	// Modal
+	"open":                 true,
+	"backdrop":             true,
+	"closeOnEscape":        true,
+	"closeOnBackdropClick": true,
+	"trapFocus":            true,
+
+	// Activation
+	"onActivate": true,
 
 	// Textarea / Input
 	"placeholder":      true,

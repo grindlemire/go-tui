@@ -201,6 +201,16 @@ func (anyRuneSpec) keyPattern() KeyPattern {
 // Allows Shift (character-forming) but excludes Ctrl and Alt.
 var AnyRune KeyMatcher = anyRuneSpec{}
 
+// anyKeySpec matches any key event (printable or special).
+type anyKeySpec struct{}
+
+func (anyKeySpec) keyPattern() KeyPattern {
+	return KeyPattern{AnyKey: true}
+}
+
+// AnyKey matches any key event. Used by modal overlays to block all parent handlers.
+var AnyKey KeyMatcher = anyKeySpec{}
+
 // Modifier represents keyboard modifier flags.
 type Modifier uint8
 

@@ -13,6 +13,7 @@ type dispatchEntry struct {
 	pattern    KeyPattern
 	handler    func(KeyEvent)
 	stop       bool
+	preempt    bool       // fires before normal handlers (used by modal)
 	position   int        // BFS order index from tree walk
 	focusCheck func() bool // Non-nil for focus-gated entries; returns true when component is focused
 }
@@ -47,6 +48,7 @@ func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, erro
 				pattern:  binding.Pattern,
 				handler:  binding.Handler,
 				stop:     binding.Stop,
+				preempt:  binding.Preempt,
 				position: position,
 			}
 			// For focus-gated bindings, capture the component's focus check
@@ -69,6 +71,10 @@ func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, erro
 // without checking focus state.
 func (e *dispatchEntry) matchesKey(ke KeyEvent) bool {
 	p := e.pattern
+
+	if p.AnyKey {
+		return true
+	}
 
 	if p.ExcludeMods != 0 && ke.Mod&p.ExcludeMods != 0 {
 		return false
@@ -121,8 +127,25 @@ func (dt *dispatchTable) dispatch(ke KeyEvent) bool {
 		}
 	}
 
+	// Preemptive pass: overlay handlers that must fire before normal dispatch.
+	// Used by modal to block parent handlers from seeing key events.
+	for i := range dt.entries {
+		if !dt.entries[i].preempt {
+			continue
+		}
+		if dt.entries[i].matches(ke) {
+			dt.entries[i].handler(ke)
+			if dt.entries[i].stop {
+				return true
+			}
+		}
+	}
+
 	// Normal dispatch: broadcast and non-stop handlers in tree order.
 	for i := range dt.entries {
+		if dt.entries[i].preempt {
+			continue // already handled
+		}
 		if dt.entries[i].matches(ke) {
 			dt.entries[i].handler(ke)
 			if dt.entries[i].stop {
@@ -149,6 +172,11 @@ func (dt *dispatchTable) validate() error {
 		}
 		// Focus-gated entries cannot conflict because only one can be focused at a time
 		if entry.pattern.FocusRequired {
+			continue
+		}
+		// Preemptive entries (modal overlay) run in a separate dispatch pass
+		// and cannot conflict with normal stop handlers.
+		if entry.preempt {
 			continue
 		}
 		// Strip FocusRequired for comparison so focus-gated and broadcast entries

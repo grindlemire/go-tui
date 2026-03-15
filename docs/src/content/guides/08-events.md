@@ -33,12 +33,15 @@ Three helper functions cover the binding patterns, each accepting a `KeyMatcher`
 | `On(matcher, handler)` | Continues | Default binding; other components can also handle the event |
 | `OnStop(matcher, handler)` | Stops | Exclusive ownership; no other component sees the event |
 | `OnFocused(matcher, handler)` | Stops (focus-gated) | Only fires when the component has focus |
+| `OnPreemptStop(matcher, handler)` | Stops (preemptive) | Fires before all normal handlers; used by modal to block parent keys |
 
 A `KeyMatcher` can be a Key constant (`tui.KeyEscape`), a specific rune (`tui.Rune('q')`), or the catch-all `tui.AnyRune`. Key and RuneSpec both support `.Ctrl()`, `.Alt()`, and `.Shift()` modifier methods.
 
 `On` with a Key constant matches special keys like Escape, Enter, and arrow keys. `On` with `Rune('x')` matches a specific printable character. `On` with `AnyRune` catches all printable characters, which is useful for text input.
 
 The `OnStop` variant prevents other components from seeing the event after your handler runs. `On` lets the event continue through the component tree. More on propagation in a later section.
+
+`OnPreemptStop` fires in a separate pass before the normal tree-order dispatch. This lets overlay components like Modal consume key events before parent component handlers can see them. The `AnyKey` matcher pairs with this to create a catch-all that blocks all keys: `OnPreemptStop(AnyKey, noop)`.
 
 A quick example showing the difference between key and rune matching:
 
