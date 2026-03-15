@@ -2,7 +2,7 @@
   "name": "go-tui",
   "displayName": "go-tui",
   "description": "Syntax highlighting and LSP support for .gsx files (go-tui DSL)",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "publisher": "grindlemire",
   "license": "MIT",
   "repository": {

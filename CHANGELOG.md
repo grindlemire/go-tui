@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/grindlemire/go-tui/compare/v0.6.0...v0.6.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **lsp:** highlight Go keywords in expression attribute values ([b147ae7](https://github.com/grindlemire/go-tui/commit/b147ae799f44c0a7743df093599b85dfb68d8614))
+
 ## [0.6.0](https://github.com/grindlemire/go-tui/compare/v0.5.0...v0.6.0) (2026-03-15)
 
 
