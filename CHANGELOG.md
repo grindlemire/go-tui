@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.7.0](https://github.com/grindlemire/go-tui/compare/v0.6.1...v0.7.0) (2026-03-15)
+
+
+### Features
+
+* add ApplyDim and FillBlank methods to Buffer ([04ad1ef](https://github.com/grindlemire/go-tui/commit/04ad1eff5aef8d4e1c18f85987afc135dc09d2f3))
+* add auto focus highlighting, Tab cycling, key suppression, and bottom-sheet modal example ([30fa430](https://github.com/grindlemire/go-tui/commit/30fa430c16df7e82a2bd00a93b410bce07ca09f3))
+* add Modal component with Render, KeyListener, and MouseListener ([6f414da](https://github.com/grindlemire/go-tui/commit/6f414da63b7d9a70269ed1070fccb9c8c4e32785))
+* add modal support ([87d3d78](https://github.com/grindlemire/go-tui/commit/87d3d78c40f2741bbc127915094fc068b1f3eadc))
+* add modal support to code generator ([56a62fb](https://github.com/grindlemire/go-tui/commit/56a62fbf1a1280e253c6a9cb239ef26f952afb6b))
+* add modal to analyzer known tags and attributes ([c4b27eb](https://github.com/grindlemire/go-tui/commit/c4b27eb66adfbc75d8d3c3364c1e059d1a0d2917))
+* add overlay flag to Element for modal support ([14976ed](https://github.com/grindlemire/go-tui/commit/14976ed7c84b618470feef95a6dccd4b36fded2b))
+* add overlay registration system to App ([5519970](https://github.com/grindlemire/go-tui/commit/55199705df45abfe49c00e969ab81e99c8cf1e69))
+* add overlay render pass and focus scoping for modal support ([1fc431e](https://github.com/grindlemire/go-tui/commit/1fc431e4ca82579215fac0e10225eb7fff93da17))
+* add reset confirmation modal to color mixer example ([aff5dc4](https://github.com/grindlemire/go-tui/commit/aff5dc4af06087c2941770ed1faf975b5d23420c))
+* **lsp:** add modal element definition to schema ([4c626e4](https://github.com/grindlemire/go-tui/commit/4c626e4149cee68cee130f723a2bb0b387ae50b5))
+
+
+### Bug Fixes
+
+* add Enter key handler to select focused modal button in color mixer ([e0de594](https://github.com/grindlemire/go-tui/commit/e0de594df32c7c3ed09da5290a79a2b1dc167262))
+* address review feedback for modal PR ([10addd5](https://github.com/grindlemire/go-tui/commit/10addd594cd2abd6148268339e27b44e746273a3))
+* ensure modal content children have opaque background by default ([680c6af](https://github.com/grindlemire/go-tui/commit/680c6af0883597cc28004a5dfb0832293ea48d07))
+* guard modals in inline mode, fix mouse coords, and resolve dispatch validation ([e898946](https://github.com/grindlemire/go-tui/commit/e89894651f972d7855439d4aac0b521665aec741))
+* repair RenderFull overlay handling and modal inline mode key blocking ([5917456](https://github.com/grindlemire/go-tui/commit/59174561cf5ad73cad5cbb98f0150638b6ff283b))
+* resolve render consistency, focus lifecycle, and test robustness ([e300abf](https://github.com/grindlemire/go-tui/commit/e300abfb1e10038bb35677c34d96c78ffa42437f))
+* **suspend:** prevent Kitty keyboard response from leaking as typed input after Ctrl+Z resume ([2016f29](https://github.com/grindlemire/go-tui/commit/2016f29115425fc650d8fc05b7d54a03a9380d13))
+
 ## [0.6.1](https://github.com/grindlemire/go-tui/compare/v0.6.0...v0.6.1) (2026-03-15)
 
 
