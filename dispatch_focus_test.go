@@ -57,7 +57,7 @@ func TestDispatchTable_FocusRequired(t *testing.T) {
 
 			// App-level broadcast binding: Escape quits (no FocusRequired)
 			table.entries = append(table.entries, dispatchEntry{
-				pattern:  KeyPattern{Key: KeyEscape, RequireNoMods: true},
+				pattern:  KeyPattern{Key: KeyEscape, ExcludeMods: ModCtrl | ModAlt | ModShift},
 				handler:  func(ke KeyEvent) { appQuit = true },
 				stop:     false,
 				position: 0,

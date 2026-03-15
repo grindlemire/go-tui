@@ -387,13 +387,13 @@ func TestKeyMap_KeyPatternEquality(t *testing.T) {
 			b:    KeyPattern{Key: KeyTab, Mod: ModCtrl},
 			want: false,
 		},
-		"RequireNoMods patterns are equal": {
-			a:    KeyPattern{Key: KeyTab, RequireNoMods: true},
-			b:    KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods patterns are equal": {
+			a:    KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
+			b:    KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			want: true,
 		},
-		"RequireNoMods vs Mod not equal": {
-			a:    KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods vs Mod not equal": {
+			a:    KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			b:    KeyPattern{Key: KeyTab, Mod: ModShift},
 			want: false,
 		},

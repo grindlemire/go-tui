@@ -123,29 +123,39 @@ func TestDispatchEntry_Matches(t *testing.T) {
 			event:   KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl},
 			want:    false,
 		},
-		"no modifier required rejects event with mods": {
-			pattern: KeyPattern{Key: KeyEscape, RequireNoMods: true},
+		"ExcludeMods rejects event with excluded mod": {
+			pattern: KeyPattern{Key: KeyEscape, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyEscape, Mod: ModShift},
 			want:    false,
 		},
-		"no RequireNoMods ignores event mods": {
+		"no ExcludeMods ignores event mods": {
 			pattern: KeyPattern{Key: KeyEscape},
 			event:   KeyEvent{Key: KeyEscape, Mod: ModShift},
 			want:    true,
 		},
-		"RequireNoMods matches event with no modifiers": {
-			pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods matches event with no modifiers": {
+			pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyTab, Mod: ModNone},
 			want:    true,
 		},
-		"RequireNoMods rejects event with shift": {
-			pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods rejects event with shift": {
+			pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyTab, Mod: ModShift},
 			want:    false,
 		},
-		"RequireNoMods rejects event with alt": {
-			pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+		"ExcludeMods rejects event with alt": {
+			pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			event:   KeyEvent{Key: KeyTab, Mod: ModAlt},
+			want:    false,
+		},
+		"ExcludeMods Ctrl|Alt allows shift": {
+			pattern: KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			event:   KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModShift},
+			want:    true,
+		},
+		"ExcludeMods Ctrl|Alt blocks ctrl": {
+			pattern: KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			event:   KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl},
 			want:    false,
 		},
 		"empty pattern matches nothing": {
