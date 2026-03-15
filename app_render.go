@@ -181,6 +181,15 @@ func (a *App) RenderFull() {
 	// Clear overlay registrations from previous frame
 	a.clearOverlays()
 
+	// If a root component is set, re-render it to get a fresh element tree.
+	// This repopulates overlay registrations (e.g. from Modal.Render).
+	if a.rootComponent != nil {
+		el := a.rootComponent.Render(a)
+		el.setAppRecursive(a)
+		a.root = el
+		a.focus.refreshFromTree(el)
+	}
+
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, height)
@@ -192,6 +201,13 @@ func (a *App) RenderFull() {
 		if a.overlays[i].trapFocus {
 			a.focus.ScopeTo(a.overlays[i].element)
 			focusScoped = true
+			if a.overlays[i].needsFocusInit {
+				a.overlays[i].needsFocusInit = false
+				current := a.focus.Focused()
+				if current == nil || !a.focus.isInScope(current) {
+					a.focus.Next()
+				}
+			}
 			break
 		}
 	}

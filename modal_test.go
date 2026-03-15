@@ -273,6 +273,113 @@ func TestModal_HandleMouse_ClosedNoOp(t *testing.T) {
 	}
 }
 
+// testModalRoot is a minimal root component that wraps a Modal for testing.
+type testModalRoot struct {
+	modal *Modal
+}
+
+func (r *testModalRoot) Render(app *App) *Element {
+	root := New()
+	el := r.modal.Render(app)
+	root.AddChild(el)
+	return root
+}
+
+// newTestApp creates a lightweight App with a mock terminal and buffer for modal tests.
+func newTestApp(width, height int) *App {
+	return &App{
+		terminal:    NewMockTerminal(width, height),
+		buffer:      NewBuffer(width, height),
+		stopCh:      make(chan struct{}),
+		eventQueue:  make(chan func(), 256),
+		updateQueue: make(chan func(), 256),
+		focus:       newFocusManager(),
+		mounts:      newMountState(),
+		batch:       newBatchContext(),
+	}
+}
+
+func TestModal_RenderFull_RepopulatesOverlays(t *testing.T) {
+	open := NewState(true)
+	modal := NewModal(WithModalOpen(open))
+	rootComp := &testModalRoot{modal: modal}
+
+	app := newTestApp(80, 24)
+	modal.BindApp(app)
+	app.rootComponent = rootComp
+
+	// First render populates overlays
+	app.Render()
+	if len(app.overlays) == 0 {
+		t.Fatal("expected overlay after initial Render()")
+	}
+
+	// RenderFull should re-render the component tree and repopulate overlays
+	app.RenderFull()
+	if len(app.overlays) == 0 {
+		t.Error("RenderFull() cleared overlays without re-registering them; open modal vanishes on full redraw")
+	}
+}
+
+func TestModal_RenderFull_NeedsFocusInit(t *testing.T) {
+	open := NewState(false)
+	modal := NewModal(WithModalOpen(open))
+	rootComp := &testModalRoot{modal: modal}
+
+	app := newTestApp(80, 24)
+	modal.BindApp(app)
+	app.rootComponent = rootComp
+
+	// Initial render with modal closed
+	app.Render()
+	if len(app.overlays) != 0 {
+		t.Fatal("expected no overlays when modal is closed")
+	}
+
+	// Open the modal; next render should set needsFocusInit
+	open.Set(true)
+
+	// Use RenderFull to verify it processes needsFocusInit
+	app.RenderFull()
+	if len(app.overlays) == 0 {
+		t.Fatal("expected overlay after opening modal")
+	}
+	for _, ov := range app.overlays {
+		if ov.needsFocusInit {
+			t.Error("RenderFull() did not process needsFocusInit; focus won't auto-enter the modal on full redraw")
+		}
+	}
+}
+
+func TestModal_KeyMap_InlineMode(t *testing.T) {
+	open := NewState(true)
+	m := NewModal(WithModalOpen(open))
+
+	app := newTestApp(80, 24)
+	app.inlineHeight = 10
+	app.inAlternateScreen = false
+	m.BindApp(app)
+
+	// In inline mode, registerOverlay silently skips the overlay
+	m.Render(app)
+	if len(app.overlays) != 0 {
+		t.Fatal("expected no overlay in inline mode")
+	}
+
+	// KeyMap should return nil since the modal is not rendered
+	km := m.KeyMap()
+	if km != nil {
+		t.Errorf("expected nil KeyMap in inline mode, got %d bindings", len(km))
+	}
+
+	// After entering alternate screen, KeyMap should return bindings
+	app.inAlternateScreen = true
+	km = m.KeyMap()
+	if km == nil {
+		t.Error("expected non-nil KeyMap in alternate screen mode")
+	}
+}
+
 func TestModal_Options(t *testing.T) {
 	type tc struct {
 		opts     []ModalOption

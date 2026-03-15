@@ -103,6 +103,12 @@ func (m *Modal) KeyMap() KeyMap {
 	if m.open == nil || !m.open.Get() {
 		return nil
 	}
+	// In inline mode without alternate screen, overlays are not rendered
+	// (registerOverlay silently skips them). Returning preemptive bindings
+	// here would block all keyboard input with no visible modal.
+	if m.app != nil && !m.app.inAlternateScreen && m.app.inlineHeight > 0 {
+		return nil
+	}
 	var km KeyMap
 	if m.closeOnEscape {
 		km = append(km, OnPreemptStop(KeyEscape, func(ke KeyEvent) {
