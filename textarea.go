@@ -226,40 +226,31 @@ func (t *TextArea) HandleEvent(e Event) bool {
 // KeyMap returns the key bindings for the text area.
 func (t *TextArea) KeyMap() KeyMap {
 	km := KeyMap{
-		// Text input (focus-gated)
-		OnRunesFocused(t.insertChar),
-
-		// Editing (focus-gated)
-		OnKeyFocused(KeyBackspace, t.backspace),
-		OnKeyFocused(KeyDelete, t.delete),
-
-		// Navigation (focus-gated)
-		OnKeyFocused(KeyLeft, t.moveLeft),
-		OnKeyFocused(KeyRight, t.moveRight),
-		OnKeyFocused(KeyUp, t.moveUp),
-		OnKeyFocused(KeyDown, t.moveDown),
-		OnKeyFocused(KeyHome, t.moveHome),
-		OnKeyFocused(KeyEnd, t.moveEnd),
+		OnFocused(AnyRune, t.insertChar),
+		OnFocused(KeyBackspace, t.backspace),
+		OnFocused(KeyDelete, t.delete),
+		OnFocused(KeyLeft, t.moveLeft),
+		OnFocused(KeyRight, t.moveRight),
+		OnFocused(KeyUp, t.moveUp),
+		OnFocused(KeyDown, t.moveDown),
+		OnFocused(KeyHome, t.moveHome),
+		OnFocused(KeyEnd, t.moveEnd),
 	}
 
 	if t.submitKey == KeyEnter {
-		// Enter submits, Ctrl+J inserts newline
 		km = append(km,
-			// Ctrl+J inserts newline (focus-gated)
-			OnRuneFocused('j', t.insertNewline, ModCtrl),
-			OnKeyFocused(KeyEnter, t.submit),
+			OnFocused(Rune('j').Ctrl(), t.insertNewline),
+			OnFocused(KeyEnter, t.submit),
 		)
 	} else {
-		// Custom submit key submits, Enter inserts newline
 		km = append(km,
-			OnKeyFocused(KeyEnter, t.insertNewline),
-			OnKeyFocused(t.submitKey, t.submit),
+			OnFocused(KeyEnter, t.insertNewline),
+			OnFocused(t.submitKey, t.submit),
 		)
 	}
 
 	km = append(km,
-		// Blur on Escape (focus-gated)
-		OnKeyFocused(KeyEscape, func(ke KeyEvent) {
+		OnFocused(KeyEscape, func(ke KeyEvent) {
 			if app := ke.App(); app != nil {
 				app.BlurFocused()
 			}

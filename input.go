@@ -231,24 +231,15 @@ func (inp *Input) HandleEvent(e Event) bool {
 // KeyMap returns the key bindings for the input.
 func (inp *Input) KeyMap() KeyMap {
 	return KeyMap{
-		// Text input (focus-gated)
-		OnRunesFocused(inp.insertChar),
-
-		// Editing (focus-gated)
-		OnKeyFocused(KeyBackspace, inp.backspace),
-		OnKeyFocused(KeyDelete, inp.delete),
-
-		// Navigation (focus-gated)
-		OnKeyFocused(KeyLeft, inp.moveLeft),
-		OnKeyFocused(KeyRight, inp.moveRight),
-		OnKeyFocused(KeyHome, inp.moveHome),
-		OnKeyFocused(KeyEnd, inp.moveEnd),
-
-		// Submit (focus-gated)
-		OnKeyFocused(KeyEnter, inp.submit),
-
-		// Blur on Escape (focus-gated)
-		OnKeyFocused(KeyEscape, func(ke KeyEvent) {
+		OnFocused(AnyRune, inp.insertChar),
+		OnFocused(KeyBackspace, inp.backspace),
+		OnFocused(KeyDelete, inp.delete),
+		OnFocused(KeyLeft, inp.moveLeft),
+		OnFocused(KeyRight, inp.moveRight),
+		OnFocused(KeyHome, inp.moveHome),
+		OnFocused(KeyEnd, inp.moveEnd),
+		OnFocused(KeyEnter, inp.submit),
+		OnFocused(KeyEscape, func(ke KeyEvent) {
 			if app := ke.App(); app != nil {
 				app.BlurFocused()
 			}

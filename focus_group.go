@@ -82,18 +82,9 @@ func (fg *FocusGroup) Current() int {
 }
 
 // KeyMap returns key bindings for Tab (next) and Shift+Tab (prev).
-// Tab is matched as KeyTab; Shift+Tab is matched as KeyTab with ModShift.
 func (fg *FocusGroup) KeyMap() KeyMap {
 	return KeyMap{
-		{
-			Pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
-			Handler: func(ke KeyEvent) { fg.Next() },
-			Stop:    false,
-		},
-		{
-			Pattern: KeyPattern{Key: KeyTab, Mod: ModShift},
-			Handler: func(ke KeyEvent) { fg.Prev() },
-			Stop:    false,
-		},
+		On(KeyTab, func(ke KeyEvent) { fg.Next() }),
+		On(KeyTab.Shift(), func(ke KeyEvent) { fg.Prev() }),
 	}
 }
