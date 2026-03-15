@@ -190,9 +190,31 @@ func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
 
 Both input methods call the same `adjust*` methods, so the behavior stays consistent. The preset buttons use `RefMap.All()` to iterate and hit-test by key, letting us identify which preset was clicked by name.
 
+## Click Handling in Modals
+
+Modals handle mouse clicks internally. You don't need refs or `HandleMouse` for buttons inside a modal. Use the `onActivate` attribute on focusable elements instead:
+
+```gsx
+<modal open={s.showDialog} class="justify-center items-center">
+    <div class="border-rounded p-2 flex-col gap-1 w-40">
+        <span class="font-bold">Delete Item?</span>
+        <div class="flex gap-2 justify-center">
+            <button class="px-2 border-rounded focusable" onActivate={s.onDelete}>Delete</button>
+            <button class="px-2 border-rounded focusable" onActivate={s.onCancel}>Cancel</button>
+        </div>
+    </div>
+</modal>
+```
+
+Clicking a button fires its `onActivate` callback. Clicking the backdrop (the dimmed area outside the dialog) closes the modal by setting the `open` state to `false`.
+
+Enter does the same thing as a click: it fires `onActivate` on whichever button is focused. Tab and Shift+Tab cycle between focusable elements inside the modal. Escape closes it.
+
+Outside of modals, use refs and `HandleClicks` for click targets. Inside modals, `onActivate` is all you need.
+
 ## Complete Example
 
-This color mixer lets you adjust RGB values with both keyboard shortcuts and mouse clicks. Each color channel has a visual bar, a value readout, and +/- buttons. It also includes clickable preset color buttons using `RefMap` with `key`:
+This color mixer uses ref-based click handling for the +/- buttons and presets, plus a modal confirmation dialog for the reset action. Each color channel has a visual bar, a value readout, and clickable buttons. Preset colors use `RefMap` with `key`:
 
 ```gsx
 package main
@@ -215,6 +237,7 @@ type colorMixer struct {
     blueDnBtn    *tui.Ref
     presetBtns   *tui.RefMap[string]
     activePreset *tui.State[string]
+    showReset    *tui.State[bool]
 }
 
 func ColorMixer() *colorMixer {
@@ -230,6 +253,7 @@ func ColorMixer() *colorMixer {
         blueDnBtn:    tui.NewRef(),
         presetBtns:   tui.NewRefMap[string](),
         activePreset: tui.NewState(""),
+        showReset:    tui.NewState(false),
     }
 }
 
@@ -270,6 +294,18 @@ func (c *colorMixer) adjustBlue(delta int) {
     c.activePreset.Set("")
 }
 
+func (c *colorMixer) confirmReset() {
+    c.showReset.Set(false)
+    c.red.Set(128)
+    c.green.Set(64)
+    c.blue.Set(200)
+    c.activePreset.Set("")
+}
+
+func (c *colorMixer) cancelReset() {
+    c.showReset.Set(false)
+}
+
 func (c *colorMixer) applyPreset(name string) {
     for _, p := range presets {
         if p.name == name {
@@ -292,6 +328,7 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
         tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
         tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
         tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
+        tui.On(tui.Rune('x'), func(ke tui.KeyEvent) { c.showReset.Set(true) }),
     }
 }
 
@@ -411,9 +448,21 @@ templ (c *colorMixer) Render() {
         </div>
 
         <div class="flex justify-center">
-            <span class="font-dim">r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
+            <span class="font-dim">r/g/b increase | R/G/B decrease | x reset | click buttons/presets | q quit</span>
         </div>
     </div>
+
+    // Reset confirmation modal (uses onActivate, not refs)
+    <modal open={c.showReset} class="justify-center items-center">
+        <div class="border-rounded p-2 flex-col gap-1 w-40 border-cyan">
+            <span class="font-bold text-cyan">Reset Colors?</span>
+            <span>This restores the default RGB values.</span>
+            <div class="flex gap-2 justify-center">
+                <button class="px-2 border-rounded focusable" onActivate={c.confirmReset}>Yes</button>
+                <button class="px-2 border-rounded focusable" onActivate={c.cancelReset}>No</button>
+            </div>
+        </div>
+    </modal>
 }
 ```
 
@@ -455,7 +504,11 @@ go run .
 
 Click the +/- buttons, use r/g/b keys to adjust colors, or click a preset to apply it:
 
-![Refs and Click Handling screenshot](/guides/09.png)
+![Refs and Click Handling screenshot](/guides/09a.png)
+
+Click "reset" to open the confirmation dialog and click on an option.
+
+![Reset confirmation modal](/guides/09b.png)
 
 ## Next Steps
 
