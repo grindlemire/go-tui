@@ -37,6 +37,9 @@ func (a *App) Render() {
 	// Clear buffer
 	a.buffer.Clear()
 
+	// Clear overlay registrations from previous frame
+	a.clearOverlays()
+
 	// If a root component is set, re-render it to get a fresh element tree.
 	// This is the core of the reactivity cycle: state changes → dirty → re-render
 	// component → new element tree with updated state reads.
@@ -59,6 +62,38 @@ func (a *App) Render() {
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, renderHeight)
+	}
+
+	// Render overlay elements (modals) on top of the main tree
+	for _, ov := range a.overlays {
+		switch ov.backdrop {
+		case "dim":
+			a.buffer.ApplyDim()
+		case "blank":
+			a.buffer.FillBlank()
+		}
+		ov.element.Render(a.buffer, width, renderHeight)
+	}
+
+	// Apply focus scoping for the topmost overlay with trapFocus
+	focusScoped := false
+	for i := len(a.overlays) - 1; i >= 0; i-- {
+		if a.overlays[i].trapFocus {
+			a.focus.ScopeTo(a.overlays[i].element)
+			focusScoped = true
+			break
+		}
+	}
+	if !focusScoped && a.focus.scope != nil {
+		a.focus.ClearScope()
+	}
+
+	// If focus scope was just applied and current focus is outside scope, focus first child
+	if focusScoped {
+		current := a.focus.Focused()
+		if current == nil || !a.focus.isInScope(current) {
+			a.focus.Next()
+		}
 	}
 
 	// Sweep mount cache: clean up components no longer in the tree.
