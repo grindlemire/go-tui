@@ -161,6 +161,7 @@ type RuneSpec struct {
 }
 
 // Rune returns a RuneSpec that matches a specific printable character.
+// r must be a non-zero printable rune; Rune(0) will never match any event.
 // Without modifiers, allows Shift (character-forming) but excludes Ctrl and Alt.
 func Rune(r rune) RuneSpec {
 	return RuneSpec{r: r}
