@@ -337,7 +337,7 @@ type KeyPattern struct {
     Rune          rune
     AnyRune       bool
     Mod           Modifier
-    RequireNoMods bool
+    ExcludeMods   Modifier
 }
 ```
 
@@ -349,7 +349,7 @@ Describes which key events a binding matches.
 | `Rune` | `rune` | Match a specific printable character, or `0` for none. |
 | `AnyRune` | `bool` | When `true`, match any printable character. |
 | `Mod` | `Modifier` | When non-zero, the event must have exactly these modifiers. |
-| `RequireNoMods` | `bool` | When `true`, the event must have no modifiers. The `Mod` field is ignored. |
+| `ExcludeMods` | `Modifier` | Reject the event if any of these modifiers are present. |
 
 You don't usually construct `KeyPattern` directly. Use the helper functions below instead.
 

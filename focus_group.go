@@ -86,7 +86,7 @@ func (fg *FocusGroup) Current() int {
 func (fg *FocusGroup) KeyMap() KeyMap {
 	return KeyMap{
 		{
-			Pattern: KeyPattern{Key: KeyTab, RequireNoMods: true},
+			Pattern: KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			Handler: func(ke KeyEvent) { fg.Next() },
 			Stop:    false,
 		},

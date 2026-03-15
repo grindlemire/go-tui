@@ -17,7 +17,7 @@ type KeyPattern struct {
 	Rune          rune     // Specific rune, or 0
 	AnyRune       bool     // Match any printable character
 	Mod           Modifier // Required modifiers (when non-zero, event must have exactly these mods)
-	RequireNoMods bool     // When true, event must have no modifiers (Mod field is ignored)
+	ExcludeMods   Modifier // Reject event if any of these modifiers are present
 	FocusRequired bool     // When true, only dispatch when owning component is focused
 }
 
@@ -26,7 +26,7 @@ type KeyPattern struct {
 // Use OnKeyMod to match a key with specific modifiers (e.g., Shift+Tab).
 func OnKey(key Key, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Key: key, RequireNoMods: true},
+		Pattern: KeyPattern{Key: key, ExcludeMods: ModCtrl | ModAlt | ModShift},
 		Handler: handler,
 		Stop:    false,
 	}
@@ -37,7 +37,7 @@ func OnKey(key Key, handler func(KeyEvent)) KeyBinding {
 // Use OnKeyModStop to match a key with specific modifiers.
 func OnKeyStop(key Key, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Key: key, RequireNoMods: true},
+		Pattern: KeyPattern{Key: key, ExcludeMods: ModCtrl | ModAlt | ModShift},
 		Handler: handler,
 		Stop:    true,
 	}
@@ -64,18 +64,20 @@ func OnKeyModStop(key Key, mod Modifier, handler func(KeyEvent)) KeyBinding {
 }
 
 // OnRune creates a broadcast binding for a specific printable character.
+// Allows Shift (character-forming) but excludes Ctrl and Alt.
 func OnRune(r rune, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Rune: r},
+		Pattern: KeyPattern{Rune: r, ExcludeMods: ModCtrl | ModAlt},
 		Handler: handler,
 		Stop:    false,
 	}
 }
 
 // OnRuneStop creates a stop-propagation binding for a specific printable character.
+// Allows Shift (character-forming) but excludes Ctrl and Alt.
 func OnRuneStop(r rune, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Rune: r},
+		Pattern: KeyPattern{Rune: r, ExcludeMods: ModCtrl | ModAlt},
 		Handler: handler,
 		Stop:    true,
 	}
@@ -102,9 +104,10 @@ func OnRuneModStop(r rune, mod Modifier, handler func(KeyEvent)) KeyBinding {
 }
 
 // OnRunes creates a broadcast binding for all printable characters.
+// Allows Shift (character-forming) but excludes Ctrl and Alt.
 func OnRunes(handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{AnyRune: true},
+		Pattern: KeyPattern{AnyRune: true, ExcludeMods: ModCtrl | ModAlt},
 		Handler: handler,
 		Stop:    false,
 	}
@@ -112,9 +115,10 @@ func OnRunes(handler func(KeyEvent)) KeyBinding {
 
 // OnRunesStop creates a stop-propagation binding for all printable characters.
 // Use this for text inputs that need exclusive access to character keys.
+// Allows Shift (character-forming) but excludes Ctrl and Alt.
 func OnRunesStop(handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{AnyRune: true},
+		Pattern: KeyPattern{AnyRune: true, ExcludeMods: ModCtrl | ModAlt},
 		Handler: handler,
 		Stop:    true,
 	}
@@ -124,7 +128,7 @@ func OnRunesStop(handler func(KeyEvent)) KeyBinding {
 // Only fires when the owning component's element is focused.
 func OnKeyFocused(key Key, handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{Key: key, RequireNoMods: true, FocusRequired: true},
+		Pattern: KeyPattern{Key: key, ExcludeMods: ModCtrl | ModAlt | ModShift, FocusRequired: true},
 		Handler: handler,
 		Stop:    true,
 	}
@@ -132,9 +136,10 @@ func OnKeyFocused(key Key, handler func(KeyEvent)) KeyBinding {
 
 // OnRunesFocused creates a focus-gated stop-propagation binding for all printable characters.
 // Only fires when the owning component's element is focused.
+// Allows Shift (character-forming) but excludes Ctrl and Alt.
 func OnRunesFocused(handler func(KeyEvent)) KeyBinding {
 	return KeyBinding{
-		Pattern: KeyPattern{AnyRune: true, FocusRequired: true},
+		Pattern: KeyPattern{AnyRune: true, ExcludeMods: ModCtrl | ModAlt, FocusRequired: true},
 		Handler: handler,
 		Stop:    true,
 	}

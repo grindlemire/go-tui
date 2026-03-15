@@ -180,12 +180,12 @@ func TestFocusGroup_KeyMap(t *testing.T) {
 		t.Fatalf("KeyMap() returned %d bindings, want 2", len(km))
 	}
 
-	// First binding should be Tab with RequireNoMods
+	// First binding should be Tab with ExcludeMods
 	if km[0].Pattern.Key != KeyTab {
 		t.Errorf("first binding key = %v, want KeyTab", km[0].Pattern.Key)
 	}
-	if !km[0].Pattern.RequireNoMods {
-		t.Error("first binding should have RequireNoMods=true")
+	if km[0].Pattern.ExcludeMods != ModCtrl|ModAlt|ModShift {
+		t.Errorf("first binding ExcludeMods = %v, want all", km[0].Pattern.ExcludeMods)
 	}
 	if km[0].Stop {
 		t.Error("Tab binding should be broadcast (Stop=false)")
