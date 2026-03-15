@@ -292,6 +292,7 @@ func eventAttrs() []AttributeDef {
 	return []AttributeDef{
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
+		{Name: "onActivate", Type: "func", Description: "Called when Enter is pressed while focused: func()", Category: "event"},
 		{Name: "focusable", Type: "bool", Description: "Whether the element can receive focus", Category: "event"},
 		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this element on startup", Category: "event"},
 	}

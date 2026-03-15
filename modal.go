@@ -91,27 +91,40 @@ func (m *Modal) Render(app *App) *Element {
 }
 
 // KeyMap returns key bindings for the modal.
-// Handles Escape to close, and Tab/Shift+Tab for focus cycling within the modal.
+// All bindings are preemptive: they fire before parent component handlers,
+// preventing parent keys from leaking through when the modal is open.
+// A catch-all binding consumes any unhandled keys.
 func (m *Modal) KeyMap() KeyMap {
 	if m.open == nil || !m.open.Get() {
 		return nil
 	}
 	var km KeyMap
 	if m.closeOnEscape {
-		km = append(km, OnStop(KeyEscape, func(ke KeyEvent) {
+		km = append(km, OnPreemptStop(KeyEscape, func(ke KeyEvent) {
 			m.open.Set(false)
 		}))
 	}
 	if m.trapFocus && m.app != nil {
 		km = append(km,
-			OnStop(KeyTab, func(ke KeyEvent) {
+			OnPreemptStop(KeyTab, func(ke KeyEvent) {
 				m.app.FocusNext()
 			}),
-			OnStop(KeyTab.Shift(), func(ke KeyEvent) {
+			OnPreemptStop(KeyTab.Shift(), func(ke KeyEvent) {
 				m.app.FocusPrev()
 			}),
 		)
 	}
+	// Enter activates the focused element's onActivate callback
+	km = append(km, OnPreemptStop(KeyEnter, func(ke KeyEvent) {
+		if m.app == nil {
+			return
+		}
+		if focused, ok := m.app.Focused().(*Element); ok && focused != nil {
+			focused.Activate()
+		}
+	}))
+	// Catch-all: block all other keys from reaching parent handlers
+	km = append(km, OnPreemptStop(AnyKey, func(ke KeyEvent) {}))
 	return km
 }
 

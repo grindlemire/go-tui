@@ -218,8 +218,9 @@ func textExpr(code string) string {
 // handlerAttributes maps focus callback attribute names to their With* option functions.
 // Handlers are emitted as inline options during element creation (self-inject pattern).
 var handlerAttributes = map[string]string{
-	"onFocus": "tui.WithOnFocus",
-	"onBlur":  "tui.WithOnBlur",
+	"onFocus":    "tui.WithOnFocus",
+	"onBlur":     "tui.WithOnBlur",
+	"onActivate": "tui.WithOnActivate",
 }
 
 // attributeToOption maps DSL attribute names to tui.With* functions.

@@ -19,10 +19,8 @@ type colorMixer struct {
 	presetBtns   *tui.RefMap[string]
 	activePreset *tui.State[string]
 
-	resetBtn        *tui.Ref
-	showResetModal  *tui.State[bool]
-	resetConfirmBtn *tui.Ref
-	resetCancelBtn  *tui.Ref
+	resetBtn       *tui.Ref
+	showResetModal *tui.State[bool]
 }
 
 func ColorMixer() *colorMixer {
@@ -39,10 +37,8 @@ func ColorMixer() *colorMixer {
 		presetBtns:   tui.NewRefMap[string](),
 		activePreset: tui.NewState(""),
 
-		resetBtn:        tui.NewRef(),
-		showResetModal:  tui.NewState(false),
-		resetConfirmBtn: tui.NewRef(),
-		resetCancelBtn:  tui.NewRef(),
+		resetBtn:       tui.NewRef(),
+		showResetModal: tui.NewState(false),
 	}
 }
 
@@ -105,55 +101,14 @@ func (c *colorMixer) applyPreset(name string) {
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return // let the modal handle Escape
-			}
-			ke.App().Stop()
-		}),
-		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			ke.App().Stop()
-		}),
-		tui.On(tui.KeyEnter, func(ke tui.KeyEvent) {
-			if !c.showResetModal.Get() {
-				return
-			}
-			focused := ke.App().Focused()
-			if el := c.resetConfirmBtn.El(); el != nil && focused == el {
-				c.resetColors()
-			} else if el := c.resetCancelBtn.El(); el != nil && focused == el {
-				c.showResetModal.Set(false)
-			}
-		}),
-		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() {
-				return
-			}
-			c.showResetModal.Set(true)
-		}),
-		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() { return }
-			c.adjustRed(-16)
-		}),
-		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() { return }
-			c.adjustGreen(16)
-		}),
-		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() { return }
-			c.adjustGreen(-16)
-		}),
-		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() { return }
-			c.adjustBlue(16)
-		}),
-		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) {
-			if c.showResetModal.Get() { return }
-			c.adjustBlue(-16)
-		}),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
+		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
+		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
+		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
+		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
+		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
 	}
 }
 
@@ -167,8 +122,6 @@ func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
 		tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
 		tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
 		tui.Click(c.resetBtn, func() { c.showResetModal.Set(true) }),
-		tui.Click(c.resetConfirmBtn, func() { c.resetColors() }),
-		tui.Click(c.resetCancelBtn, func() { c.showResetModal.Set(false) }),
 	) {
 		return true
 	}
@@ -284,13 +237,13 @@ templ (c *colorMixer) Render() {
 		</div>
 
 		// Confirmation modal for resetting colors
-		<modal open={c.showResetModal} backdrop="blank" class="justify-center items-center">
+		<modal open={c.showResetModal} class="justify-center items-center">
 			<div class="border-rounded p-2 flex-col gap-1 w-36 items-center">
 				<span class="font-bold text-yellow">Reset Colors?</span>
 				<span class="font-dim">This will restore default values.</span>
 				<div class="flex gap-2 justify-center">
-					<button ref={c.resetCancelBtn} class="px-2 text-green font-bold border-single focusable">Cancel</button>
-					<button ref={c.resetConfirmBtn} class="px-2 text-red font-bold border-single focusable">Yes, Reset</button>
+					<button class="px-2 text-green font-bold border-single focusable" onActivate={func() { c.showResetModal.Set(false) }}>Cancel</button>
+					<button class="px-2 text-red font-bold border-single focusable" onActivate={func() { c.resetColors() }}>Yes, Reset</button>
 				</div>
 			</div>
 		</modal>

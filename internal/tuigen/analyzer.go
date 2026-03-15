@@ -180,6 +180,9 @@ var knownAttributes = map[string]bool{
 	"closeOnBackdropClick": true,
 	"trapFocus":            true,
 
+	// Activation
+	"onActivate": true,
+
 	// Textarea / Input
 	"placeholder":      true,
 	"placeholderStyle": true,
