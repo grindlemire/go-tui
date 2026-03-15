@@ -128,10 +128,10 @@ func (m *Modal) KeyMap() KeyMap {
 	return km
 }
 
-// HandleMouse handles backdrop click events.
-// Clicking on the modal's backdrop (outside children) closes the modal.
+// HandleMouse handles click events within the modal.
+// Clicking a child with onActivate triggers it. Clicking the backdrop closes the modal.
 func (m *Modal) HandleMouse(me MouseEvent) bool {
-	if m.open == nil || !m.open.Get() || !m.closeOnBackdrop {
+	if m.open == nil || !m.open.Get() {
 		return false
 	}
 	if me.Action != MousePress || me.Button != MouseLeft {
@@ -140,11 +140,24 @@ func (m *Modal) HandleMouse(me MouseEvent) bool {
 	if m.element == nil {
 		return false
 	}
-	// Check if click landed on the modal container itself (not on a child)
 	hit := m.element.ElementAt(me.X, me.Y)
+	if hit == nil {
+		return false
+	}
+	// Backdrop click (hit the overlay container itself, not a child)
 	if hit == m.element {
-		m.open.Set(false)
-		return true
+		if m.closeOnBackdrop {
+			m.open.Set(false)
+			return true
+		}
+		return false
+	}
+	// Check if the clicked element (or an ancestor up to the overlay) has onActivate
+	for el := hit; el != nil && el != m.element; el = el.parent {
+		if el.onActivate != nil {
+			el.Activate()
+			return true
+		}
 	}
 	return false
 }
