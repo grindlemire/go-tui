@@ -25,9 +25,9 @@ func Sidebar(category *tui.State[string]) *sidebar {
 
 func (s *sidebar) KeyMap() tui.KeyMap {
 	km := tui.KeyMap{
-		tui.OnRuneMod('b', tui.ModCtrl, func(ke tui.KeyEvent) {
+		tui.OnRune('b', func(ke tui.KeyEvent) {
 			s.expanded.Set(!s.expanded.Get())
-		}),
+		}, tui.ModCtrl),
 	}
 	if s.expanded.Get() {
 		km = append(km, tui.OnRune('j', func(ke tui.KeyEvent) { s.moveDown() }))

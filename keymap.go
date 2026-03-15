@@ -21,86 +21,53 @@ type KeyPattern struct {
 	FocusRequired bool     // When true, only dispatch when owning component is focused
 }
 
-// OnKey creates a broadcast binding for a specific key with no modifiers.
-// Other handlers for the same key will also fire.
-// Use OnKeyMod to match a key with specific modifiers (e.g., Shift+Tab).
-func OnKey(key Key, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Key: key, ExcludeMods: ModCtrl | ModAlt | ModShift},
-		Handler: handler,
-		Stop:    false,
+// OnKey creates a broadcast binding for a specific key.
+// Without modifiers, excludes Ctrl/Alt/Shift so only unmodified presses match.
+// With modifiers (e.g. OnKey(KeyTab, handler, ModShift)), matches that exact combo.
+func OnKey(key Key, handler func(KeyEvent), mods ...Modifier) KeyBinding {
+	var mod Modifier
+	for _, m := range mods {
+		mod |= m
 	}
+	pattern := KeyPattern{Key: key}
+	if mod != 0 {
+		pattern.Mod = mod
+	} else {
+		pattern.ExcludeMods = ModCtrl | ModAlt | ModShift
+	}
+	return KeyBinding{Pattern: pattern, Handler: handler}
 }
 
-// OnKeyStop creates a stop-propagation binding for a specific key with no modifiers.
+// OnKeyStop creates a stop-propagation binding for a specific key.
 // No handlers registered after this one (in tree order) will fire.
-// Use OnKeyModStop to match a key with specific modifiers.
-func OnKeyStop(key Key, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Key: key, ExcludeMods: ModCtrl | ModAlt | ModShift},
-		Handler: handler,
-		Stop:    true,
-	}
-}
-
-// OnKeyMod creates a broadcast binding for a key with specific modifiers.
-// Example: OnKeyMod(KeyTab, ModShift, handler) matches Shift+Tab.
-func OnKeyMod(key Key, mod Modifier, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Key: key, Mod: mod},
-		Handler: handler,
-		Stop:    false,
-	}
-}
-
-// OnKeyModStop creates a stop-propagation binding for a key with specific modifiers.
-// Example: OnKeyModStop(KeyTab, ModShift, handler) matches Shift+Tab exclusively.
-func OnKeyModStop(key Key, mod Modifier, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Key: key, Mod: mod},
-		Handler: handler,
-		Stop:    true,
-	}
+func OnKeyStop(key Key, handler func(KeyEvent), mods ...Modifier) KeyBinding {
+	b := OnKey(key, handler, mods...)
+	b.Stop = true
+	return b
 }
 
 // OnRune creates a broadcast binding for a specific printable character.
-// Allows Shift (character-forming) but excludes Ctrl and Alt.
-func OnRune(r rune, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Rune: r, ExcludeMods: ModCtrl | ModAlt},
-		Handler: handler,
-		Stop:    false,
+// Without modifiers, allows Shift (character-forming) but excludes Ctrl and Alt.
+// With modifiers (e.g. OnRune('s', handler, ModCtrl)), matches that exact combo.
+func OnRune(r rune, handler func(KeyEvent), mods ...Modifier) KeyBinding {
+	var mod Modifier
+	for _, m := range mods {
+		mod |= m
 	}
+	pattern := KeyPattern{Rune: r}
+	if mod != 0 {
+		pattern.Mod = mod
+	} else {
+		pattern.ExcludeMods = ModCtrl | ModAlt
+	}
+	return KeyBinding{Pattern: pattern, Handler: handler}
 }
 
 // OnRuneStop creates a stop-propagation binding for a specific printable character.
-// Allows Shift (character-forming) but excludes Ctrl and Alt.
-func OnRuneStop(r rune, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Rune: r, ExcludeMods: ModCtrl | ModAlt},
-		Handler: handler,
-		Stop:    true,
-	}
-}
-
-// OnRuneMod creates a broadcast binding for a specific rune with specific modifiers.
-// Example: OnRuneMod('s', ModCtrl, handler) matches Ctrl+S as a rune event
-// (requires Kitty keyboard protocol).
-func OnRuneMod(r rune, mod Modifier, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Rune: r, Mod: mod},
-		Handler: handler,
-		Stop:    false,
-	}
-}
-
-// OnRuneModStop creates a stop-propagation binding for a specific rune with specific modifiers.
-func OnRuneModStop(r rune, mod Modifier, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Rune: r, Mod: mod},
-		Handler: handler,
-		Stop:    true,
-	}
+func OnRuneStop(r rune, handler func(KeyEvent), mods ...Modifier) KeyBinding {
+	b := OnRune(r, handler, mods...)
+	b.Stop = true
+	return b
 }
 
 // OnRunes creates a broadcast binding for all printable characters.
@@ -126,12 +93,34 @@ func OnRunesStop(handler func(KeyEvent)) KeyBinding {
 
 // OnKeyFocused creates a focus-gated stop-propagation binding for a specific key.
 // Only fires when the owning component's element is focused.
-func OnKeyFocused(key Key, handler func(KeyEvent)) KeyBinding {
-	return KeyBinding{
-		Pattern: KeyPattern{Key: key, ExcludeMods: ModCtrl | ModAlt | ModShift, FocusRequired: true},
-		Handler: handler,
-		Stop:    true,
+func OnKeyFocused(key Key, handler func(KeyEvent), mods ...Modifier) KeyBinding {
+	var mod Modifier
+	for _, m := range mods {
+		mod |= m
 	}
+	pattern := KeyPattern{Key: key, FocusRequired: true}
+	if mod != 0 {
+		pattern.Mod = mod
+	} else {
+		pattern.ExcludeMods = ModCtrl | ModAlt | ModShift
+	}
+	return KeyBinding{Pattern: pattern, Handler: handler, Stop: true}
+}
+
+// OnRuneFocused creates a focus-gated stop-propagation binding for a specific rune.
+// Only fires when the owning component's element is focused.
+func OnRuneFocused(r rune, handler func(KeyEvent), mods ...Modifier) KeyBinding {
+	var mod Modifier
+	for _, m := range mods {
+		mod |= m
+	}
+	pattern := KeyPattern{Rune: r, FocusRequired: true}
+	if mod != 0 {
+		pattern.Mod = mod
+	} else {
+		pattern.ExcludeMods = ModCtrl | ModAlt
+	}
+	return KeyBinding{Pattern: pattern, Handler: handler, Stop: true}
 }
 
 // OnRunesFocused creates a focus-gated stop-propagation binding for all printable characters.

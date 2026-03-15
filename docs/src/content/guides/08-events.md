@@ -90,7 +90,7 @@ Three Ctrl+letter combinations produce the same byte as a functional key:
 
 In legacy mode, these are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `OnKey(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `OnKey(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H.
 
-If the terminal supports the Kitty keyboard protocol (negotiated automatically on startup), these keys become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. Use `OnKeyMod(tui.KeyRune, tui.ModCtrl, handler)` and check `ke.Rune` to handle Ctrl+H separately from Backspace when the Kitty protocol is active.
+If the terminal supports the Kitty keyboard protocol (negotiated automatically on startup), these keys become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. Use `OnKey(tui.KeyRune, handler, tui.ModCtrl)` and check `ke.Rune` to handle Ctrl+H separately from Backspace when the Kitty protocol is active.
 
 ```go
 // In legacy mode, these two bindings are identical:

@@ -246,11 +246,7 @@ func (t *TextArea) KeyMap() KeyMap {
 		// Enter submits, Ctrl+J inserts newline
 		km = append(km,
 			// Ctrl+J inserts newline (focus-gated)
-			KeyBinding{
-				Pattern: KeyPattern{Rune: 'j', Mod: ModCtrl, FocusRequired: true},
-				Handler: t.insertNewline,
-				Stop:    true,
-			},
+			OnRuneFocused('j', t.insertNewline, ModCtrl),
 			OnKeyFocused(KeyEnter, t.submit),
 		)
 	} else {

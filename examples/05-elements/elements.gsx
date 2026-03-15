@@ -59,7 +59,7 @@ func (e *elementsApp) KeyMap() tui.KeyMap {
 		tui.OnRune('q', func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
 		tui.OnRune('n', func(ke tui.KeyEvent) {e.name.Set("John Doe") }),
-		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusPrev() }, tui.ModShift),
 		tui.OnRune('+', func(ke tui.KeyEvent) {
 			v := e.progress.Get() + 5
 			if v > 100 {

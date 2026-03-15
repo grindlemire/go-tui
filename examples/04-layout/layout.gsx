@@ -44,9 +44,9 @@ func (l *layoutApp) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
 			l.viewIndex.Update(func(v int) int { return (v + 1) % len(viewNames()) })
 		}),
-		tui.OnKeyMod(tui.KeyTab, tui.ModShift, func(ke tui.KeyEvent) {
+		tui.OnKey(tui.KeyTab, func(ke tui.KeyEvent) {
 			l.viewIndex.Update(func(v int) int { return (v - 1 + len(viewNames())) % len(viewNames()) })
-		}),
+		}, tui.ModShift),
 		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) {
 			l.modeIndex.Update(func(v int) int { return (v + 1) % len(alignModes()) })
 		}),

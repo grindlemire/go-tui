@@ -315,13 +315,13 @@ func TestKeyMap_SliceType(t *testing.T) {
 		},
 		"single binding": {
 			km: KeyMap{
-				OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
+				OnRune('c', func(ke KeyEvent) {}, ModCtrl),
 			},
 			want: 1,
 		},
 		"multiple bindings": {
 			km: KeyMap{
-				OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
+				OnRune('c', func(ke KeyEvent) {}, ModCtrl),
 				OnRune('/', func(ke KeyEvent) {}),
 				OnRunesStop(func(ke KeyEvent) {}),
 				OnKeyStop(KeyEscape, func(ke KeyEvent) {}),
