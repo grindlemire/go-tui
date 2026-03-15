@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/grindlemire/go-tui/compare/v0.6.1...v0.6.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* **suspend:** prevent Kitty keyboard response from leaking as typed input after Ctrl+Z resume ([2016f29](https://github.com/grindlemire/go-tui/commit/2016f29115425fc650d8fc05b7d54a03a9380d13))
+
 ## [0.6.1](https://github.com/grindlemire/go-tui/compare/v0.6.0...v0.6.1) (2026-03-15)
 
 
