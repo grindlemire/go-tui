@@ -83,8 +83,8 @@ func parseInput(data []byte) []Event {
 
 		// Control characters (0x00-0x1F, except 0x1b which is handled above)
 		if b < 0x20 {
-			key := controlToKey(b)
-			events = append(events, KeyEvent{Key: key})
+			key, r, mod := controlToKey(b)
+			events = append(events, KeyEvent{Key: key, Rune: r, Mod: mod})
 			i++
 			continue
 		}
@@ -110,67 +110,26 @@ func parseInput(data []byte) []Event {
 	return events
 }
 
-// controlToKey converts a control character (0x00-0x1F) to a Key.
-func controlToKey(b byte) Key {
+// controlToKey converts a control character (0x00-0x1F) to a normalized key event.
+// Ambiguous bytes (0x08, 0x09, 0x0D, 0x1B) keep their semantic Key.
+// All other Ctrl+letter bytes produce {KeyRune, letter, ModCtrl}.
+func controlToKey(b byte) (Key, rune, Modifier) {
 	switch b {
-	case 0x00: // Ctrl+Space or Ctrl+@
-		return KeyCtrlSpace
-	case 0x01: // Ctrl+A
-		return KeyCtrlA
-	case 0x02: // Ctrl+B
-		return KeyCtrlB
-	case 0x03: // Ctrl+C
-		return KeyCtrlC
-	case 0x04: // Ctrl+D
-		return KeyCtrlD
-	case 0x05: // Ctrl+E
-		return KeyCtrlE
-	case 0x06: // Ctrl+F
-		return KeyCtrlF
-	case 0x07: // Ctrl+G (bell)
-		return KeyCtrlG
-	case 0x08: // Ctrl+H (backspace on some terminals)
-		return KeyBackspace
-	case 0x09: // Ctrl+I (tab)
-		return KeyTab
-	case 0x0a: // Ctrl+J (newline/enter on some terminals)
-		return KeyCtrlJ
-	case 0x0b: // Ctrl+K
-		return KeyCtrlK
-	case 0x0c: // Ctrl+L
-		return KeyCtrlL
-	case 0x0d: // Ctrl+M (carriage return/enter)
-		return KeyEnter
-	case 0x0e: // Ctrl+N
-		return KeyCtrlN
-	case 0x0f: // Ctrl+O
-		return KeyCtrlO
-	case 0x10: // Ctrl+P
-		return KeyCtrlP
-	case 0x11: // Ctrl+Q
-		return KeyCtrlQ
-	case 0x12: // Ctrl+R
-		return KeyCtrlR
-	case 0x13: // Ctrl+S
-		return KeyCtrlS
-	case 0x14: // Ctrl+T
-		return KeyCtrlT
-	case 0x15: // Ctrl+U
-		return KeyCtrlU
-	case 0x16: // Ctrl+V
-		return KeyCtrlV
-	case 0x17: // Ctrl+W
-		return KeyCtrlW
-	case 0x18: // Ctrl+X
-		return KeyCtrlX
-	case 0x19: // Ctrl+Y
-		return KeyCtrlY
-	case 0x1a: // Ctrl+Z
-		return KeyCtrlZ
-	case 0x1b: // Escape
-		return KeyEscape
+	case 0x08:
+		return KeyBackspace, 0, ModNone
+	case 0x09:
+		return KeyTab, 0, ModNone
+	case 0x0d:
+		return KeyEnter, 0, ModNone
+	case 0x1b:
+		return KeyEscape, 0, ModNone
+	case 0x00:
+		return KeyRune, ' ', ModCtrl // Ctrl+Space
 	default:
-		return KeyNone
+		if b >= 0x01 && b <= 0x1a {
+			return KeyRune, rune('a' + b - 1), ModCtrl
+		}
+		return KeyNone, 0, ModNone
 	}
 }
 

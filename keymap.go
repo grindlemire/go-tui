@@ -13,7 +13,7 @@ type KeyBinding struct {
 
 // KeyPattern identifies which key events match a binding.
 type KeyPattern struct {
-	Key           Key      // Specific key (KeyCtrlB, KeyEscape, etc.), or 0
+	Key           Key      // Specific key (KeyEscape, KeyBackspace, etc.), or 0
 	Rune          rune     // Specific rune, or 0
 	AnyRune       bool     // Match any printable character
 	Mod           Modifier // Required modifiers (when non-zero, event must have exactly these mods)

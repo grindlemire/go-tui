@@ -15,9 +15,9 @@ func TestKeyMap_OnKey(t *testing.T) {
 			wantKey:  KeyEscape,
 			wantStop: false,
 		},
-		"OnKey with ctrl key": {
-			key:      KeyCtrlC,
-			wantKey:  KeyCtrlC,
+		"OnKey with function key": {
+			key:      KeyF1,
+			wantKey:  KeyF1,
 			wantStop: false,
 		},
 		"OnKey with enter": {
@@ -224,8 +224,8 @@ func TestKeyMap_PatternFields(t *testing.T) {
 
 	tests := map[string]tc{
 		"OnKey only sets Key field": {
-			binding:     OnKey(KeyCtrlB, func(ke KeyEvent) {}),
-			wantKey:     KeyCtrlB,
+			binding:     OnKey(KeyF2, func(ke KeyEvent) {}),
+			wantKey:     KeyF2,
 			wantRune:    0,
 			wantAnyRune: false,
 			wantMods:    ModNone,
@@ -315,13 +315,13 @@ func TestKeyMap_SliceType(t *testing.T) {
 		},
 		"single binding": {
 			km: KeyMap{
-				OnKey(KeyCtrlC, func(ke KeyEvent) {}),
+				OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
 			},
 			want: 1,
 		},
 		"multiple bindings": {
 			km: KeyMap{
-				OnKey(KeyCtrlC, func(ke KeyEvent) {}),
+				OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
 				OnRune('/', func(ke KeyEvent) {}),
 				OnRunesStop(func(ke KeyEvent) {}),
 				OnKeyStop(KeyEscape, func(ke KeyEvent) {}),

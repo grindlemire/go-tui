@@ -47,8 +47,8 @@ func (e *explorer) KeyMap() tui.KeyMap {
 		tui.OnKey(tui.KeyDown, func(ke tui.KeyEvent) { e.record("Down") }),
 		tui.OnKey(tui.KeyLeft, func(ke tui.KeyEvent) { e.record("Left") }),
 		tui.OnKey(tui.KeyRight, func(ke tui.KeyEvent) { e.record("Right") }),
-		tui.OnKey(tui.KeyCtrlA, func(ke tui.KeyEvent) { e.record("Ctrl+A") }),
-		tui.OnKey(tui.KeyCtrlS, func(ke tui.KeyEvent) { e.record("Ctrl+S") }),
+		tui.OnRuneMod('a', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+A") }),
+		tui.OnRuneMod('s', tui.ModCtrl, func(ke tui.KeyEvent) { e.record("Ctrl+S") }),
 	}
 }
 

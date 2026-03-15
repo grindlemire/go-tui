@@ -68,11 +68,6 @@ func TestKey_String(t *testing.T) {
 		"f10":       {key: KeyF10, expected: "F10"},
 		"f11":       {key: KeyF11, expected: "F11"},
 		"f12":       {key: KeyF12, expected: "F12"},
-		"ctrl+a":    {key: KeyCtrlA, expected: "Ctrl+A"},
-		"ctrl+b":    {key: KeyCtrlB, expected: "Ctrl+B"},
-		"ctrl+c":    {key: KeyCtrlC, expected: "Ctrl+C"},
-		"ctrl+z":    {key: KeyCtrlZ, expected: "Ctrl+Z"},
-		"ctrl+space": {key: KeyCtrlSpace, expected: "Ctrl+Space"},
 		"unknown":   {key: Key(9999), expected: "Unknown"},
 	}
 

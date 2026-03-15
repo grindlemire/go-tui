@@ -45,48 +45,6 @@ const (
 	KeyF10
 	KeyF11
 	KeyF12
-
-	// Control keys (Ctrl+A through Ctrl+Z)
-	KeyCtrlA
-	KeyCtrlB
-	KeyCtrlC
-	KeyCtrlD
-	KeyCtrlE
-	KeyCtrlF
-	KeyCtrlG
-	// KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases defined below.
-	// They share the same terminal byte as KeyBackspace, KeyTab,
-	// and KeyEnter respectively, so they must have the same value.
-	_
-	_
-	KeyCtrlJ
-	KeyCtrlK
-	KeyCtrlL
-	_
-	KeyCtrlN
-	KeyCtrlO
-	KeyCtrlP
-	KeyCtrlQ
-	KeyCtrlR
-	KeyCtrlS
-	KeyCtrlT
-	KeyCtrlU
-	KeyCtrlV
-	KeyCtrlW
-	KeyCtrlX
-	KeyCtrlY
-	KeyCtrlZ
-
-	// KeyCtrlSpace represents Ctrl+Space (NUL character, 0x00)
-	KeyCtrlSpace
-)
-
-// Terminal byte aliases: these Ctrl+letter combinations produce the same
-// byte as their functional key counterparts, so they are the same Key.
-const (
-	KeyCtrlH = KeyBackspace // 0x08
-	KeyCtrlI = KeyTab       // 0x09
-	KeyCtrlM = KeyEnter     // 0x0D
 )
 
 // String returns a human-readable representation of the key.
@@ -148,56 +106,6 @@ func (k Key) String() string {
 		return "F11"
 	case KeyF12:
 		return "F12"
-	case KeyCtrlA:
-		return "Ctrl+A"
-	case KeyCtrlB:
-		return "Ctrl+B"
-	case KeyCtrlC:
-		return "Ctrl+C"
-	case KeyCtrlD:
-		return "Ctrl+D"
-	case KeyCtrlE:
-		return "Ctrl+E"
-	case KeyCtrlF:
-		return "Ctrl+F"
-	case KeyCtrlG:
-		return "Ctrl+G"
-	// KeyCtrlH == KeyBackspace, KeyCtrlI == KeyTab (same terminal byte)
-	case KeyCtrlJ:
-		return "Ctrl+J"
-	case KeyCtrlK:
-		return "Ctrl+K"
-	case KeyCtrlL:
-		return "Ctrl+L"
-	// KeyCtrlM == KeyEnter (same terminal byte)
-	case KeyCtrlN:
-		return "Ctrl+N"
-	case KeyCtrlO:
-		return "Ctrl+O"
-	case KeyCtrlP:
-		return "Ctrl+P"
-	case KeyCtrlQ:
-		return "Ctrl+Q"
-	case KeyCtrlR:
-		return "Ctrl+R"
-	case KeyCtrlS:
-		return "Ctrl+S"
-	case KeyCtrlT:
-		return "Ctrl+T"
-	case KeyCtrlU:
-		return "Ctrl+U"
-	case KeyCtrlV:
-		return "Ctrl+V"
-	case KeyCtrlW:
-		return "Ctrl+W"
-	case KeyCtrlX:
-		return "Ctrl+X"
-	case KeyCtrlY:
-		return "Ctrl+Y"
-	case KeyCtrlZ:
-		return "Ctrl+Z"
-	case KeyCtrlSpace:
-		return "Ctrl+Space"
 	default:
 		return "Unknown"
 	}

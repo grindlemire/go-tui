@@ -147,7 +147,7 @@ func (s *streamDemo) KeyMap() tui.KeyMap {
 		tui.OnKeyStop(tui.KeyEnter, func(ke tui.KeyEvent) { s.streamPhrase() }),
 		tui.OnKeyStop(tui.KeyTab, func(ke tui.KeyEvent) { s.streamWithElement() }),
 		tui.OnKey(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRuneMod('c', tui.ModCtrl, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
 

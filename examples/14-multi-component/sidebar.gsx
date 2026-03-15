@@ -20,7 +20,7 @@ func Sidebar(category *tui.State[string]) *sidebar {
 
 func (s *sidebar) KeyMap() tui.KeyMap {
 	km := tui.KeyMap{
-		tui.OnKey(tui.KeyCtrlB, func(ke tui.KeyEvent) {
+		tui.OnRuneMod('b', tui.ModCtrl, func(ke tui.KeyEvent) {
 			s.expanded.Set(!s.expanded.Get())
 		}),
 	}

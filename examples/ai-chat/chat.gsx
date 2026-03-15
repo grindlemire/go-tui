@@ -187,7 +187,7 @@ func (c *chat) KeyMap() tui.KeyMap {
 	if c.showSettings.Get() {
 		km := c.settingsView.KeyMap()
 		km = append(km,
-			tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+			tui.OnRuneMod('c', tui.ModCtrl, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		)
 		return km
 	}
@@ -195,15 +195,15 @@ func (c *chat) KeyMap() tui.KeyMap {
 	// While streaming, only allow Ctrl+C (kills subprocess) and Escape
 	if c.streaming.Get() {
 		return tui.KeyMap{
-			tui.OnKeyStop(tui.KeyCtrlC, func(ke tui.KeyEvent) { c.cancelStream(); ke.App().Stop() }),
+			tui.OnRuneModStop('c', tui.ModCtrl, func(ke tui.KeyEvent) { c.cancelStream(); ke.App().Stop() }),
 			tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { c.cancelStream() }),
 		}
 	}
 
 	return tui.KeyMap{
-		tui.OnKeyStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { c.toggleSettings() }),
+		tui.OnRuneModStop('s', tui.ModCtrl, func(ke tui.KeyEvent) { c.toggleSettings() }),
 		tui.OnKeyStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.OnKey(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
+		tui.OnRuneMod('c', tui.ModCtrl, func(ke tui.KeyEvent) { ke.App().Stop() }),
 	}
 }
 

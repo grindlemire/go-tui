@@ -76,39 +76,39 @@ func TestParseInput_UTF8Characters(t *testing.T) {
 func TestParseInput_ControlCharacters(t *testing.T) {
 	type tc struct {
 		input    []byte
-		expected Key
+		expected KeyEvent
 	}
 
 	tests := map[string]tc{
-		"ctrl+space":   {input: []byte{0x00}, expected: KeyCtrlSpace},
-		"ctrl+a":       {input: []byte{0x01}, expected: KeyCtrlA},
-		"ctrl+b":       {input: []byte{0x02}, expected: KeyCtrlB},
-		"ctrl+c":       {input: []byte{0x03}, expected: KeyCtrlC},
-		"ctrl+d":       {input: []byte{0x04}, expected: KeyCtrlD},
-		"ctrl+e":       {input: []byte{0x05}, expected: KeyCtrlE},
-		"ctrl+f":       {input: []byte{0x06}, expected: KeyCtrlF},
-		"ctrl+g":       {input: []byte{0x07}, expected: KeyCtrlG},
-		"backspace":    {input: []byte{0x08}, expected: KeyBackspace},
-		"tab":          {input: []byte{0x09}, expected: KeyTab},
-		"ctrl+j":       {input: []byte{0x0a}, expected: KeyCtrlJ},
-		"ctrl+k":       {input: []byte{0x0b}, expected: KeyCtrlK},
-		"ctrl+l":       {input: []byte{0x0c}, expected: KeyCtrlL},
-		"enter":        {input: []byte{0x0d}, expected: KeyEnter},
-		"ctrl+n":       {input: []byte{0x0e}, expected: KeyCtrlN},
-		"ctrl+o":       {input: []byte{0x0f}, expected: KeyCtrlO},
-		"ctrl+p":       {input: []byte{0x10}, expected: KeyCtrlP},
-		"ctrl+q":       {input: []byte{0x11}, expected: KeyCtrlQ},
-		"ctrl+r":       {input: []byte{0x12}, expected: KeyCtrlR},
-		"ctrl+s":       {input: []byte{0x13}, expected: KeyCtrlS},
-		"ctrl+t":       {input: []byte{0x14}, expected: KeyCtrlT},
-		"ctrl+u":       {input: []byte{0x15}, expected: KeyCtrlU},
-		"ctrl+v":       {input: []byte{0x16}, expected: KeyCtrlV},
-		"ctrl+w":       {input: []byte{0x17}, expected: KeyCtrlW},
-		"ctrl+x":       {input: []byte{0x18}, expected: KeyCtrlX},
-		"ctrl+y":       {input: []byte{0x19}, expected: KeyCtrlY},
-		"ctrl+z":       {input: []byte{0x1a}, expected: KeyCtrlZ},
-		"escape":       {input: []byte{0x1b}, expected: KeyEscape},
-		"del":          {input: []byte{0x7f}, expected: KeyBackspace},
+		"ctrl+space":   {input: []byte{0x00}, expected: KeyEvent{Key: KeyRune, Rune: ' ', Mod: ModCtrl}},
+		"ctrl+a":       {input: []byte{0x01}, expected: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl}},
+		"ctrl+b":       {input: []byte{0x02}, expected: KeyEvent{Key: KeyRune, Rune: 'b', Mod: ModCtrl}},
+		"ctrl+c":       {input: []byte{0x03}, expected: KeyEvent{Key: KeyRune, Rune: 'c', Mod: ModCtrl}},
+		"ctrl+d":       {input: []byte{0x04}, expected: KeyEvent{Key: KeyRune, Rune: 'd', Mod: ModCtrl}},
+		"ctrl+e":       {input: []byte{0x05}, expected: KeyEvent{Key: KeyRune, Rune: 'e', Mod: ModCtrl}},
+		"ctrl+f":       {input: []byte{0x06}, expected: KeyEvent{Key: KeyRune, Rune: 'f', Mod: ModCtrl}},
+		"ctrl+g":       {input: []byte{0x07}, expected: KeyEvent{Key: KeyRune, Rune: 'g', Mod: ModCtrl}},
+		"backspace":    {input: []byte{0x08}, expected: KeyEvent{Key: KeyBackspace}},
+		"tab":          {input: []byte{0x09}, expected: KeyEvent{Key: KeyTab}},
+		"ctrl+j":       {input: []byte{0x0a}, expected: KeyEvent{Key: KeyRune, Rune: 'j', Mod: ModCtrl}},
+		"ctrl+k":       {input: []byte{0x0b}, expected: KeyEvent{Key: KeyRune, Rune: 'k', Mod: ModCtrl}},
+		"ctrl+l":       {input: []byte{0x0c}, expected: KeyEvent{Key: KeyRune, Rune: 'l', Mod: ModCtrl}},
+		"enter":        {input: []byte{0x0d}, expected: KeyEvent{Key: KeyEnter}},
+		"ctrl+n":       {input: []byte{0x0e}, expected: KeyEvent{Key: KeyRune, Rune: 'n', Mod: ModCtrl}},
+		"ctrl+o":       {input: []byte{0x0f}, expected: KeyEvent{Key: KeyRune, Rune: 'o', Mod: ModCtrl}},
+		"ctrl+p":       {input: []byte{0x10}, expected: KeyEvent{Key: KeyRune, Rune: 'p', Mod: ModCtrl}},
+		"ctrl+q":       {input: []byte{0x11}, expected: KeyEvent{Key: KeyRune, Rune: 'q', Mod: ModCtrl}},
+		"ctrl+r":       {input: []byte{0x12}, expected: KeyEvent{Key: KeyRune, Rune: 'r', Mod: ModCtrl}},
+		"ctrl+s":       {input: []byte{0x13}, expected: KeyEvent{Key: KeyRune, Rune: 's', Mod: ModCtrl}},
+		"ctrl+t":       {input: []byte{0x14}, expected: KeyEvent{Key: KeyRune, Rune: 't', Mod: ModCtrl}},
+		"ctrl+u":       {input: []byte{0x15}, expected: KeyEvent{Key: KeyRune, Rune: 'u', Mod: ModCtrl}},
+		"ctrl+v":       {input: []byte{0x16}, expected: KeyEvent{Key: KeyRune, Rune: 'v', Mod: ModCtrl}},
+		"ctrl+w":       {input: []byte{0x17}, expected: KeyEvent{Key: KeyRune, Rune: 'w', Mod: ModCtrl}},
+		"ctrl+x":       {input: []byte{0x18}, expected: KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl}},
+		"ctrl+y":       {input: []byte{0x19}, expected: KeyEvent{Key: KeyRune, Rune: 'y', Mod: ModCtrl}},
+		"ctrl+z":       {input: []byte{0x1a}, expected: KeyEvent{Key: KeyRune, Rune: 'z', Mod: ModCtrl}},
+		"escape":       {input: []byte{0x1b}, expected: KeyEvent{Key: KeyEscape}},
+		"del":          {input: []byte{0x7f}, expected: KeyEvent{Key: KeyBackspace}},
 	}
 
 	for name, tt := range tests {
@@ -121,8 +121,9 @@ func TestParseInput_ControlCharacters(t *testing.T) {
 			if !ok {
 				t.Fatalf("event is not KeyEvent")
 			}
-			if ke.Key != tt.expected {
-				t.Errorf("parseInput(%x): got Key = %v, want %v", tt.input, ke.Key, tt.expected)
+			if ke.Key != tt.expected.Key || ke.Rune != tt.expected.Rune || ke.Mod != tt.expected.Mod {
+				t.Errorf("parseInput(%x): got {Key: %v, Rune: %q, Mod: %v}, want {Key: %v, Rune: %q, Mod: %v}",
+					tt.input, ke.Key, ke.Rune, ke.Mod, tt.expected.Key, tt.expected.Rune, tt.expected.Mod)
 			}
 		})
 	}
@@ -370,7 +371,7 @@ func TestParseInput_MultipleEvents(t *testing.T) {
 		"ctrl then letter": {
 			input: []byte{0x03, 'x'},
 			expected: []KeyEvent{
-				{Key: KeyCtrlC},
+				{Key: KeyRune, Rune: 'c', Mod: ModCtrl},
 				{Key: KeyRune, Rune: 'x'},
 			},
 		},
@@ -413,23 +414,29 @@ func TestParseInput_LoneEscape(t *testing.T) {
 func TestControlToKey(t *testing.T) {
 	type tc struct {
 		input    byte
-		expected Key
+		wantKey  Key
+		wantRune rune
+		wantMod  Modifier
 	}
 
 	tests := map[string]tc{
-		"0x00": {input: 0x00, expected: KeyCtrlSpace},
-		"0x01": {input: 0x01, expected: KeyCtrlA},
-		"0x1a": {input: 0x1a, expected: KeyCtrlZ},
-		"0x1b": {input: 0x1b, expected: KeyEscape},
-		"0x1c": {input: 0x1c, expected: KeyNone},
-		"0x1f": {input: 0x1f, expected: KeyNone},
+		"0x00 ctrl+space": {input: 0x00, wantKey: KeyRune, wantRune: ' ', wantMod: ModCtrl},
+		"0x01 ctrl+a":     {input: 0x01, wantKey: KeyRune, wantRune: 'a', wantMod: ModCtrl},
+		"0x1a ctrl+z":     {input: 0x1a, wantKey: KeyRune, wantRune: 'z', wantMod: ModCtrl},
+		"0x08 backspace":  {input: 0x08, wantKey: KeyBackspace, wantRune: 0, wantMod: ModNone},
+		"0x09 tab":        {input: 0x09, wantKey: KeyTab, wantRune: 0, wantMod: ModNone},
+		"0x0d enter":      {input: 0x0d, wantKey: KeyEnter, wantRune: 0, wantMod: ModNone},
+		"0x1b escape":     {input: 0x1b, wantKey: KeyEscape, wantRune: 0, wantMod: ModNone},
+		"0x1c none":       {input: 0x1c, wantKey: KeyNone, wantRune: 0, wantMod: ModNone},
+		"0x1f none":       {input: 0x1f, wantKey: KeyNone, wantRune: 0, wantMod: ModNone},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := controlToKey(tt.input)
-			if got != tt.expected {
-				t.Errorf("controlToKey(0x%02x) = %v, want %v", tt.input, got, tt.expected)
+			gotKey, gotRune, gotMod := controlToKey(tt.input)
+			if gotKey != tt.wantKey || gotRune != tt.wantRune || gotMod != tt.wantMod {
+				t.Errorf("controlToKey(0x%02x) = (%v, %q, %v), want (%v, %q, %v)",
+					tt.input, gotKey, gotRune, gotMod, tt.wantKey, tt.wantRune, tt.wantMod)
 			}
 		})
 	}

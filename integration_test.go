@@ -24,7 +24,7 @@ func newIntRoot() *intRoot {
 
 func (r *intRoot) KeyMap() KeyMap {
 	km := KeyMap{
-		OnKey(KeyCtrlC, func(ke KeyEvent) {}),
+		OnRuneMod('c', ModCtrl, func(ke KeyEvent) {}),
 	}
 	if !r.searchActive.Get() {
 		km = append(km, OnRune('/', func(ke KeyEvent) {
@@ -57,7 +57,7 @@ func (r *intRoot) BindApp(app *App) {
 	r.query.BindApp(app)
 }
 
-// intSidebar is a child component with a KeyCtrlB binding.
+// intSidebar is a child component with a Ctrl+B binding.
 type intSidebar struct {
 	query    *State[string]
 	expanded *State[bool]
@@ -72,7 +72,7 @@ func newIntSidebar(query *State[string]) *intSidebar {
 
 func (s *intSidebar) KeyMap() KeyMap {
 	return KeyMap{
-		OnKey(KeyCtrlB, func(ke KeyEvent) {
+		OnRuneMod('b', ModCtrl, func(ke KeyEvent) {
 			s.expanded.Set(!s.expanded.Get())
 		}),
 	}
@@ -410,14 +410,14 @@ func TestIntegration_CtrlBTogglesSidebar(t *testing.T) {
 	}
 
 	// Press Ctrl+B to toggle sidebar
-	table.dispatch(KeyEvent{Key: KeyCtrlB})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'b', Mod: ModCtrl})
 
 	if sidebar.expanded.Get() {
 		t.Error("sidebar should be collapsed after Ctrl+B")
 	}
 
 	// Press again to toggle back
-	table.dispatch(KeyEvent{Key: KeyCtrlB})
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'b', Mod: ModCtrl})
 
 	if !sidebar.expanded.Get() {
 		t.Error("sidebar should be expanded after second Ctrl+B")
