@@ -105,14 +105,44 @@ func (c *colorMixer) applyPreset(name string) {
 
 func (c *colorMixer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
-		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.adjustRed(16) }),
-		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
-		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
-		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
-		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
-		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
+		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() {
+				return // let the modal handle Escape
+			}
+			ke.App().Stop()
+		}),
+		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() {
+				return
+			}
+			ke.App().Stop()
+		}),
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() {
+				return
+			}
+			c.showResetModal.Set(true)
+		}),
+		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() { return }
+			c.adjustRed(-16)
+		}),
+		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() { return }
+			c.adjustGreen(16)
+		}),
+		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() { return }
+			c.adjustGreen(-16)
+		}),
+		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() { return }
+			c.adjustBlue(16)
+		}),
+		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) {
+			if c.showResetModal.Get() { return }
+			c.adjustBlue(-16)
+		}),
 	}
 }
 
@@ -239,17 +269,17 @@ templ (c *colorMixer) Render() {
 		</div>
 
 		<div class="flex justify-center">
-			<span class="font-dim">r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
+			<span class="font-dim">r reset | g/b increase | G/B decrease | click buttons/presets | q quit</span>
 		</div>
 
 		// Confirmation modal for resetting colors
-		<modal open={c.showResetModal} class="justify-center items-center">
+		<modal open={c.showResetModal} backdrop="blank" class="justify-center items-center">
 			<div class="border-rounded p-2 flex-col gap-1 w-36 items-center">
 				<span class="font-bold text-yellow">Reset Colors?</span>
 				<span class="font-dim">This will restore default values.</span>
 				<div class="flex gap-2 justify-center">
-					<button ref={c.resetConfirmBtn} class="px-2 text-red font-bold">Yes, Reset</button>
-					<button ref={c.resetCancelBtn} class="px-2 text-green font-bold">Cancel</button>
+					<button ref={c.resetCancelBtn} class="px-2 text-green font-bold border-single focusable">Cancel</button>
+					<button ref={c.resetConfirmBtn} class="px-2 text-red font-bold border-single focusable">Yes, Reset</button>
 				</div>
 			</div>
 		</modal>
