@@ -187,6 +187,7 @@ tui.New(
 | `WithFocusable(focusable bool)` | Whether this element can receive focus |
 | `WithOnFocus(fn func(*Element))` | Callback when focus is gained. Implicitly sets `focusable = true` |
 | `WithOnBlur(fn func(*Element))` | Callback when focus is lost. Implicitly sets `focusable = true` |
+| `WithOnActivate(fn func())` | Callback when Enter is pressed while focused. Implicitly sets `focusable = true` |
 
 ```go
 tui.New(

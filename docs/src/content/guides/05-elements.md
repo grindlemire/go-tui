@@ -225,6 +225,36 @@ Then use it in your template with styling:
 
 Color the bar with `text-cyan`, `text-green`, `text-yellow`, etc. to convey meaning (progress, success, warning).
 
+## Modal Dialogs
+
+The `<modal>` element renders as a full-screen overlay. When open, it dims the background, traps keyboard focus, and blocks parent key handlers. Escape and backdrop clicks close it by default.
+
+Bind the `open` attribute to a `*State[bool]` to control visibility. Use `onActivate` on buttons to handle Enter key activation:
+
+```gsx
+<modal open={s.showDialog} class="justify-center items-center">
+    <div class="border-rounded p-2 flex-col gap-1 w-40">
+        <span class="font-bold text-yellow">Are you sure?</span>
+        <button class="px-2 border-rounded focusable text-green font-bold" onActivate={s.cancel}>Cancel</button>
+        <button class="px-2 border-rounded focusable text-red font-bold" onActivate={s.confirm}>Confirm</button>
+    </div>
+</modal>
+```
+
+The modal container uses flexbox layout, so `justify-center items-center` centers the dialog, while `justify-end items-stretch` pins it as a bottom sheet. Tab and Shift+Tab cycle between focusable children. Enter triggers the focused element's `onActivate` callback. Mouse clicks on elements with `onActivate` also trigger it.
+
+Key attributes:
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `open` | (required) | `*State[bool]` controlling visibility |
+| `backdrop` | `"dim"` | `"dim"`, `"blank"`, or `"none"` |
+| `closeOnEscape` | `true` | Escape key closes the modal |
+| `closeOnBackdropClick` | `true` | Clicking outside the dialog closes it |
+| `trapFocus` | `true` | Restrict Tab navigation and block parent key handlers |
+
+Focusable elements with borders get an automatic cyan highlight when focused. The first focusable child receives focus when the modal opens.
+
 ## Complete Example
 
 This elements gallery demonstrates every built-in element type in a scrollable layout, including Input and TextArea with two-way value binding:

@@ -114,6 +114,7 @@ The `generate` command compiles `.gsx` files into plain Go source (`*_gsx.go`) t
 - Pure Go flexbox layout without CGO: row, column, justify, align, gap, padding, margin, percentage widths, min/max constraints
 - Generic `State[T]` with automatic re-rendering, batched updates, and bindings
 - Struct components with keyboard/mouse handlers, watchers for timers and channels, refs, and a `{children...}` slot
+- Modal dialogs with backdrop, focus trapping, and preemptive key handling
 - Language server, formatter, and tree-sitter grammar for VS Code
 - Only depends on `golang.org/x/{sys,tools}`, pure Go from terminal to layout
 
@@ -148,10 +149,10 @@ The [`examples/`](examples/) directory has runnable programs for each feature ar
 | [03-styling](examples/03-styling) | Colors, text styles, borders, conditional styling |
 | [04-layout](examples/04-layout) | Flexbox row/column, justify, align, reusable layouts |
 | [05-elements](examples/05-elements) | Built-in elements, disabled state, progress bars |
-| [06-state](examples/06-state) | `State[T]`, `if`/`for`/`:=` bindings, reactive children |
+| [06-state](examples/06-state) | `State[T]`, `if`/`for`/`:=` bindings, reactive children, modal dialog |
 | [07-components](examples/07-components) | Component composition, tabs, `{children...}` slot |
 | [08-events](examples/08-events) | Keyboard event handling, `KeyMap`, `OnKey`/`OnRune` |
-| [09-refs-and-clicks](examples/09-refs-and-clicks) | Refs, click handling, mouse + keyboard |
+| [09-refs-and-clicks](examples/09-refs-and-clicks) | Refs, click handling, mouse + keyboard, modal with onActivate |
 | [10-scrolling](examples/10-scrolling) | Scrollable containers, keyboard navigation |
 | [11-focus](examples/11-focus) | Focus management, tab cycling |
 | [12-watchers](examples/12-watchers) | Interval timers, channel watchers, live data |
