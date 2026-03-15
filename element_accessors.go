@@ -123,6 +123,20 @@ func (e *Element) SetHidden(hidden bool) {
 	e.MarkDirty()
 }
 
+// --- Overlay API ---
+
+// IsOverlay returns whether this element is rendered in the overlay pass.
+func (e *Element) IsOverlay() bool {
+	return e.overlay
+}
+
+// Apply applies option functions to an existing element.
+func (e *Element) Apply(opts ...Option) {
+	for _, opt := range opts {
+		opt(e)
+	}
+}
+
 // --- Overflow API ---
 
 // Overflow returns the overflow mode.

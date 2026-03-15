@@ -22,7 +22,7 @@ func (e *Element) LayoutStyle() LayoutStyle {
 func (e *Element) LayoutChildren() []Layoutable {
 	result := make([]Layoutable, 0, len(e.children))
 	for _, child := range e.children {
-		if !child.hidden {
+		if !child.hidden && !child.overlay {
 			result = append(result, child)
 		}
 	}
@@ -116,7 +116,7 @@ func (e *Element) IntrinsicSize() (width, height int) {
 	visibleIdx := 0
 
 	for _, child := range e.children {
-		if child.hidden {
+		if child.hidden || child.overlay {
 			continue
 		}
 		childW, childH := child.IntrinsicSize()
@@ -204,7 +204,7 @@ func (e *Element) HeightForWidth(width int) int {
 		totalH := 0
 		visibleIdx := 0
 		for _, child := range e.children {
-			if child.hidden {
+			if child.hidden || child.overlay {
 				continue
 			}
 			childH := child.HeightForWidth(contentWidth)
@@ -233,7 +233,7 @@ func (e *Element) HeightForWidth(width int) int {
 		}
 		maxH := 0
 		for _, child := range e.children {
-			if child.hidden {
+			if child.hidden || child.overlay {
 				continue
 			}
 			// For row children, approximate: give each child the full width

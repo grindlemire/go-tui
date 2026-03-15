@@ -410,6 +410,13 @@ func WithBorderGradient(g Gradient) Option {
 	}
 }
 
+// WithOverlay marks the element as an overlay that renders in the overlay pass.
+func WithOverlay(overlay bool) Option {
+	return func(e *Element) {
+		e.overlay = overlay
+	}
+}
+
 // WithTag sets the element tag for layout dispatch.
 // Used by generated code to identify table elements.
 func WithTag(tag string) Option {
