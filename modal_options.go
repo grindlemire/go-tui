@@ -1,5 +1,7 @@
 package tui
 
+import "fmt"
+
 // ModalOption configures a Modal component.
 type ModalOption func(*Modal)
 
@@ -12,6 +14,9 @@ func WithModalOpen(state *State[bool]) ModalOption {
 
 // WithModalBackdrop sets the backdrop style: "dim" (default), "blank", or "none".
 func WithModalBackdrop(b string) ModalOption {
+	if b != "dim" && b != "blank" && b != "none" {
+		panic(fmt.Sprintf("tui: invalid backdrop %q: must be \"dim\", \"blank\", or \"none\"", b))
+	}
 	return func(m *Modal) {
 		m.backdrop = b
 	}

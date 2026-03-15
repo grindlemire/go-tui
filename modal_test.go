@@ -380,6 +380,15 @@ func TestModal_KeyMap_InlineMode(t *testing.T) {
 	}
 }
 
+func TestModal_WithModalBackdrop_InvalidPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic for invalid backdrop value")
+		}
+	}()
+	WithModalBackdrop("typo")
+}
+
 func TestModal_Options(t *testing.T) {
 	type tc struct {
 		opts     []ModalOption

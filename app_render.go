@@ -43,16 +43,7 @@ func (a *App) Render() {
 	// If a root component is set, re-render it to get a fresh element tree.
 	// This is the core of the reactivity cycle: state changes → dirty → re-render
 	// component → new element tree with updated state reads.
-	if a.rootComponent != nil {
-		el := a.rootComponent.Render(a)
-		el.setAppRecursive(a)
-		a.root = el
-		// Refresh focusManager references: re-renders produce new Element
-		// objects, so the focusManager's old references become stale.
-		// Rebuild the focusable list from the current tree, preserving
-		// the focus index so the focused element stays focused.
-		a.focus.refreshFromTree(el)
-	}
+	a.rerenderComponent()
 
 	// Re-read renderHeight in case SetInlineHeight was called during component render
 	if !a.inAlternateScreen && a.inlineHeight > 0 {
@@ -64,47 +55,7 @@ func (a *App) Render() {
 		a.root.Render(a.buffer, width, renderHeight)
 	}
 
-	// Apply focus scoping so overlay elements get correct focus borders.
-	focusScoped := false
-	for i := len(a.overlays) - 1; i >= 0; i-- {
-		if a.overlays[i].trapFocus {
-			a.focus.ScopeTo(a.overlays[i].element)
-			focusScoped = true
-			// Move focus into the modal only on the first frame after open.
-			// This avoids calling Next()/MarkDirty() on every render frame.
-			if a.overlays[i].needsFocusInit {
-				a.overlays[i].needsFocusInit = false
-				current := a.focus.Focused()
-				if current == nil || !a.focus.isInScope(current) {
-					a.focus.Next()
-				}
-			}
-			break
-		}
-	}
-	if !focusScoped && a.focus.scope != nil {
-		a.focus.ClearScope()
-	}
-
-	// Render overlay elements (modals) on top of the main tree
-	for _, ov := range a.overlays {
-		switch ov.backdrop {
-		case "dim":
-			a.buffer.ApplyDim()
-		case "blank":
-			a.buffer.FillBlank()
-		}
-		// Ensure overlay content children have an opaque background so the
-		// backdrop effect doesn't bleed through the dialog body. The overlay
-		// element itself stays transparent for backdrop click detection.
-		for _, child := range ov.element.children {
-			if child.background == nil {
-				bg := NewStyle()
-				child.background = &bg
-			}
-		}
-		ov.element.Render(a.buffer, width, renderHeight)
-	}
+	a.renderOverlays(width, renderHeight)
 
 	// Sweep mount cache: clean up components no longer in the tree.
 	// Mount() marks active keys during Render(); sweep removes the rest.
@@ -171,7 +122,10 @@ func (a *App) renderInline() {
 }
 
 // RenderFull forces a complete redraw of the buffer to the terminal.
-// Use this after resize events or when the terminal may be corrupted.
+// This performs a full render cycle: re-renders the component tree (triggering
+// state reads, overlay registration, and focus refresh), then flushes every
+// cell to the terminal. Use this after resize events or when the terminal may
+// be corrupted.
 func (a *App) RenderFull() {
 	width, height := a.terminal.Size()
 
@@ -181,26 +135,47 @@ func (a *App) RenderFull() {
 	// Clear overlay registrations from previous frame
 	a.clearOverlays()
 
-	// If a root component is set, re-render it to get a fresh element tree.
-	// This repopulates overlay registrations (e.g. from Modal.Render).
-	if a.rootComponent != nil {
-		el := a.rootComponent.Render(a)
-		el.setAppRecursive(a)
-		a.root = el
-		a.focus.refreshFromTree(el)
-	}
+	// Re-render the component tree so overlays and state are up to date.
+	a.rerenderComponent()
 
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, height)
 	}
 
-	// Apply focus scoping for overlays
+	a.renderOverlays(width, height)
+
+	// Full render to terminal
+	RenderFull(a.terminal, a.buffer)
+}
+
+// rerenderComponent re-renders the root component to produce a fresh element tree.
+// Called by both Render() and RenderFull() to keep overlays and state in sync.
+func (a *App) rerenderComponent() {
+	if a.rootComponent == nil {
+		return
+	}
+	el := a.rootComponent.Render(a)
+	el.setAppRecursive(a)
+	a.root = el
+	// Refresh focusManager references: re-renders produce new Element
+	// objects, so the focusManager's old references become stale.
+	// Rebuild the focusable list from the current tree, preserving
+	// the focus index so the focused element stays focused.
+	a.focus.refreshFromTree(el)
+}
+
+// renderOverlays applies focus scoping and renders overlay elements (modals)
+// on top of the main element tree. Called by both Render() and RenderFull().
+func (a *App) renderOverlays(width, height int) {
+	// Apply focus scoping so overlay elements get correct focus borders.
 	focusScoped := false
 	for i := len(a.overlays) - 1; i >= 0; i-- {
 		if a.overlays[i].trapFocus {
 			a.focus.ScopeTo(a.overlays[i].element)
 			focusScoped = true
+			// Move focus into the modal only on the first frame after open.
+			// This avoids calling Next()/MarkDirty() on every render frame.
 			if a.overlays[i].needsFocusInit {
 				a.overlays[i].needsFocusInit = false
 				current := a.focus.Focused()
@@ -223,6 +198,9 @@ func (a *App) RenderFull() {
 		case "blank":
 			a.buffer.FillBlank()
 		}
+		// Ensure overlay content children have an opaque background so the
+		// backdrop effect doesn't bleed through the dialog body. The overlay
+		// element itself stays transparent for backdrop click detection.
 		for _, child := range ov.element.children {
 			if child.background == nil {
 				bg := NewStyle()
@@ -231,7 +209,4 @@ func (a *App) RenderFull() {
 		}
 		ov.element.Render(a.buffer, width, height)
 	}
-
-	// Full render to terminal
-	RenderFull(a.terminal, a.buffer)
 }

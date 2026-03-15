@@ -135,7 +135,7 @@ var Elements = map[string]*ElementDef{
 		Description: "A modal overlay that renders on top of all other content. Supports backdrop dimming, focus trapping, and close-on-escape.",
 		Attributes:  modalAttrs(),
 		SelfClosing: false,
-		Category:    "input",
+		Category:    "container",
 	},
 }
 

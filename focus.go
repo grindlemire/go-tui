@@ -118,8 +118,10 @@ func (f *focusManager) focusedIndex() int {
 }
 
 // setFocusIndex restores focus to the element at the given index.
-// Used by modal to restore focus after close, since element references
-// become stale after re-render (refreshFromTree preserves index).
+// Used by modal to restore focus after close. The Blur/Focus calls here
+// target stale elements from the previous render tree, but are harmless;
+// refreshFromTree runs immediately after and calls Focus on the fresh
+// element at the preserved index.
 func (f *focusManager) setFocusIndex(idx int) {
 	if idx < 0 || idx >= len(f.elements) {
 		return
