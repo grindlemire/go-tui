@@ -152,7 +152,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 
 	// Negotiate Kitty keyboard protocol unless legacy mode was requested
 	if !app.legacyKeyboard {
-		terminal.NegotiateKittyKeyboard(int(terminal.inFd))
+		terminal.NegotiateKittyKeyboard()
 	}
 
 	// Get terminal size
@@ -255,7 +255,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 
 	// Negotiate Kitty keyboard protocol unless legacy mode was requested
 	if !app.legacyKeyboard {
-		terminal.NegotiateKittyKeyboard(int(terminal.inFd))
+		terminal.NegotiateKittyKeyboard()
 	}
 
 	// Get terminal size

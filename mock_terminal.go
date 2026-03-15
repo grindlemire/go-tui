@@ -135,7 +135,7 @@ func (m *MockTerminal) DisableMouse() {
 }
 
 // NegotiateKittyKeyboard is a no-op for the mock terminal.
-func (m *MockTerminal) NegotiateKittyKeyboard(stdinFd int) bool {
+func (m *MockTerminal) NegotiateKittyKeyboard() bool {
 	return false
 }
 

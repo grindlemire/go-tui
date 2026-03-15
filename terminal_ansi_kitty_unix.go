@@ -15,7 +15,7 @@ import (
 //  2. Query current mode: CSI ? u
 //  3. Poll stdin (50ms timeout) for response: CSI ? flags u
 //  4. If response includes flag 1, success. Otherwise pop: CSI < u
-func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
+func (t *ANSITerminal) NegotiateKittyKeyboard() bool {
 	// Push disambiguate mode onto the keyboard stack and query
 	t.esc.Reset()
 	t.esc.KittyKeyboardPush(1)
@@ -36,12 +36,12 @@ func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
 		if remaining <= 0 {
 			break
 		}
-		ready, err := selectWithTimeout(stdinFd, remaining)
+		ready, err := selectWithTimeout(int(t.inFd), remaining)
 		if err != nil || !ready {
 			break
 		}
 		var b [1]byte
-		nr, err := syscall.Read(stdinFd, b[:])
+		nr, err := syscall.Read(int(t.inFd), b[:])
 		if err != nil || nr == 0 {
 			break
 		}
@@ -63,11 +63,10 @@ func (t *ANSITerminal) NegotiateKittyKeyboard(stdinFd int) bool {
 		return true
 	}
 
-	// Pop to undo the push. Skip if we got no response at all (timeout
-	// with zero bytes), since the pop is a no-op per the Kitty spec but
-	// avoids an unnecessary write.
-	if n > 0 {
-		t.popKittyKeyboard()
-	}
+	// Always pop to undo the push. A pop on a terminal that does not
+	// support the protocol is silently ignored, so this is safe. Skipping
+	// the pop when n == 0 would leak a stack entry if the terminal accepted
+	// the push but responded after the deadline.
+	t.popKittyKeyboard()
 	return false
 }
