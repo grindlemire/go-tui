@@ -826,6 +826,126 @@ func TestValidate_ConflictingStops(t *testing.T) {
 	}
 }
 
+// --- Normalization integration tests ---
+
+func TestDispatch_NormalizedCtrlLetter_LegacyAndKitty(t *testing.T) {
+	called := 0
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnRune('a', func(ke KeyEvent) { called++ }, ModCtrl),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Legacy path: byte 0x01 -> {KeyRune, 'a', ModCtrl}
+	legacyEvents := parseInput([]byte{0x01})
+	table.dispatch(legacyEvents[0].(KeyEvent))
+	if called != 1 {
+		t.Errorf("legacy Ctrl+A: called = %d, want 1", called)
+	}
+
+	// Kitty path: CSI 97;5u -> {KeyRune, 'a', ModCtrl}
+	kittyEvents := parseInput([]byte("\x1b[97;5u"))
+	table.dispatch(kittyEvents[0].(KeyEvent))
+	if called != 2 {
+		t.Errorf("kitty Ctrl+A: called = %d, want 2", called)
+	}
+}
+
+func TestDispatch_ExcludeMods_OnRunesIgnoresCtrl(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnRunes(func(ke KeyEvent) { called = true }),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Plain rune matches
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'a'})
+	if !called {
+		t.Error("OnRunes should match plain rune")
+	}
+
+	// Ctrl+rune does NOT match
+	called = false
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl})
+	if called {
+		t.Error("OnRunes should not match Ctrl+rune")
+	}
+
+	// Shift+rune DOES match (Shift is character-forming)
+	called = false
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 'A', Mod: ModShift})
+	if !called {
+		t.Error("OnRunes should match Shift+rune")
+	}
+}
+
+func TestDispatch_OnRune_VariadicMod(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnRune('s', func(ke KeyEvent) { called = true }, ModCtrl),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Plain 's' should NOT match (wrong modifier)
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 's'})
+	if called {
+		t.Error("OnRune('s', ..., ModCtrl) should not match plain 's'")
+	}
+
+	// Ctrl+S should match
+	table.dispatch(KeyEvent{Key: KeyRune, Rune: 's', Mod: ModCtrl})
+	if !called {
+		t.Error("OnRune('s', ..., ModCtrl) should match Ctrl+S")
+	}
+}
+
+func TestDispatch_OnKey_VariadicMod(t *testing.T) {
+	called := false
+	comp := &mockKeyComponent{
+		keyMap: KeyMap{
+			OnKey(KeyTab, func(ke KeyEvent) { called = true }, ModShift),
+		},
+	}
+
+	root := buildTestTree(comp)
+	table, err := buildDispatchTable(nil, root)
+	if err != nil {
+		t.Fatalf("buildDispatchTable: %v", err)
+	}
+
+	// Plain Tab should NOT match
+	table.dispatch(KeyEvent{Key: KeyTab})
+	if called {
+		t.Error("OnKey(KeyTab, ..., ModShift) should not match plain Tab")
+	}
+
+	// Shift+Tab should match
+	table.dispatch(KeyEvent{Key: KeyTab, Mod: ModShift})
+	if !called {
+		t.Error("OnKey(KeyTab, ..., ModShift) should match Shift+Tab")
+	}
+}
+
 // --- Kitty keyboard protocol integration tests ---
 
 func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {

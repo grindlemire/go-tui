@@ -339,6 +339,43 @@ func TestKeyMap_SliceType(t *testing.T) {
 	}
 }
 
+func TestKeyMap_OnKey_VariadicMod(t *testing.T) {
+	// Without modifier: ExcludeMods set
+	binding := OnKey(KeyTab, func(ke KeyEvent) {})
+	if binding.Pattern.ExcludeMods != ModCtrl|ModAlt|ModShift {
+		t.Errorf("OnKey without mod: ExcludeMods = %v, want all", binding.Pattern.ExcludeMods)
+	}
+	if binding.Pattern.Mod != ModNone {
+		t.Errorf("OnKey without mod: Mod = %v, want None", binding.Pattern.Mod)
+	}
+
+	// With modifier: Mod set, ExcludeMods cleared
+	binding = OnKey(KeyTab, func(ke KeyEvent) {}, ModShift)
+	if binding.Pattern.Mod != ModShift {
+		t.Errorf("OnKey with ModShift: Mod = %v, want Shift", binding.Pattern.Mod)
+	}
+	if binding.Pattern.ExcludeMods != ModNone {
+		t.Errorf("OnKey with ModShift: ExcludeMods = %v, want None", binding.Pattern.ExcludeMods)
+	}
+}
+
+func TestKeyMap_OnRune_VariadicMod(t *testing.T) {
+	// Without modifier: ExcludeMods set to Ctrl|Alt
+	binding := OnRune('a', func(ke KeyEvent) {})
+	if binding.Pattern.ExcludeMods != ModCtrl|ModAlt {
+		t.Errorf("OnRune without mod: ExcludeMods = %v, want Ctrl|Alt", binding.Pattern.ExcludeMods)
+	}
+
+	// With modifier: Mod set, ExcludeMods cleared
+	binding = OnRune('a', func(ke KeyEvent) {}, ModCtrl)
+	if binding.Pattern.Mod != ModCtrl {
+		t.Errorf("OnRune with ModCtrl: Mod = %v, want Ctrl", binding.Pattern.Mod)
+	}
+	if binding.Pattern.ExcludeMods != ModNone {
+		t.Errorf("OnRune with ModCtrl: ExcludeMods = %v, want None", binding.Pattern.ExcludeMods)
+	}
+}
+
 func TestKeyMap_KeyPatternEquality(t *testing.T) {
 	type tc struct {
 		a    KeyPattern
@@ -395,6 +432,16 @@ func TestKeyMap_KeyPatternEquality(t *testing.T) {
 		"ExcludeMods vs Mod not equal": {
 			a:    KeyPattern{Key: KeyTab, ExcludeMods: ModCtrl | ModAlt | ModShift},
 			b:    KeyPattern{Key: KeyTab, Mod: ModShift},
+			want: false,
+		},
+		"same ExcludeMods rune patterns are equal": {
+			a:    KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			b:    KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			want: true,
+		},
+		"different ExcludeMods are not equal": {
+			a:    KeyPattern{Rune: 'a', ExcludeMods: ModCtrl | ModAlt},
+			b:    KeyPattern{Rune: 'a', ExcludeMods: ModCtrl},
 			want: false,
 		},
 	}
