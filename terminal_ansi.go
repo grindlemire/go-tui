@@ -109,17 +109,15 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 			t.lastStyle = ch.Cell.Style
 		}
 
-		// Write the character (skip continuation cells)
-		if !ch.Cell.IsContinuation() {
-			if ch.Cell.Rune != 0 {
-				t.esc.WriteRune(ch.Cell.Rune)
-			} else {
-				t.esc.WriteRune(' ')
-			}
+		// Write the character
+		if ch.Cell.Rune != 0 {
+			t.esc.WriteRune(ch.Cell.Rune)
+		} else {
+			t.esc.WriteRune(' ')
 		}
 
 		lastX = ch.X
-		if !ch.Cell.IsContinuation() && ch.Cell.Width > 1 {
+		if ch.Cell.Width > 1 {
 			// Wide character advances cursor by its width
 			lastX = ch.X + int(ch.Cell.Width) - 1
 		}

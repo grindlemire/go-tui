@@ -55,14 +55,12 @@ func (a *App) resumeTerminal() {
 	// Re-negotiate Kitty keyboard protocol.
 	// Pause the event reader so it doesn't consume the query response.
 	if !a.legacyKeyboard {
-		if ansiTerm, ok := a.terminal.(*ANSITerminal); ok {
-			if pr, ok := a.reader.(PausableReader); ok {
-				pr.Pause()
-			}
-			ansiTerm.NegotiateKittyKeyboard(int(ansiTerm.inFd))
-			if pr, ok := a.reader.(PausableReader); ok {
-				pr.Resume()
-			}
+		if pr, ok := a.reader.(PausableReader); ok {
+			pr.Pause()
+		}
+		a.terminal.NegotiateKittyKeyboard()
+		if pr, ok := a.reader.(PausableReader); ok {
+			pr.Resume()
 		}
 	}
 

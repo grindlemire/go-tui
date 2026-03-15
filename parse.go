@@ -277,16 +277,6 @@ var kittySpecialKeys = map[int]Key{
 	13:    KeyEnter,
 	27:    KeyEscape,
 	127:   KeyBackspace,
-	57345: KeyHome,
-	57346: KeyEnd,
-	57348: KeyInsert,
-	57349: KeyDelete,
-	57350: KeyPageUp,
-	57351: KeyPageDown,
-	57352: KeyUp,
-	57353: KeyDown,
-	57354: KeyRight,
-	57355: KeyLeft,
 	57358: KeyBackspace, // alternate backspace
 	57359: KeyEnter,     // keypad enter
 	57360: KeyTab,       // alternate tab

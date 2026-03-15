@@ -529,46 +529,11 @@ func TestParseInput_KittyCSIu(t *testing.T) {
 			input:    []byte("\x1b[57375;1u"),
 			expected: KeyEvent{Key: KeyF12},
 		},
-		"up arrow": {
-			input:    []byte("\x1b[57352;1u"),
-			expected: KeyEvent{Key: KeyUp},
-		},
-		"down arrow": {
-			input:    []byte("\x1b[57353;1u"),
-			expected: KeyEvent{Key: KeyDown},
-		},
-		"right arrow": {
-			input:    []byte("\x1b[57354;1u"),
-			expected: KeyEvent{Key: KeyRight},
-		},
-		"left arrow": {
-			input:    []byte("\x1b[57355;1u"),
-			expected: KeyEvent{Key: KeyLeft},
-		},
-		"home": {
-			input:    []byte("\x1b[57345;1u"),
-			expected: KeyEvent{Key: KeyHome},
-		},
-		"end": {
-			input:    []byte("\x1b[57346;1u"),
-			expected: KeyEvent{Key: KeyEnd},
-		},
-		"insert": {
-			input:    []byte("\x1b[57348;1u"),
-			expected: KeyEvent{Key: KeyInsert},
-		},
-		"delete": {
-			input:    []byte("\x1b[57349;1u"),
-			expected: KeyEvent{Key: KeyDelete},
-		},
-		"page up": {
-			input:    []byte("\x1b[57350;1u"),
-			expected: KeyEvent{Key: KeyPageUp},
-		},
-		"page down": {
-			input:    []byte("\x1b[57351;1u"),
-			expected: KeyEvent{Key: KeyPageDown},
-		},
+		// Navigation key code points (57345-57355) are omitted here because
+		// Kitty only sends them in flag-2+ ("report all keys") mode. Under
+		// flag 1 (disambiguate only, the mode we negotiate), arrow and nav
+		// keys arrive as standard CSI sequences (e.g. ESC[A for Up) and are
+		// parsed by parseCSI, not parseKittyKey.
 		"no modifier param": {
 			input:    []byte("\x1b[97u"),
 			expected: KeyEvent{Key: KeyRune, Rune: 'a'},
