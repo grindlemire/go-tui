@@ -91,7 +91,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 				focus:        newFocusManager(),
 				buffer:       NewBuffer(80, 24),
 				watcherQueue: make(chan func(), 256),
-				events:       make(chan Event, 256),
+				merged:       make(chan Event, 256),
 				stopCh:       make(chan struct{}),
 			}
 
@@ -130,7 +130,7 @@ func TestApp_SetRoot_WithElement(t *testing.T) {
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
 		watcherQueue: make(chan func(), 256),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		stopCh:       make(chan struct{}),
 	}
 
@@ -149,7 +149,7 @@ func TestApp_Run_EventLoopLogic(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -157,13 +157,13 @@ func TestApp_Run_EventLoopLogic(t *testing.T) {
 
 	// Queue an event
 	var eventProcessed bool
-	app.events <- UpdateEvent{fn: func() {
+	app.merged <- UpdateEvent{fn: func() {
 		eventProcessed = true
 	}}
 
 	// Process one event manually (simulating the Run loop)
 	select {
-	case ev := <-app.events:
+	case ev := <-app.merged:
 		app.Dispatch(ev)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Expected event in queue")
@@ -188,7 +188,7 @@ func TestApp_Stop_IsIdempotent(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -214,7 +214,7 @@ func TestApp_SetRoot_ClearsRootComponent(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -235,7 +235,7 @@ func TestApp_SetRoot_StopsPreviousRootWatchers(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),

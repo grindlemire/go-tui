@@ -27,7 +27,7 @@ func TestRender_SkipsWhenNotDirty(t *testing.T) {
 		terminal:     mock,
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 1),
+		merged:       make(chan Event, 1),
 		watcherQueue: make(chan func(), 1),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -59,7 +59,9 @@ func TestClose_Idempotent(t *testing.T) {
 		reader:       &MockEventReader{},
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 256),
+		inputEvents:  make(chan Event, 256),
+		updates:      make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -79,7 +81,7 @@ func TestClose_Idempotent(t *testing.T) {
 
 func TestEvents_ReturnsChannel(t *testing.T) {
 	app := &App{
-		events: make(chan Event, 256),
+		merged: make(chan Event, 256),
 		stopCh: make(chan struct{}),
 	}
 	ch := app.Events()
@@ -88,7 +90,7 @@ func TestEvents_ReturnsChannel(t *testing.T) {
 	}
 
 	// Send an event and verify it's received
-	app.events <- KeyEvent{Key: KeyEnter}
+	app.merged <- KeyEvent{Key: KeyEnter}
 	select {
 	case ev := <-ch:
 		if _, ok := ev.(KeyEvent); !ok {
@@ -104,7 +106,7 @@ func TestDispatchEvents_ReturnsFalseOnStop(t *testing.T) {
 		terminal:     NewMockTerminal(80, 24),
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -122,7 +124,7 @@ func TestStep_ReturnsFalseOnStop(t *testing.T) {
 		terminal:     NewMockTerminal(80, 24),
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -143,7 +145,7 @@ func TestManualLoop_StepExitsOnStop(t *testing.T) {
 		reader:        &MockEventReader{},
 		buffer:        NewBuffer(80, 24),
 		focus:         newFocusManager(),
-		events:        make(chan Event, 256),
+		merged:        make(chan Event, 256),
 		watcherQueue:  make(chan func(), 256),
 		stopCh:        make(chan struct{}),
 		mounts:        newMountState(),
@@ -172,12 +174,16 @@ func TestManualLoop_EventsChannelReceivesUpdates(t *testing.T) {
 		reader:       &MockEventReader{},
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 256),
+		inputEvents:  make(chan Event, 256),
+		updates:      make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
 		batch:        newBatchContext(),
 	}
+	app.startEventMerge()
+	defer app.Stop()
 
 	called := false
 	app.QueueUpdate(func() { called = true })
@@ -202,7 +208,7 @@ func TestManualLoop_DispatchEventsProcessesAll(t *testing.T) {
 		terminal:     NewMockTerminal(80, 24),
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -211,7 +217,7 @@ func TestManualLoop_DispatchEventsProcessesAll(t *testing.T) {
 
 	count := 0
 	for i := 0; i < 5; i++ {
-		app.events <- UpdateEvent{fn: func() { count++ }}
+		app.merged <- UpdateEvent{fn: func() { count++ }}
 	}
 
 	ok := app.DispatchEvents()
@@ -229,7 +235,9 @@ func TestManualLoop_OpenDoubleCallErrors(t *testing.T) {
 		reader:        &MockEventReader{},
 		buffer:        NewBuffer(80, 24),
 		focus:         newFocusManager(),
-		events:        make(chan Event, 256),
+		inputEvents:   make(chan Event, 256),
+		updates:       make(chan Event, 256),
+		merged:        make(chan Event, 256),
 		watcherQueue:  make(chan func(), 256),
 		stopCh:        make(chan struct{}),
 		mounts:        newMountState(),
@@ -253,7 +261,7 @@ func TestManualLoop_SelectMultiplexing(t *testing.T) {
 		reader:       &MockEventReader{},
 		buffer:       NewBuffer(80, 24),
 		focus:        newFocusManager(),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		mounts:       newMountState(),
@@ -263,7 +271,7 @@ func TestManualLoop_SelectMultiplexing(t *testing.T) {
 	customCh := make(chan string, 1)
 	customCh <- "external"
 
-	app.events <- UpdateEvent{fn: func() {}}
+	app.merged <- UpdateEvent{fn: func() {}}
 
 	tuiHandled := false
 	customHandled := false

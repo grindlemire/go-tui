@@ -98,7 +98,7 @@ func TestFocusIntegration_TabFocusesInput(t *testing.T) {
 		terminal:   term,
 		focus:      newFocusManager(),
 		buffer:     NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
 		mounts:     newMountState(),

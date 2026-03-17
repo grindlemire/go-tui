@@ -9,7 +9,8 @@ func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		updates:      make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -20,9 +21,9 @@ func TestApp_QueueUpdate_EnqueuesSafely(t *testing.T) {
 		executed = true
 	})
 
-	// Read from events channel and dispatch
+	// QueueUpdate sends to updates channel; read directly (no fan-in in test)
 	select {
-	case ev := <-app.events:
+	case ev := <-app.updates:
 		app.Dispatch(ev)
 		if !executed {
 			t.Error("Queued function was not executed correctly")
@@ -36,7 +37,8 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		updates:      make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -54,11 +56,11 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 		}()
 	}
 
-	// Read all queued functions
+	// Read all queued functions from updates channel
 	go func() {
 		for i := 0; i < 10; i++ {
 			select {
-			case ev := <-app.events:
+			case ev := <-app.updates:
 				app.Dispatch(ev)
 			case <-time.After(100 * time.Millisecond):
 				return
@@ -81,7 +83,8 @@ func TestApp_QueueUpdate_DropsWhenFull(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 1),
+		updates:      make(chan Event, 1),
+		merged:       make(chan Event, 1),
 		watcherQueue: make(chan func(), 1),
 		stopCh:       make(chan struct{}),
 	}
@@ -92,7 +95,7 @@ func TestApp_QueueUpdate_DropsWhenFull(t *testing.T) {
 
 	// Drain: only the first update should be present
 	select {
-	case ev := <-app.events:
+	case ev := <-app.updates:
 		app.Dispatch(ev)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("expected queued update")
@@ -100,7 +103,7 @@ func TestApp_QueueUpdate_DropsWhenFull(t *testing.T) {
 
 	// Channel should be empty now
 	select {
-	case <-app.events:
+	case <-app.updates:
 		t.Fatal("expected channel to be empty after draining one event")
 	default:
 	}
@@ -114,7 +117,7 @@ func TestApp_SetGlobalKeyHandler(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -151,7 +154,7 @@ func TestApp_GlobalKeyHandler_ConsumesEvent(t *testing.T) {
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
 		reader:       mockReader,
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -188,7 +191,7 @@ func TestApp_GlobalKeyHandler_PassesEvent(t *testing.T) {
 	app := &App{
 		focus:        newFocusManager(),
 		buffer:       NewBuffer(80, 24),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
@@ -227,15 +230,15 @@ func TestApp_EventBatching(t *testing.T) {
 		buffer:       NewBuffer(80, 24),
 		reader:       mockReader,
 		root:         New(),
-		events:       make(chan Event, 256),
+		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 		stopped:      false,
 	}
 
-	// Queue multiple events that mark dirty
+	// Queue multiple events directly to merged (simulating fan-in output)
 	for i := 0; i < 5; i++ {
-		app.events <- UpdateEvent{fn: func() {
+		app.merged <- UpdateEvent{fn: func() {
 			testApp.MarkDirty()
 		}}
 	}
@@ -243,7 +246,7 @@ func TestApp_EventBatching(t *testing.T) {
 	// Process one batch manually (simulating the Run() loop logic)
 	// Block until at least one event arrives
 	select {
-	case ev := <-app.events:
+	case ev := <-app.merged:
 		app.Dispatch(ev)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Expected event in queue")
@@ -253,7 +256,7 @@ func TestApp_EventBatching(t *testing.T) {
 drain:
 	for {
 		select {
-		case ev := <-app.events:
+		case ev := <-app.merged:
 			app.Dispatch(ev)
 		default:
 			break drain

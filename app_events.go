@@ -116,7 +116,7 @@ func (a *App) readInputEvents() {
 		}
 
 		select {
-		case a.events <- event:
+		case a.inputEvents <- event:
 		case <-a.stopCh:
 			return
 		}

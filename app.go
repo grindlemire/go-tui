@@ -33,8 +33,10 @@ type App struct {
 	batch           batchContext
 
 	// Event loop fields
-	events       chan Event      // Unified event channel (key, mouse, resize, updates)
-	watcherQueue chan func()     // Bridge channel for Watcher interface compatibility
+	inputEvents  chan Event  // Terminal input events (key, mouse, resize)
+	updates      chan Event  // Background events (watchers, QueueUpdate, Suspend)
+	merged       chan Event  // Fan-in of inputEvents + updates with input priority
+	watcherQueue chan func() // Bridge channel for Watcher interface compatibility
 	stopCh       chan struct{}
 	stopped      bool
 	stopOnce     sync.Once
@@ -167,10 +169,13 @@ func NewApp(opts ...AppOption) (*App, error) {
 	// Set up screen mode based on inline configuration.
 	app.setupInitialScreen(width, termHeight)
 
-	// Create unified event channel and watcher bridge
-	app.events = make(chan Event, app.eventQueueSize)
+	// Create event channels and start background goroutines
+	app.inputEvents = make(chan Event, app.eventQueueSize)
+	app.updates = make(chan Event, app.eventQueueSize)
+	app.merged = make(chan Event, app.eventQueueSize)
 	app.watcherQueue = make(chan func(), app.eventQueueSize)
 	app.startWatcherBridge()
+	app.startEventMerge()
 
 	// Apply terminal settings based on options
 	if app.mouseEnabled {
@@ -271,10 +276,13 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	// Set up screen mode based on inline configuration.
 	app.setupInitialScreen(width, termHeight)
 
-	// Create unified event channel and watcher bridge
-	app.events = make(chan Event, app.eventQueueSize)
+	// Create event channels and start background goroutines
+	app.inputEvents = make(chan Event, app.eventQueueSize)
+	app.updates = make(chan Event, app.eventQueueSize)
+	app.merged = make(chan Event, app.eventQueueSize)
 	app.watcherQueue = make(chan func(), app.eventQueueSize)
 	app.startWatcherBridge()
+	app.startEventMerge()
 
 	// Apply terminal settings based on options
 	if app.mouseEnabled {
@@ -467,7 +475,7 @@ func (a *App) PollEvent(timeout time.Duration) (Event, bool) {
 }
 
 // startWatcherBridge starts a goroutine that forwards closures from the
-// watcherQueue to the unified events channel as UpdateEvents.
+// watcherQueue to the updates channel as UpdateEvents.
 func (a *App) startWatcherBridge() {
 	go func() {
 		for {
@@ -477,7 +485,45 @@ func (a *App) startWatcherBridge() {
 					return
 				}
 				select {
-				case a.events <- UpdateEvent{fn: fn}:
+				case a.updates <- UpdateEvent{fn: fn}:
+				case <-a.stopCh:
+					return
+				}
+			case <-a.stopCh:
+				return
+			}
+		}
+	}()
+}
+
+// startEventMerge starts a goroutine that merges inputEvents and updates
+// into the merged channel with input priority. Input events are always
+// forwarded before background updates when both are pending.
+func (a *App) startEventMerge() {
+	go func() {
+		for {
+			// Priority: always drain inputEvents first
+			select {
+			case ev := <-a.inputEvents:
+				select {
+				case a.merged <- ev:
+				case <-a.stopCh:
+					return
+				}
+				continue
+			default:
+			}
+			// No input pending; take from either channel
+			select {
+			case ev := <-a.inputEvents:
+				select {
+				case a.merged <- ev:
+				case <-a.stopCh:
+					return
+				}
+			case ev := <-a.updates:
+				select {
+				case a.merged <- ev:
 				case <-a.stopCh:
 					return
 				}

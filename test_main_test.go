@@ -12,7 +12,7 @@ var testApp *App
 func TestMain(m *testing.M) {
 	testApp = &App{
 		stopCh:       make(chan struct{}),
-		events:       make(chan Event, 1),
+		merged:       make(chan Event, 1),
 		watcherQueue: make(chan func(), 1),
 		focus:        newFocusManager(),
 		mounts:       newMountState(),

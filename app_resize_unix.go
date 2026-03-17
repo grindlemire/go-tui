@@ -25,7 +25,7 @@ func (a *App) registerResizeSignal() func() {
 					interruptible.Interrupt()
 				}
 				select {
-				case a.events <- ev:
+				case a.inputEvents <- ev:
 				case <-a.stopCh:
 					return
 				}

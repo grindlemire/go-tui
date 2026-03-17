@@ -83,7 +83,7 @@ func (a *App) Run() error {
 	drain:
 		for time.Now().Before(eventDeadline) {
 			select {
-			case ev := <-a.events:
+			case ev := <-a.merged:
 				a.Dispatch(ev)
 			case <-a.stopCh:
 				return nil
@@ -123,11 +123,12 @@ func (a *App) Stop() {
 }
 
 // Events returns a read-only channel carrying all events: key, mouse, resize,
-// and queued updates. Use this with select to multiplex go-tui events with
-// your own event sources. The channel remains open until the App is garbage
-// collected; use StopCh() to detect shutdown.
+// and queued updates. Input events are prioritized over background updates.
+// Use this with select to multiplex go-tui events with your own event sources.
+// The channel remains open until the App is garbage collected; use StopCh()
+// to detect shutdown.
 func (a *App) Events() <-chan Event {
-	return a.events
+	return a.merged
 }
 
 // DispatchEvents reads and dispatches all pending events from the Events channel.
@@ -137,7 +138,7 @@ func (a *App) DispatchEvents() bool {
 		select {
 		case <-a.stopCh:
 			return false
-		case ev := <-a.events:
+		case ev := <-a.merged:
 			a.Dispatch(ev)
 		default:
 			return true
@@ -157,18 +158,17 @@ func (a *App) Step() bool {
 
 // QueueUpdate enqueues a function to run on the main loop.
 // Safe to call from any goroutine. Use this for background thread safety.
-// If the event channel is full, the update is dropped to avoid blocking
-// input events and watchers that share the same channel.
+// If the updates channel is full, the update is dropped to avoid blocking
+// the caller.
 func (a *App) QueueUpdate(fn func()) {
 	if fn == nil {
 		return
 	}
 	select {
-	case a.events <- UpdateEvent{fn: fn}:
+	case a.updates <- UpdateEvent{fn: fn}:
 	case <-a.stopCh:
 	default:
-		// Channel full; drop the update to avoid blocking senders of
-		// input events and watcher callbacks that share this channel.
+		// Channel full; drop the update to avoid blocking the caller.
 	}
 }
 
