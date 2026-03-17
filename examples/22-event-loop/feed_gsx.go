@@ -10,16 +10,18 @@ import (
 )
 
 type feedApp struct {
-	messages *tui.State[[]string]
-	paused   *tui.State[bool]
-	mode     string
+	messages  *tui.State[[]string]
+	paused    *tui.State[bool]
+	mode      string
+	scrollRef *tui.Ref
 }
 
 func NewFeedApp(mode string) *feedApp {
 	return &feedApp{
-		messages: tui.NewState([]string{}),
-		paused:   tui.NewState(false),
-		mode:     mode,
+		messages:  tui.NewState([]string{}),
+		paused:    tui.NewState(false),
+		mode:      mode,
+		scrollRef: tui.NewRef(),
 	}
 }
 
@@ -37,6 +39,9 @@ func (f *feedApp) AddMessage(msg string) {
 	f.messages.Update(func(msgs []string) []string {
 		return append(msgs, msg)
 	})
+	if el := f.scrollRef.El(); el != nil {
+		el.ScrollToBottom()
+	}
 }
 
 func (f *feedApp) IsPaused() bool {
@@ -110,6 +115,7 @@ func (f *feedApp) Render(app *tui.App) *tui.Element {
 		tui.WithMinHeight(0),
 		tui.WithScrollable(tui.ScrollVertical),
 	)
+	f.scrollRef.Set(__tui_7)
 	for __idx_0, msg := range lastN(f.messages.Get(), 100) {
 		_ = __idx_0
 		__tui_8 := tui.New(
