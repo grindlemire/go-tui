@@ -2,11 +2,11 @@
 
 ## Overview
 
-go-tui has three ways to drive its event loop. `Run()` works for most apps. When you need to integrate external event sources (LLM streaming, network I/O, background workers), you can take control of the loop using `Open`, `Step`, `Events`, `Dispatch`, `Render`, and `Close`.
+go-tui has three ways to drive its event loop. `Run()` works for most apps, but when you need to integrate external event sources like LLM streaming, network I/O, or background workers, you can take control of the loop using `Open`, `Step`, `Events`, `Dispatch`, `Render`, and `Close`.
 
 ## The Standard Loop (Run)
 
-`Run()` handles everything: signal setup, input reading, event dispatch, dirty checking, rendering, and frame timing. Background goroutines use `QueueUpdate` to push data into the UI.
+`Run()` manages signal setup, input reading, event dispatch, dirty checking, rendering, and frame timing. Background goroutines push data into the UI through `QueueUpdate`.
 
 ```go
 func runMode() {
@@ -41,13 +41,13 @@ func runMode() {
 }
 ```
 
-The constraint: all external data must funnel through `QueueUpdate`, because `Run()` owns the event loop and state mutations need to happen on the main goroutine.
+Because `Run()` owns the event loop, all external data must funnel through `QueueUpdate` so that state mutations happen on the main goroutine.
 
 ## Owning the Frame Loop (Step)
 
-`Open()` does what `Run()` does at startup: registers signals, starts the input reader, and performs the initial render. After that, your code controls when frames happen.
+`Open()` performs the same startup work as `Run()` (registering signals, starting the input reader, performing the initial render) but returns immediately instead of blocking.
 
-`Step()` combines `DispatchEvents()` and `Render()` into a single call. Between steps, you can read from your own channels and mutate state directly, because you are the main goroutine.
+After that, your code controls when frames happen. `Step()` combines `DispatchEvents()` and `Render()` into a single call. Between steps you can read from your own channels and mutate state directly, since you are the main goroutine.
 
 ```go
 func stepMode() {
@@ -96,11 +96,11 @@ func stepMode() {
 
 The ticker controls frame rate. Between ticks, the drain loop pulls all pending messages from the producer channel and updates state without `QueueUpdate`. `Step()` returns `false` when the app should exit.
 
-`Close()` restores terminal state. It is safe to call multiple times.
+`Close()` restores terminal state and is safe to call multiple times.
 
 ## Full Control with Select (Events)
 
-`Events()` returns a read-only channel you can use in a standard Go `select`. Your external channels sit alongside go-tui events as peers in the same select statement.
+`Events()` returns a read-only channel you can use in a standard Go `select`, placing your external channels alongside go-tui events as peers.
 
 ```go
 func selectMode() {
@@ -133,19 +133,19 @@ func selectMode() {
 }
 ```
 
-`Dispatch(ev)` routes the event through the key/mouse/resize dispatch system. `Render()` checks for dirty state and redraws if needed. Calling `Render()` after every select case is fine; it short-circuits when nothing changed.
+`Dispatch(ev)` routes the event through the key/mouse/resize dispatch system. `Render()` checks for dirty state and redraws if needed, so calling it after every select case is fine since it short-circuits when nothing changed.
 
-This is the cleanest option when you have external event sources. Each source gets its own select case instead of funneling through `QueueUpdate`.
+This is the cleanest option when you have external event sources, because each source gets its own select case instead of funneling through `QueueUpdate`.
 
 ## When to Use Which
 
-- **`Run()`**: Most apps. External data goes through `QueueUpdate` or channel watchers.
-- **`Step()`**: You need control over frame timing, or you want to drain your own channels between frames without `QueueUpdate`.
-- **`Events()` + select**: You have external channels and want them in the same select as go-tui input events.
+- **`Run()`** works for most apps. External data goes through `QueueUpdate` or channel watchers.
+- **`Step()`** gives you control over frame timing and lets you drain your own channels between frames without `QueueUpdate`.
+- **`Events()` + select** lets you put external channels in the same select as go-tui input events.
 
 ## Complete Example
 
-The UI component lives in `feed.gsx`. It displays a scrollable message feed with pause/resume and sticky-bottom scrolling:
+The UI component lives in `feed.gsx` and displays a scrollable message feed with pause/resume and sticky-bottom scrolling.
 
 ```gsx
 package main
@@ -282,7 +282,7 @@ templ (f *feedApp) Render() {
 }
 ```
 
-With `main.go` (showing the `startProducer` helper and all three modes):
+The `main.go` file contains the `startProducer` helper and all three modes:
 
 ```go
 package main
@@ -345,12 +345,12 @@ go run . step      # Step-based loop
 go run . select    # Select-based loop
 ```
 
-All three modes produce the same UI. The difference is how the event loop is wired:
+All three modes produce the same UI, and the difference is how the event loop is wired:
 
 ![Event Loop Demo screenshot](/guides/22.png)
 
 ## Next Steps
 
-- [Streaming Data](streaming) - Channel watchers, auto-scroll, and the producer pattern
-- [Watchers](watchers) - Timers, channels, and the WatcherProvider interface
-- [App Reference](../reference/app) - Full documentation for Open, Step, Events, Dispatch, Render, and Close
+- [Streaming Data](streaming) for channel watchers, auto-scroll, and the producer pattern
+- [Watchers](watchers) for timers, channels, and the WatcherProvider interface
+- [App Reference](../reference/app) for full documentation of Open, Step, Events, Dispatch, Render, and Close
