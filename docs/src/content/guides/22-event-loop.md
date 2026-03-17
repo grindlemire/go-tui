@@ -1,0 +1,356 @@
+# Custom Event Loops
+
+## Overview
+
+go-tui has three ways to drive its event loop. `Run()` works for most apps. When you need to integrate external event sources (LLM streaming, network I/O, background workers), you can take control of the loop using `Open`, `Step`, `Events`, `Dispatch`, `Render`, and `Close`.
+
+## The Standard Loop (Run)
+
+`Run()` handles everything: signal setup, input reading, event dispatch, dirty checking, rendering, and frame timing. Background goroutines use `QueueUpdate` to push data into the UI.
+
+```go
+func runMode() {
+    comp := NewFeedApp("Run()")
+    app, err := tui.NewApp(tui.WithRootComponent(comp))
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    // The producer must use QueueUpdate to safely mutate state from its
+    // goroutine. This is the only way to get external data into the UI
+    // when Run() owns the event loop.
+    go func() {
+        for i := 1; ; i++ {
+            time.Sleep(200 * time.Millisecond)
+            if comp.IsPaused() {
+                continue
+            }
+            msg := fmt.Sprintf("[%s] Message #%d", time.Now().Format("15:04:05.000"), i)
+            app.QueueUpdate(func() {
+                comp.AddMessage(msg)
+            })
+        }
+    }()
+
+    if err := app.Run(); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+
+The constraint: all external data must funnel through `QueueUpdate`, because `Run()` owns the event loop and state mutations need to happen on the main goroutine.
+
+## Owning the Frame Loop (Step)
+
+`Open()` does what `Run()` does at startup: registers signals, starts the input reader, and performs the initial render. After that, your code controls when frames happen.
+
+`Step()` combines `DispatchEvents()` and `Render()` into a single call. Between steps, you can read from your own channels and mutate state directly, because you are the main goroutine.
+
+```go
+func stepMode() {
+    comp := NewFeedApp("Step()")
+    app, err := tui.NewApp(tui.WithRootComponent(comp))
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+
+    if err := app.Open(); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    msgCh := startProducer(comp.IsPaused)
+    ticker := time.NewTicker(16 * time.Millisecond)
+    defer ticker.Stop()
+
+    for {
+        select {
+        case <-ticker.C:
+        case <-app.StopCh():
+            return
+        }
+
+        // Drain pending messages from the producer. This runs on the
+        // main goroutine so we can mutate state directly.
+    drain:
+        for {
+            select {
+            case msg := <-msgCh:
+                comp.AddMessage(msg)
+            default:
+                break drain
+            }
+        }
+
+        if !app.Step() {
+            return
+        }
+    }
+}
+```
+
+The ticker controls frame rate. Between ticks, the drain loop pulls all pending messages from the producer channel and updates state without `QueueUpdate`. `Step()` returns `false` when the app should exit.
+
+`Close()` restores terminal state. It is safe to call multiple times.
+
+## Full Control with Select (Events)
+
+`Events()` returns a read-only channel you can use in a standard Go `select`. Your external channels sit alongside go-tui events as peers in the same select statement.
+
+```go
+func selectMode() {
+    comp := NewFeedApp("Select()")
+    app, err := tui.NewApp(tui.WithRootComponent(comp))
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+
+    if err := app.Open(); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+    defer app.Close()
+
+    msgCh := startProducer(comp.IsPaused)
+
+    for {
+        select {
+        case ev := <-app.Events():
+            app.Dispatch(ev)
+        case msg := <-msgCh:
+            comp.AddMessage(msg)
+        case <-app.StopCh():
+            return
+        }
+        app.Render()
+    }
+}
+```
+
+`Dispatch(ev)` routes the event through the key/mouse/resize dispatch system. `Render()` checks for dirty state and redraws if needed. Calling `Render()` after every select case is fine; it short-circuits when nothing changed.
+
+This is the cleanest option when you have external event sources. Each source gets its own select case instead of funneling through `QueueUpdate`.
+
+## When to Use Which
+
+- **`Run()`**: Most apps. External data goes through `QueueUpdate` or channel watchers.
+- **`Step()`**: You need control over frame timing, or you want to drain your own channels between frames without `QueueUpdate`.
+- **`Events()` + select**: You have external channels and want them in the same select as go-tui input events.
+
+## Complete Example
+
+The UI component lives in `feed.gsx`. It displays a scrollable message feed with pause/resume and sticky-bottom scrolling:
+
+```gsx
+package main
+
+import (
+    "fmt"
+    "math"
+    tui "github.com/grindlemire/go-tui"
+)
+
+type feedApp struct {
+    messages      *tui.State[[]string]
+    paused        *tui.State[bool]
+    scrollY       *tui.State[int]
+    stickToBottom *tui.State[bool]
+    content       *tui.Ref
+    mode          string
+}
+
+func NewFeedApp(mode string) *feedApp {
+    return &feedApp{
+        messages:      tui.NewState([]string{}),
+        paused:        tui.NewState(false),
+        scrollY:       tui.NewState(0),
+        stickToBottom: tui.NewState(false),
+        content:       tui.NewRef(),
+        mode:          mode,
+    }
+}
+
+func (f *feedApp) scrollBy(delta int) {
+    el := f.content.El()
+    if el == nil {
+        return
+    }
+    _, curY := el.ScrollOffset()
+    _, maxY := el.MaxScroll()
+    newY := curY + delta
+    if newY < 0 {
+        newY = 0
+    } else if newY > maxY {
+        newY = maxY
+    }
+    f.scrollY.Set(newY)
+    f.stickToBottom.Set(false)
+}
+
+func (f *feedApp) KeyMap() tui.KeyMap {
+    return tui.KeyMap{
+        tui.OnStop(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
+        tui.OnStop(tui.Rune('p'), func(ke tui.KeyEvent) {
+            f.paused.Set(!f.paused.Get())
+        }),
+        tui.OnStop(tui.Rune('s'), func(ke tui.KeyEvent) {
+            if f.stickToBottom.Get() {
+                if el := f.content.El(); el != nil {
+                    _, y := el.ScrollOffset()
+                    f.scrollY.Set(y)
+                }
+                f.stickToBottom.Set(false)
+            } else {
+                f.stickToBottom.Set(true)
+            }
+        }),
+        tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { f.scrollBy(1) }),
+        tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { f.scrollBy(-1) }),
+        tui.On(tui.KeyUp, func(ke tui.KeyEvent) { f.scrollBy(-1) }),
+        tui.On(tui.KeyDown, func(ke tui.KeyEvent) { f.scrollBy(1) }),
+        tui.On(tui.KeyPageUp, func(ke tui.KeyEvent) { f.scrollBy(-10) }),
+        tui.On(tui.KeyPageDown, func(ke tui.KeyEvent) { f.scrollBy(10) }),
+        tui.On(tui.KeyHome, func(ke tui.KeyEvent) {
+            f.scrollY.Set(0)
+            f.stickToBottom.Set(false)
+        }),
+    }
+}
+
+func (f *feedApp) HandleMouse(me tui.MouseEvent) bool {
+    switch me.Button {
+    case tui.MouseWheelUp:
+        f.scrollBy(-1)
+        return true
+    case tui.MouseWheelDown:
+        f.scrollBy(1)
+        return true
+    }
+    return false
+}
+
+func (f *feedApp) AddMessage(msg string) {
+    f.messages.Update(func(msgs []string) []string {
+        return append(msgs, msg)
+    })
+    if f.stickToBottom.Get() {
+        f.scrollY.Set(math.MaxInt)
+    }
+}
+
+func (f *feedApp) IsPaused() bool {
+    return f.paused.Get()
+}
+
+templ (f *feedApp) Render() {
+    <div class="flex-col h-full border-rounded border-cyan">
+        <div class="flex justify-between px-1 shrink-0">
+            <span class="text-gradient-cyan-magenta font-bold">Event Loop Demo</span>
+            <div class="flex gap-1">
+                <span class="font-dim">mode:</span>
+                <span class="text-cyan font-bold">{f.mode}</span>
+            </div>
+        </div>
+        <hr />
+        <div
+            ref={f.content}
+            class="flex-col flex-grow border-single p-1"
+            scrollable={tui.ScrollVertical}
+            scrollOffset={0, f.scrollY.Get()}
+        >
+            for _, msg := range f.messages.Get() {
+                <span class="font-dim">{msg}</span>
+            }
+        </div>
+        <hr />
+        <div class="flex justify-between px-1 shrink-0">
+            <div class="flex gap-2">
+                <span class="font-dim">p: pause</span>
+                <span class="font-dim">s: sticky</span>
+                <span class="font-dim">j/k: scroll</span>
+                <span class="font-dim">q: quit</span>
+            </div>
+        </div>
+    </div>
+}
+```
+
+With `main.go` (showing the `startProducer` helper and all three modes):
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+    "time"
+
+    tui "github.com/grindlemire/go-tui"
+)
+
+//go:generate go run ../../cmd/tui generate feed.gsx
+
+func main() {
+    mode := "run"
+    if len(os.Args) > 1 {
+        mode = os.Args[1]
+    }
+
+    switch mode {
+    case "run":
+        runMode()
+    case "step":
+        stepMode()
+    case "select":
+        selectMode()
+    default:
+        fmt.Fprintf(os.Stderr, "Unknown mode %q. Use: run, step, or select\n", mode)
+        os.Exit(1)
+    }
+}
+
+func startProducer(paused func() bool) <-chan string {
+    ch := make(chan string, 10)
+    go func() {
+        for i := 1; ; i++ {
+            time.Sleep(200 * time.Millisecond)
+            if paused() {
+                continue
+            }
+            select {
+            case ch <- fmt.Sprintf("[%s] Message #%d", time.Now().Format("15:04:05.000"), i):
+            default:
+            }
+        }
+    }()
+    return ch
+}
+
+// ... runMode, stepMode, selectMode as shown above ...
+```
+
+Generate and run:
+
+```bash
+tui generate ./...
+go run . run       # Standard Run() mode
+go run . step      # Step-based loop
+go run . select    # Select-based loop
+```
+
+All three modes produce the same UI. The difference is how the event loop is wired:
+
+![Event Loop Demo screenshot](/guides/22.png)
+
+## Next Steps
+
+- [Streaming Data](streaming) - Channel watchers, auto-scroll, and the producer pattern
+- [Watchers](watchers) - Timers, channels, and the WatcherProvider interface
+- [App Reference](../reference/app) - Full documentation for Open, Step, Events, Dispatch, Render, and Close

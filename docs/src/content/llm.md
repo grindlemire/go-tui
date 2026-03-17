@@ -575,17 +575,65 @@ tui.WithEventQueueSize(n int)            // Event queue buffer size
 ## App Methods
 
 ```go
-app.Run() error              // Start event loop (blocks)
+// Standard lifecycle
+app.Run() error              // Start event loop (blocks), calls Open() + Close() internally
 app.Stop()                   // Stop the event loop
-app.Close()                  // Restore terminal
+app.Close() error            // Restore terminal (idempotent)
 app.StopCh() <-chan struct{} // Closed when app stops
+
+// Manual event loop
+app.Open() error             // Initialize without blocking (signals, input reader, initial render)
+app.Events() <-chan Event    // Read-only channel for select multiplexing (input prioritized)
+app.Dispatch(Event) bool     // Route a single event through key/mouse/resize dispatch
+app.DispatchEvents() bool    // Drain all pending events (non-blocking), false if stopped
+app.Step() bool              // DispatchEvents + Render in one call, false if stopped
+app.Render()                 // Re-render if dirty (no-op when clean)
+app.RenderFull()             // Force full redraw
+
+// State and updates
 app.Batch(func())            // Batch state updates
-app.QueueUpdate(func())      // Schedule work on main loop
+app.QueueUpdate(func())      // Schedule work on main loop (drops if full)
+app.MarkDirty()              // Mark app as needing render
+
+// Focus
 app.FocusNext() / app.FocusPrev() / app.Focused()
+
+// Inline mode
 app.PrintAbove(string)       // Print above inline widget
 app.StreamAbove() *StreamWriter  // Stream text char-by-char above inline widget
-app.Draw()                   // Manual redraw
-app.QueueUpdateDraw(func())  // QueueUpdate + Draw
+```
+
+### Manual Event Loop Patterns
+
+Three ways to drive the event loop:
+
+```go
+// 1. Run() - standard, go-tui owns the loop
+app.Run()
+
+// 2. Step() - you own frame timing
+app.Open()
+defer app.Close()
+for {
+    <-ticker.C
+    drainMyChannels()    // mutate state directly, no QueueUpdate needed
+    if !app.Step() { return }
+}
+
+// 3. Events() + select - multiplex with external channels
+app.Open()
+defer app.Close()
+for {
+    select {
+    case ev := <-app.Events():
+        app.Dispatch(ev)
+    case msg := <-myChannel:
+        handleMsg(msg)   // mutate state directly
+    case <-app.StopCh():
+        return
+    }
+    app.Render()
+}
 ```
 
 ## Inline Mode

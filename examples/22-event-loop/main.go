@@ -123,12 +123,13 @@ func stepMode() {
 
 		// Drain pending messages from the producer. This runs on the
 		// main goroutine so we can mutate state directly.
-		for done := false; !done; {
+	drain:
+		for {
 			select {
 			case msg := <-msgCh:
 				comp.AddMessage(msg)
 			default:
-				done = true
+				break drain
 			}
 		}
 

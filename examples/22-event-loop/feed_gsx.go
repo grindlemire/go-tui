@@ -24,7 +24,7 @@ func NewFeedApp(mode string) *feedApp {
 		messages:      tui.NewState([]string{}),
 		paused:        tui.NewState(false),
 		scrollY:       tui.NewState(0),
-		stickToBottom: tui.NewState(true),
+		stickToBottom: tui.NewState(false),
 		content:       tui.NewRef(),
 		mode:          mode,
 	}
@@ -35,15 +35,17 @@ func (f *feedApp) scrollBy(delta int) {
 	if el == nil {
 		return
 	}
+	// Read actual position from element, not from state (state may be math.MaxInt).
+	_, curY := el.ScrollOffset()
 	_, maxY := el.MaxScroll()
-	newY := f.scrollY.Get() + delta
+	newY := curY + delta
 	if newY < 0 {
 		newY = 0
 	} else if newY > maxY {
 		newY = maxY
 	}
 	f.scrollY.Set(newY)
-	f.stickToBottom.Set(newY >= maxY)
+	f.stickToBottom.Set(false)
 }
 
 func (f *feedApp) KeyMap() tui.KeyMap {
@@ -52,6 +54,19 @@ func (f *feedApp) KeyMap() tui.KeyMap {
 		tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.OnStop(tui.Rune('p'), func(ke tui.KeyEvent) {
 			f.paused.Set(!f.paused.Get())
+		}),
+		tui.OnStop(tui.Rune('s'), func(ke tui.KeyEvent) {
+			if f.stickToBottom.Get() {
+				// Turning off: capture actual scroll position so scrollY
+				// is no longer math.MaxInt (which would keep following the bottom).
+				if el := f.content.El(); el != nil {
+					_, y := el.ScrollOffset()
+					f.scrollY.Set(y)
+				}
+				f.stickToBottom.Set(false)
+			} else {
+				f.stickToBottom.Set(true)
+			}
 		}),
 		tui.On(tui.Rune('j'), func(ke tui.KeyEvent) { f.scrollBy(1) }),
 		tui.On(tui.Rune('k'), func(ke tui.KeyEvent) { f.scrollBy(-1) }),
@@ -62,10 +77,6 @@ func (f *feedApp) KeyMap() tui.KeyMap {
 		tui.On(tui.KeyHome, func(ke tui.KeyEvent) {
 			f.scrollY.Set(0)
 			f.stickToBottom.Set(false)
-		}),
-		tui.On(tui.KeyEnd, func(ke tui.KeyEvent) {
-			f.scrollY.Set(math.MaxInt)
-			f.stickToBottom.Set(true)
 		}),
 	}
 }
@@ -107,6 +118,20 @@ func pauseClass(paused bool) string {
 		return "text-yellow font-bold"
 	}
 	return "text-green font-bold"
+}
+
+func stickyLabel(sticky bool) string {
+	if sticky {
+		return "STICKY"
+	}
+	return "FREE"
+}
+
+func stickyClass(sticky bool) string {
+	if sticky {
+		return "text-cyan font-bold"
+	}
+	return "text-yellow"
 }
 
 func (f *feedApp) Render(app *tui.App) *tui.Element {
@@ -151,8 +176,8 @@ func (f *feedApp) Render(app *tui.App) *tui.Element {
 	__tui_7 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithFlexGrow(1),
+		tui.WithBorder(tui.BorderSingle),
 		tui.WithPadding(1),
-		tui.WithMinHeight(0),
 		tui.WithScrollable(tui.ScrollVertical),
 		tui.WithScrollOffset(0, f.scrollY.Get()),
 	)
@@ -181,35 +206,44 @@ func (f *feedApp) Render(app *tui.App) *tui.Element {
 		tui.WithGap(2),
 	)
 	__tui_12 := tui.New(
-		tui.WithText("p: toggle"),
+		tui.WithText("p: pause"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_11.AddChild(__tui_12)
 	__tui_13 := tui.New(
-		tui.WithText("j/k: scroll"),
+		tui.WithText("s: sticky"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_11.AddChild(__tui_13)
 	__tui_14 := tui.New(
-		tui.WithText("q: quit"),
+		tui.WithText("j/k: scroll"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_11.AddChild(__tui_14)
-	__tui_10.AddChild(__tui_11)
 	__tui_15 := tui.New(
+		tui.WithText("q: quit"),
+		tui.WithTextStyle(tui.NewStyle().Dim()),
+	)
+	__tui_11.AddChild(__tui_15)
+	__tui_10.AddChild(__tui_11)
+	__tui_16 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
 		tui.WithGap(2),
 	)
-	__tui_16 := tui.New(
+	__tui_17 := tui.New(
 		tui.WithText(pauseLabel(f.paused.Get())),
 	)
-	__tui_15.AddChild(__tui_16)
-	__tui_17 := tui.New(
+	__tui_16.AddChild(__tui_17)
+	__tui_18 := tui.New(
+		tui.WithText(stickyLabel(f.stickToBottom.Get())),
+	)
+	__tui_16.AddChild(__tui_18)
+	__tui_19 := tui.New(
 		tui.WithText(fmt.Sprintf("%d msgs", len(f.messages.Get()))),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_15.AddChild(__tui_17)
-	__tui_10.AddChild(__tui_15)
+	__tui_16.AddChild(__tui_19)
+	__tui_10.AddChild(__tui_16)
 	__tui_0.AddChild(__tui_10)
 
 	return __tui_0
