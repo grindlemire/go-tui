@@ -33,17 +33,17 @@ type App struct {
 	batch           batchContext
 
 	// Event loop fields
-	inputEvents  chan Event  // Terminal input events (key, mouse, resize)
-	updates      chan Event  // Background events (watchers, QueueUpdate, Suspend)
-	merged       chan Event  // Fan-in of inputEvents + updates with input priority
-	watcherQueue chan func() // Bridge channel for Watcher interface compatibility
-	stopCh       chan struct{}
-	stopped      bool
-	stopOnce     sync.Once
-	closeOnce     sync.Once
-	opened        atomic.Bool
-	signalCleanup func()      // Cleans up signal handlers (set by Open)
-	selfSuspended atomic.Bool // True during self-initiated suspend; prevents double resume from SIGCONT handler
+	inputEvents      chan Event  // Terminal input events (key, mouse, resize)
+	updates          chan Event  // Background events (watchers, QueueUpdate, Suspend)
+	merged           chan Event  // Fan-in of inputEvents + updates with input priority
+	watcherQueue     chan func() // Bridge channel for Watcher interface compatibility
+	stopCh           chan struct{}
+	stopped          bool
+	stopOnce         sync.Once
+	closeOnce        sync.Once
+	opened           atomic.Bool
+	signalCleanup    func()              // Cleans up signal handlers (set by Open)
+	selfSuspended    atomic.Bool         // True during self-initiated suspend; prevents double resume from SIGCONT handler
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 
 	// Configuration (set via options)
@@ -59,9 +59,9 @@ type App struct {
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
-	inlineHeight      int               // Number of rows for inline widget (0 = full screen mode)
-	inlineStartRow    int               // Terminal row where inline region starts (calculated at init)
-	inlineStartupMode InlineStartupMode // Startup behavior for inline viewport ownership
+	inlineHeight       int               // Number of rows for inline widget (0 = full screen mode)
+	inlineStartRow     int               // Terminal row where inline region starts (calculated at init)
+	inlineStartupMode  InlineStartupMode // Startup behavior for inline viewport ownership
 	inlineLayout       inlineLayoutState
 	inlineSession      *inlineSession
 	activeStreamWriter *inlineStreamWriter

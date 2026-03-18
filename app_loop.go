@@ -1,11 +1,15 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"time"
 )
+
+// ErrAlreadyOpen is returned by Open when the app has already been opened.
+var ErrAlreadyOpen = errors.New("tui: app is already open")
 
 // Open initializes the event loop: registers signal handlers, starts the
 // input reader goroutine, and performs the initial render. Call this instead
@@ -15,7 +19,7 @@ import (
 // Call Close() when done to restore terminal state.
 func (a *App) Open() (retErr error) {
 	if !a.opened.CompareAndSwap(false, true) {
-		return fmt.Errorf("tui: app is already open")
+		return ErrAlreadyOpen
 	}
 
 	// If Open fails after starting goroutines, clean them up.
@@ -68,10 +72,8 @@ func (a *App) Open() (retErr error) {
 // Dispatch/Render, and calling Close(). For custom event loops, use
 // Open/Events/Dispatch/Render/Close directly.
 func (a *App) Run() error {
-	if !a.opened.Load() {
-		if err := a.Open(); err != nil {
-			return err
-		}
+	if err := a.Open(); err != nil && err != ErrAlreadyOpen {
+		return err
 	}
 	defer a.Close()
 
@@ -94,6 +96,9 @@ func (a *App) Run() error {
 
 		a.Render()
 
+		// Sleep for remaining frame time. Events arriving during sleep are
+		// processed on the next iteration. For lower latency, use Events()
+		// in a custom select loop.
 		elapsed := time.Since(frameStart)
 		if remaining := a.frameDuration - elapsed; remaining > 0 {
 			select {
