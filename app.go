@@ -188,6 +188,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
 	if interruptible, ok := reader.(InterruptibleReader); ok {
 		if err := interruptible.EnableInterrupt(); err != nil {
+			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
 			if app.mouseEnabled {
 				terminal.DisableMouse()
@@ -295,6 +296,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
 	if interruptible, ok := reader.(InterruptibleReader); ok {
 		if err := interruptible.EnableInterrupt(); err != nil {
+			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
 			if app.mouseEnabled {
 				terminal.DisableMouse()
