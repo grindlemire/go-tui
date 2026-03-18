@@ -15,6 +15,13 @@ function useValueProps() {
   const isDark = theme === "dark";
   return [
     {
+      tag: "tui",
+      label: "Terminal apps without the rendering pain",
+      summary: "Describe your UI in markup, compile it to Go",
+      detail: "HTML-like .gsx templates with Tailwind classes compile to type-safe Go. No ANSI escapes, no manual cursor math, no rendering headaches.",
+      color: t.accent,
+    },
+    {
       tag: ".gsx",
       label: "templ-inspired syntax",
       summary: "HTML-like templates that compile to type-safe Go",
@@ -310,7 +317,9 @@ export default function HomePageExplore() {
           <section className="max-w-[1100px] mx-auto px-4 sm:px-6" style={{ paddingTop: "clamp(28px, 5vh, 56px)" }}>
             <div className="v-in" style={{ animationDelay: "0ms" }}>
               <h1 className="leading-[1.08] tracking-tight font-bold" style={{ color: t.heading, fontSize: "clamp(24px, 5vw, 42px)", margin: 0 }}>
-                Declarative terminal UIs in <span style={{ color: t.tertiary }}>Go</span>
+                Build declarative terminal UIs
+                <br />
+                <span style={{ color: t.textDim }}>in </span><span style={{ color: t.tertiary }}>Go</span>
               </h1>
             </div>
 
