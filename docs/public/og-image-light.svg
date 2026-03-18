@@ -104,5 +104,5 @@
   </g>
 
   <!-- Tagline -->
-  <text x="600" y="460" text-anchor="middle" font-family="'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace" font-size="28" fill="#555555" letter-spacing="2">Declarative Terminal UI for Go</text>
+  <text x="600" y="460" text-anchor="middle" font-family="'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace" font-size="28" fill="#555555" letter-spacing="2">Build Declarative Terminal UIs in Go</text>
 </svg>
