@@ -11,12 +11,12 @@ var testApp *App
 
 func TestMain(m *testing.M) {
 	testApp = &App{
-		stopCh:      make(chan struct{}),
-		eventQueue:  make(chan func(), 1),
-		updateQueue: make(chan func(), 1),
-		focus:       newFocusManager(),
-		mounts:      newMountState(),
-		batch:       newBatchContext(),
+		stopCh:       make(chan struct{}),
+		merged:       make(chan Event, 1),
+		watcherQueue: make(chan func(), 1),
+		focus:        newFocusManager(),
+		mounts:       newMountState(),
+		batch:        newBatchContext(),
 	}
 	os.Exit(m.Run())
 }

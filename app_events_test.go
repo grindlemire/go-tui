@@ -88,10 +88,11 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			app := &App{
-				focus:      newFocusManager(),
-				buffer:     NewBuffer(80, 24),
-				eventQueue: make(chan func(), 256),
-				stopCh:     make(chan struct{}),
+				focus:        newFocusManager(),
+				buffer:       NewBuffer(80, 24),
+				watcherQueue: make(chan func(), 256),
+				merged:       make(chan Event, 256),
+				stopCh:       make(chan struct{}),
 			}
 
 			root := New()
@@ -116,7 +117,7 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 				if !mw.started {
 					t.Errorf("Watcher %d was not started", i)
 				}
-				if mw.eventQueue != app.eventQueue {
+				if mw.eventQueue != app.watcherQueue {
 					t.Errorf("Watcher %d received wrong eventQueue", i)
 				}
 			}
@@ -126,10 +127,11 @@ func TestApp_SetRoot_WithViewable(t *testing.T) {
 
 func TestApp_SetRoot_WithElement(t *testing.T) {
 	app := &App{
-		focus:      newFocusManager(),
-		buffer:     NewBuffer(80, 24),
-		eventQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
+		focus:        newFocusManager(),
+		buffer:       NewBuffer(80, 24),
+		watcherQueue: make(chan func(), 256),
+		merged:       make(chan Event, 256),
+		stopCh:       make(chan struct{}),
 	}
 
 	root := New()
@@ -142,26 +144,27 @@ func TestApp_SetRoot_WithElement(t *testing.T) {
 
 func TestApp_Run_EventLoopLogic(t *testing.T) {
 	// Test the core event loop logic without a real terminal.
-	// We simulate what Run() does: process events from eventQueue, check dirty, etc.
+	// We simulate what Run() does: process events from events channel, check dirty, etc.
 
 	app := &App{
-		focus:      newFocusManager(),
-		buffer:     NewBuffer(80, 24),
-		eventQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
-		stopped:    false,
+		focus:        newFocusManager(),
+		buffer:       NewBuffer(80, 24),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
+		stopCh:       make(chan struct{}),
+		stopped:      false,
 	}
 
 	// Queue an event
 	var eventProcessed bool
-	app.eventQueue <- func() {
+	app.merged <- UpdateEvent{fn: func() {
 		eventProcessed = true
-	}
+	}}
 
 	// Process one event manually (simulating the Run loop)
 	select {
-	case handler := <-app.eventQueue:
-		handler()
+	case ev := <-app.merged:
+		app.Dispatch(ev)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Expected event in queue")
 	}
@@ -183,11 +186,12 @@ func TestApp_Run_EventLoopLogic(t *testing.T) {
 
 func TestApp_Stop_IsIdempotent(t *testing.T) {
 	app := &App{
-		focus:      newFocusManager(),
-		buffer:     NewBuffer(80, 24),
-		eventQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
-		stopped:    false,
+		focus:        newFocusManager(),
+		buffer:       NewBuffer(80, 24),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
+		stopCh:       make(chan struct{}),
+		stopped:      false,
 	}
 
 	// First call should work
@@ -208,11 +212,12 @@ func TestApp_Stop_IsIdempotent(t *testing.T) {
 
 func TestApp_SetRoot_ClearsRootComponent(t *testing.T) {
 	app := &App{
-		focus:      newFocusManager(),
-		buffer:     NewBuffer(80, 24),
-		eventQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
-		mounts:     newMountState(),
+		focus:        newFocusManager(),
+		buffer:       NewBuffer(80, 24),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
+		stopCh:       make(chan struct{}),
+		mounts:       newMountState(),
 	}
 
 	app.SetRootComponent(&mockComponentRoot{})
@@ -228,11 +233,12 @@ func TestApp_SetRoot_ClearsRootComponent(t *testing.T) {
 
 func TestApp_SetRoot_StopsPreviousRootWatchers(t *testing.T) {
 	app := &App{
-		focus:      newFocusManager(),
-		buffer:     NewBuffer(80, 24),
-		eventQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
-		mounts:     newMountState(),
+		focus:        newFocusManager(),
+		buffer:       NewBuffer(80, 24),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
+		stopCh:       make(chan struct{}),
+		mounts:       newMountState(),
 	}
 
 	w1 := newStopAwareWatcher()

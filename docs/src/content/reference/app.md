@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `App` type is the top-level container that manages terminal setup, the event loop, rendering, and the component tree. Every go-tui program creates an `App`, sets a root component, calls `Run()`, and defers `Close()`.
+The `App` type is the top-level container that manages terminal setup, the event loop, rendering, and the component tree. Most programs create an `App`, set a root component, call `Run()`, and defer `Close()`. For custom event loops, use `Open()` with `Events()`, `Step()`, or `DispatchEvents()` instead of `Run()`.
 
 ```go
 package main
@@ -227,7 +227,7 @@ Sets a callback that runs after the app resumes from suspension (when the user r
 func (a *App) Run() error
 ```
 
-Starts the main event loop. Blocks until `Stop()` is called or a SIGINT (Ctrl+C) is received. The loop processes input events, re-renders when state is dirty, and sleeps for the remaining frame budget to maintain a consistent frame rate.
+Starts the main event loop. Blocks until `Stop()` is called or a SIGINT (Ctrl+C) is received. The loop processes input events, re-renders when state is dirty, and sleeps for the remaining frame budget to maintain a consistent frame rate. Calls `Open()` internally if the app has not been opened yet, and calls `Close()` on exit.
 
 ```go
 if err := app.Run(); err != nil {
@@ -236,13 +236,31 @@ if err := app.Run(); err != nil {
 }
 ```
 
+### Open
+
+```go
+func (a *App) Open() error
+```
+
+Initializes the event loop without blocking. Registers signal handlers (SIGINT, SIGWINCH, SIGTSTP/SIGCONT), starts the input reader goroutine, and performs the initial render. Returns an error if the app is already open.
+
+Use `Open()` instead of `Run()` when you want to drive your own event loop. After `Open()`, use `Events()`, `Dispatch()`, `Render()`, `Step()`, or `DispatchEvents()` to process events at your own pace. Call `Close()` when done.
+
+```go
+if err := app.Open(); err != nil {
+    fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+    os.Exit(1)
+}
+defer app.Close()
+```
+
 ### Stop
 
 ```go
 func (a *App) Stop()
 ```
 
-Signals the `Run` loop to exit gracefully. All watchers receive a stop signal and their goroutines exit. Safe to call multiple times (idempotent).
+Signals the event loop to exit gracefully. All watchers receive a stop signal and their goroutines exit. Safe to call multiple times (idempotent).
 
 ```go
 tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
@@ -256,7 +274,7 @@ tui.On(tui.KeyEscape, func(ke tui.KeyEvent) {
 func (a *App) Close() error
 ```
 
-Restores the terminal to its original state: disables mouse, shows cursor, exits alternate screen (or clears the inline region), exits raw mode, and closes the event reader. Must be called when the application exits.
+Restores the terminal to its original state: stops goroutines, cleans up signal handlers, disables mouse, shows cursor, exits alternate screen (or clears the inline region), exits raw mode, and closes the event reader. Safe to call multiple times (idempotent via `sync.Once`).
 
 ```go
 app, err := tui.NewApp(...)
@@ -306,7 +324,9 @@ Returns the current root element.
 func (a *App) Render()
 ```
 
-Clears the buffer, re-renders the component tree (calling the root component's `Render` method if one is set), and flushes changes to the terminal. Handles buffer resizing, inline mode offsets, and the mark-and-sweep cycle for mounted sub-components. Automatically performs a full redraw after a resize.
+Checks the dirty flag and, if set, re-renders the component tree and flushes changes to the terminal. No-op if nothing has changed since the last render. After rendering, the dispatch table is rebuilt from the current component tree. Handles buffer resizing, inline mode offsets, and the mark-and-sweep cycle for mounted sub-components. Automatically performs a full redraw after a resize.
+
+Safe to call frequently (e.g., after every select case in a manual event loop). The dirty check makes redundant calls cheap.
 
 ### RenderFull
 
@@ -350,22 +370,77 @@ Returns the current frame as a trimmed string. Useful for debugging and testing.
 
 ## Event Handling
 
+### Events
+
+```go
+func (a *App) Events() <-chan Event
+```
+
+Returns a read-only channel carrying all events: key, mouse, resize, and queued updates. Input events are prioritized over background updates internally. Use this with `select` to multiplex go-tui events with your own channels.
+
+```go
+for {
+    select {
+    case ev := <-app.Events():
+        app.Dispatch(ev)
+    case msg := <-myChannel:
+        handleMsg(msg)
+    case <-app.StopCh():
+        return
+    }
+    app.Render()
+}
+```
+
 ### Dispatch
 
 ```go
 func (a *App) Dispatch(event Event) bool
 ```
 
-Sends an event through the framework's dispatch pipeline. Returns `true` if the event was consumed.
+Routes a single event through the dispatch system. Returns `true` if the event was consumed.
 
+- **UpdateEvent**: executes the queued closure.
+- **KeyEvent**: goes through the dispatch table (component model) or global key handler (legacy path), then falls through to the focus manager.
+- **MouseEvent**: translated for inline mode, dispatched to MouseListener components, then hit-tested against elements.
 - **ResizeEvent**: updates buffer size, marks root dirty, schedules a full redraw.
-- **MouseEvent**: hit-tests the element tree to find the target element and dispatches to it.
-- **KeyEvent**: routes through the focus manager to the focused element.
 
-This method is primarily used in tests. During normal operation, `Run()` handles dispatch internally.
+Used in manual event loops with `Events()`, and in tests.
 
 ```go
 app.Dispatch(tui.KeyEvent{Key: tui.KeyEnter})
+```
+
+### DispatchEvents
+
+```go
+func (a *App) DispatchEvents() bool
+```
+
+Reads and dispatches all pending events from the Events channel. Returns `false` if the app has been stopped, `true` otherwise. Non-blocking: returns immediately when no events are pending.
+
+```go
+if !app.DispatchEvents() {
+    return // app stopped
+}
+app.Render()
+```
+
+### Step
+
+```go
+func (a *App) Step() bool
+```
+
+Combines `DispatchEvents()` and `Render()` into a single call. Returns `false` if the app has been stopped.
+
+```go
+for {
+    <-ticker.C
+    if !app.Step() {
+        return
+    }
+}
 ```
 
 ### SetGlobalKeyHandler
@@ -382,7 +457,9 @@ Sets (or replaces) a handler that runs before key events reach the focus manager
 func (a *App) QueueUpdate(fn func())
 ```
 
-Enqueues a function to run on the main event loop. Safe to call from any goroutine. Use this when you need to update state from a background goroutine.
+Enqueues a function to run on the main event loop. Safe to call from any goroutine. If the updates channel is full, the update is dropped. Use this when you need to update state from a background goroutine and you are using `Run()`.
+
+When using `Open()` with `Step()` or `Events()`, you can mutate state directly on the main goroutine without `QueueUpdate`.
 
 ```go
 go func() {

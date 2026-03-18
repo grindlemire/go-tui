@@ -285,7 +285,9 @@ func TestSuspendSignalRegistration(t *testing.T) {
 	app := &App{
 		terminal:       term,
 		stopCh:         make(chan struct{}),
-		eventQueue:     make(chan func(), 256),
+		updates:        make(chan Event, 256),
+		merged:         make(chan Event, 256),
+		watcherQueue:   make(chan func(), 256),
 		eventQueueSize: 256,
 		buffer:         NewBuffer(80, 24),
 	}
@@ -393,7 +395,9 @@ func TestSelfSuspendedPreventsDoubleResume(t *testing.T) {
 	app := &App{
 		terminal:       term,
 		stopCh:         make(chan struct{}),
-		eventQueue:     make(chan func(), 256),
+		updates:        make(chan Event, 256),
+		merged:         make(chan Event, 256),
+		watcherQueue:   make(chan func(), 256),
 		eventQueueSize: 256,
 		buffer:         NewBuffer(80, 24),
 		dirty:          atomic.Bool{},
@@ -446,8 +450,9 @@ func TestKeyCtrlZ_OverrideByStopper(t *testing.T) {
 	app := &App{
 		terminal:      term,
 		stopCh:        make(chan struct{}),
-		eventQueue:    make(chan func(), 256),
-		updateQueue:   make(chan func(), 256),
+		updates:       make(chan Event, 256),
+		merged:        make(chan Event, 256),
+		watcherQueue:  make(chan func(), 256),
 		buffer:        NewBuffer(80, 24),
 		focus:         newFocusManager(),
 		dispatchTable: table,

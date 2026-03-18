@@ -33,11 +33,16 @@ type App struct {
 	batch           batchContext
 
 	// Event loop fields
-	eventQueue       chan func()
-	updateQueue      chan func()
+	inputEvents      chan Event  // Terminal input events (key, mouse, resize)
+	updates          chan Event  // Background events (watchers, QueueUpdate, Suspend)
+	merged           chan Event  // Fan-in of inputEvents + updates with input priority
+	watcherQueue     chan func() // Bridge channel for Watcher interface compatibility
 	stopCh           chan struct{}
 	stopped          bool
 	stopOnce         sync.Once
+	closeOnce        sync.Once
+	opened           atomic.Bool
+	signalCleanup    func()              // Cleans up signal handlers (set by Open)
 	selfSuspended    atomic.Bool         // True during self-initiated suspend; prevents double resume from SIGCONT handler
 	globalKeyHandler func(KeyEvent) bool // Returns true if event consumed
 
@@ -54,9 +59,9 @@ type App struct {
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
 
 	// Inline mode (set via WithInlineHeight)
-	inlineHeight      int               // Number of rows for inline widget (0 = full screen mode)
-	inlineStartRow    int               // Terminal row where inline region starts (calculated at init)
-	inlineStartupMode InlineStartupMode // Startup behavior for inline viewport ownership
+	inlineHeight       int               // Number of rows for inline widget (0 = full screen mode)
+	inlineStartRow     int               // Terminal row where inline region starts (calculated at init)
+	inlineStartupMode  InlineStartupMode // Startup behavior for inline viewport ownership
 	inlineLayout       inlineLayoutState
 	inlineSession      *inlineSession
 	activeStreamWriter *inlineStreamWriter
@@ -164,9 +169,13 @@ func NewApp(opts ...AppOption) (*App, error) {
 	// Set up screen mode based on inline configuration.
 	app.setupInitialScreen(width, termHeight)
 
-	// Create event queue with configured size
-	app.eventQueue = make(chan func(), app.eventQueueSize)
-	app.updateQueue = make(chan func(), app.eventQueueSize)
+	// Create event channels and start background goroutines
+	app.inputEvents = make(chan Event, app.eventQueueSize)
+	app.updates = make(chan Event, app.eventQueueSize)
+	app.merged = make(chan Event, app.eventQueueSize)
+	app.watcherQueue = make(chan func(), app.eventQueueSize)
+	app.startWatcherBridge()
+	app.startEventMerge()
 
 	// Apply terminal settings based on options
 	if app.mouseEnabled {
@@ -179,6 +188,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
 	if interruptible, ok := reader.(InterruptibleReader); ok {
 		if err := interruptible.EnableInterrupt(); err != nil {
+			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
 			if app.mouseEnabled {
 				terminal.DisableMouse()
@@ -267,9 +277,13 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	// Set up screen mode based on inline configuration.
 	app.setupInitialScreen(width, termHeight)
 
-	// Create event queue with configured size
-	app.eventQueue = make(chan func(), app.eventQueueSize)
-	app.updateQueue = make(chan func(), app.eventQueueSize)
+	// Create event channels and start background goroutines
+	app.inputEvents = make(chan Event, app.eventQueueSize)
+	app.updates = make(chan Event, app.eventQueueSize)
+	app.merged = make(chan Event, app.eventQueueSize)
+	app.watcherQueue = make(chan func(), app.eventQueueSize)
+	app.startWatcherBridge()
+	app.startEventMerge()
 
 	// Apply terminal settings based on options
 	if app.mouseEnabled {
@@ -282,6 +296,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
 	if interruptible, ok := reader.(InterruptibleReader); ok {
 		if err := interruptible.EnableInterrupt(); err != nil {
+			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
 			if app.mouseEnabled {
 				terminal.DisableMouse()
@@ -324,7 +339,7 @@ func (a *App) SetRootView(view Viewable) {
 		binder.BindApp(a)
 	}
 	for _, w := range view.GetWatchers() {
-		w.Start(a.eventQueue, a.rootWatcherCh)
+		w.Start(a.watcherQueue, a.rootWatcherCh)
 	}
 }
 
@@ -362,7 +377,7 @@ func (a *App) applyRoot(root *Element) {
 
 	// Start all watchers in the tree
 	root.WalkWatchers(func(w Watcher) {
-		w.Start(a.eventQueue, a.rootWatcherCh)
+		w.Start(a.watcherQueue, a.rootWatcherCh)
 	})
 }
 
@@ -437,10 +452,10 @@ func (a *App) Terminal() Terminal {
 	return a.terminal
 }
 
-// EventQueue returns the event queue channel for manual watcher setup.
+// EventQueue returns the watcher queue channel for manual watcher setup.
 // Use with caution - prefer using SetRoot with Viewable for automatic watcher management.
 func (a *App) EventQueue() chan<- func() {
-	return a.eventQueue
+	return a.watcherQueue
 }
 
 // StopCh returns the stop channel for manual watcher setup.
@@ -459,6 +474,66 @@ func (a *App) Buffer() *Buffer {
 // Convenience wrapper around the EventReader.
 func (a *App) PollEvent(timeout time.Duration) (Event, bool) {
 	return a.reader.PollEvent(timeout)
+}
+
+// startWatcherBridge starts a goroutine that forwards closures from the
+// watcherQueue to the updates channel as UpdateEvents.
+func (a *App) startWatcherBridge() {
+	go func() {
+		for {
+			select {
+			case fn, ok := <-a.watcherQueue:
+				if !ok {
+					return
+				}
+				select {
+				case a.updates <- UpdateEvent{fn: fn}:
+				case <-a.stopCh:
+					return
+				}
+			case <-a.stopCh:
+				return
+			}
+		}
+	}()
+}
+
+// startEventMerge starts a goroutine that merges inputEvents and updates
+// into the merged channel with input priority. Input events are always
+// forwarded before background updates when both are pending.
+func (a *App) startEventMerge() {
+	go func() {
+		for {
+			// Priority: always drain inputEvents first
+			select {
+			case ev := <-a.inputEvents:
+				select {
+				case a.merged <- ev:
+				case <-a.stopCh:
+					return
+				}
+				continue
+			default:
+			}
+			// No input pending; take from either channel
+			select {
+			case ev := <-a.inputEvents:
+				select {
+				case a.merged <- ev:
+				case <-a.stopCh:
+					return
+				}
+			case ev := <-a.updates:
+				select {
+				case a.merged <- ev:
+				case <-a.stopCh:
+					return
+				}
+			case <-a.stopCh:
+				return
+			}
+		}
+	}()
 }
 
 // walkComponents performs a BFS walk of the element tree, calling fn for

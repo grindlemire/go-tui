@@ -110,7 +110,7 @@ func (a *App) resumeTerminal() {
 }
 
 // suspend performs the full suspend sequence: tear down terminal, send SIGTSTP.
-// Must be called from the main event loop (via eventQueue).
+// Must be called from the main event loop (via events channel).
 //
 // We never register signal.Notify for SIGTSTP, so its disposition remains at
 // the OS default (stop the process). signal.Reset after Notify doesn't reliably
@@ -136,7 +136,7 @@ func (a *App) suspend() {
 // Safe to call from any goroutine.
 func (a *App) Suspend() {
 	select {
-	case a.eventQueue <- func() { a.suspend() }:
+	case a.updates <- UpdateEvent{fn: func() { a.suspend() }}:
 	case <-a.stopCh:
 	}
 }
@@ -169,9 +169,9 @@ func (a *App) registerSuspendSignals() func() {
 				// no alt screen, cursor visible, mouse disabled).
 				// Run the full resume sequence on the event loop.
 				select {
-				case a.eventQueue <- func() {
+				case a.updates <- UpdateEvent{fn: func() {
 					a.resumeTerminal()
-				}:
+				}}:
 				case <-a.stopCh:
 					return
 				}

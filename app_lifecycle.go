@@ -16,53 +16,67 @@ func (a *App) SnapshotFrame() string {
 }
 
 // Close restores the terminal to its original state.
-// Must be called when the application exits.
+// Must be called when the application exits. Safe to call multiple times.
 func (a *App) Close() error {
-	// Component watchers are stopped via stopCh (closed by Stop()).
-	// No explicit cleanup needed here - they exit when stopCh closes.
+	var closeErr error
+	a.closeOnce.Do(func() {
+		// Stop goroutines if not already stopped
+		a.Stop()
 
-	// Disable mouse event reporting (only if it was enabled)
-	if a.mouseEnabled {
-		a.terminal.DisableMouse()
-	}
-
-	// Show cursor (only if it was hidden)
-	if !a.cursorVisible {
-		a.terminal.ShowCursor()
-	}
-
-	// Handle screen cleanup based on mode
-	if a.inAlternateScreen {
-		// Currently in alternate screen overlay: exit alternate screen first
-		a.terminal.ExitAltScreen()
-		// Then handle based on the original mode (before entering alternate)
-		if a.savedInlineHeight > 0 {
-			// Was inline mode: clear the inline area
-			a.terminal.SetCursor(0, a.savedInlineStartRow)
-			a.terminal.ClearToEnd()
+		// Clean up signal handlers
+		if a.signalCleanup != nil {
+			a.signalCleanup()
 		}
-		// If savedInlineHeight == 0, we were in full-screen mode which means
-		// alternate screen was the normal state, so exiting it is sufficient
-	} else if a.inlineHeight > 0 {
-		// Inline mode: clear the widget area and position cursor for shell
-		a.terminal.SetCursor(0, a.inlineStartRow)
-		a.terminal.ClearToEnd()
-	} else {
-		// Full screen mode: exit alternate screen
-		a.terminal.ExitAltScreen()
-	}
 
-	// Disable Kitty keyboard protocol (pop from stack)
-	a.terminal.DisableKittyKeyboard()
+		// Disable mouse event reporting (only if it was enabled)
+		if a.mouseEnabled {
+			a.terminal.DisableMouse()
+		}
 
-	// Exit raw mode
-	if err := a.terminal.ExitRawMode(); err != nil {
-		a.reader.Close()
-		return err
-	}
+		// Show cursor (only if it was hidden)
+		if !a.cursorVisible {
+			a.terminal.ShowCursor()
+		}
 
-	// Close EventReader
-	return a.reader.Close()
+		// Handle screen cleanup based on mode
+		if a.inAlternateScreen {
+			// Currently in alternate screen overlay: exit alternate screen first
+			a.terminal.ExitAltScreen()
+			// Then handle based on the original mode (before entering alternate)
+			if a.savedInlineHeight > 0 {
+				// Was inline mode: clear the inline area
+				a.terminal.SetCursor(0, a.savedInlineStartRow)
+				a.terminal.ClearToEnd()
+			}
+			// If savedInlineHeight == 0, we were in full-screen mode which means
+			// alternate screen was the normal state, so exiting it is sufficient
+		} else if a.inlineHeight > 0 {
+			// Inline mode: clear the widget area and position cursor for shell
+			a.terminal.SetCursor(0, a.inlineStartRow)
+			a.terminal.ClearToEnd()
+		} else {
+			// Full screen mode: exit alternate screen
+			a.terminal.ExitAltScreen()
+		}
+
+		// Disable Kitty keyboard protocol (pop from stack)
+		a.terminal.DisableKittyKeyboard()
+
+		// Exit raw mode
+		if err := a.terminal.ExitRawMode(); err != nil {
+			if a.reader != nil {
+				a.reader.Close()
+			}
+			closeErr = err
+			return
+		}
+
+		// Close EventReader
+		if a.reader != nil {
+			closeErr = a.reader.Close()
+		}
+	})
+	return closeErr
 }
 
 // PrintAbove prints content that scrolls up above the inline widget.

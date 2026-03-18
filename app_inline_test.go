@@ -22,7 +22,10 @@ func newInlineTestApp(termWidth, termHeight, inlineHeight int) (*App, *EmulatorT
 		buffer:         NewBuffer(termWidth, inlineHeight),
 		focus:          newFocusManager(),
 		reader:         NewMockEventReader(),
-		eventQueue:     make(chan func(), 256),
+		inputEvents:    make(chan Event, 256),
+		updates:        make(chan Event, 256),
+		merged:         make(chan Event, 256),
+		watcherQueue:   make(chan func(), 256),
 		stopCh:         make(chan struct{}),
 	}
 
@@ -32,8 +35,8 @@ func newInlineTestApp(termWidth, termHeight, inlineHeight int) (*App, *EmulatorT
 func runQueuedUpdates(a *App) {
 	for {
 		select {
-		case fn := <-a.eventQueue:
-			fn()
+		case ev := <-a.updates:
+			a.Dispatch(ev)
 		default:
 			return
 		}
@@ -923,7 +926,8 @@ func TestStreamAbove_ReturnsWriter(t *testing.T) {
 func TestStreamAbove_NopWhenNotInline(t *testing.T) {
 	app := &App{
 		inlineHeight: 0,
-		eventQueue:   make(chan func(), 256),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
 		stopCh:       make(chan struct{}),
 	}
 
@@ -1104,7 +1108,8 @@ func TestPrintAboveElement_NoopOutsideInlineMode(t *testing.T) {
 		buffer:     NewBuffer(80, 24),
 		focus:      newFocusManager(),
 		reader:     NewMockEventReader(),
-		eventQueue: make(chan func(), 256),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
 	}
 
@@ -1208,7 +1213,8 @@ func TestStreamWriter_WriteElement_NopMode(t *testing.T) {
 		buffer:     NewBuffer(80, 24),
 		focus:      newFocusManager(),
 		reader:     NewMockEventReader(),
-		eventQueue: make(chan func(), 256),
+		merged:       make(chan Event, 256),
+		watcherQueue: make(chan func(), 256),
 		stopCh:     make(chan struct{}),
 	}
 

@@ -1,15 +1,37 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"time"
 )
 
-// Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
-// Rendering occurs only when the dirty flag is set (by mutations).
-func (a *App) Run() error {
+// ErrAlreadyOpen is returned by Open when the app has already been opened.
+var ErrAlreadyOpen = errors.New("tui: app is already open")
+
+// Open initializes the event loop: registers signal handlers, starts the
+// input reader goroutine, and performs the initial render. Call this instead
+// of Run() when driving your own event loop. Returns an error if already open.
+//
+// After Open(), use Events(), Dispatch(), and Render() to process events.
+// Call Close() when done to restore terminal state.
+func (a *App) Open() (retErr error) {
+	if !a.opened.CompareAndSwap(false, true) {
+		return ErrAlreadyOpen
+	}
+
+	// If Open fails after starting goroutines, clean them up.
+	defer func() {
+		if retErr != nil {
+			a.Stop()
+			if a.signalCleanup != nil {
+				a.signalCleanup()
+			}
+		}
+	}()
+
 	// Handle Ctrl+C gracefully
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
@@ -18,58 +40,69 @@ func (a *App) Run() error {
 		case <-sigCh:
 			a.Stop()
 		case <-a.stopCh:
-			// App already stopped, clean up signal handler
 		}
 		signal.Stop(sigCh)
 	}()
 
 	// Handle SIGWINCH (terminal resize)
 	cleanupResize := a.registerResizeSignal()
-	defer cleanupResize()
 
 	// Handle Ctrl+Z / SIGTSTP for job control
 	cleanupSuspend := a.registerSuspendSignals()
-	defer cleanupSuspend()
+
+	// Store cleanup functions for Close()
+	a.signalCleanup = func() {
+		cleanupResize()
+		cleanupSuspend()
+	}
 
 	// Start input reader in background
 	go a.readInputEvents()
 
 	// Initial render
-	a.Render()
+	a.MarkDirty()
+	a.renderFrame()
 	a.rebuildDispatchTable()
 
-	// Frame-based loop with configurable frame timing
+	return nil
+}
+
+// Run starts the main event loop. Blocks until Stop() is called or SIGINT received.
+// This is equivalent to calling Open(), running a frame-timed loop with
+// Dispatch/Render, and calling Close(). For custom event loops, use
+// Open/Events/Dispatch/Render/Close directly.
+func (a *App) Run() error {
+	if err := a.Open(); err != nil && err != ErrAlreadyOpen {
+		return err
+	}
+	defer a.Close()
+
 	for {
 		frameStart := time.Now()
-
-		// Process events for up to half the frame budget (non-blocking)
 		eventDeadline := frameStart.Add(a.frameDuration / 2)
+
+		// Drain events for up to half the frame budget
 	drain:
 		for time.Now().Before(eventDeadline) {
 			select {
-			case handler := <-a.eventQueue:
-				handler()
-			case handler := <-a.updateQueue:
-				handler()
+			case ev := <-a.merged:
+				a.Dispatch(ev)
 			case <-a.stopCh:
 				return nil
 			default:
-				// No more events, move to render phase
 				break drain
 			}
 		}
 
-		// Always render if dirty
-		if a.checkAndClearDirty() {
-			a.Render()
-			a.rebuildDispatchTable()
-		}
+		a.Render()
 
-		// Sleep for remaining frame time to maintain consistent framerate
+		// Sleep for remaining frame time. Events arriving during sleep are
+		// processed on the next iteration. For lower latency, use Events()
+		// in a custom select loop.
 		elapsed := time.Since(frameStart)
-		if elapsed < a.frameDuration {
+		if remaining := a.frameDuration - elapsed; remaining > 0 {
 			select {
-			case <-time.After(a.frameDuration - elapsed):
+			case <-time.After(remaining):
 			case <-a.stopCh:
 				return nil
 			}
@@ -94,38 +127,53 @@ func (a *App) Stop() {
 	})
 }
 
+// Events returns a read-only channel carrying all events: key, mouse, resize,
+// and queued updates. Input events are prioritized over background updates.
+// Use this with select to multiplex go-tui events with your own event sources.
+// The channel remains open until the App is garbage collected; use StopCh()
+// to detect shutdown.
+func (a *App) Events() <-chan Event {
+	return a.merged
+}
+
+// DispatchEvents reads and dispatches all pending events from the Events channel.
+// Returns false if the app has been stopped, true otherwise.
+func (a *App) DispatchEvents() bool {
+	for {
+		select {
+		case <-a.stopCh:
+			return false
+		case ev := <-a.merged:
+			a.Dispatch(ev)
+		default:
+			return true
+		}
+	}
+}
+
+// Step is a convenience that calls DispatchEvents followed by Render.
+// Returns false if the app has been stopped.
+func (a *App) Step() bool {
+	if !a.DispatchEvents() {
+		return false
+	}
+	a.Render()
+	return true
+}
+
 // QueueUpdate enqueues a function to run on the main loop.
 // Safe to call from any goroutine. Use this for background thread safety.
+// If the updates channel is full, the update is dropped to avoid blocking
+// the caller.
 func (a *App) QueueUpdate(fn func()) {
 	if fn == nil {
 		return
 	}
-	if a.updateQueue == nil {
-		// Back-compat path for tests/mocks that construct App manually.
-		select {
-		case a.eventQueue <- fn:
-		case <-a.stopCh:
-		default:
-		}
-		return
-	}
-
-	// Bounded queue: drop oldest background update when full.
-	// Input/watcher events use eventQueue and are lossless.
-	for {
-		select {
-		case a.updateQueue <- fn:
-			return
-		case <-a.stopCh:
-			return
-		default:
-			select {
-			case <-a.updateQueue:
-			case <-a.stopCh:
-				return
-			default:
-			}
-		}
+	select {
+	case a.updates <- UpdateEvent{fn: fn}:
+	case <-a.stopCh:
+	default:
+		// Channel full; drop the update to avoid blocking the caller.
 	}
 }
 

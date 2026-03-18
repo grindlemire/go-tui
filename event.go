@@ -118,3 +118,11 @@ type MouseEvent struct {
 func (e MouseEvent) App() *App { return e.app }
 
 func (MouseEvent) isEvent() {}
+
+// UpdateEvent wraps a closure queued via QueueUpdate. Dispatch() executes
+// the closure on the caller's goroutine.
+type UpdateEvent struct {
+	fn func()
+}
+
+func (UpdateEvent) isEvent() {}

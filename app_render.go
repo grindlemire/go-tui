@@ -2,10 +2,21 @@ package tui
 
 import "github.com/grindlemire/go-tui/internal/debug"
 
-// Render clears the buffer, renders the element tree, and flushes to terminal.
-// If a resize occurred since the last render, this automatically performs a full
-// redraw to eliminate visual artifacts.
+// Render performs layout and renders to the terminal if the dirty flag is set.
+// No-op if nothing has changed since the last render. After rendering, the
+// dispatch table is rebuilt from the current component tree.
+// Use RenderFull() to force a re-render regardless of dirty state.
 func (a *App) Render() {
+	if !a.checkAndClearDirty() {
+		return
+	}
+	a.renderFrame()
+	a.rebuildDispatchTable()
+}
+
+// renderFrame performs the actual render cycle: clear buffer, re-render
+// components, render element tree, flush to terminal.
+func (a *App) renderFrame() {
 	width, termHeight := a.terminal.Size()
 
 	// Determine the render height based on mode
@@ -68,7 +79,7 @@ func (a *App) Render() {
 		if a.root != nil {
 			a.componentWatchers = collectComponentWatchers(a.rootComponent, a.root)
 			for _, w := range a.componentWatchers {
-				w.Start(a.eventQueue, a.rootWatcherCh)
+				w.Start(a.watcherQueue, a.rootWatcherCh)
 			}
 		}
 		a.componentWatchersStarted = true
@@ -147,6 +158,8 @@ func (a *App) RenderFull() {
 
 	// Full render to terminal
 	RenderFull(a.terminal, a.buffer)
+
+	a.rebuildDispatchTable()
 }
 
 // rerenderComponent re-renders the root component to produce a fresh element tree.
