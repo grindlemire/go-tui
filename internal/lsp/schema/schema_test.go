@@ -262,13 +262,9 @@ func TestGetKeyword(t *testing.T) {
 
 	tests := map[string]tc{
 		"templ keyword":     {name: "templ"},
-		"@for keyword":      {name: "@for"},
 		"for keyword":       {name: "for"},
-		"@if keyword":       {name: "@if"},
 		"if keyword":        {name: "if"},
-		"@else keyword":     {name: "@else"},
-		"@let keyword":      {name: "@let"},
-		"let keyword":       {name: "let"},
+		"else keyword":      {name: "else"},
 		"package keyword":   {name: "package"},
 		"import keyword":    {name: "import"},
 		"unknown":           {name: "unknown", wantNil: true},

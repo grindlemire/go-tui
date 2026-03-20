@@ -233,12 +233,12 @@ func TestSemanticTokens_Keywords(t *testing.T) {
 			content: `package main
 
 templ List(items []string) {
-	@for _, item := range items {
+	for _, item := range items {
 		<span>{item}</span>
 	}
 }
 `,
-			wantKeyword: 2, // templ + @for
+			wantKeyword: 2, // templ + for
 		},
 		"if/else keywords": {
 			content: `package main
@@ -286,8 +286,8 @@ templ Cond(show bool) {
 		if !hasTokenAt(tokens, 2, 0, 5, TokenTypeKeyword) {
 			t.Error("expected templ keyword at 2:0 with length 5")
 		}
-		if !hasTokenAt(tokens, 3, 2, 3, TokenTypeKeyword) {
-			t.Error("expected for keyword at 3:2 with length 3")
+		if !hasTokenAt(tokens, 3, 1, 3, TokenTypeKeyword) {
+			t.Error("expected for keyword at 3:1 with length 3")
 		}
 	})
 
@@ -316,7 +316,7 @@ templ Cond(show bool) {
 	})
 
 	// Verify "else" inside a string does not produce a false-positive keyword token.
-	// The real else keyword is on line 7 ("} else {"), not inside the Sprintf on line 4.
+	// The real else keyword is on line 7 ("} else {"), not inside the Sprintf on line 6.
 	t.Run("else inside string not matched", func(t *testing.T) {
 		content := `package main
 
@@ -354,14 +354,14 @@ templ Cond(show bool) {
 		}
 	})
 
-	// Verify legacy @else syntax gets a semantic token for the "else" keyword.
-	t.Run("legacy @else keyword highlighted", func(t *testing.T) {
+	// Verify bare else syntax gets a semantic token for the "else" keyword.
+	t.Run("bare else keyword highlighted", func(t *testing.T) {
 		content := `package main
 
 templ Cond(show bool) {
 	if show {
 		<span>Yes</span>
-	} @else {
+	} else {
 		<span>No</span>
 	}
 }
@@ -377,9 +377,9 @@ templ Cond(show bool) {
 		}
 		tokens := decodeTokens(result.Data)
 
-		// "else" in "} @else {" on line 5 (0-indexed), col 4 (after "\t} @")
-		if !hasTokenAt(tokens, 5, 4, 4, TokenTypeKeyword) {
-			t.Error("expected else keyword at 5:4 with length 4 for legacy @else syntax")
+		// "else" in "} else {" on line 5 (0-indexed), col 3 (after "\t} ")
+		if !hasTokenAt(tokens, 5, 3, 4, TokenTypeKeyword) {
+			t.Error("expected else keyword at 5:3 with length 4 for bare else syntax")
 		}
 	})
 }

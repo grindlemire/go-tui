@@ -79,7 +79,7 @@ func TestDocumentSymbols_LetBindingChildren(t *testing.T) {
 	src := `package test
 
 templ Page() {
-	@let header = <div>Header</div>
+	header := <div>Header</div>
 	{header}
 }
 `

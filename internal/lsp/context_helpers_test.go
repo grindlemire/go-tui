@@ -68,9 +68,9 @@ func TestGetWordAtOffset(t *testing.T) {
 			want:    "flex-col",
 		},
 		"at symbol": {
-			content: "@for i := range items",
+			content: "for i := range items",
 			offset:  2,
-			want:    "@for",
+			want:    "for",
 		},
 		"hash prefix": {
 			content: "<div #Header>",

@@ -136,7 +136,7 @@ func TestDefinition_LetBinding(t *testing.T) {
 	src := `package test
 
 templ Example() {
-	@let header = <div>title</div>
+	header := <div>title</div>
 	{header}
 }
 `
@@ -162,7 +162,7 @@ func TestDefinition_ForLoopVariable(t *testing.T) {
 
 templ List(items []string) {
 	<div>
-		@for _, item := range items {
+		for _, item := range items {
 			<span>{item}</span>
 		}
 	</div>

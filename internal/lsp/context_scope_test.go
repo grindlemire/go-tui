@@ -9,7 +9,7 @@ func TestResolveCursorContext_ForLoop(t *testing.T) {
 
 templ List(items []string) {
 	<div>
-		@for _, item := range items {
+		for _, item := range items {
 			<span>{item}</span>
 		}
 	</div>
@@ -17,8 +17,8 @@ templ List(items []string) {
 `
 	doc := parseTestDoc(src)
 
-	// Cursor on "@for" keyword line (line 4)
-	// "\t\t@for" — '@' at col 2
+	// Cursor on "for" keyword line (line 4)
+	// "\t\tfor" — 'f' at col 2
 	ctx := ResolveCursorContext(doc, Position{Line: 4, Character: 3})
 
 	if ctx.NodeKind != NodeKindForLoop {
@@ -31,7 +31,7 @@ func TestResolveCursorContext_IfStmt(t *testing.T) {
 
 templ Conditional(show bool) {
 	<div>
-		@if show {
+		if show {
 			<span>visible</span>
 		}
 	</div>
@@ -39,7 +39,7 @@ templ Conditional(show bool) {
 `
 	doc := parseTestDoc(src)
 
-	// Cursor on "@if" line (line 4)
+	// Cursor on "if" line (line 4)
 	ctx := ResolveCursorContext(doc, Position{Line: 4, Character: 3})
 
 	if ctx.NodeKind != NodeKindIfStmt {
@@ -51,14 +51,14 @@ func TestResolveCursorContext_LetBinding(t *testing.T) {
 	src := `package test
 
 templ Example() {
-	@let header = <div>title</div>
+	header := <div>title</div>
 	{header}
 }
 `
 	doc := parseTestDoc(src)
 
-	// Cursor on "header" after @let — "\t@let header =" — '@let ' is 5 chars starting at col 1, 'header' starts at col 6
-	ctx := ResolveCursorContext(doc, Position{Line: 3, Character: 7})
+	// Cursor on "header" — "\theader := <div>..." — 'header' starts at col 1
+	ctx := ResolveCursorContext(doc, Position{Line: 3, Character: 2})
 
 	if ctx.NodeKind != NodeKindLetBinding {
 		t.Errorf("expected NodeKindLetBinding, got %s", ctx.NodeKind)
@@ -232,7 +232,7 @@ func TestResolveCursorContext_ScopeCollectsLetBindings(t *testing.T) {
 	src := `package test
 
 templ Example() {
-	@let title = <span>Hello</span>
+	title := <span>Hello</span>
 	{title}
 }
 `

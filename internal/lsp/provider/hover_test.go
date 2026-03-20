@@ -81,16 +81,16 @@ func TestHover_Keyword(t *testing.T) {
 			wantIn: "package",
 		},
 		"for keyword": {
-			word:   "@for",
-			wantIn: "@for",
+			word:   "for",
+			wantIn: "for",
 		},
 		"if keyword": {
-			word:   "@if",
-			wantIn: "@if",
+			word:   "if",
+			wantIn: "if",
 		},
 		"let keyword": {
-			word:   "@let",
-			wantIn: "@let",
+			word:   "let",
+			wantIn: ":=",
 		},
 		"unknown word": {
 			word:    "foobar",

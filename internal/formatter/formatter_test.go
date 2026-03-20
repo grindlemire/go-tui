@@ -152,7 +152,7 @@ templ Divider() {
 			input: `package main
 
 templ List(items []string) {
-@for i, item := range items {
+for i, item := range items {
 <span>{item}</span>
 }
 }
@@ -170,7 +170,7 @@ templ List(items []string) {
 			input: `package main
 
 templ Cond(show bool) {
-@if show {
+if show {
 <span>Visible</span>
 }
 }
@@ -188,9 +188,9 @@ templ Cond(show bool) {
 			input: `package main
 
 templ Cond(show bool) {
-@if show {
+if show {
 <span>Yes</span>
-} @else {
+} else {
 <span>No</span>
 }
 }
@@ -210,7 +210,7 @@ templ Cond(show bool) {
 			input: `package main
 
 templ WithLet() {
-@let x = <span>Hello</span>
+x := <span>Hello</span>
 {x}
 }
 `,

@@ -136,7 +136,7 @@ func TestReferences_LetBinding(t *testing.T) {
 	src := `package test
 
 templ Example() {
-	@let header = <div>title</div>
+	header := <div>title</div>
 	{header}
 }
 `
@@ -350,7 +350,7 @@ func TestReferences_LoopVariable(t *testing.T) {
 
 templ List(items []string) {
 	<div>
-		@for _, item := range items {
+		for _, item := range items {
 			<span>{item}</span>
 		}
 	</div>

@@ -76,7 +76,7 @@ templ Hello() {
 
 templ Hello(show bool) {
 	// comment before if
-	@if show {
+	if show {
 		<span>Hello</span>
 	}
 }
@@ -89,7 +89,7 @@ templ Hello(show bool) {
 
 templ List(items []string) {
 	// comment before for
-	@for _, item := range items {
+	for _, item := range items {
 		<span>{item}</span>
 	}
 }
