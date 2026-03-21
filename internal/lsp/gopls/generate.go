@@ -312,8 +312,8 @@ func (g *generator) generateForLoop(loop *tuigen.ForLoop, indent string) {
 	// Record mapping for the iterable expression
 	// Position.Column is 1-indexed from parser, convert to 0-indexed then add offset
 	tuiLine := loop.Position.Line - 1
-	// The iterable starts after "@for index, value := range "
-	tuiCol := loop.Position.Column - 1 + len("@for ") + len(loop.Index) + len(", ") + len(loop.Value) + len(" := range ")
+	// The iterable starts after "for index, value := range "
+	tuiCol := loop.Position.Column - 1 + len("for ") + len(loop.Index) + len(", ") + len(loop.Value) + len(" := range ")
 
 	// Generate for loop header
 	indexVar := loop.Index
@@ -350,7 +350,7 @@ func (g *generator) generateIfStmt(stmt *tuigen.IfStmt, indent string) {
 	// Record mapping for the condition
 	// Position.Column is 1-indexed from parser, convert to 0-indexed then add offset
 	tuiLine := stmt.Position.Line - 1
-	tuiCol := stmt.Position.Column - 1 + len("@if ") // -1 converts to 0-indexed
+	tuiCol := stmt.Position.Column - 1 + len("if ") // -1 converts to 0-indexed
 
 	goExprStartCol := len(indent) + len("if ")
 
@@ -385,10 +385,20 @@ func (g *generator) generateLetBinding(binding *tuigen.LetBinding, indent string
 	}
 
 	// Add mapping for the variable name
-	// In .gsx: "@let varName = ..." - Position points to @, so varName is at Column + len("@let ")
+	// In .gsx: Position points to the variable name (for :=) or the "var" keyword (for var form)
 	// In .go: "var varName any" - varName is at indent + len("var ")
 	tuiLine := binding.Position.Line - 1
-	tuiCol := binding.Position.Column - 1 + len("@let ")
+	var tuiCol int
+	if binding.IsShortForm {
+		// := syntax: Position is at the variable name
+		tuiCol = binding.Position.Column - 1
+	} else if binding.IsVarForm {
+		// var syntax: Position is at "var", name is after "var "
+		tuiCol = binding.Position.Column - 1 + len("var ")
+	} else {
+		// Fallback (should not occur after @let removal)
+		tuiCol = binding.Position.Column - 1
+	}
 	goVarStartCol := len(indent) + len("var ")
 
 	m := Mapping{

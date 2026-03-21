@@ -10,7 +10,7 @@ import (
 
 // letBindingNameOffset returns the column offset from Position to the variable name
 // for a LetBinding. For := short form, Position is already at the name (offset 0).
-// For @let, Position is at '@' (offset 5 for "@let "). For var, offset is 4 for "var ".
+// For var, offset is 4 for "var ".
 func letBindingNameOffset(b *tuigen.LetBinding) int {
 	if b.IsShortForm {
 		return 0 // Position is at the variable name
@@ -18,7 +18,7 @@ func letBindingNameOffset(b *tuigen.LetBinding) int {
 	if b.IsVarForm {
 		return len("var ") // Position is at "var"
 	}
-	return len("@let ") // Position is at "@"
+	return 0 // unreachable after @let removal
 }
 
 // findLetBindingInNodes finds a let binding by name in AST nodes.

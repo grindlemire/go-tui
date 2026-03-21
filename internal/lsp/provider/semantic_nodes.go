@@ -208,20 +208,17 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 				TokenType: TokenTypeVariable,
 				Modifiers: TokenModDeclaration | TokenModReadonly,
 			})
-		} else {
-			// var or @let syntax: position is at the keyword start
-			kwLen := len("@let")
-			if n.IsVarForm {
-				kwLen = len("var")
-			}
+		} else if n.IsVarForm {
+			// var syntax: position is at "var" keyword
 			*tokens = append(*tokens, SemanticToken{
 				Line:      n.Position.Line - 1,
 				StartChar: n.Position.Column - 1,
-				Length:    kwLen,
+				Length:    len("var"),
 				TokenType: TokenTypeKeyword,
 				Modifiers: 0,
 			})
-			varStart := n.Position.Column - 1 + kwLen + 1 // +1 for space
+			// Variable name token after "var "
+			varStart := n.Position.Column - 1 + len("var") + 1 // +1 for space
 			*tokens = append(*tokens, SemanticToken{
 				Line:      n.Position.Line - 1,
 				StartChar: varStart,
@@ -380,7 +377,7 @@ func (s *semanticTokensProvider) emitStringWithFormatSpecifiers(str string, line
 }
 
 // findElseKeyword scans the document content to find the else keyword position for an IfStmt.
-// Supports both bare "else" and legacy "@else". Returns 0-indexed (line, col), or (-1, -1) if not found.
+// Returns 0-indexed (line, col), or (-1, -1) if not found.
 func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, int) {
 	if s.docs == nil {
 		return -1, -1
@@ -398,10 +395,6 @@ func (s *semanticTokensProvider) findElseKeyword(ifStmt *tuigen.IfStmt) (int, in
 		trimmed := strings.TrimLeft(lines[i], " \t")
 		if strings.HasPrefix(trimmed, "} else") {
 			col := len(lines[i]) - len(trimmed) + 2 // skip "} ", point at "else"
-			return i, col
-		}
-		if strings.HasPrefix(trimmed, "} @else") {
-			col := len(lines[i]) - len(trimmed) + 3 // skip "} @", point at "else"
 			return i, col
 		}
 	}

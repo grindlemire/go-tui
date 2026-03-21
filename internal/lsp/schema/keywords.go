@@ -8,9 +8,7 @@ type KeywordDef struct {
 	Documentation string // Markdown documentation
 }
 
-// Canonical keyword definitions. Bare forms ("for", "if", etc.) point to
-// the same *KeywordDef as the prefixed forms ("@for", "@if", etc.) to
-// avoid duplicating multi-line documentation strings.
+// Canonical keyword definitions.
 var (
 	kwTempl = &KeywordDef{
 		Name:        "templ",
@@ -180,31 +178,6 @@ if condition {
 - Contains elements to render when condition is false`,
 	}
 
-	kwLet = &KeywordDef{
-		Name:        ":=",
-		Description: "Bind element to variable",
-		Syntax:      "varName := <element>",
-		Documentation: `## := (binding)
-
-Creates a local binding within a component body.
-
-**Syntax:**
-` + "```gsx" + `
-varName := <element>
-` + "```" + `
-
-**Examples:**
-` + "```gsx" + `
-header := <div class="font-bold">{title}</div>
-{header}
-` + "```" + `
-
-- Binds element trees or component calls to variables
-- Variables are scoped to the component body
-- Useful for reusable sub-elements
-- Legacy syntax: ` + "`@let varName = <element>`" + ` (auto-migrated by ` + "`tui fmt`" + `)`,
-	}
-
 	kwPackage = &KeywordDef{
 		Name:        "package",
 		Description: "Go package declaration",
@@ -279,19 +252,11 @@ func (s *sidebar) KeyMap() tui.KeyMap {
 )
 
 // Keywords maps keyword names to their definitions.
-// Both the bare form ("for") and the prefixed form ("@for") are included
-// so lookups work regardless of how the cursor word is extracted.
-// Bare forms point to the same *KeywordDef as their prefixed counterparts.
 var Keywords = map[string]*KeywordDef{
 	"templ":   kwTempl,
-	"@for":    kwFor,
 	"for":     kwFor,
-	"@if":     kwIf,
 	"if":      kwIf,
-	"@else":   kwElse,
 	"else":    kwElse,
-	"@let":    kwLet,
-	"let":     kwLet,
 	"package": kwPackage,
 	"import":  kwImport,
 	"func":    kwFunc,

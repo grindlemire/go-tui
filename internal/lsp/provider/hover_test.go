@@ -89,8 +89,8 @@ func TestHover_Keyword(t *testing.T) {
 			wantIn: "if",
 		},
 		"let keyword": {
-			word:   "let",
-			wantIn: ":=",
+			word:    "let",
+			wantNil: true,
 		},
 		"unknown word": {
 			word:    "foobar",
