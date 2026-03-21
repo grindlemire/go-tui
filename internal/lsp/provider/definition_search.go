@@ -18,7 +18,7 @@ func letBindingNameOffset(b *tuigen.LetBinding) int {
 	if b.IsVarForm {
 		return len("var ") // Position is at "var"
 	}
-	return 0 // unreachable after @let removal
+	panic("letBindingNameOffset: unrecognised LetBinding variant (neither IsShortForm nor IsVarForm)")
 }
 
 // findLetBindingInNodes finds a let binding by name in AST nodes.
