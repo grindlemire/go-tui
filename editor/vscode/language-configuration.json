@@ -106,7 +106,7 @@
     }
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(templ|@for|@if|@else|<[a-zA-Z][^/>]*>).*\\{?\\s*$",
+    "increaseIndentPattern": "^\\s*(templ|for|if|else|<[a-zA-Z][^/>]*>).*\\{?\\s*$",
     "decreaseIndentPattern": "^\\s*(\\}|</[a-zA-Z])"
   },
   "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)"

@@ -33,10 +33,10 @@ type Generator struct {
 	// These fields need BindApp calls in the generated BindApp method.
 	componentExprFields []string
 
-	// Conditional counter for reactive @if wrapper elements (__cond_0, __cond_1, etc.)
+	// Conditional counter for reactive if wrapper elements (__cond_0, __cond_1, etc.)
 	condCounter int
 
-	// Loop counter for reactive @for wrapper elements (__loop_0, __loop_1, etc.)
+	// Loop counter for reactive for wrapper elements (__loop_0, __loop_1, etc.)
 	loopCounter int
 
 	// Mount index counter for struct component @Component() calls in method templs.
@@ -48,7 +48,7 @@ type Generator struct {
 	// to emit app.Mount(receiverVar, index, factory).
 	currentReceiver string
 
-	// loopIndexStack tracks loop index variable names for nested @for loops.
+	// loopIndexStack tracks loop index variable names for nested for loops.
 	// Used by generateStructMount to generate unique mount indices per iteration.
 	loopIndexStack []string
 

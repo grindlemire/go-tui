@@ -56,12 +56,12 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string) {
 	}
 }
 
-// generateForLoop generates code for a @for loop.
+// generateForLoop generates code for a for loop.
 func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
 	g.generateForLoopWithRefs(loop, parentVar, false, false)
 }
 
-// generateForLoopWithRefs generates code for a @for loop with ref context tracking.
+// generateForLoopWithRefs generates code for a for loop with ref context tracking.
 // When the loop body references state variables (and we're not already in a loop/reactive context),
 // generates a reactive wrapper that rebuilds loop children when state changes.
 func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inLoop bool, inConditional bool) {
@@ -145,12 +145,12 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 	g.writeln("}")
 }
 
-// generateIfStmt generates code for an @if statement.
+// generateIfStmt generates code for an if statement.
 func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
 	g.generateIfStmtWithRefs(stmt, parentVar, false)
 }
 
-// generateIfStmtWithRefs generates code for an @if statement with ref context tracking.
+// generateIfStmtWithRefs generates code for an if statement with ref context tracking.
 // When the condition references state variables (and we're not in a loop), generates
 // a reactive wrapper that rebuilds its children when state changes.
 func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoop bool) {
@@ -197,7 +197,7 @@ func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoo
 	}
 }
 
-// generateIfStmtToRoot generates an @if statement where rendered element output
+// generateIfStmtToRoot generates an if statement where rendered element output
 // should assign to the component root variable. This is used for top-level
 // control flow in method/function components where no parent element exists.
 func (g *Generator) generateIfStmtToRoot(stmt *IfStmt, rootVar string, inLoop bool) {
@@ -225,7 +225,7 @@ func (g *Generator) generateIfStmtToRoot(stmt *IfStmt, rootVar string, inLoop bo
 	}
 }
 
-// generateForLoopToRoot emits a top-level @for as a synthetic container root.
+// generateForLoopToRoot emits a top-level for loop as a synthetic container root.
 // Without a parent element there is no legal way to emit multiple siblings.
 func (g *Generator) generateForLoopToRoot(loop *ForLoop, rootVar string, inLoop bool) {
 	loopRoot := g.nextVar()
@@ -282,7 +282,7 @@ func (g *Generator) assignIfNil(rootVar, value string) {
 	g.writeln("}")
 }
 
-// generateReactiveIfStmt generates a reactive @if block that rebuilds when state changes.
+// generateReactiveIfStmt generates a reactive if block that rebuilds when state changes.
 // It creates a wrapper element, an update closure, and state bindings.
 func (g *Generator) generateReactiveIfStmt(stmt *IfStmt, parentVar string, deps []string) {
 	condVar := g.nextCondVar()
@@ -318,7 +318,7 @@ func (g *Generator) generateReactiveIfStmt(stmt *IfStmt, parentVar string, deps 
 	}
 }
 
-// collectAllIfStmtDeps collects all state variable dependencies from an @if statement,
+// collectAllIfStmtDeps collects all state variable dependencies from an if statement,
 // including the condition, else-if conditions, and all expressions in the body.
 // This ensures the reactive update fires for any state change that could affect the block.
 func collectAllIfStmtDeps(stmt *IfStmt, stateNames map[string]bool) []string {
@@ -371,7 +371,7 @@ func collectAllIfStmtDeps(stmt *IfStmt, stateNames map[string]bool) []string {
 	return deps
 }
 
-// generateReactiveForLoop generates a reactive @for loop that rebuilds when state changes.
+// generateReactiveForLoop generates a reactive for loop that rebuilds when state changes.
 // It creates a wrapper element, an update closure, and state bindings.
 func (g *Generator) generateReactiveForLoop(loop *ForLoop, parentVar string, deps []string) {
 	loopVar := g.nextLoopVar()
@@ -410,7 +410,7 @@ func (g *Generator) generateReactiveForLoop(loop *ForLoop, parentVar string, dep
 	}
 }
 
-// collectForLoopDeps collects all state variable dependencies from a @for loop body.
+// collectForLoopDeps collects all state variable dependencies from a for loop body.
 // This scans the iterable expression and all nested nodes for state .Get() calls.
 func collectForLoopDeps(loop *ForLoop, stateNames map[string]bool) []string {
 	seen := make(map[string]bool)

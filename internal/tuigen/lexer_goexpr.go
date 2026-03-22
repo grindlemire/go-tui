@@ -158,7 +158,7 @@ func (l *Lexer) ReadBalancedBraces() (string, error) {
 }
 
 // ReadUntilBrace reads raw source from the current position until a '{' is encountered.
-// Used for capturing @if conditions and @for iterables as raw Go code.
+// Used for capturing if conditions and for iterables as raw Go code.
 // Does not consume the '{'.
 func (l *Lexer) ReadUntilBrace() string {
 	l.skipWhitespaceAndCollectComments()

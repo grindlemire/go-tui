@@ -128,7 +128,7 @@ templ (c *complexApp) Render() {
 		<span class="text-gradient-cyan-magenta font-bold">Complex Component Demo</span>
 
 		// Conditional rendering
-		@if c.showHeader.Get() {
+		if c.showHeader.Get() {
 			<div class="border-single p-1">
 				<span class="font-bold">Header Section</span>
 			</div>
@@ -146,12 +146,12 @@ templ (c *complexApp) Render() {
 		// List with selection
 		<div class="flex-col gap-1 border-rounded p-1">
 			<span class="font-bold">Items(↑/↓to navigate)</span>
-			@for i, item := range c.items.Get() {
-				@if i == c.selected.Get() {
+			for i, item := range c.items.Get() {
+				if i == c.selected.Get() {
 					<div ref={c.itemRefs} class="border-single px-1">
 						<span class="text-cyan font-bold">{fmt.Sprintf("> %s", item)}</span>
 					</div>
-				} @else {
+				} else {
 					<span ref={c.itemRefs} class="font-dim">{fmt.Sprintf("  %s", item)}</span>
 				}
 			}
@@ -165,20 +165,20 @@ templ (c *complexApp) Render() {
 		// Messages from channel watcher
 		<div class="flex-col gap-1 border-rounded p-1">
 			<span class="font-bold">Live Messages</span>
-			@for _, msg := range c.messages.Get() {
+			for _, msg := range c.messages.Get() {
 				<span class="text-green">{msg}</span>
 			}
-			@if len(c.messages.Get()) == 0 {
+			if len(c.messages.Get()) == 0 {
 				<span class="font-dim">Waitingmessages...</span>
 			}
 		</div>
 
 		// Footer with conditional
-		@if c.showFooter.Get() {
+		if c.showFooter.Get() {
 			<div class="border-single p-1">
 				<span class="font-dim">Footer Section</span>
 			</div>
-		} @else {
+		} else {
 			<span class="font-dim">Footer hidden</span>
 		}
 
@@ -196,7 +196,7 @@ templ (c *complexApp) Render() {
 // Let bindings
 templ LetBindingExample(count int, label string) {
 	formattedLabel := fmt.Sprintf("%s:", strings.ToUpper(label))
-	@let countText = <span class="font-bold">{fmt.Sprintf("%d", count)}</span>
+	countText := <span class="font-bold">{fmt.Sprintf("%d", count)}</span>
 	<div class="flex-col gap-1 p-1">
 		<span>{formattedLabel}</span>
 		{countText}
@@ -213,15 +213,15 @@ templ RefsExample(items []string, users map[string]string, showWarning bool) {
 	<div ref={container} class="flex-col gap-1">
 		<span ref={titleRef} class="font-bold">Dashboard</span>
 
-		@for _, item := range items {
+		for _, item := range items {
 			<span ref={itemRefs}>{item}</span>
 		}
 
-		@for id, name := range users {
+		for id, name := range users {
 			<span ref={userRefs} key={id}>{name}</span>
 		}
 
-		@if showWarning {
+		if showWarning {
 			<div ref={warning} class="text-red border-single p-1">
 				<span>Warning!</span>
 			</div>

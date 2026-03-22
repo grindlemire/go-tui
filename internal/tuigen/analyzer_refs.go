@@ -76,7 +76,7 @@ func (a *Analyzer) validateRefs(comp *Component) []RefInfo {
 					if n.RefKey != nil {
 						if !inLoop {
 							a.errors.AddErrorf(n.Position,
-								"key attribute on ref %q only valid inside @for loop",
+								"key attribute on ref %q only valid inside for loop",
 								refName)
 						}
 						ref.KeyExpr = n.RefKey.Code

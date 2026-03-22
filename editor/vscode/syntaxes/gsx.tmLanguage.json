@@ -168,9 +168,9 @@
     "control-keywords": {
       "patterns": [
         {
-          "comment": "for loop: for ... { or @for ... { (legacy)",
+          "comment": "for loop: for ... {",
           "name": "meta.control.for.gsx",
-          "begin": "(@for|(?<=^|\\s)for)\\s+",
+          "begin": "((?<=^|\\s)for)\\s+",
           "end": "(?=\\{)",
           "beginCaptures": {
             "1": { "name": "keyword.control.for.gsx" }
@@ -180,9 +180,9 @@
           ]
         },
         {
-          "comment": "if statement: if ... { or @if ... { (legacy)",
+          "comment": "if statement: if ... {",
           "name": "meta.control.if.gsx",
-          "begin": "(@if|(?<=^|\\s)if)\\s+",
+          "begin": "((?<=^|\\s)if)\\s+",
           "end": "(?=\\{)",
           "beginCaptures": {
             "1": { "name": "keyword.control.if.gsx" }
@@ -192,8 +192,8 @@
           ]
         },
         {
-          "comment": "else keyword: else or @else (legacy)",
-          "match": "@else|(?<=\\})\\s*(else)\\b",
+          "comment": "else keyword: } else {",
+          "match": "(?<=\\})\\s*(else)\\b",
           "captures": {
             "0": { "name": "keyword.control.else.gsx" },
             "1": { "name": "keyword.control.else.gsx" }

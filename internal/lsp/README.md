@@ -213,9 +213,9 @@ Every cursor position is classified into one of these kinds, which drives dispat
 | `Attribute` | Element attribute name (`class`, `id`, etc.) |
 | `NamedRef` | `#Name` reference on an element |
 | `GoExpr` | Go expression inside `{...}` |
-| `ForLoop` | `@for` loop header |
-| `IfStmt` | `@if` conditional header |
-| `LetBinding` | `@let` variable binding |
+| `ForLoop` | `for` loop header |
+| `IfStmt` | `if` conditional header |
+| `LetBinding` | `:=` variable binding |
 | `StateDecl` | `tui.NewState(...)` declaration |
 | `StateAccess` | `.Get()`, `.Set()`, `.Update()`, `.Bind()`, `.Batch()` |
 | `Parameter` | Component parameter on the declaration line |
@@ -223,7 +223,7 @@ Every cursor position is classified into one of these kinds, which drives dispat
 | `ComponentCall` | `@Component(args)` call |
 | `EventHandler` | Event handler attribute (e.g. `onClick`) |
 | `Text` | Plain text content |
-| `Keyword` | Language keywords (`templ`, `@for`, `@if`, `@else`, `@let`) |
+| `Keyword` | Language keywords (`templ`, `for`, `if`, `else`) |
 | `TailwindClass` | Class name inside `class="..."` |
 
 ### Phase 5: Provider Decision Logic
@@ -366,7 +366,7 @@ Protocol types (`Position`, `Range`, `Location`, `Hover`, etc.) are defined once
 ### `schema/`
 
 - **`schema.go`** - Element definitions (`<div>`, `<span>`, `<button>`, etc.), attribute definitions (per-element and global), event handler definitions.
-- **`keywords.go`** - Language keyword definitions (`templ`, `@for`, `@if`, `@else`, `@let`) with documentation.
+- **`keywords.go`** - Language keyword definitions (`templ`, `for`, `if`, `else`) with documentation.
 - **`tailwind.go`** - Tailwind-style class definitions, parameterized patterns (e.g. `p-N`, `text-COLOR`), class documentation for hover, class matching for completion.
 
 ### `log/`

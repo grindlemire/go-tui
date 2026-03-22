@@ -141,7 +141,7 @@ func inferTypeFromExpr(expr string) string {
 // elements. This must match the generator's naming scheme in generator.go. Named
 // refs (#Name) use their ref name instead.
 //
-// Note: Elements inside @for loops are skipped for binding generation because their
+// Note: Elements inside for loops are skipped for binding generation because their
 // generated variable names are scoped to the loop and cannot be referenced from outside.
 func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []StateBinding {
 	// Build a set of state variable names for quick lookup

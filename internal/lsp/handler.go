@@ -159,7 +159,7 @@ func (s *Server) handleInitialize(params json.RawMessage) (any, *Error) {
 						"parameter",   // 4: parameters
 						"variable",    // 5: variables
 						"property",    // 6: attributes
-						"keyword",     // 7: keywords (templ, @for, etc.)
+						"keyword",     // 7: keywords (templ, for, etc.)
 						"string",      // 8: strings
 						"number",      // 9: numbers
 						"operator",    // 10: operators

@@ -296,7 +296,7 @@ func TestIntegration_SweepCleansUnmountedComponents(t *testing.T) {
 
 	ms := testApp.mounts
 
-	// Simulate a render where the component is not active (e.g., removed by @if)
+	// Simulate a render where the component is not active (e.g., removed by if)
 	ms.activeKeys = make(map[mountKey]bool)
 	ms.sweep()
 
