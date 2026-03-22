@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/grindlemire/go-tui/compare/v0.8.0...v0.9.0) (2026-03-22)
+
+
+### Features
+
+* reject @if/@for/@else/[@let](https://github.com/let) with diagnostic errors, remove TokenAtLet and parseLet ([0dae91b](https://github.com/grindlemire/go-tui/commit/0dae91b0047a341ed122cd5992c0fed1b9adac02))
+* remove @-prefixed control flow from tree-sitter grammar ([6bd0d78](https://github.com/grindlemire/go-tui/commit/6bd0d78c099f6cf5bf784e15ece7175b26cf40c2))
+* remove legacy @-prefixed control flow syntax ([cd711cb](https://github.com/grindlemire/go-tui/commit/cd711cb2e75b325442a59267b283933f6feedc21))
+
+
+### Bug Fixes
+
+* panic on unreachable LetBinding variant, suppress duplicate error for [@let](https://github.com/let) ([4dc7ad3](https://github.com/grindlemire/go-tui/commit/4dc7ad31e0e0e0158506fda00f62f49708a28bdd))
+
 ## [0.8.0](https://github.com/grindlemire/go-tui/compare/v0.7.0...v0.8.0) (2026-03-18)
 
 
