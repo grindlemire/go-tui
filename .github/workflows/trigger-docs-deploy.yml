@@ -1,0 +1,16 @@
+name: Trigger docs site rebuild
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/content/**"
+      - "docs/images/guides/**"
+      - "editor/vscode/syntaxes/gsx.tmLanguage.json"
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deploy hook
+        run: curl -s -X POST "${{ secrets.VERCEL_DOCS_DEPLOY_HOOK }}"
