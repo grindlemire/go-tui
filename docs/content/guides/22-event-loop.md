@@ -356,4 +356,4 @@ All three modes produce the same UI, and the difference is how the event loop is
 
 - [Streaming Data](streaming) for channel watchers, auto-scroll, and the producer pattern
 - [Watchers](watchers) for timers, channels, and the WatcherProvider interface
-- [App Reference](../reference/app) for full documentation of Open, Step, Events, Dispatch, Render, and Close
+- [App Reference](../reference/app) for full documentation of Open, Step, Events, Dispatch, Render, and Close.
