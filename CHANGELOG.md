@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/grindlemire/go-tui/compare/v0.9.0...v0.10.0) (2026-03-26)
+
+
+### Features
+
+* add KeyCtrlA-Z helpers, fix Ctrl+H parsing, add topic-based debug logging ([b6eea3d](https://github.com/grindlemire/go-tui/commit/b6eea3da39d70aa97e6968367e892f7a4b0538d1))
+
+
+### Bug Fixes
+
+* address review feedback on debug logging ([110ebed](https://github.com/grindlemire/go-tui/commit/110ebeda93b711b4dbf8f2417d7520b0645fad32))
+* gate debug.Log on allTopics so DEBUG=keys doesn't enable untopiced logs ([6ecdfe6](https://github.com/grindlemire/go-tui/commit/6ecdfe6ec1ae44b2cf5e964aadc2883667b95749))
+* report initLocked errors to stderr instead of silently dropping logs ([e3f5383](https://github.com/grindlemire/go-tui/commit/e3f53835851ea130f35f300dc820ce15bad5e45d))
+
 ## [0.9.0](https://github.com/grindlemire/go-tui/compare/v0.8.0...v0.9.0) (2026-03-22)
 
 
