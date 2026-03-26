@@ -4,8 +4,7 @@
       "release-type": "go",
       "initial-version": "0.1.0",
       "extra-files": [
-        "editor/vscode/package.json",
-        "docs/src/version.ts"
+        "editor/vscode/package.json"
       ]
     }
   }
