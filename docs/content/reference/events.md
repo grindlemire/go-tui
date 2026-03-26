@@ -201,21 +201,21 @@ All twelve function keys are defined: `KeyF1`, `KeyF2`, `KeyF3`, `KeyF4`, `KeyF5
 | `KeyCtrlA` – `KeyCtrlZ` | `"Ctrl+A"` – `"Ctrl+Z"` |
 | `KeyCtrlSpace` | `"Ctrl+Space"` |
 
-Most Ctrl+letter combinations have their own distinct constants (`KeyCtrlA` through `KeyCtrlZ`). Three are exceptions: `KeyCtrlH`, `KeyCtrlI`, and `KeyCtrlM` are aliases for `KeyBackspace`, `KeyTab`, and `KeyEnter` respectively, because the terminal sends the same byte for each pair. See the section below for details.
+Each constant is a `RuneSpec` matching the corresponding `Rune(letter).Ctrl()` pattern. `On(tui.KeyCtrlS, handler)` and `On(tui.Rune('s').Ctrl(), handler)` are equivalent.
 
-### Terminal Byte Aliases
+### Ctrl+H, Ctrl+I, Ctrl+M and Backspace/Tab/Enter
 
-Terminals encode some Ctrl+letter combinations using the same byte as a functional key. go-tui defines these as true aliases (identical constant values), so binding either name matches both:
+Three Ctrl+letter combinations share a terminal byte with a functional key:
 
-| Alias | Same as | Terminal byte |
-|-------|---------|---------------|
-| `KeyCtrlH` | `KeyBackspace` | `0x08` |
-| `KeyCtrlI` | `KeyTab` | `0x09` |
-| `KeyCtrlM` | `KeyEnter` | `0x0D` |
+| Ctrl combo | Functional key | Shared legacy byte |
+|------------|---------------|-------------------|
+| Ctrl+H | Backspace | `0x08` |
+| Ctrl+I | Tab | `0x09` |
+| Ctrl+M | Enter | `0x0D` |
 
-Because these are the same constant, `On(tui.KeyCtrlH, handler)` and `On(tui.KeyBackspace, handler)` produce identical bindings in legacy mode. When the Kitty keyboard protocol is active (negotiated automatically on supported terminals), these become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. The same applies to the other two pairs. Use whichever name best communicates the intent of your binding.
+**Ctrl+H / Backspace (0x08):** Modern terminals send `0x7F` for Backspace, so go-tui treats `0x08` as Ctrl+H. `KeyCtrlH` and `KeyBackspace` are separate bindings: Backspace matches `0x7F` (and Kitty's `CSI 127;1u`), while `KeyCtrlH` matches `0x08` (and Kitty's `CSI 104;5u`). Terminals configured with `stty erase ^H` send `0x08` for Backspace, which will fire `KeyCtrlH` handlers instead of `KeyBackspace`.
 
-> **Note:** Some terminals send Ctrl+H as the legacy backspace byte even with Kitty protocol active, so Ctrl+H and Backspace may remain indistinguishable depending on the terminal. Ctrl+I and Ctrl+M are typically disambiguated correctly.
+**Ctrl+I / Tab and Ctrl+M / Enter:** In legacy mode, the terminal sends `0x09` for both Tab and Ctrl+I (and `0x0D` for both Enter and Ctrl+M). go-tui maps these bytes to `KeyTab` and `KeyEnter`, so `KeyCtrlI` and `KeyCtrlM` only fire when the Kitty keyboard protocol is active and the terminal sends distinct sequences. If you need Tab or Enter handling without Kitty, bind `KeyTab` or `KeyEnter`.
 
 ## Modifier Flags
 

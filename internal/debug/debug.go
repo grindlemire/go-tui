@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -14,6 +15,10 @@ var (
 
 	overflowOnce      sync.Once
 	overflowHighlight bool
+
+	topicsOnce sync.Once
+	allTopics  bool            // DEBUG=1 or DEBUG=*
+	topics     map[string]bool // DEBUG=keys,dispatch
 )
 
 // OverflowHighlight returns true if the TUI_DEBUG_OVERFLOW environment variable
@@ -24,6 +29,44 @@ func OverflowHighlight() bool {
 		overflowHighlight = os.Getenv("TUI_DEBUG_OVERFLOW") != ""
 	})
 	return overflowHighlight
+}
+
+// parseTopics reads the DEBUG env var and populates the topic filter.
+// DEBUG=1 or DEBUG=* enables all topics. DEBUG=keys,dispatch enables
+// only those topics. Unset or empty disables all logging.
+func parseTopics() {
+	topicsOnce.Do(func() {
+		val := strings.TrimSpace(os.Getenv("DEBUG"))
+		if val == "" {
+			return
+		}
+		if val == "1" || val == "*" {
+			allTopics = true
+			return
+		}
+		topics = make(map[string]bool)
+		for _, t := range strings.Split(val, ",") {
+			t = strings.TrimSpace(t)
+			if t != "" {
+				topics[t] = true
+			}
+		}
+	})
+}
+
+// topicEnabled returns true if the given topic should be logged.
+func topicEnabled(topic string) bool {
+	parseTopics()
+	if allTopics {
+		return true
+	}
+	return topics[topic]
+}
+
+// debugEnabled returns true if any debug logging is configured.
+func debugEnabled() bool {
+	parseTopics()
+	return allTopics || len(topics) > 0
 }
 
 // Init initializes debug logging to the specified file path.
@@ -71,14 +114,17 @@ func Close() error {
 }
 
 // Log writes a message to the debug log with a timestamp.
+// Enabled when DEBUG is set to any value.
 func Log(format string, args ...any) {
+	if !debugEnabled() {
+		return
+	}
+
 	mu.Lock()
 	defer mu.Unlock()
 
-	if logFile == nil && os.Getenv("DEBUG") != "" {
+	if logFile == nil {
 		initLocked("")
-	} else if logFile == nil {
-		return
 	}
 
 	timestamp := time.Now().Format("15:04:05.000")
@@ -90,4 +136,25 @@ func Log(format string, args ...any) {
 // Logf is an alias for Log.
 func Logf(format string, args ...any) {
 	Log(format, args...)
+}
+
+// Topic writes a message to the debug log only if the given topic is enabled.
+// Topics are enabled via the DEBUG env var: DEBUG=keys,dispatch enables those
+// two topics. DEBUG=1 or DEBUG=* enables all topics.
+func Topic(topic string, format string, args ...any) {
+	if !topicEnabled(topic) {
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if logFile == nil {
+		initLocked("")
+	}
+
+	timestamp := time.Now().Format("15:04:05.000")
+	msg := fmt.Sprintf(format, args...)
+	fmt.Fprintf(logFile, "[%s] [%s] %s\n", timestamp, topic, msg)
+	logFile.Sync()
 }

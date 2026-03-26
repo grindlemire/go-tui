@@ -73,34 +73,25 @@ go-tui defines constants for every non-printable key the terminal can report:
 `KeyEnter`, `KeyTab`, `KeyBackspace`, `KeyDelete`, `KeyInsert`
 
 **Control:**
-`KeyEscape`, `KeyCtrlA` through `KeyCtrlZ`, `KeyCtrlSpace` (note: `KeyCtrlH`, `KeyCtrlI`, and `KeyCtrlM` are aliases for `KeyBackspace`, `KeyTab`, and `KeyEnter`; see Terminal Byte Aliases below)
+`KeyEscape`, `KeyCtrlA` through `KeyCtrlZ`, `KeyCtrlSpace`
 
 **Function keys:**
 `KeyF1` through `KeyF12`
 
 Printable characters (letters, numbers, symbols) come through as `KeyRune` with the character in the `Rune` field. You generally don't check for `KeyRune` directly; the `Rune()` and `AnyRune` matchers handle that for you.
 
-### Terminal Byte Aliases
+### Ctrl+H, Ctrl+I, Ctrl+M
 
-Three Ctrl+letter combinations produce the same byte as a functional key:
+Three Ctrl+letter combinations share a terminal byte with a functional key (`0x08` with Backspace, `0x09` with Tab, `0x0D` with Enter).
 
-| Alias | Same as | Terminal byte |
-|---|---|---|
-| `KeyCtrlH` | `KeyBackspace` | `0x08` |
-| `KeyCtrlI` | `KeyTab` | `0x09` |
-| `KeyCtrlM` | `KeyEnter` | `0x0D` |
+**Ctrl+H vs Backspace:** Modern terminals send `0x7F` for Backspace, so go-tui treats `0x08` as Ctrl+H. `KeyCtrlH` and `KeyBackspace` are separate bindings that match different events. Use `KeyBackspace` for delete-character behavior and `KeyCtrlH` for Ctrl+H shortcuts.
 
-In legacy mode, these are true aliases, not separate keys. `KeyCtrlH` and `KeyBackspace` are the same constant, so binding either one matches both. For example, `On(tui.KeyCtrlH, handler)` fires when the user presses Backspace, and `On(tui.KeyBackspace, handler)` fires when the user presses Ctrl+H.
-
-If the terminal supports the Kitty keyboard protocol (negotiated automatically on startup), these keys become distinguishable: Backspace arrives as `KeyBackspace` while Ctrl+H arrives as `KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}`. Use `On(tui.Rune('h').Ctrl(), handler)` to handle Ctrl+H separately from Backspace when the Kitty protocol is active.
+**Ctrl+I vs Tab and Ctrl+M vs Enter:** In legacy mode, the terminal sends the same byte for both. go-tui maps `0x09` to `KeyTab` and `0x0D` to `KeyEnter`, so `KeyCtrlI` and `KeyCtrlM` only fire when the Kitty keyboard protocol is active. If you need Tab or Enter handling that works everywhere, bind `KeyTab` or `KeyEnter`.
 
 ```go
-// In legacy mode, these two bindings are identical:
-tui.On(tui.KeyCtrlH, handler)    // matches Backspace AND Ctrl+H
-tui.On(tui.KeyBackspace, handler) // matches Backspace AND Ctrl+H
+tui.On(tui.KeyCtrlH, handler)     // matches Ctrl+H (0x08 and Kitty CSI 104;5u)
+tui.On(tui.KeyBackspace, handler)  // matches Backspace (0x7F and Kitty CSI 127;1u)
 ```
-
-Use whichever name best communicates your intent. If you're building a text editor where Backspace deletes a character, use `KeyBackspace`. If you're binding Ctrl+H to open a help panel, use `KeyCtrlH`, but keep in mind that in legacy mode Backspace will also trigger it.
 
 ## KeyEvent Properties
 
@@ -346,9 +337,6 @@ func (e *explorer) KeyMap() tui.KeyMap {
         tui.On(tui.AnyRune,func(ke tui.KeyEvent) {
             e.record(fmt.Sprintf("'%c' (rune)", ke.Rune))
         }),
-        // KeyCtrlH, KeyCtrlI, and KeyCtrlM are aliases for KeyBackspace,
-        // KeyTab, and KeyEnter (same terminal byte), so you can use
-        // either name here and both will match.
         tui.On(tui.KeyEnter, func(ke tui.KeyEvent) { e.record("Enter") }),
         tui.On(tui.KeyTab, func(ke tui.KeyEvent) { e.record("Tab") }),
         tui.On(tui.KeyBackspace, func(ke tui.KeyEvent) { e.record("Backspace") }),

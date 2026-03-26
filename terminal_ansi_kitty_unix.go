@@ -5,6 +5,8 @@ package tui
 import (
 	"syscall"
 	"time"
+
+	"github.com/grindlemire/go-tui/internal/debug"
 )
 
 // NegotiateKittyKeyboard attempts to enable Kitty keyboard protocol (flag 1 =
@@ -65,6 +67,7 @@ func (t *ANSITerminal) NegotiateKittyKeyboard() bool {
 	if n > 0 && parseKittyQueryResponse(resp[:n]) {
 		t.kittyKeyboard = true
 		t.caps.KittyKeyboard = true
+		debug.Log("KittyKeyboard: negotiated successfully (response %d bytes)", n)
 		return true
 	}
 
@@ -73,5 +76,6 @@ func (t *ANSITerminal) NegotiateKittyKeyboard() bool {
 	// the pop when n == 0 would leak a stack entry if the terminal accepted
 	// the push but responded after the deadline.
 	t.popKittyKeyboard()
+	debug.Log("KittyKeyboard: negotiation failed (response %d bytes)", n)
 	return false
 }

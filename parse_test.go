@@ -88,7 +88,7 @@ func TestParseInput_ControlCharacters(t *testing.T) {
 		"ctrl+e":       {input: []byte{0x05}, expected: KeyEvent{Key: KeyRune, Rune: 'e', Mod: ModCtrl}},
 		"ctrl+f":       {input: []byte{0x06}, expected: KeyEvent{Key: KeyRune, Rune: 'f', Mod: ModCtrl}},
 		"ctrl+g":       {input: []byte{0x07}, expected: KeyEvent{Key: KeyRune, Rune: 'g', Mod: ModCtrl}},
-		"backspace":    {input: []byte{0x08}, expected: KeyEvent{Key: KeyBackspace}},
+		"ctrl+h (0x08)": {input: []byte{0x08}, expected: KeyEvent{Key: KeyRune, Rune: 'h', Mod: ModCtrl}},
 		"tab":          {input: []byte{0x09}, expected: KeyEvent{Key: KeyTab}},
 		"ctrl+j":       {input: []byte{0x0a}, expected: KeyEvent{Key: KeyRune, Rune: 'j', Mod: ModCtrl}},
 		"ctrl+k":       {input: []byte{0x0b}, expected: KeyEvent{Key: KeyRune, Rune: 'k', Mod: ModCtrl}},
@@ -423,7 +423,7 @@ func TestControlToKey(t *testing.T) {
 		"0x00 ctrl+space": {input: 0x00, wantKey: KeyRune, wantRune: ' ', wantMod: ModCtrl},
 		"0x01 ctrl+a":     {input: 0x01, wantKey: KeyRune, wantRune: 'a', wantMod: ModCtrl},
 		"0x1a ctrl+z":     {input: 0x1a, wantKey: KeyRune, wantRune: 'z', wantMod: ModCtrl},
-		"0x08 backspace":  {input: 0x08, wantKey: KeyBackspace, wantRune: 0, wantMod: ModNone},
+		"0x08 ctrl+h":     {input: 0x08, wantKey: KeyRune, wantRune: 'h', wantMod: ModCtrl},
 		"0x09 tab":        {input: 0x09, wantKey: KeyTab, wantRune: 0, wantMod: ModNone},
 		"0x0d enter":      {input: 0x0d, wantKey: KeyEnter, wantRune: 0, wantMod: ModNone},
 		"0x1b escape":     {input: 0x1b, wantKey: KeyEscape, wantRune: 0, wantMod: ModNone},
@@ -552,6 +552,19 @@ func TestParseInput_KittyCSIu(t *testing.T) {
 					tt.input, ke.Key, ke.Rune, ke.Mod, tt.expected.Key, tt.expected.Rune, tt.expected.Mod)
 			}
 		})
+	}
+}
+
+func TestParseInput_0x08_IsCtrlH(t *testing.T) {
+	// 0x08 is always Ctrl+H (Backspace is 0x7F)
+	events := parseInput([]byte{0x08})
+	if len(events) != 1 {
+		t.Fatalf("got %d events, want 1", len(events))
+	}
+	ke := events[0].(KeyEvent)
+	if ke.Key != KeyRune || ke.Rune != 'h' || ke.Mod != ModCtrl {
+		t.Errorf("0x08: got {Key: %v, Rune: %q, Mod: %v}, want {Key: Rune, Rune: 'h', Mod: Ctrl}",
+			ke.Key, ke.Rune, ke.Mod)
 	}
 }
 

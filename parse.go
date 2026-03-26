@@ -1,6 +1,11 @@
 package tui
 
-import "unicode/utf8"
+import (
+	"fmt"
+	"unicode/utf8"
+
+	"github.com/grindlemire/go-tui/internal/debug"
+)
 
 // parseInput parses buffered bytes into events.
 // Handles:
@@ -10,6 +15,7 @@ import "unicode/utf8"
 // - SS3 sequences (\x1bO...) -> Some function keys
 // - Alt+key: \x1b + printable -> KeyRune with ModAlt
 func parseInput(data []byte) []Event {
+	debug.Topic("keys", "parseInput: raw bytes (%d): %v", len(data), formatBytes(data))
 	var events []Event
 	i := 0
 
@@ -107,16 +113,51 @@ func parseInput(data []byte) []Event {
 		i += size
 	}
 
+	for _, ev := range events {
+		if ke, ok := ev.(KeyEvent); ok {
+			debug.Topic("keys", "parseInput: event Key=%s Rune=%q Mod=%s", ke.Key, ke.Rune, ke.Mod)
+		} else if me, ok := ev.(MouseEvent); ok {
+			debug.Topic("keys", "parseInput: mouse Button=%d Action=%d X=%d Y=%d", me.Button, me.Action, me.X, me.Y)
+		}
+	}
 	return events
 }
 
+// formatBytes returns a human-readable hex dump of raw input bytes.
+func formatBytes(data []byte) string {
+	if len(data) == 0 {
+		return "[]"
+	}
+	return fmt.Sprintf("%x", data)
+}
+
 // controlToKey converts a control character (0x00-0x1F) to a normalized key event.
-// Ambiguous bytes (0x08, 0x09, 0x0D, 0x1B) keep their semantic Key.
+// Ambiguous bytes (0x09, 0x0D, 0x1B) keep their semantic Key.
 // All other Ctrl+letter bytes produce {KeyRune, letter, ModCtrl}.
+//
+// Why 0x08 is NOT mapped to KeyBackspace:
+//
+// Historically 0x08 (BS) and 0x7F (DEL) both meant "backspace," but modern
+// terminals universally send 0x7F for the Backspace key (handled separately
+// in parseInput). That makes 0x08 unambiguously Ctrl+H in practice, so we
+// let it fall through to the Ctrl+letter default: {KeyRune, 'h', ModCtrl}.
+//
+// This has two benefits:
+//  1. KeyCtrlH works in both legacy and Kitty keyboard modes. Without this,
+//     On(KeyCtrlH, handler) would silently never fire in legacy mode because
+//     0x08 would parse as KeyBackspace, which doesn't match the Ctrl+H pattern.
+//  2. It works around a Ghostty bug (observed March 2026) where the terminal
+//     successfully negotiates Kitty keyboard protocol but still sends raw 0x08
+//     for Ctrl+H instead of the expected CSI 104;5u sequence. Ctrl+M and
+//     Ctrl+I are correctly sent as Kitty sequences by Ghostty; only Ctrl+H
+//     is affected.
+//
+// The tradeoff: terminals configured with "stty erase ^H" send 0x08 for
+// Backspace. On those (rare) setups, Backspace will fire KeyCtrlH handlers
+// instead of KeyBackspace handlers. Users in that situation can reconfigure
+// their terminal or bind both KeyBackspace and KeyCtrlH.
 func controlToKey(b byte) (Key, rune, Modifier) {
 	switch b {
-	case 0x08:
-		return KeyBackspace, 0, ModNone
 	case 0x09:
 		return KeyTab, 0, ModNone
 	case 0x0d:

@@ -1065,11 +1065,11 @@ func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {
 		t.Errorf("ctrl-h: calls = %v, want [ctrl-h]", calls)
 	}
 
-	// Legacy backspace byte (0x08) matches backspace handler
+	// 0x08 is always Ctrl+H (Backspace is 0x7F)
 	calls = nil
 	events = parseInput([]byte{0x08})
 	table.dispatch(events[0].(KeyEvent))
-	if len(calls) != 1 || calls[0] != "backspace" {
-		t.Errorf("legacy 0x08: calls = %v, want [backspace]", calls)
+	if len(calls) != 1 || calls[0] != "ctrl-h" {
+		t.Errorf("0x08: calls = %v, want [ctrl-h]", calls)
 	}
 }

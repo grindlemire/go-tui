@@ -47,6 +47,38 @@ const (
 	KeyF12
 )
 
+// Ctrl+letter helpers. Each is a RuneSpec that matches the corresponding
+// Ctrl+letter combination via the modifier API.
+var (
+	KeyCtrlA     = Rune('a').Ctrl()
+	KeyCtrlB     = Rune('b').Ctrl()
+	KeyCtrlC     = Rune('c').Ctrl()
+	KeyCtrlD     = Rune('d').Ctrl()
+	KeyCtrlE     = Rune('e').Ctrl()
+	KeyCtrlF     = Rune('f').Ctrl()
+	KeyCtrlG     = Rune('g').Ctrl()
+	KeyCtrlH     = Rune('h').Ctrl()
+	KeyCtrlI     = Rune('i').Ctrl()
+	KeyCtrlJ     = Rune('j').Ctrl()
+	KeyCtrlK     = Rune('k').Ctrl()
+	KeyCtrlL     = Rune('l').Ctrl()
+	KeyCtrlM     = Rune('m').Ctrl()
+	KeyCtrlN     = Rune('n').Ctrl()
+	KeyCtrlO     = Rune('o').Ctrl()
+	KeyCtrlP     = Rune('p').Ctrl()
+	KeyCtrlQ     = Rune('q').Ctrl()
+	KeyCtrlR     = Rune('r').Ctrl()
+	KeyCtrlS     = Rune('s').Ctrl()
+	KeyCtrlT     = Rune('t').Ctrl()
+	KeyCtrlU     = Rune('u').Ctrl()
+	KeyCtrlV     = Rune('v').Ctrl()
+	KeyCtrlW     = Rune('w').Ctrl()
+	KeyCtrlX     = Rune('x').Ctrl()
+	KeyCtrlY     = Rune('y').Ctrl()
+	KeyCtrlZ     = Rune('z').Ctrl()
+	KeyCtrlSpace = Rune(' ').Ctrl()
+)
+
 // String returns a human-readable representation of the key.
 func (k Key) String() string {
 	switch k {

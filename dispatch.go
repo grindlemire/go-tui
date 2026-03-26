@@ -1,6 +1,10 @@
 package tui
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/grindlemire/go-tui/internal/debug"
+)
 
 // focusQuerier is implemented by components that can report their own focus state.
 // Used by the dispatch table to evaluate focus-gated key bindings.
@@ -113,6 +117,7 @@ func (dt *dispatchTable) dispatch(ke KeyEvent) bool {
 	if dt == nil {
 		return false
 	}
+	debug.Topic("dispatch", "Key=%s Rune=%q Mod=%s (entries=%d)", ke.Key, ke.Rune, ke.Mod, len(dt.entries))
 
 	// Priority pass: focus-gated stop handlers consume the event exclusively.
 	// This ensures a focused input captures keys like 'q' before broadcast
@@ -147,6 +152,8 @@ func (dt *dispatchTable) dispatch(ke KeyEvent) bool {
 			continue // already handled
 		}
 		if dt.entries[i].matches(ke) {
+			debug.Topic("dispatch", "matched entry[%d] pattern={Key=%d Rune=%q Mod=%v ExcludeMods=%v} stop=%v",
+				i, dt.entries[i].pattern.Key, dt.entries[i].pattern.Rune, dt.entries[i].pattern.Mod, dt.entries[i].pattern.ExcludeMods, dt.entries[i].stop)
 			dt.entries[i].handler(ke)
 			if dt.entries[i].stop {
 				return true
