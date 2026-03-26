@@ -63,12 +63,6 @@ func topicEnabled(topic string) bool {
 	return topics[topic]
 }
 
-// debugEnabled returns true if any debug logging is configured.
-func debugEnabled() bool {
-	parseTopics()
-	return allTopics || len(topics) > 0
-}
-
 // Init initializes debug logging to the specified file path.
 // If path is empty, uses "debug.log" in the current directory.
 func Init(path string) error {
@@ -114,9 +108,10 @@ func Close() error {
 }
 
 // Log writes a message to the debug log with a timestamp.
-// Enabled when DEBUG is set to any value.
+// Enabled only when DEBUG=1 or DEBUG=*; specific topic values do not enable Log.
 func Log(format string, args ...any) {
-	if !debugEnabled() {
+	parseTopics()
+	if !allTopics {
 		return
 	}
 
