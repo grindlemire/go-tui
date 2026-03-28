@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.1](https://github.com/grindlemire/go-tui/compare/v0.10.0...v0.10.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* **formatter:** run gofmt on Go code blocks in .gsx files ([80dcff3](https://github.com/grindlemire/go-tui/commit/80dcff36605403815056d6e23a09f0a6f744201b))
+* kitty keyboard negotiation and gofmt for .gsx Go code ([08a633f](https://github.com/grindlemire/go-tui/commit/08a633f495818e41160258dfed1c1f1238967233))
+* negotiate Kitty keyboard after entering alt screen ([7746d43](https://github.com/grindlemire/go-tui/commit/7746d438eaec2a6dc74c14b7727a3bcb39aaba6d))
+
 ## [0.10.0](https://github.com/grindlemire/go-tui/compare/v0.9.0...v0.10.0) (2026-03-26)
 
 
