@@ -67,7 +67,7 @@ func (t *ANSITerminal) NegotiateKittyKeyboard() bool {
 	if n > 0 && parseKittyQueryResponse(resp[:n]) {
 		t.kittyKeyboard = true
 		t.caps.KittyKeyboard = true
-		debug.Topic("keys", "KittyKeyboard: negotiated successfully (response %d bytes)", n)
+		debug.Topic("keys", "KittyKeyboard: negotiated successfully (response %d bytes: %x)", n, resp[:n])
 		return true
 	}
 

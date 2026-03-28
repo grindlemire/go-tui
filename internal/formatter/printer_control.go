@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"go/format"
 	"strings"
 
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -330,24 +331,31 @@ func splitTopLevelArgs(args string) []string {
 	return result
 }
 
+// formatGoCode runs gofmt on a top-level Go declaration or function.
+func formatGoCode(code string) string {
+	wrapped := "package p\n\n" + code + "\n"
+	formatted, err := format.Source([]byte(wrapped))
+	if err != nil {
+		return code
+	}
+	result := string(formatted)
+	result = strings.TrimPrefix(result, "package p\n\n")
+	result = strings.TrimSuffix(result, "\n")
+	return result
+}
+
 // printGoFunc outputs a top-level Go function.
 func (p *printer) printGoFunc(fn *tuigen.GoFunc) {
-	// Leading comments
 	p.printLeadingComments(fn.LeadingComments)
-
-	// Go functions are printed as-is since they're raw Go code
-	p.write(fn.Code)
+	p.write(formatGoCode(fn.Code))
 	p.printTrailingComment(fn.TrailingComments)
 	p.newline()
 }
 
 // printGoDecl outputs a top-level Go declaration (type, const, var).
 func (p *printer) printGoDecl(decl *tuigen.GoDecl) {
-	// Leading comments
 	p.printLeadingComments(decl.LeadingComments)
-
-	// Go declarations are printed as-is since they're raw Go code
-	p.write(decl.Code)
+	p.write(formatGoCode(decl.Code))
 	p.printTrailingComment(decl.TrailingComments)
 	p.newline()
 }

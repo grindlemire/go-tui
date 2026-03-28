@@ -137,20 +137,13 @@ func formatBytes(data []byte) string {
 //
 // Why 0x08 is NOT mapped to KeyBackspace:
 //
-// Historically 0x08 (BS) and 0x7F (DEL) both meant "backspace," but modern
-// terminals universally send 0x7F for the Backspace key (handled separately
-// in parseInput). That makes 0x08 unambiguously Ctrl+H in practice, so we
-// let it fall through to the Ctrl+letter default: {KeyRune, 'h', ModCtrl}.
-//
-// This has two benefits:
-//  1. KeyCtrlH works in both legacy and Kitty keyboard modes. Without this,
-//     On(KeyCtrlH, handler) would silently never fire in legacy mode because
-//     0x08 would parse as KeyBackspace, which doesn't match the Ctrl+H pattern.
-//  2. It works around a Ghostty bug (observed March 2026) where the terminal
-//     successfully negotiates Kitty keyboard protocol but still sends raw 0x08
-//     for Ctrl+H instead of the expected CSI 104;5u sequence. Ctrl+M and
-//     Ctrl+I are correctly sent as Kitty sequences by Ghostty; only Ctrl+H
-//     is affected.
+// Modern terminals send 0x7F for the Backspace key (handled separately in
+// parseInput), so 0x08 only arrives as Ctrl+H. We let it fall through to
+// the Ctrl+letter default: {KeyRune, 'h', ModCtrl}. Without this,
+// On(KeyCtrlH, handler) would silently never fire in legacy mode because
+// 0x08 would parse as KeyBackspace, which doesn't match the Ctrl+H pattern.
+// In Kitty mode, Ctrl+H arrives as CSI 104;5u and Backspace as CSI 127;1u,
+// so the distinction is handled by the CSI parser instead.
 //
 // The tradeoff: terminals configured with "stty erase ^H" send 0x08 for
 // Backspace. On those (rare) setups, Backspace will fire KeyCtrlH handlers

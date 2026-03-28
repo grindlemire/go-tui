@@ -158,16 +158,18 @@ func NewApp(opts ...AppOption) (*App, error) {
 		app.mouseEnabled = app.inlineHeight == 0
 	}
 
+	// Get terminal size
+	width, termHeight := terminal.Size()
+
+	// Set up screen mode BEFORE Kitty negotiation. The Kitty keyboard
+	// protocol stack is per-screen: entering alternate screen starts a
+	// fresh stack, discarding any modes pushed on the primary screen.
+	app.setupInitialScreen(width, termHeight)
+
 	// Negotiate Kitty keyboard protocol unless legacy mode was requested
 	if !app.legacyKeyboard {
 		terminal.NegotiateKittyKeyboard()
 	}
-
-	// Get terminal size
-	width, termHeight := terminal.Size()
-
-	// Set up screen mode based on inline configuration.
-	app.setupInitialScreen(width, termHeight)
 
 	// Create event channels and start background goroutines
 	app.inputEvents = make(chan Event, app.eventQueueSize)
@@ -266,16 +268,18 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		app.mouseEnabled = app.inlineHeight == 0
 	}
 
+	// Get terminal size
+	width, termHeight := terminal.Size()
+
+	// Set up screen mode BEFORE Kitty negotiation. The Kitty keyboard
+	// protocol stack is per-screen: entering alternate screen starts a
+	// fresh stack, discarding any modes pushed on the primary screen.
+	app.setupInitialScreen(width, termHeight)
+
 	// Negotiate Kitty keyboard protocol unless legacy mode was requested
 	if !app.legacyKeyboard {
 		terminal.NegotiateKittyKeyboard()
 	}
-
-	// Get terminal size
-	width, termHeight := terminal.Size()
-
-	// Set up screen mode based on inline configuration.
-	app.setupInitialScreen(width, termHeight)
 
 	// Create event channels and start background goroutines
 	app.inputEvents = make(chan Event, app.eventQueueSize)
