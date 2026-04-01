@@ -103,11 +103,11 @@ func (e *Element) IntrinsicSize() (width, height int) {
 	// For containers without text, compute from children
 	if len(e.children) == 0 {
 		// Empty container: use explicit dimensions if set, otherwise 0
-		if !e.style.Width.IsAuto() {
-			width = e.style.Width.Resolve(0, 0)
+		if e.style.Width.IsFixed() {
+			width = int(e.style.Width.Amount)
 		}
-		if !e.style.Height.IsAuto() {
-			height = e.style.Height.Resolve(0, 0)
+		if e.style.Height.IsFixed() {
+			height = int(e.style.Height.Amount)
 		}
 		return width, height
 	}
@@ -166,11 +166,11 @@ func (e *Element) IntrinsicSize() (width, height int) {
 	// Respect explicit dimensions: if Width or Height is set, use it
 	// instead of the content-derived value. This ensures elements with
 	// WithWidth/WithHeight report those sizes to parent layout calculations.
-	if !e.style.Width.IsAuto() {
-		intrinsicW = e.style.Width.Resolve(0, 0)
+	if e.style.Width.IsFixed() {
+		intrinsicW = int(e.style.Width.Amount)
 	}
-	if !e.style.Height.IsAuto() {
-		intrinsicH = e.style.Height.Resolve(0, 0)
+	if e.style.Height.IsFixed() {
+		intrinsicH = int(e.style.Height.Amount)
 	}
 
 	return intrinsicW, intrinsicH
@@ -182,8 +182,8 @@ func (e *Element) IntrinsicSize() (width, height int) {
 // Scrollable elements and elements with explicit heights are not affected.
 func (e *Element) HeightForWidth(width int) int {
 	// Explicit height takes priority over content-derived height.
-	if !e.style.Height.IsAuto() {
-		return e.style.Height.Resolve(0, 0)
+	if e.style.Height.IsFixed() {
+		return int(e.style.Height.Amount)
 	}
 
 	// Scrollable elements have fixed viewport — don't expand based on content.

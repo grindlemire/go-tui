@@ -430,6 +430,7 @@ func TestElement_HeightForWidth_TextWrap(t *testing.T) {
 func TestElement_IntrinsicSize_ExplicitDimensions(t *testing.T) {
 	type tc struct {
 		opts       []Option
+		withChild  bool
 		wantWidth  int
 		wantHeight int
 	}
@@ -439,6 +440,7 @@ func TestElement_IntrinsicSize_ExplicitDimensions(t *testing.T) {
 			opts: []Option{
 				WithWidth(5), WithHeight(3),
 			},
+			withChild:  true,
 			wantWidth:  5,
 			wantHeight: 3,
 		},
@@ -446,6 +448,7 @@ func TestElement_IntrinsicSize_ExplicitDimensions(t *testing.T) {
 			opts: []Option{
 				WithWidth(10), WithHeight(5),
 			},
+			withChild:  true,
 			wantWidth:  10,
 			wantHeight: 5,
 		},
@@ -453,6 +456,7 @@ func TestElement_IntrinsicSize_ExplicitDimensions(t *testing.T) {
 			opts: []Option{
 				WithWidth(8), WithHeight(4),
 			},
+			withChild:  false,
 			wantWidth:  8,
 			wantHeight: 4,
 		},
@@ -461,8 +465,7 @@ func TestElement_IntrinsicSize_ExplicitDimensions(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			e := New(tt.opts...)
-			// Add a text child for the non-empty cases
-			if name != "explicit dimensions on empty container" {
+			if tt.withChild {
 				e.AddChild(New(WithText(" ")))
 			}
 			w, h := e.IntrinsicSize()

@@ -50,3 +50,8 @@ func (v Value) Resolve(available, fallback int) int {
 func (v Value) IsAuto() bool {
 	return v.Unit == UnitAuto
 }
+
+// IsFixed returns true if this value represents an absolute number of terminal cells.
+func (v Value) IsFixed() bool {
+	return v.Unit == UnitFixed
+}
