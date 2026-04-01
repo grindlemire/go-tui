@@ -130,3 +130,8 @@ func (e *explorer) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*explorer)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener = (*explorer)(nil)
+)

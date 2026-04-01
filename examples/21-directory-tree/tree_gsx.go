@@ -513,3 +513,9 @@ func (d *directoryTree) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*directoryTree)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*directoryTree)(nil)
+	_ tui.WatcherProvider = (*directoryTree)(nil)
+)

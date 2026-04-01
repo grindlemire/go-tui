@@ -190,3 +190,8 @@ func (l *listApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*listApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener = (*listApp)(nil)
+)

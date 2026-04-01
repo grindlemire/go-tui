@@ -176,3 +176,9 @@ func (f *fileList) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*fileList)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener   = (*fileList)(nil)
+	_ tui.MouseListener = (*fileList)(nil)
+)

@@ -239,3 +239,10 @@ func (s *streamingApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*streamingApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*streamingApp)(nil)
+	_ tui.MouseListener   = (*streamingApp)(nil)
+	_ tui.WatcherProvider = (*streamingApp)(nil)
+)

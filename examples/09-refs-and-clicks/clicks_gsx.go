@@ -539,3 +539,9 @@ func (c *colorMixer) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*colorMixer)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener   = (*colorMixer)(nil)
+	_ tui.MouseListener = (*colorMixer)(nil)
+)

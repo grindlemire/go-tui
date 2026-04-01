@@ -319,3 +319,8 @@ func (s *streamDemo) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*streamDemo)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener = (*streamDemo)(nil)
+)

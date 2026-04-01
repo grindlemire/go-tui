@@ -275,3 +275,9 @@ func (f *feedApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*feedApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener   = (*feedApp)(nil)
+	_ tui.MouseListener = (*feedApp)(nil)
+)

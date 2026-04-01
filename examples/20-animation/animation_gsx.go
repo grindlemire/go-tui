@@ -372,3 +372,9 @@ func (a *animationApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*animationApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*animationApp)(nil)
+	_ tui.WatcherProvider = (*animationApp)(nil)
+)

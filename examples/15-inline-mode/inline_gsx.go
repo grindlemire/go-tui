@@ -114,3 +114,9 @@ func (a *myApp) UpdateProps(fresh tui.Component) {
 }
 
 var _ tui.PropsUpdater = (*myApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*myApp)(nil)
+	_ tui.WatcherProvider = (*myApp)(nil)
+)

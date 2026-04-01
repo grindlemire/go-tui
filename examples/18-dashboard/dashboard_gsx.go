@@ -439,3 +439,10 @@ func (d *dashboardApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*dashboardApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*dashboardApp)(nil)
+	_ tui.MouseListener   = (*dashboardApp)(nil)
+	_ tui.WatcherProvider = (*dashboardApp)(nil)
+)

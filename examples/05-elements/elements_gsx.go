@@ -556,3 +556,9 @@ func (e *elementsApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*elementsApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener   = (*elementsApp)(nil)
+	_ tui.MouseListener = (*elementsApp)(nil)
+)

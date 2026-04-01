@@ -304,3 +304,10 @@ func (c *chat) UnbindApp() {
 }
 
 var _ tui.AppUnbinder = (*chat)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*chat)(nil)
+	_ tui.Initializer     = (*chat)(nil)
+	_ tui.WatcherProvider = (*chat)(nil)
+)

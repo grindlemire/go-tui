@@ -246,3 +246,10 @@ func (w *watcherApp) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*watcherApp)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*watcherApp)(nil)
+	_ tui.MouseListener   = (*watcherApp)(nil)
+	_ tui.WatcherProvider = (*watcherApp)(nil)
+)

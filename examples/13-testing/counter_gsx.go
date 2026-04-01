@@ -59,3 +59,8 @@ func (c *counter) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*counter)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener = (*counter)(nil)
+)

@@ -54,3 +54,8 @@ func (h *helloApp) Render(app *tui.App) *tui.Element {
 
 	return __tui_0
 }
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener = (*helloApp)(nil)
+)

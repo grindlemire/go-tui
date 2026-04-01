@@ -132,3 +132,8 @@ func (p *panelForm) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*panelForm)(nil)
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener = (*panelForm)(nil)
+)
