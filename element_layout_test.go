@@ -426,3 +426,115 @@ func TestElement_HeightForWidth_TextWrap(t *testing.T) {
 		})
 	}
 }
+
+func TestElement_IntrinsicSize_ExplicitDimensions(t *testing.T) {
+	type tc struct {
+		opts       []Option
+		wantWidth  int
+		wantHeight int
+	}
+
+	tests := map[string]tc{
+		"explicit width and height on container with child": {
+			opts: []Option{
+				WithWidth(5), WithHeight(3),
+			},
+			wantWidth:  5,
+			wantHeight: 3,
+		},
+		"explicit height overrides child content height": {
+			opts: []Option{
+				WithWidth(10), WithHeight(5),
+			},
+			wantWidth:  10,
+			wantHeight: 5,
+		},
+		"explicit dimensions on empty container": {
+			opts: []Option{
+				WithWidth(8), WithHeight(4),
+			},
+			wantWidth:  8,
+			wantHeight: 4,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(tt.opts...)
+			// Add a text child for the non-empty cases
+			if name != "explicit dimensions on empty container" {
+				e.AddChild(New(WithText(" ")))
+			}
+			w, h := e.IntrinsicSize()
+			if w != tt.wantWidth {
+				t.Errorf("IntrinsicSize().Width = %d, want %d", w, tt.wantWidth)
+			}
+			if h != tt.wantHeight {
+				t.Errorf("IntrinsicSize().Height = %d, want %d", h, tt.wantHeight)
+			}
+		})
+	}
+}
+
+func TestElement_HeightForWidth_ExplicitHeight(t *testing.T) {
+	type tc struct {
+		height int
+		width  int
+		want   int
+	}
+
+	tests := map[string]tc{
+		"explicit height returned for container": {
+			height: 3,
+			width:  10,
+			want:   3,
+		},
+		"explicit height returned for container with text child": {
+			height: 5,
+			width:  10,
+			want:   5,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(WithHeight(tt.height))
+			e.AddChild(New(WithText(" ")))
+			got := e.HeightForWidth(tt.width)
+			if got != tt.want {
+				t.Errorf("HeightForWidth(%d) = %d, want %d", tt.width, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestElement_IntrinsicSize_BugRepro_ColumnRowSquare(t *testing.T) {
+	// Reproduces the bug from the report: column > row > square(WithHeight(3))
+	// should report height of 3 for the square, not 1.
+	sq := New(WithWidth(5), WithHeight(3), WithBackground(NewStyle().Background(Red)))
+	sq.AddChild(New(WithText(" ")))
+
+	row := New(WithDirection(Row))
+	row.AddChild(sq)
+
+	col := New(WithDirection(Column))
+	col.AddChild(row)
+
+	// The square should report height 3
+	_, sqH := sq.IntrinsicSize()
+	if sqH != 3 {
+		t.Errorf("square IntrinsicSize height = %d, want 3", sqH)
+	}
+
+	// The row should report height 3 (max of children)
+	_, rowH := row.IntrinsicSize()
+	if rowH != 3 {
+		t.Errorf("row IntrinsicSize height = %d, want 3", rowH)
+	}
+
+	// HeightForWidth should also report 3 for the column
+	colH := col.HeightForWidth(40)
+	if colH != 3 {
+		t.Errorf("column HeightForWidth(40) = %d, want 3", colH)
+	}
+}
