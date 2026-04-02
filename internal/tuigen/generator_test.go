@@ -692,6 +692,26 @@ templ Multi() {
 				`name.Bind(func(_ string) { __update___cond_0() })`,
 			},
 		},
+		"reactive for loop with component call resets views slice": {
+			input: `package x
+templ List() {
+	count := tui.NewState(0)
+	items := []string{"a", "b"}
+	<div>
+		for _, item := range items {
+			if count.Get() > 0 {
+				@Badge(item)
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"var __tui_1_views []*BadgeView",
+				"__tui_1_views = __tui_1_views[:0]",
+				"RemoveAllChildren",
+				"__tui_1_views = append(__tui_1_views, __tui_1)",
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -1125,7 +1145,7 @@ templ Outer(show bool) {
 				"__tui_3 := Badge()",
 			},
 		},
-		"component call inside for loop hoists var": {
+		"component call inside for loop collects views slice": {
 			input: `package x
 
 templ List(items []string) {
@@ -1136,12 +1156,66 @@ templ List(items []string) {
 	</div>
 }`,
 			wantContains: []string{
+				"var __tui_1_views []*BadgeView",
+				"__tui_1 := Badge(item)",
+				"__tui_1_views = append(__tui_1_views, __tui_1)",
+				"for _, __cv := range __tui_1_views",
+				"watchers = append(watchers, __cv.GetWatchers()...)",
+			},
+			wantNotContains: []string{
 				"var __tui_1 *BadgeView",
 				"__tui_1 = Badge(item)",
 				"if __tui_1 != nil",
 			},
-			wantNotContains: []string{
+		},
+		"component call inside if inside for loop uses views slice": {
+			input: `package x
+
+templ List(items []string) {
+	<div>
+		for _, item := range items {
+			if item != "" {
+				@Badge(item)
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"var __tui_1_views []*BadgeView",
 				"__tui_1 := Badge(item)",
+				"__tui_1_views = append(__tui_1_views, __tui_1)",
+				"for _, __cv := range __tui_1_views",
+			},
+			wantNotContains: []string{
+				"var __tui_1 *BadgeView",
+			},
+		},
+		"mixed: component call outside and inside for loop": {
+			input: `package x
+
+templ Mixed(items []string) {
+	<div>
+		@Header()
+		for _, item := range items {
+			@Badge(item)
+		}
+	</div>
+}`,
+			wantContains: []string{
+				// Outside the loop: normal single-var pattern
+				"__tui_1 := Header()",
+				"watchers = append(watchers, __tui_1.GetWatchers()...)",
+				// Inside the loop: views slice pattern
+				"var __tui_2_views []*BadgeView",
+				"__tui_2 := Badge(item)",
+				"__tui_2_views = append(__tui_2_views, __tui_2)",
+				"for _, __cv := range __tui_2_views",
+			},
+			wantNotContains: []string{
+				// Outside call should NOT get slice treatment
+				"__tui_1_views",
+				// Inside call should NOT get single-var hoist
+				"var __tui_2 *BadgeView",
 			},
 		},
 		"method templ with conditional function templ uses short declaration": {
