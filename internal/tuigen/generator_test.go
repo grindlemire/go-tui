@@ -692,6 +692,26 @@ templ Multi() {
 				`name.Bind(func(_ string) { __update___cond_0() })`,
 			},
 		},
+		"reactive for loop with component call resets views slice": {
+			input: `package x
+templ List() {
+	count := tui.NewState(0)
+	items := []string{"a", "b"}
+	<div>
+		for _, item := range items {
+			if count.Get() > 0 {
+				@Badge(item)
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"var __tui_1_views []*BadgeView",
+				"__tui_1_views = __tui_1_views[:0]",
+				"RemoveAllChildren",
+				"__tui_1_views = append(__tui_1_views, __tui_1)",
+			},
+		},
 	}
 
 	for name, tt := range tests {
