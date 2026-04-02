@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.10.2](https://github.com/grindlemire/go-tui/compare/v0.10.1...v0.10.2) (2026-04-02)
+
+
+### Bug Fixes
+
+* **layout:** respect explicit WithHeight/WithWidth in IntrinsicSize and HeightForWidth ([7f5f6d6](https://github.com/grindlemire/go-tui/commit/7f5f6d6e749b68b1ab5aba62821f3051eff398d1))
+* **layout:** restrict IntrinsicSize and HeightForWidth overrides to fixed dimensions only ([9327491](https://github.com/grindlemire/go-tui/commit/93274916870a9e81fae49a088ab4f354580e62ef))
+* remove ability to accidentally generate incorrect Watcher signature ([d34e5b0](https://github.com/grindlemire/go-tui/commit/d34e5b0c545054f5c6c0e08659be4bdcccebaa45))
+* silent interface failures and layout dimension bugs ([8de39e7](https://github.com/grindlemire/go-tui/commit/8de39e7af675f2bdd5b48d57332e1559803254f6))
+* **tuigen:** adjust source map entries after splicing view reset lines ([c3f2de7](https://github.com/grindlemire/go-tui/commit/c3f2de7b6d385457033112e8141b38b7c6f79970))
+* **tuigen:** collect all for-loop iteration component views for watcher/bind aggregation ([9309940](https://github.com/grindlemire/go-tui/commit/9309940e79e45a4828bf487e67e0f872cd2db71d))
+* **tuigen:** collect all for-loop iteration component views for watcher/bind aggregation ([2525476](https://github.com/grindlemire/go-tui/commit/252547614d78fb4760147be42db0564613f723b2))
+* **tuigen:** document intentionally ignored inForLoop parameter ([89d7f92](https://github.com/grindlemire/go-tui/commit/89d7f922170d647ce88dea23e21ba76c53008a50))
+* **tuigen:** hoist block-scoped component vars to function scope ([0949b63](https://github.com/grindlemire/go-tui/commit/0949b63e531c873f4a243885406d032c1b3a7321))
+* **tuigen:** hoist conditional and loop-scoped component vars to function scope ([234748b](https://github.com/grindlemire/go-tui/commit/234748be7925307bdc009fc0e83a5b757ab983bb)), closes [#42](https://github.com/grindlemire/go-tui/issues/42)
+* **tuigen:** reset views slice in reactive closures to prevent unbounded growth ([89749ce](https://github.com/grindlemire/go-tui/commit/89749ce4a518ae0fb198a2cca26c4b27767acb36))
+* **tuigen:** skip hoisting for method templs with conditional component calls ([b305684](https://github.com/grindlemire/go-tui/commit/b305684f3928196d7ee3795c94dd4294e0898315))
+
 ## [0.10.1](https://github.com/grindlemire/go-tui/compare/v0.10.0...v0.10.1) (2026-03-28)
 
 
