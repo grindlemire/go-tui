@@ -270,10 +270,12 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar string, inConditional bool) string {
 	varName := g.nextVar()
 
-	// When inside a conditional block, use assignment (=) instead of short declaration (:=)
-	// because the variable will be hoisted to function scope.
+	// When inside a block scope in a function templ, use assignment (=) instead of
+	// short declaration (:=) because the variable will be hoisted to function scope.
+	// Method templs don't need hoisting since they don't have watcher/bind/unbind
+	// wiring that references component vars outside the block.
 	decl := ":="
-	if inConditional {
+	if inConditional && g.currentReceiver == "" {
 		decl = "="
 	}
 

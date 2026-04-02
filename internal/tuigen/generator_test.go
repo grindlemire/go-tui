@@ -1144,6 +1144,33 @@ templ List(items []string) {
 				"__tui_1 := Badge(item)",
 			},
 		},
+		"method templ with conditional function templ uses short declaration": {
+			input: `package x
+
+type sidebar struct{}
+
+templ Foo() {
+	<div></div>
+}
+
+templ (s *sidebar) Render() {
+	<div>
+		if true {
+			@Foo()
+		}
+	</div>
+}`,
+			wantContains: []string{
+				// Method templs don't hoist - they use := inside the block
+				"__tui_1 := Foo()",
+			},
+			wantNotContains: []string{
+				// No hoisted var declaration
+				"var __tui_1",
+				// No bare assignment
+				"__tui_1 = Foo()",
+			},
+		},
 	}
 
 	for name, tt := range tests {
