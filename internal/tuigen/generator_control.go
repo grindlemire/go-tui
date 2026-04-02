@@ -5,10 +5,10 @@ import (
 )
 
 // generateLetBinding generates code for a let binding.
-func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inConditional bool) {
+func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inConditional bool, inForLoop bool) {
 	if let.Call != nil {
 		// RHS is a component call
-		varName := g.generateComponentCallWithRefs(let.Call, "", inConditional)
+		varName := g.generateComponentCallWithRefs(let.Call, "", inConditional, inForLoop)
 		if g.returnsElement(let.Call) {
 			g.writef("%s := %s\n", let.Name, varName)
 		} else {
@@ -58,13 +58,13 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inCond
 
 // generateForLoop generates code for a for loop.
 func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
-	g.generateForLoopWithRefs(loop, parentVar, false, false)
+	g.generateForLoopWithRefs(loop, parentVar, false, false, false)
 }
 
 // generateForLoopWithRefs generates code for a for loop with ref context tracking.
 // When the loop body references state variables (and we're not already in a loop/reactive context),
 // generates a reactive wrapper that rebuilds loop children when state changes.
-func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inLoop bool, inConditional bool) {
+func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inLoop bool, inConditional bool, _ bool) {
 	// Check if this loop body references state and we're not in a loop context
 	if !inLoop && parentVar != "" {
 		deps := collectForLoopDeps(loop, g.stateNameSet())
@@ -107,16 +107,19 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 	// Generate loop body - now inside a loop context.
 	// The for-loop body is a block scope, so all component calls and let bindings
 	// inside it must be treated as conditional (hoisted + nil-guarded).
+	// inForLoop is set to true so component calls collect views into a slice
+	// for proper watcher/bind/unbind aggregation across all iterations.
+	bodyInForLoop := true
 	for _, node := range loop.Body {
 		switch n := node.(type) {
 		case *Element:
-			g.generateElementWithRefs(n, parentVar, true, true)
+			g.generateElementWithRefs(n, parentVar, true, true, bodyInForLoop)
 		case *LetBinding:
-			g.generateLetBinding(n, parentVar, true)
+			g.generateLetBinding(n, parentVar, true, bodyInForLoop)
 		case *ForLoop:
-			g.generateForLoopWithRefs(n, parentVar, true, true) // nested loop inside loop context
+			g.generateForLoopWithRefs(n, parentVar, true, true, bodyInForLoop) // nested loop inside loop context
 		case *IfStmt:
-			g.generateIfStmtWithRefs(n, parentVar, true) // now in loop context
+			g.generateIfStmtWithRefs(n, parentVar, true, bodyInForLoop) // now in loop context
 		case *GoCode:
 			g.generateGoCode(n)
 		case *GoExpr:
@@ -129,7 +132,7 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 				g.writef("%s\n", n.Code)
 			}
 		case *ComponentCall:
-			g.generateComponentCallWithRefs(n, parentVar, true)
+			g.generateComponentCallWithRefs(n, parentVar, true, bodyInForLoop)
 		case *ComponentExpr:
 			g.generateComponentExpr(n, parentVar)
 		case *ChildrenSlot:
@@ -149,13 +152,13 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 
 // generateIfStmt generates code for an if statement.
 func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
-	g.generateIfStmtWithRefs(stmt, parentVar, false)
+	g.generateIfStmtWithRefs(stmt, parentVar, false, false)
 }
 
 // generateIfStmtWithRefs generates code for an if statement with ref context tracking.
 // When the condition references state variables (and we're not in a loop), generates
 // a reactive wrapper that rebuilds its children when state changes.
-func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoop bool) {
+func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoop bool, inForLoop bool) {
 	// Check if this condition references state and we're not in a loop context
 	if !inLoop && parentVar != "" {
 		deps := collectAllIfStmtDeps(stmt, g.stateNameSet())
@@ -170,7 +173,7 @@ func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoo
 
 	// Generate then body - now inside conditional context
 	for _, node := range stmt.Then {
-		g.generateBodyNodeWithRefs(node, parentVar, inLoop, true)
+		g.generateBodyNodeWithRefs(node, parentVar, inLoop, true, inForLoop)
 	}
 
 	g.indent--
@@ -182,7 +185,7 @@ func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoo
 		// Check if else contains a single IfStmt (else-if chain)
 		if len(stmt.Else) == 1 {
 			if elseIf, ok := stmt.Else[0].(*IfStmt); ok {
-				g.generateIfStmtWithRefs(elseIf, parentVar, inLoop)
+				g.generateIfStmtWithRefs(elseIf, parentVar, inLoop, inForLoop)
 				return
 			}
 		}
@@ -190,7 +193,7 @@ func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoo
 		g.writeln("{")
 		g.indent++
 		for _, node := range stmt.Else {
-			g.generateBodyNodeWithRefs(node, parentVar, inLoop, true)
+			g.generateBodyNodeWithRefs(node, parentVar, inLoop, true, inForLoop)
 		}
 		g.indent--
 		g.writeln("}")
@@ -205,7 +208,7 @@ func (g *Generator) generateIfStmtWithRefs(stmt *IfStmt, parentVar string, inLoo
 func (g *Generator) generateIfStmtToRoot(stmt *IfStmt, rootVar string, inLoop bool) {
 	g.writef("if %s {\n", stmt.Condition)
 	g.indent++
-	g.generateNodesToRoot(stmt.Then, rootVar, inLoop, true)
+	g.generateNodesToRoot(stmt.Then, rootVar, inLoop, true, false)
 	g.indent--
 
 	if len(stmt.Else) > 0 {
@@ -219,7 +222,7 @@ func (g *Generator) generateIfStmtToRoot(stmt *IfStmt, rootVar string, inLoop bo
 
 		g.writeln("{")
 		g.indent++
-		g.generateNodesToRoot(stmt.Else, rootVar, inLoop, true)
+		g.generateNodesToRoot(stmt.Else, rootVar, inLoop, true, false)
 		g.indent--
 		g.writeln("}")
 	} else {
@@ -232,7 +235,7 @@ func (g *Generator) generateIfStmtToRoot(stmt *IfStmt, rootVar string, inLoop bo
 func (g *Generator) generateForLoopToRoot(loop *ForLoop, rootVar string, inLoop bool) {
 	loopRoot := g.nextVar()
 	g.writef("%s := tui.New()\n", loopRoot)
-	g.generateForLoopWithRefs(loop, loopRoot, inLoop, false)
+	g.generateForLoopWithRefs(loop, loopRoot, inLoop, false, false)
 	g.writef("if %s == nil {\n", rootVar)
 	g.indent++
 	g.writef("%s = %s\n", rootVar, loopRoot)
@@ -242,14 +245,14 @@ func (g *Generator) generateForLoopToRoot(loop *ForLoop, rootVar string, inLoop 
 
 // generateNodesToRoot emits nodes and assigns the first rendered element in the
 // sequence to rootVar, preserving existing first-root behavior.
-func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop bool, inConditional bool) {
+func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop bool, inConditional bool, inForLoop bool) {
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *Element:
-			varName := g.generateElementWithRefs(n, "", inLoop, inConditional)
+			varName := g.generateElementWithRefs(n, "", inLoop, inConditional, inForLoop)
 			g.assignIfNil(rootVar, varName)
 		case *ComponentCall:
-			varName := g.generateComponentCallWithRefs(n, "", inConditional)
+			varName := g.generateComponentCallWithRefs(n, "", inConditional, inForLoop)
 			if g.returnsElement(n) {
 				g.assignIfNil(rootVar, varName)
 			} else {
@@ -265,7 +268,7 @@ func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop boo
 		case *ForLoop:
 			g.generateForLoopToRoot(n, rootVar, inLoop)
 		case *LetBinding:
-			g.generateLetBinding(n, "", inConditional)
+			g.generateLetBinding(n, "", inConditional, inForLoop)
 		case *GoCode:
 			g.generateGoCode(n)
 		case *GoExpr:
@@ -301,7 +304,7 @@ func (g *Generator) generateReactiveIfStmt(stmt *IfStmt, parentVar string, deps 
 
 	// Generate the if/else structure inside the closure with wrapper as parent.
 	// Use inLoop=true to prevent nested reactive handling and skip text bindings.
-	g.generateIfStmtWithRefs(stmt, condVar, true)
+	g.generateIfStmtWithRefs(stmt, condVar, true, false)
 
 	g.indent--
 	g.writeln("}")
@@ -393,7 +396,7 @@ func (g *Generator) generateReactiveForLoop(loop *ForLoop, parentVar string, dep
 
 	// Generate the for loop inside the closure with wrapper as parent.
 	// Use inLoop=true to prevent nested reactive handling.
-	g.generateForLoopWithRefs(loop, loopVar, true, false)
+	g.generateForLoopWithRefs(loop, loopVar, true, false, false)
 
 	g.indent--
 	g.writeln("}")

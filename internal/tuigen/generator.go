@@ -78,7 +78,8 @@ type Generator struct {
 type componentVarEntry struct {
 	name          string // generated variable name (e.g., "__tui_2")
 	componentName string // component function name (e.g., "Badge" or "pkg.Badge")
-	inConditional bool   // true when declared inside an if/else block scope
+	inConditional bool   // true when declared inside an if/else or for-loop block scope
+	inForLoop     bool   // true when declared inside a for-loop body (needs slice collection)
 }
 
 // viewTypeName returns the view struct pointer type for a component name.

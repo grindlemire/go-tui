@@ -9,7 +9,7 @@ import (
 // generateElement generates code for an element and returns the variable name.
 // If parentVar is non-empty, adds this element as a child.
 func (g *Generator) generateElement(elem *Element, parentVar string) string {
-	return g.generateElementWithRefs(elem, parentVar, false, false)
+	return g.generateElementWithRefs(elem, parentVar, false, false, false)
 }
 
 // isComponentElement returns true if the tag represents a Component that
@@ -20,7 +20,7 @@ func isComponentElement(tag string) bool {
 
 // generateElementWithRefs generates code for an element with ref handling.
 // inLoop and inConditional track the context for proper variable handling.
-func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool) string {
+func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inLoop bool, inConditional bool, inForLoop bool) string {
 	if isComponentElement(elem.Tag) {
 		return g.generateComponentElementWithRefs(elem, parentVar, inLoop)
 	}
@@ -60,7 +60,7 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 
 	// Generate children - skip if text element already has content in WithText
 	if !skipTextChildren(elem) {
-		g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional)
+		g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional, inForLoop)
 	}
 
 	// Add to parent if specified
@@ -466,7 +466,7 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 
 	// Generate children for component elements that accept them (modal)
 	if len(elem.Children) > 0 {
-		g.generateChildrenWithRefs(varName, elem.Children, inLoop, false)
+		g.generateChildrenWithRefs(varName, elem.Children, inLoop, false, false)
 	}
 
 	if parentVar != "" {
