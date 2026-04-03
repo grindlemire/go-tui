@@ -139,11 +139,10 @@ func TestModal_KeyMap_NoTabWhenTrapFocusDisabled(t *testing.T) {
 
 func TestModal_KeyMap_OnlyExpectedBindings(t *testing.T) {
 	type tc struct {
-		name        string
-		trapFocus   bool
-		escapeClose bool
-		wantKeys    map[Key]bool // expected specific key bindings
-		wantCatchAll bool        // expect AnyKey catch-all
+		trapFocus    bool
+		escapeClose  bool
+		wantKeys     map[Key]bool // expected specific key bindings
+		wantCatchAll bool         // expect AnyKey catch-all
 	}
 
 	tests := map[string]tc{
@@ -196,6 +195,18 @@ func TestModal_KeyMap_OnlyExpectedBindings(t *testing.T) {
 			}
 			if hasCatchAll != tt.wantCatchAll {
 				t.Errorf("catch-all: got %v, want %v", hasCatchAll, tt.wantCatchAll)
+			}
+			for key := range tt.wantKeys {
+				found := false
+				for _, b := range km {
+					if b.Pattern.Key == key {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("expected binding for key %v not found", key)
+				}
 			}
 		})
 	}
