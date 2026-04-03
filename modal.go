@@ -61,7 +61,7 @@ func (m *Modal) Render(app *App) *Element {
 			if m.trapFocus && m.app != nil {
 				m.app.focus.ClearScope()
 			}
-			if m.previousFocusIdx >= 0 && m.app != nil {
+			if m.trapFocus && m.previousFocusIdx >= 0 && m.app != nil {
 				m.app.focus.setFocusIndex(m.previousFocusIdx)
 				m.previousFocusIdx = -1
 			}
@@ -77,10 +77,10 @@ func (m *Modal) Render(app *App) *Element {
 		opt(m.element)
 	}
 
-	// Handle open transition: save previous focus index
+	// Handle open transition: save previous focus index when trapping focus
 	needsFocusInit := false
 	if !m.wasOpen {
-		if m.app != nil {
+		if m.trapFocus && m.app != nil {
 			m.previousFocusIdx = m.app.focus.focusedIndex()
 		}
 		m.wasOpen = true
@@ -96,9 +96,10 @@ func (m *Modal) Render(app *App) *Element {
 }
 
 // KeyMap returns key bindings for the modal.
-// All bindings are preemptive: they fire before parent component handlers,
-// preventing parent keys from leaking through when the modal is open.
-// A catch-all binding consumes any unhandled keys.
+// When trapFocus is true, all bindings are preemptive: they fire before parent
+// component handlers, and a catch-all consumes any unhandled keys.
+// When trapFocus is false, only explicitly configured keys (e.g. Escape) are
+// bound, allowing parent components to handle all other input.
 func (m *Modal) KeyMap() KeyMap {
 	if m.open == nil || !m.open.Get() {
 		return nil
@@ -124,18 +125,15 @@ func (m *Modal) KeyMap() KeyMap {
 				m.app.FocusPrev()
 			}),
 		)
+		// Enter activates the focused element's onActivate callback
+		km = append(km, OnPreemptStop(KeyEnter, func(ke KeyEvent) {
+			if focused, ok := m.app.Focused().(*Element); ok && focused != nil {
+				focused.Activate()
+			}
+		}))
+		// Catch-all: block all other keys from reaching parent handlers
+		km = append(km, OnPreemptStop(AnyKey, func(ke KeyEvent) {}))
 	}
-	// Enter activates the focused element's onActivate callback
-	km = append(km, OnPreemptStop(KeyEnter, func(ke KeyEvent) {
-		if m.app == nil {
-			return
-		}
-		if focused, ok := m.app.Focused().(*Element); ok && focused != nil {
-			focused.Activate()
-		}
-	}))
-	// Catch-all: block all other keys from reaching parent handlers
-	km = append(km, OnPreemptStop(AnyKey, func(ke KeyEvent) {}))
 	return km
 }
 

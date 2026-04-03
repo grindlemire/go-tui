@@ -137,6 +137,145 @@ func TestModal_KeyMap_NoTabWhenTrapFocusDisabled(t *testing.T) {
 	}
 }
 
+func TestModal_KeyMap_OnlyExpectedBindings(t *testing.T) {
+	type tc struct {
+		trapFocus    bool
+		escapeClose  bool
+		wantKeys     map[Key]bool // expected specific key bindings
+		wantCatchAll bool         // expect AnyKey catch-all
+	}
+
+	tests := map[string]tc{
+		"trapFocus true, escape true": {
+			trapFocus:    true,
+			escapeClose:  true,
+			wantKeys:     map[Key]bool{KeyEscape: true, KeyTab: true, KeyEnter: true},
+			wantCatchAll: true,
+		},
+		"trapFocus true, escape false": {
+			trapFocus:    true,
+			escapeClose:  false,
+			wantKeys:     map[Key]bool{KeyTab: true, KeyEnter: true},
+			wantCatchAll: true,
+		},
+		"trapFocus false, escape true": {
+			trapFocus:    false,
+			escapeClose:  true,
+			wantKeys:     map[Key]bool{KeyEscape: true},
+			wantCatchAll: false,
+		},
+		"trapFocus false, escape false": {
+			trapFocus:    false,
+			escapeClose:  false,
+			wantKeys:     map[Key]bool{},
+			wantCatchAll: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			open := NewState(true)
+			m := NewModal(
+				WithModalOpen(open),
+				WithModalTrapFocus(tt.trapFocus),
+				WithModalCloseOnEscape(tt.escapeClose),
+			)
+			m.BindApp(testApp)
+
+			km := m.KeyMap()
+			hasCatchAll := false
+			for _, b := range km {
+				if b.Pattern.AnyKey {
+					hasCatchAll = true
+					continue
+				}
+				if !tt.wantKeys[b.Pattern.Key] {
+					t.Errorf("unexpected binding for key %v", b.Pattern.Key)
+				}
+			}
+			if hasCatchAll != tt.wantCatchAll {
+				t.Errorf("catch-all: got %v, want %v", hasCatchAll, tt.wantCatchAll)
+			}
+			for key := range tt.wantKeys {
+				found := false
+				for _, b := range km {
+					if b.Pattern.Key == key {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("expected binding for key %v not found", key)
+				}
+			}
+		})
+	}
+}
+
+func TestModal_FocusRestore_OnlyWhenTrapFocus(t *testing.T) {
+	type tc struct {
+		trapFocus     bool
+		expectRestore bool
+	}
+
+	tests := map[string]tc{
+		"trapFocus true restores focus": {
+			trapFocus:     true,
+			expectRestore: true,
+		},
+		"trapFocus false does not restore focus": {
+			trapFocus:     false,
+			expectRestore: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			open := NewState(false)
+			m := NewModal(
+				WithModalOpen(open),
+				WithModalTrapFocus(tt.trapFocus),
+			)
+
+			app := newTestApp(80, 24)
+			m.BindApp(app)
+
+			// Register two focusable elements
+			btn1 := New(WithFocusable(true))
+			btn2 := New(WithFocusable(true))
+			app.focus.Register(btn1)
+			app.focus.Register(btn2)
+			app.focus.Next() // focus btn1 (index 0)
+
+			originalIdx := app.focus.focusedIndex()
+
+			// Open the modal via Render (triggers save of focus index)
+			open.Set(true)
+			m.Render(app)
+
+			// Move focus while modal is open
+			app.focus.Next() // move to btn2
+
+			movedIdx := app.focus.focusedIndex()
+			if movedIdx == originalIdx {
+				t.Fatal("focus did not move; test setup is broken")
+			}
+
+			// Close the modal via Render (triggers restore)
+			open.Set(false)
+			m.Render(app)
+
+			finalIdx := app.focus.focusedIndex()
+			if tt.expectRestore && finalIdx != originalIdx {
+				t.Errorf("expected focus restored to %d, got %d", originalIdx, finalIdx)
+			}
+			if !tt.expectRestore && finalIdx != movedIdx {
+				t.Errorf("expected focus to stay at %d, got %d", movedIdx, finalIdx)
+			}
+		})
+	}
+}
+
 func TestModal_HandleMouse_BackdropClick(t *testing.T) {
 	open := NewState(true)
 	m := NewModal(WithModalOpen(open))
