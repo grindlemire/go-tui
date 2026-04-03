@@ -179,6 +179,7 @@ var knownAttributes = map[string]bool{
 	"closeOnEscape":        true,
 	"closeOnBackdropClick": true,
 	"trapFocus":            true,
+	"keyMap":               true,
 
 	// Activation
 	"onActivate": true,

@@ -411,7 +411,8 @@ func modalAttrs() []AttributeDef {
 		{Name: "backdrop", Type: "string", Description: "Backdrop style: \"dim\" (default), \"blank\", or \"none\"", Category: "visual"},
 		{Name: "closeOnEscape", Type: "bool", Description: "Escape key closes the modal (default true)", Category: "event"},
 		{Name: "closeOnBackdropClick", Type: "bool", Description: "Clicking backdrop closes the modal (default true)", Category: "event"},
-		{Name: "trapFocus", Type: "bool", Description: "Tab/Shift+Tab restricted to modal children (default true)", Category: "event"},
+		{Name: "trapFocus", Type: "bool", Description: "Tab/Shift+Tab restricted to modal children; when true, also blocks unhandled keys from reaching parent components (default true)", Category: "event"},
+		{Name: "keyMap", Type: "expression", Description: "Custom KeyMap bindings for the modal; fire before the catch-all when trapFocus is true", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}

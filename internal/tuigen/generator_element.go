@@ -388,6 +388,7 @@ var modalAttributeToOption = map[string]string{
 	"closeOnEscape":        "tui.WithModalCloseOnEscape(%s)",
 	"closeOnBackdropClick": "tui.WithModalCloseOnBackdropClick(%s)",
 	"trapFocus":            "tui.WithModalTrapFocus(%s)",
+	"keyMap":               "tui.WithModalKeyMap(%s)",
 }
 
 // modalHandlerAttributes maps modal event attributes to handler option funcs.

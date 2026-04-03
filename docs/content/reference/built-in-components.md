@@ -578,7 +578,8 @@ func NewModal(opts ...ModalOption) *Modal
 | `WithModalBackdrop(b string)` | Backdrop style: `"dim"` (default), `"blank"`, or `"none"` |
 | `WithModalCloseOnEscape(v bool)` | Escape closes the modal (default `true`) |
 | `WithModalCloseOnBackdropClick(v bool)` | Backdrop click closes the modal (default `true`) |
-| `WithModalTrapFocus(v bool)` | Restrict Tab navigation to modal children (default `true`) |
+| `WithModalTrapFocus(v bool)` | Restrict Tab navigation to modal children and block unhandled keys from parent handlers (default `true`) |
+| `WithModalKeyMap(km KeyMap)` | Custom key bindings for the modal; fire after built-in handlers but before the catch-all. Use `OnPreemptStop`; non-preemptive bindings (`On`, `OnStop`) are inert when `trapFocus` is true |
 | `WithModalElementOptions(opts ...Option)` | Pass layout options to the overlay container (used by generated code for `class` attributes) |
 
 ### GSX Attributes
@@ -591,7 +592,8 @@ All `<modal>` attributes and their types:
 | `backdrop` | `string` | `"dim"` (default), `"blank"`, or `"none"` |
 | `closeOnEscape` | `bool` | Escape closes the modal (default true) |
 | `closeOnBackdropClick` | `bool` | Backdrop click closes the modal (default true) |
-| `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children (default true) |
+| `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children; also blocks unhandled keys from parents (default true) |
+| `keyMap` | `expression` | Custom `KeyMap` bindings for the modal |
 | `class` | `string` | Tailwind classes for positioning (e.g. `"justify-center items-center"`) |
 
 ### Behavior
@@ -599,12 +601,26 @@ All `<modal>` attributes and their types:
 When open, the modal:
 
 - Applies the backdrop effect (dim, blank, or none) to the buffer before rendering the overlay
-- Traps Tab/Shift+Tab within its focusable children
 - Handles Enter by calling `Activate()` on the focused element
-- Blocks all parent key handlers via preemptive dispatch
 - Closes on Escape (if `closeOnEscape` is true)
 - Closes on backdrop click (if `closeOnBackdropClick` is true)
 - Walks clicked elements up to find `onActivate` callbacks for mouse support
+
+When `trapFocus` is true (the default):
+
+- Tab/Shift+Tab only cycle through focusable children inside the modal
+- A catch-all binding blocks unhandled keys from parent handlers
+
+When `trapFocus` is false, Tab and unhandled keys propagate to parent components normally.
+
+Custom key bindings provided via `WithModalKeyMap` (or the `keyMap` GSX attribute) fire after the built-in Escape/Tab/Enter handlers but before the catch-all. This lets you add hotkeys to a modal while still blocking everything else:
+
+```go
+tui.WithModalKeyMap(tui.KeyMap{
+    tui.OnPreemptStop(tui.Rune('n'), func(ke tui.KeyEvent) { startNewGame() }),
+    tui.OnPreemptStop(tui.Rune('q'), func(ke tui.KeyEvent) { quit() }),
+})
+```
 
 When closed, it returns a hidden placeholder element with no key bindings.
 
@@ -613,7 +629,7 @@ When closed, it returns a hidden placeholder element with no key bindings.
 | Interface | Purpose |
 |-----------|---------|
 | `Component` | `Render(app *App) *Element` returns the overlay element |
-| `KeyListener` | `KeyMap()` returns Escape, Tab, Enter, and catch-all bindings |
+| `KeyListener` | `KeyMap()` returns Escape, Tab, Enter, custom, and catch-all bindings (catch-all only when `trapFocus` is true) |
 | `MouseListener` | `HandleMouse()` handles backdrop click and onActivate delegation |
 | `AppBinder` | `BindApp()` wires the open state to the app |
 

@@ -33,7 +33,7 @@ Three helper functions cover the binding patterns, each accepting a `KeyMatcher`
 | `On(matcher, handler)` | Continues | Default binding; other components can also handle the event |
 | `OnStop(matcher, handler)` | Stops | Exclusive ownership; no other component sees the event |
 | `OnFocused(matcher, handler)` | Stops (focus-gated) | Only fires when the component has focus |
-| `OnPreemptStop(matcher, handler)` | Stops (preemptive) | Fires before all normal handlers; used by modal to block parent keys |
+| `OnPreemptStop(matcher, handler)` | Stops (preemptive) | Fires before all normal handlers; used by modal (when `trapFocus` is true) to block parent keys |
 
 A `KeyMatcher` can be a Key constant (`tui.KeyEscape`), a specific rune (`tui.Rune('q')`), or the catch-all `tui.AnyRune`. Key and RuneSpec both support `.Ctrl()`, `.Alt()`, and `.Shift()` modifier methods.
 
