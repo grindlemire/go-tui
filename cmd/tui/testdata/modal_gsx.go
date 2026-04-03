@@ -10,12 +10,21 @@ import (
 type myModal struct {
 	app        *tui.App
 	showModal  *tui.State[bool]
+	gameOver   *tui.State[bool]
 	confirmBtn tui.Ref
 }
 
 func MyModal() *myModal {
 	return &myModal{
 		showModal: tui.NewState(false),
+		gameOver:  tui.NewState(false),
+	}
+}
+
+func (c *myModal) gameOverKeys() tui.KeyMap {
+	return tui.KeyMap{
+		tui.OnPreemptStop(tui.Rune('n'), func(ke tui.KeyEvent) {}),
+		tui.OnPreemptStop(tui.Rune('q'), func(ke tui.KeyEvent) {}),
 	}
 }
 
@@ -53,6 +62,23 @@ func (c *myModal) Render(app *tui.App) *tui.Element {
 	__tui_3.AddChild(__tui_5)
 	__tui_2.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_2)
+	__tui_7 := app.MountPersistent(c, 1, func() tui.Component {
+		return tui.NewModal(
+			tui.WithModalOpen(c.gameOver),
+			tui.WithModalKeyMap(c.gameOverKeys()),
+			tui.WithModalTrapFocus(false),
+		)
+	})
+	__tui_8 := tui.New(
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(2),
+	)
+	__tui_9 := tui.New(
+		tui.WithText("Game Over"),
+	)
+	__tui_8.AddChild(__tui_9)
+	__tui_7.AddChild(__tui_8)
+	__tui_0.AddChild(__tui_7)
 
 	return __tui_0
 }
@@ -71,6 +97,9 @@ func (c *myModal) BindApp(app *tui.App) {
 	c.app = app
 	if c.showModal != nil {
 		c.showModal.BindApp(app)
+	}
+	if c.gameOver != nil {
+		c.gameOver.BindApp(app)
 	}
 }
 

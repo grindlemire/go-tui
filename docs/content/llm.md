@@ -279,7 +279,8 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `backdrop` | `string` | `"dim"` (default), `"blank"`, or `"none"` |
 | `closeOnEscape` | `bool` | Escape closes modal (default `true`) |
 | `closeOnBackdropClick` | `bool` | Backdrop click closes modal (default `true`) |
-| `trapFocus` | `bool` | Restrict Tab to modal children (default `true`) |
+| `trapFocus` | `bool` | Restrict Tab to modal children and block unhandled keys from parents (default `true`) |
+| `keyMap` | `expression` | Custom `KeyMap` bindings for the modal |
 
 ### Activation
 

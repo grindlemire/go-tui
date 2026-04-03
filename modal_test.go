@@ -161,13 +161,13 @@ func TestModal_KeyMap_OnlyExpectedBindings(t *testing.T) {
 		"trapFocus false, escape true": {
 			trapFocus:    false,
 			escapeClose:  true,
-			wantKeys:     map[Key]bool{KeyEscape: true},
+			wantKeys:     map[Key]bool{KeyEscape: true, KeyEnter: true},
 			wantCatchAll: false,
 		},
 		"trapFocus false, escape false": {
 			trapFocus:    false,
 			escapeClose:  false,
-			wantKeys:     map[Key]bool{},
+			wantKeys:     map[Key]bool{KeyEnter: true},
 			wantCatchAll: false,
 		},
 	}

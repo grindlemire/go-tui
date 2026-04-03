@@ -190,7 +190,7 @@ These hold text content and support text styling but not flex container attribut
 <textarea value={s.note} placeholder="Write here..." width={40} maxHeight={6} border={tui.BorderRounded} />
 ```
 
-**`<modal>`** -- Full-screen overlay dialog. Bind `open` to a `*State[bool]` for visibility. Accepts children for the dialog content. Supports `backdrop`, `closeOnEscape`, `closeOnBackdropClick`, `trapFocus`, and `class` for positioning.
+**`<modal>`** -- Full-screen overlay dialog. Bind `open` to a `*State[bool]` for visibility. Accepts children for the dialog content. Supports `backdrop`, `closeOnEscape`, `closeOnBackdropClick`, `trapFocus`, `keyMap`, and `class` for positioning.
 
 ```gsx
 <modal open={s.showDialog} class="justify-center items-center">
@@ -380,7 +380,8 @@ Available on: `div`, `ul`, `li`, `table`, `span`, `p`, `button`, `input`.
 | `backdrop` | `string` | `"dim"` (default), `"blank"`, or `"none"` |
 | `closeOnEscape` | `bool` | Escape closes modal (default `true`) |
 | `closeOnBackdropClick` | `bool` | Backdrop click closes modal (default `true`) |
-| `trapFocus` | `bool` | Restrict Tab to modal children (default `true`) |
+| `trapFocus` | `bool` | Restrict Tab to modal children and block unhandled keys from parents (default `true`) |
+| `keyMap` | `expression` | Custom `KeyMap` bindings for the modal |
 
 ### Scroll attributes
 

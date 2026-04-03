@@ -43,6 +43,17 @@ func WithModalTrapFocus(v bool) ModalOption {
 	}
 }
 
+// WithModalKeyMap sets custom key bindings for the modal. These bindings fire
+// after the built-in Escape/Tab/Enter handlers but before the catch-all blocker
+// (when trapFocus is true). Use OnPreemptStop for bindings that should block
+// parent handlers. When trapFocus is true, non-preemptive bindings (On, OnStop)
+// will never fire because the AnyKey catch-all consumes events first.
+func WithModalKeyMap(km KeyMap) ModalOption {
+	return func(m *Modal) {
+		m.customKeyMap = km
+	}
+}
+
 // WithModalElementOptions passes through standard Element options to the modal's
 // container element. Used by the code generator to apply class-derived layout options.
 func WithModalElementOptions(opts ...Option) ModalOption {

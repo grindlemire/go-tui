@@ -11,6 +11,9 @@ type Modal struct {
 	trapFocus       bool
 	elementOpts     []Option
 
+	// Custom key bindings injected before the catch-all
+	customKeyMap KeyMap
+
 	// Internal state
 	app              *App
 	element          *Element
@@ -96,10 +99,11 @@ func (m *Modal) Render(app *App) *Element {
 }
 
 // KeyMap returns key bindings for the modal.
-// When trapFocus is true, all bindings are preemptive: they fire before parent
-// component handlers, and a catch-all consumes any unhandled keys.
-// When trapFocus is false, only explicitly configured keys (e.g. Escape) are
-// bound, allowing parent components to handle all other input.
+// Escape (if closeOnEscape) and Enter (activate focused element) are always
+// bound. When trapFocus is true, Tab/Shift+Tab cycling and an AnyKey catch-all
+// are added, blocking all unhandled keys from parent handlers. When trapFocus
+// is false, unhandled keys propagate to parent components. Custom bindings
+// from WithModalKeyMap are inserted before the catch-all.
 func (m *Modal) KeyMap() KeyMap {
 	if m.open == nil || !m.open.Get() {
 		return nil
@@ -125,13 +129,22 @@ func (m *Modal) KeyMap() KeyMap {
 				m.app.FocusPrev()
 			}),
 		)
-		// Enter activates the focused element's onActivate callback
-		km = append(km, OnPreemptStop(KeyEnter, func(ke KeyEvent) {
-			if focused, ok := m.app.Focused().(*Element); ok && focused != nil {
-				focused.Activate()
-			}
-		}))
-		// Catch-all: block all other keys from reaching parent handlers
+	}
+	// Enter activates the focused element's onActivate callback
+	km = append(km, OnPreemptStop(KeyEnter, func(ke KeyEvent) {
+		if m.app == nil {
+			return
+		}
+		if focused, ok := m.app.Focused().(*Element); ok && focused != nil {
+			focused.Activate()
+		}
+	}))
+	// Custom key bindings (user-provided via WithModalKeyMap)
+	km = append(km, m.customKeyMap...)
+	// Catch-all: block remaining keys from reaching parent handlers.
+	// Only active when trapFocus is true; with trapFocus=false, unhandled
+	// keys propagate to parent components.
+	if m.trapFocus {
 		km = append(km, OnPreemptStop(AnyKey, func(ke KeyEvent) {}))
 	}
 	return km

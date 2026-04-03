@@ -445,7 +445,7 @@ tui.OnFocused(tui.AnyRune, func(ke tui.KeyEvent) {
 func OnPreemptStop(m KeyMatcher, handler func(KeyEvent)) KeyBinding
 ```
 
-Creates a preemptive stop-propagation binding. Fires before all normal handlers in the dispatch table, preventing parent components from seeing the event. Used internally by Modal to block parent key handlers when the overlay is open.
+Creates a preemptive stop-propagation binding. Fires before all normal handlers in the dispatch table, preventing parent components from seeing the event. Used internally by Modal (when `trapFocus` is true) to block parent key handlers when the overlay is open. Also useful for custom modal key bindings via `WithModalKeyMap`.
 
 ```go
 // Block all keys from reaching parent handlers
@@ -552,7 +552,7 @@ Here's how events flow through the system.
 
 1. Terminal input is read and parsed into a `KeyEvent`.
 2. If the app uses the component model (struct components with `KeyMap()`), the dispatch table is built from all `KeyListener` components in tree order.
-3. **Preemptive pass**: bindings marked as preemptive (e.g., modal catch-all) fire first. If any stops the event, normal dispatch is skipped entirely.
+3. **Preemptive pass**: bindings marked as preemptive (e.g., modal catch-all when `trapFocus` is true) fire first. If any stops the event, normal dispatch is skipped entirely.
 4. Bindings are checked in order. The first match fires. If `Stop` is true, dispatch ends.
 5. If no binding stopped the event, it falls through to `App.Dispatch()` and the focus manager for element-level handlers.
 6. In legacy mode (no components), `WithGlobalKeyHandler` runs first. If it returns `true`, the event is consumed.

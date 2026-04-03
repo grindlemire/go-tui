@@ -29,6 +29,20 @@ Format: `<type>: <description>` or `<type>(<scope>): <description>`
 For BREAKING CHANGES (major bump, e.g. 0.1.0 → 1.0.0), add `!` after the type:
 `feat!: remove deprecated API` or include `BREAKING CHANGE:` in the commit body.
 
+## Pull Requests IMPORTANT
+
+PR titles MUST pass the GitHub Actions checks before merging. There are two CI
+workflows that run on every PR:
+
+1. **PR Title** (`pr-title.yml`): Enforces conventional commit format on the PR
+   title using `action-semantic-pull-request`. The title must start with one of
+   the allowed types (`feat`, `fix`, `docs`, `chore`, `ci`, `test`, `refactor`,
+   `perf`, `build`, `revert`). This is the same format as commit messages.
+2. **CI** (`ci.yml`): Runs `go test ./...` on ubuntu-latest.
+
+Both checks must pass. Always verify your PR title matches the conventional
+commit format and that tests pass before considering a PR ready.
+
 Examples:
 ```
 gcommit -m "feat: add table element support"
@@ -444,7 +458,8 @@ func helper(s string) string {
 | `backdrop` | `string` | Backdrop style: `"dim"` (default), `"blank"`, or `"none"` |
 | `closeOnEscape` | `bool` | Escape key closes the modal (default true) |
 | `closeOnBackdropClick` | `bool` | Clicking backdrop closes the modal (default true) |
-| `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children (default true) |
+| `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children; also blocks unhandled keys from parents (default true) |
+| `keyMap` | `expression` | Custom KeyMap bindings for the modal; fire before the catch-all when trapFocus is true |
 
 ### Input-specific Attributes
 

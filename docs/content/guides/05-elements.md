@@ -227,7 +227,7 @@ Color the bar with `text-cyan`, `text-green`, `text-yellow`, etc. to convey mean
 
 ## Modal Dialogs
 
-The `<modal>` element renders as a full-screen overlay. When open, it dims the background, traps keyboard focus, and blocks parent key handlers. Escape and backdrop clicks close it by default.
+The `<modal>` element renders as a full-screen overlay. When open, it dims the background and closes on Escape and backdrop clicks by default. With `trapFocus` enabled (the default), it also traps Tab navigation and blocks unhandled keys from parents. Set `trapFocus={false}` to let keys pass through, or provide a `keyMap` for custom hotkeys.
 
 Bind the `open` attribute to a `*State[bool]` to control visibility. Use `onActivate` on buttons to handle Enter key activation:
 
@@ -251,7 +251,8 @@ Key attributes:
 | `backdrop` | `"dim"` | `"dim"`, `"blank"`, or `"none"` |
 | `closeOnEscape` | `true` | Escape key closes the modal |
 | `closeOnBackdropClick` | `true` | Clicking outside the dialog closes it |
-| `trapFocus` | `true` | Restrict Tab navigation and block parent key handlers |
+| `trapFocus` | `true` | Restrict Tab navigation and block unhandled keys from parents |
+| `keyMap` | — | Custom `KeyMap` bindings for modal hotkeys |
 
 Focusable elements with borders get an automatic cyan highlight when focused. The first focusable child receives focus when the modal opens.
 
