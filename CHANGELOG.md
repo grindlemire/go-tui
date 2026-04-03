@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.3](https://github.com/grindlemire/go-tui/compare/v0.10.2...v0.10.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* modal catch-all key binding blocking input when trapFocus is false ([30df011](https://github.com/grindlemire/go-tui/commit/30df011c10d3dcee507b6779ffdb66f5781f0076))
+* **modal:** gate catch-all key binding and focus save/restore on trapFocus ([7dca970](https://github.com/grindlemire/go-tui/commit/7dca9700bd1b685fda362c0dc6c5900035a4b7fd))
+
 ## [0.10.2](https://github.com/grindlemire/go-tui/compare/v0.10.1...v0.10.2) (2026-04-02)
 
 
