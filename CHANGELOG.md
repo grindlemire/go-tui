@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/grindlemire/go-tui/compare/v0.10.3...v0.11.0) (2026-04-03)
+
+
+### Features
+
+* add WithModalKeyMap and tie key blocking to trapFocus ([#48](https://github.com/grindlemire/go-tui/issues/48)) ([2dcff81](https://github.com/grindlemire/go-tui/commit/2dcff816da24182d22b8af97e22d3edf32923508))
+
 ## [0.10.3](https://github.com/grindlemire/go-tui/compare/v0.10.2...v0.10.3) (2026-04-03)
 
 
