@@ -373,8 +373,11 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 			}
 		}
 		
-		startColor := colorNameToColor(startColorName)
-		endColor := colorNameToColor(endColorName)
+		startColor, startOk := colorNameToColor(startColorName)
+		endColor, endOk := colorNameToColor(endColorName)
+		if !startOk || !endOk {
+			return TailwindMapping{}, false
+		}
 		option := "tui.WithTextGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
 		return TailwindMapping{Option: option, NeedsImport: "tui"}, true
 	}
@@ -419,8 +422,11 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 			}
 		}
 		
-		startColor := colorNameToColor(startColorName)
-		endColor := colorNameToColor(endColorName)
+		startColor, startOk := colorNameToColor(startColorName)
+		endColor, endOk := colorNameToColor(endColorName)
+		if !startOk || !endOk {
+			return TailwindMapping{}, false
+		}
 		option := "tui.WithBackgroundGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
 		return TailwindMapping{Option: option, NeedsImport: "tui"}, true
 	}
@@ -465,8 +471,11 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 			}
 		}
 		
-		startColor := colorNameToColor(startColorName)
-		endColor := colorNameToColor(endColorName)
+		startColor, startOk := colorNameToColor(startColorName)
+		endColor, endOk := colorNameToColor(endColorName)
+		if !startOk || !endOk {
+			return TailwindMapping{}, false
+		}
 		option := "tui.WithBorderGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
 		return TailwindMapping{Option: option, NeedsImport: "tui"}, true
 	}
@@ -482,43 +491,43 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 }
 
 // colorNameToColor maps a color name string to the corresponding tui.Color constant.
-func colorNameToColor(name string) string {
+// Returns the color constant and true if the name is valid, or ("", false) for unknown names.
+func colorNameToColor(name string) (string, bool) {
 	switch name {
 	case "red":
-		return "tui.Red"
+		return "tui.Red", true
 	case "green":
-		return "tui.Green"
+		return "tui.Green", true
 	case "blue":
-		return "tui.Blue"
+		return "tui.Blue", true
 	case "cyan":
-		return "tui.Cyan"
+		return "tui.Cyan", true
 	case "magenta":
-		return "tui.Magenta"
+		return "tui.Magenta", true
 	case "yellow":
-		return "tui.Yellow"
+		return "tui.Yellow", true
 	case "white":
-		return "tui.White"
+		return "tui.White", true
 	case "black":
-		return "tui.Black"
+		return "tui.Black", true
 	case "bright-red":
-		return "tui.BrightRed"
+		return "tui.BrightRed", true
 	case "bright-green":
-		return "tui.BrightGreen"
+		return "tui.BrightGreen", true
 	case "bright-blue":
-		return "tui.BrightBlue"
+		return "tui.BrightBlue", true
 	case "bright-cyan":
-		return "tui.BrightCyan"
+		return "tui.BrightCyan", true
 	case "bright-magenta":
-		return "tui.BrightMagenta"
+		return "tui.BrightMagenta", true
 	case "bright-yellow":
-		return "tui.BrightYellow"
+		return "tui.BrightYellow", true
 	case "bright-white":
-		return "tui.BrightWhite"
+		return "tui.BrightWhite", true
 	case "bright-black":
-		return "tui.BrightBlack"
+		return "tui.BrightBlack", true
 	default:
-		// Default to black if unknown
-		return "tui.Black"
+		return "", false
 	}
 }
 

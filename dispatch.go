@@ -58,6 +58,8 @@ func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, erro
 			// For focus-gated bindings, capture the component's focus check
 			if binding.Pattern.FocusRequired && hasFocusQuery {
 				entry.focusCheck = fq.IsFocused
+			} else if binding.Pattern.FocusRequired && !hasFocusQuery {
+				debug.Log("dispatch: OnFocused binding at position %d on component %T will never fire: component does not implement focusQuerier (missing IsFocused method)", position, comp)
 			}
 			table.entries = append(table.entries, entry)
 		}

@@ -1,71 +1,99 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/debug"
+
 // Option configures an Element.
 type Option func(*Element)
+
+// clampNonNeg returns 0 if v is negative, logging a debug warning.
+func clampNonNeg(v int, name string) int {
+	if v < 0 {
+		debug.Log("tui: %s received negative value %d, clamping to 0", name, v)
+		return 0
+	}
+	return v
+}
 
 // --- Dimension Options ---
 
 // WithWidth sets a fixed width in terminal cells.
+// Negative values are clamped to 0.
 func WithWidth(cells int) Option {
 	return func(e *Element) {
-		e.style.Width = Fixed(cells)
+		e.style.Width = Fixed(clampNonNeg(cells, "WithWidth"))
 	}
 }
 
 // WithWidthPercent sets width as a percentage of parent's available width.
+// Negative values are clamped to 0.
 func WithWidthPercent(percent float64) Option {
 	return func(e *Element) {
+		if percent < 0 {
+			debug.Log("tui: WithWidthPercent received negative value %f, clamping to 0", percent)
+			percent = 0
+		}
 		e.style.Width = Percent(percent)
 	}
 }
 
 // WithHeight sets a fixed height in terminal cells.
+// Negative values are clamped to 0.
 func WithHeight(cells int) Option {
 	return func(e *Element) {
-		e.style.Height = Fixed(cells)
+		e.style.Height = Fixed(clampNonNeg(cells, "WithHeight"))
 	}
 }
 
 // WithHeightPercent sets height as a percentage of parent's available height.
+// Negative values are clamped to 0.
 func WithHeightPercent(percent float64) Option {
 	return func(e *Element) {
+		if percent < 0 {
+			debug.Log("tui: WithHeightPercent received negative value %f, clamping to 0", percent)
+			percent = 0
+		}
 		e.style.Height = Percent(percent)
 	}
 }
 
 // WithSize sets both width and height in terminal cells.
+// Negative values are clamped to 0.
 func WithSize(width, height int) Option {
 	return func(e *Element) {
-		e.style.Width = Fixed(width)
-		e.style.Height = Fixed(height)
+		e.style.Width = Fixed(clampNonNeg(width, "WithSize(width)"))
+		e.style.Height = Fixed(clampNonNeg(height, "WithSize(height)"))
 	}
 }
 
 // WithMinWidth sets the minimum width in terminal cells.
+// Negative values are clamped to 0.
 func WithMinWidth(cells int) Option {
 	return func(e *Element) {
-		e.style.MinWidth = Fixed(cells)
+		e.style.MinWidth = Fixed(clampNonNeg(cells, "WithMinWidth"))
 	}
 }
 
 // WithMinHeight sets the minimum height in terminal cells.
+// Negative values are clamped to 0.
 func WithMinHeight(cells int) Option {
 	return func(e *Element) {
-		e.style.MinHeight = Fixed(cells)
+		e.style.MinHeight = Fixed(clampNonNeg(cells, "WithMinHeight"))
 	}
 }
 
 // WithMaxWidth sets the maximum width in terminal cells.
+// Negative values are clamped to 0.
 func WithMaxWidth(cells int) Option {
 	return func(e *Element) {
-		e.style.MaxWidth = Fixed(cells)
+		e.style.MaxWidth = Fixed(clampNonNeg(cells, "WithMaxWidth"))
 	}
 }
 
 // WithMaxHeight sets the maximum height in terminal cells.
+// Negative values are clamped to 0.
 func WithMaxHeight(cells int) Option {
 	return func(e *Element) {
-		e.style.MaxHeight = Fixed(cells)
+		e.style.MaxHeight = Fixed(clampNonNeg(cells, "WithMaxHeight"))
 	}
 }
 
@@ -102,9 +130,10 @@ func WithAlign(a Align) Option {
 }
 
 // WithGap sets the space between children on the main axis.
+// Negative values are clamped to 0.
 func WithGap(cells int) Option {
 	return func(e *Element) {
-		e.style.Gap = cells
+		e.style.Gap = clampNonNeg(cells, "WithGap")
 	}
 }
 
@@ -126,15 +155,25 @@ func WithAlignContent(a AlignContent) Option {
 // --- Flex Item Options ---
 
 // WithFlexGrow sets how much this element should grow relative to siblings.
+// Negative values are clamped to 0.
 func WithFlexGrow(factor float64) Option {
 	return func(e *Element) {
+		if factor < 0 {
+			debug.Log("tui: WithFlexGrow received negative value %f, clamping to 0", factor)
+			factor = 0
+		}
 		e.style.FlexGrow = factor
 	}
 }
 
 // WithFlexShrink sets how much this element should shrink relative to siblings.
+// Negative values are clamped to 0.
 func WithFlexShrink(factor float64) Option {
 	return func(e *Element) {
+		if factor < 0 {
+			debug.Log("tui: WithFlexShrink received negative value %f, clamping to 0", factor)
+			factor = 0
+		}
 		e.style.FlexShrink = factor
 	}
 }
@@ -149,30 +188,44 @@ func WithAlignSelf(a Align) Option {
 // --- Spacing Options ---
 
 // WithPadding sets uniform padding on all sides.
+// Negative values are clamped to 0.
 func WithPadding(cells int) Option {
 	return func(e *Element) {
-		e.style.Padding = EdgeAll(cells)
+		e.style.Padding = EdgeAll(clampNonNeg(cells, "WithPadding"))
 	}
 }
 
 // WithPaddingTRBL sets padding using CSS order: Top, Right, Bottom, Left.
+// Negative values are clamped to 0.
 func WithPaddingTRBL(top, right, bottom, left int) Option {
 	return func(e *Element) {
-		e.style.Padding = EdgeTRBL(top, right, bottom, left)
+		e.style.Padding = EdgeTRBL(
+			clampNonNeg(top, "WithPaddingTRBL(top)"),
+			clampNonNeg(right, "WithPaddingTRBL(right)"),
+			clampNonNeg(bottom, "WithPaddingTRBL(bottom)"),
+			clampNonNeg(left, "WithPaddingTRBL(left)"),
+		)
 	}
 }
 
 // WithMargin sets uniform margin on all sides.
+// Negative values are clamped to 0.
 func WithMargin(cells int) Option {
 	return func(e *Element) {
-		e.style.Margin = EdgeAll(cells)
+		e.style.Margin = EdgeAll(clampNonNeg(cells, "WithMargin"))
 	}
 }
 
 // WithMarginTRBL sets margin using CSS order: Top, Right, Bottom, Left.
+// Negative values are clamped to 0.
 func WithMarginTRBL(top, right, bottom, left int) Option {
 	return func(e *Element) {
-		e.style.Margin = EdgeTRBL(top, right, bottom, left)
+		e.style.Margin = EdgeTRBL(
+			clampNonNeg(top, "WithMarginTRBL(top)"),
+			clampNonNeg(right, "WithMarginTRBL(right)"),
+			clampNonNeg(bottom, "WithMarginTRBL(bottom)"),
+			clampNonNeg(left, "WithMarginTRBL(left)"),
+		)
 	}
 }
 

@@ -162,13 +162,20 @@ func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, main
 			}
 			crossStyleValue := childStyle.Width
 			crossMargin := childStyle.Margin.Horizontal()
+			availCross := crossSize - crossMargin
+			if availCross < 0 {
+				availCross = 0
+			}
 			if align == AlignStretch && crossStyleValue.IsAuto() {
-				childWidth = crossSize - crossMargin
+				childWidth = availCross
 			} else if crossStyleValue.IsAuto() {
 				childWidth, _ = child.IntrinsicSize()
 			} else {
-				childWidth = crossStyleValue.Resolve(crossSize-crossMargin, 0)
+				childWidth = crossStyleValue.Resolve(availCross, 0)
 			}
+		}
+		if childWidth < 0 {
+			childWidth = 0
 		}
 
 		wrappedHeight := child.HeightForWidth(childWidth)
@@ -355,7 +362,11 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 
 			itemCross := crossIntrinsic
 			if !crossStyleValue.IsAuto() {
-				itemCross = crossStyleValue.Resolve(crossSize-crossMargin, 0) + crossMargin
+				resolveAvail := crossSize - crossMargin
+				if resolveAvail < 0 {
+					resolveAvail = 0
+				}
+				itemCross = crossStyleValue.Resolve(resolveAvail, 0) + crossMargin
 			}
 			if itemCross > maxCross {
 				maxCross = itemCross
@@ -433,6 +444,9 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 			}
 
 			availableCross := lineCross - crossMargin
+			if availableCross < 0 {
+				availableCross = 0
+			}
 
 			if align == AlignStretch && crossStyleValue.IsAuto() {
 				lineItems[i].crossSize = availableCross + crossMargin

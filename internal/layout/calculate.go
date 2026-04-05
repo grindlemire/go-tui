@@ -61,7 +61,13 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 
 		if crossIsAuto {
 			contentWidth := borderBox.Width - style.Padding.Horizontal()
+			if contentWidth < 0 {
+				contentWidth = 0
+			}
 			contentHeight := borderBox.Height - style.Padding.Vertical()
+			if contentHeight < 0 {
+				contentHeight = 0
+			}
 
 			mainSz := contentWidth
 			crossSz := contentHeight
@@ -125,7 +131,11 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 						crossMargin = childStyle.Margin.Horizontal()
 					}
 					if !crossStyleValue.IsAuto() {
-						cross = crossStyleValue.Resolve(crossSz-crossMargin, 0) + crossMargin
+						resolveAvail := crossSz - crossMargin
+						if resolveAvail < 0 {
+							resolveAvail = 0
+						}
+						cross = crossStyleValue.Resolve(resolveAvail, 0) + crossMargin
 					}
 
 					if cross > maxCross {
@@ -175,11 +185,19 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 	// 3. Compute content rect position from float position (then round)
 	contentAbsX := absoluteX + float64(style.Padding.Left)
 	contentAbsY := absoluteY + float64(style.Padding.Top)
+	contentWidth := borderBox.Width - style.Padding.Horizontal()
+	if contentWidth < 0 {
+		contentWidth = 0
+	}
+	contentHeight := borderBox.Height - style.Padding.Vertical()
+	if contentHeight < 0 {
+		contentHeight = 0
+	}
 	contentRect := Rect{
 		X:      int(math.Round(contentAbsX)),
 		Y:      int(math.Round(contentAbsY)),
-		Width:  borderBox.Width - style.Padding.Horizontal(),
-		Height: borderBox.Height - style.Padding.Vertical(),
+		Width:  contentWidth,
+		Height: contentHeight,
 	}
 
 	// 4. Layout children within content rect, passing float positions

@@ -60,12 +60,22 @@ func (r Rect) ContainsRect(other Rect) bool {
 
 // Inset returns a new Rect inset by the given Edges.
 // Positive values shrink the rectangle; negative values expand it.
+// Width and Height are clamped to zero to prevent negative dimensions
+// when edges exceed the rectangle size.
 func (r Rect) Inset(edges Edges) Rect {
+	w := r.Width - edges.Left - edges.Right
+	if w < 0 {
+		w = 0
+	}
+	h := r.Height - edges.Top - edges.Bottom
+	if h < 0 {
+		h = 0
+	}
 	return Rect{
 		X:      r.X + edges.Left,
 		Y:      r.Y + edges.Top,
-		Width:  r.Width - edges.Left - edges.Right,
-		Height: r.Height - edges.Top - edges.Bottom,
+		Width:  w,
+		Height: h,
 	}
 }
 
