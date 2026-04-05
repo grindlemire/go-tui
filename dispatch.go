@@ -48,6 +48,10 @@ func buildDispatchTable(rootComp Component, root *Element) (*dispatchTable, erro
 		fq, hasFocusQuery := comp.(focusQuerier)
 
 		for _, binding := range km {
+			if binding.Handler == nil {
+				debug.Log("dispatch: skipping nil handler in KeyMap from component %T at position %d", comp, position)
+				continue
+			}
 			entry := dispatchEntry{
 				pattern:  binding.Pattern,
 				handler:  binding.Handler,
@@ -102,9 +106,12 @@ func (e *dispatchEntry) matchesKey(ke KeyEvent) bool {
 }
 
 // matches checks if a dispatch entry matches a key event, including focus gating.
+// If FocusRequired is true but focusCheck is nil (component doesn't implement
+// focusQuerier), the binding never matches — preventing it from silently
+// behaving as a broadcast handler.
 func (e *dispatchEntry) matches(ke KeyEvent) bool {
-	if e.pattern.FocusRequired && e.focusCheck != nil {
-		if !e.focusCheck() {
+	if e.pattern.FocusRequired {
+		if e.focusCheck == nil || !e.focusCheck() {
 			return false
 		}
 	}
