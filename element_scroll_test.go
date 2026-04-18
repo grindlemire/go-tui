@@ -124,14 +124,15 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 			t.Fatalf("expected scrollbar to be needed")
 		}
 
-		vw, _ := e.ViewportSize()
-		if vw != width {
-			t.Fatalf("viewport width = %d, want %d", vw, width)
-		}
-
-		gutter := buf.Cell(width-1, 0).Rune
-		if gutter != '█' && gutter != '│' {
-			t.Errorf("rightmost column rune = %q, want scrollbar glyph", gutter)
+		// Rightmost column should be the scrollbar, not the child's red fill.
+		for y := 0; y < height; y++ {
+			cell := buf.Cell(width-1, y)
+			if cell.Rune != '█' && cell.Rune != '│' {
+				t.Errorf("row %d rightmost column rune = %q, want scrollbar glyph", y, cell.Rune)
+			}
+			if cell.Style.Bg.Equal(Red) {
+				t.Errorf("row %d rightmost column bg = Red, expected scrollbar to cover child", y)
+			}
 		}
 	})
 
@@ -144,10 +145,12 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 			t.Fatalf("expected scrollbar to be hidden")
 		}
 
+		// Rightmost column should be the child's red background, proving the
+		// scrollbar gutter was reclaimed for child layout and not left blank.
 		for y := 0; y < height; y++ {
-			r := buf.Cell(width-1, y).Rune
-			if r == '█' || r == '│' {
-				t.Errorf("row %d rightmost column = %q, expected child content (no scrollbar glyph)", y, r)
+			cell := buf.Cell(width-1, y)
+			if !cell.Style.Bg.Equal(Red) {
+				t.Errorf("row %d rightmost column bg = %v, want Red (child fills reclaimed gutter)", y, cell.Style.Bg)
 			}
 		}
 	})
