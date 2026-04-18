@@ -183,7 +183,7 @@ Binds the event bus to an app for dirty-marking. The framework calls this during
 func (e *Events[T]) UnbindApp()
 ```
 
-Detaches the event bus from app topic routing. Called automatically when components unmount.
+Detaches the event bus from app topic routing. Called automatically when components unmount or when the root is replaced.
 
 ### Emit
 

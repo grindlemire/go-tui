@@ -187,7 +187,7 @@ type AppUnbinder interface {
 }
 ```
 
-Called by the framework when a mounted component leaves the tree. This detaches app-bound resources such as topic-based `Events[T]` subscriptions.
+Called by the framework when a component leaves the tree: on unmount during sweep, or when the root is replaced via `SetRootComponent`, `SetRoot`, or `SetRootView`. This detaches app-bound resources such as topic-based `Events[T]` subscriptions.
 
 You usually don't implement this manually. Generated code handles it for `.gsx` components that contain `Events` fields.
 
