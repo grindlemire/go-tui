@@ -329,14 +329,9 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 
 // unbindPreviousRoot drains the current root's AppUnbinder (if any) before a
 // new root is bound. Called from every root-setter so that Events subscriptions
-// owned by the outgoing root do not leak into the new session. skip lets a
-// caller protect against unbinding when the incoming root is the same instance.
-//
-// Interface equality relies on rootUnbinder holding a pointer receiver, which
-// every AppUnbinder in this codebase does. Storing a non-pointer value type
-// with an incomparable field would panic on comparison.
-func (a *App) unbindPreviousRoot(skip AppUnbinder) {
-	if a.rootUnbinder == nil || a.rootUnbinder == skip {
+// owned by the outgoing root do not leak into the new session.
+func (a *App) unbindPreviousRoot() {
+	if a.rootUnbinder == nil {
 		return
 	}
 	a.rootUnbinder.UnbindApp()
@@ -345,27 +340,22 @@ func (a *App) unbindPreviousRoot(skip AppUnbinder) {
 
 // SetRoot sets the root element for rendering.
 func (a *App) SetRoot(root *Element) {
-	a.unbindPreviousRoot(nil)
+	a.unbindPreviousRoot()
 	a.rootComponent = nil
 	a.applyRoot(root)
 }
 
 // SetRootView sets the root from a Viewable and starts its watchers.
 func (a *App) SetRootView(view Viewable) {
-	var next AppUnbinder
-	if u, ok := view.(AppUnbinder); ok {
-		next = u
-	}
-	a.unbindPreviousRoot(next)
+	a.unbindPreviousRoot()
 	a.rootComponent = nil
 	if binder, ok := view.(AppBinder); ok {
 		binder.BindApp(a)
 	}
 	a.applyRoot(view.GetRoot())
-	if binder, ok := view.(AppBinder); ok {
-		binder.BindApp(a)
+	if u, ok := view.(AppUnbinder); ok {
+		a.rootUnbinder = u
 	}
-	a.rootUnbinder = next
 	for _, w := range view.GetWatchers() {
 		w.Start(a.watcherQueue, a.rootWatcherCh)
 	}
@@ -377,21 +367,16 @@ func (a *App) SetRootView(view Viewable) {
 // before the new component is bound. This drains its Events subscriptions from
 // a.topics so the outgoing root doesn't leak listeners across root swaps.
 func (a *App) SetRootComponent(component Component) {
-	var next AppUnbinder
-	if u, ok := component.(AppUnbinder); ok {
-		next = u
-	}
-	a.unbindPreviousRoot(next)
+	a.unbindPreviousRoot()
 	if binder, ok := component.(AppBinder); ok {
 		binder.BindApp(a)
 	}
 	a.rootComponent = component
-	a.rootUnbinder = next
+	if u, ok := component.(AppUnbinder); ok {
+		a.rootUnbinder = u
+	}
 	el := component.Render(a)
 	a.applyRoot(el)
-	if binder, ok := component.(AppBinder); ok {
-		binder.BindApp(a)
-	}
 }
 
 func (a *App) applyRoot(root *Element) {
