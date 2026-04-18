@@ -10,10 +10,11 @@ import (
 )
 
 type fileList struct {
-	files    []string
-	selected *tui.State[int]
-	scrollY  *tui.State[int]
-	content  *tui.Ref
+	files         []string
+	selected      *tui.State[int]
+	scrollY       *tui.State[int]
+	hideScrollbar *tui.State[bool]
+	content       *tui.Ref
 }
 
 func FileList() *fileList {
@@ -27,10 +28,11 @@ func FileList() *fileList {
 		"state.go", "style.go", "terminal.go", "watcher.go",
 	}
 	return &fileList{
-		files:    files,
-		selected: tui.NewState(0),
-		scrollY:  tui.NewState(0),
-		content:  tui.NewRef(),
+		files:         files,
+		selected:      tui.NewState(0),
+		scrollY:       tui.NewState(0),
+		hideScrollbar: tui.NewState(false),
+		content:       tui.NewRef(),
 	}
 }
 
@@ -84,6 +86,7 @@ func (f *fileList) KeyMap() tui.KeyMap {
 		tui.On(tui.KeyPageUp, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 10) }),
 		tui.On(tui.KeyHome, func(ke tui.KeyEvent) { f.moveTo(0) }),
 		tui.On(tui.KeyEnd, func(ke tui.KeyEvent) { f.moveTo(len(f.files) - 1) }),
+		tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { f.hideScrollbar.Set(!f.hideScrollbar.Get()) }),
 	}
 }
 
@@ -117,6 +120,7 @@ func (f *fileList) Render(app *tui.App) *tui.Element {
 		tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 		tui.WithHeight(12),
+		tui.WithScrollbarHidden(f.hideScrollbar.Get()),
 		tui.WithScrollOffset(0, f.scrollY.Get()),
 	)
 	f.content.Set(__tui_2)
@@ -142,7 +146,7 @@ func (f *fileList) Render(app *tui.App) *tui.Element {
 		tui.WithJustify(tui.JustifySpaceBetween),
 	)
 	__tui_6 := tui.New(
-		tui.WithText("j/k navigate | esc quit"),
+		tui.WithText("j/k navigate | h toggle scrollbar | esc quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_5.AddChild(__tui_6)
@@ -175,6 +179,9 @@ func (f *fileList) bindAppFields(app *tui.App) {
 	}
 	if f.scrollY != nil {
 		f.scrollY.BindApp(app)
+	}
+	if f.hideScrollbar != nil {
+		f.hideScrollbar.BindApp(app)
 	}
 }
 

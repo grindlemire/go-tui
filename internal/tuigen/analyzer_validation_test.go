@@ -129,7 +129,7 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 		"border", "borderStyle", "background",
 		"text", "textStyle", "textAlign",
 		"onFocus", "onBlur",
-		"scrollable", "scrollbarStyle", "scrollbarThumbStyle",
+		"scrollable", "scrollbarStyle", "scrollbarThumbStyle", "hideScrollbar",
 		"disabled", "id",
 	}
 

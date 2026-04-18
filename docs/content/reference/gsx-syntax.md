@@ -391,6 +391,7 @@ Available on: `div`, `ul`, `li`, `table`, `span`, `p`, `button`, `input`.
 | `scrollOffset` | int, int | `tui.WithScrollOffset(x, y)` |
 | `scrollbarStyle` | `tui.Style` | `tui.WithScrollbarStyle(s)` |
 | `scrollbarThumbStyle` | `tui.Style` | `tui.WithScrollbarThumbStyle(s)` |
+| `hideScrollbar` | `bool` | `tui.WithScrollbarHidden(b)` |
 
 Available on: `div`, `ul`, `li`, `table`.
 
@@ -714,6 +715,7 @@ Examples:
 | `overflow-y-scroll` | `tui.WithScrollable(tui.ScrollVertical)` |
 | `overflow-x-scroll` | `tui.WithScrollable(tui.ScrollHorizontal)` |
 | `overflow-hidden` | `tui.WithOverflow(tui.OverflowHidden)` |
+| `scrollbar-hidden` | `tui.WithScrollbarHidden(true)` |
 
 ### Scrollbar colors
 

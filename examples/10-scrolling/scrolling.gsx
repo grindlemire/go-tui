@@ -6,10 +6,11 @@ import (
 )
 
 type fileList struct {
-	files    []string
-	selected *tui.State[int]
-	scrollY  *tui.State[int]
-	content  *tui.Ref
+	files         []string
+	selected      *tui.State[int]
+	scrollY       *tui.State[int]
+	hideScrollbar *tui.State[bool]
+	content       *tui.Ref
 }
 
 func FileList() *fileList {
@@ -23,10 +24,11 @@ func FileList() *fileList {
 		"state.go", "style.go", "terminal.go", "watcher.go",
 	}
 	return &fileList{
-		files:    files,
-		selected: tui.NewState(0),
-		scrollY:  tui.NewState(0),
-		content:  tui.NewRef(),
+		files:         files,
+		selected:      tui.NewState(0),
+		scrollY:       tui.NewState(0),
+		hideScrollbar: tui.NewState(false),
+		content:       tui.NewRef(),
 	}
 }
 
@@ -80,6 +82,7 @@ func (f *fileList) KeyMap() tui.KeyMap {
 		tui.On(tui.KeyPageUp, func(ke tui.KeyEvent) { f.moveTo(f.selected.Get() - 10) }),
 		tui.On(tui.KeyHome, func(ke tui.KeyEvent) { f.moveTo(0) }),
 		tui.On(tui.KeyEnd, func(ke tui.KeyEvent) { f.moveTo(len(f.files) - 1) }),
+		tui.On(tui.Rune('h'), func(ke tui.KeyEvent) { f.hideScrollbar.Set(!f.hideScrollbar.Get()) }),
 	}
 }
 
@@ -102,6 +105,7 @@ templ (f *fileList) Render() {
 			ref={f.content}
 			class="overflow-y-scroll scrollbar-cyan scrollbar-thumb-bright-cyan"
 			height={12}
+			hideScrollbar={f.hideScrollbar.Get()}
 			scrollOffset={0, f.scrollY.Get()}>
 			for i, name := range f.files {
 				if i == f.selected.Get() {
@@ -112,7 +116,7 @@ templ (f *fileList) Render() {
 			}
 		</div>
 		<div class="flex justify-between">
-			<span class="font-dim">j/k navigate | esc quit</span>
+			<span class="font-dim">j/k navigate | h toggle scrollbar | esc quit</span>
 			<span class="font-dim">{fmt.Sprintf("%d/%d", f.selected.Get()+1, len(f.files))}</span>
 		</div>
 	</div>
