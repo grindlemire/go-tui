@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.12.0](https://github.com/grindlemire/go-tui/compare/v0.11.0...v0.12.0) (2026-04-18)
+
+
+### Features
+
+* emit bindAppFields helper for method components ([dcf2824](https://github.com/grindlemire/go-tui/commit/dcf28247a8d3f0c72222dd5868b996849aac4d2b))
+
+
+### Bug Fixes
+
+* drain mount cache and unbind outgoing root on root reset ([a3665a9](https://github.com/grindlemire/go-tui/commit/a3665a9f7ddb97cb309a33771bfd6901dc7c222f))
+* silent event delivery loss after root reset ([378e107](https://github.com/grindlemire/go-tui/commit/378e10797e7e799a9e5c207fbe33425ea8e8b22e))
+* track outgoing root in a dedicated field for unbind ([e28242b](https://github.com/grindlemire/go-tui/commit/e28242bdbe0cdcce65fb7fceb46976ee881e9987))
+* **tuigen:** decouple UnbindApp suppression from BindApp detection ([4bdb40d](https://github.com/grindlemire/go-tui/commit/4bdb40deedec56c1a47553aa6ba4771a4eb61f31))
+
 ## [0.11.0](https://github.com/grindlemire/go-tui/compare/v0.10.3...v0.11.0) (2026-04-03)
 
 
