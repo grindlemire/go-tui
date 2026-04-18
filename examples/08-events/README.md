@@ -4,7 +4,7 @@ Shows keyboard and mouse event handling through the `KeyListener` interface, `Ke
 
 ## Screenshot
 
-![Events](../../docs/public/guides/08.png)
+![Events](../../docs/images/guides/08.png)
 
 ## Run
 

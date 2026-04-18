@@ -4,7 +4,7 @@ Demonstrates focus management for keyboard input routing, including focusable el
 
 ## Screenshot
 
-![Focus](../../docs/public/guides/11.png)
+![Focus](../../docs/images/guides/11.png)
 
 ## Run
 

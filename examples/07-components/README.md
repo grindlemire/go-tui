@@ -4,7 +4,7 @@ Demonstrates the two kinds of components: pure templ functions for stateless reu
 
 ## Screenshot
 
-![Components](../../docs/public/guides/07.png)
+![Components](../../docs/images/guides/07.png)
 
 ## Run
 

@@ -4,7 +4,7 @@ Shows scrollable containers for content that overflows its bounds, with keyboard
 
 ## Screenshot
 
-![Scrolling](../../docs/public/guides/10.png)
+![Scrolling](../../docs/images/guides/10.png)
 
 ## Run
 

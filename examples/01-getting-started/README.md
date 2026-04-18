@@ -4,7 +4,7 @@ A minimal go-tui app: one component with gradient text and a quit handler. Cover
 
 ## Screenshot
 
-![Getting Started](../../docs/public/guides/01.png)
+![Getting Started](../../docs/images/guides/01.png)
 
 ## Run
 

@@ -4,7 +4,7 @@ Builds a live data viewer that receives streaming data from a Go channel, with s
 
 ## Screenshot
 
-![Streaming](../../docs/public/guides/16.png)
+![Streaming](../../docs/images/guides/16.png)
 
 ## Run
 

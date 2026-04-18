@@ -4,7 +4,7 @@ A live metrics dashboard with CPU, memory, and disk gauges, a network sparkline,
 
 ## Screenshot
 
-![Dashboard](../../docs/public/guides/18.png)
+![Dashboard](../../docs/images/guides/18.png)
 
 ## Run
 

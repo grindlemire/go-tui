@@ -4,7 +4,7 @@ Demonstrates the flexbox layout engine with row and column directions, justify a
 
 ## Screenshot
 
-![Layout](../../docs/public/guides/04.png)
+![Layout](../../docs/images/guides/04.png)
 
 ## Run
 
