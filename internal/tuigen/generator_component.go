@@ -477,8 +477,20 @@ func findStructDecl(decls []*GoDecl, typeName string) *GoDecl {
 // hasUserBindAppMethod returns true when the source file already declares a
 // BindApp method on the receiver type.
 func hasUserBindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
+	return hasUserMethod(decls, funcs, receiverType, "BindApp")
+}
+
+// hasUserUnbindAppMethod returns true when the source file already declares an
+// UnbindApp method on the receiver type. Kept distinct from BindApp detection
+// so that users who override BindApp alone still receive an auto-generated
+// UnbindApp (otherwise their Events fields would leak subscriptions).
+func hasUserUnbindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
+	return hasUserMethod(decls, funcs, receiverType, "UnbindApp")
+}
+
+func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName string) bool {
 	typeName := strings.TrimPrefix(receiverType, "*")
-	pattern := regexp.MustCompile(`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*BindApp\s*\(`)
+	pattern := regexp.MustCompile(`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*` + regexp.QuoteMeta(methodName) + `\s*\(`)
 
 	for _, decl := range decls {
 		if decl.Kind == "func" && pattern.MatchString(decl.Code) {
@@ -726,7 +738,7 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 	// Always emit the unbindAppFields helper.
 	g.emitUnbindAppFieldsHelper(comp, unbindFields, componentUnbindFields)
 
-	if hasUserBindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+	if hasUserUnbindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
 		return
 	}
 

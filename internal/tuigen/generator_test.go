@@ -1268,3 +1268,47 @@ templ (s *sidebar) Render() {
 		})
 	}
 }
+
+// TestGenerator_UserBindAppDoesNotSuppressUnbindApp verifies the fix for a
+// generator bug where a user-defined BindApp (via hasUserBindAppMethod) also
+// suppressed auto-generation of UnbindApp, leaving components that owned
+// Events subscriptions unable to satisfy AppUnbinder and leaking their
+// subscriptions across root resets.
+func TestGenerator_UserBindAppDoesNotSuppressUnbindApp(t *testing.T) {
+	input := `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type myRoot struct {
+	app    *tui.App
+	events *tui.Events[string]
+}
+
+func (c *myRoot) BindApp(app *tui.App) {
+	c.app = app
+	c.bindAppFields(app)
+}
+
+templ (c *myRoot) Render() {
+	<div></div>
+}
+`
+
+	output, err := parseAndGenerateSkipImports("test.gsx", input)
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+	code := string(output)
+
+	mustContain := []string{
+		"func (c *myRoot) unbindAppFields()",
+		"func (c *myRoot) UnbindApp()",
+		"c.unbindAppFields()",
+		"var _ tui.AppUnbinder = (*myRoot)(nil)",
+	}
+	for _, want := range mustContain {
+		if !strings.Contains(code, want) {
+			t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+		}
+	}
+}

@@ -137,6 +137,12 @@ func (a *myApp) unbindAppFields() {
 	}
 }
 
+func (a *myApp) UnbindApp() {
+	a.unbindAppFields()
+}
+
+var _ tui.AppUnbinder = (*myApp)(nil)
+
 // Compile-time interface satisfaction checks.
 var (
 	_ tui.KeyListener     = (*myApp)(nil)
