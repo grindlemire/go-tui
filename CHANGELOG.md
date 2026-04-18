@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.0](https://github.com/grindlemire/go-tui/compare/v0.12.0...v0.13.0) (2026-04-18)
+
+
+### Features
+
+* add hideScrollbar option for scrollable containers ([15a2ce7](https://github.com/grindlemire/go-tui/commit/15a2ce75360ad5c17ba46f80b4b36b327b572b95))
+
+
+### Bug Fixes
+
+* update image URLs in example docs ([7dc88fd](https://github.com/grindlemire/go-tui/commit/7dc88fd49bc13b6a720b4cbbd9cfa961538441f6))
+
 ## [0.12.0](https://github.com/grindlemire/go-tui/compare/v0.11.0...v0.12.0) (2026-04-18)
 
 
