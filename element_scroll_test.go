@@ -98,6 +98,61 @@ func TestElement_Scroll(t *testing.T) {
 	}
 }
 
+func TestElement_ScrollbarHidden(t *testing.T) {
+	const width, height = 20, 5
+
+	makeScrollable := func(opts ...Option) *Element {
+		opts = append([]Option{
+			WithSize(width, height),
+			WithScrollable(ScrollVertical),
+			WithDirection(Column),
+		}, opts...)
+		e := New(opts...)
+		// More rows than viewport so a scrollbar would be needed.
+		for i := 0; i < height*3; i++ {
+			e.AddChild(New(WithHeight(1), WithBackground(NewStyle().Background(Red))))
+		}
+		return e
+	}
+
+	t.Run("default shows scrollbar and reserves gutter", func(t *testing.T) {
+		e := makeScrollable()
+		buf := NewBuffer(width, height)
+		e.Render(buf, width, height)
+
+		if !e.needsVerticalScrollbar() {
+			t.Fatalf("expected scrollbar to be needed")
+		}
+
+		vw, _ := e.ViewportSize()
+		if vw != width {
+			t.Fatalf("viewport width = %d, want %d", vw, width)
+		}
+
+		gutter := buf.Cell(width-1, 0).Rune
+		if gutter != '█' && gutter != '│' {
+			t.Errorf("rightmost column rune = %q, want scrollbar glyph", gutter)
+		}
+	})
+
+	t.Run("hidden skips scrollbar and reclaims gutter", func(t *testing.T) {
+		e := makeScrollable(WithScrollbarHidden(true))
+		buf := NewBuffer(width, height)
+		e.Render(buf, width, height)
+
+		if e.needsVerticalScrollbar() {
+			t.Fatalf("expected scrollbar to be hidden")
+		}
+
+		for y := 0; y < height; y++ {
+			r := buf.Cell(width-1, y).Rune
+			if r == '█' || r == '│' {
+				t.Errorf("row %d rightmost column = %q, expected child content (no scrollbar glyph)", y, r)
+			}
+		}
+	})
+}
+
 func TestElement_ScrollToTop(t *testing.T) {
 	e := New(
 		WithSize(20, 5),

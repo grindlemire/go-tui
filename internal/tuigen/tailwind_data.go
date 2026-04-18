@@ -166,6 +166,9 @@ var tailwindClasses = map[string]TailwindMapping{
 	"nowrap": {Option: "tui.WithWrap(false)", NeedsImport: ""},
 	"wrap":   {Option: "tui.WithWrap(true)", NeedsImport: ""},
 
+	// Scrollbar visibility
+	"scrollbar-hidden": {Option: "tui.WithScrollbarHidden(true)", NeedsImport: "tui"},
+
 	// Scrollbar track colors
 	"scrollbar-red":     {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Red))", NeedsImport: "tui"},
 	"scrollbar-green":   {Option: "tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Green))", NeedsImport: "tui"},

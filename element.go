@@ -98,6 +98,7 @@ type Element struct {
 	// Scrollbar styles
 	scrollbarStyle      Style
 	scrollbarThumbStyle Style
+	scrollbarHidden     bool // true = don't draw scrollbar or reserve gutter
 
 	// HR properties
 	hr bool // true if this element is a horizontal rule

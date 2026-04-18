@@ -267,6 +267,7 @@ func AllTailwindClasses() []TailwindClassInfo {
 
 	// Scrollbar styling classes
 	scrollbarClasses := []TailwindClassInfo{
+		{Name: "scrollbar-hidden", Category: "visual", Description: "Hide scrollbar and reclaim its gutter width", Example: `<div class="overflow-y-scroll scrollbar-hidden">`},
 		{Name: "scrollbar-red", Category: "visual", Description: "Set scrollbar track color to red", Example: `<div class="overflow-y-scroll scrollbar-red">`},
 		{Name: "scrollbar-thumb-cyan", Category: "visual", Description: "Set scrollbar thumb color to cyan", Example: `<div class="overflow-y-scroll scrollbar-thumb-cyan">`},
 		{Name: "scrollbar-[#ff6600]", Category: "visual", Description: "Set scrollbar track color to hex", Example: `<div class="overflow-y-scroll scrollbar-[#ff6600]">`},

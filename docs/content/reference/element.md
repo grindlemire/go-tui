@@ -209,6 +209,7 @@ tui.New(
 | `WithScrollOffset(x, y int)` | Initial scroll position. Useful for preserving scroll state across re-renders via `State[int]` |
 | `WithScrollbarStyle(style Style)` | Style for the scrollbar track |
 | `WithScrollbarThumbStyle(style Style)` | Style for the scrollbar thumb |
+| `WithScrollbarHidden(hidden bool)` | Hide the scrollbar and reclaim its gutter column. Scrolling still works via keyboard, mouse wheel, and programmatic calls |
 
 ```go
 tui.New(

@@ -158,6 +158,7 @@ var knownAttributes = map[string]bool{
 	"scrollOffset":        true,
 	"scrollbarStyle":      true,
 	"scrollbarThumbStyle": true,
+	"hideScrollbar":       true,
 
 	// Generic
 	"disabled": true,

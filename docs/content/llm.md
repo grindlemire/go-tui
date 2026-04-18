@@ -270,6 +270,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `scrollOffset` | `int, int` | x, y scroll position |
 | `scrollbarStyle` | `tui.Style` | Track style |
 | `scrollbarThumbStyle` | `tui.Style` | Thumb style |
+| `hideScrollbar` | `bool` | Hide scrollbar and reclaim gutter width |
 
 ### Modal
 
@@ -343,7 +344,7 @@ Directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagonal down), 
 
 ### Scroll & Overflow
 
-`overflow-scroll` `overflow-y-scroll` `overflow-x-scroll` `overflow-hidden` `scrollbar-COLOR` `scrollbar-thumb-COLOR` `scrollbar-[#hex]` `scrollbar-thumb-[#hex]`
+`overflow-scroll` `overflow-y-scroll` `overflow-x-scroll` `overflow-hidden` `scrollbar-hidden` `scrollbar-COLOR` `scrollbar-thumb-COLOR` `scrollbar-[#hex]` `scrollbar-thumb-[#hex]`
 
 ### Other
 

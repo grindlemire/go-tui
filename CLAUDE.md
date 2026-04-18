@@ -449,6 +449,7 @@ func helper(s string) string {
 | `scrollable` | `bool` | Enable scrolling for overflow content |
 | `scrollbarStyle` | `tui.Style` | Style for the scrollbar track |
 | `scrollbarThumbStyle` | `tui.Style` | Style for the scrollbar thumb |
+| `hideScrollbar` | `bool` | Hide the scrollbar and reclaim its gutter width |
 
 ### Modal Attributes
 
@@ -622,6 +623,7 @@ Gradient directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagona
 | `overflow-y-scroll` | Enable vertical scrolling |
 | `overflow-x-scroll` | Enable horizontal scrolling |
 | `overflow-hidden` | Clip children without scrollbars |
+| `scrollbar-hidden` | Hide scrollbar and reclaim its gutter width |
 | `scrollbar-COLOR` | Scrollbar track color |
 | `scrollbar-thumb-COLOR` | Scrollbar thumb color |
 | `scrollbar-[#hex]` / `scrollbar-thumb-[#hex]` | Hex scrollbar colors |

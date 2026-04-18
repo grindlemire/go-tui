@@ -328,6 +328,16 @@ func WithScrollbarThumbStyle(style Style) Option {
 	}
 }
 
+// WithScrollbarHidden hides the scrollbar on a scrollable element.
+// When hidden, the scrollbar is neither drawn nor reserves a column of content width,
+// so the viewport uses the full available width. Scrolling still works via keyboard,
+// mouse wheel, and programmatic ScrollTo/ScrollBy.
+func WithScrollbarHidden(hidden bool) Option {
+	return func(e *Element) {
+		e.scrollbarHidden = hidden
+	}
+}
+
 // --- HR Options ---
 
 // WithHR configures an element as a horizontal rule.

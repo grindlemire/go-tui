@@ -303,6 +303,7 @@ func scrollAttrs() []AttributeDef {
 		{Name: "scrollable", Type: "bool", Description: "Enable scrolling for overflow content", Category: "scroll"},
 		{Name: "scrollbarStyle", Type: "style", Description: "Style for the scrollbar track", Category: "scroll"},
 		{Name: "scrollbarThumbStyle", Type: "style", Description: "Style for the scrollbar thumb", Category: "scroll"},
+		{Name: "hideScrollbar", Type: "bool", Description: "Hide the scrollbar and reclaim its gutter width", Category: "scroll"},
 	}
 }
 

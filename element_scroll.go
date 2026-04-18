@@ -166,7 +166,7 @@ func (e *Element) layoutScrollContent() {
 	e.measureContentBounds()
 
 	// Check if scrollbars are needed
-	if e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth {
+	if !e.scrollbarHidden && (e.scrollMode == ScrollVertical || e.scrollMode == ScrollBoth) {
 		needsVScrollbar = e.contentHeight > contentRect.Height
 	}
 	// TODO: horizontal scrollbar support
@@ -239,6 +239,9 @@ func (e *Element) clampScrollOffset() {
 // needsVerticalScrollbar returns whether a vertical scrollbar should be shown.
 func (e *Element) needsVerticalScrollbar() bool {
 	if e.scrollMode != ScrollVertical && e.scrollMode != ScrollBoth {
+		return false
+	}
+	if e.scrollbarHidden {
 		return false
 	}
 	_, vh := e.ViewportSize()

@@ -332,6 +332,26 @@ tui.New(
 
 The scrollbar is a single column on the right edge of the scrollable area. The track character is `│` (box drawing vertical) and the thumb is `█` (full block). Thumb size is proportional to how much of the content is visible, with a minimum of one row.
 
+### Hiding the Scrollbar
+
+To scroll without drawing a scrollbar, add the `scrollbar-hidden` class or set `hideScrollbar={true}`. The gutter column is reclaimed too, so content uses the full container width.
+
+```gsx
+<div class="overflow-y-scroll scrollbar-hidden" height={15}>
+    // scrolls, but the scrollbar column is reclaimed for content
+</div>
+```
+
+```go
+tui.New(
+    tui.WithScrollable(tui.ScrollVertical),
+    tui.WithHeight(15),
+    tui.WithScrollbarHidden(true),
+)
+```
+
+Keyboard, mouse wheel, and programmatic scroll calls still work. Use this when you render your own scroll indicator, or when the default scrollbar is visually distracting.
+
 ## Scroll Methods
 
 The `*Element` type provides these methods for programmatic scroll control:
