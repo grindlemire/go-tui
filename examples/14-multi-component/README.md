@@ -4,7 +4,7 @@ Shows how to structure multi-file applications with shared `State[T]` passed bet
 
 ## Screenshot
 
-![Multi-Component](../../docs/public/guides/14.png)
+![Multi-Component](../../docs/images/guides/14.png)
 
 ## Run
 

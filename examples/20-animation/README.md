@@ -4,7 +4,7 @@ Demonstrates four terminal animation patterns: frame-cycling spinners, eased pro
 
 ## Screenshot
 
-![Animation](../../docs/public/guides/20.png)
+![Animation](../../docs/images/guides/20.png)
 
 ## Run
 

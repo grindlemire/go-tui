@@ -4,7 +4,7 @@ Demonstrates reactive state with `State[T]`, using `.Get()` in render and `.Set(
 
 ## Screenshot
 
-![State](../../docs/public/guides/06.png)
+![State](../../docs/images/guides/06.png)
 
 ## Run
 

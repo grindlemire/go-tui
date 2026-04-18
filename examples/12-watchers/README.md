@@ -4,7 +4,7 @@ Shows background operations through the `WatcherProvider` interface: interval ti
 
 ## Screenshot
 
-![Watchers](../../docs/public/guides/12.png)
+![Watchers](../../docs/images/guides/12.png)
 
 ## Run
 

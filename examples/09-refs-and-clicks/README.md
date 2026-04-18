@@ -4,7 +4,7 @@ Demonstrates element references (`Ref`, `RefList`, `RefMap[K]`) for binding to r
 
 ## Screenshot
 
-![Refs and Clicks](../../docs/public/guides/09.png)
+![Refs and Clicks](../../docs/images/guides/09.png)
 
 ## Run
 

@@ -4,7 +4,7 @@ Showcases the built-in HTML-like elements (`<div>`, `<span>`, `<button>`, `<inpu
 
 ## Screenshot
 
-![Elements](../../docs/public/guides/05.png)
+![Elements](../../docs/images/guides/05.png)
 
 ## Run
 

@@ -4,7 +4,7 @@ Demonstrates inline rendering where the UI occupies a fixed number of rows at th
 
 ## Screenshot
 
-![Inline Mode](../../docs/public/guides/15.png)
+![Inline Mode](../../docs/images/guides/15.png)
 
 ## Run
 

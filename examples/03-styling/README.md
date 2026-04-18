@@ -4,7 +4,7 @@ Shows the Tailwind-inspired class system for colors, text decorations, borders, 
 
 ## Screenshot
 
-![Styling](../../docs/public/guides/03.png)
+![Styling](../../docs/images/guides/03.png)
 
 ## Run
 

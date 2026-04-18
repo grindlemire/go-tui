@@ -4,7 +4,7 @@ Shows `StreamAbove()` for streaming text character-by-character into the history
 
 ## Screenshot
 
-![Inline Streaming](../../docs/public/guides/17.png)
+![Inline Streaming](../../docs/images/guides/17.png)
 
 ## Run
 

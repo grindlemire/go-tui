@@ -4,7 +4,7 @@ Demonstrates `.gsx` file structure including the `templ` keyword, component defi
 
 ## Screenshot
 
-![GSX Syntax](../../docs/public/guides/02.png)
+![GSX Syntax](../../docs/images/guides/02.png)
 
 ## Run
 
