@@ -79,7 +79,11 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			varName := g.generateComponentCallWithRefs(n, "", false, false)
 			if rootVar == "" {
 				rootVar = varName
-				rootIsComponent = true
+				// Struct mounts return *tui.Element directly; function templs
+				// return *XView and need .Root access.
+				if !g.returnsElement(n) {
+					rootIsComponent = true
+				}
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()

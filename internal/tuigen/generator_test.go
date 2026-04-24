@@ -328,6 +328,22 @@ templ (e *empty) Render() {
 				"return nil",
 			},
 		},
+		"method templ with struct mount as root returns element directly": {
+			input: `package x
+
+type app struct{}
+
+templ (a *app) Render() {
+	@Sidebar()
+}`,
+			wantContains: []string{
+				"__tui_0 := app.Mount(a, 0, func() tui.Component {",
+				"return __tui_0\n",
+			},
+			wantNotContains: []string{
+				"__tui_0.Root",
+			},
+		},
 		"method templ with function-component call as root returns .Root": {
 			input: `package x
 
