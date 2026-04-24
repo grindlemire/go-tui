@@ -47,6 +47,7 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 
 	// Track the root element variable name
 	var rootVar string
+	var rootIsComponent bool // Whether root is a function-component call (view struct, needs .Root accessor)
 
 	// Generate body nodes
 	for _, node := range comp.Body {
@@ -78,6 +79,11 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			varName := g.generateComponentCallWithRefs(n, "", false, false)
 			if rootVar == "" {
 				rootVar = varName
+				// Struct mounts return *tui.Element directly; function templs
+				// return *XView and need .Root access.
+				if !g.returnsElement(n) {
+					rootIsComponent = true
+				}
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()
@@ -92,7 +98,11 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 	// Return the root element directly
 	g.writeln("")
 	if rootVar != "" {
-		g.writef("return %s\n", rootVar)
+		if rootIsComponent {
+			g.writef("return %s.Root\n", rootVar)
+		} else {
+			g.writef("return %s\n", rootVar)
+		}
 	} else {
 		g.writeln("return nil")
 	}
