@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.1](https://github.com/grindlemire/go-tui/compare/v0.13.0...v0.13.1) (2026-04-24)
+
+
+### Bug Fixes
+
+* **tuigen:** access .Root when method templ root is a function-component call ([976d3c1](https://github.com/grindlemire/go-tui/commit/976d3c13184856083a250fc872ab995462da3bbc))
+* **tuigen:** access .Root when method templ root is a function-component call ([7a61cda](https://github.com/grindlemire/go-tui/commit/7a61cda34977dcf76f0d3bfe6cfb9a1bdff4e071))
+* **tuigen:** only unwrap .Root for function-templ root calls ([cb713b0](https://github.com/grindlemire/go-tui/commit/cb713b0006dba9d809b4fb946c6ebdaa1dc63627))
+
 ## [0.13.0](https://github.com/grindlemire/go-tui/compare/v0.12.0...v0.13.0) (2026-04-18)
 
 
