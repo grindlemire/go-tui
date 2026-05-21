@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -19,6 +20,9 @@ func TestMain(m *testing.M) {
 	defer os.RemoveAll(tmp)
 
 	testBin = filepath.Join(tmp, "tui")
+	if runtime.GOOS == "windows" {
+		testBin += ".exe"
+	}
 	cmd := exec.Command("go", "build", "-o", testBin, ".")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "build failed: %v\n%s\n", err, out)

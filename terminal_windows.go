@@ -21,8 +21,11 @@ func enableRawMode(fd int) (*rawModeState, error) {
 	}
 
 	raw := mode
-	raw &^= windows.ENABLE_ECHO_INPUT | windows.ENABLE_LINE_INPUT | windows.ENABLE_PROCESSED_INPUT
-	raw |= windows.ENABLE_EXTENDED_FLAGS | windows.ENABLE_WINDOW_INPUT | windows.ENABLE_VIRTUAL_TERMINAL_INPUT
+	// Strip cooked-mode flags plus quick-edit (mouse-text-selection hijacks button
+	// records) and VT input (we read INPUT_RECORDs directly, so we don't want the
+	// console pre-translating keys into escape byte streams).
+	raw &^= windows.ENABLE_ECHO_INPUT | windows.ENABLE_LINE_INPUT | windows.ENABLE_PROCESSED_INPUT | windows.ENABLE_VIRTUAL_TERMINAL_INPUT | windows.ENABLE_QUICK_EDIT_MODE
+	raw |= windows.ENABLE_EXTENDED_FLAGS | windows.ENABLE_WINDOW_INPUT | windows.ENABLE_MOUSE_INPUT
 
 	if err := windows.SetConsoleMode(h, raw); err != nil {
 		return nil, err
