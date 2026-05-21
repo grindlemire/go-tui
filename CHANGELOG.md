@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.14.0](https://github.com/grindlemire/go-tui/compare/v0.13.1...v0.14.0) (2026-05-21)
+
+
+### Features
+
+* **examples:** add 23-event-dump diagnostic for verifying input handling ([c9ecaf5](https://github.com/grindlemire/go-tui/commit/c9ecaf53fdc6a187f97f8635734176813fb7c997))
+
+
+### Bug Fixes
+
+* refine example text ([3826b5a](https://github.com/grindlemire/go-tui/commit/3826b5a043c0ebbc10fa6b93c617984fc93c337a))
+* **test:** append .exe to integration test binary path on Windows ([0af9408](https://github.com/grindlemire/go-tui/commit/0af940859314b46001cb8c5ce5acbe1fecefde42))
+* **windows:** apply code review feedback on reader ([2529945](https://github.com/grindlemire/go-tui/commit/2529945dcb2722cf5d5fc5701d6f7e54390497e4))
+* **windows:** decode console input records directly for keys, mouse, and resize ([389d343](https://github.com/grindlemire/go-tui/commit/389d343e0a5dab7122db403e4a734a69d574b19b))
+* **windows:** rewrite console reader for keys, mouse, and resize ([da4f753](https://github.com/grindlemire/go-tui/commit/da4f7539afd6ee6647352b2ec0b0302f74699a09))
+
 ## [0.13.1](https://github.com/grindlemire/go-tui/compare/v0.13.0...v0.13.1) (2026-04-24)
 
 
