@@ -466,6 +466,9 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 	}
 
 	// Rich text takes its own path (parallel to the plain-text logic below).
+	// Note: e.truncate and per-element vertical auto-scroll are not yet applied
+	// to rich text (unlike the plain-text path); rich text relies on a
+	// container's clipping/scrolling instead.
 	if len(e.richText) > 0 {
 		ts := textStyle
 		if bg != nil && !bg.Bg.IsDefault() {
@@ -603,6 +606,7 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 // already merged), and clip bounds the drawable region. Cells outside clip are
 // skipped but still advance x (so horizontal scroll offsets line up).
 func drawSpanLines(buf *Buffer, lines [][]TextSpan, originX, originY, contentWidth int, align TextAlign, base Style, clip Rect) {
+nextLine:
 	for li, line := range lines {
 		y := originY + li
 		if y < clip.Y || y >= clip.Bottom() {
@@ -620,12 +624,15 @@ func drawSpanLines(buf *Buffer, lines [][]TextSpan, originX, originY, contentWid
 		for _, span := range line {
 			st := mergeSpanStyle(base, span.Style)
 			for _, r := range span.Text {
+				// Reached the right clip edge: clip this line and move to the
+				// next one (matching the plain-text paths' per-line break),
+				// rather than abandoning all remaining lines.
 				if x >= clip.Right() {
-					return
+					continue nextLine
 				}
 				w := RuneWidth(r)
 				if w == 2 && x+1 >= clip.Right() {
-					return
+					continue nextLine
 				}
 				if x >= clip.X {
 					style := st

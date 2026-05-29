@@ -80,7 +80,9 @@ func wrapParagraph(text string, maxWidth int) []string {
 	return lines
 }
 
-// styledRune is one rune carrying the style of its source span.
+// styledRune is one rune carrying the style of its source span. It deliberately
+// does NOT carry TextSpan.Link: links are inert in this layer, so wrapping drops
+// them. When OSC 8 support lands, styledRune (and emit) must thread Link through.
 type styledRune struct {
 	r  rune
 	st Style

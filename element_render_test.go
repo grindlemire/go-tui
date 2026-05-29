@@ -41,6 +41,39 @@ func TestRichText_BoldSurvivesWrap(t *testing.T) {
 	}
 }
 
+func TestRichText_ClippedLinesBelowAnOverflowingLineStillRender(t *testing.T) {
+	// Regression: drawSpanLines must clip an over-wide line and continue to the
+	// next line, not abandon all remaining lines. Parent is overflow-hidden and
+	// narrower (width 3) than the child (width 10), so each wrapped line is wider
+	// than the clip. Line 0 must clip at 3 cols AND line 1 must still render.
+	buf := NewBuffer(12, 6)
+	child := New(
+		WithWidth(10),
+		WithFlexShrink(0), // keep the child wider than the clip
+		WithRichText(TextSpan{Text: "aaaaa bbbbb"}), // wraps to "aaaaa" / "bbbbb" at width 10
+	)
+	parent := New(
+		WithSize(3, 4),
+		WithOverflow(OverflowHidden),
+	)
+	parent.AddChild(child)
+	parent.Calculate(12, 6)
+	RenderTree(buf, parent)
+
+	// Line 0 is clipped to 3 columns.
+	if buf.Cell(0, 0).Rune != 'a' || buf.Cell(2, 0).Rune != 'a' {
+		t.Errorf("line 0 not rendered/clipped as expected: %q%q",
+			buf.Cell(0, 0).Rune, buf.Cell(2, 0).Rune)
+	}
+	if buf.Cell(3, 0).Rune == 'a' {
+		t.Errorf("line 0 leaked past the clip at x=3")
+	}
+	// The regression assertion: line 1 must still render after line 0 overflowed.
+	if buf.Cell(0, 1).Rune != 'b' {
+		t.Errorf("line 1 was dropped after line 0 hit the clip edge: cell(0,1)=%q, want 'b'", buf.Cell(0, 1).Rune)
+	}
+}
+
 func TestRichText_RendersInsideScrollableContainer(t *testing.T) {
 	buf := NewBuffer(20, 5)
 	child := New(
