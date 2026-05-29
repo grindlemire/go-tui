@@ -4,6 +4,32 @@ import (
 	"testing"
 )
 
+func TestIntrinsicSize_RichText(t *testing.T) {
+	e := New(WithRichText(
+		TextSpan{Text: "ab"},
+		TextSpan{Text: "cde", Style: NewStyle().Bold()},
+	))
+	w, h := e.IntrinsicSize()
+	if w != 5 {
+		t.Errorf("intrinsic width = %d, want 5", w)
+	}
+	if h != 1 {
+		t.Errorf("intrinsic height = %d, want 1", h)
+	}
+}
+
+func TestHeightForWidth_RichTextWraps(t *testing.T) {
+	// "aaa bbb ccc" is 11 cells; width 7 forces 2 lines.
+	e := New(WithRichText(
+		TextSpan{Text: "aaa "},
+		TextSpan{Text: "bbb", Style: NewStyle().Bold()},
+		TextSpan{Text: " ccc"},
+	))
+	if got := e.HeightForWidth(7); got != 2 {
+		t.Errorf("HeightForWidth(7) = %d, want 2", got)
+	}
+}
+
 // --- Focus Tests ---
 
 func TestElement_WithOnFocus_ImpliesFocusable(t *testing.T) {

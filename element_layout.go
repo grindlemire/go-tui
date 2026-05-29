@@ -100,6 +100,17 @@ func (e *Element) IntrinsicSize() (width, height int) {
 		return width, height
 	}
 
+	// Rich text content has explicit intrinsic size (single unwrapped line).
+	if len(e.richText) > 0 {
+		width = richTextWidth(e.richText) + e.style.Padding.Horizontal()
+		height = 1 + e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			width += 2
+			height += 2
+		}
+		return width, height
+	}
+
 	// For containers without text, compute from children
 	if len(e.children) == 0 {
 		// Empty container: use explicit dimensions if set, otherwise 0
@@ -206,6 +217,27 @@ func (e *Element) HeightForWidth(width int) int {
 			return h
 		}
 		lines := wrapText(e.text, contentWidth)
+		h := len(lines) + e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			h += 2
+		}
+		return h
+	}
+
+	// Rich text elements with wrapping.
+	if len(e.richText) > 0 && !e.noWrap {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		if contentWidth <= 0 {
+			h := e.style.Padding.Vertical()
+			if e.border != BorderNone {
+				h += 2
+			}
+			return h
+		}
+		lines := wrapSpans(e.richText, contentWidth)
 		h := len(lines) + e.style.Padding.Vertical()
 		if e.border != BorderNone {
 			h += 2
