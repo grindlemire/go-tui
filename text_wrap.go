@@ -79,3 +79,91 @@ func wrapParagraph(text string, maxWidth int) []string {
 	lines = append(lines, buf.String())
 	return lines
 }
+
+// styledWord is one whitespace-delimited token with the style of its source span.
+type styledWord struct {
+	text  string
+	style Style
+}
+
+// wrapSpans wraps styled spans to maxWidth using word boundaries, mirroring
+// wrapParagraph. Each emitted word keeps its source span's style, so a multi-word
+// styled run stays styled across a line break. Adjacent same-style segments on a
+// line are merged. Newlines inside span text start new lines.
+func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
+	if maxWidth < 1 {
+		return [][]TextSpan{{}}
+	}
+
+	// Flatten spans into styled words, treating '\n' as a hard line break.
+	var words []styledWord
+	for _, sp := range spans {
+		for i, para := range strings.Split(sp.Text, "\n") {
+			if i > 0 {
+				words = append(words, styledWord{text: "\n"}) // marker
+			}
+			for _, w := range strings.Fields(para) {
+				words = append(words, styledWord{text: w, style: sp.Style})
+			}
+		}
+	}
+
+	var lines [][]TextSpan
+	var cur []TextSpan
+	lineWidth := 0
+
+	flush := func() {
+		lines = append(lines, cur)
+		cur = nil
+		lineWidth = 0
+	}
+	// appendWord adds a word to cur, merging into the last segment if same style.
+	appendWord := func(w styledWord, leadingSpace bool) {
+		text := w.text
+		if leadingSpace {
+			text = " " + text
+		}
+		if n := len(cur); n > 0 && cur[n-1].Style == w.style {
+			cur[n-1].Text += text
+		} else {
+			cur = append(cur, TextSpan{Text: text, Style: w.style})
+		}
+	}
+
+	for _, w := range words {
+		if w.text == "\n" {
+			flush()
+			continue
+		}
+		ww := stringWidth(w.text)
+		if ww > maxWidth {
+			// Word longer than the line: flush current, then hard-break by rune.
+			if lineWidth > 0 {
+				flush()
+			}
+			for _, r := range w.text {
+				rw := RuneWidth(r)
+				if lineWidth+rw > maxWidth && lineWidth > 0 {
+					flush()
+				}
+				appendWord(styledWord{text: string(r), style: w.style}, false)
+				lineWidth += rw
+			}
+			continue
+		}
+		switch {
+		case lineWidth == 0:
+			appendWord(w, false)
+			lineWidth = ww
+		case lineWidth+1+ww <= maxWidth:
+			appendWord(w, true)
+			lineWidth += 1 + ww
+		default:
+			flush()
+			appendWord(w, false)
+			lineWidth = ww
+		}
+	}
+	flush()
+	return lines
+}

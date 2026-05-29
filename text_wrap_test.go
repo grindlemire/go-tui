@@ -84,3 +84,48 @@ func TestWrapText(t *testing.T) {
 		})
 	}
 }
+
+func TestWrapSpans_KeepsStyleAcrossWrap(t *testing.T) {
+	bold := NewStyle().Bold()
+	spans := []TextSpan{
+		{Text: "aa "},
+		{Text: "bbbb cccc", Style: bold}, // two bold words
+		{Text: " dd"},
+	}
+	// Width 6 forces a break inside the bold run.
+	lines := wrapSpans(spans, 6)
+	if len(lines) < 2 {
+		t.Fatalf("expected multiple lines, got %d: %+v", len(lines), lines)
+	}
+	// Every segment whose text is a bold word must carry bold on every line.
+	for li, line := range lines {
+		for _, seg := range line {
+			if seg.Text == "bbbb" || seg.Text == "cccc" {
+				if seg.Style.Attrs&AttrBold == 0 {
+					t.Errorf("line %d: %q lost bold", li, seg.Text)
+				}
+			}
+		}
+	}
+}
+
+func TestWrapSpans_MergesAdjacentSameStyle(t *testing.T) {
+	// Two plain spans with words that fit on one line should merge.
+	spans := []TextSpan{{Text: "foo "}, {Text: "bar"}}
+	lines := wrapSpans(spans, 40)
+	if len(lines) != 1 {
+		t.Fatalf("want 1 line, got %d", len(lines))
+	}
+	if len(lines[0]) != 1 {
+		t.Errorf("adjacent same-style segments should merge into 1, got %d: %+v", len(lines[0]), lines[0])
+	}
+	if lines[0][0].Text != "foo bar" {
+		t.Errorf("merged text = %q, want \"foo bar\"", lines[0][0].Text)
+	}
+}
+
+func TestWrapSpans_Empty(t *testing.T) {
+	if got := wrapSpans(nil, 10); len(got) != 1 || len(got[0]) != 0 {
+		t.Errorf("empty spans should give one empty line, got %+v", got)
+	}
+}
