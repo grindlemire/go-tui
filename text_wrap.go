@@ -80,36 +80,25 @@ func wrapParagraph(text string, maxWidth int) []string {
 	return lines
 }
 
-// styledWord is one whitespace-delimited token with the style of its source span.
-type styledWord struct {
-	text  string
-	style Style
+// styledRune is one rune carrying the style of its source span.
+type styledRune struct {
+	r  rune
+	st Style
 }
 
 // wrapSpans wraps styled spans to maxWidth using word boundaries, mirroring
-// wrapParagraph. Each emitted word keeps its source span's style, so a multi-word
-// styled run stays styled across a line break. Adjacent same-style segments on a
-// line are merged. Newlines inside span text start new lines.
+// wrapParagraph. Words are delimited by actual whitespace in the concatenated
+// text (a span boundary is NOT a word boundary), so a single word may mix styles
+// (e.g. "a**b**c" is one word "abc"). Each rune keeps its source span's style, so
+// a styled run stays styled across a line break. Adjacent same-style runes on a
+// line are merged into one segment. Newlines start new lines.
 func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 	if maxWidth < 1 {
 		return [][]TextSpan{{}}
 	}
 
-	// Flatten spans into styled words, treating '\n' as a hard line break.
-	var words []styledWord
-	for _, sp := range spans {
-		for i, para := range strings.Split(sp.Text, "\n") {
-			if i > 0 {
-				words = append(words, styledWord{text: "\n"}) // marker
-			}
-			for _, w := range strings.Fields(para) {
-				words = append(words, styledWord{text: w, style: sp.Style})
-			}
-		}
-	}
-
 	var lines [][]TextSpan
-	var cur []TextSpan
+	var cur []TextSpan // current line segments
 	lineWidth := 0
 
 	flush := func() {
@@ -117,53 +106,81 @@ func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 		cur = nil
 		lineWidth = 0
 	}
-	// appendWord adds a word to cur, merging into the last segment if same style.
-	appendWord := func(w styledWord, leadingSpace bool) {
-		text := w.text
-		if leadingSpace {
-			text = " " + text
+	// emit appends styled runes to cur, merging same-style into the last segment.
+	emit := func(rs []styledRune) {
+		for _, sr := range rs {
+			if n := len(cur); n > 0 && cur[n-1].Style == sr.st {
+				cur[n-1].Text += string(sr.r)
+			} else {
+				cur = append(cur, TextSpan{Text: string(sr.r), Style: sr.st})
+			}
 		}
-		if n := len(cur); n > 0 && cur[n-1].Style == w.style {
-			cur[n-1].Text += text
+	}
+	// emitSpace appends a single separator space (default style; it merges to the
+	// element's base style at render time).
+	emitSpace := func() {
+		if n := len(cur); n > 0 && cur[n-1].Style == (Style{}) {
+			cur[n-1].Text += " "
 		} else {
-			cur = append(cur, TextSpan{Text: text, Style: w.style})
+			cur = append(cur, TextSpan{Text: " "})
 		}
 	}
 
-	for _, w := range words {
-		if w.text == "\n" {
-			flush()
-			continue
+	var word []styledRune
+	wordWidth := 0
+	placeWord := func() {
+		if len(word) == 0 {
+			return
 		}
-		ww := stringWidth(w.text)
-		if ww > maxWidth {
+		if wordWidth > maxWidth {
 			// Word longer than the line: flush current, then hard-break by rune.
 			if lineWidth > 0 {
 				flush()
 			}
-			for _, r := range w.text {
-				rw := RuneWidth(r)
+			for _, sr := range word {
+				rw := RuneWidth(sr.r)
 				if lineWidth+rw > maxWidth && lineWidth > 0 {
 					flush()
 				}
-				appendWord(styledWord{text: string(r), style: w.style}, false)
+				emit([]styledRune{sr})
 				lineWidth += rw
 			}
-			continue
+			word = word[:0]
+			wordWidth = 0
+			return
 		}
 		switch {
 		case lineWidth == 0:
-			appendWord(w, false)
-			lineWidth = ww
-		case lineWidth+1+ww <= maxWidth:
-			appendWord(w, true)
-			lineWidth += 1 + ww
+			emit(word)
+			lineWidth = wordWidth
+		case lineWidth+1+wordWidth <= maxWidth:
+			emitSpace()
+			emit(word)
+			lineWidth += 1 + wordWidth
 		default:
 			flush()
-			appendWord(w, false)
-			lineWidth = ww
+			emit(word)
+			lineWidth = wordWidth
+		}
+		word = word[:0]
+		wordWidth = 0
+	}
+
+	for _, sp := range spans {
+		for _, r := range sp.Text {
+			switch r {
+			case '\n':
+				placeWord()
+				flush()
+			case ' ', '\t':
+				placeWord()
+			default:
+				word = append(word, styledRune{r: r, st: sp.Style})
+				wordWidth += RuneWidth(r)
+			}
 		}
 	}
+	placeWord()
 	flush()
 	return lines
 }

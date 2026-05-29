@@ -134,7 +134,7 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 	}
 
 	// 3. Draw text content if present
-	if e.text != "" {
+	if e.text != "" || len(e.richText) > 0 {
 		renderTextContent(buf, e, rc.textStyle, rc.bg)
 	}
 
@@ -437,6 +437,22 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		return
 	}
 
+	// Rich text takes its own path (parallel to the plain-text logic below).
+	if len(e.richText) > 0 {
+		ts := textStyle
+		if bg != nil && !bg.Bg.IsDefault() {
+			ts.Bg = bg.Bg
+		}
+		var spanLines [][]TextSpan
+		if !e.noWrap && contentRect.Width > 0 {
+			spanLines = wrapSpans(e.richText, contentRect.Width)
+		} else {
+			spanLines = [][]TextSpan{e.richText}
+		}
+		drawSpanLines(buf, spanLines, contentRect.X, contentRect.Y, contentRect.Width, e.textAlign, ts, contentRect)
+		return
+	}
+
 	// Compute wrapped lines
 	var lines []string
 	if !e.noWrap && contentRect.Width > 0 {
@@ -549,6 +565,51 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 			}
 		} else {
 			buf.SetStringClipped(x, y, line, ts, contentRect)
+		}
+	}
+}
+
+// drawSpanLines renders pre-wrapped rich-text lines into the buffer.
+// originX/originY is the top-left content cell, contentWidth is the line box used
+// for alignment, base is the element's resolved text style (with background
+// already merged), and clip bounds the drawable region. Cells outside clip are
+// skipped but still advance x (so horizontal scroll offsets line up).
+func drawSpanLines(buf *Buffer, lines [][]TextSpan, originX, originY, contentWidth int, align TextAlign, base Style, clip Rect) {
+	for li, line := range lines {
+		y := originY + li
+		if y < clip.Y || y >= clip.Bottom() {
+			continue
+		}
+		x := originX
+		if lw := spanLineWidth(line); contentWidth > lw {
+			switch align {
+			case TextAlignCenter:
+				x += (contentWidth - lw) / 2
+			case TextAlignRight:
+				x += contentWidth - lw
+			}
+		}
+		for _, span := range line {
+			st := mergeSpanStyle(base, span.Style)
+			for _, r := range span.Text {
+				if x >= clip.Right() {
+					return
+				}
+				w := RuneWidth(r)
+				if w == 2 && x+1 >= clip.Right() {
+					return
+				}
+				if x >= clip.X {
+					style := st
+					if style.Bg.IsDefault() {
+						if cellBg := buf.Cell(x, y).Style.Bg; !cellBg.IsDefault() {
+							style.Bg = cellBg
+						}
+					}
+					buf.SetRune(x, y, r, style)
+				}
+				x += w
+			}
 		}
 	}
 }

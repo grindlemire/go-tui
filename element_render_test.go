@@ -4,6 +4,36 @@ import (
 	"testing"
 )
 
+func TestRenderTree_RichTextStylesPerSegment(t *testing.T) {
+	buf := NewBuffer(20, 3)
+	e := New(
+		WithSize(10, 1),
+		WithRichText(
+			TextSpan{Text: "ab"},
+			TextSpan{Text: "cd", Style: NewStyle().Bold()},
+		),
+	)
+	e.Calculate(20, 3)
+	RenderTree(buf, e)
+
+	// "abcd" laid out left to right.
+	for x, want := range []rune{'a', 'b', 'c', 'd'} {
+		if got := buf.Cell(x, 0).Rune; got != want {
+			t.Errorf("cell(%d,0).Rune = %q, want %q", x, got, want)
+		}
+	}
+	// First two cells plain, last two bold.
+	if buf.Cell(0, 0).Style.Attrs&AttrBold != 0 {
+		t.Errorf("cell(0,0) should not be bold")
+	}
+	if buf.Cell(2, 0).Style.Attrs&AttrBold == 0 {
+		t.Errorf("cell(2,0) should be bold")
+	}
+	if buf.Cell(3, 0).Style.Attrs&AttrBold == 0 {
+		t.Errorf("cell(3,0) should be bold")
+	}
+}
+
 func TestRenderTree_DrawsBackground(t *testing.T) {
 	buf := NewBuffer(20, 10)
 	bgStyle := NewStyle().Background(Blue)
