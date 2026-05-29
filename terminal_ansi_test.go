@@ -1,0 +1,44 @@
+package tui
+
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
+
+func linkChanges(url string) []CellChange {
+	mk := func(x int, r rune) CellChange {
+		c := NewCell(r, NewStyle())
+		c.Link = url
+		return CellChange{X: x, Y: 0, Cell: c}
+	}
+	return []CellChange{mk(0, 'a'), mk(1, 'b')}
+}
+
+func TestFlush_EmitsHyperlinkOnce(t *testing.T) {
+	var out bytes.Buffer
+	caps := Capabilities{Colors: Color16, Hyperlinks: true}
+	term := NewANSITerminalWithCaps(&out, nil, caps)
+	term.Flush(linkChanges("https://example.com"))
+	s := out.String()
+	if strings.Count(s, "\x1b]8;;https://example.com\x1b\\") != 1 {
+		t.Errorf("want exactly one open seq, got: %q", s)
+	}
+	if strings.Count(s, "\x1b]8;;\x1b\\") != 1 {
+		t.Errorf("want exactly one close seq, got: %q", s)
+	}
+	// Open before the text, close after it.
+	if !strings.Contains(s, "\x1b\\ab") || !strings.HasSuffix(s, "\x1b]8;;\x1b\\") {
+		t.Errorf("link run not wrapped correctly: %q", s)
+	}
+}
+
+func TestFlush_NoHyperlinkWhenUnsupported(t *testing.T) {
+	var out bytes.Buffer
+	caps := Capabilities{Colors: Color16, Hyperlinks: false}
+	term := NewANSITerminalWithCaps(&out, nil, caps)
+	term.Flush(linkChanges("https://example.com"))
+	if strings.Contains(out.String(), "]8;;") {
+		t.Errorf("must not emit OSC 8 when unsupported: %q", out.String())
+	}
+}

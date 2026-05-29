@@ -82,6 +82,7 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 
 	t.esc.Reset()
 	lastX, lastY := -1, -1
+	openLink := "" // currently-open OSC 8 hyperlink ("" = none)
 
 	for _, ch := range changes {
 		// Skip continuation cells entirely - they represent the second column
@@ -100,7 +101,25 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 		}
 
 		if needsMove {
+			// A non-contiguous jump ends any open hyperlink run.
+			if t.caps.Hyperlinks && openLink != "" {
+				t.esc.CloseHyperlink()
+				openLink = ""
+			}
 			t.esc.MoveTo(ch.X, ch.Y)
+		}
+
+		// Open/close OSC 8 hyperlinks around contiguous same-link runs.
+		if t.caps.Hyperlinks {
+			if link := ch.Cell.Link; link != openLink {
+				if openLink != "" {
+					t.esc.CloseHyperlink()
+				}
+				if link != "" {
+					t.esc.OpenHyperlink(link)
+				}
+				openLink = link
+			}
 		}
 
 		// Only emit style changes when style differs
@@ -122,6 +141,10 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 			lastX = ch.X + int(ch.Cell.Width) - 1
 		}
 		lastY = ch.Y
+	}
+
+	if t.caps.Hyperlinks && openLink != "" {
+		t.esc.CloseHyperlink()
 	}
 
 	t.out.Write(t.esc.Bytes())
