@@ -107,7 +107,7 @@ func TestMarkdown_RenderList(t *testing.T) {
 	if !strings.Contains(out, "•") {
 		t.Errorf("expected bullet marker • in output:\n%s", out)
 	}
-	_, colAlpha := findCell(buf, 'a') // first 'a' is in "alpha"
+	_, colAlpha := findCell(buf, 'a')  // first 'a' is in "alpha"
 	_, colNested := findCell(buf, 'n') // first 'n' is in "nested"
 	if colNested <= colAlpha {
 		t.Errorf("nested item col %d should exceed top-level col %d", colNested, colAlpha)
