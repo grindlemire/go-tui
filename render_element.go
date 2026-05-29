@@ -38,15 +38,7 @@ func bufferRowToANSI(buf *Buffer, row int, esc *escBuilder, caps Capabilities) s
 
 		// Open/close OSC 8 hyperlinks around contiguous same-link runs.
 		if caps.Hyperlinks {
-			if c.Link != openLink {
-				if openLink != "" {
-					esc.CloseHyperlink()
-				}
-				if c.Link != "" {
-					esc.OpenHyperlink(c.Link)
-				}
-				openLink = c.Link
-			}
+			openLink = linkTransition(esc, openLink, c.Link)
 		}
 
 		// Emit style change if needed.
@@ -69,8 +61,8 @@ func bufferRowToANSI(buf *Buffer, row int, esc *escBuilder, caps Capabilities) s
 	}
 
 	// Close any open hyperlink before resetting style.
-	if caps.Hyperlinks && openLink != "" {
-		esc.CloseHyperlink()
+	if caps.Hyperlinks {
+		linkTransition(esc, openLink, "")
 	}
 
 	// Reset at end so styling doesn't bleed.

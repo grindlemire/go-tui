@@ -102,24 +102,15 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 
 		if needsMove {
 			// A non-contiguous jump ends any open hyperlink run.
-			if t.caps.Hyperlinks && openLink != "" {
-				t.esc.CloseHyperlink()
-				openLink = ""
+			if t.caps.Hyperlinks {
+				openLink = linkTransition(t.esc, openLink, "")
 			}
 			t.esc.MoveTo(ch.X, ch.Y)
 		}
 
 		// Open/close OSC 8 hyperlinks around contiguous same-link runs.
 		if t.caps.Hyperlinks {
-			if link := ch.Cell.Link; link != openLink {
-				if openLink != "" {
-					t.esc.CloseHyperlink()
-				}
-				if link != "" {
-					t.esc.OpenHyperlink(link)
-				}
-				openLink = link
-			}
+			openLink = linkTransition(t.esc, openLink, ch.Cell.Link)
 		}
 
 		// Only emit style changes when style differs
@@ -143,8 +134,8 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 		lastY = ch.Y
 	}
 
-	if t.caps.Hyperlinks && openLink != "" {
-		t.esc.CloseHyperlink()
+	if t.caps.Hyperlinks {
+		linkTransition(t.esc, openLink, "")
 	}
 
 	t.out.Write(t.esc.Bytes())

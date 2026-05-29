@@ -373,3 +373,20 @@ func (e *escBuilder) OpenHyperlink(url string) {
 func (e *escBuilder) CloseHyperlink() {
 	e.buf = append(e.buf, 0x1b, ']', '8', ';', ';', 0x1b, '\\')
 }
+
+// linkTransition moves the open OSC 8 hyperlink from open to next, emitting the
+// close/open sequences as needed, and returns the new open link. Passing
+// next == "" closes any open link. Used by both the diff-based and row-based
+// renderers so they emit identical hyperlink sequences.
+func linkTransition(e *escBuilder, open, next string) string {
+	if next == open {
+		return open
+	}
+	if open != "" {
+		e.CloseHyperlink()
+	}
+	if next != "" {
+		e.OpenHyperlink(next)
+	}
+	return next
+}
