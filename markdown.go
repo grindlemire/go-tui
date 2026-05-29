@@ -109,7 +109,7 @@ func (m *Markdown) renderBlock(b markdown.Block, contentWidth int) *Element {
 	case markdown.KindCodeFence:
 		return m.renderCodeFence(b)
 	case markdown.KindList:
-		return m.renderList(b, 0)
+		return m.renderList(b, 0, contentWidth)
 	case markdown.KindBlockquote:
 		return m.renderBlockquote(b, contentWidth)
 	case markdown.KindTable:
@@ -171,32 +171,54 @@ func (m *Markdown) renderCodeFence(b markdown.Block) *Element {
 }
 
 // renderList renders a list and its items at the given nesting depth.
-func (m *Markdown) renderList(list markdown.Block, depth int) *Element {
+// contentWidth is the width available to the list (0 = auto/unknown).
+func (m *Markdown) renderList(list markdown.Block, depth, contentWidth int) *Element {
 	col := New(WithDirection(Column))
 	for i, item := range list.Children {
 		marker := m.theme.BulletMarker
 		if list.Ordered {
 			marker = fmt.Sprintf("%d. ", i+1)
 		}
-		col.AddChild(m.renderListItem(item, marker, depth))
+		col.AddChild(m.renderListItem(item, marker, depth, contentWidth))
 	}
 	return col
 }
 
 // renderListItem renders one item: an indented "marker + inline text" row,
 // followed by any nested list rendered at depth+1.
-func (m *Markdown) renderListItem(item markdown.Block, marker string, depth int) *Element {
+func (m *Markdown) renderListItem(item markdown.Block, marker string, depth, contentWidth int) *Element {
 	itemCol := New(WithDirection(Column))
 
-	indent := strings.Repeat("  ", depth)
-	row := New(WithDisplay(DisplayFlex), WithDirection(Row))
-	row.AddChild(New(WithText(indent+marker), WithWrap(false)))
-	row.AddChild(New(WithRichText(m.inlineToSpans(item.Inline)...)))
+	markerText := strings.Repeat("  ", depth) + marker
+	spans := m.inlineToSpans(item.Inline)
+
+	rowOpts := []Option{WithDisplay(DisplayFlex), WithDirection(Row)}
+	content := New(WithRichText(spans...))
+	if contentWidth > 0 {
+		// Constrain content width so it wraps, and size the row to the wrapped
+		// height: a Row sizes its height from children's intrinsic height, which
+		// is 1 for rich text, so without an explicit height wrapped lines clip.
+		cw := contentWidth - stringWidth(markerText)
+		if cw < 1 {
+			cw = 1
+		}
+		content = New(WithDirection(Column), WithWidth(cw))
+		content.AddChild(New(WithRichText(spans...)))
+		h := content.HeightForWidth(cw)
+		if h < 1 {
+			h = 1
+		}
+		rowOpts = append(rowOpts, WithHeight(h))
+	}
+
+	row := New(rowOpts...)
+	row.AddChild(New(WithText(markerText), WithWrap(false)))
+	row.AddChild(content)
 	itemCol.AddChild(row)
 
 	for _, child := range item.Children {
 		if child.Kind == markdown.KindList {
-			itemCol.AddChild(m.renderList(child, depth+1))
+			itemCol.AddChild(m.renderList(child, depth+1, contentWidth))
 		}
 	}
 	return itemCol
@@ -215,7 +237,13 @@ func (m *Markdown) renderBlockquote(b markdown.Block, contentWidth int) *Element
 		}
 	}
 
-	content := New(WithDirection(Column))
+	// Constrain the content width (when known) so paragraphs wrap to it; this
+	// also makes the measured height below match what actually renders.
+	contentOpts := []Option{WithDirection(Column)}
+	if childWidth > 0 {
+		contentOpts = append(contentOpts, WithWidth(childWidth))
+	}
+	content := New(contentOpts...)
 	for _, child := range b.Children {
 		if el := m.renderBlock(child, childWidth); el != nil {
 			content.AddChild(el)

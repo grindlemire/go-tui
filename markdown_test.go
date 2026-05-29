@@ -229,6 +229,40 @@ func TestMarkdown_FullDocument(t *testing.T) {
 	}
 }
 
+func TestMarkdown_BlockquoteWrapsLongContent(t *testing.T) {
+	long := "the quick brown fox jumps over the lazy dog repeatedly"
+	m := NewMarkdown(WithMarkdownSource("> "+long+"\n"), WithMarkdownWidth(24))
+	root := m.Render(nil)
+
+	buf := NewBuffer(24, 10)
+	root.Render(buf, 24, 10)
+	out := buf.StringTrimmed()
+
+	// Tail of the line must survive (it was clipped before the wrap fix).
+	if !strings.Contains(out, "repeatedly") {
+		t.Fatalf("blockquote content should wrap, not clip; got:\n%s", out)
+	}
+	// Content occupies more than one row, and the bar spans each content row.
+	if buf.Cell(0, 0).Rune != '│' || buf.Cell(0, 1).Rune != '│' {
+		t.Errorf("bar should span wrapped content rows; row0=%q row1=%q",
+			buf.Cell(0, 0).Rune, buf.Cell(0, 1).Rune)
+	}
+}
+
+func TestMarkdown_ListWrapsLongContent(t *testing.T) {
+	long := "the quick brown fox jumps over the lazy dog repeatedly"
+	m := NewMarkdown(WithMarkdownSource("- "+long+"\n"), WithMarkdownWidth(24))
+	root := m.Render(nil)
+
+	buf := NewBuffer(24, 10)
+	root.Render(buf, 24, 10)
+	out := buf.StringTrimmed()
+
+	if !strings.Contains(out, "repeatedly") {
+		t.Fatalf("list content should wrap, not clip; got:\n%s", out)
+	}
+}
+
 // findCell returns the row,col of the first occurrence of r in the buffer.
 func findCell(buf *Buffer, r rune) (int, int) {
 	w, h := buf.Size()
