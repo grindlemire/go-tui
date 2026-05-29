@@ -63,6 +63,7 @@ type Element struct {
 
 	// Text properties
 	text         string
+	richText     []TextSpan // when non-empty, takes precedence over text
 	textStyle    Style
 	textStyleSet bool // true if textStyle was explicitly configured (false = inherit from parent)
 	textAlign    TextAlign

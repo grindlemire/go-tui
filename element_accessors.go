@@ -59,6 +59,7 @@ func (e *Element) Text() string {
 // which correctly accounts for text dimensions, padding, and border.
 func (e *Element) SetText(content string) {
 	e.text = content
+	e.richText = nil
 	e.MarkDirty()
 }
 
