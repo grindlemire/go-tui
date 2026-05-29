@@ -1,6 +1,9 @@
 package tui
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestBufferRowToANSI(t *testing.T) {
 	type tc struct {
@@ -165,5 +168,20 @@ func TestRenderElementToBuffer(t *testing.T) {
 				t.Fatalf("buffer height = %d, want %d", buf.Height(), tt.wantHeight)
 			}
 		})
+	}
+}
+
+func TestBufferRowToANSI_EmitsHyperlink(t *testing.T) {
+	buf := NewBuffer(3, 1)
+	buf.SetRuneLink(0, 0, 'a', NewStyle(), "https://example.com")
+	buf.SetRuneLink(1, 0, 'b', NewStyle(), "https://example.com")
+	esc := newEscBuilder(64)
+	caps := Capabilities{Colors: Color16, Hyperlinks: true}
+	row := bufferRowToANSI(buf, 0, esc, caps)
+	if strings.Count(row, "\x1b]8;;https://example.com\x1b\\") != 1 {
+		t.Errorf("want one OSC 8 open: %q", row)
+	}
+	if !strings.Contains(row, "\x1b]8;;\x1b\\") {
+		t.Errorf("missing OSC 8 close: %q", row)
 	}
 }
