@@ -80,12 +80,11 @@ func wrapParagraph(text string, maxWidth int) []string {
 	return lines
 }
 
-// styledRune is one rune carrying the style of its source span. It deliberately
-// does NOT carry TextSpan.Link: links are inert in this layer, so wrapping drops
-// them. When OSC 8 support lands, styledRune (and emit) must thread Link through.
+// styledRune is one rune carrying the style and link of its source span.
 type styledRune struct {
-	r  rune
-	st Style
+	r    rune
+	st   Style
+	link string
 }
 
 // wrapSpans wraps styled spans to maxWidth using word boundaries, mirroring
@@ -111,10 +110,10 @@ func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 	// emit appends styled runes to cur, merging same-style into the last segment.
 	emit := func(rs []styledRune) {
 		for _, sr := range rs {
-			if n := len(cur); n > 0 && cur[n-1].Style == sr.st {
+			if n := len(cur); n > 0 && cur[n-1].Style == sr.st && cur[n-1].Link == sr.link {
 				cur[n-1].Text += string(sr.r)
 			} else {
-				cur = append(cur, TextSpan{Text: string(sr.r), Style: sr.st})
+				cur = append(cur, TextSpan{Text: string(sr.r), Style: sr.st, Link: sr.link})
 			}
 		}
 	}
@@ -181,7 +180,7 @@ func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 				// the line; only '\n' starts a new line.
 				placeWord()
 			default:
-				word = append(word, styledRune{r: r, st: sp.Style})
+				word = append(word, styledRune{r: r, st: sp.Style, link: sp.Link})
 				wordWidth += RuneWidth(r)
 			}
 		}

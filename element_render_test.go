@@ -991,3 +991,19 @@ func TestRenderTree_TextWrapAutoScroll(t *testing.T) {
 	}
 }
 
+
+func TestRichText_LinkReachesCell(t *testing.T) {
+	buf := NewBuffer(10, 1)
+	e := New(
+		WithSize(6, 1),
+		WithRichText(TextSpan{Text: "ab", Link: "https://example.com"}),
+	)
+	e.Calculate(10, 1)
+	RenderTree(buf, e)
+	if got := buf.Cell(0, 0).Link; got != "https://example.com" {
+		t.Errorf("cell(0,0).Link = %q, want the URL", got)
+	}
+	if got := buf.Cell(1, 0).Link; got != "https://example.com" {
+		t.Errorf("cell(1,0).Link = %q, want the URL", got)
+	}
+}

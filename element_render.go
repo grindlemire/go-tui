@@ -641,7 +641,7 @@ nextLine:
 							style.Bg = cellBg
 						}
 					}
-					buf.SetRune(x, y, r, style)
+					buf.SetRuneLink(x, y, r, style, span.Link)
 				}
 				x += w
 			}

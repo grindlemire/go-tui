@@ -240,3 +240,21 @@ func TestWrapSpans_WideRuneHardBreakDoesNotOverflow(t *testing.T) {
 		}
 	}
 }
+
+func TestWrapSpans_PreservesLinkAndSplitsOnLinkChange(t *testing.T) {
+	// "ab"(link X) + "cd"(link Y), no whitespace = one logical word "abcd" that
+	// must split into two segments at the link boundary, each keeping its link.
+	lines := wrapSpans([]TextSpan{
+		{Text: "ab", Link: "X"},
+		{Text: "cd", Link: "Y"},
+	}, 40)
+	if len(lines) != 1 || len(lines[0]) != 2 {
+		t.Fatalf("want one line of two segments, got %+v", lines)
+	}
+	if lines[0][0].Text != "ab" || lines[0][0].Link != "X" {
+		t.Errorf("seg 0 = %+v, want {ab, X}", lines[0][0])
+	}
+	if lines[0][1].Text != "cd" || lines[0][1].Link != "Y" {
+		t.Errorf("seg 1 = %+v, want {cd, Y}", lines[0][1])
+	}
+}
