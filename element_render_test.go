@@ -4,6 +4,43 @@ import (
 	"testing"
 )
 
+func TestRichText_BoldSurvivesWrap(t *testing.T) {
+	buf := NewBuffer(40, 6)
+	// Paragraph fixed to width 10 so the bold run wraps.
+	para := New(
+		WithWidth(10),
+		WithRichText(
+			TextSpan{Text: "see "},
+			TextSpan{Text: "this bold run", Style: NewStyle().Bold()},
+			TextSpan{Text: " end"},
+		),
+	)
+	para.Calculate(40, 6)
+	RenderTree(buf, para)
+
+	// Row 0 starts "see " (plain) then "this" (bold).
+	if buf.Cell(0, 0).Rune != 's' || buf.Cell(0, 0).Style.Attrs&AttrBold != 0 {
+		t.Errorf("cell(0,0) should be plain 's', got %q attrs=%v", buf.Cell(0, 0).Rune, buf.Cell(0, 0).Style.Attrs)
+	}
+	// "see " is 4 cells; the bold word "this" begins at x=4 on row 0.
+	if buf.Cell(4, 0).Style.Attrs&AttrBold == 0 {
+		t.Errorf("cell(4,0) should be bold (start of bold run)")
+	}
+	// The paragraph must occupy more than one row at width 10.
+	rowsWithText := 0
+	for y := 0; y < 6; y++ {
+		for x := 0; x < 10; x++ {
+			if buf.Cell(x, y).Rune != ' ' {
+				rowsWithText++
+				break
+			}
+		}
+	}
+	if rowsWithText < 2 {
+		t.Errorf("expected the paragraph to wrap to >=2 rows, got %d", rowsWithText)
+	}
+}
+
 func TestRichText_RendersInsideScrollableContainer(t *testing.T) {
 	buf := NewBuffer(20, 5)
 	child := New(
