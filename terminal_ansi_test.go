@@ -42,3 +42,27 @@ func TestFlush_NoHyperlinkWhenUnsupported(t *testing.T) {
 		t.Errorf("must not emit OSC 8 when unsupported: %q", out.String())
 	}
 }
+
+func TestRichTextLink_EndToEnd(t *testing.T) {
+	buf := NewBuffer(12, 1)
+	e := New(
+		WithSize(12, 1),
+		WithRichText(
+			TextSpan{Text: "see "},
+			TextSpan{Text: "site", Link: "https://example.com"},
+		),
+	)
+	e.Calculate(12, 1)
+	RenderTree(buf, e)
+
+	var out bytes.Buffer
+	term := NewANSITerminalWithCaps(&out, nil, Capabilities{Colors: Color16, Hyperlinks: true})
+	term.Flush(buf.Diff())
+	s := out.String()
+	if strings.Count(s, "\x1b]8;;https://example.com\x1b\\") != 1 {
+		t.Errorf("want one hyperlink open around \"site\", got: %q", s)
+	}
+	if strings.Count(s, "\x1b]8;;\x1b\\") != 1 {
+		t.Errorf("want one hyperlink close, got: %q", s)
+	}
+}
