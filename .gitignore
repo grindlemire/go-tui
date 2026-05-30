@@ -48,6 +48,9 @@ docs/dist/
 docs/node_modules/
 docs/plans
 
+# Superpowers specs and plans (kept locally, not tracked)
+docs/superpowers/
+
 # Claude
 .claude/
 
