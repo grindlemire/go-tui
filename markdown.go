@@ -166,16 +166,22 @@ func (m *Markdown) renderCodeFence(b markdown.Block) *Element {
 		WithScrollbarHidden(true),
 		WithFlexGrow(1),
 	)
-	for _, line := range b.Lines {
-		text := line
-		if text == "" {
-			text = " " // keep blank lines from collapsing to height 0
+	var lineSpans [][]TextSpan
+	if m.theme.CodeHighlighter != nil && b.Lang != "" {
+		lineSpans = m.theme.CodeHighlighter.Highlight(b.Lang, strings.Join(b.Lines, "\n"))
+	}
+	for i, line := range b.Lines {
+		child := New(WithWrap(false), WithTextStyle(m.theme.CodeBlockText))
+		if lineSpans != nil && i < len(lineSpans) && len(lineSpans[i]) > 0 {
+			child.Apply(WithRichText(lineSpans[i]...))
+		} else {
+			text := line
+			if text == "" {
+				text = " " // keep blank lines from collapsing to height 0
+			}
+			child.Apply(WithText(text))
 		}
-		inner.AddChild(New(
-			WithText(text),
-			WithWrap(false),
-			WithTextStyle(m.theme.CodeBlockText),
-		))
+		inner.AddChild(child)
 	}
 
 	height := len(b.Lines)
