@@ -433,25 +433,27 @@ func parseStructFields(structCode string) []StructField {
 	return fields
 }
 
+func getCoreType(fieldType string) string {
+	t := strings.TrimPrefix(fieldType, "*")
+	if idx := strings.Index(t, "."); idx != -1 {
+		prefix := t[:idx]
+		if !strings.ContainsAny(prefix, "[]{}()*") {
+			t = t[idx+1:]
+		}
+	}
+	if idx := strings.Index(t, "["); idx != -1 {
+		t = t[:idx]
+	}
+	return t
+}
+
 // isInternalStateType returns true if the type is an internal state type
 // that should NOT be updated via UpdateProps.
 func isInternalStateType(fieldType string) bool {
-	// These types are internal state that should be preserved across re-renders
-	internalTypes := []string{
-		"*tui.Ref",
-		"*tui.RefList",
-		"*tui.RefMap",
-		"*tui.State",
-		"tui.Ref",
-		"tui.RefList",
-		"tui.RefMap",
-		"tui.State",
-	}
-
-	for _, t := range internalTypes {
-		if strings.HasPrefix(fieldType, t) {
-			return true
-		}
+	core := getCoreType(fieldType)
+	switch core {
+	case "Ref", "RefList", "RefMap", "State":
+		return true
 	}
 
 	// Channels and functions are runtime state, not props.
@@ -572,15 +574,10 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 // isAppBindableType returns true if the field type has a BindApp method
 // (i.e., *tui.State[...] or *tui.Events[...]).
 func isAppBindableType(fieldType string) bool {
-	bindableTypes := []string{
-		"*tui.State[",
-		"*tui.Events[",
-		"*tui.TextArea",
-	}
-	for _, t := range bindableTypes {
-		if strings.HasPrefix(fieldType, t) {
-			return true
-		}
+	core := getCoreType(fieldType)
+	switch core {
+	case "State", "Events", "TextArea":
+		return true
 	}
 	return false
 }
@@ -725,7 +722,7 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 
 	var unbindFields []StructField
 	for _, f := range fields {
-		if strings.HasPrefix(f.Type, "*tui.Events[") {
+		if getCoreType(f.Type) == "Events" {
 			unbindFields = append(unbindFields, f)
 		}
 	}
