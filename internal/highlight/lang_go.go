@@ -89,7 +89,7 @@ func lexGo(code string) []Token {
 			case unicode.IsUpper(rs[i]):
 				kind = KindType
 			}
-			expectName = word == "func" || word == "type"
+			expectName = (word == "func" || word == "type") && nextNonSpaceIsIdent(rs, j)
 			toks = append(toks, Token{kind, word})
 			i = j
 		case isOperator(r):

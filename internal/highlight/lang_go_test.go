@@ -50,6 +50,17 @@ func TestLexGo(t *testing.T) {
 			code: `nil`,
 			want: [][]Token{{{KindLiteral, "nil"}}},
 		},
+		"method receiver is not a type": {
+			code: `func (r *T) M()`,
+			want: [][]Token{{
+				{KindKeyword, "func"}, {KindPlain, " "},
+				{KindOperator, "("},
+				{KindPlain, "r"}, {KindPlain, " "},
+				{KindOperator, "*"},
+				{KindType, "T"}, {KindOperator, ")"}, {KindPlain, " "},
+				{KindType, "M"}, {KindOperator, "("}, {KindOperator, ")"},
+			}},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

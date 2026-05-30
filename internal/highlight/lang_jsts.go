@@ -95,7 +95,7 @@ func lexJS(code string) []Token {
 			case unicode.IsUpper(rs[i]):
 				kind = KindType
 			}
-			expectName = word == "function" || word == "class" || word == "new"
+			expectName = (word == "function" || word == "class" || word == "new") && nextNonSpaceIsIdent(rs, j)
 			toks = append(toks, Token{kind, word})
 			i = j
 		case isOperator(r):

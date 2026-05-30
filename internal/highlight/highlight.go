@@ -171,6 +171,20 @@ func nextNonSpaceIs(rs []rune, i int, c rune) bool {
 	return false
 }
 
+// nextNonSpaceIsIdent reports whether the next non-space, non-tab rune at or
+// after i begins an identifier. Used to arm the "name after func/type" type
+// heuristic only when a name actually follows (not '(' or '{').
+func nextNonSpaceIsIdent(rs []rune, i int) bool {
+	for i < len(rs) {
+		if rs[i] == ' ' || rs[i] == '\t' {
+			i++
+			continue
+		}
+		return isIdentStart(rs[i])
+	}
+	return false
+}
+
 const operatorRunes = "{}()[]<>+-*/%=&|^~!?:;,."
 
 func isOperator(r rune) bool { return strings.ContainsRune(operatorRunes, r) }
