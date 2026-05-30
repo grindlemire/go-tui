@@ -59,6 +59,19 @@ func TestParseInline(t *testing.T) {
 				{Text: " *b"},
 			},
 		},
+		"single star inside bold stays literal": {
+			in: "**bold *text**",
+			want: []Inline{
+				{Text: "bold *text", Bold: true},
+			},
+		},
+		"closing double does not leak italic past it": {
+			in: "**bold *text** more",
+			want: []Inline{
+				{Text: "bold *text", Bold: true},
+				{Text: " more"},
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

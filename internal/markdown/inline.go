@@ -98,6 +98,13 @@ func hasDelimCloser(rs []rune, start int, r rune, double bool) bool {
 			}
 			continue
 		}
+		// Single-rune closer: a doubled run (e.g. "**") is not a single
+		// closer, and neither of its two characters may serve as one. Skip
+		// both so a closing "**" can't be mistaken for an italic closer.
+		if j+1 < len(rs) && rs[j+1] == r {
+			j++
+			continue
+		}
 		return true
 	}
 	return false
