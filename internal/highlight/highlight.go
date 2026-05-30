@@ -46,6 +46,8 @@ func lexerFor(lang string) func(string) []Token {
 	switch normalizeLang(lang) {
 	case "go":
 		return lexGo
+	case "json":
+		return lexJSON
 	}
 	return nil
 }
