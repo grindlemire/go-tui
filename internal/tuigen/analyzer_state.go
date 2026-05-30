@@ -45,6 +45,13 @@ func (a *Analyzer) DetectStateVars(comp *Component) []StateVar {
 		stateParamRegex = regexp.MustCompile(`\*?` + regexp.QuoteMeta(alias) + `\.State\[(.+)\]$`)
 	}
 
+	var stateNewStateRegex *regexp.Regexp
+	if alias == "." {
+		stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*NewState\((.+)\)`)
+	} else {
+		stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*` + regexp.QuoteMeta(alias) + `\.NewState\((.+)\)`)
+	}
+
 	var stateVars []StateVar
 
 	// First, detect state parameters in component signature
@@ -64,23 +71,15 @@ func (a *Analyzer) DetectStateVars(comp *Component) []StateVar {
 	// We need to look for GoCode nodes that contain state declarations
 	for _, node := range comp.Body {
 		if goCode, ok := node.(*GoCode); ok {
-			stateVars = append(stateVars, a.parseStateDeclarations(goCode)...)
+			stateVars = append(stateVars, a.parseStateDeclarations(goCode, stateNewStateRegex)...)
 		}
 	}
 
 	return stateVars
 }
 
-// parseStateDeclarations extracts tui.NewState declarations from Go code.
-func (a *Analyzer) parseStateDeclarations(code *GoCode) []StateVar {
-	alias := a.getTUIAlias()
-	var stateNewStateRegex *regexp.Regexp
-	if alias == "." {
-		stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*NewState\((.+)\)`)
-	} else {
-		stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*` + regexp.QuoteMeta(alias) + `\.NewState\((.+)\)`)
-	}
-
+// parseStateDeclarations extracts tui.NewState declarations from Go code using the pre-compiled regex.
+func (a *Analyzer) parseStateDeclarations(code *GoCode, stateNewStateRegex *regexp.Regexp) []StateVar {
 	var stateVars []StateVar
 
 	// Find all matches in the code

@@ -434,6 +434,9 @@ func parseStructFields(structCode string) []StructField {
 	return fields
 }
 
+// isTUIType checks if fieldType belongs to the TUI package and matches one of baseNames.
+// It deliberately strips the '*' prefix (to support both pointer and non-pointer forms)
+// and generic type parameters like '[T]' (to match base generic types against baseNames).
 func (g *Generator) isTUIType(fieldType string, baseNames ...string) bool {
 	t := strings.TrimPrefix(fieldType, "*")
 	if idx := strings.Index(t, "["); idx != -1 {
