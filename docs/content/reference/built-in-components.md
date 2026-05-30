@@ -662,6 +662,112 @@ app.ExitAlternateScreen()
 
 See the [Inline Mode Guide](../guides/15-inline-mode) for the full pattern.
 
+## Markdown
+
+Markdown renders a markdown string into the widget tree. It is a pure content renderer with no scroll state or key handling, so it is wrapped in a scrollable container for long documents. The parsed block tree is cached and re-parsed only when the resolved source string changes.
+
+### Constructor
+
+```go
+func NewMarkdown(opts ...MarkdownOption) *Markdown
+```
+
+### MarkdownOption Functions
+
+| Function | Description |
+|----------|-------------|
+| `WithMarkdownSource(s string)` | Static markdown content. Ignored when a state source is set |
+| `WithMarkdownState(s *State[string])` | Reactive source; takes precedence over the static source and re-renders on change |
+| `WithMarkdownWidth(w int)` | Fixed render width in characters. `0` (the default) fills the width the parent assigns |
+| `WithMarkdownTheme(t MarkdownTheme)` | Override the default styling theme |
+
+### GSX Attributes
+
+All `<markdown>` attributes and their types:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `source` | `string` | Static markdown content (string expression) |
+| `state` | `*State[string]` | Reactive source; re-renders on change. Takes precedence over `source` |
+| `width` | `int` | Fixed render width in characters (`0` fills the parent width) |
+| `theme` | `MarkdownTheme` | Override the default styling |
+
+The tag is self-closing. Content comes from `source` or `state` rather than from children, because the generator cannot tell a literal markdown string from a Go expression that returns one.
+
+### Supported Markdown
+
+| Construct | Notes |
+|-----------|-------|
+| Headings | ATX (`#` through `######`) and single-line setext (`===`, `---`) |
+| Emphasis | Bold, italic, and bold-italic, with `*`/`_` and `**`/`__` markers |
+| Inline code | Backtick spans |
+| Links | Rendered as OSC 8 hyperlinks on capable terminals |
+| Code blocks | Fenced blocks, syntax-highlighted for Go, JSON, Bash, and JS/TS |
+| Tables | Pipe tables drawn as a full grid with inline formatting kept in cells |
+| Lists | Ordered, unordered (`-`, `*`, `+`), and nested |
+| Blockquotes | Including nested quotes and quotes that contain a list |
+
+An emphasis delimiter with no closer stays literal, so `see **docs` and `3 * 4` render as written.
+
+### Width and Wrapping
+
+With `width` at `0` (the default), the component fills the width its parent assigns. Paragraphs and headings wrap to that width, while list and blockquote content renders on one line and clips on overflow. Set an explicit `width` to wrap list and blockquote content as well.
+
+### Theming
+
+`MarkdownTheme` is a flat struct of `Style` fields plus a few extras. `DefaultMarkdownTheme()` returns a glow-inspired theme. Override individual fields and pass the result to `WithMarkdownTheme` or the `theme` attribute.
+
+| Field | Type | Controls |
+|-------|------|----------|
+| `Heading` | `[6]Style` | Per-level heading styles, indexed `0` (h1) through `5` (h6) |
+| `Paragraph` | `Style` | Body text |
+| `Bold`, `Italic`, `CodeSpan`, `Link` | `Style` | Inline runs, layered over the surrounding text |
+| `CodeBlockText` | `Style` | Fenced code block text |
+| `CodeBlockBg` | `Color` | Code block fill (default: no fill) |
+| `CodeBlockBorder` | `BorderStyle` | Box border around code blocks |
+| `CodeHighlighter` | `CodeHighlighter` | Colorizes fenced code; `nil` disables highlighting |
+| `TableHeader` | `Style` | Table header cells |
+| `TableBorder` | `BorderStyle` | Table grid border |
+| `BlockquoteBar` | `rune` | Left bar glyph |
+| `BlockquoteBarStyle` | `Style` | Left bar style |
+| `BlockquoteText` | `Style` | Quoted text |
+| `BulletMarker` | `string` | Unordered-list marker, e.g. `"• "` |
+
+### Syntax Highlighting
+
+Fenced code blocks run through the theme's `CodeHighlighter`. The default is a built-in zero-dependency lexer covering Go, JSON, Bash, and JS/TS. An unrecognized language renders in `CodeBlockText`.
+
+```go
+type CodeHighlighter interface {
+    Highlight(lang, code string) [][]TextSpan
+}
+```
+
+| Function | Description |
+|----------|-------------|
+| `NewHighlighter(p Palette)` | Built-in highlighter using palette `p` |
+| `DefaultPalette()` | Default One Dark color scheme as a `Palette` (a `map[TokenKind]Color`) |
+
+Set `theme.CodeHighlighter = nil` to render code uncolored, pass `NewHighlighter` a custom `Palette` to recolor the built-in lexer, or implement `CodeHighlighter` to plug in another engine such as chroma.
+
+### Interfaces Implemented
+
+| Interface | Purpose |
+|-----------|---------|
+| `Component` | `Render(app *App) *Element` returns the rendered block tree |
+| `AppBinder` | `BindApp()` wires the reactive state source to the app (a no-op for a static source) |
+| `PropsUpdater` | `UpdateProps()` receives fresh source, width, and theme when re-rendered from cache |
+
+### GSX Usage
+
+```gsx
+<div class="overflow-y-scroll scrollbar-hidden grow" ref={s.content} scrollOffset={0, s.scrollY.Get()}>
+    <markdown source={s.doc} width={80} />
+</div>
+```
+
+Markdown holds no scroll position, so the surrounding container provides the ref, the `scrollOffset` binding, and the key handling. See the [Markdown Guide](../guides/24-markdown) for the full scrollable viewer.
+
 ## Cross-References
 
 - [Component Interfaces Reference](interfaces.md) — `Component`, `KeyListener`, `WatcherProvider`, `Focusable`, `AppBinder`

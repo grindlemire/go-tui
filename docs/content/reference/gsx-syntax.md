@@ -203,6 +203,12 @@ These hold text content and support text styling but not flex container attribut
 
 ### Display elements
 
+**`<markdown />`** -- Renders a markdown string into the widget tree. Self-closing. Provide content through `source` (a string expression) or `state` (a `*State[string]` that re-renders on change). Also accepts `width` and `theme`. Owns no scroll or keys, so wrap it in a scrollable container for long documents.
+
+```gsx
+<markdown source={s.doc} width={80} />
+```
+
 **`<progress />`** -- Progress bar. Self-closing. Accepts `value`, `max`, and `width`.
 
 ```gsx
@@ -223,7 +229,7 @@ These hold text content and support text styling but not flex container attribut
 
 ### Self-closing elements
 
-`<input />`, `<textarea />`, `<progress />`, `<hr />`, and `<br />` are self-closing and cannot have children. Writing `<input>children</input>` produces a compile error.
+`<input />`, `<textarea />`, `<markdown />`, `<progress />`, `<hr />`, and `<br />` are self-closing and cannot have children. Writing `<input>children</input>` produces a compile error.
 
 ## Attributes
 
