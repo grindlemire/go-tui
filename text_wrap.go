@@ -26,7 +26,8 @@ func wrapParagraph(text string, maxWidth int) []string {
 		return []string{""}
 	}
 
-	words := strings.Fields(text)
+	// Use strings.Split instead of strings.Fields to preserve consecutive spaces.
+	words := strings.Split(text, " ")
 	if len(words) == 0 {
 		return []string{""}
 	}
