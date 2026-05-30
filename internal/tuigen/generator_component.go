@@ -433,25 +433,47 @@ func parseStructFields(structCode string) []StructField {
 	return fields
 }
 
-// isInternalStateType returns true if the type is an internal state type
-// that should NOT be updated via UpdateProps.
-func isInternalStateType(fieldType string) bool {
-	// These types are internal state that should be preserved across re-renders
-	internalTypes := []string{
-		"*tui.Ref",
-		"*tui.RefList",
-		"*tui.RefMap",
-		"*tui.State",
-		"tui.Ref",
-		"tui.RefList",
-		"tui.RefMap",
-		"tui.State",
+func (g *Generator) isTUIType(fieldType string, baseNames ...string) bool {
+	t := strings.TrimPrefix(fieldType, "*")
+	if idx := strings.Index(t, "["); idx != -1 {
+		t = t[:idx]
 	}
-
-	for _, t := range internalTypes {
-		if strings.HasPrefix(fieldType, t) {
+	idx := strings.Index(t, ".")
+	if idx == -1 {
+		if g.tuiAlias == "." {
+			for _, name := range baseNames {
+				if t == name {
+					return true
+				}
+			}
+		}
+		if g.isTuiPackage {
+			for _, name := range baseNames {
+				if t == name {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	prefix := t[:idx]
+	typeName := t[idx+1:]
+	if prefix != g.tuiAlias {
+		return false
+	}
+	for _, name := range baseNames {
+		if typeName == name {
 			return true
 		}
+	}
+	return false
+}
+
+// isInternalStateType returns true if the type is an internal state type
+// that should NOT be updated via UpdateProps.
+func (g *Generator) isInternalStateType(fieldType string) bool {
+	if g.isTUIType(fieldType, "Ref", "RefList", "RefMap", "State") {
+		return true
 	}
 
 	// Channels and functions are runtime state, not props.
@@ -533,7 +555,7 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Find prop fields (non-internal-state types)
 	var propFields []StructField
 	for _, f := range fields {
-		if !isInternalStateType(f.Type) {
+		if !g.isInternalStateType(f.Type) {
 			propFields = append(propFields, f)
 		}
 	}
@@ -571,18 +593,8 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 
 // isAppBindableType returns true if the field type has a BindApp method
 // (i.e., *tui.State[...] or *tui.Events[...]).
-func isAppBindableType(fieldType string) bool {
-	bindableTypes := []string{
-		"*tui.State[",
-		"*tui.Events[",
-		"*tui.TextArea",
-	}
-	for _, t := range bindableTypes {
-		if strings.HasPrefix(fieldType, t) {
-			return true
-		}
-	}
-	return false
+func (g *Generator) isAppBindableType(fieldType string) bool {
+	return g.isTUIType(fieldType, "State", "Events", "TextArea")
 }
 
 // generateBindApp generates a BindApp method for a method component.
@@ -617,7 +629,7 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// Find fields that need BindApp (known types like State, Events, TextArea)
 	var bindableFields []StructField
 	for _, f := range fields {
-		if isAppBindableType(f.Type) {
+		if g.isAppBindableType(f.Type) {
 			bindableFields = append(bindableFields, f)
 		}
 	}
@@ -725,7 +737,7 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 
 	var unbindFields []StructField
 	for _, f := range fields {
-		if strings.HasPrefix(f.Type, "*tui.Events[") {
+		if g.isTUIType(f.Type, "Events") {
 			unbindFields = append(unbindFields, f)
 		}
 	}
