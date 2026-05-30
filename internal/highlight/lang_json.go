@@ -25,7 +25,12 @@ func lexJSON(code string) []Token {
 			i = j
 		case isDigit(r) || (r == '-' && i+1 < n && isDigit(rs[i+1])):
 			flush()
-			j := scanNumber(rs, i+1) // skip a leading '-' or first digit; rs[i:j] keeps it
+			// Start scanning one rune in (past the leading digit or '-'); the
+			// rs[i:j] slice below still includes that leading char. scanNumber is
+			// shared across languages and intentionally lenient: this is a
+			// colorizer, not a JSON validator, so non-strict numerics (e.g. extra
+			// dots or stray hex digits) still tokenize as a single number.
+			j := scanNumber(rs, i+1)
 			if j <= i {
 				j = i + 1
 			}
