@@ -79,6 +79,7 @@ type App struct {
 	mounts        *mountState
 	dispatchTable *dispatchTable // Key broadcast dispatch table, rebuilt on dirty frames
 	rootComponent Component      // Root struct component (set via SetRoot with Component)
+	postRenderHook func()
 	rootUnbinder  AppUnbinder    // Tracks the current root's AppUnbinder for swap-time teardown. Covers SetRootView where rootComponent is nil.
 
 	// Component watchers (from WatcherProvider components)

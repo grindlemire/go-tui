@@ -122,6 +122,14 @@ func WithMouse() AppOption {
 	}
 }
 
+// WithPostRenderHook sets a callback that runs after every render cycle.
+func WithPostRenderHook(fn func()) AppOption {
+	return func(a *App) error {
+		a.postRenderHook = fn
+		return nil
+	}
+}
+
 // WithoutMouse explicitly disables mouse event reporting.
 // Use this to disable mouse in full screen mode (where it's enabled by default).
 func WithoutMouse() AppOption {

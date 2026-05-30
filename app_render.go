@@ -94,6 +94,9 @@ func (a *App) renderFrame() {
 	} else {
 		Render(a.terminal, a.buffer)
 	}
+	if a.postRenderHook != nil {
+		a.postRenderHook()
+	}
 }
 
 // renderInline handles rendering for inline mode by offsetting Y coordinates.
@@ -160,6 +163,9 @@ func (a *App) RenderFull() {
 	RenderFull(a.terminal, a.buffer)
 
 	a.rebuildDispatchTable()
+	if a.postRenderHook != nil {
+		a.postRenderHook()
+	}
 }
 
 // rerenderComponent re-renders the root component to produce a fresh element tree.

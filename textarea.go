@@ -498,6 +498,13 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 	line := lines[lineIdx]
 
 	if lineIdx == row && t.focused.Get() {
+		// Skip virtual cursor when using hardware cursor (cursorRune == ' ')
+		if t.cursorRune == ' ' {
+			if line == "" {
+				return " "
+			}
+			return line
+		}
 		cursor := string(t.cursorRune)
 		if !t.blink.Get() {
 			cursor = " "
