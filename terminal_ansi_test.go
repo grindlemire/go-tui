@@ -43,6 +43,35 @@ func TestFlush_NoHyperlinkWhenUnsupported(t *testing.T) {
 	}
 }
 
+func TestANSITerminal_AltScroll(t *testing.T) {
+	type tc struct {
+		fn       func(*ANSITerminal)
+		expected string
+	}
+
+	tests := map[string]tc{
+		"enable": {
+			fn:       func(t *ANSITerminal) { t.EnableAltScroll() },
+			expected: "\x1b[?1007h",
+		},
+		"disable": {
+			fn:       func(t *ANSITerminal) { t.DisableAltScroll() },
+			expected: "\x1b[?1007l",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var out bytes.Buffer
+			term := NewANSITerminalWithCaps(&out, nil, Capabilities{Colors: Color16})
+			tt.fn(term)
+			if out.String() != tt.expected {
+				t.Errorf("got %q, want %q", out.String(), tt.expected)
+			}
+		})
+	}
+}
+
 func TestRichTextLink_EndToEnd(t *testing.T) {
 	buf := NewBuffer(12, 1)
 	e := New(

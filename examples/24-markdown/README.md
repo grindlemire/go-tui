@@ -38,11 +38,18 @@ The sample document in `main.go` exercises every supported construct:
 - mouse wheel: scroll
 - `q` / `Esc`: quit
 
-## Clicking links
+## Selecting text and clicking links
 
-Links render as OSC 8 hyperlinks on capable terminals (Ghostty, iTerm2, kitty,
-WezTerm, and others). This example enables mouse reporting for wheel scrolling,
-which means the terminal forwards plain clicks to the app instead of opening the
-link itself. To follow a link while mouse reporting is active, hold the terminal's
-bypass modifier (Shift in most terminals, including Ghostty) and click. A build
-that does not call `tui.WithMouse()` makes links directly clickable.
+This example calls `tui.WithoutMouse()`, so it does not capture the mouse. That
+leaves the terminal's native behavior intact: you can select and copy text, and
+click OSC 8 hyperlinks (rendered on capable terminals such as Ghostty, iTerm2,
+kitty, and WezTerm) to open them, the same as in any other terminal program.
+
+The mouse wheel still scrolls. In full-screen mode with mouse reporting off,
+go-tui enables alternate-scroll (DEC mode 1007), so the terminal translates wheel
+notches into arrow keys, which the keymap scrolls on. The result: native
+selection and clickable links without giving up wheel scrolling.
+
+If you instead call `tui.WithMouse()`, the app captures the mouse for click and
+wheel events, and the terminal no longer does native selection or link opening
+(hold the terminal's bypass modifier, usually Shift, to do so while captured).

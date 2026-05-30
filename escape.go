@@ -190,6 +190,23 @@ func (e *escBuilder) DisableMouse() {
 	e.buf = append(e.buf, '?', '1', '0', '0', '0', 'l')
 }
 
+// EnableAltScroll enables alternate-scroll mode (DEC private mode 1007).
+// While on the alternate screen with mouse reporting disabled, the terminal
+// translates mouse-wheel events into cursor up/down keys. This lets the wheel
+// scroll the app while leaving native text selection and OSC 8 link clicking
+// intact. Terminals gate this on mouse reporting being off, so it is a no-op
+// when mouse mode is active.
+func (e *escBuilder) EnableAltScroll() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '7', 'h')
+}
+
+// DisableAltScroll disables alternate-scroll mode (DEC private mode 1007).
+func (e *escBuilder) DisableAltScroll() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '7', 'l')
+}
+
 // KittyKeyboardPush pushes Kitty keyboard protocol mode onto the terminal's
 // keyboard mode stack. flags=1 enables key disambiguation.
 // Sequence: CSI > flags u

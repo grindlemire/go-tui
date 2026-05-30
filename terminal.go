@@ -79,6 +79,14 @@ type Terminal interface {
 	// Call this before exiting to restore normal terminal behavior.
 	DisableMouse()
 
+	// EnableAltScroll enables alternate-scroll mode so the mouse wheel scrolls
+	// via cursor keys while on the alternate screen with mouse reporting off.
+	// This keeps native text selection and link clicking working.
+	EnableAltScroll()
+
+	// DisableAltScroll disables alternate-scroll mode.
+	DisableAltScroll()
+
 	// NegotiateKittyKeyboard attempts to enable the Kitty keyboard protocol
 	// using push/pop stack semantics. Each implementation uses its own stored
 	// input fd to read the terminal's response. Returns true if the protocol

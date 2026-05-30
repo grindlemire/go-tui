@@ -91,7 +91,11 @@ const sampleDoc = "# go-tui Markdown (ATX h1)\n" +
 func main() {
 	app, err := tui.NewApp(
 		tui.WithRootComponent(Viewer()),
-		tui.WithMouse(),
+		// Mouse reporting is left off so the terminal keeps native text
+		// selection and OSC 8 link clicking. Full-screen mode then enables
+		// alternate-scroll, so the mouse wheel still scrolls (the terminal
+		// sends arrow keys, which the keymap handles).
+		tui.WithoutMouse(),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

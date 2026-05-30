@@ -80,6 +80,6 @@ templ (v *viewer) Render() {
 			scrollOffset={0, v.scrollY.Get()}>
 			<markdown source={v.doc} width={v.mdWidth(app)} />
 		</div>
-		<span class="font-dim">j/k or arrows scroll | q/esc quit</span>
+		<span class="font-dim">scroll: wheel/j/k/arrows | select and click links natively | q/esc quit</span>
 	</div>
 }

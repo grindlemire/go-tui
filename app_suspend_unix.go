@@ -15,9 +15,7 @@ func (a *App) suspendTerminal() {
 		a.onSuspend()
 	}
 
-	if a.mouseEnabled {
-		a.terminal.DisableMouse()
-	}
+	a.disableInputReporting()
 
 	a.terminal.ShowCursor()
 
@@ -97,9 +95,7 @@ func (a *App) resumeTerminal() {
 		a.terminal.HideCursor()
 	}
 
-	if a.mouseEnabled {
-		a.terminal.EnableMouse()
-	}
+	a.enableInputReporting()
 
 	a.needsFullRedraw = true
 	a.MarkDirty()

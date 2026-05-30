@@ -28,10 +28,8 @@ func (a *App) Close() error {
 			a.signalCleanup()
 		}
 
-		// Disable mouse event reporting (only if it was enabled)
-		if a.mouseEnabled {
-			a.terminal.DisableMouse()
-		}
+		// Disable mouse event reporting, or alternate-scroll if that was used.
+		a.disableInputReporting()
 
 		// Show cursor (only if it was hidden)
 		if !a.cursorVisible {

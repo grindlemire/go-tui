@@ -231,6 +231,20 @@ func (t *ANSITerminal) DisableMouse() {
 	t.out.Write(t.esc.Bytes())
 }
 
+// EnableAltScroll enables alternate-scroll mode (mouse wheel -> cursor keys).
+func (t *ANSITerminal) EnableAltScroll() {
+	t.esc.Reset()
+	t.esc.EnableAltScroll()
+	t.out.Write(t.esc.Bytes())
+}
+
+// DisableAltScroll disables alternate-scroll mode.
+func (t *ANSITerminal) DisableAltScroll() {
+	t.esc.Reset()
+	t.esc.DisableAltScroll()
+	t.out.Write(t.esc.Bytes())
+}
+
 // EnableKittyKeyboard pushes Kitty keyboard protocol mode onto the terminal's
 // stack without querying. Use this on resume when the terminal is already known
 // to support the protocol.

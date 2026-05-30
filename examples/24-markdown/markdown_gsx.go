@@ -101,7 +101,7 @@ func (v *viewer) Render(app *tui.App) *tui.Element {
 	__tui_2.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_2)
 	__tui_4 := tui.New(
-		tui.WithText("j/k or arrows scroll | q/esc quit"),
+		tui.WithText("scroll: wheel/j/k/arrows | select and click links natively | q/esc quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_4)

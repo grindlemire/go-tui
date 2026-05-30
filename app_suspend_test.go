@@ -59,6 +59,16 @@ func (r *recordingTerminal) EnableMouse() {
 	r.MockTerminal.EnableMouse()
 }
 
+func (r *recordingTerminal) EnableAltScroll() {
+	r.calls = append(r.calls, "EnableAltScroll")
+	r.MockTerminal.EnableAltScroll()
+}
+
+func (r *recordingTerminal) DisableAltScroll() {
+	r.calls = append(r.calls, "DisableAltScroll")
+	r.MockTerminal.DisableAltScroll()
+}
+
 func (r *recordingTerminal) EnableKittyKeyboard() {
 	r.calls = append(r.calls, "EnableKittyKeyboard")
 	r.MockTerminal.EnableKittyKeyboard()
@@ -117,6 +127,46 @@ func TestSuspendSequence_FullScreen(t *testing.T) {
 			t.Errorf("call[%d] = %q, want %q", i, term.calls[i], call)
 		}
 	}
+}
+
+func TestSuspendResume_FullScreenNoMouse(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+	term.inRawMode = true
+	term.inAltScreen = true
+	term.cursorHidden = true
+
+	app := &App{
+		terminal:     term,
+		mouseEnabled: false,
+		stopCh:       make(chan struct{}),
+		buffer:       NewBuffer(80, 24),
+	}
+
+	app.suspendTerminal()
+	if !containsCall(term.calls, "DisableAltScroll") {
+		t.Errorf("suspend did not disable alt-scroll: %v", term.calls)
+	}
+	if containsCall(term.calls, "DisableMouse") {
+		t.Errorf("suspend should not touch mouse when mouse is off: %v", term.calls)
+	}
+
+	term.calls = nil
+	app.resumeTerminal()
+	if !containsCall(term.calls, "EnableAltScroll") {
+		t.Errorf("resume did not enable alt-scroll: %v", term.calls)
+	}
+	if containsCall(term.calls, "EnableMouse") {
+		t.Errorf("resume should not enable mouse when mouse is off: %v", term.calls)
+	}
+}
+
+func containsCall(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func TestSuspendSequence_InlineMode(t *testing.T) {
@@ -306,12 +356,12 @@ func TestSuspendSequence_DynamicAltScreen(t *testing.T) {
 	term.cursorHidden = true
 
 	app := &App{
-		terminal:          term,
-		inAlternateScreen: true,
-		savedInlineHeight: 5,
+		terminal:            term,
+		inAlternateScreen:   true,
+		savedInlineHeight:   5,
 		savedInlineStartRow: 19,
-		stopCh:            make(chan struct{}),
-		buffer:            NewBuffer(80, 24),
+		stopCh:              make(chan struct{}),
+		buffer:              NewBuffer(80, 24),
 	}
 
 	app.suspendTerminal()

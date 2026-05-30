@@ -181,9 +181,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 	app.startEventMerge()
 
 	// Apply terminal settings based on options
-	if app.mouseEnabled {
-		terminal.EnableMouse()
-	}
+	app.enableInputReporting()
 	if !app.cursorVisible {
 		terminal.HideCursor()
 	}
@@ -193,9 +191,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 		if err := interruptible.EnableInterrupt(); err != nil {
 			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
-			if app.mouseEnabled {
-				terminal.DisableMouse()
-			}
+			app.disableInputReporting()
 			if !app.cursorVisible {
 				terminal.ShowCursor()
 			}
@@ -291,9 +287,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 	app.startEventMerge()
 
 	// Apply terminal settings based on options
-	if app.mouseEnabled {
-		terminal.EnableMouse()
-	}
+	app.enableInputReporting()
 	if !app.cursorVisible {
 		terminal.HideCursor()
 	}
@@ -303,9 +297,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		if err := interruptible.EnableInterrupt(); err != nil {
 			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
-			if app.mouseEnabled {
-				terminal.DisableMouse()
-			}
+			app.disableInputReporting()
 			if !app.cursorVisible {
 				terminal.ShowCursor()
 			}

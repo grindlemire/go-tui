@@ -15,6 +15,7 @@ type MockTerminal struct {
 	inRawMode     bool
 	inAltScreen   bool
 	mouseEnabled  bool
+	altScroll     bool
 	caps          Capabilities
 
 	// Transition counters for testing screen mode switches
@@ -132,6 +133,21 @@ func (m *MockTerminal) EnableMouse() {
 // DisableMouse simulates disabling mouse event reporting.
 func (m *MockTerminal) DisableMouse() {
 	m.mouseEnabled = false
+}
+
+// EnableAltScroll simulates enabling alternate-scroll mode.
+func (m *MockTerminal) EnableAltScroll() {
+	m.altScroll = true
+}
+
+// DisableAltScroll simulates disabling alternate-scroll mode.
+func (m *MockTerminal) DisableAltScroll() {
+	m.altScroll = false
+}
+
+// IsAltScrollEnabled returns whether alternate-scroll mode is enabled.
+func (m *MockTerminal) IsAltScrollEnabled() bool {
+	return m.altScroll
 }
 
 // NegotiateKittyKeyboard is a no-op for the mock terminal.
