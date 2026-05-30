@@ -163,7 +163,7 @@ func (t *TextArea) Render(app *App) *Element {
 		root.AddChild(New(WithText(t.placeholder), WithTextStyle(t.placeholderStyle)))
 	} else {
 		for i := range lines {
-			root.AddChild(New(WithText(t.lineWithCursor(i)), WithTextStyle(t.textStyle)))
+			root.AddChild(New(WithText(t.lineWithCursor(i)), WithTextStyle(t.textStyle), WithWrap(false)))
 		}
 	}
 
@@ -501,6 +501,8 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 		// Skip virtual cursor when using hardware cursor (cursorRune == ' ')
 		if t.cursorRune == ' ' {
 			if line == "" {
+				// Return a space so the cursor cell is occupied, matching
+				// the behavior of all other code paths (line + cursor).
 				return " "
 			}
 			return line
