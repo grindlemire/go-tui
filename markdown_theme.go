@@ -18,6 +18,10 @@ type MarkdownTheme struct {
 	CodeBlockBg     Color       // default => no fill
 	CodeBlockBorder BorderStyle // a real full-box border around the code element
 
+	// CodeHighlighter colorizes fenced code blocks. nil disables highlighting
+	// (code renders in CodeBlockText). DefaultMarkdownTheme sets the built-in.
+	CodeHighlighter CodeHighlighter
+
 	// Tables render as a full grid (outer box, column separators, and a rule under
 	// the header) in the TableBorder style. BorderNone falls back to a plain grid
 	// using rounded characters. TableHeader styles the header cells.
@@ -54,6 +58,7 @@ func DefaultMarkdownTheme() MarkdownTheme {
 		CodeBlockText:   NewStyle().Foreground(BrightWhite),
 		CodeBlockBg:     DefaultColor(),
 		CodeBlockBorder: BorderRounded,
+		CodeHighlighter: NewHighlighter(DefaultPalette()),
 
 		TableHeader: NewStyle().Bold(),
 		TableBorder: BorderRounded,

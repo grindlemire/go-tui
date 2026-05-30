@@ -36,3 +36,14 @@ func TestDefaultMarkdownTheme(t *testing.T) {
 		t.Errorf("BlockquoteBar should have a default glyph")
 	}
 }
+
+func TestDefaultMarkdownThemeHasHighlighter(t *testing.T) {
+	th := DefaultMarkdownTheme()
+	if th.CodeHighlighter == nil {
+		t.Fatal("DefaultMarkdownTheme should set a CodeHighlighter")
+	}
+	lines := th.CodeHighlighter.Highlight("go", "var x = 1")
+	if len(lines) != 1 || len(lines[0]) == 0 {
+		t.Fatalf("expected highlighted spans, got %#v", lines)
+	}
+}
