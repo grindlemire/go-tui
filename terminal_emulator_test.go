@@ -97,7 +97,18 @@ func (e *EmulatorTerminal) ClearToEnd() {
 
 func (e *EmulatorTerminal) Flush(changes []CellChange) {
 	for _, ch := range changes {
-		if ch.X >= 0 && ch.X < e.width && ch.Y >= 0 && ch.Y < e.height {
+		if ch.Y < 0 || ch.Y >= e.height {
+			continue
+		}
+		if ch.EraseToEOL {
+			for x := ch.X; x < e.width; x++ {
+				if x >= 0 {
+					e.screen[ch.Y][x] = ' '
+				}
+			}
+			continue
+		}
+		if ch.X >= 0 && ch.X < e.width {
 			r := ch.Cell.Rune
 			if r == 0 {
 				r = ' '

@@ -15,6 +15,11 @@ type Buffer struct {
 type CellChange struct {
 	X, Y int
 	Cell Cell
+	// EraseToEOL, when true, means "clear from (X, Y) to the end of the row"
+	// instead of writing Cell. The diff emits this when a row's trailing cells
+	// became empty, so terminals leave them blank (and trim them on copy)
+	// rather than recording written spaces.
+	EraseToEOL bool
 }
 
 // NewBuffer creates a new double-buffered grid of the specified dimensions.
@@ -478,11 +483,39 @@ func (b *Buffer) ClearRect(rect Rect) {
 func (b *Buffer) Diff() []CellChange {
 	changes := make([]CellChange, 0, b.width) // Pre-allocate one row
 	for y := 0; y < b.height; y++ {
-		for x := 0; x < b.width; x++ {
+		// Rightmost non-empty cell in the new (back) row. Everything past it is
+		// empty, so a trailing clear can replace per-cell space writes there.
+		lastContent := -1
+		for x := b.width - 1; x >= 0; x-- {
+			c := b.back[y*b.width+x]
+			if !c.IsEmpty() && !c.IsContinuation() {
+				lastContent = x
+				break
+			}
+		}
+
+		// Emit changed cells up to and including the last content cell.
+		for x := 0; x <= lastContent; x++ {
 			idx := y*b.width + x
 			if !b.back[idx].Equal(b.front[idx]) {
 				changes = append(changes, CellChange{X: x, Y: y, Cell: b.back[idx]})
 			}
+		}
+
+		// The trailing region (lastContent+1 .. width-1) is all empty in the new
+		// frame. If any of it changed (the row used to have content there), clear
+		// it with one erase-to-end-of-line instead of writing spaces.
+		tailStart := lastContent + 1
+		tailChanged := false
+		for x := tailStart; x < b.width; x++ {
+			idx := y*b.width + x
+			if !b.back[idx].Equal(b.front[idx]) {
+				tailChanged = true
+				break
+			}
+		}
+		if tailChanged {
+			changes = append(changes, CellChange{X: tailStart, Y: y, EraseToEOL: true})
 		}
 	}
 	return changes

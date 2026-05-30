@@ -85,12 +85,32 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 	openLink := "" // currently-open OSC 8 hyperlink ("" = none)
 
 	for _, ch := range changes {
+		// Erase-to-end-of-line: clear the row's tail with ESC[K. Reset style
+		// first so the erased cells take the default background and stay blank
+		// (terminals trim such cells when copying a selection). Checked before
+		// the continuation guard below, since this change carries a zero Cell
+		// (Width 0) that would otherwise be mistaken for a continuation cell.
+		if ch.EraseToEOL {
+			if t.caps.Hyperlinks {
+				openLink = linkTransition(t.esc, openLink, "")
+			}
+			t.esc.MoveTo(ch.X, ch.Y)
+			if !t.lastStyle.Equal(NewStyle()) {
+				t.esc.ResetStyle()
+				t.lastStyle = NewStyle()
+			}
+			t.esc.EraseToEndOfLine()
+			lastX, lastY = -1, -1
+			continue
+		}
+
 		// Skip continuation cells entirely - they represent the second column
 		// of a wide character, which was already rendered by the primary cell.
 		// Processing them would incorrectly move the cursor backwards.
 		if ch.Cell.IsContinuation() {
 			continue
 		}
+
 		// Optimize cursor movement
 		needsMove := false
 		if ch.Y != lastY {

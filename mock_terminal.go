@@ -57,8 +57,20 @@ func (m *MockTerminal) Size() (width, height int) {
 
 // Flush applies the given cell changes to the mock terminal's buffer.
 func (m *MockTerminal) Flush(changes []CellChange) {
+	blank := NewCell(' ', NewStyle())
 	for _, ch := range changes {
-		if ch.X >= 0 && ch.X < m.width && ch.Y >= 0 && ch.Y < m.height {
+		if ch.Y < 0 || ch.Y >= m.height {
+			continue
+		}
+		if ch.EraseToEOL {
+			for x := ch.X; x < m.width; x++ {
+				if x >= 0 {
+					m.cells[ch.Y*m.width+x] = blank
+				}
+			}
+			continue
+		}
+		if ch.X >= 0 && ch.X < m.width {
 			idx := ch.Y*m.width + ch.X
 			m.cells[idx] = ch.Cell
 		}

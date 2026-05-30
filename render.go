@@ -22,15 +22,25 @@ func Render(term Terminal, buf *Buffer) {
 //   - Recovering from external terminal corruption
 //   - Switching back from alternate screen
 func RenderFull(term Terminal, buf *Buffer) {
-	// Build a list of all cells as changes
+	// Build a list of all cells as changes, skipping trailing empty cells in
+	// each row. term.Clear() blanks the screen first, so unpainted trailing
+	// cells stay blank. Emitting them as spaces would mark them as written and
+	// stop terminals from trimming trailing whitespace on copy.
 	width := buf.Width()
 	height := buf.Height()
 	changes := make([]CellChange, 0, width*height)
 
 	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			cell := buf.Cell(x, y)
-			changes = append(changes, CellChange{X: x, Y: y, Cell: cell})
+		trimEnd := -1
+		for x := width - 1; x >= 0; x-- {
+			c := buf.Cell(x, y)
+			if !c.IsEmpty() && !c.IsContinuation() {
+				trimEnd = x
+				break
+			}
+		}
+		for x := 0; x <= trimEnd; x++ {
+			changes = append(changes, CellChange{X: x, Y: y, Cell: buf.Cell(x, y)})
 		}
 	}
 

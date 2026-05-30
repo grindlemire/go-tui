@@ -64,7 +64,6 @@ func (v *viewer) HandleMouse(me tui.MouseEvent) bool {
 
 func (v *viewer) mdWidth(app *tui.App) int {
 	w, _ := app.Size()
-	w -= 5
 	if w < 10 {
 		w = 10
 	}
@@ -83,12 +82,8 @@ func (v *viewer) Render(app *tui.App) *tui.Element {
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
 		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		tui.WithScrollbarThumbStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
+		tui.WithScrollbarHidden(true),
 		tui.WithFlexGrow(1),
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
 		tui.WithScrollOffset(0, v.scrollY.Get()),
 	)
 	v.content.Set(__tui_2)

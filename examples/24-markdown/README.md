@@ -50,6 +50,11 @@ go-tui enables alternate-scroll (DEC mode 1007), so the terminal translates whee
 notches into arrow keys, which the keymap scrolls on. The result: native
 selection and clickable links without giving up wheel scrolling.
 
+To keep copied text clean, the viewer draws no border, padding, or visible
+scrollbar, so lines sit flush against the edges. go-tui also clears empty space
+to the right of each line with an erase-to-end-of-line rather than writing
+spaces, so the terminal trims trailing whitespace from a copied selection.
+
 If you instead call `tui.WithMouse()`, the app captures the mouse for click and
 wheel events, and the terminal no longer does native selection or link opening
 (hold the terminal's bypass modifier, usually Shift, to do so while captured).

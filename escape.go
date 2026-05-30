@@ -126,6 +126,14 @@ func (e *escBuilder) ClearLine() {
 	e.buf = append(e.buf, '2', 'K')
 }
 
+// EraseToEndOfLine clears from the cursor to the end of the current line
+// (ESC[K). Erased cells take the current background and are left in a blank,
+// unwritten state, so terminals trim them when copying a selection.
+func (e *escBuilder) EraseToEndOfLine() {
+	e.writeCSI()
+	e.buf = append(e.buf, 'K')
+}
+
 // HideCursor makes the cursor invisible.
 func (e *escBuilder) HideCursor() {
 	e.writeCSI()
