@@ -9,6 +9,14 @@ import (
 // DetectEventsVars scans a component for tui.NewEvents declarations.
 // It returns a list of all detected events variables.
 func (a *Analyzer) DetectEventsVars(comp *Component) []EventsVar {
+	alias := a.getTUIAlias()
+	var eventsNewEventsRegex *regexp.Regexp
+	if alias == "." {
+		eventsNewEventsRegex = regexp.MustCompile(`(\w+)\s*:=\s*NewEvents(?:\[.+\])?\([^)]*\)`)
+	} else {
+		eventsNewEventsRegex = regexp.MustCompile(`(\w+)\s*:=\s*` + regexp.QuoteMeta(alias) + `\.NewEvents(?:\[.+\])?\([^)]*\)`)
+	}
+
 	var eventsVars []EventsVar
 	for _, node := range comp.Body {
 		if goCode, ok := node.(*GoCode); ok {
@@ -29,6 +37,14 @@ func (a *Analyzer) DetectEventsVars(comp *Component) []EventsVar {
 // DetectStateVars scans a component for tui.NewState declarations and state parameters.
 // It returns a list of all detected state variables.
 func (a *Analyzer) DetectStateVars(comp *Component) []StateVar {
+	alias := a.getTUIAlias()
+	var stateParamRegex *regexp.Regexp
+	if alias == "." {
+		stateParamRegex = regexp.MustCompile(`\*?State\[(.+)\]$`)
+	} else {
+		stateParamRegex = regexp.MustCompile(`\*?` + regexp.QuoteMeta(alias) + `\.State\[(.+)\]$`)
+	}
+
 	var stateVars []StateVar
 
 	// First, detect state parameters in component signature
@@ -57,6 +73,14 @@ func (a *Analyzer) DetectStateVars(comp *Component) []StateVar {
 
 // parseStateDeclarations extracts tui.NewState declarations from Go code.
 func (a *Analyzer) parseStateDeclarations(code *GoCode) []StateVar {
+	alias := a.getTUIAlias()
+	var stateNewStateRegex *regexp.Regexp
+	if alias == "." {
+		stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*NewState\((.+)\)`)
+	} else {
+		stateNewStateRegex = regexp.MustCompile(`(\w+)\s*:=\s*` + regexp.QuoteMeta(alias) + `\.NewState\((.+)\)`)
+	}
+
 	var stateVars []StateVar
 
 	// Find all matches in the code
