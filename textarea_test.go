@@ -75,7 +75,7 @@ func TestTextArea_HideVirtualCursor(t *testing.T) {
 			lines := ta.wrapText()
 			for i := range lines {
 				rendered := ta.lineWithCursor(i)
-				if len(rendered) != tt.wantLen && rendered != " " {
+				if len(rendered) != tt.wantLen {
 					t.Fatalf("lineWithCursor(%d) = %q (len=%d), want len=%d", i, rendered, len(rendered), tt.wantLen)
 				}
 			}
