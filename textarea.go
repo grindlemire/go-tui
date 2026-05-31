@@ -17,6 +17,7 @@ type TextArea struct {
 	placeholder      string
 	placeholderStyle Style
 	cursorRune       rune
+	hideVirtualCursor bool
 	focusColor       *Color
 	borderGradient   *Gradient
 	focusGradient    *Gradient
@@ -163,7 +164,7 @@ func (t *TextArea) Render(app *App) *Element {
 		root.AddChild(New(WithText(t.placeholder), WithTextStyle(t.placeholderStyle)))
 	} else {
 		for i := range lines {
-			root.AddChild(New(WithText(t.lineWithCursor(i)), WithTextStyle(t.textStyle)))
+			root.AddChild(New(WithText(t.lineWithCursor(i)), WithTextStyle(t.textStyle), WithWrap(false)))
 		}
 	}
 
