@@ -48,3 +48,53 @@ func TestTextArea_MoveRight_UsesRuneLength(t *testing.T) {
 		t.Fatalf("cursorPos = %d, want 2", got)
 	}
 }
+
+func TestTextArea_HideVirtualCursor_ReturnsLineUnchanged(t *testing.T) {
+	ta := NewTextArea(
+		WithTextAreaVirtualCursor(false),
+	)
+	ta.BindApp(testApp)
+	ta.SetText("hello")
+	ta.Focus()
+	ta.cursorPos.Set(3)
+
+	line := ta.lineWithCursor(0)
+	want := "hello"
+	if line != want {
+		t.Fatalf("lineWithCursor(0) = %q, want %q (unchanged)", line, want)
+	}
+}
+
+func TestTextArea_HideVirtualCursor_ReturnsSpaceOnEmptyLine(t *testing.T) {
+	ta := NewTextArea(
+		WithTextAreaVirtualCursor(false),
+	)
+	ta.BindApp(testApp)
+	ta.SetText("")
+	ta.Focus()
+
+	line := ta.lineWithCursor(0)
+	want := " "
+	if line != want {
+		t.Fatalf("lineWithCursor(0) on empty = %q, want %q", line, want)
+	}
+}
+
+func TestTextArea_HideVirtualCursor_LineWidthUnchanged(t *testing.T) {
+	ta := NewTextArea(
+		WithTextAreaVirtualCursor(false),
+	)
+	ta.BindApp(testApp)
+	ta.SetText("hello world")
+	ta.Focus()
+
+	// With virtual cursor on, line would gain an extra character.
+	// With it off, line width should match the wrapped line width.
+	lines := ta.wrapText()
+	for i, line := range lines {
+		rendered := ta.lineWithCursor(i)
+		if rendered != line && rendered != " " {
+			t.Fatalf("lineWithCursor(%d) = %q, want %q (or space for empty)", i, rendered, line)
+		}
+	}
+}
