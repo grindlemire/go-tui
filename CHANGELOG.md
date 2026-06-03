@@ -1,5 +1,75 @@
 # Changelog
 
+## [0.15.0](https://github.com/grindlemire/go-tui/compare/v0.14.0...v0.15.0) (2026-06-03)
+
+
+### Features
+
+* add alternate-scroll mode so the wheel scrolls without mouse capture ([dda7860](https://github.com/grindlemire/go-tui/commit/dda78600501d18aa9bfaeee88737a4ec5f1e0e17))
+* add Buffer.SetRuneLink to attach hyperlink targets ([d7c415e](https://github.com/grindlemire/go-tui/commit/d7c415ed194cd23bd6406739e19c95c52a8a4e9f))
+* add Hyperlinks capability, default on except TERM=dumb ([b5633e1](https://github.com/grindlemire/go-tui/commit/b5633e1cd7878e6f3eadbb77499fa110eb11cb56))
+* add Link field to Cell and include it in Equal/Diff ([61003b5](https://github.com/grindlemire/go-tui/commit/61003b51e50e5f747aa4f08a498c821cf5e4d071))
+* add Markdown component with block tree rendering ([97dd1a4](https://github.com/grindlemire/go-tui/commit/97dd1a45aa8be69f17a7ddb79730630eed7744b6))
+* add markdown rendering support (rich text, OSC 8 links, parser, component, gsx) ([f3cc139](https://github.com/grindlemire/go-tui/commit/f3cc139dd2b11b479f83dec6dcb8af5f9ec2487b))
+* add MarkdownTheme and DefaultMarkdownTheme ([1e46923](https://github.com/grindlemire/go-tui/commit/1e469231a5059fa49afb0a5b1a047bd59308bd9f))
+* add OSC 8 hyperlink escape sequences to escBuilder ([0409c6f](https://github.com/grindlemire/go-tui/commit/0409c6fea3d456fc042970748a16495d1606854a))
+* add pluggable CodeHighlighter with built-in palette ([e1d7080](https://github.com/grindlemire/go-tui/commit/e1d70800c5a192844234ba85af4385ad3789640b))
+* add PostRenderHook and allow invisible virtual cursor ([ac3e9f4](https://github.com/grindlemire/go-tui/commit/ac3e9f428f5863f7b9341be2daee8f61acbaab4c))
+* add PostRenderHook and allow invisible virtual cursor ([bdd0068](https://github.com/grindlemire/go-tui/commit/bdd006874f378cbcaeb07c15defd271a34399147))
+* add TextSpan rich-text type with accessors, clearing, and style helpers ([161339b](https://github.com/grindlemire/go-tui/commit/161339b4ff89533dee042fd0233d4b9e74e98d93))
+* add wrapSpans for style-preserving word wrapping ([dd29b78](https://github.com/grindlemire/go-tui/commit/dd29b783b57431913d4b40f0469921c8e941fc1d))
+* add zero-dependency markdown parser (internal/markdown) ([b7b549f](https://github.com/grindlemire/go-tui/commit/b7b549f427b81080b5a85bec1ff4131e68d18e05))
+* emit OSC 8 hyperlinks for linked cells in Flush ([143c3b8](https://github.com/grindlemire/go-tui/commit/143c3b8604bb25772bbef3364c660ca141845330))
+* emit OSC 8 hyperlinks in bufferRowToANSI ([b7ef736](https://github.com/grindlemire/go-tui/commit/b7ef7365cbdfa7c204be7d21cdf03b75850b426f))
+* extract getCoreType helper and refactor type checking functions ([daa2699](https://github.com/grindlemire/go-tui/commit/daa26993f5f05c5eebcd18dd8dea1822c8059fa3))
+* generalize regex patterns and fix whitespace in analyzer ([7aae716](https://github.com/grindlemire/go-tui/commit/7aae716eb460bd8cd227b20a6b10b21147788500))
+* **highlight:** add Bash lexer ([de4382a](https://github.com/grindlemire/go-tui/commit/de4382a82193a0094f9b7a096a153b15a384daa2))
+* **highlight:** add Go lexer ([a906f6e](https://github.com/grindlemire/go-tui/commit/a906f6ec4e96e509b4143eca4cc20356811c8240))
+* **highlight:** add JS/TS lexer ([5a92b50](https://github.com/grindlemire/go-tui/commit/5a92b50f30812035fbba5a0d246510bb87f476b8))
+* **highlight:** add JSON lexer with key/value distinction ([5086351](https://github.com/grindlemire/go-tui/commit/5086351fcfae314ad94d2dbe293f3ec0dddb18ae))
+* **highlight:** add tokenizer core with language dispatch and fallback ([cfe2bc8](https://github.com/grindlemire/go-tui/commit/cfe2bc881f3b497de0427ab82ad586e598816938))
+* **markdown:** highlight fenced code blocks via the theme highlighter ([d173a0c](https://github.com/grindlemire/go-tui/commit/d173a0ce1513cf32a36ef6655cf419caaea78159))
+* **markdown:** render tables as a full grid ([0ad97c8](https://github.com/grindlemire/go-tui/commit/0ad97c896847421b58ab33270102d2006814afd8))
+* **markdown:** restyle headings/blockquotes, outline tables ([44e9b60](https://github.com/grindlemire/go-tui/commit/44e9b606865fc12a13439a61ee6c3361dfdc8d62))
+* **markdown:** rule between every table row, blank line after headings ([de8c1f0](https://github.com/grindlemire/go-tui/commit/de8c1f07ba044cfdd688650c388a187633bc01d9))
+* **markdown:** scrollable code blocks, heading spacing, h1/h2 italics ([d50dfbb](https://github.com/grindlemire/go-tui/commit/d50dfbb706e4aa81928bf9203a952effb5cf9f80))
+* **markdown:** wire built-in highlighter into the default theme ([c052b58](https://github.com/grindlemire/go-tui/commit/c052b583e7fb7e45c70a8fc193d2d375b77f248b))
+* measure rich text in IntrinsicSize and HeightForWidth ([63ba8eb](https://github.com/grindlemire/go-tui/commit/63ba8eb3ea3cb64765ccfc4dbeb3b2f43cf8a7fb))
+* register &lt;markdown&gt; tag in analyzer and LSP schema ([ba5d647](https://github.com/grindlemire/go-tui/commit/ba5d6476182fe8847a95a4739b9cd975f8190f09))
+* render code fences, lists, blockquotes, tables; fix row layout ([b58341c](https://github.com/grindlemire/go-tui/commit/b58341c03cd850246e473272d02761e325c262fd))
+* render rich text in the clipped/scroll render pass ([c665816](https://github.com/grindlemire/go-tui/commit/c66581663cef5f23811db91e0e5b3f2eaad505b0))
+* render rich text in the normal pass; fix wrapSpans word boundaries ([2331b45](https://github.com/grindlemire/go-tui/commit/2331b4588b222a81718e0b9325646ca7222c0b8e))
+* thread TextSpan.Link through wrapping and rich-text rendering ([d551098](https://github.com/grindlemire/go-tui/commit/d55109880fc07ae3caa5d1aa9f69af7a13fb9ee0))
+* trim trailing whitespace so copied selections stay clean ([d89ae47](https://github.com/grindlemire/go-tui/commit/d89ae47c23bf99b55015cafb63696be5051c7138))
+* **tuigen:** generate tui.NewMarkdown for the &lt;markdown&gt; tag ([651d8e0](https://github.com/grindlemire/go-tui/commit/651d8e06722c9b9ba215e1d41a626858f7cd4dff))
+
+
+### Bug Fixes
+
+* apply WithWrap(false) unconditionally ([be350ba](https://github.com/grindlemire/go-tui/commit/be350ba9037d04feab4160941077467a32dcc8da))
+* apply WithWrap(false) unconditionally, fix textarea.go cleanup ([646a21f](https://github.com/grindlemire/go-tui/commit/646a21fc38872fc245a0ed06782d1ab7051c934e))
+* apply WithWrap(false) unconditionally, table-driven map format ([2de5709](https://github.com/grindlemire/go-tui/commit/2de5709db8e347371b54ef518875f60944ac3151))
+* drawSpanLines clips an over-wide line instead of dropping the rest ([caeefee](https://github.com/grindlemire/go-tui/commit/caeefeed638b7e225e055b92c4b82e18fbc42d1e))
+* end a paragraph when a table starts on the next line ([d1d652d](https://github.com/grindlemire/go-tui/commit/d1d652d9ac4b1fed100f0717f07d07e0e8e68598))
+* gate OSC 8 hyperlinks off for dumb terminals and report them in String() ([781e1cc](https://github.com/grindlemire/go-tui/commit/781e1ccf674ba3a89eab3291dcc64a762d332d49))
+* **highlight:** do not color func receiver or anonymous func params as types ([dbdeb45](https://github.com/grindlemire/go-tui/commit/dbdeb459379b1c92b31fa0cd004a7afa38f1453e))
+* lineWithCursor checks hideVirtualCursor instead of magic cursorRune value ([8801ced](https://github.com/grindlemire/go-tui/commit/8801cedb04ab832d6c8a44d597d7e8480a384d09))
+* **markdown:** keep unmatched emphasis delimiters literal ([248109d](https://github.com/grindlemire/go-tui/commit/248109d7bc62f19cf14d133d732ae6ba098ab687))
+* **markdown:** scroll extent, continuous links; responsive example ([e182aeb](https://github.com/grindlemire/go-tui/commit/e182aebe636a290422a2a2b547d0570aefed5845))
+* **markdown:** stop a closing double-marker from italicizing a stray single marker ([09272c0](https://github.com/grindlemire/go-tui/commit/09272c09962bfb575ee17d4d9a1b29940587baec))
+* preserve consecutive spaces in textarea rendering ([2ebaab6](https://github.com/grindlemire/go-tui/commit/2ebaab677d86e246d8e5b5efdca3ce34ce224b91))
+* preserve consecutive spaces in wrapParagraph ([80a9faf](https://github.com/grindlemire/go-tui/commit/80a9faf34ae06448a2b6ea07b318717babd242c4))
+* restore deleted tests, scope WithWrap to hideVirtualCursor, table-driven format ([a910d60](https://github.com/grindlemire/go-tui/commit/a910d60130146a87d43216e213691f7c99c9d52b))
+* scope WithWrap to hideVirtualCursor, fix test guard ([e1b8e38](https://github.com/grindlemire/go-tui/commit/e1b8e387440dc9ead00a3dee316fb5a3f378b248))
+* treat CR/VT/FF as word separators in wrapSpans ([b229624](https://github.com/grindlemire/go-tui/commit/b229624c2289e12cc259e1a2759cf1b8419e143f))
+* update stale comments from cursorRune check to hideVirtualCursor ([15ccbe2](https://github.com/grindlemire/go-tui/commit/15ccbe267d6b82fdaf379932c0c6b4d443e4b601))
+* wrap blockquote and list content instead of clipping ([fd9854c](https://github.com/grindlemire/go-tui/commit/fd9854c9f5ccfd25f949363f86d7f706a242ceb6))
+
+
+### Performance Improvements
+
+* **highlight:** avoid per-identifier rune slice allocation ([88ff313](https://github.com/grindlemire/go-tui/commit/88ff313fad66e6f426e4357653465f9c8b828277))
+
 ## [0.14.0](https://github.com/grindlemire/go-tui/compare/v0.13.1...v0.14.0) (2026-05-21)
 
 
