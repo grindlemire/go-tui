@@ -10,20 +10,20 @@ import (
 // It implements Component, KeyListener, WatcherProvider, and Focusable interfaces.
 type TextArea struct {
 	// Configuration (set via options, immutable after construction)
-	width            int
-	maxHeight        int
-	border           BorderStyle
-	textStyle        Style
-	placeholder      string
-	placeholderStyle Style
-	cursorRune       rune
+	width             int
+	maxHeight         int
+	border            BorderStyle
+	textStyle         Style
+	placeholder       string
+	placeholderStyle  Style
+	cursorRune        rune
 	hideVirtualCursor bool
-	focusColor       *Color
-	borderGradient   *Gradient
-	focusGradient    *Gradient
-	autoFocus        bool
-	submitKey        Key
-	onSubmit         func(string)
+	focusColor        *Color
+	borderGradient    *Gradient
+	focusGradient     *Gradient
+	autoFocus         bool
+	submitKey         Key
+	onSubmit          func(string)
 
 	// Reactive state
 	text      *State[string]

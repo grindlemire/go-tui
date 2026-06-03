@@ -60,9 +60,9 @@ func TestTextArea_HideVirtualCursor(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"returns line unchanged":            {text: "hello", cursor: 3, wantLen: 5},
-		"returns space on empty line":       {text: "", cursor: 0, wantLen: 1},
-		"line width matches wrapped text":   {text: "hello world", cursor: 5, wantLen: 11},
+		"returns line unchanged":          {text: "hello", cursor: 3, wantLen: 5},
+		"returns space on empty line":     {text: "", cursor: 0, wantLen: 1},
+		"line width matches wrapped text": {text: "hello world", cursor: 5, wantLen: 11},
 	}
 
 	for name, tt := range tests {
