@@ -60,14 +60,14 @@ func TestInlineStartup_DefaultModeIsPreserveVisible(t *testing.T) {
 func TestInlineStartup_DefaultMode_DoesNotClearVisibleViewport(t *testing.T) {
 	app, emu := newInlineTestApp(40, 10, 3)
 
-	for row := 0; row < 10; row++ {
+	for row := range 10 {
 		emu.SetScreenRow(row, fmt.Sprintf("seed-%d", row))
 	}
 
 	// Leave inlineStartupMode unset (zero value). This should match preserve mode.
 	app.applyInlineStartupPolicy(10)
 
-	for row := 0; row < 10; row++ {
+	for row := range 10 {
 		want := fmt.Sprintf("seed-%d", row)
 		if got := emu.ScreenRow(row); got != want {
 			t.Fatalf("row %d = %q, want %q\n%s", row, got, want, emu.DumpState())
@@ -123,13 +123,13 @@ func TestInlineStartup_PreserveVisible_AppendsDrainFromRowZero(t *testing.T) {
 func TestInlineStartup_FreshViewport_ClearsVisibleWithoutScrollbackWipe(t *testing.T) {
 	app, emu := newInlineStartupPolicyApp(40, 10, 3, InlineStartupFreshViewport)
 
-	for row := 0; row < 10; row++ {
+	for row := range 10 {
 		emu.SetScreenRow(row, fmt.Sprintf("seed-%d", row))
 	}
 
 	app.applyInlineStartupPolicy(10)
 
-	for row := 0; row < 10; row++ {
+	for row := range 10 {
 		if got := emu.ScreenRow(row); got != "" {
 			t.Fatalf("row %d = %q, want blank\n%s", row, got, emu.DumpState())
 		}
@@ -146,7 +146,7 @@ func TestInlineStartup_FreshViewport_ClearsVisibleWithoutScrollbackWipe(t *testi
 func TestInlineStartup_SoftReset_PushesViewportIntoScrollback(t *testing.T) {
 	app, emu := newInlineStartupPolicyApp(40, 10, 3, InlineStartupSoftReset)
 
-	for row := 0; row < 10; row++ {
+	for row := range 10 {
 		emu.SetScreenRow(row, fmt.Sprintf("seed-%d", row))
 	}
 
@@ -158,7 +158,7 @@ func TestInlineStartup_SoftReset_PushesViewportIntoScrollback(t *testing.T) {
 	if emu.Scrollback()[0] != "seed-0" {
 		t.Fatalf("first scrollback line = %q, want %q\n%s", emu.Scrollback()[0], "seed-0", emu.DumpState())
 	}
-	for row := 0; row < 10; row++ {
+	for row := range 10 {
 		if got := emu.ScreenRow(row); got != "" {
 			t.Fatalf("row %d = %q, want blank after soft reset\n%s", row, got, emu.DumpState())
 		}
@@ -270,7 +270,7 @@ func TestSetInlineHeight_GrowingWithHistory_ContentStaysVisible(t *testing.T) {
 			// since there are plenty of blank rows to absorb the growth
 			for _, line := range tt.historyLines {
 				found := false
-				for r := 0; r < 24; r++ {
+				for r := range 24 {
 					if emu.ScreenRow(r) == line {
 						found = true
 						break
@@ -328,7 +328,7 @@ func TestSetInlineHeight_GrowAfterPrintAboveln(t *testing.T) {
 	expected := []string{"You: hello", "Bot: hi there", "You: how are you?"}
 	for _, line := range expected {
 		found := false
-		for r := 0; r < 24; r++ {
+		for r := range 24 {
 			if emu.ScreenRow(r) == line {
 				found = true
 				break
@@ -357,7 +357,7 @@ func TestSetInlineHeight_GrowMoreThanHistory(t *testing.T) {
 
 	// Content should remain on screen
 	found := false
-	for r := 0; r < 24; r++ {
+	for r := range 24 {
 		if emu.ScreenRow(r) == "only one line" {
 			found = true
 			break
@@ -375,7 +375,7 @@ func TestSetInlineHeight_GrowExceedsBlankSpace_ContentGoesToScrollback(t *testin
 	app, emu := newInlineTestApp(80, 10, 3)
 
 	// Fill history area completely: 7 rows
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		app.printAboveRaw(fmt.Sprintf("line%d\n", i))
 	}
 	emu.scrollback = nil
@@ -462,7 +462,7 @@ func TestSetInlineHeight_SubmitThenShrink_DoesNotSplitMultilineMessage(t *testin
 	app.SetInlineHeight(21) // history area is only 3 rows
 
 	lines := make([]string, 0, 20)
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		lines = append(lines, fmt.Sprintf("M2-%02d", i))
 	}
 	app.printAboveRaw(strings.Join(lines, "\n") + "\n")
@@ -719,7 +719,7 @@ func TestPrintAboveRaw_TracksVisibleRows(t *testing.T) {
 func TestSetInlineHeight_VisibleRowsCapped(t *testing.T) {
 	app, _ := newInlineTestApp(80, 24, 3)
 
-	for i := 0; i < 30; i++ {
+	for i := range 30 {
 		app.printAboveRaw(fmt.Sprintf("line %d\n", i))
 	}
 
@@ -1104,13 +1104,13 @@ func TestPrintAboveElement_InsertsRenderedRows(t *testing.T) {
 func TestPrintAboveElement_NoopOutsideInlineMode(t *testing.T) {
 	// Full-screen app (inlineHeight == 0).
 	app := &App{
-		terminal:   NewEmulatorTerminal(80, 24),
-		buffer:     NewBuffer(80, 24),
-		focus:      newFocusManager(),
-		reader:     NewMockEventReader(),
+		terminal:     NewEmulatorTerminal(80, 24),
+		buffer:       NewBuffer(80, 24),
+		focus:        newFocusManager(),
+		reader:       NewMockEventReader(),
 		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
+		stopCh:       make(chan struct{}),
 	}
 
 	// Should not panic.
@@ -1209,13 +1209,13 @@ func TestStreamWriter_WriteElement(t *testing.T) {
 func TestStreamWriter_WriteElement_NopMode(t *testing.T) {
 	// Full-screen app — StreamAbove returns nop writer.
 	app := &App{
-		terminal:   NewEmulatorTerminal(80, 24),
-		buffer:     NewBuffer(80, 24),
-		focus:      newFocusManager(),
-		reader:     NewMockEventReader(),
+		terminal:     NewEmulatorTerminal(80, 24),
+		buffer:       NewBuffer(80, 24),
+		focus:        newFocusManager(),
+		reader:       NewMockEventReader(),
 		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
+		stopCh:       make(chan struct{}),
 	}
 
 	w := app.StreamAbove()

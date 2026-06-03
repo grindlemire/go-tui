@@ -48,8 +48,8 @@ func TestGenerateVirtualGo_RefSimple(t *testing.T) {
 				ReturnType: "*element.Element",
 				Body: []tuigen.Node{
 					&tuigen.Element{
-						Tag:     "div",
-						RefExpr: &tuigen.GoExpr{Code: "header", Position: tuigen.Position{Line: 4, Column: 10}},
+						Tag:      "div",
+						RefExpr:  &tuigen.GoExpr{Code: "header", Position: tuigen.Position{Line: 4, Column: 10}},
 						Position: tuigen.Position{Line: 4, Column: 2},
 					},
 				},
@@ -81,8 +81,8 @@ func TestGenerateVirtualGo_RefInLoop(t *testing.T) {
 						Position: tuigen.Position{Line: 4, Column: 2},
 						Body: []tuigen.Node{
 							&tuigen.Element{
-								Tag:     "span",
-								RefExpr: &tuigen.GoExpr{Code: "items", Position: tuigen.Position{Line: 5, Column: 14}},
+								Tag:      "span",
+								RefExpr:  &tuigen.GoExpr{Code: "items", Position: tuigen.Position{Line: 5, Column: 14}},
 								Position: tuigen.Position{Line: 5, Column: 3},
 							},
 						},
@@ -116,9 +116,9 @@ func TestGenerateVirtualGo_RefKeyed(t *testing.T) {
 						Position: tuigen.Position{Line: 4, Column: 2},
 						Body: []tuigen.Node{
 							&tuigen.Element{
-								Tag:     "span",
-								RefExpr: &tuigen.GoExpr{Code: "users", Position: tuigen.Position{Line: 5, Column: 14}},
-								RefKey:  &tuigen.GoExpr{Code: "user.ID", Position: tuigen.Position{Line: 5, Column: 28}},
+								Tag:      "span",
+								RefExpr:  &tuigen.GoExpr{Code: "users", Position: tuigen.Position{Line: 5, Column: 14}},
+								RefKey:   &tuigen.GoExpr{Code: "user.ID", Position: tuigen.Position{Line: 5, Column: 28}},
 								Position: tuigen.Position{Line: 5, Column: 3},
 							},
 						},

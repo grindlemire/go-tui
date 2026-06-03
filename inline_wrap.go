@@ -198,10 +198,7 @@ func wrapInlineStyledRows(text string, width int) []string {
 			continue
 		}
 
-		w := RuneWidth(r)
-		if w < 1 {
-			w = 1
-		}
+		w := max(RuneWidth(r), 1)
 		if w > width {
 			r = '?'
 			w = 1
@@ -247,10 +244,7 @@ func wrapInlineVisualRows(text string, width int) []string {
 			continue
 		}
 
-		w := RuneWidth(r)
-		if w < 1 {
-			w = 1
-		}
+		w := max(RuneWidth(r), 1)
 		if w > width {
 			r = '?'
 			w = 1

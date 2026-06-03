@@ -22,8 +22,8 @@ func GetClassDoc(class string) string {
 
 	// Check parameterized patterns
 	for _, p := range paramPatterns {
-		if strings.HasPrefix(class, p.prefix) {
-			val := strings.TrimPrefix(class, p.prefix)
+		if after, ok := strings.CutPrefix(class, p.prefix); ok {
+			val := after
 			if val != "" {
 				return fmt.Sprintf(p.docFmt, val)
 			}
@@ -118,15 +118,15 @@ var staticClassDocs = map[string]string{
 	"text-right":  "Align text to the right.",
 
 	// Size keywords
-	"w-full":  "Set width to 100%.",
-	"w-auto":  "Set width to auto (size to content).",
-	"h-full":  "Set height to 100%.",
-	"h-auto":  "Set height to auto (size to content).",
-	"w-1/2":   "Set width to 50%.",
-	"w-1/3":   "Set width to 33.3%.",
-	"w-2/3":   "Set width to 66.7%.",
-	"w-1/4":   "Set width to 25%.",
-	"w-3/4":   "Set width to 75%.",
+	"w-full": "Set width to 100%.",
+	"w-auto": "Set width to auto (size to content).",
+	"h-full": "Set height to 100%.",
+	"h-auto": "Set height to auto (size to content).",
+	"w-1/2":  "Set width to 50%.",
+	"w-1/3":  "Set width to 33.3%.",
+	"w-2/3":  "Set width to 66.7%.",
+	"w-1/4":  "Set width to 25%.",
+	"w-3/4":  "Set width to 75%.",
 
 	// Flex grow/shrink keywords
 	"grow":         "Set flex grow factor to 1.",
@@ -156,9 +156,9 @@ var staticClassDocs = map[string]string{
 	"truncate": "Truncate text with ellipsis (\u2026) when it overflows the element width.",
 
 	// Gradients
-	"text-gradient-red-blue":     "Apply a horizontal gradient to text from red to blue.",
-	"bg-gradient-red-blue":        "Apply a horizontal gradient to background from red to blue.",
-	"border-gradient-red-blue":    "Apply a horizontal gradient to border from red to blue.",
+	"text-gradient-red-blue":   "Apply a horizontal gradient to text from red to blue.",
+	"bg-gradient-red-blue":     "Apply a horizontal gradient to background from red to blue.",
+	"border-gradient-red-blue": "Apply a horizontal gradient to border from red to blue.",
 }
 
 // paramPatterns defines parameterized class prefixes and their documentation.

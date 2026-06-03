@@ -140,9 +140,11 @@ func uriToPath(uri string) string {
 
 // Position, Range, and Location are type aliases for the canonical definitions
 // in the provider package, eliminating duplicate type definitions.
-type Position = provider.Position
-type Range = provider.Range
-type Location = provider.Location
+type (
+	Position = provider.Position
+	Range    = provider.Range
+	Location = provider.Location
+)
 
 // PositionToOffset converts a Position to a byte offset in the content.
 func PositionToOffset(content string, pos Position) int {

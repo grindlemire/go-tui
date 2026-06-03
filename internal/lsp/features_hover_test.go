@@ -291,8 +291,7 @@ templ Hello() {
 func TestGetTailwindCompletions(t *testing.T) {
 	type tc struct {
 		prefix    string
-		wantCount int // -1 means we just check > 0
-		wantFirst string
+		wantCount int  // -1 means we just check > 0
 		checkAll  bool // if true, check that all returned items have the prefix
 	}
 

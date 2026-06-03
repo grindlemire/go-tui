@@ -327,10 +327,7 @@ func (h *hoverProvider) hoverForTailwindWord(ctx *CursorContext) (*Hover, error)
 	content := ctx.Document.Content
 
 	// Search backwards for class="
-	searchStart := offset - maxClassAttrSearchDistance
-	if searchStart < 0 {
-		searchStart = 0
-	}
+	searchStart := max(offset-maxClassAttrSearchDistance, 0)
 
 	segment := content[searchStart:offset]
 	classIdx := strings.LastIndex(segment, `class="`)
@@ -424,7 +421,7 @@ func hoverForElement(def *schema.ElementDef) *Hover {
 }
 
 func hoverForAttributeDef(tag string, attr *schema.AttributeDef) *Hover {
-	md := fmt.Sprintf("**%s** (`%s`)\n\n%s", attr.Name, attr.Type, attr.Description)
+	md := fmt.Sprintf("**%s** (`%s`) on `<%s>`\n\n%s", attr.Name, attr.Type, tag, attr.Description)
 	return markdownHover(md)
 }
 

@@ -11,9 +11,9 @@ import (
 
 // stdinReader implements EventReader for a real terminal.
 type stdinReader struct {
-	fd         int    // stdin file descriptor
-	buf        []byte // Read buffer for escape sequences
-	partialBuf []byte // Buffer for incomplete UTF-8 sequences
+	fd         int     // stdin file descriptor
+	buf        []byte  // Read buffer for escape sequences
+	partialBuf []byte  // Buffer for incomplete UTF-8 sequences
 	pending    []Event // Parsed events waiting to be returned
 
 	// Interrupt mechanism for blocking mode
@@ -24,8 +24,10 @@ type stdinReader struct {
 }
 
 // Ensure stdinReader implements InterruptibleReader and PausableReader.
-var _ InterruptibleReader = (*stdinReader)(nil)
-var _ PausableReader = (*stdinReader)(nil)
+var (
+	_ InterruptibleReader = (*stdinReader)(nil)
+	_ PausableReader      = (*stdinReader)(nil)
+)
 
 // NewEventReader creates an EventReader for the given terminal input.
 // The terminal should already be in raw mode.
@@ -195,10 +197,7 @@ func findIncompleteEscapeSequence(data []byte) []byte {
 
 	// Scan backwards to find a potential incomplete escape sequence
 	// Look for ESC (0x1b) in the last ~64 bytes (max reasonable escape sequence length)
-	searchStart := len(data) - 64
-	if searchStart < 0 {
-		searchStart = 0
-	}
+	searchStart := max(len(data)-64, 0)
 
 	for i := len(data) - 1; i >= searchStart; i-- {
 		if data[i] != 0x1b {

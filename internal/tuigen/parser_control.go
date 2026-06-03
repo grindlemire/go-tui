@@ -22,13 +22,14 @@ func (p *Parser) parseFor() *ForLoop {
 	//       or: for i := range items
 
 	var firstVar string
-	if p.current.Type == TokenUnderscore {
+	switch p.current.Type {
+	case TokenUnderscore:
 		firstVar = "_"
 		p.advance()
-	} else if p.current.Type == TokenIdent {
+	case TokenIdent:
 		firstVar = p.current.Literal
 		p.advance()
-	} else {
+	default:
 		p.errors.AddError(p.position(), "expected loop variable")
 		return nil
 	}
@@ -38,13 +39,14 @@ func (p *Parser) parseFor() *ForLoop {
 		p.advance()
 		loop.Index = firstVar
 
-		if p.current.Type == TokenUnderscore {
+		switch p.current.Type {
+		case TokenUnderscore:
 			loop.Value = "_"
 			p.advance()
-		} else if p.current.Type == TokenIdent {
+		case TokenIdent:
 			loop.Value = p.current.Literal
 			p.advance()
-		} else {
+		default:
 			p.errors.AddError(p.position(), "expected second loop variable")
 			return nil
 		}

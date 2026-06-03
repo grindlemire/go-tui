@@ -104,11 +104,7 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 					if isRow {
 						childWidth := preItems[j].baseSize - childStyle.Margin.Horizontal()
 						wrappedH := child.HeightForWidth(childWidth)
-						if wrappedH > childIntrinsicH {
-							cross = wrappedH
-						} else {
-							cross = childIntrinsicH
-						}
+						cross = max(wrappedH, childIntrinsicH)
 						cross += childStyle.Margin.Vertical()
 					} else {
 						cross = childIntrinsicW + childStyle.Margin.Horizontal()
@@ -140,12 +136,12 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 			// by the parent's flex algorithm, only expand (never shrink).
 			// Otherwise (truly auto-sized), set to content size exactly.
 			// NOTE: FlexGrow > 0 is a heuristic for "parent allocated the
-		// cross axis". It can over-size containers when the parent uses
-		// AlignItems: AlignStart (the parent allocates full line height
-		// but doesn't stretch the child). The extra space goes unused
-		// and won't cause incorrect rendering. A more precise check
-		// would require threading the parent's align mode into this pass.
-		flexAllocated := style.FlexGrow > 0
+			// cross axis". It can over-size containers when the parent uses
+			// AlignItems: AlignStart (the parent allocates full line height
+			// but doesn't stretch the child). The extra space goes unused
+			// and won't cause incorrect rendering. A more precise check
+			// would require threading the parent's align mode into this pass.
+			flexAllocated := style.FlexGrow > 0
 			if isRow {
 				needed := totalCross + style.Padding.Vertical()
 				if flexAllocated {

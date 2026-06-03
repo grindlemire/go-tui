@@ -56,11 +56,11 @@ type AlignContent = layout.AlignContent
 
 const (
 	ContentStart        = layout.ContentStart        // Pack lines at start
-	ContentEnd          = layout.ContentEnd           // Pack lines at end
-	ContentCenter       = layout.ContentCenter        // Center lines
-	ContentStretch      = layout.ContentStretch       // Stretch lines to fill
-	ContentSpaceBetween = layout.ContentSpaceBetween  // Even space between lines
-	ContentSpaceAround  = layout.ContentSpaceAround   // Even space around lines
+	ContentEnd          = layout.ContentEnd          // Pack lines at end
+	ContentCenter       = layout.ContentCenter       // Center lines
+	ContentStretch      = layout.ContentStretch      // Stretch lines to fill
+	ContentSpaceBetween = layout.ContentSpaceBetween // Even space between lines
+	ContentSpaceAround  = layout.ContentSpaceAround  // Even space around lines
 )
 
 // Value represents a dimension value (fixed, percent, or auto).

@@ -14,7 +14,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -91,7 +90,6 @@ templ Test() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -164,7 +162,6 @@ templ Test() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -205,7 +202,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -255,7 +251,6 @@ templ Test(items []string) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -381,7 +376,6 @@ templ Test(x int) {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -478,11 +472,9 @@ templ Test(x int) {
 
 func TestParser_ShortBinding(t *testing.T) {
 	type tc struct {
-		name        string
 		input       string
 		wantName    string
 		wantElement string // expected element tag, empty if not element RHS
-		wantExpr    string // expected expression, empty if not expr RHS
 		wantCall    string // expected component call name, empty if not call RHS
 		wantShort   bool   // IsShortForm
 	}
@@ -495,10 +487,10 @@ func TestParser_ShortBinding(t *testing.T) {
 			wantShort:   true,
 		},
 		"short component binding": {
-			input:       "package x\ntempl Test() {\n\tfoo := @MyComponent()\n\t<div></div>\n}",
-			wantName:    "foo",
-			wantCall:    "MyComponent",
-			wantShort:   true,
+			input:     "package x\ntempl Test() {\n\tfoo := @MyComponent()\n\t<div></div>\n}",
+			wantName:  "foo",
+			wantCall:  "MyComponent",
+			wantShort: true,
 		},
 		"var element binding": {
 			input:       "package x\ntempl Test() {\n\tvar label = <span>Hello</span>\n\t<div></div>\n}",
@@ -507,10 +499,10 @@ func TestParser_ShortBinding(t *testing.T) {
 			wantShort:   false,
 		},
 		"var component binding": {
-			input:       "package x\ntempl Test() {\n\tvar foo = @MyComponent()\n\t<div></div>\n}",
-			wantName:    "foo",
-			wantCall:    "MyComponent",
-			wantShort:   false,
+			input:     "package x\ntempl Test() {\n\tvar foo = @MyComponent()\n\t<div></div>\n}",
+			wantName:  "foo",
+			wantCall:  "MyComponent",
+			wantShort: false,
 		},
 	}
 
@@ -708,7 +700,6 @@ templ Counter(count int) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -187,7 +187,7 @@ func TestIntegration_FormLayout(t *testing.T) {
 	form.style.Gap = 1
 
 	// Create 3 form rows
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		row := newTestNode(DefaultStyle())
 		row.style.Height = Fixed(3)
 		row.style.Display = DisplayFlex
@@ -440,7 +440,7 @@ func TestEdgeCase_VeryLargeTree(t *testing.T) {
 	parent.style.Direction = Row
 
 	// Add 100 children
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		child := newTestNode(DefaultStyle())
 		child.style.Width = Fixed(10)
 		child.style.Height = Fixed(100)
@@ -466,7 +466,7 @@ func TestEdgeCase_DeepNesting(t *testing.T) {
 	root.style.Height = Fixed(100)
 
 	current := root
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		child := newTestNode(DefaultStyle())
 		child.style.FlexGrow = 1
 		child.style.Padding = EdgeAll(1)

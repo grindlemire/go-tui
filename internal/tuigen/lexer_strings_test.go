@@ -11,13 +11,13 @@ func TestLexer_Strings(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"simple":        {input: `"hello"`, literal: "hello"},
-		"empty":         {input: `""`, literal: ""},
-		"with spaces":   {input: `"hello world"`, literal: "hello world"},
-		"escape n":      {input: `"hello\nworld"`, literal: "hello\nworld"},
-		"escape t":      {input: `"hello\tworld"`, literal: "hello\tworld"},
-		"escape r":      {input: `"hello\rworld"`, literal: "hello\rworld"},
-		"escape quote":  {input: `"say \"hi\""`, literal: `say "hi"`},
+		"simple":           {input: `"hello"`, literal: "hello"},
+		"empty":            {input: `""`, literal: ""},
+		"with spaces":      {input: `"hello world"`, literal: "hello world"},
+		"escape n":         {input: `"hello\nworld"`, literal: "hello\nworld"},
+		"escape t":         {input: `"hello\tworld"`, literal: "hello\tworld"},
+		"escape r":         {input: `"hello\rworld"`, literal: "hello\rworld"},
+		"escape quote":     {input: `"say \"hi\""`, literal: `say "hi"`},
 		"escape backslash": {input: `"path\\to\\file"`, literal: `path\to\file`},
 	}
 

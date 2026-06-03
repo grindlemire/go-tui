@@ -72,6 +72,9 @@ type Generator struct {
 	// Used to avoid mounting function templs via app.Mount() from method templs —
 	// they should be called directly since they're stateless view functions.
 	functionTempls map[string]bool
+
+	tuiAlias     string
+	isTuiPackage bool
 }
 
 // componentVarEntry tracks a function component call variable for watcher/bind aggregation.
@@ -106,6 +109,18 @@ func (g *Generator) Generate(file *File, sourceFile string) ([]byte, error) {
 	g.sourceFile = sourceFile
 	g.sourceMap = NewSourceMap(sourceFile)
 	g.currentLine = 0
+
+	// Detect go-tui package alias and package name
+	g.tuiAlias = "tui"
+	for _, imp := range file.Imports {
+		if imp.Path == "github.com/grindlemire/go-tui" {
+			if imp.Alias != "" {
+				g.tuiAlias = imp.Alias
+			}
+			break
+		}
+	}
+	g.isTuiPackage = (file.Package == "tui")
 
 	// Generate header
 	g.generateHeader()
@@ -373,7 +388,7 @@ func (g *Generator) write(s string) {
 }
 
 // writef writes a formatted string with indentation and tracks line numbers.
-func (g *Generator) writef(format string, args ...interface{}) {
+func (g *Generator) writef(format string, args ...any) {
 	g.writeIndent()
 	s := fmt.Sprintf(format, args...)
 	g.buf.WriteString(s)

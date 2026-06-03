@@ -214,11 +214,11 @@ func TestIsElementTag(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"div is element":     {tag: "div", want: true},
-		"span is element":    {tag: "span", want: true},
-		"foobar is not":      {tag: "foobar", want: false},
-		"empty is not":       {tag: "", want: false},
-		"MyComp is not":      {tag: "MyComponent", want: false},
+		"div is element":  {tag: "div", want: true},
+		"span is element": {tag: "span", want: true},
+		"foobar is not":   {tag: "foobar", want: false},
+		"empty is not":    {tag: "", want: false},
+		"MyComp is not":   {tag: "MyComponent", want: false},
 	}
 
 	for name, tt := range tests {
@@ -261,13 +261,13 @@ func TestGetKeyword(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"templ keyword":     {name: "templ"},
-		"for keyword":       {name: "for"},
-		"if keyword":        {name: "if"},
-		"else keyword":      {name: "else"},
-		"package keyword":   {name: "package"},
-		"import keyword":    {name: "import"},
-		"unknown":           {name: "unknown", wantNil: true},
+		"templ keyword":   {name: "templ"},
+		"for keyword":     {name: "for"},
+		"if keyword":      {name: "if"},
+		"else keyword":    {name: "else"},
+		"package keyword": {name: "package"},
+		"import keyword":  {name: "import"},
+		"unknown":         {name: "unknown", wantNil: true},
 	}
 
 	for name, tt := range tests {
@@ -325,9 +325,9 @@ func TestGetClassDoc(t *testing.T) {
 
 func TestMatchClasses(t *testing.T) {
 	type tc struct {
-		prefix   string
-		wantMin  int // minimum expected matches
-		wantAll  bool // if true, verify all matches have the prefix
+		prefix  string
+		wantMin int  // minimum expected matches
+		wantAll bool // if true, verify all matches have the prefix
 	}
 
 	tests := map[string]tc{

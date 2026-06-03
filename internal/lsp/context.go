@@ -78,12 +78,12 @@ func (k NodeKind) String() string {
 
 // Scope holds the enclosing scope information for a cursor position.
 type Scope struct {
-	Component *tuigen.Component  // Enclosing component (nil if at file level)
-	Function  *tuigen.GoFunc     // Enclosing function (nil if not in a function)
-	ForLoop   *tuigen.ForLoop    // Enclosing for loop (nil if not in a loop)
-	IfStmt    *tuigen.IfStmt     // Enclosing if statement (nil if not in conditional)
-	Refs      []tuigen.RefInfo   // Element refs in scope (from ref={} attributes)
-	StateVars []tuigen.StateVar  // State variables in scope
+	Component *tuigen.Component // Enclosing component (nil if at file level)
+	Function  *tuigen.GoFunc    // Enclosing function (nil if not in a function)
+	ForLoop   *tuigen.ForLoop   // Enclosing for loop (nil if not in a loop)
+	IfStmt    *tuigen.IfStmt    // Enclosing if statement (nil if not in conditional)
+	Refs      []tuigen.RefInfo  // Element refs in scope (from ref={} attributes)
+	StateVars []tuigen.StateVar // State variables in scope
 	LetBinds  []*tuigen.LetBinding
 	Params    []*tuigen.Param
 }

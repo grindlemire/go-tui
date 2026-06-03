@@ -33,7 +33,7 @@ func init() {
 		return
 	}
 	topics = make(map[string]bool)
-	for _, t := range strings.Split(val, ",") {
+	for t := range strings.SplitSeq(val, ",") {
 		t = strings.TrimSpace(t)
 		if t != "" {
 			topics[t] = true
@@ -69,12 +69,12 @@ func initLocked(path string) error {
 	// Ensure directory exists
 	dir := filepath.Dir(path)
 	if dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create log directory: %w", err)
 		}
 	}
 
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open debug log: %w", err)
 	}

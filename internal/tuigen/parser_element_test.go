@@ -13,7 +13,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -49,7 +48,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -140,7 +138,6 @@ templ Test() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -169,7 +166,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -250,7 +246,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -331,7 +326,6 @@ templ Test() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -386,7 +380,6 @@ templ Test(items []Item) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -436,7 +429,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

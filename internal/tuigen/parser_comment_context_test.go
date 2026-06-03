@@ -17,7 +17,6 @@ templ List(items []string) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -69,7 +68,6 @@ templ Cond(show bool) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -116,7 +114,6 @@ templ Empty() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -147,7 +144,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -177,7 +173,6 @@ templ Test() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -212,7 +207,6 @@ func helper() string {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -243,7 +237,6 @@ templ Header() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -276,7 +269,6 @@ templ Nested() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

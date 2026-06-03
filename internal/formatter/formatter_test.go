@@ -16,7 +16,6 @@ func newTestFormatter() *Formatter {
 // TestFormat tests basic formatting scenarios.
 func TestFormat(t *testing.T) {
 	type tc struct {
-		name  string
 		input string
 		want  string
 	}
@@ -1044,7 +1043,6 @@ templ Test() {
 // TestFormatAutoImports tests that missing imports are automatically added.
 func TestFormatAutoImports(t *testing.T) {
 	type tc struct {
-		name  string
 		input string
 		want  []string // import paths that should be present
 	}

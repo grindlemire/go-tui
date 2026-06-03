@@ -11,15 +11,15 @@ func TestLexer_GoExpressions(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"simple":           {input: "{x}", literal: "x"},
-		"with spaces":      {input: "{ x + y }", literal: " x + y "},
-		"nested braces":    {input: "{map[string]int{}}", literal: "map[string]int{}"},
-		"deeply nested":    {input: "{func() { if true { x } }()}", literal: "func() { if true { x } }()"},
-		"with string":      {input: `{fmt.Sprintf("%d", x)}`, literal: `fmt.Sprintf("%d", x)`},
-		"with raw string":  {input: "{`hello`}", literal: "`hello`"},
-		"function call":    {input: "{onClick()}", literal: "onClick()"},
-		"method call":      {input: "{s.Method(a, b)}", literal: "s.Method(a, b)"},
-		"struct literal":   {input: "{Point{X: 1, Y: 2}}", literal: "Point{X: 1, Y: 2}"},
+		"simple":          {input: "{x}", literal: "x"},
+		"with spaces":     {input: "{ x + y }", literal: " x + y "},
+		"nested braces":   {input: "{map[string]int{}}", literal: "map[string]int{}"},
+		"deeply nested":   {input: "{func() { if true { x } }()}", literal: "func() { if true { x } }()"},
+		"with string":     {input: `{fmt.Sprintf("%d", x)}`, literal: `fmt.Sprintf("%d", x)`},
+		"with raw string": {input: "{`hello`}", literal: "`hello`"},
+		"function call":   {input: "{onClick()}", literal: "onClick()"},
+		"method call":     {input: "{s.Method(a, b)}", literal: "s.Method(a, b)"},
+		"struct literal":  {input: "{Point{X: 1, Y: 2}}", literal: "Point{X: 1, Y: 2}"},
 	}
 
 	for name, tt := range tests {

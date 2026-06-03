@@ -8,9 +8,9 @@ import (
 
 func TestGenerateVirtualGo(t *testing.T) {
 	type tc struct {
-		file           *tuigen.File
-		wantContains   []string
-		wantMinMapLen  int
+		file          *tuigen.File
+		wantContains  []string
+		wantMinMapLen int
 	}
 
 	tests := map[string]tc{

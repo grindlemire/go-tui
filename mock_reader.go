@@ -9,8 +9,10 @@ type MockEventReader struct {
 }
 
 // Ensure MockEventReader implements EventReader and InterruptibleReader.
-var _ EventReader = (*MockEventReader)(nil)
-var _ InterruptibleReader = (*MockEventReader)(nil)
+var (
+	_ EventReader         = (*MockEventReader)(nil)
+	_ InterruptibleReader = (*MockEventReader)(nil)
+)
 
 // NewMockEventReader creates a MockEventReader with the given events.
 // Events are returned in order by successive calls to PollEvent.

@@ -93,10 +93,11 @@ func (p *Parser) parseFuncOrComponent() Node {
 	started := false
 
 	for p.current.Type != TokenEOF {
-		if p.current.Type == TokenLBrace {
+		switch p.current.Type {
+		case TokenLBrace:
 			braceDepth++
 			started = true
-		} else if p.current.Type == TokenRBrace {
+		case TokenRBrace:
 			braceDepth--
 			if started && braceDepth == 0 {
 				// Capture raw source from func to after closing brace
@@ -195,10 +196,11 @@ func (p *Parser) captureRawGoFunc(startPos int, pos Position) *GoFunc {
 	started := false
 
 	for p.current.Type != TokenEOF {
-		if p.current.Type == TokenLBrace {
+		switch p.current.Type {
+		case TokenLBrace:
 			braceDepth++
 			started = true
-		} else if p.current.Type == TokenRBrace {
+		case TokenRBrace:
 			braceDepth--
 			if started && braceDepth == 0 {
 				endPos := p.current.StartPos + 1

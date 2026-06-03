@@ -358,4 +358,3 @@ func TestIsVirtualGoFile(t *testing.T) {
 		})
 	}
 }
-

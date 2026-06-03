@@ -220,7 +220,7 @@ func TestParseTailwindClassesWithPositions(t *testing.T) {
 		input        string
 		attrStartCol int
 		wantCount    int
-		checkClass   int    // index of class to check
+		checkClass   int // index of class to check
 		wantClass    string
 		wantStartCol int
 		wantEndCol   int

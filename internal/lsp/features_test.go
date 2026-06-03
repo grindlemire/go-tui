@@ -105,39 +105,3 @@ templ Hello() {
 		t.Fatal("expected Hello to be removed from index")
 	}
 }
-
-// testServer runs a server with the given requests and returns responses by ID.
-func testServer(t *testing.T, requests func(m *mockReadWriter, uri string) int) (map[int]*Response, *Server) {
-	t.Helper()
-
-	mock := newMockReadWriter()
-	uri := "file:///test.gsx"
-
-	// Send requests
-	maxID := requests(mock, uri)
-
-	server := NewServer(mock.input, mock.output)
-	if err := server.Run(t.Context()); err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-
-	// Read all responses
-	responses := make(map[int]*Response)
-	for i := 0; i <= maxID; i++ {
-		resp, err := mock.readResponse()
-		if err != nil {
-			break
-		}
-		if resp.ID != nil {
-			switch id := resp.ID.(type) {
-			case float64:
-				responses[int(id)] = resp
-			case int:
-				responses[id] = resp
-			}
-		}
-		// Skip notifications
-	}
-
-	return responses, server
-}

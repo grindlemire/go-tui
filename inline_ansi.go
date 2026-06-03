@@ -25,7 +25,7 @@ func inlineAppendScrollUp(seq *strings.Builder, topRow, bottomRow, n int) {
 	}
 	seq.WriteString(fmt.Sprintf("\033[%d;%dr", topRow+1, bottomRow+1))
 	seq.WriteString(fmt.Sprintf("\033[%d;1H", bottomRow+1))
-	for i := 0; i < n; i++ {
+	for range n {
 		seq.WriteString("\n")
 	}
 	seq.WriteString("\033[r")
@@ -35,7 +35,7 @@ func inlineAppendClearRows(seq *strings.Builder, startRow, count int) {
 	if startRow < 0 || count < 1 {
 		return
 	}
-	for i := 0; i < count; i++ {
+	for i := range count {
 		row := startRow + i
 		seq.WriteString(fmt.Sprintf("\033[%d;1H\033[2K", row+1))
 	}

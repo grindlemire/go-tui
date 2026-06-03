@@ -107,7 +107,6 @@ templ Test(name string, count int, items []string, handler func()) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -185,7 +184,6 @@ templ Test(fn func(a, b int) (string, error)) {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -294,7 +292,6 @@ templ App() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -340,7 +337,6 @@ templ Card(title string) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -385,7 +381,6 @@ templ App() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -475,7 +470,6 @@ templ (a *pkg.App) Render() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -556,7 +550,6 @@ templ Header(title string) {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -610,7 +603,6 @@ templ (a *myApp) Render() {
 			l := NewLexer("test.gsx", tt.input)
 			p := NewParser(l)
 			file, err := p.ParseFile()
-
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -648,7 +640,6 @@ templ (s *sidebar) Render() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -697,7 +688,6 @@ templ (s *sidebar) Render() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -7,8 +7,7 @@ import (
 
 func TestCommentPreservationInElements(t *testing.T) {
 	type tc struct {
-		source   string
-		expected string // if empty, expected == source (idempotent)
+		source string
 	}
 
 	tests := map[string]tc{
@@ -133,11 +132,6 @@ templ Foo() {
 				t.Fatalf("format error: %v", err)
 			}
 
-			expected := tt.expected
-			if expected == "" {
-				expected = tt.source
-			}
-
 			// Verify no comments were lost
 			sourceComments := countCommentLines(tt.source)
 			formattedComments := countCommentLines(formatted)
@@ -169,7 +163,7 @@ templ Foo() {
 // countCommentLines counts lines starting with // (after trimming whitespace).
 func countCommentLines(s string) int {
 	count := 0
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "//") {
 			count++
@@ -182,7 +176,7 @@ func countCommentLines(s string) int {
 // e.g., "2,2,3,3" means 4 comment lines at depths 2,2,3,3.
 func commentDepths(s string) string {
 	var depths []string
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "//") {
 			tabs := 0

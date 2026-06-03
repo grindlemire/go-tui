@@ -253,7 +253,7 @@ func TestMarkdown_TableRuleBetweenEveryRow(t *testing.T) {
 	// header + 2 body rows => 2 interior rules (after header, between body rows),
 	// each starting with the left-tee junction.
 	tees := 0
-	for y := 0; y < 10; y++ {
+	for y := range 10 {
 		if buf.Cell(0, y).Rune == '├' {
 			tees++
 		}
@@ -381,8 +381,8 @@ func TestMarkdown_ListWrapsLongContent(t *testing.T) {
 // findCell returns the row,col of the first occurrence of r in the buffer.
 func findCell(buf *Buffer, r rune) (int, int) {
 	w, h := buf.Size()
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			if buf.Cell(x, y).Rune == r {
 				return y, x
 			}

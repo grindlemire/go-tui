@@ -780,7 +780,6 @@ func TestBuildDispatchTable_EntryCount(t *testing.T) {
 	}
 }
 
-
 // --- Validate tests ---
 
 func TestValidate_NoEntries(t *testing.T) {

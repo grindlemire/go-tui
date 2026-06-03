@@ -67,16 +67,6 @@ func countByType(tokens []SemanticToken, tokenType int) int {
 	return count
 }
 
-// findFirstByType returns the first token of a given type.
-func findFirstByType(tokens []SemanticToken, tokenType int) *SemanticToken {
-	for i := range tokens {
-		if tokens[i].TokenType == tokenType {
-			return &tokens[i]
-		}
-	}
-	return nil
-}
-
 // hasTokenAt checks if a token exists at the given position with the given type and length.
 func hasTokenAt(tokens []SemanticToken, line, col, length, tokenType int) bool {
 	for _, tok := range tokens {

@@ -177,17 +177,17 @@ func TestMount_FullAppRenderPipeline(t *testing.T) {
 
 	// Build the app manually (avoiding real terminal)
 	app := &App{
-		terminal:       mockTerm,
-		buffer:         NewBuffer(80, 24),
-		focus:          newFocusManager(),
-		stopCh:         make(chan struct{}),
-		stopped:        false,
-		merged:         make(chan Event, 256),
-		watcherQueue:   make(chan func(), 256),
-		mounts:         newMountState(),
-		batch:          newBatchContext(),
+		terminal:        mockTerm,
+		buffer:          NewBuffer(80, 24),
+		focus:           newFocusManager(),
+		stopCh:          make(chan struct{}),
+		stopped:         false,
+		merged:          make(chan Event, 256),
+		watcherQueue:    make(chan func(), 256),
+		mounts:          newMountState(),
+		batch:           newBatchContext(),
 		needsFullRedraw: true,
-		frameDuration:  16,
+		frameDuration:   16,
 	}
 	app.resetRootSession()
 
@@ -208,8 +208,8 @@ func TestMount_FullAppRenderPipeline(t *testing.T) {
 
 	// Also check that the border is there (just the top-left corner)
 	found := false
-	for y := 0; y < 24; y++ {
-		for x := 0; x < 80; x++ {
+	for y := range 24 {
+		for x := range 80 {
 			c := app.buffer.Cell(x, y)
 			if c.Rune == '╭' {
 				found = true
@@ -480,7 +480,7 @@ func genUserCard(app *App, parent Component, name, role string, online bool) gen
 	children = append(children, badge)
 
 	card := genCard(name, children)
-	return genUserCardView{Root: card.Root}
+	return genUserCardView(card)
 }
 
 type genStatusBarView struct{ Root *Element }
@@ -503,4 +503,3 @@ func genStatusBar() genStatusBarView {
 	div.AddChild(b2)
 	return genStatusBarView{Root: div}
 }
-

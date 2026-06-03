@@ -10,10 +10,10 @@ import (
 type DiagnosticSeverity int
 
 const (
-	DiagnosticSeverityError         DiagnosticSeverity = 1
-	DiagnosticSeverityWarning       DiagnosticSeverity = 2
-	DiagnosticSeverityInformation   DiagnosticSeverity = 3
-	DiagnosticSeverityHint          DiagnosticSeverity = 4
+	DiagnosticSeverityError       DiagnosticSeverity = 1
+	DiagnosticSeverityWarning     DiagnosticSeverity = 2
+	DiagnosticSeverityInformation DiagnosticSeverity = 3
+	DiagnosticSeverityHint        DiagnosticSeverity = 4
 )
 
 // Diagnostic represents a diagnostic, such as a compiler error or warning.

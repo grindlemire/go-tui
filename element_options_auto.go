@@ -1,6 +1,5 @@
 package tui
 
-
 // WithWidthAuto sets width to auto (size to content).
 func WithWidthAuto() Option {
 	return func(e *Element) {

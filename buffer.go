@@ -603,8 +603,8 @@ func (b *Buffer) Resize(width, height int) {
 	copyWidth := min(width, b.width)
 	copyHeight := min(height, b.height)
 
-	for y := 0; y < copyHeight; y++ {
-		for x := 0; x < copyWidth; x++ {
+	for y := range copyHeight {
+		for x := range copyWidth {
 			oldIdx := y*b.width + x
 			newIdx := y*width + x
 			newFront[newIdx] = b.front[oldIdx]

@@ -455,8 +455,8 @@ func TestDrawBoxClipped(t *testing.T) {
 			},
 		},
 		"entirely outside": {
-			boxRect:  NewRect(0, 0, 5, 3),
-			clipRect: NewRect(10, 10, 5, 5),
+			boxRect:   NewRect(0, 0, 5, 3),
+			clipRect:  NewRect(10, 10, 5, 5),
 			wantDrawn: map[[2]int]rune{},
 			wantSpace: [][2]int{
 				{0, 0}, {4, 0}, {0, 2}, {4, 2},

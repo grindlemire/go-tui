@@ -9,13 +9,13 @@ func TestKeyEvent_IsRune(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"rune event":       {event: KeyEvent{Key: KeyRune, Rune: 'a'}, expected: true},
-		"enter event":      {event: KeyEvent{Key: KeyEnter}, expected: false},
-		"escape event":     {event: KeyEvent{Key: KeyEscape}, expected: false},
-		"arrow event":      {event: KeyEvent{Key: KeyUp}, expected: false},
-		"function event":   {event: KeyEvent{Key: KeyF1}, expected: false},
+		"rune event":         {event: KeyEvent{Key: KeyRune, Rune: 'a'}, expected: true},
+		"enter event":        {event: KeyEvent{Key: KeyEnter}, expected: false},
+		"escape event":       {event: KeyEvent{Key: KeyEscape}, expected: false},
+		"arrow event":        {event: KeyEvent{Key: KeyUp}, expected: false},
+		"function event":     {event: KeyEvent{Key: KeyF1}, expected: false},
 		"function key event": {event: KeyEvent{Key: KeyF1}, expected: false},
-		"rune with mod":    {event: KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl}, expected: true},
+		"rune with mod":      {event: KeyEvent{Key: KeyRune, Rune: 'x', Mod: ModCtrl}, expected: true},
 	}
 
 	for name, tt := range tests {
@@ -37,15 +37,15 @@ func TestKeyEvent_Is(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"enter matches enter":              {event: KeyEvent{Key: KeyEnter}, key: KeyEnter, expected: true},
-		"enter does not match escape":      {event: KeyEvent{Key: KeyEnter}, key: KeyEscape, expected: false},
-		"rune matches rune":                {event: KeyEvent{Key: KeyRune, Rune: 'a'}, key: KeyRune, expected: true},
-		"ctrl+a with ctrl matches":         {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl}, key: KeyRune, mods: []Modifier{ModCtrl}, expected: true},
-		"ctrl+a without ctrl no match":     {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl}, key: KeyRune, expected: true},
-		"no mod with ctrl no match":        {event: KeyEvent{Key: KeyRune, Rune: 'a'}, key: KeyRune, mods: []Modifier{ModCtrl}, expected: false},
-		"ctrl+alt matches both":            {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl | ModAlt}, key: KeyRune, mods: []Modifier{ModCtrl, ModAlt}, expected: true},
-		"ctrl+alt only ctrl no match":      {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl | ModAlt}, key: KeyRune, mods: []Modifier{ModCtrl}, expected: false},
-		"shift matches shift":              {event: KeyEvent{Key: KeyUp, Mod: ModShift}, key: KeyUp, mods: []Modifier{ModShift}, expected: true},
+		"enter matches enter":          {event: KeyEvent{Key: KeyEnter}, key: KeyEnter, expected: true},
+		"enter does not match escape":  {event: KeyEvent{Key: KeyEnter}, key: KeyEscape, expected: false},
+		"rune matches rune":            {event: KeyEvent{Key: KeyRune, Rune: 'a'}, key: KeyRune, expected: true},
+		"ctrl+a with ctrl matches":     {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl}, key: KeyRune, mods: []Modifier{ModCtrl}, expected: true},
+		"ctrl+a without ctrl no match": {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl}, key: KeyRune, expected: true},
+		"no mod with ctrl no match":    {event: KeyEvent{Key: KeyRune, Rune: 'a'}, key: KeyRune, mods: []Modifier{ModCtrl}, expected: false},
+		"ctrl+alt matches both":        {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl | ModAlt}, key: KeyRune, mods: []Modifier{ModCtrl, ModAlt}, expected: true},
+		"ctrl+alt only ctrl no match":  {event: KeyEvent{Key: KeyRune, Rune: 'a', Mod: ModCtrl | ModAlt}, key: KeyRune, mods: []Modifier{ModCtrl}, expected: false},
+		"shift matches shift":          {event: KeyEvent{Key: KeyUp, Mod: ModShift}, key: KeyUp, mods: []Modifier{ModShift}, expected: true},
 	}
 
 	for name, tt := range tests {
@@ -65,13 +65,13 @@ func TestKeyEvent_Char(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"rune a":        {event: KeyEvent{Key: KeyRune, Rune: 'a'}, expected: 'a'},
-		"rune space":    {event: KeyEvent{Key: KeyRune, Rune: ' '}, expected: ' '},
-		"rune unicode":  {event: KeyEvent{Key: KeyRune, Rune: '日'}, expected: '日'},
-		"enter":         {event: KeyEvent{Key: KeyEnter}, expected: 0},
-		"escape":        {event: KeyEvent{Key: KeyEscape}, expected: 0},
-		"arrow":         {event: KeyEvent{Key: KeyUp}, expected: 0},
-		"function key":  {event: KeyEvent{Key: KeyF1}, expected: 0},
+		"rune a":       {event: KeyEvent{Key: KeyRune, Rune: 'a'}, expected: 'a'},
+		"rune space":   {event: KeyEvent{Key: KeyRune, Rune: ' '}, expected: ' '},
+		"rune unicode": {event: KeyEvent{Key: KeyRune, Rune: '日'}, expected: '日'},
+		"enter":        {event: KeyEvent{Key: KeyEnter}, expected: 0},
+		"escape":       {event: KeyEvent{Key: KeyEscape}, expected: 0},
+		"arrow":        {event: KeyEvent{Key: KeyUp}, expected: 0},
+		"function key": {event: KeyEvent{Key: KeyF1}, expected: 0},
 	}
 
 	for name, tt := range tests {
@@ -86,8 +86,8 @@ func TestKeyEvent_Char(t *testing.T) {
 
 func TestEvent_TypeAssertion(t *testing.T) {
 	type tc struct {
-		event   Event
-		isKey   bool
+		event    Event
+		isKey    bool
 		isResize bool
 	}
 

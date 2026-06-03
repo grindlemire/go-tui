@@ -258,16 +258,6 @@ func (s *State[T]) Bind(fn func(T)) Unbind {
 	}
 }
 
-func (s *State[T]) resolveApp() *App {
-	s.mu.RLock()
-	app := s.app
-	s.mu.RUnlock()
-	if app != nil {
-		return app
-	}
-	panic("tui.State used without app context; call BindApp or use NewStateForApp")
-}
-
 // Batch executes fn using this app's batch context.
 func (a *App) Batch(fn func()) {
 	if a == nil {

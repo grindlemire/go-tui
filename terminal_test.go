@@ -375,8 +375,8 @@ func TestMockTerminal_Resize(t *testing.T) {
 		newW, newH         int
 		setCell            struct{ x, y int }
 		checkAfter         struct {
-			x, y          int
-			expectedRune  rune
+			x, y           int
+			expectedRune   rune
 			shouldPreserve bool
 		}
 	}
@@ -387,8 +387,8 @@ func TestMockTerminal_Resize(t *testing.T) {
 			newW: 10, newH: 10,
 			setCell: struct{ x, y int }{2, 2},
 			checkAfter: struct {
-				x, y          int
-				expectedRune  rune
+				x, y           int
+				expectedRune   rune
 				shouldPreserve bool
 			}{2, 2, 'X', true},
 		},
@@ -397,8 +397,8 @@ func TestMockTerminal_Resize(t *testing.T) {
 			newW: 5, newH: 5,
 			setCell: struct{ x, y int }{2, 2},
 			checkAfter: struct {
-				x, y          int
-				expectedRune  rune
+				x, y           int
+				expectedRune   rune
 				shouldPreserve bool
 			}{2, 2, 'X', true},
 		},
@@ -407,8 +407,8 @@ func TestMockTerminal_Resize(t *testing.T) {
 			newW: 5, newH: 5,
 			setCell: struct{ x, y int }{8, 8},
 			checkAfter: struct {
-				x, y          int
-				expectedRune  rune
+				x, y           int
+				expectedRune   rune
 				shouldPreserve bool
 			}{8, 8, 0, false}, // Out of bounds after resize
 		},

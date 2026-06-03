@@ -7,8 +7,10 @@ import (
 
 // Diagnostic and DiagnosticSeverity are type aliases for the canonical definitions
 // in the provider package, eliminating duplicate type definitions.
-type Diagnostic = provider.Diagnostic
-type DiagnosticSeverity = provider.DiagnosticSeverity
+type (
+	Diagnostic         = provider.Diagnostic
+	DiagnosticSeverity = provider.DiagnosticSeverity
+)
 
 // Re-export severity constants so existing lsp package code compiles unchanged.
 const (

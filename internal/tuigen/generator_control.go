@@ -56,11 +56,6 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inCond
 	}
 }
 
-// generateForLoop generates code for a for loop.
-func (g *Generator) generateForLoop(loop *ForLoop, parentVar string) {
-	g.generateForLoopWithRefs(loop, parentVar, false, false, false)
-}
-
 // generateForLoopWithRefs generates code for a for loop with ref context tracking.
 // When the loop body references state variables (and we're not already in a loop/reactive context),
 // generates a reactive wrapper that rebuilds loop children when state changes.
@@ -151,11 +146,6 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 
 	g.indent--
 	g.writeln("}")
-}
-
-// generateIfStmt generates code for an if statement.
-func (g *Generator) generateIfStmt(stmt *IfStmt, parentVar string) {
-	g.generateIfStmtWithRefs(stmt, parentVar, false, false)
 }
 
 // generateIfStmtWithRefs generates code for an if statement with ref context tracking.

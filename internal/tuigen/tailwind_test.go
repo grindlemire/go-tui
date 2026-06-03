@@ -6,10 +6,10 @@ import (
 
 func TestParseTailwindClass_Layout(t *testing.T) {
 	type tc struct {
-		input       string
-		wantOK      bool
-		wantOption  string
-		wantImport  string
+		input      string
+		wantOK     bool
+		wantOption string
+		wantImport string
 	}
 
 	tests := map[string]tc{
@@ -65,9 +65,9 @@ func TestParseTailwindClass_Layout(t *testing.T) {
 
 func TestParseTailwindClass_Alignment(t *testing.T) {
 	type tc struct {
-		input       string
-		wantOK      bool
-		wantOption  string
+		input      string
+		wantOK     bool
+		wantOption string
 	}
 
 	tests := map[string]tc{
@@ -124,9 +124,9 @@ func TestParseTailwindClass_Alignment(t *testing.T) {
 
 func TestParseTailwindClass_DynamicSpacing(t *testing.T) {
 	type tc struct {
-		input       string
-		wantOK      bool
-		wantOption  string
+		input      string
+		wantOK     bool
+		wantOption string
 	}
 
 	tests := map[string]tc{
@@ -178,9 +178,9 @@ func TestParseTailwindClass_DynamicSpacing(t *testing.T) {
 
 func TestParseTailwindClass_DynamicSizing(t *testing.T) {
 	type tc struct {
-		input       string
-		wantOK      bool
-		wantOption  string
+		input      string
+		wantOK     bool
+		wantOption string
 	}
 
 	tests := map[string]tc{
@@ -232,10 +232,10 @@ func TestParseTailwindClass_DynamicSizing(t *testing.T) {
 
 func TestParseTailwindClass_Borders(t *testing.T) {
 	type tc struct {
-		input       string
-		wantOK      bool
-		wantOption  string
-		wantImport  string
+		input      string
+		wantOK     bool
+		wantOption string
+		wantImport string
 	}
 
 	tests := map[string]tc{
@@ -284,36 +284,36 @@ func TestParseTailwindClass_Borders(t *testing.T) {
 
 func TestParseTailwindClass_TextStyles(t *testing.T) {
 	type tc struct {
-		input          string
-		wantOK         bool
+		input           string
+		wantOK          bool
 		wantIsTextStyle bool
-		wantTextMethod string
+		wantTextMethod  string
 	}
 
 	tests := map[string]tc{
 		"font-bold": {
-			input:          "font-bold",
-			wantOK:         true,
+			input:           "font-bold",
+			wantOK:          true,
 			wantIsTextStyle: true,
-			wantTextMethod: "Bold()",
+			wantTextMethod:  "Bold()",
 		},
 		"font-dim": {
-			input:          "font-dim",
-			wantOK:         true,
+			input:           "font-dim",
+			wantOK:          true,
 			wantIsTextStyle: true,
-			wantTextMethod: "Dim()",
+			wantTextMethod:  "Dim()",
 		},
 		"italic": {
-			input:          "italic",
-			wantOK:         true,
+			input:           "italic",
+			wantOK:          true,
 			wantIsTextStyle: true,
-			wantTextMethod: "Italic()",
+			wantTextMethod:  "Italic()",
 		},
 		"underline": {
-			input:          "underline",
-			wantOK:         true,
+			input:           "underline",
+			wantOK:          true,
 			wantIsTextStyle: true,
-			wantTextMethod: "Underline()",
+			wantTextMethod:  "Underline()",
 		},
 	}
 
@@ -466,10 +466,10 @@ func TestParseTailwindClass_Unknown(t *testing.T) {
 
 func TestParseTailwindClass_Gradients(t *testing.T) {
 	type tc struct {
-		input       string
-		wantOK      bool
-		wantOption  string
-		wantImport  string
+		input      string
+		wantOK     bool
+		wantOption string
+		wantImport string
 	}
 
 	tests := map[string]tc{

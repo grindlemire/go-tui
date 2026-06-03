@@ -109,7 +109,7 @@ func splitLines(toks []Token) [][]Token {
 
 func wordsSet(s string) map[string]bool {
 	m := make(map[string]bool)
-	for _, w := range strings.Fields(s) {
+	for w := range strings.FieldsSeq(s) {
 		m[w] = true
 	}
 	return m

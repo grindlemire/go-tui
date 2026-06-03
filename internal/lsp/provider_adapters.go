@@ -1,6 +1,8 @@
 package lsp
 
 import (
+	"maps"
+
 	"github.com/grindlemire/go-tui/internal/lsp/gopls"
 	"github.com/grindlemire/go-tui/internal/lsp/provider"
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -135,9 +137,7 @@ func (a *workspaceASTAdapter) AllWorkspaceASTs() map[string]*tuigen.File {
 
 	// Return a copy to avoid holding the lock
 	result := make(map[string]*tuigen.File, len(a.server.workspaceASTs))
-	for k, v := range a.server.workspaceASTs {
-		result[k] = v
-	}
+	maps.Copy(result, a.server.workspaceASTs)
 	return result
 }
 

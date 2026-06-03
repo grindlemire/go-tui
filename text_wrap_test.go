@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -132,11 +133,11 @@ func TestWrapSpans_Empty(t *testing.T) {
 
 // joinSpanLine concatenates a wrapped line's segment texts into one string.
 func joinSpanLine(line []TextSpan) string {
-	s := ""
+	var s strings.Builder
 	for _, seg := range line {
-		s += seg.Text
+		s.WriteString(seg.Text)
 	}
-	return s
+	return s.String()
 }
 
 // hasControlRune reports whether any segment text contains a control rune that
@@ -289,14 +290,14 @@ func TestWrapSpans_NonLinkSeparatorStaysNeutral(t *testing.T) {
 	if len(lines) != 1 {
 		t.Fatalf("want one line, got %d", len(lines))
 	}
-	joined := ""
+	var joined strings.Builder
 	for _, seg := range lines[0] {
 		if seg.Text == " " && seg.Style.Attrs&AttrBold != 0 {
 			t.Errorf("separator space should not be bold: %+v", seg)
 		}
-		joined += seg.Text
+		joined.WriteString(seg.Text)
 	}
-	if joined != "bold words" {
-		t.Errorf("joined = %q, want %q", joined, "bold words")
+	if joined.String() != "bold words" {
+		t.Errorf("joined = %q, want %q", joined.String(), "bold words")
 	}
 }

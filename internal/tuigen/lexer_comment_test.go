@@ -6,11 +6,11 @@ import (
 
 func TestLexer_CommentCollection_LineComment(t *testing.T) {
 	type tc struct {
-		input        string
-		wantText     string
-		wantLine     int
-		wantEndLine  int
-		wantIsBlock  bool
+		input       string
+		wantText    string
+		wantLine    int
+		wantEndLine int
+		wantIsBlock bool
 	}
 
 	tests := map[string]tc{
@@ -70,11 +70,11 @@ func TestLexer_CommentCollection_LineComment(t *testing.T) {
 
 func TestLexer_CommentCollection_BlockComment(t *testing.T) {
 	type tc struct {
-		input        string
-		wantText     string
-		wantLine     int
-		wantEndLine  int
-		wantIsBlock  bool
+		input       string
+		wantText    string
+		wantLine    int
+		wantEndLine int
+		wantIsBlock bool
 	}
 
 	tests := map[string]tc{
@@ -469,7 +469,7 @@ func TestLexer_SaveRestoreState_PreservesTokenPosition(t *testing.T) {
 	saved := l.SaveState()
 
 	// Advance past 'b' to 'c'
-	l.Next() // 'b'
+	l.Next()       // 'b'
 	tok = l.Next() // 'c'
 	if tok.Literal != "c" {
 		t.Fatalf("expected 'c', got %q", tok.Literal)
@@ -478,7 +478,7 @@ func TestLexer_SaveRestoreState_PreservesTokenPosition(t *testing.T) {
 
 	// Restore and re-advance
 	l.RestoreState(saved)
-	l.Next() // 'b' again
+	l.Next()       // 'b' again
 	tok = l.Next() // 'c' again
 	if tok.Literal != "c" {
 		t.Fatalf("after restore, expected 'c', got %q", tok.Literal)

@@ -329,11 +329,11 @@ templ Counter() {
 
 	// Should include state methods
 	expectedMethods := map[string]bool{
-		"Get()":       false,
-		"Set(value)":  false,
-		"Update(fn)":  false,
-		"Bind(fn)":    false,
-		"Batch(fn)":   false,
+		"Get()":      false,
+		"Set(value)": false,
+		"Update(fn)": false,
+		"Bind(fn)":   false,
+		"Batch(fn)":  false,
 	}
 	for _, item := range result.Items {
 		if _, ok := expectedMethods[item.Label]; ok {

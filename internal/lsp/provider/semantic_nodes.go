@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"maps"
 	"strings"
 	"unicode/utf8"
 
@@ -48,10 +49,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 			// Search for "ref={" in the document content to find exact position
 			docLines := strings.Split(s.currentContent, "\n")
 			startLine := n.Position.Line - 1
-			maxSearch := startLine + 20
-			if maxSearch > len(docLines) {
-				maxSearch = len(docLines)
-			}
+			maxSearch := min(startLine+20, len(docLines))
 			for lineIdx := startLine; lineIdx < maxSearch; lineIdx++ {
 				refIdx := strings.Index(docLines[lineIdx], "ref={"+n.RefExpr.Code+"}")
 				if refIdx >= 0 {
@@ -122,9 +120,7 @@ func (s *semanticTokensProvider) collectTokensFromNode(node tuigen.Node, paramNa
 			Modifiers: 0,
 		})
 		loopVars := make(map[string]bool)
-		for k, v := range localVars {
-			loopVars[k] = v
-		}
+		maps.Copy(loopVars, localVars)
 		if n.Index != "" && n.Index != "_" {
 			loopVars[n.Index] = true
 			idxStart := n.Position.Column - 1 + len("for ")

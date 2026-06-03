@@ -197,7 +197,7 @@ func TestState_ConcurrentGet(t *testing.T) {
 	const numGoroutines = 100
 
 	results := make([]int, numGoroutines)
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
@@ -229,11 +229,9 @@ func TestState_ConcurrentGetDuringSet(t *testing.T) {
 	var invalidCount atomic.Int64
 
 	// Start readers that continuously call Get()
-	for i := 0; i < numReaders; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < numWrites; j++ {
+	for range numReaders {
+		wg.Go(func() {
+			for range numWrites {
 				// Get should never panic or return invalid data
 				v := s.Get()
 				// Value should be non-negative and not exceed final value.
@@ -243,17 +241,15 @@ func TestState_ConcurrentGetDuringSet(t *testing.T) {
 					invalidCount.Add(1)
 				}
 			}
-		}()
+		})
 	}
 
 	// Writer goroutine that calls Set()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for i := 1; i <= numWrites; i++ {
 			s.Set(i)
 		}
-	}()
+	})
 
 	wg.Wait()
 

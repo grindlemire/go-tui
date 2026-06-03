@@ -65,7 +65,6 @@ func (w *stopAwareWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{
 
 func TestApp_SetRoot_WithViewable(t *testing.T) {
 	type tc struct {
-		name        string
 		numWatchers int
 		expectRoot  bool
 	}

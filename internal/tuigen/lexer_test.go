@@ -238,12 +238,12 @@ func TestLexer_Identifiers(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"simple":         {input: "foo", literal: "foo"},
-		"with numbers":   {input: "foo123", literal: "foo123"},
-		"with underscore": {input: "foo_bar", literal: "foo_bar"},
+		"simple":            {input: "foo", literal: "foo"},
+		"with numbers":      {input: "foo123", literal: "foo123"},
+		"with underscore":   {input: "foo_bar", literal: "foo_bar"},
 		"starts underscore": {input: "_foo", literal: "_foo"},
-		"uppercase":      {input: "FooBar", literal: "FooBar"},
-		"mixed":          {input: "myVar2_test", literal: "myVar2_test"},
+		"uppercase":         {input: "FooBar", literal: "FooBar"},
+		"mixed":             {input: "myVar2_test", literal: "myVar2_test"},
 	}
 
 	for name, tt := range tests {
@@ -268,15 +268,15 @@ func TestLexer_Numbers(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"integer":       {input: "123", expectedType: TokenInt, literal: "123"},
-		"zero":          {input: "0", expectedType: TokenInt, literal: "0"},
-		"large":         {input: "999999", expectedType: TokenInt, literal: "999999"},
-		"float":         {input: "1.23", expectedType: TokenFloat, literal: "1.23"},
-		"float no int":  {input: ".5", expectedType: TokenFloat, literal: ".5"},
-		"exponent":      {input: "1e10", expectedType: TokenFloat, literal: "1e10"},
-		"exponent neg":  {input: "1e-5", expectedType: TokenFloat, literal: "1e-5"},
-		"exponent pos":  {input: "1E+5", expectedType: TokenFloat, literal: "1E+5"},
-		"full float":    {input: "3.14e-10", expectedType: TokenFloat, literal: "3.14e-10"},
+		"integer":      {input: "123", expectedType: TokenInt, literal: "123"},
+		"zero":         {input: "0", expectedType: TokenInt, literal: "0"},
+		"large":        {input: "999999", expectedType: TokenInt, literal: "999999"},
+		"float":        {input: "1.23", expectedType: TokenFloat, literal: "1.23"},
+		"float no int": {input: ".5", expectedType: TokenFloat, literal: ".5"},
+		"exponent":     {input: "1e10", expectedType: TokenFloat, literal: "1e10"},
+		"exponent neg": {input: "1e-5", expectedType: TokenFloat, literal: "1e-5"},
+		"exponent pos": {input: "1E+5", expectedType: TokenFloat, literal: "1E+5"},
+		"full float":   {input: "3.14e-10", expectedType: TokenFloat, literal: "3.14e-10"},
 	}
 
 	for name, tt := range tests {
@@ -524,4 +524,3 @@ func TestLexer_Underscore(t *testing.T) {
 		})
 	}
 }
-

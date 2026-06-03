@@ -235,4 +235,3 @@ func TestState_Set_ReentrantWithNoApp(t *testing.T) {
 		t.Errorf("a binding fired %d times, want 1", aBindCount)
 	}
 }
-

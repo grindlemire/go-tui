@@ -197,9 +197,9 @@ func TestCalculate_JustifyModes_SingleChild(t *testing.T) {
 		"JustifyStart":        {justify: JustifyStart, expectedX: 0},
 		"JustifyEnd":          {justify: JustifyEnd, expectedX: 80},
 		"JustifyCenter":       {justify: JustifyCenter, expectedX: 40},
-		"JustifySpaceBetween": {justify: JustifySpaceBetween, expectedX: 0},     // No between with 1 item
-		"JustifySpaceAround":  {justify: JustifySpaceAround, expectedX: 40},     // 80 / (1*2) = 40
-		"JustifySpaceEvenly":  {justify: JustifySpaceEvenly, expectedX: 40},     // 80 / 2 = 40
+		"JustifySpaceBetween": {justify: JustifySpaceBetween, expectedX: 0}, // No between with 1 item
+		"JustifySpaceAround":  {justify: JustifySpaceAround, expectedX: 40}, // 80 / (1*2) = 40
+		"JustifySpaceEvenly":  {justify: JustifySpaceEvenly, expectedX: 40}, // 80 / 2 = 40
 	}
 
 	for name, tt := range tests {

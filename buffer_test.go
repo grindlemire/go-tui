@@ -41,14 +41,8 @@ func TestNewBuffer(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			b := NewBuffer(tt.width, tt.height)
 
-			expectedWidth := tt.width
-			if expectedWidth < 0 {
-				expectedWidth = 0
-			}
-			expectedHeight := tt.height
-			if expectedHeight < 0 {
-				expectedHeight = 0
-			}
+			expectedWidth := max(tt.width, 0)
+			expectedHeight := max(tt.height, 0)
 
 			if b.Width() != expectedWidth {
 				t.Errorf("Width() = %d, want %d", b.Width(), expectedWidth)
@@ -74,8 +68,8 @@ func TestBuffer_InitializedWithSpaces(t *testing.T) {
 	b := NewBuffer(5, 3)
 	defaultStyle := NewStyle()
 
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 5; x++ {
+	for y := range 3 {
+		for x := range 5 {
 			cell := b.Cell(x, y)
 			if cell.Rune != ' ' {
 				t.Errorf("Cell(%d, %d).Rune = %q, want ' '", x, y, cell.Rune)
@@ -198,7 +192,7 @@ func TestBuffer_Fill_WideChar(t *testing.T) {
 	b.Fill(rect, '好', style)
 
 	// Should have 3 wide chars (each taking 2 columns)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		x := i * 2
 		if b.Cell(x, 0).Rune != '好' {
 			t.Errorf("Cell(%d, 0).Rune = %q, want '好'", x, b.Cell(x, 0).Rune)
@@ -218,8 +212,8 @@ func TestBuffer_Fill_ClipsToBuffer(t *testing.T) {
 	b.Fill(rect, 'X', style)
 
 	// All cells should be filled
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 5; x++ {
+	for y := range 3 {
+		for x := range 5 {
 			if b.Cell(x, y).Rune != 'X' {
 				t.Errorf("Cell(%d, %d).Rune = %q, want 'X'", x, y, b.Cell(x, y).Rune)
 			}
@@ -232,8 +226,8 @@ func TestBuffer_Clear(t *testing.T) {
 	style := NewStyle().Bold().Foreground(Red)
 
 	// Fill with styled content
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 5; x++ {
+	for y := range 3 {
+		for x := range 5 {
 			b.SetRune(x, y, 'X', style)
 		}
 	}
@@ -243,8 +237,8 @@ func TestBuffer_Clear(t *testing.T) {
 
 	// All cells should be space with default style
 	defaultStyle := NewStyle()
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 5; x++ {
+	for y := range 3 {
+		for x := range 5 {
 			cell := b.Cell(x, y)
 			if cell.Rune != ' ' {
 				t.Errorf("Cell(%d, %d).Rune = %q, want ' '", x, y, cell.Rune)

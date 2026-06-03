@@ -13,8 +13,8 @@ import (
 func fixImports(file *tuigen.File, filename string) error {
 	// Convert .gsx filename to .go for goimports resolution
 	goFilename := filename
-	if strings.HasSuffix(goFilename, ".tui") {
-		goFilename = strings.TrimSuffix(goFilename, ".tui") + "_tui.go"
+	if before, ok := strings.CutSuffix(goFilename, ".tui"); ok {
+		goFilename = before + "_tui.go"
 	}
 
 	// Generate Go code from the AST (generator runs imports.Process internally)

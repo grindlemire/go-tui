@@ -271,7 +271,7 @@ func TestColor_ToANSI(t *testing.T) {
 
 			if tt.inGrayRange {
 				idx := c.ANSI()
-				if idx < 232 || idx > 255 {
+				if idx < 232 {
 					t.Errorf("Gray should map to grayscale range 232-255, got %d", idx)
 				}
 				return
@@ -544,10 +544,10 @@ func TestGradient_At(t *testing.T) {
 			}
 			r, gVal, b := result.RGB()
 			if name == "ansi colors" {
-				// For ANSI colors, just verify we get valid RGB values
-				if r > 255 || gVal > 255 || b > 255 {
-					t.Errorf("Gradient.At(%v).RGB() = (%d, %d, %d), values out of range", tt.t, r, gVal, b)
-				}
+				// For ANSI colors, just verify we get valid RGB values (guaranteed by uint8 type)
+				_ = r
+				_ = gVal
+				_ = b
 			} else {
 				if r != tt.wantR || gVal != tt.wantG || b != tt.wantB {
 					t.Errorf("Gradient.At(%v).RGB() = (%d, %d, %d), want (%d, %d, %d)", tt.t, r, gVal, b, tt.wantR, tt.wantG, tt.wantB)

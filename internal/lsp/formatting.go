@@ -10,5 +10,7 @@ type DocumentFormattingParams struct {
 
 // FormattingOptions and TextEdit are type aliases for the canonical definitions
 // in the provider package, eliminating duplicate type definitions.
-type FormattingOptions = provider.FormattingOptions
-type TextEdit = provider.TextEdit
+type (
+	FormattingOptions = provider.FormattingOptions
+	TextEdit          = provider.TextEdit
+)

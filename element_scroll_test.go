@@ -109,7 +109,7 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 		}, opts...)
 		e := New(opts...)
 		// More rows than viewport so a scrollbar would be needed.
-		for i := 0; i < height*3; i++ {
+		for range height * 3 {
 			e.AddChild(New(WithHeight(1), WithBackground(NewStyle().Background(Red))))
 		}
 		return e
@@ -125,7 +125,7 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 		}
 
 		// Rightmost column should be the scrollbar, not the child's red fill.
-		for y := 0; y < height; y++ {
+		for y := range height {
 			cell := buf.Cell(width-1, y)
 			if cell.Rune != '█' && cell.Rune != '│' {
 				t.Errorf("row %d rightmost column rune = %q, want scrollbar glyph", y, cell.Rune)
@@ -147,7 +147,7 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 
 		// Rightmost column should be the child's red background, proving the
 		// scrollbar gutter was reclaimed for child layout and not left blank.
-		for y := 0; y < height; y++ {
+		for y := range height {
 			cell := buf.Cell(width-1, y)
 			if !cell.Style.Bg.Equal(Red) {
 				t.Errorf("row %d rightmost column bg = %v, want Red (child fills reclaimed gutter)", y, cell.Style.Bg)
@@ -162,7 +162,7 @@ func TestElement_ScrollToTop(t *testing.T) {
 		WithScrollable(ScrollVertical),
 		WithDirection(Column),
 	)
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		e.AddChild(New(WithHeight(1)))
 	}
 	buf := NewBuffer(20, 5)

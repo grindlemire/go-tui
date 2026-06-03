@@ -97,7 +97,7 @@ func TestElement_ScrollBy(t *testing.T) {
 				WithScrollable(ScrollVertical),
 				WithDirection(Column),
 			)
-			for i := 0; i < 30; i++ {
+			for range 30 {
 				e.AddChild(New(WithHeight(1)))
 			}
 
@@ -195,7 +195,7 @@ func TestElement_ScrollEventHandling(t *testing.T) {
 				WithScrollable(ScrollVertical),
 				WithDirection(Column),
 			)
-			for i := 0; i < 30; i++ {
+			for range 30 {
 				e.AddChild(New(WithHeight(1)))
 			}
 
@@ -236,9 +236,9 @@ func TestElement_IsScrollable(t *testing.T) {
 
 func TestElement_ScrollModes(t *testing.T) {
 	type tc struct {
-		mode         ScrollMode
-		expectVert   bool
-		expectHoriz  bool
+		mode        ScrollMode
+		expectVert  bool
+		expectHoriz bool
 	}
 
 	tests := map[string]tc{
@@ -267,7 +267,7 @@ func TestElement_ScrollModes(t *testing.T) {
 			)
 
 			// Add content that exceeds viewport in both directions
-			for i := 0; i < 30; i++ {
+			for range 30 {
 				e.AddChild(New(WithSize(30, 1)))
 			}
 
@@ -307,7 +307,7 @@ func TestElement_ScrollRendersThroughTree(t *testing.T) {
 	)
 
 	// Add items with text
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		scrollable.AddChild(New(
 			WithText("Item"),
 			WithHeight(1),
@@ -360,4 +360,3 @@ func TestElement_ScrollUnhandledEvent(t *testing.T) {
 		t.Error("Rune events should not be handled by scroll")
 	}
 }
-

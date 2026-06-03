@@ -134,10 +134,7 @@ func (m *Markdown) renderBlock(b markdown.Block, contentWidth int, textStyle Sty
 }
 
 func (m *Markdown) renderHeading(b markdown.Block) *Element {
-	level := b.Level
-	if level < 1 {
-		level = 1
-	}
+	level := max(b.Level, 1)
 	if level > 6 {
 		level = 6
 	}
@@ -184,10 +181,7 @@ func (m *Markdown) renderCodeFence(b markdown.Block) *Element {
 		inner.AddChild(child)
 	}
 
-	height := len(b.Lines)
-	if height < 1 {
-		height = 1
-	}
+	height := max(len(b.Lines), 1)
 	opts := []Option{WithDirection(Column)}
 	if m.theme.CodeBlockBorder != BorderNone {
 		opts = append(opts, WithBorder(m.theme.CodeBlockBorder))
@@ -231,16 +225,10 @@ func (m *Markdown) renderListItem(item markdown.Block, marker string, depth, con
 		// Constrain content width so it wraps, and size the row to the wrapped
 		// height: a Row sizes its height from children's intrinsic height, which
 		// is 1 for rich text, so without an explicit height wrapped lines clip.
-		cw := contentWidth - stringWidth(markerText)
-		if cw < 1 {
-			cw = 1
-		}
+		cw := max(contentWidth-stringWidth(markerText), 1)
 		content = New(WithDirection(Column), WithWidth(cw))
 		content.AddChild(New(WithTextStyle(textStyle), WithRichText(spans...)))
-		h := content.HeightForWidth(cw)
-		if h < 1 {
-			h = 1
-		}
+		h := max(content.HeightForWidth(cw), 1)
 		rowOpts = append(rowOpts, WithHeight(h))
 	}
 
@@ -264,10 +252,9 @@ func (m *Markdown) renderListItem(item markdown.Block, marker string, depth, con
 func (m *Markdown) renderBlockquote(b markdown.Block, contentWidth int) *Element {
 	childWidth := 0
 	if contentWidth > 0 {
-		childWidth = contentWidth - 2 // bar (1) + gap (1)
-		if childWidth < 1 {
-			childWidth = 1
-		}
+		childWidth = max(
+			// bar (1) + gap (1)
+			contentWidth-2, 1)
 	}
 
 	// Constrain the content width (when known) so paragraphs wrap to it; this

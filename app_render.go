@@ -108,8 +108,8 @@ func (a *App) renderInline() {
 		width := a.buffer.Width()
 		height := a.buffer.Height()
 		changes = make([]CellChange, 0, width*height)
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
+		for y := range height {
+			for x := range width {
 				cell := a.buffer.Cell(x, y)
 				changes = append(changes, CellChange{X: x, Y: y + a.inlineStartRow, Cell: cell})
 			}

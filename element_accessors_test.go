@@ -185,7 +185,7 @@ func TestElement_ScrollBy_MarksDirty(t *testing.T) {
 	)
 	e.app = testApp
 	// Set up content that exceeds viewport
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		e.AddChild(New(WithHeight(1)))
 	}
 
@@ -273,4 +273,3 @@ func TestElement_Wrap(t *testing.T) {
 		})
 	}
 }
-

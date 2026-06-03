@@ -15,7 +15,7 @@ func TestRenderHRDefault(t *testing.T) {
 	RenderTree(buf, hr)
 
 	// HR should draw '─' characters across its width
-	for x := 0; x < 10; x++ {
+	for x := range 10 {
 		cell := buf.Cell(x, 0)
 		if cell.Rune != '─' {
 			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Rune)
@@ -40,7 +40,7 @@ func TestRenderHRDouble(t *testing.T) {
 	RenderTree(buf, hr)
 
 	// HR with BorderDouble should draw '═' characters
-	for x := 0; x < 10; x++ {
+	for x := range 10 {
 		cell := buf.Cell(x, 0)
 		if cell.Rune != '═' {
 			t.Errorf("HR double at x=%d = %q, want '═'", x, cell.Rune)
@@ -57,7 +57,7 @@ func TestRenderHRThick(t *testing.T) {
 	RenderTree(buf, hr)
 
 	// HR with BorderThick should draw '━' characters
-	for x := 0; x < 10; x++ {
+	for x := range 10 {
 		cell := buf.Cell(x, 0)
 		if cell.Rune != '━' {
 			t.Errorf("HR thick at x=%d = %q, want '━'", x, cell.Rune)
@@ -78,7 +78,7 @@ func TestRenderHRWithColor(t *testing.T) {
 	RenderTree(buf, hr)
 
 	// HR should respect textStyle for color
-	for x := 0; x < 10; x++ {
+	for x := range 10 {
 		cell := buf.Cell(x, 0)
 		if cell.Rune != '─' {
 			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Rune)
@@ -111,7 +111,7 @@ func TestRenderHRInContainer(t *testing.T) {
 	}
 
 	// Check that HR drew '─' characters across the full width
-	for x := 0; x < 20; x++ {
+	for x := range 20 {
 		cell := buf.Cell(x, 0)
 		if cell.Rune != '─' {
 			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Rune)

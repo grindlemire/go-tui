@@ -234,7 +234,7 @@ func (a *App) PrintAboveElement(v Viewable) {
 
 	esc := newEscBuilder(256)
 	var seq strings.Builder
-	for row := 0; row < height; row++ {
+	for row := range height {
 		line := bufferRowToANSI(buf, row, esc, caps)
 		a.inlineSession.appendRow(&seq, &a.inlineLayout, line)
 	}

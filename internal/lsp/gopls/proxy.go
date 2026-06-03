@@ -436,16 +436,10 @@ func (p *GoplsProxy) handleNotification(notif *Notification) {
 
 		// Translate positions using source map
 		// For real files, goimports adds blank lines that shift positions
-		adjustedStartLine := diag.Range.Start.Line - lineOffset
-		if adjustedStartLine < 0 {
-			adjustedStartLine = 0
-		}
+		adjustedStartLine := max(diag.Range.Start.Line-lineOffset, 0)
 		gsxStartLine, gsxStartCol, startFound := translatePos(adjustedStartLine, diag.Range.Start.Character)
 
-		adjustedEndLine := diag.Range.End.Line - lineOffset
-		if adjustedEndLine < 0 {
-			adjustedEndLine = 0
-		}
+		adjustedEndLine := max(diag.Range.End.Line-lineOffset, 0)
 		gsxEndLine, gsxEndCol, endFound := translatePos(adjustedEndLine, diag.Range.End.Character)
 
 		if !startFound || !endFound {
@@ -492,8 +486,8 @@ func (p *GoplsProxy) readMessage() ([]byte, error) {
 		if line == "" {
 			break
 		}
-		if strings.HasPrefix(line, "Content-Length:") {
-			lenStr := strings.TrimSpace(strings.TrimPrefix(line, "Content-Length:"))
+		if after, ok := strings.CutPrefix(line, "Content-Length:"); ok {
+			lenStr := strings.TrimSpace(after)
 			contentLength, err = strconv.Atoi(lenStr)
 			if err != nil {
 				return nil, fmt.Errorf("invalid Content-Length: %w", err)
@@ -518,16 +512,16 @@ func (p *GoplsProxy) readMessage() ([]byte, error) {
 // TuiURIToGoURI converts a .gsx file URI to a virtual .go file URI.
 func TuiURIToGoURI(tuiURI string) string {
 	// Replace .gsx extension with _gsx_generated.go
-	if strings.HasSuffix(tuiURI, ".gsx") {
-		return strings.TrimSuffix(tuiURI, ".gsx") + "_gsx_generated.go"
+	if before, ok := strings.CutSuffix(tuiURI, ".gsx"); ok {
+		return before + "_gsx_generated.go"
 	}
 	return tuiURI + "_generated.go"
 }
 
 // GoURIToTuiURI converts a virtual .go file URI back to the .gsx file URI.
 func GoURIToTuiURI(goURI string) string {
-	if strings.HasSuffix(goURI, "_gsx_generated.go") {
-		return strings.TrimSuffix(goURI, "_gsx_generated.go") + ".gsx"
+	if before, ok := strings.CutSuffix(goURI, "_gsx_generated.go"); ok {
+		return before + ".gsx"
 	}
 	return goURI
 }
@@ -541,8 +535,8 @@ func IsVirtualGoFile(uri string) bool {
 func GetVirtualFilePath(gsxPath string) string {
 	dir := filepath.Dir(gsxPath)
 	base := filepath.Base(gsxPath)
-	if strings.HasSuffix(base, ".gsx") {
-		base = strings.TrimSuffix(base, ".gsx") + "_gsx_generated.go"
+	if before, ok := strings.CutSuffix(base, ".gsx"); ok {
+		base = before + "_gsx_generated.go"
 	} else {
 		base = base + "_generated.go"
 	}
@@ -557,8 +551,8 @@ func IsGeneratedGoFile(uri string) bool {
 
 // GeneratedGoURIToTuiURI converts a real generated _gsx.go file URI to the .gsx file URI.
 func GeneratedGoURIToTuiURI(goURI string) string {
-	if strings.HasSuffix(goURI, "_gsx.go") {
-		return strings.TrimSuffix(goURI, "_gsx.go") + ".gsx"
+	if before, ok := strings.CutSuffix(goURI, "_gsx.go"); ok {
+		return before + ".gsx"
 	}
 	return goURI
 }

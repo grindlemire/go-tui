@@ -155,9 +155,6 @@ func (e *EmulatorTerminal) WriteDirect(b []byte) (int, error) {
 				e.cursorCol >= 0 && e.cursorCol < e.width {
 				e.screen[e.cursorRow][e.cursorCol] = rune(s[i])
 				e.cursorCol++
-			} else if e.cursorCol >= e.width {
-				// At end of line; real terminals wrap, but for our tests
-				// we just stop advancing
 			}
 			i++
 		}

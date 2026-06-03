@@ -27,13 +27,6 @@ func (l *Lexer) skipWhitespaceAndCollectComments() {
 	}
 }
 
-// skipWhitespaceOnly skips spaces and tabs only, no comments.
-func (l *Lexer) skipWhitespaceOnly() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
-		l.readChar()
-	}
-}
-
 // collectLineComment reads a // comment and adds it to pendingComments.
 func (l *Lexer) collectLineComment() {
 	startPos := l.pos

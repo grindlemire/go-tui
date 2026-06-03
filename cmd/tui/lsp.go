@@ -21,7 +21,7 @@ func runLSP(args []string) error {
 
 	// Set up logging if requested
 	if *logPath != "" {
-		logFile, err := os.OpenFile(*logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		logFile, err := os.OpenFile(*logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			return fmt.Errorf("opening log file: %w", err)
 		}

@@ -28,8 +28,8 @@ func TestRichText_BoldSurvivesWrap(t *testing.T) {
 	}
 	// The paragraph must occupy more than one row at width 10.
 	rowsWithText := 0
-	for y := 0; y < 6; y++ {
-		for x := 0; x < 10; x++ {
+	for y := range 6 {
+		for x := range 10 {
 			if buf.Cell(x, y).Rune != ' ' {
 				rowsWithText++
 				break
@@ -143,8 +143,8 @@ func TestRenderTree_DrawsBackground(t *testing.T) {
 
 	// Check that background was filled
 	// The entire 10x5 area should have the background style
-	for y := 0; y < 5; y++ {
-		for x := 0; x < 10; x++ {
+	for y := range 5 {
+		for x := range 10 {
 			cell := buf.Cell(x, y)
 			if cell.Rune != ' ' {
 				t.Errorf("cell(%d,%d).Rune = %q, want ' '", x, y, cell.Rune)
@@ -262,8 +262,8 @@ func TestRenderTree_CullsElementsOutsideBuffer(t *testing.T) {
 	RenderTree(buf, e)
 
 	// All cells should be spaces (untouched)
-	for y := 0; y < 10; y++ {
-		for x := 0; x < 10; x++ {
+	for y := range 10 {
+		for x := range 10 {
 			cell := buf.Cell(x, y)
 			if cell.Rune != ' ' {
 				t.Errorf("cell(%d,%d) should be space, got %q", x, y, cell.Rune)
@@ -512,7 +512,6 @@ func checkString(t *testing.T, buf *Buffer, x, y int, expected string) {
 
 func TestRenderTree_TextWithBorder(t *testing.T) {
 	type tc struct {
-		name       string
 		text       string
 		wantWidth  int
 		wantHeight int
@@ -521,8 +520,8 @@ func TestRenderTree_TextWithBorder(t *testing.T) {
 	tests := map[string]tc{
 		"short text with border": {
 			text:       "Hi",
-			wantWidth:  4,  // 2 + border(2)
-			wantHeight: 3,  // 1 + border(2)
+			wantWidth:  4, // 2 + border(2)
+			wantHeight: 3, // 1 + border(2)
 		},
 		"longer text with border": {
 			text:       "Text Styles",
@@ -990,7 +989,6 @@ func TestRenderTree_TextWrapAutoScroll(t *testing.T) {
 		})
 	}
 }
-
 
 func TestRichText_LinkReachesCell(t *testing.T) {
 	buf := NewBuffer(10, 1)

@@ -327,7 +327,7 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 	if matches := textGradientPattern.FindStringSubmatch(class); matches != nil {
 		var startColorName, endColorName string
 		direction := "tui.GradientHorizontal"
-		
+
 		// Check if class ends with a direction suffix
 		if strings.HasSuffix(class, "-v") || strings.HasSuffix(class, "-dd") || strings.HasSuffix(class, "-du") || strings.HasSuffix(class, "-h") {
 			// Has direction suffix - use first alternative
@@ -372,7 +372,7 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 				}
 			}
 		}
-		
+
 		startColor := colorNameToColor(startColorName)
 		endColor := colorNameToColor(endColorName)
 		option := "tui.WithTextGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
@@ -382,7 +382,7 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 	if matches := bgGradientPattern.FindStringSubmatch(class); matches != nil {
 		var startColorName, endColorName string
 		direction := "tui.GradientHorizontal"
-		
+
 		// Check if class ends with a direction suffix
 		if strings.HasSuffix(class, "-v") || strings.HasSuffix(class, "-dd") || strings.HasSuffix(class, "-du") || strings.HasSuffix(class, "-h") {
 			// Has direction suffix - use first alternative
@@ -418,7 +418,7 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 				}
 			}
 		}
-		
+
 		startColor := colorNameToColor(startColorName)
 		endColor := colorNameToColor(endColorName)
 		option := "tui.WithBackgroundGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
@@ -428,7 +428,7 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 	if matches := borderGradientPattern.FindStringSubmatch(class); matches != nil {
 		var startColorName, endColorName string
 		direction := "tui.GradientHorizontal"
-		
+
 		// Check if class ends with a direction suffix
 		if strings.HasSuffix(class, "-v") || strings.HasSuffix(class, "-dd") || strings.HasSuffix(class, "-du") || strings.HasSuffix(class, "-h") {
 			// Has direction suffix - use first alternative
@@ -464,7 +464,7 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 				}
 			}
 		}
-		
+
 		startColor := colorNameToColor(startColorName)
 		endColor := colorNameToColor(endColorName)
 		option := "tui.WithBorderGradient(tui.NewGradient(" + startColor + ", " + endColor + ").WithDirection(" + direction + "))"
@@ -524,9 +524,9 @@ func colorNameToColor(name string) string {
 
 // TailwindParseResult contains the parsed results from a class string
 type TailwindParseResult struct {
-	Options      []string          // Direct element options
-	TextMethods  []string          // Text style methods to chain
-	NeedsImports map[string]bool   // Imports needed
+	Options      []string        // Direct element options
+	TextMethods  []string        // Text style methods to chain
+	NeedsImports map[string]bool // Imports needed
 }
 
 // ParseTailwindClasses parses a full class attribute string
@@ -539,7 +539,7 @@ func ParseTailwindClasses(classes string) TailwindParseResult {
 	var paddingAcc PaddingAccumulator
 	var marginAcc MarginAccumulator
 
-	for _, class := range strings.Fields(classes) {
+	for class := range strings.FieldsSeq(classes) {
 		// First, check if it's an individual padding/margin class
 		if spacing, ok := parseIndividualSpacing(class); ok {
 			if spacing.IsPadding {

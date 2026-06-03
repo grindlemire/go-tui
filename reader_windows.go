@@ -109,8 +109,10 @@ type stdinReader struct {
 	lastMouseButtons uint32
 }
 
-var _ InterruptibleReader = (*stdinReader)(nil)
-var _ PausableReader = (*stdinReader)(nil)
+var (
+	_ InterruptibleReader = (*stdinReader)(nil)
+	_ PausableReader      = (*stdinReader)(nil)
+)
 
 // NewEventReader creates an EventReader for the given terminal input.
 func NewEventReader(in *os.File) (EventReader, error) {

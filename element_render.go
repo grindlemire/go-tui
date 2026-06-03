@@ -413,7 +413,7 @@ func renderVerticalScrollbar(buf *Buffer, e *Element) {
 	thumbTop := e.scrollY * (trackHeight - thumbHeight) / maxScroll
 
 	// Draw track and thumb
-	for y := 0; y < trackHeight; y++ {
+	for y := range trackHeight {
 		screenY := trackTop + y
 		if y >= thumbTop && y < thumbTop+thumbHeight {
 			buf.SetRune(trackX, screenY, '█', e.scrollbarThumbStyle)
@@ -520,13 +520,7 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 	startLine := 0
 	if len(lines) > contentRect.Height && contentRect.Height > 0 {
 		e.contentHeight = len(lines) // store for scroll bounds
-		startLine = e.scrollY
-		if startLine > len(lines)-contentRect.Height {
-			startLine = len(lines) - contentRect.Height
-		}
-		if startLine < 0 {
-			startLine = 0
-		}
+		startLine = max(min(e.scrollY, len(lines)-contentRect.Height), 0)
 		maxLines = contentRect.Height
 	}
 
@@ -566,9 +560,8 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		}
 
 		if needPerCell {
-			runes := []rune(line)
 			curX := x
-			for _, r := range runes {
+			for _, r := range line {
 				if curX >= contentRect.Right() {
 					break
 				}

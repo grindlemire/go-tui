@@ -48,7 +48,7 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 	done := make(chan struct{})
 
 	// Queue from multiple goroutines
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		go func() {
 			app.QueueUpdate(func() {
 				executed++
@@ -58,7 +58,7 @@ func TestApp_QueueUpdate_FromGoroutine(t *testing.T) {
 
 	// Read all queued functions from updates channel
 	go func() {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			select {
 			case ev := <-app.updates:
 				app.Dispatch(ev)
@@ -237,7 +237,7 @@ func TestApp_EventBatching(t *testing.T) {
 	}
 
 	// Queue multiple events directly to merged (simulating fan-in output)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		app.merged <- UpdateEvent{fn: func() {
 			testApp.MarkDirty()
 		}}
@@ -290,14 +290,14 @@ func TestPostRenderHook(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			called := 0
 			a := &App{
-				terminal:   NewMockTerminal(80, 24),
-				focus:      newFocusManager(),
-				buffer:     NewBuffer(80, 24),
-				merged:     make(chan Event, 256),
-				watcherQueue: make(chan func(), 256),
-				stopCh:     make(chan struct{}),
-				mounts:     newMountState(),
-				batch:      newBatchContext(),
+				terminal:       NewMockTerminal(80, 24),
+				focus:          newFocusManager(),
+				buffer:         NewBuffer(80, 24),
+				merged:         make(chan Event, 256),
+				watcherQueue:   make(chan func(), 256),
+				stopCh:         make(chan struct{}),
+				mounts:         newMountState(),
+				batch:          newBatchContext(),
 				postRenderHook: func() { called++ },
 			}
 			tt.render(a)

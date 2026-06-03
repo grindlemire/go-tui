@@ -61,4 +61,3 @@ func (sm *SourceMap) GsxToGo(gsxLine, gsxCol int) (goLine, goCol int, found bool
 	}
 	return gsxLine, gsxCol, false
 }
-

@@ -35,10 +35,7 @@ func (a *App) setupInlineScreen(width, termHeight int) {
 	a.reserveInlineRegion()
 
 	// Calculate where our inline region starts.
-	a.inlineStartRow = termHeight - a.inlineHeight
-	if a.inlineStartRow < 0 {
-		a.inlineStartRow = 0
-	}
+	a.inlineStartRow = max(termHeight-a.inlineHeight, 0)
 	a.inlineSession = newInlineSession(a.terminal)
 
 	// Create buffer sized for inline region only.
@@ -58,7 +55,7 @@ func (a *App) reserveInlineRegion() {
 
 	// Reserve rows via linefeeds and return to the start of the reserved block.
 	_, _ = a.terminal.WriteDirect([]byte(strings.Repeat("\r\n", a.inlineHeight)))
-	_, _ = a.terminal.WriteDirect([]byte(fmt.Sprintf("\033[%dA", a.inlineHeight)))
+	_, _ = a.terminal.WriteDirect(fmt.Appendf(nil, "\033[%dA", a.inlineHeight))
 }
 
 func (a *App) applyInlineStartupPolicy(termHeight int) {

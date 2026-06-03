@@ -14,9 +14,11 @@ type WorkspaceSymbolParams struct {
 
 // DocumentSymbol, SymbolInformation, and SymbolKind are type aliases for the
 // canonical definitions in the provider package, eliminating duplicate type definitions.
-type DocumentSymbol = provider.DocumentSymbol
-type SymbolInformation = provider.SymbolInformation
-type SymbolKind = provider.SymbolKind
+type (
+	DocumentSymbol    = provider.DocumentSymbol
+	SymbolInformation = provider.SymbolInformation
+	SymbolKind        = provider.SymbolKind
+)
 
 // Re-export SymbolKind constants so existing lsp package code compiles unchanged.
 const (

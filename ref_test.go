@@ -95,8 +95,8 @@ func TestRefList_AppendAndAll(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"empty list":       {count: 0},
-		"single element":   {count: 1},
+		"empty list":        {count: 0},
+		"single element":    {count: 1},
 		"multiple elements": {count: 5},
 	}
 
@@ -137,10 +137,10 @@ func TestRefList_At(t *testing.T) {
 	r.Append(el2)
 
 	tests := map[string]tc{
-		"valid index 0":        {index: 0, wantNil: false},
-		"valid index 1":        {index: 1, wantNil: false},
-		"valid index 2":        {index: 2, wantNil: false},
-		"out of bounds high":   {index: 3, wantNil: true},
+		"valid index 0":          {index: 0, wantNil: false},
+		"valid index 1":          {index: 1, wantNil: false},
+		"valid index 2":          {index: 2, wantNil: false},
+		"out of bounds high":     {index: 3, wantNil: true},
 		"out of bounds negative": {index: -1, wantNil: true},
 	}
 
@@ -199,9 +199,9 @@ func TestRefMap_PutAndGet(t *testing.T) {
 	r.Put("b", elB)
 
 	tests := map[string]tc{
-		"existing key a":  {key: "a", wantNil: false},
-		"existing key b":  {key: "b", wantNil: false},
-		"missing key":     {key: "c", wantNil: true},
+		"existing key a": {key: "a", wantNil: false},
+		"existing key b": {key: "b", wantNil: false},
+		"missing key":    {key: "c", wantNil: true},
 	}
 
 	expected := map[string]*Element{"a": elA, "b": elB}

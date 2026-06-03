@@ -159,14 +159,6 @@ func (n *testNode) markDirty() {
 	}
 }
 
-// flexStyle returns a DefaultStyle with Display set to DisplayFlex.
-// Use this in tests that need explicit row/column flex behavior.
-func flexStyle() Style {
-	s := DefaultStyle()
-	s.Display = DisplayFlex
-	return s
-}
-
 // Tests for the testNode implementation (ensures it implements Layoutable correctly)
 
 func TestTestNode_ImplementsLayoutable(t *testing.T) {

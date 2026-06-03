@@ -1,0 +1,28 @@
+version: "2"
+
+run:
+  go: "1.25"
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - ineffassign
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - errcheck
+        path: _test\.go
+      - linters:
+          - errcheck
+        text: "Error return value of `.*(Write|WriteString|WriteDirect|WriteStyled|WriteGradient|ExitRawMode|EnterRawMode|Interrupt|Kill|Shutdown|Close|Flush|sendNotification|InitGopls|Sync|Read|Fprintf)` is not checked"
+  settings:
+    staticcheck:
+      checks: ["SA*", "S*"]
+
+formatters:
+  enable:
+    - gofumpt

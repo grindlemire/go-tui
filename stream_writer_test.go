@@ -187,9 +187,9 @@ func TestStreamWriter_NopWriter(t *testing.T) {
 
 func TestStreamWriter_ColumnTracking(t *testing.T) {
 	type tc struct {
-		writes   []string
-		width    int
-		wantCol  int
+		writes  []string
+		width   int
+		wantCol int
 	}
 
 	tests := map[string]tc{

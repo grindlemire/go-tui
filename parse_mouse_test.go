@@ -103,13 +103,13 @@ func TestParseMouseSGR_Invalid(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"empty":                     {input: []byte{}},
-		"too short":                 {input: []byte("\x1b[<")},
-		"missing M":                 {input: []byte("\x1b[<0;1;1")},
-		"wrong prefix":              {input: []byte("\x1b[0;1;1M")},
-		"missing x":                 {input: []byte("\x1b[<0;;1M")},
-		"missing y":                 {input: []byte("\x1b[<0;1;M")},
-		"non-numeric button":        {input: []byte("\x1b[<a;1;1M")},
+		"empty":              {input: []byte{}},
+		"too short":          {input: []byte("\x1b[<")},
+		"missing M":          {input: []byte("\x1b[<0;1;1")},
+		"wrong prefix":       {input: []byte("\x1b[0;1;1M")},
+		"missing x":          {input: []byte("\x1b[<0;;1M")},
+		"missing y":          {input: []byte("\x1b[<0;1;M")},
+		"non-numeric button": {input: []byte("\x1b[<a;1;1M")},
 	}
 
 	for name, tt := range tests {

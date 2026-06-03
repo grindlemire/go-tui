@@ -6,10 +6,10 @@ import "encoding/json"
 type streamEventType int
 
 const (
-	eventText     streamEventType = iota // text delta to display
-	eventToolUse                         // tool invocation summary
-	eventDone                            // response complete
-	eventError                           // subprocess error
+	eventText    streamEventType = iota // text delta to display
+	eventToolUse                        // tool invocation summary
+	eventDone                           // response complete
+	eventError                          // subprocess error
 )
 
 // streamEvent is a parsed event from claude's stream-json output.

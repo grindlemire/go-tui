@@ -14,7 +14,7 @@ func wrapText(text string, maxWidth int) []string {
 	}
 
 	var result []string
-	for _, paragraph := range strings.Split(text, "\n") {
+	for paragraph := range strings.SplitSeq(text, "\n") {
 		result = append(result, wrapParagraph(paragraph, maxWidth)...)
 	}
 	return result

@@ -13,8 +13,10 @@ type HoverParams struct {
 
 // Hover and MarkupContent are type aliases for the canonical definitions
 // in the provider package, eliminating duplicate type definitions.
-type Hover = provider.Hover
-type MarkupContent = provider.MarkupContent
+type (
+	Hover         = provider.Hover
+	MarkupContent = provider.MarkupContent
+)
 
 // getElementAttributes returns attribute documentation for an element tag.
 // Delegates to the centralized schema. Used by features_test.go.

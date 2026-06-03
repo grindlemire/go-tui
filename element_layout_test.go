@@ -415,13 +415,13 @@ func TestElement_HeightForWidth_TextWrap(t *testing.T) {
 		},
 		"with padding": {
 			text:    "hello world",
-			width:   9,  // 9 total - 2 padding = 7 content width
+			width:   9, // 9 total - 2 padding = 7 content width
 			padding: 1,
 			want:    4, // 2 lines + 2 padding
 		},
 		"with border": {
 			text:   "hello world",
-			width:  9,  // 9 total - 2 border = 7 content width
+			width:  9, // 9 total - 2 border = 7 content width
 			border: BorderSingle,
 			want:   4, // 2 lines + 2 border
 		},

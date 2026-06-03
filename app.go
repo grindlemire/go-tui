@@ -76,11 +76,11 @@ type App struct {
 	savedInlineLayout   inlineLayoutState
 
 	// Component model (mount system for struct components)
-	mounts        *mountState
-	dispatchTable *dispatchTable // Key broadcast dispatch table, rebuilt on dirty frames
-	rootComponent Component      // Root struct component (set via SetRoot with Component)
+	mounts         *mountState
+	dispatchTable  *dispatchTable // Key broadcast dispatch table, rebuilt on dirty frames
+	rootComponent  Component      // Root struct component (set via SetRoot with Component)
 	postRenderHook func()
-	rootUnbinder  AppUnbinder    // Tracks the current root's AppUnbinder for swap-time teardown. Covers SetRootView where rootComponent is nil.
+	rootUnbinder   AppUnbinder // Tracks the current root's AppUnbinder for swap-time teardown. Covers SetRootView where rootComponent is nil.
 
 	// Component watchers (from WatcherProvider components)
 	componentWatchers        []Watcher

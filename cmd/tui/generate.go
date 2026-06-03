@@ -81,8 +81,8 @@ func collectGsxFiles(paths []string) ([]string, error) {
 
 	for _, path := range paths {
 		// Handle ./... recursive pattern
-		if strings.HasSuffix(path, "/...") {
-			root := strings.TrimSuffix(path, "/...")
+		if before, ok := strings.CutSuffix(path, "/..."); ok {
+			root := before
 			if root == "." || root == "" {
 				root = "."
 			}
@@ -183,7 +183,7 @@ func generateFile(inputPath, outputPath string) error {
 	}
 
 	// Write output file
-	if err := os.WriteFile(outputPath, output, 0644); err != nil {
+	if err := os.WriteFile(outputPath, output, 0o644); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
 

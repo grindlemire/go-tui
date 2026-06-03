@@ -257,7 +257,7 @@ func (l *Lexer) ReadBalancedBracesFrom(startPos int) (string, error) {
 	// and l.column could be in an inconsistent state.
 	lineStart := 0
 	lineNum := 1
-	for i := 0; i < startPos; i++ {
+	for i := range startPos {
 		if l.source[i] == '\n' {
 			lineStart = i + 1
 			lineNum++

@@ -368,24 +368,24 @@ func TestNodeKind_String(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"component":     {kind: NodeKindComponent, want: "Component"},
-		"element":       {kind: NodeKindElement, want: "Element"},
-		"attribute":     {kind: NodeKindAttribute, want: "Attribute"},
-		"ref attr":      {kind: NodeKindRefAttr, want: "RefAttr"},
-		"go expr":       {kind: NodeKindGoExpr, want: "GoExpr"},
-		"for loop":      {kind: NodeKindForLoop, want: "ForLoop"},
-		"if stmt":       {kind: NodeKindIfStmt, want: "IfStmt"},
-		"let binding":   {kind: NodeKindLetBinding, want: "LetBinding"},
-		"state decl":    {kind: NodeKindStateDecl, want: "StateDecl"},
-		"state access":  {kind: NodeKindStateAccess, want: "StateAccess"},
-		"parameter":     {kind: NodeKindParameter, want: "Parameter"},
-		"function":      {kind: NodeKindFunction, want: "Function"},
-		"component call":{kind: NodeKindComponentCall, want: "ComponentCall"},
-		"event handler": {kind: NodeKindEventHandler, want: "EventHandler"},
-		"text":          {kind: NodeKindText, want: "Text"},
-		"keyword":       {kind: NodeKindKeyword, want: "Keyword"},
-		"tailwind class":{kind: NodeKindTailwindClass, want: "TailwindClass"},
-		"unknown":       {kind: NodeKindUnknown, want: "Unknown"},
+		"component":      {kind: NodeKindComponent, want: "Component"},
+		"element":        {kind: NodeKindElement, want: "Element"},
+		"attribute":      {kind: NodeKindAttribute, want: "Attribute"},
+		"ref attr":       {kind: NodeKindRefAttr, want: "RefAttr"},
+		"go expr":        {kind: NodeKindGoExpr, want: "GoExpr"},
+		"for loop":       {kind: NodeKindForLoop, want: "ForLoop"},
+		"if stmt":        {kind: NodeKindIfStmt, want: "IfStmt"},
+		"let binding":    {kind: NodeKindLetBinding, want: "LetBinding"},
+		"state decl":     {kind: NodeKindStateDecl, want: "StateDecl"},
+		"state access":   {kind: NodeKindStateAccess, want: "StateAccess"},
+		"parameter":      {kind: NodeKindParameter, want: "Parameter"},
+		"function":       {kind: NodeKindFunction, want: "Function"},
+		"component call": {kind: NodeKindComponentCall, want: "ComponentCall"},
+		"event handler":  {kind: NodeKindEventHandler, want: "EventHandler"},
+		"text":           {kind: NodeKindText, want: "Text"},
+		"keyword":        {kind: NodeKindKeyword, want: "Keyword"},
+		"tailwind class": {kind: NodeKindTailwindClass, want: "TailwindClass"},
+		"unknown":        {kind: NodeKindUnknown, want: "Unknown"},
 	}
 
 	for name, tt := range tests {
@@ -397,4 +397,3 @@ func TestNodeKind_String(t *testing.T) {
 		})
 	}
 }
-

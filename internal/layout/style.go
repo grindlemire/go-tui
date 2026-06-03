@@ -77,9 +77,9 @@ type Style struct {
 	Direction      Direction
 	JustifyContent Justify
 	AlignItems     Align
-	Gap          int          // Space between children (main axis only)
-	FlexWrap     FlexWrap     // Wrap behavior (default WrapNone)
-	AlignContent AlignContent // Cross-axis line distribution (default ContentStart)
+	Gap            int          // Space between children (main axis only)
+	FlexWrap       FlexWrap     // Wrap behavior (default WrapNone)
+	AlignContent   AlignContent // Cross-axis line distribution (default ContentStart)
 
 	// Flex item properties
 	FlexGrow   float64 // How much to grow relative to siblings

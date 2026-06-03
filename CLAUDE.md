@@ -51,6 +51,27 @@ gcommit -m "feat!: change State API to require type parameter"
 gcommit -m "chore: update golang.org/x dependencies"
 ```
 
+## Code Style & Linting
+
+We enforce strict formatting, linting, and language modernization standards for all Go files:
+
+- **Formatting**: Format all Go files strictly using `golangci-lint fmt`:
+  ```bash
+  golangci-lint fmt
+  ```
+- **Modernization**: Use `go fix` to apply and keep modern Go library usages and constructs updated:
+  ```bash
+  go fix ./...
+  ```
+- **Linting**: Verify code quality and static analysis warnings locally using `golangci-lint`:
+  ```bash
+  golangci-lint run
+  ```
+- **Template Formatting**: Format custom `.gsx` template files using:
+  ```bash
+  tui fmt [path...]
+  ```
+
 ## Project Overview
 
 go-tui allows defining UIs in `.gsx` files that compile to type-safe Go code. The framework provides:

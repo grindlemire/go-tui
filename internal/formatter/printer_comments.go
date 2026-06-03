@@ -44,7 +44,7 @@ func formatBlockComment(text string) string {
 
 	// Collect all non-empty content lines
 	var contentLines []string
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed != "" {
 			contentLines = append(contentLines, trimmed)

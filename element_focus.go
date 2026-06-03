@@ -152,17 +152,8 @@ func (e *Element) hasWrapOverflow() bool {
 // This bypasses the normal ScrollTo/ScrollBy which require scrollMode.
 func (e *Element) scrollWrapOverflow(dy int) {
 	cr := e.ContentRect()
-	maxY := e.contentHeight - cr.Height
-	if maxY < 0 {
-		maxY = 0
-	}
-	newY := e.scrollY + dy
-	if newY < 0 {
-		newY = 0
-	}
-	if newY > maxY {
-		newY = maxY
-	}
+	maxY := max(e.contentHeight-cr.Height, 0)
+	newY := min(max(e.scrollY+dy, 0), maxY)
 	if newY != e.scrollY {
 		e.scrollY = newY
 		e.MarkDirty()

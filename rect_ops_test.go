@@ -218,10 +218,10 @@ func TestRect_Translate(t *testing.T) {
 
 func TestRect_Clamp(t *testing.T) {
 	type tc struct {
-		rect       Rect
-		x, y       int
-		expectedX  int
-		expectedY  int
+		rect      Rect
+		x, y      int
+		expectedX int
+		expectedY int
 	}
 
 	r := NewRect(10, 20, 30, 40)

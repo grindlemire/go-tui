@@ -67,8 +67,8 @@ func (m *mockReadWriter) readResponse() (*Response, error) {
 		if line == "" {
 			break
 		}
-		if strings.HasPrefix(line, "Content-Length:") {
-			lenStr := strings.TrimSpace(strings.TrimPrefix(line, "Content-Length:"))
+		if after, ok := strings.CutPrefix(line, "Content-Length:"); ok {
+			lenStr := strings.TrimSpace(after)
 			if _, err := fmt.Sscanf(lenStr, "%d", &contentLength); err != nil {
 				return nil, err
 			}
@@ -431,4 +431,3 @@ templ Hello() {
 		t.Error("document still exists after close")
 	}
 }
-

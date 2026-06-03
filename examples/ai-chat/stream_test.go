@@ -4,9 +4,9 @@ import "testing"
 
 func TestStreamParserParseLine(t *testing.T) {
 	type tc struct {
-		name   string
-		lines  []string // feed these lines in order
-		want   [][]streamEvent
+		name  string
+		lines []string // feed these lines in order
+		want  [][]streamEvent
 	}
 
 	tests := []tc{

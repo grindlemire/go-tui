@@ -340,9 +340,9 @@ type viewWithUnbind struct {
 	onUnbind func()
 }
 
-func (v *viewWithUnbind) GetRoot() *Element       { return New() }
-func (v *viewWithUnbind) GetWatchers() []Watcher  { return nil }
-func (v *viewWithUnbind) BindApp(app *App)        {}
+func (v *viewWithUnbind) GetRoot() *Element      { return New() }
+func (v *viewWithUnbind) GetWatchers() []Watcher { return nil }
+func (v *viewWithUnbind) BindApp(app *App)       {}
 func (v *viewWithUnbind) UnbindApp() {
 	if v.onUnbind != nil {
 		v.onUnbind()

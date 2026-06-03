@@ -19,7 +19,7 @@ func buildTree(branching, depth int) *testNode {
 }
 
 func addChildrenRecursive(parent *testNode, branching, remainingDepth int) {
-	for i := 0; i < branching; i++ {
+	for range branching {
 		child := newTestNode(DefaultStyle())
 		child.style.FlexGrow = 1
 
@@ -47,7 +47,7 @@ func buildLinearTree(n int) *testNode {
 	root.style.Display = DisplayFlex
 	root.style.Direction = Row
 
-	for i := 0; i < n; i++ {
+	for range n {
 		child := newTestNode(DefaultStyle())
 		child.style.Width = Fixed(10)
 		child.style.Height = Fixed(100)

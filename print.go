@@ -54,7 +54,7 @@ func Sprint(v Viewable, opts ...PrintOption) string {
 
 	var sb strings.Builder
 	esc := newEscBuilder(256)
-	for row := 0; row < height; row++ {
+	for row := range height {
 		if row > 0 {
 			sb.WriteByte('\n')
 		}

@@ -421,7 +421,7 @@ func TestDefinition_EventHandler(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// Without a real gopls proxy, this should return nil
-	if result != nil && len(result) > 0 {
+	if len(result) > 0 {
 		t.Errorf("expected nil result without gopls, got %v", result)
 	}
 }

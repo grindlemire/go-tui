@@ -47,7 +47,10 @@ func TestBuffer_Diff_MultipleChanges(t *testing.T) {
 	}
 
 	// Changes should be in row-major order
-	expected := []struct{ x, y int; r rune }{
+	expected := []struct {
+		x, y int
+		r    rune
+	}{
 		{0, 0, 'A'},
 		{4, 0, 'B'},
 		{2, 2, 'C'},

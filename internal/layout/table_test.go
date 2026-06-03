@@ -48,10 +48,10 @@ func TestLayoutTable(t *testing.T) {
 	}
 
 	type tc struct {
-		desc       string
-		tableWidth int
+		desc        string
+		tableWidth  int
 		tableHeight int
-		build      func() *tableNode
+		build       func() *tableNode
 		// expectations: rows[rowIdx][colIdx] = expected cell dimensions
 		cells [][]cellExpect
 	}
@@ -380,8 +380,8 @@ func TestLayoutTable_ShrinkColumns(t *testing.T) {
 
 func TestTableIntrinsicSize(t *testing.T) {
 	type tc struct {
-		build       func() *tableNode
-		expectWidth int
+		build        func() *tableNode
+		expectWidth  int
 		expectHeight int
 	}
 

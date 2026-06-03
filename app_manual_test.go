@@ -6,10 +6,7 @@ import (
 )
 
 func TestUpdateEvent_ImplementsEvent(t *testing.T) {
-	var ev Event = UpdateEvent{fn: func() {}}
-	if ev == nil {
-		t.Fatal("UpdateEvent should implement Event")
-	}
+	var _ Event = UpdateEvent{fn: func() {}}
 }
 
 func TestUpdateEvent_RunsClosure(t *testing.T) {
@@ -216,7 +213,7 @@ func TestManualLoop_DispatchEventsProcessesAll(t *testing.T) {
 	}
 
 	count := 0
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		app.merged <- UpdateEvent{fn: func() { count++ }}
 	}
 
@@ -277,7 +274,7 @@ func TestManualLoop_SelectMultiplexing(t *testing.T) {
 	customHandled := false
 
 	// Process both sources
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		select {
 		case ev, ok := <-app.Events():
 			if ok {

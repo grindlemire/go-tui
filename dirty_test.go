@@ -75,12 +75,10 @@ func TestDirty_ConcurrentMarkDirty(t *testing.T) {
 	var wg sync.WaitGroup
 	const numGoroutines = 100
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range numGoroutines {
+		wg.Go(func() {
 			testApp.MarkDirty()
-		}()
+		})
 	}
 
 	wg.Wait()

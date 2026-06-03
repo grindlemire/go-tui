@@ -30,7 +30,7 @@ func RenderFull(term Terminal, buf *Buffer) {
 	height := buf.Height()
 	changes := make([]CellChange, 0, width*height)
 
-	for y := 0; y < height; y++ {
+	for y := range height {
 		trimEnd := -1
 		for x := width - 1; x >= 0; x-- {
 			c := buf.Cell(x, y)
@@ -39,7 +39,7 @@ func RenderFull(term Terminal, buf *Buffer) {
 				break
 			}
 		}
-		for x := 0; x <= trimEnd; x++ {
+		for x := range trimEnd + 1 {
 			changes = append(changes, CellChange{X: x, Y: y, Cell: buf.Cell(x, y)})
 		}
 	}

@@ -16,7 +16,6 @@ templ Header() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -52,7 +51,6 @@ templ Header() { // trailing comment on brace
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -82,7 +80,6 @@ templ Header() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -123,7 +120,6 @@ templ Header() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -156,7 +152,6 @@ templ Header() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -182,7 +177,6 @@ templ Header() {
 	l := NewLexer("test.gsx", input)
 	p := NewParser(l)
 	file, err := p.ParseFile()
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -243,4 +237,3 @@ func TestParser_CommentGrouping_BlankLineSeparation(t *testing.T) {
 		})
 	}
 }
-

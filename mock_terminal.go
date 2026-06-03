@@ -313,8 +313,8 @@ func (m *MockTerminal) Resize(width, height int) {
 	copyWidth := min(width, m.width)
 	copyHeight := min(height, m.height)
 
-	for y := 0; y < copyHeight; y++ {
-		for x := 0; x < copyWidth; x++ {
+	for y := range copyHeight {
+		for x := range copyWidth {
 			newCells[y*width+x] = m.cells[y*m.width+x]
 		}
 	}

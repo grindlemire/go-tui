@@ -49,7 +49,8 @@ func (l *Lexer) readRune() Token {
 	l.readChar() // consume opening '
 
 	var r rune
-	if l.ch == '\\' {
+	switch l.ch {
+	case '\\':
 		l.readChar() // consume backslash
 		switch l.ch {
 		case 'n':
@@ -69,10 +70,10 @@ func (l *Lexer) readRune() Token {
 			r = l.ch
 		}
 		l.readChar()
-	} else if l.ch == '\'' || l.ch == 0 {
+	case '\'', 0:
 		l.errors.AddError(l.position(), "empty rune literal")
 		return l.makeToken(TokenError, "")
-	} else {
+	default:
 		r = l.ch
 		l.readChar()
 	}

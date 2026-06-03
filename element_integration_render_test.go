@@ -14,7 +14,7 @@ func TestIntegration_DeepNesting(t *testing.T) {
 
 	current := root
 	depth := 5
-	for i := 0; i < depth; i++ {
+	for range depth {
 		child := New(
 			WithFlexGrow(1),
 			WithPadding(2),
@@ -130,9 +130,9 @@ func TestIntegration_RenderOutput(t *testing.T) {
 		"└────────┘",
 	}
 
-	for y := 0; y < 5; y++ {
+	for y := range 5 {
 		var row strings.Builder
-		for x := 0; x < 10; x++ {
+		for x := range 10 {
 			cell := buf.Cell(x, y)
 			row.WriteRune(cell.Rune)
 		}
@@ -247,7 +247,7 @@ func TestIntegration_TextWrapEndToEnd(t *testing.T) {
 
 func extractBufferLine(buf *Buffer, y, width int) string {
 	var b strings.Builder
-	for x := 0; x < width; x++ {
+	for x := range width {
 		cell := buf.Cell(x, y)
 		if cell.Rune != 0 {
 			b.WriteRune(cell.Rune)

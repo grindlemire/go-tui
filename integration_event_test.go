@@ -8,10 +8,10 @@ import (
 // MockEventReader through FocusManager to mock Focusable elements.
 func TestIntegration_MockReaderToFocusManager(t *testing.T) {
 	type tc struct {
-		events           []Event
-		expectedHandled  []bool
-		focusedAfter     string
-		focusCycles      int // number of Next() calls to make
+		events          []Event
+		expectedHandled []bool
+		focusedAfter    string
+		focusCycles     int // number of Next() calls to make
 	}
 
 	tests := map[string]tc{
@@ -234,7 +234,7 @@ func TestIntegration_FocusCycleWithNonFocusable(t *testing.T) {
 	focusOrder := []string{}
 
 	// Navigate forward through all focusable elements
-	for i := 0; i < 6; i++ { // More iterations than needed to test wraparound
+	for range 6 { // More iterations than needed to test wraparound
 		fm.Next()
 		focusOrder = append(focusOrder, fm.Focused().(*mockFocusable).id)
 	}

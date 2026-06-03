@@ -30,7 +30,7 @@ func (c *testInputComponent) Render(app *App) *Element {
 }
 
 func (c *testInputComponent) IsFocusable() bool { return true }
-func (c *testInputComponent) IsTabStop() bool    { return true }
+func (c *testInputComponent) IsTabStop() bool   { return true }
 func (c *testInputComponent) IsFocused() bool   { return c.focused.Get() }
 
 func (c *testInputComponent) Focus() {
@@ -95,14 +95,14 @@ func TestFocusIntegration_TabFocusesInput(t *testing.T) {
 
 	term := NewMockTerminal(80, 24)
 	app := &App{
-		terminal:   term,
-		focus:      newFocusManager(),
-		buffer:     NewBuffer(80, 24),
+		terminal:     term,
+		focus:        newFocusManager(),
+		buffer:       NewBuffer(80, 24),
 		merged:       make(chan Event, 256),
 		watcherQueue: make(chan func(), 256),
-		stopCh:     make(chan struct{}),
-		mounts:     newMountState(),
-		batch:      newBatchContext(),
+		stopCh:       make(chan struct{}),
+		mounts:       newMountState(),
+		batch:        newBatchContext(),
 	}
 
 	// Phase 1: SetRootComponent (like the real app)

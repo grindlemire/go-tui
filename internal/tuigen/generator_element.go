@@ -236,9 +236,9 @@ var attributeToOption = map[string]string{
 	"maxHeight":     "tui.WithMaxHeight(%s)",
 
 	// Flex container
-	"direction": "tui.WithDirection(%s)",
-	"justify":   "tui.WithJustify(%s)",
-	"align":     "tui.WithAlign(%s)",
+	"direction":    "tui.WithDirection(%s)",
+	"justify":      "tui.WithJustify(%s)",
+	"align":        "tui.WithAlign(%s)",
 	"gap":          "tui.WithGap(%s)",
 	"flexWrap":     "tui.WithFlexWrap(%s)",
 	"alignContent": "tui.WithAlignContent(%s)",

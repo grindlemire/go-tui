@@ -10,20 +10,20 @@ import (
 // It implements Component, KeyListener, WatcherProvider, and Focusable interfaces.
 type TextArea struct {
 	// Configuration (set via options, immutable after construction)
-	width            int
-	maxHeight        int
-	border           BorderStyle
-	textStyle        Style
-	placeholder      string
-	placeholderStyle Style
-	cursorRune       rune
+	width             int
+	maxHeight         int
+	border            BorderStyle
+	textStyle         Style
+	placeholder       string
+	placeholderStyle  Style
+	cursorRune        rune
 	hideVirtualCursor bool
-	focusColor       *Color
-	borderGradient   *Gradient
-	focusGradient    *Gradient
-	autoFocus        bool
-	submitKey        Key
-	onSubmit         func(string)
+	focusColor        *Color
+	borderGradient    *Gradient
+	focusGradient     *Gradient
+	autoFocus         bool
+	submitKey         Key
+	onSubmit          func(string)
 
 	// Reactive state
 	text      *State[string]
@@ -96,10 +96,7 @@ func (t *TextArea) Clear() {
 // Height returns the total rendered height including border.
 func (t *TextArea) Height() int {
 	lines := t.wrapText()
-	height := len(lines)
-	if height < 1 {
-		height = 1
-	}
+	height := max(len(lines), 1)
 	if t.maxHeight > 0 && height > t.maxHeight {
 		height = t.maxHeight
 	}
@@ -114,10 +111,7 @@ func (t *TextArea) Height() int {
 // Render returns the element tree for the text area.
 func (t *TextArea) Render(app *App) *Element {
 	lines := t.wrapText()
-	height := len(lines)
-	if height < 1 {
-		height = 1
-	}
+	height := max(len(lines), 1)
 	if t.maxHeight > 0 && height > t.maxHeight {
 		height = t.maxHeight
 	}
@@ -400,9 +394,9 @@ func (t *TextArea) wrapText() []string {
 	var lines []string
 
 	// Split on embedded newlines first
-	paragraphs := strings.Split(text, "\n")
+	paragraphs := strings.SplitSeq(text, "\n")
 
-	for _, para := range paragraphs {
+	for para := range paragraphs {
 		if para == "" {
 			lines = append(lines, "")
 			continue
@@ -460,7 +454,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	currentCol := 0
 	lineIdx := 0
 
-	for i := 0; i < len(textRunes); i++ {
+	for i := range textRunes {
 		if currentRow == targetRow && currentCol == targetCol {
 			return i
 		}

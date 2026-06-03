@@ -14,15 +14,18 @@ func TestLexBash(t *testing.T) {
 		"comment and variable": {
 			code: `echo $HOME # hi`,
 			want: [][]Token{{
-				{KindPlain, "echo"}, {KindPlain, " "},
-				{KindLiteral, "$HOME"}, {KindPlain, " "},
+				{KindPlain, "echo"},
+				{KindPlain, " "},
+				{KindLiteral, "$HOME"},
+				{KindPlain, " "},
 				{KindComment, "# hi"},
 			}},
 		},
 		"keyword and string": {
 			code: `if "x"`,
 			want: [][]Token{{
-				{KindKeyword, "if"}, {KindPlain, " "},
+				{KindKeyword, "if"},
+				{KindPlain, " "},
 				{KindString, `"x"`},
 			}},
 		},

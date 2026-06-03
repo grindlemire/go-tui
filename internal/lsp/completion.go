@@ -24,9 +24,11 @@ type CompletionContext struct {
 // CompletionList, CompletionItem, and CompletionItemKind are type aliases for
 // the canonical definitions in the provider package, eliminating duplicate type
 // definitions.
-type CompletionList = provider.CompletionList
-type CompletionItem = provider.CompletionItem
-type CompletionItemKind = provider.CompletionItemKind
+type (
+	CompletionList     = provider.CompletionList
+	CompletionItem     = provider.CompletionItem
+	CompletionItemKind = provider.CompletionItemKind
+)
 
 // Re-export CompletionItemKind constants so existing lsp package code compiles unchanged.
 const (

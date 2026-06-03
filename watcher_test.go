@@ -49,7 +49,7 @@ func TestWatch_ReceivesChannelValues(t *testing.T) {
 	ch <- "world"
 
 	// Drain exactly 2 events with timeout
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		select {
 		case fn := <-eventQueue:
 			fn()
@@ -159,7 +159,7 @@ func TestOnTimer_FiresAtInterval(t *testing.T) {
 	watcher.Start(eventQueue, stopCh)
 
 	// Wait for at least 2 ticks
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		select {
 		case fn := <-eventQueue:
 			fn()

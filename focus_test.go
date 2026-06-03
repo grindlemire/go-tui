@@ -500,4 +500,3 @@ func TestFocusManager_Register(t *testing.T) {
 		})
 	}
 }
-

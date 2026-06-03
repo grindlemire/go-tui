@@ -17,8 +17,8 @@ type dispatchEntry struct {
 	pattern    KeyPattern
 	handler    func(KeyEvent)
 	stop       bool
-	preempt    bool       // fires before normal handlers (used by modal)
-	position   int        // BFS order index from tree walk
+	preempt    bool        // fires before normal handlers (used by modal)
+	position   int         // BFS order index from tree walk
 	focusCheck func() bool // Non-nil for focus-gated entries; returns true when component is focused
 }
 

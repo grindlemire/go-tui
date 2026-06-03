@@ -169,25 +169,25 @@ func TestMockEventReader_AddEvents(t *testing.T) {
 
 func TestMockEventReader_Remaining(t *testing.T) {
 	type tc struct {
-		events        []Event
-		consumeCount  int
+		events         []Event
+		consumeCount   int
 		expectedRemain int
 	}
 
 	tests := map[string]tc{
 		"all remaining": {
-			events:        []Event{KeyEvent{Key: KeyUp}, KeyEvent{Key: KeyDown}},
-			consumeCount:  0,
+			events:         []Event{KeyEvent{Key: KeyUp}, KeyEvent{Key: KeyDown}},
+			consumeCount:   0,
 			expectedRemain: 2,
 		},
 		"some consumed": {
-			events:        []Event{KeyEvent{Key: KeyUp}, KeyEvent{Key: KeyDown}},
-			consumeCount:  1,
+			events:         []Event{KeyEvent{Key: KeyUp}, KeyEvent{Key: KeyDown}},
+			consumeCount:   1,
 			expectedRemain: 1,
 		},
 		"all consumed": {
-			events:        []Event{KeyEvent{Key: KeyUp}, KeyEvent{Key: KeyDown}},
-			consumeCount:  2,
+			events:         []Event{KeyEvent{Key: KeyUp}, KeyEvent{Key: KeyDown}},
+			consumeCount:   2,
 			expectedRemain: 0,
 		},
 	}
