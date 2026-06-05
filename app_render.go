@@ -125,7 +125,12 @@ func (a *App) renderInline() {
 		diff := a.buffer.Diff()
 		changes = make([]CellChange, len(diff))
 		for i, ch := range diff {
-			changes[i] = CellChange{X: ch.X, Y: ch.Y + a.inlineStartRow, Cell: ch.Cell}
+			changes[i] = CellChange{
+				X:          ch.X,
+				Y:          ch.Y + a.inlineStartRow,
+				Cell:       ch.Cell,
+				EraseToEOL: ch.EraseToEOL,
+			}
 		}
 	}
 
