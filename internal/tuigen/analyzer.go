@@ -141,6 +141,7 @@ var knownAttributes = map[string]bool{
 	// Visual
 	"border":             true,
 	"borderStyle":        true,
+	"borderTitle":        true,
 	"background":         true,
 	"backgroundGradient": true,
 

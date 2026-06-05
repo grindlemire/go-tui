@@ -318,3 +318,151 @@ func TestIntegration_TextAlignment(t *testing.T) {
 		})
 	}
 }
+
+func TestIntegration_BorderTitle(t *testing.T) {
+	type tc struct {
+		title         string
+		borderStyle   BorderStyle
+		opts          []Option
+		width         int
+		height        int
+		wantSubstr    string
+		wantNotSubstr string
+		gradientCheck bool // check bottom-left corner retains gradient style
+	}
+
+	tests := map[string]tc{
+		"title in rounded border": {
+			title:       "Status",
+			borderStyle: BorderRounded,
+			width:       20,
+			height:      5,
+			wantSubstr:  "Status",
+		},
+		"empty title draws no title text": {
+			title:         "",
+			borderStyle:   BorderRounded,
+			width:         20,
+			height:        5,
+			wantSubstr:    "╭",     // border draws normally with rounded corner
+			wantNotSubstr: "Title", // no stray text
+		},
+		"title takes priority over gradient": {
+			title:         "MyTitle",
+			borderStyle:   BorderRounded,
+			width:         20,
+			height:        5,
+			opts:          []Option{WithBorderGradient(Gradient{Start: Red, End: Blue})},
+			wantSubstr:    "MyTitle",
+			gradientCheck: true,
+		},
+		"long title is truncated": {
+			title:       "VeryLongTitleThatExceedsBoxWidth",
+			borderStyle: BorderRounded,
+			width:       15,
+			height:      3,
+			wantSubstr:  "VeryLong",
+		},
+		"single border with title": {
+			title:       "Info",
+			borderStyle: BorderSingle,
+			width:       12,
+			height:      4,
+			wantSubstr:  "Info",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			el := New(
+				WithSize(tt.width, tt.height),
+				WithBorder(tt.borderStyle),
+				WithBorderTitle(tt.title),
+			)
+			el.Apply(tt.opts...)
+			buf := NewBuffer(tt.width, tt.height)
+			el.Render(buf, tt.width, tt.height)
+			term := NewMockTerminal(tt.width, tt.height)
+			Render(term, buf)
+			output := term.StringTrimmed()
+
+			if tt.wantSubstr != "" && !strings.Contains(output, tt.wantSubstr) {
+				t.Errorf("output should contain %q, got:\n%s", tt.wantSubstr, output)
+			}
+			if tt.wantNotSubstr != "" && strings.Contains(output, tt.wantNotSubstr) {
+				t.Errorf("output should NOT contain %q, got:\n%s", tt.wantNotSubstr, output)
+			}
+			if tt.gradientCheck {
+				cell := buf.Cell(tt.width-1, tt.height-1)
+				if cell.Style.Fg.IsDefault() {
+					t.Error("border lost its gradient when a title was set")
+				}
+			}
+		})
+	}
+}
+
+func TestIntegration_BorderTitleClipped(t *testing.T) {
+	type tc struct {
+		title         string
+		innerHeight   int
+		outerHeight   int
+		scrollY       int // vertical scroll offset (negative = scroll up)
+		wantSubstr    string
+		wantNotSubstr string
+	}
+
+	tests := map[string]tc{
+		"title visible when top border inside clip": {
+			title:       "ClippedTitle",
+			innerHeight: 8,
+			outerHeight: 5,
+			wantSubstr:  "ClippedTitle",
+		},
+		"title hidden when scrolled above viewport": {
+			title:         "HiddenTitle",
+			innerHeight:   8,
+			outerHeight:   5,
+			scrollY:       3,
+			wantSubstr:    "",
+			wantNotSubstr: "HiddenTitle",
+		},
+		"title wider than box truncated": {
+			title:       "VeryVeryLongTitleThatExceedsBoxWidth",
+			innerHeight: 8,
+			outerHeight: 5,
+			wantSubstr:  "VeryVeryLong",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			inner := New(
+				WithSize(20, tt.innerHeight),
+				WithBorder(BorderRounded),
+				WithBorderTitle(tt.title),
+			)
+			opts := []Option{WithSize(20, tt.outerHeight)}
+			if tt.scrollY != 0 {
+				opts = append(opts, WithScrollable(ScrollVertical), WithScrollOffset(0, tt.scrollY))
+			} else {
+				opts = append(opts, WithOverflow(OverflowHidden))
+			}
+			outer := New(opts...)
+			outer.AddChild(inner)
+
+			buf := NewBuffer(20, tt.outerHeight)
+			outer.Render(buf, 20, tt.outerHeight)
+			term := NewMockTerminal(20, tt.outerHeight)
+			Render(term, buf)
+			output := term.StringTrimmed()
+
+			if tt.wantSubstr != "" && !strings.Contains(output, tt.wantSubstr) {
+				t.Errorf("output should contain %q, got:\n%s", tt.wantSubstr, output)
+			}
+			if tt.wantNotSubstr != "" && strings.Contains(output, tt.wantNotSubstr) {
+				t.Errorf("output should NOT contain %q, got:\n%s", tt.wantNotSubstr, output)
+			}
+		})
+	}
+}

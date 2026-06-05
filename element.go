@@ -60,6 +60,7 @@ type Element struct {
 	border      BorderStyle
 	borderStyle Style
 	background  *Style // nil = transparent
+	borderTitle string // title text drawn in the top border (DrawBoxWithTitle)
 
 	// Text properties
 	text         string

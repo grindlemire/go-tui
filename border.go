@@ -378,22 +378,53 @@ func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, 
 	// First draw the box
 	DrawBox(buf, rect, border, style)
 
-	// Now add the title if there's room
-	if len(title) == 0 {
+	// Draw the title
+	drawBoxTitle(buf, rect, title, style)
+}
+
+// drawBoxTitle draws a centered title string on the top border line of the box.
+// drawBoxTitle does not draw the box itself — use DrawBoxWithTitle for that.
+func drawBoxTitle(buf *Buffer, rect Rect, title string, style Style) {
+	runes, startX, ok := prepareTitle(title, rect)
+	if !ok {
 		return
 	}
+	x := startX
+	for _, r := range runes {
+		buf.SetRune(x, rect.Y, r, style)
+		x += RuneWidth(r)
+	}
+}
 
-	// Calculate available space for title (leave at least 1 char on each side for corners)
+// drawBoxTitleClipped draws a centered title string on the top border line,
+// skipping any rune outside the given clip rectangle.
+func drawBoxTitleClipped(buf *Buffer, rect Rect, title string, style Style, clipRect Rect) {
+	// Reject if the title row is outside the clip rect's Y range.
+	if rect.Y < clipRect.Y || rect.Y >= clipRect.Y+clipRect.Height {
+		return
+	}
+	runes, startX, ok := prepareTitle(title, rect)
+	if !ok {
+		return
+	}
+	x := startX
+	for _, r := range runes {
+		if x >= clipRect.X && x+RuneWidth(r) <= clipRect.X+clipRect.Width {
+			buf.SetRune(x, rect.Y, r, style)
+		}
+		x += RuneWidth(r)
+	}
+}
+
+// prepareTitle truncates and centers a title for the given rectangle.
+func prepareTitle(title string, rect Rect) (runes []rune, startX int, ok bool) {
 	availableWidth := rect.Width - 2
 	if availableWidth <= 0 {
-		return
+		return nil, 0, false
 	}
-
-	// Truncate title if needed
 	titleRunes := []rune(title)
 	titleWidth := 0
 	truncatedRunes := make([]rune, 0, len(titleRunes))
-
 	for _, r := range titleRunes {
 		w := RuneWidth(r)
 		if titleWidth+w > availableWidth {
@@ -402,20 +433,11 @@ func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, 
 		truncatedRunes = append(truncatedRunes, r)
 		titleWidth += w
 	}
-
 	if len(truncatedRunes) == 0 {
-		return
+		return nil, 0, false
 	}
-
-	// Center the title in the available space
-	startX := rect.X + 1 + (availableWidth-titleWidth)/2
-
-	// Draw the title
-	x := startX
-	for _, r := range truncatedRunes {
-		buf.SetRune(x, rect.Y, r, style)
-		x += RuneWidth(r)
-	}
+	startX = rect.X + 1 + (availableWidth-titleWidth)/2
+	return truncatedRunes, startX, true
 }
 
 // FillBox fills the interior of a box (excluding the border) with a character and style.

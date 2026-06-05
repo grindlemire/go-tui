@@ -124,12 +124,14 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 		}
 	}
 
-	// 2. Draw border (border style does NOT inherit)
 	if e.border != BorderNone {
 		if e.borderGradient != nil {
 			DrawBoxGradient(buf, rect, e.border, *e.borderGradient, e.borderStyle)
 		} else {
 			DrawBox(buf, rect, e.border, e.borderStyle)
+		}
+		if e.borderTitle != "" {
+			drawBoxTitle(buf, rect, e.borderTitle, e.borderStyle)
 		}
 	}
 
@@ -239,6 +241,9 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			DrawBoxGradientClipped(buf, screenRect, e.border, *e.borderGradient, e.borderStyle, clipRect)
 		} else {
 			DrawBoxClipped(buf, screenRect, e.border, e.borderStyle, clipRect)
+		}
+		if e.borderTitle != "" {
+			drawBoxTitleClipped(buf, screenRect, e.borderTitle, e.borderStyle, clipRect)
 		}
 	}
 

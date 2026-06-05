@@ -283,6 +283,7 @@ func visualAttrs() []AttributeDef {
 		{Name: "border", Type: "border", Description: "Border style (none, single, double, rounded, thick)", Category: "visual"},
 		{Name: "borderStyle", Type: "string", Description: "Border style name", Category: "visual"},
 		{Name: "background", Type: "color", Description: "Background color", Category: "visual"},
+		{Name: "borderTitle", Type: "string", Description: "Title text drawn in the top border", Category: "visual"},
 	}
 }
 

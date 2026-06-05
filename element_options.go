@@ -185,6 +185,15 @@ func WithBorder(style BorderStyle) Option {
 	}
 }
 
+// WithBorderTitle sets a title string drawn in the top border of the box.
+// When WithBorderGradient is also set, the gradient is drawn first and the title
+// overwrites the gradient characters on the top border line.
+func WithBorderTitle(title string) Option {
+	return func(e *Element) {
+		e.borderTitle = title
+	}
+}
+
 // WithBorderStyle sets the color/attributes for the border.
 func WithBorderStyle(style Style) Option {
 	return func(e *Element) {
