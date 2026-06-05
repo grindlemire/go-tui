@@ -276,6 +276,67 @@ drain:
 	}
 }
 
+func TestRenderInline_PreservesEraseToEOL(t *testing.T) {
+	// Regression test for the v0.15.0 bug: the inline coordinate translation
+	// in renderInline must preserve EraseToEOL. The bug manifested as cursor
+	// trails and placeholder bleed in inline mode.
+	//
+	// Sets up a minimal App in inline mode, arranges a buffer where Diff()
+	// emits EraseToEOL, and calls renderInline directly. Verifies the mock
+	// terminal received and applied the erase.
+	//
+	// To verify the test catches regressions: remove EraseToEOL from the
+	// CellChange literal in renderInline (app_render.go:128) and re-run.
+	// This test must FAIL.
+
+	const w = 20
+	term := NewMockTerminal(80, 24)
+	buf := NewBuffer(w, 3)
+	inlineStartRow := 5
+
+	// Arrange front=wide, back=narrow so Diff() emits EraseToEOL.
+	buf.SetString(0, 0, "hello world", NewStyle())
+	buf.Swap()               // front ← "hello world"
+	for x := 2; x < w; x++ { // narrow back: space-fill tail
+		buf.SetRune(x, 0, ' ', NewStyle())
+	}
+	buf.SetString(0, 0, "hi", NewStyle()) // back ← "hi"
+
+	// Pre-populate mock terminal with correct unchanged cells + stale tail.
+	term.SetCell(0, 0+inlineStartRow, NewCell('h', NewStyle()))
+	term.SetCell(1, 0+inlineStartRow, NewCell('i', NewStyle()))
+	for x := 2; x < w; x++ {
+		term.SetCell(x, 0+inlineStartRow, NewCell('X', NewStyle()))
+	}
+
+	// Build a minimal App and call renderInline directly.
+	app := &App{
+		terminal:       term,
+		buffer:         buf,
+		inlineStartRow: inlineStartRow,
+		inlineHeight:   3,
+	}
+	app.renderInline()
+
+	// After renderInline: tail must be blank (EraseToEOL cleared it).
+	for x := 2; x < w; x++ {
+		if c := term.CellAt(x, 0+inlineStartRow); c.Rune != ' ' {
+			t.Errorf("cell (%d, %d): got %q, want space — EraseToEOL not applied. "+
+				"Check app_render.go:128 copies EraseToEOL.",
+				x, 0+inlineStartRow, string(c.Rune))
+			return
+		}
+	}
+
+	// Cols 0-1 ("hi") must be intact.
+	if c := term.CellAt(0, 0+inlineStartRow); c.Rune != 'h' {
+		t.Errorf("col 0: got %q, want 'h'", string(c.Rune))
+	}
+	if c := term.CellAt(1, 0+inlineStartRow); c.Rune != 'i' {
+		t.Errorf("col 1: got %q, want 'i'", string(c.Rune))
+	}
+}
+
 func TestPostRenderHook(t *testing.T) {
 	type tc struct {
 		render func(a *App)
