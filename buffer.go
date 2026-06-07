@@ -490,6 +490,12 @@ func (b *Buffer) Diff() []CellChange {
 			c := b.back[y*b.width+x]
 			if !c.IsEmpty() && !c.IsContinuation() {
 				lastContent = x
+				// A wide character also occupies the next column via its
+				// continuation cell. Keep that column inside the content region
+				// so the trailing erase can never clip the glyph's second half.
+				if c.Width == 2 && x+1 < b.width {
+					lastContent = x + 1
+				}
 				break
 			}
 		}

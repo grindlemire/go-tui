@@ -92,6 +92,77 @@ func TestBuffer_Diff_RowMajorOrder(t *testing.T) {
 	}
 }
 
+func TestBuffer_Diff_TrailingWideChar(t *testing.T) {
+	type tc struct {
+		width      int
+		prevRow    string
+		newRow     string
+		wantEraseX int // expected X of the EraseToEOL change; -1 means no erase expected
+	}
+
+	tests := map[string]tc{
+		"erase starts after continuation cell when row shrinks to trailing wide char": {
+			width:      12,
+			prevRow:    "ABCDEFGHIJ",
+			newRow:     "测试题", // cols 0-5; continuation cell of '题' at col 5
+			wantEraseX: 6,
+		},
+		"erase skips unchanged trailing wide char when tail content is removed": {
+			width:      8,
+			prevRow:    "题  X",
+			newRow:     "题",
+			wantEraseX: 2,
+		},
+		"narrow trailing content erases immediately after it": {
+			width:      8,
+			prevRow:    "ABCDE",
+			newRow:     "ABC",
+			wantEraseX: 3,
+		},
+		"no erase when tail past trailing wide char is unchanged": {
+			width:      8,
+			prevRow:    "",
+			newRow:     "测试题",
+			wantEraseX: -1,
+		},
+		"continuation cell at last column leaves no tail to erase": {
+			width:      3,
+			prevRow:    "ABC",
+			newRow:     "A题", // continuation cell of '题' sits at col 2, the last column
+			wantEraseX: -1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			b := NewBuffer(tt.width, 1)
+
+			// Previous frame: write and "flush" so it becomes the front buffer.
+			b.SetString(0, 0, tt.prevRow, NewStyle())
+			b.Swap()
+
+			// New frame.
+			b.ClearRect(b.Rect())
+			b.SetString(0, 0, tt.newRow, NewStyle())
+
+			gotEraseX := -1
+			for _, ch := range b.Diff() {
+				if !ch.EraseToEOL {
+					continue
+				}
+				if gotEraseX != -1 {
+					t.Fatalf("Diff() emitted more than one EraseToEOL change for a single row")
+				}
+				gotEraseX = ch.X
+			}
+
+			if gotEraseX != tt.wantEraseX {
+				t.Errorf("EraseToEOL X = %d, want %d", gotEraseX, tt.wantEraseX)
+			}
+		})
+	}
+}
+
 func TestBuffer_Swap(t *testing.T) {
 	b := NewBuffer(5, 3)
 	style := NewStyle()
