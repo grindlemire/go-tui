@@ -93,13 +93,25 @@ func (t *TextArea) Clear() {
 	t.cursorPos.Set(0)
 }
 
+// contentRows returns the number of content rows to render: the wrapped
+// lines plus the phantom cursor row, clamped to maxHeight. Note that when
+// content exceeds maxHeight the rows below the clamp (including the cursor's
+// row) are clipped; the textarea has no scroll-to-cursor.
+func (t *TextArea) contentRows(lines []string) int {
+	rows := len(lines)
+	if t.phantomCursorRow(lines) {
+		rows++
+	}
+	rows = max(rows, 1)
+	if t.maxHeight > 0 && rows > t.maxHeight {
+		rows = t.maxHeight
+	}
+	return rows
+}
+
 // Height returns the total rendered height including border.
 func (t *TextArea) Height() int {
-	lines := t.wrapText()
-	height := max(len(lines), 1)
-	if t.maxHeight > 0 && height > t.maxHeight {
-		height = t.maxHeight
-	}
+	height := t.contentRows(t.wrapText())
 	if t.border != BorderNone {
 		height += 2
 	}
@@ -111,13 +123,10 @@ func (t *TextArea) Height() int {
 // Render returns the element tree for the text area.
 func (t *TextArea) Render(app *App) *Element {
 	lines := t.wrapText()
-	height := max(len(lines), 1)
-	if t.maxHeight > 0 && height > t.maxHeight {
-		height = t.maxHeight
-	}
+	rows := t.contentRows(lines)
 
 	// Account for border
-	totalHeight := height
+	totalHeight := rows
 	if t.border != BorderNone {
 		totalHeight += 2
 	}
@@ -157,7 +166,7 @@ func (t *TextArea) Render(app *App) *Element {
 	if t.text.Get() == "" && t.placeholder != "" && !t.focused.Get() {
 		root.AddChild(New(WithText(t.placeholder), WithTextStyle(t.placeholderStyle)))
 	} else {
-		for i := range lines {
+		for i := range rows {
 			root.AddChild(New(WithText(t.lineWithCursor(i)), WithTextStyle(t.textStyle), WithWrap(false)))
 		}
 	}
@@ -371,6 +380,11 @@ func (t *TextArea) moveHome(ke KeyEvent) {
 func (t *TextArea) moveEnd(ke KeyEvent) {
 	lines := t.wrapText()
 	row, _ := t.cursorRowCol(lines)
+	// The cursor can sit on the phantom row one past the last line; End there
+	// resolves against the last real line.
+	if row >= len(lines) {
+		row = len(lines) - 1
+	}
 	t.cursorPos.Set(t.posFromRowCol(lines, row, utf8.RuneCountInString(lines[row])))
 	t.blink.Set(true)
 }
@@ -440,6 +454,13 @@ func (t *TextArea) wrapText() []string {
 }
 
 // cursorRowCol returns the row and column of the cursor.
+//
+// A cursor at the end of a display-full line has no column left to render in,
+// so it moves to the start of the next visual line (downstream affinity). This
+// applies at soft wrap boundaries and at end of text, where the reported row
+// is one past the last wrapped line (a phantom row that Render and Height
+// account for). A full line ended by a hard newline keeps the cursor at its
+// end, since the next row starts a different paragraph.
 func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	text := t.text.Get()
 	pos := t.clampCursorPos()
@@ -448,7 +469,8 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
-	wrapping := t.wrapWidth() > 0
+	width := t.wrapWidth()
+	wrapping := width > 0
 
 	for i := 0; i < len(textRunes) && i < pos; i++ {
 		if textRunes[i] == '\n' {
@@ -463,6 +485,13 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 				lineIdx++
 			}
 		}
+	}
+
+	if wrapping && lineIdx < len(lines) && currentCol > 0 &&
+		currentCol == utf8.RuneCountInString(lines[lineIdx]) &&
+		stringWidth(lines[lineIdx]) >= width &&
+		(pos == len(textRunes) || textRunes[pos] != '\n') {
+		return currentRow + 1, 0
 	}
 
 	return currentRow, currentCol
@@ -499,6 +528,13 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 				currentRow++
 				currentCol = 1
 				lineIdx++
+				// The position before rune i is the start of the new line, so
+				// (row, 0) targets on soft-wrapped lines resolve here. Without
+				// this, column-0 targets after a soft wrap fall through the
+				// loop and land at the end of the text.
+				if currentRow == targetRow && targetCol == 0 {
+					return i
+				}
 			}
 		}
 	}
@@ -506,14 +542,30 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	return len(textRunes)
 }
 
+// phantomCursorRow reports whether the cursor sits one row past the last
+// wrapped line (end of text on a display-full line), which needs an extra
+// rendered row to host the cursor.
+func (t *TextArea) phantomCursorRow(lines []string) bool {
+	if !t.focused.Get() || t.hideVirtualCursor {
+		return false
+	}
+	row, _ := t.cursorRowCol(lines)
+	return row >= len(lines)
+}
+
 // lineWithCursor returns a line with the cursor character inserted.
 func (t *TextArea) lineWithCursor(lineIdx int) string {
 	lines := t.wrapText()
+	row, col := t.cursorRowCol(lines)
+
 	if lineIdx >= len(lines) {
+		// Phantom row hosting the cursor past a display-full last line.
+		if lineIdx == row && t.focused.Get() && !t.hideVirtualCursor && t.blink.Get() {
+			return string(t.cursorRune)
+		}
 		return " "
 	}
 
-	row, col := t.cursorRowCol(lines)
 	line := lines[lineIdx]
 
 	if lineIdx == row && t.focused.Get() {
@@ -530,6 +582,16 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 		}
 		runes := []rune(line)
 		if col >= len(runes) {
+			// A display-full line ended by a hard newline keeps the cursor at
+			// its end (see cursorRowCol), where an appended cursor would be
+			// clipped. Overlay the last cell instead, like a block cursor
+			// sitting on the character.
+			if w := t.wrapWidth(); w > 0 && stringWidth(line) >= w && len(runes) > 0 {
+				if !t.blink.Get() {
+					return line
+				}
+				return string(runes[:len(runes)-1]) + string(t.cursorRune)
+			}
 			return line + cursor
 		}
 		withCursor := append(runes[:col], append([]rune{t.cursorRune}, runes[col:]...)...)
