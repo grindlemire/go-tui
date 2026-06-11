@@ -384,7 +384,22 @@ func (t *TextArea) submit(ke KeyEvent) {
 
 // --- Text Wrapping and Cursor Position ---
 
-// wrapText wraps the text to fit within width, respecting embedded newlines.
+// wrapWidth returns the display columns available for text content. Borders
+// are drawn inside the element width, so they reduce the wrap width by one
+// column on each side.
+func (t *TextArea) wrapWidth() int {
+	w := t.width
+	if t.border != BorderNone {
+		w -= 2
+	}
+	return w
+}
+
+// wrapText wraps the text to fit within the content width, respecting
+// embedded newlines. Lines break at display-column boundaries (CJK and emoji
+// runes occupy two columns), never mid-rune: a wide rune that does not fit
+// moves to the next line. Cursor math stays in rune indices, which remain
+// consistent because wrapping only changes where lines split, not their runes.
 func (t *TextArea) wrapText() []string {
 	text := t.text.Get()
 	if text == "" {
@@ -392,6 +407,7 @@ func (t *TextArea) wrapText() []string {
 	}
 
 	var lines []string
+	width := t.wrapWidth()
 
 	// Split on embedded newlines first
 	paragraphs := strings.SplitSeq(text, "\n")
@@ -404,12 +420,18 @@ func (t *TextArea) wrapText() []string {
 
 		// Wrap this paragraph to width
 		currentLine := make([]rune, 0)
+		currentWidth := 0
 		for _, r := range para {
-			if t.width > 0 && len(currentLine) >= t.width {
+			rw := RuneWidth(r)
+			// The len guard keeps a rune wider than the wrap width on a line
+			// of its own instead of emitting empty lines before it.
+			if width > 0 && len(currentLine) > 0 && currentWidth+rw > width {
 				lines = append(lines, string(currentLine))
 				currentLine = currentLine[:0]
+				currentWidth = 0
 			}
 			currentLine = append(currentLine, r)
+			currentWidth += rw
 		}
 		lines = append(lines, string(currentLine))
 	}
@@ -426,6 +448,7 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
+	wrapping := t.wrapWidth() > 0
 
 	for i := 0; i < len(textRunes) && i < pos; i++ {
 		if textRunes[i] == '\n' {
@@ -434,7 +457,7 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 			lineIdx++
 		} else {
 			currentCol++
-			if t.width > 0 && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
+			if wrapping && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
 				currentRow++
 				currentCol = 1
 				lineIdx++
@@ -453,6 +476,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
+	wrapping := t.wrapWidth() > 0
 
 	for i := range textRunes {
 		if currentRow == targetRow && currentCol == targetCol {
@@ -468,7 +492,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 			lineIdx++
 		} else {
 			currentCol++
-			if t.width > 0 && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
+			if wrapping && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
 				if currentRow == targetRow {
 					return i
 				}
