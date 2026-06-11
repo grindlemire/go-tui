@@ -93,6 +93,22 @@ func TestTextArea_WrapText_DisplayWidth(t *testing.T) {
 			text:  "一二三\n\nab",
 			want:  []string{"一二三", "", "ab"},
 		},
+		"emoji wraps at display columns": {
+			width: 5,
+			text:  "🎉🎉🎉",
+			want:  []string{"🎉🎉", "🎉"},
+		},
+		"rune wider than wrap width gets its own line": {
+			width:  3,
+			border: BorderSingle,
+			text:   "界界",
+			want:   []string{"界", "界"},
+		},
+		"zero width disables wrapping": {
+			width: 0,
+			text:  "abcdef\ngh",
+			want:  []string{"abcdef", "gh"},
+		},
 	}
 
 	for name, tt := range tests {

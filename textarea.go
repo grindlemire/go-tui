@@ -448,6 +448,7 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
+	wrapping := t.wrapWidth() > 0
 
 	for i := 0; i < len(textRunes) && i < pos; i++ {
 		if textRunes[i] == '\n' {
@@ -456,7 +457,7 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 			lineIdx++
 		} else {
 			currentCol++
-			if t.width > 0 && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
+			if wrapping && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
 				currentRow++
 				currentCol = 1
 				lineIdx++
@@ -475,6 +476,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
+	wrapping := t.wrapWidth() > 0
 
 	for i := range textRunes {
 		if currentRow == targetRow && currentCol == targetCol {
@@ -490,7 +492,7 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 			lineIdx++
 		} else {
 			currentCol++
-			if t.width > 0 && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
+			if wrapping && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
 				if currentRow == targetRow {
 					return i
 				}
