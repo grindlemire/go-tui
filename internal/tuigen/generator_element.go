@@ -451,7 +451,16 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 		}
 	}
 
-	g.writef("%s := app.MountPersistent(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
+	// Loop call sites use Mount (mark-and-sweep) so components for keys that
+	// disappear from the data are cleaned up; with map keys and key={...}
+	// the key domain is unbounded, and persisting every key ever seen would
+	// leak. MountPersistent remains for standalone sites so a component
+	// hidden by a conditional keeps its state (e.g. a textarea's draft).
+	mountFunc := "app.MountPersistent"
+	if len(g.loopIndexStack) > 0 {
+		mountFunc = "app.Mount"
+	}
+	g.writef("%s := %s(%s, %s, func() tui.Component {\n", varName, mountFunc, g.currentReceiver, indexExpr)
 	g.indent++
 
 	constructor := componentConstructor(elem.Tag)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/imports"
@@ -353,16 +354,22 @@ func (g *Generator) popLoopIndex() {
 // Standalone call sites use the static site index. Call sites inside loops
 // combine the site with each enclosing loop's key value via tui.MountKey,
 // so every iteration (slice index, map key, ...) gets its own cache slot.
-// A userKey expression (from a key={...} attribute) replaces the loop
-// values: the user asserts the item's identity directly.
+// A userKey expression (from a key={...} attribute) replaces the innermost
+// loop's value only: like React keys, it identifies the item among its
+// siblings, while outer loops keep contributing their own key values.
 func (g *Generator) mountKeyExpr(baseIndex int, userKey string) string {
+	parts := slices.Clone(g.loopIndexStack)
 	if userKey != "" {
-		return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, userKey)
+		if len(parts) == 0 {
+			parts = []string{userKey}
+		} else {
+			parts[len(parts)-1] = userKey
+		}
 	}
-	if len(g.loopIndexStack) == 0 {
+	if len(parts) == 0 {
 		return fmt.Sprintf("%d", baseIndex)
 	}
-	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(g.loopIndexStack, ", "))
+	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(parts, ", "))
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.

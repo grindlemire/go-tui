@@ -416,3 +416,61 @@ templ (p *panel) Render() {
 		})
 	}
 }
+
+func TestAnalyzer_KeyAndRefRequireExpressions(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+	}
+
+	tests := map[string]tc{
+		"key expression is valid": {
+			input: `package x
+templ Test() {
+	<div>
+		for _, item := range items {
+			<markdown key={item.ID} source={item.Text} />
+		}
+	</div>
+}`,
+			wantError: false,
+		},
+		"key string literal is rejected": {
+			input: `package x
+templ Test() {
+	<markdown key="myid" source={src} />
+}`,
+			wantError:     true,
+			errorContains: "key must be an expression",
+		},
+		"ref string literal is rejected": {
+			input: `package x
+templ Test() {
+	<textarea ref="myref" />
+}`,
+			wantError:     true,
+			errorContains: "ref must be an expression",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.gsx", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}

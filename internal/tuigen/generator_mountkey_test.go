@@ -30,7 +30,7 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, i), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, i), func() tui.Component {",
 			},
 		},
 		"slice loop with discarded index uses synthetic variable": {
@@ -46,7 +46,7 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, __idx_0), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, __idx_0), func() tui.Component {",
 			},
 		},
 		"map loop keys by the map key (issue 92)": {
@@ -62,7 +62,7 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, name), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, name), func() tui.Component {",
 			},
 		},
 		"nested loops pass both loop keys": {
@@ -80,7 +80,7 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, i, j), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, i, j), func() tui.Component {",
 			},
 		},
 		"standalone component after loop keeps plain site index": {
@@ -97,11 +97,11 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, i), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, i), func() tui.Component {",
 				"app.MountPersistent(c, 1, func() tui.Component {",
 			},
 		},
-		"key attribute replaces loop keys with user identity": {
+		"key attribute replaces the innermost loop key with user identity": {
 			input: `package x
 
 type app struct{}
@@ -114,7 +114,25 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, item.ID), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+			},
+		},
+		"key attribute in nested loop is scoped to the innermost loop": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for i, group := range c.groups {
+			for _, item := range group {
+				<markdown key={item.ID} source={item.Text} />
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, i, item.ID), func() tui.Component {",
 			},
 		},
 		"key attribute still drives RefMap.Put alongside mount identity": {
@@ -130,7 +148,7 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, tui.MountKey(0, item.ID), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
 				"c.areas.Put(item.ID, __tui_",
 			},
 		},

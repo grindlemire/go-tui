@@ -49,11 +49,22 @@ func (a *App) mount(parent Component, key any, factory func() Component) *Elemen
 	app := a
 	ms := app.mounts
 	k := mountKey{parent: parent, key: key}
+	if ms.activeKeys[k] {
+		// Two mounts produced the same key within one render pass: either
+		// two call sites collide or a key={...} expression repeats across
+		// loop items. Both tree positions will share one component instance.
+		debug.Log("Mount: duplicate mount key %v (parent %T) within one render pass", key, parent)
+	}
 	ms.activeKeys[k] = true // Mark as active this render
 
 	instance, cached := ms.cache[k]
 	var fresh Component
 	if cached {
+		// The collision guard below only covers PropsUpdater types: that is
+		// the one path where a fresh instance already exists to compare
+		// against, so the check is free. All framework components implement
+		// PropsUpdater. Checking every cached component would cost a
+		// factory() allocation per cache hit per render.
 		if _, ok := instance.(PropsUpdater); ok {
 			fresh = factory()
 			if reflect.TypeOf(fresh) != reflect.TypeOf(instance) {

@@ -13,7 +13,9 @@ type mountKeyNode struct {
 // generated call-site id and the key values of the enclosing loops,
 // outermost first. A key={...} attribute in .gsx replaces the loop values
 // with the user's expression. Called by generated code. Every part must be
-// a comparable value (slice indices, map keys, or user-provided ids).
+// a comparable value (slice indices, map keys, or user-provided ids); a
+// non-comparable part panics at runtime when the key is inserted into the
+// mount cache.
 func MountKey(site int, parts ...any) any {
 	var key any = site
 	for _, part := range parts {
