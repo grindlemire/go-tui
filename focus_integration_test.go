@@ -83,7 +83,7 @@ func (c *testAppComponent) KeyMap() KeyMap {
 
 // getInputFromApp extracts the cached testInputComponent from the mount cache.
 func getInputFromApp(app *App, parent Component) *testInputComponent {
-	key := mountKey{parent: parent, index: 0}
+	key := mountKey{parent: parent, key: 0}
 	if comp, ok := app.mounts.cache[key]; ok {
 		return comp.(*testInputComponent)
 	}

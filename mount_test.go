@@ -324,7 +324,7 @@ func TestMountState_SweepMultipleComponents(t *testing.T) {
 
 	// Simulate next render where only index 0 is active
 	ms.activeKeys = make(map[mountKey]bool)
-	key0 := mountKey{parent: parent, index: 0}
+	key0 := mountKey{parent: parent, key: 0}
 	ms.activeKeys[key0] = true
 
 	ms.sweep()
@@ -565,5 +565,29 @@ func TestNewMountState(t *testing.T) {
 	}
 	if len(ms.cache) != 0 {
 		t.Errorf("cache should be empty, has %d entries", len(ms.cache))
+	}
+}
+
+func TestMount_StringAndCompositeKeys(t *testing.T) {
+	cleanup := setupTestMountState()
+	defer cleanup()
+
+	parent := &mockParent{}
+	factories := 0
+	factory := func() Component {
+		factories++
+		return &mockComponent{}
+	}
+
+	testApp.Mount(parent, MountKey(0, "alpha"), factory)
+	testApp.Mount(parent, MountKey(0, "beta"), factory)
+	if factories != 2 {
+		t.Fatalf("distinct keys should create 2 instances, got %d factory calls", factories)
+	}
+
+	// Same key again: cache hit, no new instance.
+	testApp.Mount(parent, MountKey(0, "alpha"), factory)
+	if factories != 2 {
+		t.Errorf("repeat key should hit cache, got %d factory calls", factories)
 	}
 }

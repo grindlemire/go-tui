@@ -239,7 +239,7 @@ func TestResetRootSession_CallsUnbindOnCachedMounts(t *testing.T) {
 
 	unbound := 0
 	tracker := &componentTracker{onUnbind: func() { unbound++ }}
-	key := mountKey{parent: nil, index: 0}
+	key := mountKey{parent: nil, key: 0}
 	app.mounts.cache[key] = tracker
 
 	app.resetRootSession()
