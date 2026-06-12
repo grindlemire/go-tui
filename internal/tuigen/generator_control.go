@@ -47,7 +47,14 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inCond
 
 	// Generate children for the let-bound element - skip if text element already has content in WithText
 	if !skipTextChildren(let.Element) {
-		g.generateChildren(let.Name, let.Element.Children)
+		// A key={...} on a let-bound element keys the mounts of its descendants.
+		if let.Element.RefKey != nil {
+			restore := g.pushElementKey(let.Element.RefKey.Code)
+			g.generateChildren(let.Name, let.Element.Children)
+			restore()
+		} else {
+			g.generateChildren(let.Name, let.Element.Children)
+		}
 	}
 
 	// Add to parent if specified

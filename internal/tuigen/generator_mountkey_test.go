@@ -182,6 +182,114 @@ templ (c *app) Render() {
 				"app.Mount(c, tui.MountKey(0, i), func() tui.Component {",
 			},
 		},
+		"keyed wrapper div keys struct component call": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			<div key={item.ID}>
+				@ChatMessage(item)
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+			},
+		},
+		"keyed wrapper outside inner loop prefixes inner loop keys": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, group := range c.groups {
+			<div key={group.ID}>
+				for _, item := range group.Items {
+					@Widget(item)
+				}
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, group.ID, __idx_1), func() tui.Component {",
+			},
+		},
+		"component element inherits wrapper key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			<div key={item.ID}>
+				<textarea placeholder={item.Name} />
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+			},
+		},
+		"own key wins over inherited wrapper key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			<div key={item.ID}>
+				<markdown key={item.Sub} source={item.Text} />
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.Sub), func() tui.Component {",
+			},
+		},
+		"sibling after keyed wrapper falls back to loop key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for i, item := range c.items {
+			<div key={item.ID}>
+				<textarea placeholder={item.Name} />
+			</div>
+			<markdown source={item.Text} />
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(1, i), func() tui.Component {",
+			},
+		},
+		"standalone keyed wrapper uses sweepable Mount": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div key={c.activeID}>
+		<textarea placeholder="notes" />
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.activeID), func() tui.Component {",
+			},
+		},
 	}
 
 	for name, tt := range tests {

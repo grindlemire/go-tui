@@ -308,6 +308,18 @@ Without `key`, components in a loop are identified by the loop's index or map ke
 
 A `key` on a component element outside any loop changes identity per value: when the expression changes, the old instance is swept and a fresh one mounts. Use this to reset a component's internal state when the thing it represents changes, such as `<textarea key={c.activeDraftID} />` clearing between drafts.
 
+Struct component calls (`@ChatMessage(item)`) have no attributes, so to key one, put the `key` on a wrapper element. A `key` on any element applies to every component mounted beneath it:
+
+```gsx
+for _, msg := range s.messages {
+    <div key={msg.ID} class="flex-col">
+        @ChatMessage(msg)
+    </div>
+}
+```
+
+Loops nested inside a keyed wrapper still contribute their own identity, and an element's own `key` wins over an inherited one.
+
 ## Attribute reference
 
 ### Generic attributes (all elements)

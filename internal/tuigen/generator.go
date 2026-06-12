@@ -54,6 +54,11 @@ type Generator struct {
 	// Used by generateStructMount to generate unique mount indices per iteration.
 	loopIndexStack []string
 
+	// mountKeyParts tracks the mount key segments in scope: enclosing loops'
+	// key variables with key={...} element overrides applied. Consumed by
+	// mountKeyExpr to build tui.MountKey expressions.
+	mountKeyParts []string
+
 	// fileDecls stores the current file's GoDecl nodes for struct lookup.
 	// Used by generateUpdateProps to find struct definitions for method components.
 	fileDecls []*GoDecl
@@ -340,6 +345,7 @@ func (g *Generator) pushLoopIndex(loop *ForLoop) string {
 		idxVar = fmt.Sprintf("__idx_%d", len(g.loopIndexStack))
 	}
 	g.loopIndexStack = append(g.loopIndexStack, idxVar)
+	g.mountKeyParts = append(slices.Clone(g.mountKeyParts), idxVar)
 	return idxVar
 }
 
@@ -348,25 +354,37 @@ func (g *Generator) popLoopIndex() {
 	if len(g.loopIndexStack) > 0 {
 		g.loopIndexStack = g.loopIndexStack[:len(g.loopIndexStack)-1]
 	}
+	if len(g.mountKeyParts) > 0 {
+		g.mountKeyParts = g.mountKeyParts[:len(g.mountKeyParts)-1]
+	}
+}
+
+// pushElementKey scopes a key={...} identity override: the key replaces the
+// most recent mount key segment (or starts the list) for every mount
+// generated until the returned restore func runs. This is how a keyed
+// wrapper element keys the components inside it.
+func (g *Generator) pushElementKey(key string) func() {
+	saved := g.mountKeyParts
+	parts := slices.Clone(saved)
+	if len(parts) == 0 {
+		parts = []string{key}
+	} else {
+		parts[len(parts)-1] = key
+	}
+	g.mountKeyParts = parts
+	return func() { g.mountKeyParts = saved }
 }
 
 // mountKeyExpr returns the Go expression for a component's mount cache key:
-// the static site index alone, or tui.MountKey(site, loopVars...) inside
-// loops. A userKey (from key={...}) replaces the innermost loop's value,
-// matching React's sibling-scoped key semantics.
-func (g *Generator) mountKeyExpr(baseIndex int, userKey string) string {
-	parts := slices.Clone(g.loopIndexStack)
-	if userKey != "" {
-		if len(parts) == 0 {
-			parts = []string{userKey}
-		} else {
-			parts[len(parts)-1] = userKey
-		}
-	}
-	if len(parts) == 0 {
+// the static site index alone, or tui.MountKey(site, parts...) where the
+// parts are the enclosing loops' key values with key={...} overrides applied
+// (each override replaces the innermost segment, matching React's
+// sibling-scoped key semantics).
+func (g *Generator) mountKeyExpr(baseIndex int) string {
+	if len(g.mountKeyParts) == 0 {
 		return fmt.Sprintf("%d", baseIndex)
 	}
-	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(parts, ", "))
+	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(g.mountKeyParts, ", "))
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.
