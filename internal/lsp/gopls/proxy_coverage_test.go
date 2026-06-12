@@ -203,14 +203,20 @@ func startFakeGopls(t *testing.T) *GoplsProxy {
 // shutdownProxy shuts the proxy down, tolerating the inherent race in
 // GoplsProxy.Shutdown: it cancels the exec.CommandContext (which kills the
 // child) right after sending the exit notification. Depending on scheduling,
-// cmd.Wait observes either "signal: killed" (kill won) or context.Canceled
-// (the child exited cleanly first, and on Go 1.21+ a successful exit after
-// context cancellation makes Wait return the context error). A nil error is
-// effectively unreachable in Shutdown as written.
+// cmd.Wait observes either the kill (reported as "signal: killed" on Unix
+// and "exit status 1" on Windows, where TerminateProcess sets exit code 1)
+// or context.Canceled (the child exited cleanly first, and on Go 1.21+ a
+// successful exit after context cancellation makes Wait return the context
+// error). A nil error is effectively unreachable in Shutdown as written.
 func shutdownProxy(t *testing.T, p *GoplsProxy) {
 	t.Helper()
 	err := p.Shutdown()
-	if err != nil && !strings.Contains(err.Error(), "signal: killed") && !errors.Is(err, context.Canceled) {
+	if err == nil || errors.Is(err, context.Canceled) {
+		return
+	}
+	killed := strings.Contains(err.Error(), "signal: killed") ||
+		(runtime.GOOS == "windows" && strings.Contains(err.Error(), "exit status 1"))
+	if !killed {
 		t.Errorf("Shutdown: %v", err)
 	}
 }
