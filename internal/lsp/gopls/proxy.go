@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/grindlemire/go-tui/internal/lsp/log"
 )
@@ -275,8 +276,21 @@ func (p *GoplsProxy) Shutdown() error {
 		return err
 	}
 
-	p.cancel()
-	return p.cmd.Wait()
+	// Wait for gopls to exit cleanly after the exit notification, and only
+	// kill it (by canceling the command context) if it does not. Canceling
+	// before Wait raced the kill against the clean exit, so Wait reported
+	// signal: killed or context.Canceled instead of success.
+	done := make(chan error, 1)
+	go func() { done <- p.cmd.Wait() }()
+
+	select {
+	case err := <-done:
+		p.cancel()
+		return err
+	case <-time.After(5 * time.Second):
+		p.cancel()
+		return <-done
+	}
 }
 
 // send sends a request to gopls.
