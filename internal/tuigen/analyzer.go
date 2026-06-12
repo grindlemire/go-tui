@@ -175,7 +175,7 @@ var knownAttributes = map[string]bool{
 
 	// Element refs
 	"ref": true, // ref={varName} for element references
-	"key": true, // key={expr} for map-based refs in loops
+	"key": true, // key={expr}: loop item identity (mount cache key; RefMap key with ref)
 
 	// Modal
 	"open":                 true,
@@ -384,6 +384,15 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 			err.Hint = "did you mean " + similar + "?"
 		}
 
+		a.errors.Add(err)
+		return
+	}
+
+	// The parser lifts expression-valued key/ref out of Attributes, so any
+	// surviving here hold a literal the generator would silently ignore.
+	if attr.Name == "key" || attr.Name == "ref" {
+		err := NewError(attr.Position, attr.Name+" must be an expression")
+		err.Hint = "use " + attr.Name + "={...} with a Go expression, not a literal"
 		a.errors.Add(err)
 		return
 	}

@@ -736,14 +736,34 @@ app.Batch(func() {
 ### Mount
 
 ```go
-func (a *App) Mount(parent Component, index int, factory func() Component) *Element
+func (a *App) Mount(parent Component, key any, factory func() Component) *Element
 ```
 
 Creates or retrieves a cached component instance and returns its rendered element tree. Generated code calls this; you typically don't call it directly.
 
-On first call for a given `(parent, index)` pair: executes `factory`, caches the instance, calls `BindApp` and `Init()` (if implemented). On subsequent calls: returns the cached instance's `Render()` result. If the instance implements `PropsUpdater`, `UpdateProps` is called with a fresh instance so the cached component can pick up new props.
+On first call for a given `(parent, key)` pair: executes `factory`, caches the instance, calls `BindApp` and `Init()` (if implemented). On subsequent calls: returns the cached instance's `Render()` result. If the instance implements `PropsUpdater`, `UpdateProps` is called with a fresh instance so the cached component can pick up new props.
+
+The key must be a comparable value. Generated code passes a plain int for a component declared once, and a `MountKey` composite for components inside loops, so each loop item gets its own cached instance.
+
+If a cached instance's concrete type differs from what the factory produces (a key collision between two call sites), the stale instance is evicted, its cleanup runs, and the fresh component mounts in its place. The collision is logged through the debug log rather than rendering the wrong component silently.
 
 Stale cache entries are swept after each render pass. When a component disappears from the tree, its cleanup function runs.
+
+### MountPersistent
+
+```go
+func (a *App) MountPersistent(parent Component, key any, factory func() Component) *Element
+```
+
+Like `Mount`, but the instance survives the sweep even when it is not rendered. Generated code uses this for component elements (`<textarea>`, `<input>`, `<modal>`, `<markdown>`) declared outside loops without a `key` attribute, so a textarea hidden by an `if` keeps its draft text when it reappears. Component elements inside loops, or with a `key={...}` attribute, use plain `Mount` instead: their identity comes from data, and persisting every key ever seen would leak instances as the data changes.
+
+### MountKey
+
+```go
+func MountKey(site int, parts ...any) any
+```
+
+Builds the comparable cache key generated code passes to `Mount` for loop call sites. The first argument identifies the call site within the component; each part is one enclosing loop's key value (a slice index, a map key, or the expression from a `key={...}` attribute). Every part must itself be comparable; a non-comparable value panics when the key enters the cache. Keys built from different call sites or different loop values never compare equal, so distinct items cannot collide.
 
 ## Other
 

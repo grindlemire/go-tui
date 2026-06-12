@@ -288,7 +288,16 @@ app.Mount(a, 0, func() tui.Component {
 })
 ```
 
-`Mount` takes the parent component, a position index, and a factory function. It uses the `(parent, index)` pair as a cache key:
+`Mount` takes the parent component, a cache key, and a factory function. It uses the `(parent, key)` pair to identify the instance. For a component declared once the key is just its position in the file; inside a `for` loop the generated code builds a composite key with `tui.MountKey` from the loop's index or map key, so each item gets its own instance:
+
+```go
+// Generated from: for i, item := range a.items { @Row(item) }
+app.Mount(a, tui.MountKey(0, i), func() tui.Component {
+    return Row(item)
+})
+```
+
+Either way, the cache behaves the same:
 
 - **First render**: The factory runs, creating a new component instance. The framework calls `BindApp()` to wire up state fields, then calls `Init()` if the component implements `Initializer`. The instance is cached.
 - **Subsequent renders**: The cached instance is reused. If the component implements `PropsUpdater`, a fresh instance is created from the factory and passed to `UpdateProps()` so the cached instance can pick up changed props without losing its internal state.

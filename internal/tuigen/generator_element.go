@@ -433,10 +433,11 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	baseIndex := g.mountIndex
 	g.mountIndex++
 
-	indexExpr := g.loopIndexExpr(baseIndex)
-	if indexExpr == "" {
-		indexExpr = fmt.Sprintf("%d", baseIndex)
+	userKey := ""
+	if elem.RefKey != nil {
+		userKey = elem.RefKey.Code
 	}
+	indexExpr := g.mountKeyExpr(baseIndex, userKey)
 
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)
@@ -450,7 +451,15 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 		}
 	}
 
-	g.writef("%s := app.MountPersistent(%s, %s, func() tui.Component {\n", varName, g.currentReceiver, indexExpr)
+	// Data-derived identities (loops, key={...}) use sweepable Mount since
+	// persisting an unbounded key domain would leak. MountPersistent stays
+	// for positional standalone sites so conditionally hidden components
+	// keep state (e.g. a textarea's draft).
+	mountFunc := "app.MountPersistent"
+	if len(g.loopIndexStack) > 0 || userKey != "" {
+		mountFunc = "app.Mount"
+	}
+	g.writef("%s := %s(%s, %s, func() tui.Component {\n", varName, mountFunc, g.currentReceiver, indexExpr)
 	g.indent++
 
 	constructor := componentConstructor(elem.Tag)

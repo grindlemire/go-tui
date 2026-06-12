@@ -348,7 +348,7 @@ templ (c *form) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.MountPersistent(c, (1)*1000000+i, func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, i), func() tui.Component {",
 				"c.areas.Append(__tui_",
 				"tui.WithTextAreaPlaceholder(f)",
 			},

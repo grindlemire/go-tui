@@ -1,13 +1,18 @@
 package tui
 
-import "github.com/grindlemire/go-tui/internal/debug"
+import (
+	"reflect"
 
-// mountKey identifies a component instance by its parent and position.
-// Components at the same (parent, index) are considered the same instance
-// across renders and are reused from cache.
+	"github.com/grindlemire/go-tui/internal/debug"
+)
+
+// mountKey identifies a component instance by its parent and a comparable
+// key. Components at the same (parent, key) are considered the same
+// instance across renders and are reused from cache. Generated code builds
+// keys with MountKey (loop call sites) or a plain int (standalone sites).
 type mountKey struct {
 	parent Component
-	index  int
+	key    any
 }
 
 // mountState is per-App state for component instance caching.
@@ -40,17 +45,41 @@ type PropsUpdater interface {
 }
 
 // mount is the shared implementation for Mount and MountPersistent.
-func (a *App) mount(parent Component, index int, factory func() Component) *Element {
+func (a *App) mount(parent Component, key any, factory func() Component) *Element {
 	app := a
 	ms := app.mounts
-	key := mountKey{parent: parent, index: index}
-	ms.activeKeys[key] = true // Mark as active this render
+	k := mountKey{parent: parent, key: key}
+	if ms.activeKeys[k] {
+		// Same key twice in one render pass: both positions share one instance.
+		debug.Log("Mount: duplicate mount key %v (parent %T) within one render pass", key, parent)
+	}
+	ms.activeKeys[k] = true // Mark as active this render
 
-	instance, cached := ms.cache[key]
+	instance, cached := ms.cache[k]
+	var fresh Component
+	if cached {
+		// Collision guard, PropsUpdater path only: the fresh instance needed
+		// for UpdateProps makes the type check free; checking every hit
+		// would cost a factory() call per render.
+		if _, ok := instance.(PropsUpdater); ok {
+			fresh = factory()
+			if reflect.TypeOf(fresh) != reflect.TypeOf(instance) {
+				// Evict and remount rather than render the wrong type silently.
+				debug.Log("Mount: key collision at %v: cached %T, factory produced %T; remounting", key, instance, fresh)
+				ms.evict(k)
+				cached = false
+			}
+		}
+	}
+
 	if !cached {
-		instance = factory()
-		ms.cache[key] = instance
-		debug.Log("Mount: NEW component at index %d, type %T", index, instance)
+		if fresh != nil {
+			instance = fresh
+		} else {
+			instance = factory()
+		}
+		ms.cache[k] = instance
+		debug.Log("Mount: NEW component at key %v, type %T", key, instance)
 
 		// Bind app before Init so state/events are wired up
 		if binder, ok := instance.(AppBinder); ok {
@@ -61,17 +90,17 @@ func (a *App) mount(parent Component, index int, factory func() Component) *Elem
 		if init, ok := instance.(Initializer); ok {
 			cleanup := init.Init()
 			if cleanup != nil {
-				ms.cleanups[key] = cleanup
+				ms.cleanups[k] = cleanup
 			}
 		}
 	} else {
-		// Component is cached - check if it can receive updated props
+		// Component is cached - check if it can receive updated props.
+		// fresh was already constructed (and type-checked) above.
 		if updater, ok := instance.(PropsUpdater); ok {
-			fresh := factory()
-			debug.Log("Mount: CACHED component at index %d, calling UpdateProps, type %T", index, instance)
+			debug.Log("Mount: CACHED component at key %v, calling UpdateProps, type %T", key, instance)
 			updater.UpdateProps(fresh)
 		} else {
-			debug.Log("Mount: CACHED component at index %d, NO UpdateProps, type %T", index, instance)
+			debug.Log("Mount: CACHED component at key %v, NO UpdateProps, type %T", key, instance)
 		}
 		// Rebind after props update — fresh Events fields may be unbound
 		if binder, ok := instance.(AppBinder); ok {
@@ -93,17 +122,19 @@ func (a *App) mount(parent Component, index int, factory func() Component) *Elem
 // If the cached instance implements PropsUpdater, UpdateProps is called
 // with a fresh instance to allow prop updates.
 // Mark-and-sweep: marks the key as active. Sweep after render cleans stale entries.
-func (a *App) Mount(parent Component, index int, factory func() Component) *Element {
-	return a.mount(parent, index, factory)
+// The key must be comparable; generated code passes a plain int for
+// standalone call sites and a MountKey composite inside loops.
+func (a *App) Mount(parent Component, key any, factory func() Component) *Element {
+	return a.mount(parent, key, factory)
 }
 
 // MountPersistent is like Mount but marks the component as persistent,
 // preventing it from being cleaned up during sweep even when not active.
 // Use this for components that must survive being hidden by conditionals.
-func (a *App) MountPersistent(parent Component, index int, factory func() Component) *Element {
-	key := mountKey{parent: parent, index: index}
-	a.mounts.persistKeys[key] = true
-	return a.mount(parent, index, factory)
+func (a *App) MountPersistent(parent Component, key any, factory func() Component) *Element {
+	k := mountKey{parent: parent, key: key}
+	a.mounts.persistKeys[k] = true
+	return a.mount(parent, key, factory)
 }
 
 // sweep removes cached instances that were not marked active during the last
@@ -111,16 +142,23 @@ func (a *App) MountPersistent(parent Component, index int, factory func() Compon
 func (ms *mountState) sweep() {
 	for key := range ms.cache {
 		if !ms.activeKeys[key] && !ms.persistKeys[key] {
-			if unbinder, ok := ms.cache[key].(AppUnbinder); ok {
-				unbinder.UnbindApp()
-			}
-			if cleanup, ok := ms.cleanups[key]; ok {
-				cleanup()
-				delete(ms.cleanups, key)
-			}
-			delete(ms.cache, key)
+			ms.evict(key)
 		}
 	}
 	// Reset active keys for next render
 	ms.activeKeys = make(map[mountKey]bool)
+}
+
+// evict removes one cached instance, unbinding it and running its cleanup.
+func (ms *mountState) evict(key mountKey) {
+	if instance, ok := ms.cache[key]; ok {
+		if unbinder, ok := instance.(AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+	if cleanup, ok := ms.cleanups[key]; ok {
+		cleanup()
+		delete(ms.cleanups, key)
+	}
+	delete(ms.cache, key)
 }

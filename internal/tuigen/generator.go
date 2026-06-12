@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/imports"
@@ -349,29 +350,23 @@ func (g *Generator) popLoopIndex() {
 	}
 }
 
-// loopIndexExpr returns a Go expression for computing a unique mount index
-// based on the current loop context. Returns empty string if not in a loop.
-// The expression combines a static base index with runtime loop indices.
-func (g *Generator) loopIndexExpr(baseIndex int) string {
-	if len(g.loopIndexStack) == 0 {
-		return ""
+// mountKeyExpr returns the Go expression for a component's mount cache key:
+// the static site index alone, or tui.MountKey(site, loopVars...) inside
+// loops. A userKey (from key={...}) replaces the innermost loop's value,
+// matching React's sibling-scoped key semantics.
+func (g *Generator) mountKeyExpr(baseIndex int, userKey string) string {
+	parts := slices.Clone(g.loopIndexStack)
+	if userKey != "" {
+		if len(parts) == 0 {
+			parts = []string{userKey}
+		} else {
+			parts[len(parts)-1] = userKey
+		}
 	}
-	// For a single loop level: (baseIndex+1)*1000000 + loopIdx
-	// For nested loops, each level re-multiplies the accumulated expression, e.g.
-	// ((baseIndex+1)*1000000 + i)*1000000 + j, so every (call site, iteration
-	// combination) gets a unique key as long as loops stay under 1000000
-	// iterations. The +1 keeps the multiplier from cancelling when baseIndex is 0;
-	// otherwise the loop's keys collapse to the bare loop index (0, 1, 2, ...) and
-	// collide with the small sequential keys of components mounted outside the
-	// loop (issue #88). The parentheses make the multipliers compound; without
-	// them Go precedence flattens the expression and nested-loop keys collide
-	// with sibling loops' keys.
-	expr := fmt.Sprintf("%d", baseIndex+1)
-	multiplier := 1000000
-	for _, idxVar := range g.loopIndexStack {
-		expr = fmt.Sprintf("(%s)*%d+%s", expr, multiplier, idxVar)
+	if len(parts) == 0 {
+		return fmt.Sprintf("%d", baseIndex)
 	}
-	return expr
+	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(parts, ", "))
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.
