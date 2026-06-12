@@ -433,10 +433,11 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	baseIndex := g.mountIndex
 	g.mountIndex++
 
-	indexExpr := g.loopIndexExpr(baseIndex)
-	if indexExpr == "" {
-		indexExpr = fmt.Sprintf("%d", baseIndex)
+	userKey := ""
+	if elem.RefKey != nil {
+		userKey = elem.RefKey.Code
 	}
+	indexExpr := g.mountKeyExpr(baseIndex, userKey)
 
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)

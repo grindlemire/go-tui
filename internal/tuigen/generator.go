@@ -349,29 +349,20 @@ func (g *Generator) popLoopIndex() {
 	}
 }
 
-// loopIndexExpr returns a Go expression for computing a unique mount index
-// based on the current loop context. Returns empty string if not in a loop.
-// The expression combines a static base index with runtime loop indices.
-func (g *Generator) loopIndexExpr(baseIndex int) string {
+// mountKeyExpr returns the Go expression for a component's mount cache key.
+// Standalone call sites use the static site index. Call sites inside loops
+// combine the site with each enclosing loop's key value via tui.MountKey,
+// so every iteration (slice index, map key, ...) gets its own cache slot.
+// A userKey expression (from a key={...} attribute) replaces the loop
+// values: the user asserts the item's identity directly.
+func (g *Generator) mountKeyExpr(baseIndex int, userKey string) string {
+	if userKey != "" {
+		return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, userKey)
+	}
 	if len(g.loopIndexStack) == 0 {
-		return ""
+		return fmt.Sprintf("%d", baseIndex)
 	}
-	// For a single loop level: (baseIndex+1)*1000000 + loopIdx
-	// For nested loops, each level re-multiplies the accumulated expression, e.g.
-	// ((baseIndex+1)*1000000 + i)*1000000 + j, so every (call site, iteration
-	// combination) gets a unique key as long as loops stay under 1000000
-	// iterations. The +1 keeps the multiplier from cancelling when baseIndex is 0;
-	// otherwise the loop's keys collapse to the bare loop index (0, 1, 2, ...) and
-	// collide with the small sequential keys of components mounted outside the
-	// loop (issue #88). The parentheses make the multipliers compound; without
-	// them Go precedence flattens the expression and nested-loop keys collide
-	// with sibling loops' keys.
-	expr := fmt.Sprintf("%d", baseIndex+1)
-	multiplier := 1000000
-	for _, idxVar := range g.loopIndexStack {
-		expr = fmt.Sprintf("(%s)*%d+%s", expr, multiplier, idxVar)
-	}
-	return expr
+	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(g.loopIndexStack, ", "))
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.

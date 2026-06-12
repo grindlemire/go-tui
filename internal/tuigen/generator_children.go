@@ -187,14 +187,9 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 	baseIndex := g.mountIndex
 	g.mountIndex++
 
-	// Determine the mount index expression.
-	// If we're inside a loop, combine the static base index with runtime loop indices
-	// to ensure each iteration gets a unique mount key.
-	indexExpr := g.loopIndexExpr(baseIndex)
-	if indexExpr == "" {
-		// Not in a loop - use static index
-		indexExpr = fmt.Sprintf("%d", baseIndex)
-	}
+	// Component calls have no key attribute; identity comes from the call
+	// site plus the enclosing loops' key values.
+	indexExpr := g.mountKeyExpr(baseIndex, "")
 
 	// Build children slice if the component call has children
 	childrenVar := ""
