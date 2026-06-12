@@ -439,6 +439,7 @@ func helper(s string) string {
 | `class` | `string` | Tailwind-style classes |
 | `disabled` | `bool` | Disable interaction |
 | `ref` | expression | Bind element to a `tui.Ref`/`RefList`/`RefMap` variable |
+| `key` | expression | Stable identity within a loop: mount cache key for component elements, RefMap key with `ref` |
 | `deps` | expression | Explicit state dependencies for reactive bindings |
 
 ### Layout Attributes
