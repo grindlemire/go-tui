@@ -250,11 +250,11 @@ func (f *feedApp) Render(app *tui.App) *tui.Element {
 }
 
 func (f *feedApp) UpdateProps(fresh tui.Component) {
-	f, ok := fresh.(*feedApp)
+	ff, ok := fresh.(*feedApp)
 	if !ok {
 		return
 	}
-	f.mode = f.mode
+	f.mode = ff.mode
 }
 
 var _ tui.PropsUpdater = (*feedApp)(nil)
