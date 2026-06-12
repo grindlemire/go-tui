@@ -1,6 +1,10 @@
 package tui
 
-import "github.com/grindlemire/go-tui/internal/debug"
+import (
+	"reflect"
+
+	"github.com/grindlemire/go-tui/internal/debug"
+)
 
 // mountKey identifies a component instance by its parent and a comparable
 // key. Components at the same (parent, key) are considered the same
@@ -48,8 +52,27 @@ func (a *App) mount(parent Component, key any, factory func() Component) *Elemen
 	ms.activeKeys[k] = true // Mark as active this render
 
 	instance, cached := ms.cache[k]
+	var fresh Component
+	if cached {
+		if _, ok := instance.(PropsUpdater); ok {
+			fresh = factory()
+			if reflect.TypeOf(fresh) != reflect.TypeOf(instance) {
+				// Key collision: this call site produced a different
+				// component type than the cache holds. Render the right
+				// component loudly instead of the wrong one silently.
+				debug.Log("Mount: key collision at %v: cached %T, factory produced %T; remounting", key, instance, fresh)
+				ms.evict(k)
+				cached = false
+			}
+		}
+	}
+
 	if !cached {
-		instance = factory()
+		if fresh != nil {
+			instance = fresh
+		} else {
+			instance = factory()
+		}
 		ms.cache[k] = instance
 		debug.Log("Mount: NEW component at key %v, type %T", key, instance)
 
@@ -66,9 +89,9 @@ func (a *App) mount(parent Component, key any, factory func() Component) *Elemen
 			}
 		}
 	} else {
-		// Component is cached - check if it can receive updated props
+		// Component is cached - check if it can receive updated props.
+		// fresh was already constructed (and type-checked) above.
 		if updater, ok := instance.(PropsUpdater); ok {
-			fresh := factory()
 			debug.Log("Mount: CACHED component at key %v, calling UpdateProps, type %T", key, instance)
 			updater.UpdateProps(fresh)
 		} else {
@@ -114,16 +137,23 @@ func (a *App) MountPersistent(parent Component, key any, factory func() Componen
 func (ms *mountState) sweep() {
 	for key := range ms.cache {
 		if !ms.activeKeys[key] && !ms.persistKeys[key] {
-			if unbinder, ok := ms.cache[key].(AppUnbinder); ok {
-				unbinder.UnbindApp()
-			}
-			if cleanup, ok := ms.cleanups[key]; ok {
-				cleanup()
-				delete(ms.cleanups, key)
-			}
-			delete(ms.cache, key)
+			ms.evict(key)
 		}
 	}
 	// Reset active keys for next render
 	ms.activeKeys = make(map[mountKey]bool)
+}
+
+// evict removes one cached instance, unbinding it and running its cleanup.
+func (ms *mountState) evict(key mountKey) {
+	if instance, ok := ms.cache[key]; ok {
+		if unbinder, ok := instance.(AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+	if cleanup, ok := ms.cleanups[key]; ok {
+		cleanup()
+		delete(ms.cleanups, key)
+	}
+	delete(ms.cache, key)
 }

@@ -591,3 +591,62 @@ func TestMount_StringAndCompositeKeys(t *testing.T) {
 		t.Errorf("repeat key should hit cache, got %d factory calls", factories)
 	}
 }
+
+// mockUpdaterA implements Component and PropsUpdater.
+type mockUpdaterA struct {
+	updateCalls int
+}
+
+func (m *mockUpdaterA) Render(app *App) *Element { return New() }
+func (m *mockUpdaterA) UpdateProps(fresh Component) {
+	m.updateCalls++
+}
+
+// mockUpdaterB is a distinct type implementing Component and PropsUpdater,
+// with cleanup tracking to observe eviction.
+type mockUpdaterB struct {
+	initCalled   bool
+	cleanupCalls int
+}
+
+func (m *mockUpdaterB) Render(app *App) *Element    { return New() }
+func (m *mockUpdaterB) UpdateProps(fresh Component) {}
+func (m *mockUpdaterB) Init() func() {
+	m.initCalled = true
+	return func() { m.cleanupCalls++ }
+}
+
+func TestMount_TypeMismatchEvictsAndRemounts(t *testing.T) {
+	cleanup := setupTestMountState()
+	defer cleanup()
+
+	parent := &mockParent{}
+
+	first := &mockUpdaterB{}
+	testApp.Mount(parent, "shared", func() Component { return first })
+	if !first.initCalled {
+		t.Fatal("first mount did not Init")
+	}
+
+	// Same key, different concrete type: must NOT return the cached
+	// mockUpdaterB. The stale instance is evicted (cleanup runs) and the
+	// fresh one is mounted.
+	second := &mockUpdaterA{}
+	el := testApp.Mount(parent, "shared", func() Component { return second })
+
+	if el.component != second {
+		t.Fatalf("mount returned %T, want the fresh *mockUpdaterA", el.component)
+	}
+	if first.cleanupCalls != 1 {
+		t.Errorf("stale instance cleanup ran %d times, want 1", first.cleanupCalls)
+	}
+	if second.updateCalls != 0 {
+		t.Errorf("fresh instance got UpdateProps %d times, want 0 (it is a new mount)", second.updateCalls)
+	}
+
+	// Same key and same type again: normal cache hit with UpdateProps.
+	testApp.Mount(parent, "shared", func() Component { return &mockUpdaterA{} })
+	if second.updateCalls != 1 {
+		t.Errorf("cache hit should call UpdateProps once, got %d", second.updateCalls)
+	}
+}
