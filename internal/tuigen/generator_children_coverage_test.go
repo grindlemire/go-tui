@@ -377,7 +377,7 @@ templ (c *shell) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.Mount(c, 1*1000000+i, func() tui.Component {",
+				"app.Mount(c, (1)*1000000+i, func() tui.Component {",
 				"return Sidebar(item)",
 			},
 		},

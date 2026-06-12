@@ -116,6 +116,48 @@ templ (c *app) Render() {
 			iters:    3,
 			wantKeys: 2,
 		},
+		"nested loop followed by sibling loop": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for i, row := range c.rows {
+			for j, item := range row {
+				<markdown source={item} />
+			}
+		}
+		for k, other := range c.others {
+			<markdown source={other} />
+		}
+	</div>
+}`,
+			loopVars: []string{"i", "j", "k"},
+			iters:    3,
+			wantKeys: 2,
+		},
+		"three-level nested loop followed by standalone component": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for i, plane := range c.planes {
+			for j, row := range plane {
+				for k, item := range row {
+					<markdown source={item} />
+				}
+			}
+		}
+		<textarea onSubmit={c.submit} />
+	</div>
+}`,
+			loopVars: []string{"i", "j", "k"},
+			iters:    3,
+			wantKeys: 2,
+		},
 		"two sibling loops with components": {
 			input: `package x
 
@@ -152,7 +194,9 @@ templ (c *app) Render() {
 
 			// For each call site, expand the key expression over simulated
 			// loop iterations and record every runtime key it can produce.
-			seen := map[int64]int{} // runtime key -> call site index
+			// Any two distinct (call site, iteration combo) pairs sharing a
+			// key is a collision, including two iterations of the same site.
+			seen := map[int64]string{} // runtime key -> "site/combo" identity
 			for site, m := range matches {
 				expr := m[1]
 
@@ -170,7 +214,7 @@ templ (c *app) Render() {
 				for range refs {
 					var next [][]int
 					for _, c := range combos {
-						for it := 0; it < tt.iters; it++ {
+						for it := range tt.iters {
 							next = append(next, append(append([]int{}, c...), it))
 						}
 					}
@@ -182,12 +226,13 @@ templ (c *app) Render() {
 					for vi, v := range refs {
 						vars[v] = combo[vi]
 					}
+					id := fmt.Sprintf("call site %d (vars %v)", site, vars)
 					key := evalMountKey(t, expr, vars)
-					if prev, ok := seen[key]; ok && prev != site {
-						t.Errorf("mount key collision: call site %d expr %q produces key %d already produced by call site %d (vars %v)",
-							site, expr, key, prev, vars)
+					if prev, ok := seen[key]; ok {
+						t.Errorf("mount key collision: %s expr %q produces key %d already produced by %s",
+							id, expr, key, prev)
 					}
-					seen[key] = site
+					seen[key] = id
 				}
 			}
 		})
