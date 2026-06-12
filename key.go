@@ -5,6 +5,9 @@ import "strings"
 // Key represents a keyboard key.
 type Key uint16
 
+// The keys reported in a KeyEvent. Printable characters arrive as KeyRune
+// with the character in KeyEvent.Rune; everything else maps to one of the
+// named keys below.
 const (
 	// KeyNone represents no key (zero value).
 	KeyNone Key = iota
@@ -13,6 +16,7 @@ const (
 	KeyRune
 
 	// Special keys
+
 	KeyEscape
 	KeyEnter
 	KeyTab
@@ -21,18 +25,21 @@ const (
 	KeyInsert
 
 	// Arrow keys
+
 	KeyUp
 	KeyDown
 	KeyLeft
 	KeyRight
 
 	// Navigation keys
+
 	KeyHome
 	KeyEnd
 	KeyPageUp
 	KeyPageDown
 
 	// Function keys
+
 	KeyF1
 	KeyF2
 	KeyF3

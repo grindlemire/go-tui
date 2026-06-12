@@ -7,6 +7,7 @@ import "github.com/grindlemire/go-tui/internal/layout"
 // Display specifies the layout mode for an element.
 type Display = layout.Display
 
+// Display modes.
 const (
 	DisplayBlock = layout.DisplayBlock // Block layout: column direction, fills parent width
 	DisplayFlex  = layout.DisplayFlex  // Flex layout: explicit direction control
@@ -15,6 +16,7 @@ const (
 // Direction specifies the main axis for laying out children.
 type Direction = layout.Direction
 
+// Directions.
 const (
 	Row    = layout.Row
 	Column = layout.Column
@@ -23,6 +25,7 @@ const (
 // Justify specifies how children are distributed along the main axis.
 type Justify = layout.Justify
 
+// Justify values.
 const (
 	JustifyStart        = layout.JustifyStart
 	JustifyEnd          = layout.JustifyEnd
@@ -35,6 +38,7 @@ const (
 // Align specifies how children are aligned along the cross axis.
 type Align = layout.Align
 
+// Align values.
 const (
 	AlignStart   = layout.AlignStart
 	AlignEnd     = layout.AlignEnd
@@ -45,6 +49,7 @@ const (
 // FlexWrap controls whether flex items wrap to new lines.
 type FlexWrap = layout.FlexWrap
 
+// FlexWrap values.
 const (
 	WrapNone    = layout.WrapNone    // No wrapping (default)
 	Wrap        = layout.Wrap        // Wrap to next line
@@ -54,6 +59,7 @@ const (
 // AlignContent controls how flex lines are distributed along the cross axis.
 type AlignContent = layout.AlignContent
 
+// AlignContent values.
 const (
 	ContentStart        = layout.ContentStart        // Pack lines at start
 	ContentEnd          = layout.ContentEnd          // Pack lines at end

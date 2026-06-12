@@ -6,6 +6,8 @@ import "github.com/grindlemire/go-tui/internal/highlight"
 // internal lexer taxonomy.
 type TokenKind int
 
+// The token kinds produced by the built-in tokenizer. A Palette maps each
+// kind to a color.
 const (
 	TokenPlain    TokenKind = iota // uncolored
 	TokenKeyword                   // language keywords
