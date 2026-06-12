@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -162,8 +163,11 @@ func fakeGoplsServe(in io.Reader, out io.Writer) {
 	}
 }
 
-// startFakeGopls symlinks the test binary as "gopls" into a temp dir,
-// prepends that dir to PATH, and starts a proxy against it.
+// startFakeGopls installs the test binary as "gopls" into a temp dir,
+// prepends that dir to PATH, and starts a proxy against it. It symlinks
+// where possible and falls back to copying the binary, since symlink
+// creation on Windows requires elevated privileges. The executable name
+// needs the .exe suffix on Windows for exec.LookPath to resolve it.
 func startFakeGopls(t *testing.T) *GoplsProxy {
 	t.Helper()
 
@@ -171,9 +175,20 @@ func startFakeGopls(t *testing.T) *GoplsProxy {
 	if err != nil {
 		t.Fatalf("os.Executable: %v", err)
 	}
+	name := "gopls"
+	if runtime.GOOS == "windows" {
+		name = "gopls.exe"
+	}
 	dir := t.TempDir()
-	if err := os.Symlink(exe, filepath.Join(dir, "gopls")); err != nil {
-		t.Fatalf("symlinking fake gopls: %v", err)
+	target := filepath.Join(dir, name)
+	if err := os.Symlink(exe, target); err != nil {
+		data, readErr := os.ReadFile(exe)
+		if readErr != nil {
+			t.Fatalf("reading test binary for fake gopls: %v", readErr)
+		}
+		if writeErr := os.WriteFile(target, data, 0o755); writeErr != nil {
+			t.Fatalf("copying fake gopls: %v", writeErr)
+		}
 	}
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Setenv(fakeGoplsEnvVar, "1")
@@ -725,7 +740,9 @@ func TestURIHelpers(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.fn(tt.in); got != tt.want {
+			// GetVirtualFilePath goes through filepath.Join, which emits
+			// backslashes on Windows; normalize before comparing.
+			if got := filepath.ToSlash(tt.fn(tt.in)); got != tt.want {
 				t.Errorf("got %q, want %q", got, tt.want)
 			}
 		})
