@@ -585,7 +585,11 @@ func TestMount_StringAndCompositeKeys(t *testing.T) {
 		t.Fatalf("distinct keys should create 2 instances, got %d factory calls", factories)
 	}
 
-	// Same key again: cache hit, no new instance.
+	// End the render pass so the repeat mount below is a genuine
+	// cross-render cache hit (both keys were active, so they survive).
+	testApp.mounts.sweep()
+
+	// Same key on the next render: cache hit, no new instance.
 	testApp.Mount(parent, MountKey(0, "alpha"), factory)
 	if factories != 2 {
 		t.Errorf("repeat key should hit cache, got %d factory calls", factories)

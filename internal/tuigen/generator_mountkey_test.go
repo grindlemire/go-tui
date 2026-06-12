@@ -152,6 +152,20 @@ templ (c *app) Render() {
 				"c.areas.Put(item.ID, __tui_",
 			},
 		},
+		"standalone component with key uses sweepable Mount": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		<markdown key={c.selectedDoc} source={c.body} />
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.selectedDoc), func() tui.Component {",
+			},
+		},
 		"struct component call in loop": {
 			input: `package x
 
