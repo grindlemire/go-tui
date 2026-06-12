@@ -161,11 +161,11 @@ func (f *fileList) Render(app *tui.App) *tui.Element {
 }
 
 func (f *fileList) UpdateProps(fresh tui.Component) {
-	f, ok := fresh.(*fileList)
+	ff, ok := fresh.(*fileList)
 	if !ok {
 		return
 	}
-	f.files = f.files
+	f.files = ff.files
 }
 
 var _ tui.PropsUpdater = (*fileList)(nil)

@@ -562,10 +562,18 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Get the receiver type name without pointer
 	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
 
+	// Pick a local name for the type-asserted fresh component that does not
+	// shadow the receiver; shadowing would turn every prop copy below into a
+	// self-assignment.
+	freshName := "f"
+	for freshName == comp.ReceiverName {
+		freshName += "f"
+	}
+
 	// Generate UpdateProps method
 	g.writef("func (%s) UpdateProps(fresh tui.Component) {\n", comp.Receiver)
 	g.indent++
-	g.writef("f, ok := fresh.(%s)\n", comp.ReceiverType)
+	g.writef("%s, ok := fresh.(%s)\n", freshName, comp.ReceiverType)
 	g.writeln("if !ok {")
 	g.indent++
 	g.writeln("return")
@@ -574,7 +582,7 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 
 	// Copy each prop field
 	for _, f := range propFields {
-		g.writef("%s.%s = f.%s\n", comp.ReceiverName, f.Name, f.Name)
+		g.writef("%s.%s = %s.%s\n", comp.ReceiverName, f.Name, freshName, f.Name)
 	}
 
 	g.indent--

@@ -1402,3 +1402,73 @@ templ (c *myRoot) Render() {
 		}
 	}
 }
+
+// TestGenerator_UpdatePropsReceiverShadowing verifies that the generated
+// UpdateProps does not shadow the method receiver with the type-asserted
+// local. When a component's receiver was named "f" (the hardcoded local
+// name), the assertion shadowed the receiver and every prop copy became a
+// self-assignment, silently dropping prop updates on cached components.
+func TestGenerator_UpdatePropsReceiverShadowing(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"receiver named f does not shadow the fresh local": {
+			input: `package x
+
+type fileList struct {
+	files []string
+}
+
+templ (f *fileList) Render() {
+	<div></div>
+}`,
+			wantContains: []string{
+				"func (f *fileList) UpdateProps(fresh tui.Component) {",
+				"f.files = ff.files",
+			},
+			wantNotContains: []string{
+				"f.files = f.files",
+			},
+		},
+		"non-colliding receiver keeps the f local": {
+			input: `package x
+
+type fileList struct {
+	files []string
+}
+
+templ (l *fileList) Render() {
+	<div></div>
+}`,
+			wantContains: []string{
+				"f, ok := fresh.(*fileList)",
+				"l.files = f.files",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
