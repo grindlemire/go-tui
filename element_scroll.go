@@ -7,7 +7,7 @@ func (e *Element) IsScrollable() bool {
 	return e.scrollMode != ScrollNone
 }
 
-// ScrollMode returns the current scroll mode.
+// ScrollModeValue returns the current scroll mode.
 func (e *Element) ScrollModeValue() ScrollMode {
 	return e.scrollMode
 }
