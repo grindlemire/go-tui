@@ -388,10 +388,8 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 		return
 	}
 
-	// key and ref take Go expressions. The parser lifts expression-valued
-	// key/ref into RefKey/RefExpr and removes them from Attributes, so any
-	// that survive to this point hold a literal and would be silently
-	// ignored by the generator.
+	// The parser lifts expression-valued key/ref out of Attributes, so any
+	// surviving here hold a literal the generator would silently ignore.
 	if attr.Name == "key" || attr.Name == "ref" {
 		err := NewError(attr.Position, attr.Name+" must be an expression")
 		err.Hint = "use " + attr.Name + "={...} with a Go expression, not a literal"

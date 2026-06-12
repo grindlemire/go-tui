@@ -451,12 +451,10 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 		}
 	}
 
-	// Keyed and loop call sites use Mount (mark-and-sweep): their identity
-	// comes from data, the key domain is unbounded, and persisting every key
-	// ever seen would leak. Sweeping also gives a standalone key={...} the
-	// React remount-on-key-change semantics. MountPersistent remains for
-	// plain positional standalone sites so a component hidden by a
-	// conditional keeps its state (e.g. a textarea's draft).
+	// Data-derived identities (loops, key={...}) use sweepable Mount since
+	// persisting an unbounded key domain would leak. MountPersistent stays
+	// for positional standalone sites so conditionally hidden components
+	// keep state (e.g. a textarea's draft).
 	mountFunc := "app.MountPersistent"
 	if len(g.loopIndexStack) > 0 || userKey != "" {
 		mountFunc = "app.Mount"

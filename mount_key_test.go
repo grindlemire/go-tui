@@ -1,6 +1,10 @@
 package tui
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 func TestMountKey_Equality(t *testing.T) {
 	type tc struct {
@@ -59,4 +63,17 @@ func TestMountKey_UsableAsMapKey(t *testing.T) {
 	if m[MountKey(0, "a")] != "first" {
 		t.Errorf("lookup with rebuilt key failed")
 	}
+}
+
+func TestMountKey_NonComparablePartPanics(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected panic for non-comparable key part")
+		}
+		if !strings.Contains(fmt.Sprint(r), "not comparable") {
+			t.Errorf("panic message %q should name the comparability problem", r)
+		}
+	}()
+	MountKey(0, []string{"a"})
 }

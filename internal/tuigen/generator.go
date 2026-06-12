@@ -350,13 +350,10 @@ func (g *Generator) popLoopIndex() {
 	}
 }
 
-// mountKeyExpr returns the Go expression for a component's mount cache key.
-// Standalone call sites use the static site index. Call sites inside loops
-// combine the site with each enclosing loop's key value via tui.MountKey,
-// so every iteration (slice index, map key, ...) gets its own cache slot.
-// A userKey expression (from a key={...} attribute) replaces the innermost
-// loop's value only: like React keys, it identifies the item among its
-// siblings, while outer loops keep contributing their own key values.
+// mountKeyExpr returns the Go expression for a component's mount cache key:
+// the static site index alone, or tui.MountKey(site, loopVars...) inside
+// loops. A userKey (from key={...}) replaces the innermost loop's value,
+// matching React's sibling-scoped key semantics.
 func (g *Generator) mountKeyExpr(baseIndex int, userKey string) string {
 	parts := slices.Clone(g.loopIndexStack)
 	if userKey != "" {
