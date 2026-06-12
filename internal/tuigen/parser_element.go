@@ -65,6 +65,8 @@ func (p *Parser) attachLeadingComments(node Node, comments *CommentGroup) {
 		n.LeadingComments = comments
 	case *ComponentCall:
 		n.LeadingComments = comments
+	case *ComponentExpr:
+		n.LeadingComments = comments
 	case *GoCode:
 		n.LeadingComments = comments
 	case *GoExpr:

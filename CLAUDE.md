@@ -890,7 +890,8 @@ The layout engine (`internal/layout`) implements CSS flexbox with:
 
 ## Testing
 
-Use table-driven tests for all unit tests with the following pattern:
+Use table-driven tests for unit tests that cover multiple cases of the same
+behavior, with the following pattern:
 
 ```go
 type tc struct {
@@ -911,6 +912,10 @@ for name, tt := range tests {
 ```
 
 Always define the `tc` struct separately before the test map.
+
+Plain linear tests are fine when there is no case dimension: sequential
+lifecycle or state-transition tests, goroutine-coordination tests, and
+single-scenario assertion sets. Do not force these into a one-row table.
 
 ## Running Tests
 

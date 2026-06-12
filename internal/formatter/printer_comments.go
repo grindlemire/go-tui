@@ -214,16 +214,12 @@ func (p *printer) printTrailingComment(cg *tuigen.CommentGroup) {
 }
 
 // printOrphanComments outputs orphan comments (not attached to any node).
-// Each comment group is printed with proper indentation, with blank lines between groups.
+// Each comment group is printed with proper indentation. Blank lines between
+// groups come from the first comment's BlankLineBefore flag, which the parser
+// always sets because groups are split on blank lines; emitting a separator
+// here as well would double the blank line and break format idempotency.
 func (p *printer) printOrphanComments(groups []*tuigen.CommentGroup) {
-	if len(groups) == 0 {
-		return
-	}
-	for i, cg := range groups {
-		if i > 0 {
-			// Add blank line between comment groups
-			p.newline()
-		}
+	for _, cg := range groups {
 		p.printCommentGroup(cg)
 	}
 }

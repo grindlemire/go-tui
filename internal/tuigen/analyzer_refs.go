@@ -89,7 +89,11 @@ func (a *Analyzer) validateRefs(comp *Component) []RefInfo {
 				check(n.Children, inLoop, inConditional)
 
 			case *LetBinding:
-				check(n.Element.Children, inLoop, inConditional)
+				if n.Element != nil {
+					check(n.Element.Children, inLoop, inConditional)
+				} else if n.Call != nil {
+					check(n.Call.Children, inLoop, inConditional)
+				}
 
 			case *ForLoop:
 				// Refs inside loops get slice type
@@ -149,6 +153,8 @@ func (a *Analyzer) collectLetBindings(nodes []Node) {
 			a.letBindings[n.Name] = false
 			if n.Element != nil {
 				a.collectLetBindings(n.Element.Children)
+			} else if n.Call != nil {
+				a.collectLetBindings(n.Call.Children)
 			}
 		case *Element:
 			a.collectLetBindings(n.Children)
@@ -174,7 +180,10 @@ func (a *Analyzer) containsChildrenSlot(nodes []Node) bool {
 				return true
 			}
 		case *LetBinding:
-			if a.containsChildrenSlot(n.Element.Children) {
+			if n.Element != nil && a.containsChildrenSlot(n.Element.Children) {
+				return true
+			}
+			if n.Call != nil && a.containsChildrenSlot(n.Call.Children) {
 				return true
 			}
 		case *ForLoop:
@@ -219,7 +228,11 @@ func (a *Analyzer) transformNode(node Node) Node {
 		n.Children = a.transformElementRefs(n.Children)
 		return n
 	case *LetBinding:
-		n.Element.Children = a.transformElementRefs(n.Element.Children)
+		if n.Element != nil {
+			n.Element.Children = a.transformElementRefs(n.Element.Children)
+		} else if n.Call != nil {
+			n.Call.Children = a.transformElementRefs(n.Call.Children)
+		}
 		return n
 	case *ForLoop:
 		n.Body = a.transformElementRefs(n.Body)

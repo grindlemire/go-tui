@@ -305,7 +305,12 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 			case *LetBinding:
 				// LetBindings wrap elements; recursively scan the wrapped element's children.
 				// The wrapped element itself is handled when we encounter the Element node.
-				scan(n.Element.Children, inLoop)
+				// The RHS can also be a component call or Go expression with no element.
+				if n.Element != nil {
+					scan(n.Element.Children, inLoop)
+				} else if n.Call != nil {
+					scan(n.Call.Children, inLoop)
+				}
 
 			case *ForLoop:
 				// Elements inside for loops have loop-scoped variable names
