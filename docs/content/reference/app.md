@@ -755,7 +755,7 @@ Stale cache entries are swept after each render pass. When a component disappear
 func (a *App) MountPersistent(parent Component, key any, factory func() Component) *Element
 ```
 
-Like `Mount`, but the instance survives the sweep even when it is not rendered. Generated code uses this for component elements (`<textarea>`, `<input>`, `<modal>`, `<markdown>`) declared outside loops, so a textarea hidden by an `if` keeps its draft text when it reappears. Component elements inside loops use plain `Mount` instead: loop keys come from data, and persisting every key ever seen would leak instances as the data changes.
+Like `Mount`, but the instance survives the sweep even when it is not rendered. Generated code uses this for component elements (`<textarea>`, `<input>`, `<modal>`, `<markdown>`) declared outside loops without a `key` attribute, so a textarea hidden by an `if` keeps its draft text when it reappears. Component elements inside loops, or with a `key={...}` attribute, use plain `Mount` instead: their identity comes from data, and persisting every key ever seen would leak instances as the data changes.
 
 ### MountKey
 

@@ -306,6 +306,8 @@ for _, msg := range s.messages {
 
 Without `key`, components in a loop are identified by the loop's index or map key, which is fine for stable lists but ties state to position when a slice reorders. The key must be unique among siblings of the innermost loop; in nested loops, outer loops contribute their own identity automatically. The value must be a Go expression: `key="literal"` is a compile error.
 
+A `key` on a component element outside any loop changes identity per value: when the expression changes, the old instance is swept and a fresh one mounts. Use this to reset a component's internal state when the thing it represents changes, such as `<textarea key={c.activeDraftID} />` clearing between drafts.
+
 ## Attribute reference
 
 ### Generic attributes (all elements)
