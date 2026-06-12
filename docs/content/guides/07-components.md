@@ -467,7 +467,7 @@ app.Mount(a, 0, func() tui.Component {
 })
 ```
 
-The mount system caches the `sidebar` instance by its parent and position index. On the first render, it creates the sidebar, binds its state to the app, and calls `Init()` if implemented. On subsequent renders, it reuses the cached instance and calls `UpdateProps` if the child implements it.
+The mount system caches the `sidebar` instance by its parent and a cache key (its position in the file, combined with the loop's index or map key when mounted inside a loop). On the first render, it creates the sidebar, binds its state to the app, and calls `Init()` if implemented. On subsequent renders, it reuses the cached instance and calls `UpdateProps` if the child implements it.
 
 The sidebar's `selected` state persists even when the parent re-renders, because the framework reuses the cached instance instead of creating a new one.
 

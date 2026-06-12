@@ -256,6 +256,8 @@ templ (s *tabApp) Render() {
 
 The generated code calls `s.tabRefs.Put(name, el)` each iteration. Without `key`, the same loop would generate `Append` calls and treat the ref as a `RefList` instead.
 
+On component elements (`<textarea>`, `<input>`, `<modal>`, `<markdown>`), the same `key` also identifies the cached component instance, so the component's state follows its item across reorders. See the [GSX Syntax Reference](gsx-syntax.md) for details.
+
 You can then look up specific elements in handlers:
 
 ```go

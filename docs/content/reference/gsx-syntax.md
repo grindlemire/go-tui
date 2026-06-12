@@ -288,13 +288,23 @@ See the [Refs Reference](refs.md) for `Ref`, `RefList`, and `RefMap` details.
 
 ### Key attributes
 
-Inside `for` loops, the `key` attribute tells the framework how to identify elements for `RefMap`:
+Inside `for` loops, the `key` attribute gives an element a stable identity among its siblings, like keys in React. It does two things. With a `ref` bound to a `RefMap`, it provides the map key:
 
 ```gsx
 for _, name := range items {
     <div ref={s.itemRefs} key={name}>{name}</div>
 }
 ```
+
+On component elements (`<textarea>`, `<input>`, `<modal>`, `<markdown>`), it also identifies the cached component instance, so a component's internal state follows its item when the list reorders or items are inserted:
+
+```gsx
+for _, msg := range s.messages {
+    <textarea key={msg.ID} placeholder={msg.Author} />
+}
+```
+
+Without `key`, components in a loop are identified by the loop's index or map key, which is fine for stable lists but ties state to position when a slice reorders. The key must be unique among siblings of the innermost loop; in nested loops, outer loops contribute their own identity automatically. The value must be a Go expression: `key="literal"` is a compile error.
 
 ## Attribute reference
 
@@ -307,7 +317,7 @@ for _, name := range items {
 | `disabled` | bool | -- | Disables the element |
 | `ref` | expression | `ref.Set(el)` | Binds element to a ref |
 | `deps` | expression | -- | Explicit state dependencies |
-| `key` | expression | -- | Key for RefMap in loops |
+| `key` | expression | -- | Loop item identity: component cache key, RefMap key with `ref` |
 
 ### Layout attributes
 
