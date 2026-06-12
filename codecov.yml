@@ -1,0 +1,18 @@
+coverage:
+  status:
+    # Informational while coverage is being raised toward the 80% target;
+    # flip to blocking thresholds once the library packages are there.
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+ignore:
+  - "examples"
+  - "dist"
+  - "editor"
+  - "docs"
+  - "scripts"
+  - "cmd/tui/testdata"
