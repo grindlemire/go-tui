@@ -238,7 +238,7 @@ templ (c *app) Render() {
 				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
 			},
 		},
-		"own key wins over inherited wrapper key": {
+		"own key composes after inherited wrapper key": {
 			input: `package x
 
 type app struct{}
@@ -253,7 +253,73 @@ templ (c *app) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"app.Mount(c, tui.MountKey(0, item.Sub), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(0, item.ID, item.Sub), func() tui.Component {",
+			},
+		},
+		"nested keyed wrappers compose": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div key={c.userID}>
+		<div key={c.tabID}>
+			<textarea placeholder="notes" />
+		</div>
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.userID, c.tabID), func() tui.Component {",
+			},
+		},
+		"let-bound keyed wrapper keys descendants": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	label := <div key={c.activeID}>
+		<textarea placeholder="notes" />
+	</div>
+	<div>{label}</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.activeID), func() tui.Component {",
+			},
+		},
+		"modal children inherit the modal's own key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<modal key={c.sessionID} open={c.show}>
+		<textarea placeholder="notes" />
+	</modal>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.sessionID), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(1, c.sessionID), func() tui.Component {",
+			},
+		},
+		"keyed wrapper inside conditional": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			if item.Visible {
+				<div key={item.ID}>
+					<textarea placeholder={item.Name} />
+				</div>
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
 			},
 		},
 		"sibling after keyed wrapper falls back to loop key": {

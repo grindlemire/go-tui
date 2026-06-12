@@ -62,12 +62,9 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 	if !skipTextChildren(elem) {
 		// A key={...} on a plain element keys the mounts of its descendants.
 		if elem.RefKey != nil {
-			restore := g.pushElementKey(elem.RefKey.Code)
-			g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional, inForLoop)
-			restore()
-		} else {
-			g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional, inForLoop)
+			defer g.pushElementKey(elem.RefKey.Code)()
 		}
+		g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional, inForLoop)
 	}
 
 	// Add to parent if specified

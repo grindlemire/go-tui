@@ -49,12 +49,9 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inCond
 	if !skipTextChildren(let.Element) {
 		// A key={...} on a let-bound element keys the mounts of its descendants.
 		if let.Element.RefKey != nil {
-			restore := g.pushElementKey(let.Element.RefKey.Code)
-			g.generateChildren(let.Name, let.Element.Children)
-			restore()
-		} else {
-			g.generateChildren(let.Name, let.Element.Children)
+			defer g.pushElementKey(let.Element.RefKey.Code)()
 		}
+		g.generateChildren(let.Name, let.Element.Children)
 	}
 
 	// Add to parent if specified

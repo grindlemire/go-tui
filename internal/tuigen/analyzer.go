@@ -175,7 +175,7 @@ var knownAttributes = map[string]bool{
 
 	// Element refs
 	"ref": true, // ref={varName} for element references
-	"key": true, // key={expr}: loop item identity (mount cache key; RefMap key with ref)
+	"key": true, // key={expr}: identity for mounts (own, or descendants' when on a container); RefMap key with ref
 
 	// Modal
 	"open":                 true,

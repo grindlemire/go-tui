@@ -17,6 +17,8 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.condCounter = 0
 	g.loopCounter = 0
 	g.mountIndex = 0
+	g.loopIndexStack = nil
+	g.mountKeyParts = nil
 	g.currentReceiver = ""
 	g.componentVars = nil
 	g.componentExprFields = nil

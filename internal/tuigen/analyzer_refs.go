@@ -11,7 +11,7 @@ import (
 // - Any valid Go expression for struct components (e.g., s.content)
 // - Reserved export name 'Root' (capitalized ref name must not be "Root")
 // - Unique names within the component (for function components only)
-// - key attribute only valid inside for loops
+// - key attribute provides mount/RefMap identity (with ref, only valid inside for loops)
 // - Determines ref kind from context (single, list, or map)
 func (a *Analyzer) validateRefs(comp *Component) []RefInfo {
 	names := make(map[string]Position)

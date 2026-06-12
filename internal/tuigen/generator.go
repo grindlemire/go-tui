@@ -57,7 +57,7 @@ type Generator struct {
 	// mountKeyParts tracks the mount key segments in scope: enclosing loops'
 	// key variables with key={...} element overrides applied. Consumed by
 	// mountKeyExpr to build tui.MountKey expressions.
-	mountKeyParts []string
+	mountKeyParts []mountKeySegment
 
 	// fileDecls stores the current file's GoDecl nodes for struct lookup.
 	// Used by generateUpdateProps to find struct definitions for method components.
@@ -345,7 +345,7 @@ func (g *Generator) pushLoopIndex(loop *ForLoop) string {
 		idxVar = fmt.Sprintf("__idx_%d", len(g.loopIndexStack))
 	}
 	g.loopIndexStack = append(g.loopIndexStack, idxVar)
-	g.mountKeyParts = append(slices.Clone(g.mountKeyParts), idxVar)
+	g.mountKeyParts = append(slices.Clone(g.mountKeyParts), mountKeySegment{expr: idxVar, fromLoop: true})
 	return idxVar
 }
 
@@ -359,32 +359,44 @@ func (g *Generator) popLoopIndex() {
 	}
 }
 
-// pushElementKey scopes a key={...} identity override: the key replaces the
-// most recent mount key segment (or starts the list) for every mount
-// generated until the returned restore func runs. This is how a keyed
-// wrapper element keys the components inside it.
+// mountKeySegment is one identity segment of a mount key: a loop's key
+// variable, or a key={...} expression. The kind decides how a nested
+// key={...} composes (replace a loop position, append after another key).
+type mountKeySegment struct {
+	expr     string
+	fromLoop bool
+}
+
+// pushElementKey scopes a key={...} identity override for every mount
+// generated until the returned restore func runs. A key replaces the
+// innermost segment when it came from a loop (the key substitutes for the
+// item's position at that level, like React keys) and appends when nested
+// under another key (a deeper identity level composes rather than erasing
+// the outer one).
 func (g *Generator) pushElementKey(key string) func() {
 	saved := g.mountKeyParts
 	parts := slices.Clone(saved)
-	if len(parts) == 0 {
-		parts = []string{key}
+	if n := len(parts); n > 0 && parts[n-1].fromLoop {
+		parts[n-1] = mountKeySegment{expr: key}
 	} else {
-		parts[len(parts)-1] = key
+		parts = append(parts, mountKeySegment{expr: key})
 	}
 	g.mountKeyParts = parts
 	return func() { g.mountKeyParts = saved }
 }
 
 // mountKeyExpr returns the Go expression for a component's mount cache key:
-// the static site index alone, or tui.MountKey(site, parts...) where the
-// parts are the enclosing loops' key values with key={...} overrides applied
-// (each override replaces the innermost segment, matching React's
-// sibling-scoped key semantics).
+// the static site index alone, or tui.MountKey(site, parts...) built from
+// the in-scope identity segments.
 func (g *Generator) mountKeyExpr(baseIndex int) string {
 	if len(g.mountKeyParts) == 0 {
 		return fmt.Sprintf("%d", baseIndex)
 	}
-	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(g.mountKeyParts, ", "))
+	exprs := make([]string, len(g.mountKeyParts))
+	for i, part := range g.mountKeyParts {
+		exprs[i] = part.expr
+	}
+	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(exprs, ", "))
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.

@@ -318,7 +318,7 @@ for _, msg := range s.messages {
 }
 ```
 
-Loops nested inside a keyed wrapper still contribute their own identity, and an element's own `key` wins over an inherited one.
+Keys compose by depth. A `key` replaces the loop position at its own level, loops nested inside a keyed wrapper still contribute their own identity, and a `key` nested under another `key` appends to it rather than erasing it. One caveat: components passed into a children slot are mounted at the caller's site, so a keyed wrapper inside the receiving component does not re-key them.
 
 ## Attribute reference
 
