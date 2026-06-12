@@ -242,6 +242,7 @@ func genericAttrs() []AttributeDef {
 		{Name: "disabled", Type: "bool", Description: "Whether the element is disabled", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable (tui.NewRef/NewRefList/NewRefMap)", Category: "ref"},
+		{Name: "key", Type: "expression", Description: "Stable identity for this element within a loop: used as the mount cache key for component elements and as the RefMap key when combined with ref", Category: "generic"},
 	}
 }
 
@@ -383,6 +384,7 @@ func inputAttrs() []AttributeDef {
 		{Name: "onChange", Type: "func", Description: "Callback when text changes: func(string)", Category: "event"},
 		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this input on startup", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "key", Type: "expression", Description: "Stable identity for this element within a loop: used as the mount cache key for component elements and as the RefMap key when combined with ref", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
 }
@@ -407,6 +409,7 @@ func textareaAttrs() []AttributeDef {
 		{Name: "onSubmit", Type: "func", Description: "Callback when submit key is pressed: func(string)", Category: "event"},
 		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this text area on startup", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "key", Type: "expression", Description: "Stable identity for this element within a loop: used as the mount cache key for component elements and as the RefMap key when combined with ref", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
 }
@@ -423,6 +426,7 @@ func modalAttrs() []AttributeDef {
 		{Name: "trapFocus", Type: "bool", Description: "Tab/Shift+Tab restricted to modal children; when true, also blocks unhandled keys from reaching parent components (default true)", Category: "event"},
 		{Name: "keyMap", Type: "expression", Description: "Custom KeyMap bindings for the modal; fire before the catch-all when trapFocus is true", Category: "event"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "key", Type: "expression", Description: "Stable identity for this element within a loop: used as the mount cache key for component elements and as the RefMap key when combined with ref", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
 }
@@ -437,6 +441,7 @@ func markdownAttrs() []AttributeDef {
 		{Name: "width", Type: "int", Description: "Fixed render width in characters (0 = fill available width)", Category: "layout"},
 		{Name: "theme", Type: "expression", Description: "tui.MarkdownTheme overriding the default styling", Category: "visual"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
+		{Name: "key", Type: "expression", Description: "Stable identity for this element within a loop: used as the mount cache key for component elements and as the RefMap key when combined with ref", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 	}
 }
