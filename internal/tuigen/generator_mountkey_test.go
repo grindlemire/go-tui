@@ -182,6 +182,180 @@ templ (c *app) Render() {
 				"app.Mount(c, tui.MountKey(0, i), func() tui.Component {",
 			},
 		},
+		"keyed wrapper div keys struct component call": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			<div key={item.ID}>
+				@ChatMessage(item)
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+			},
+		},
+		"keyed wrapper outside inner loop prefixes inner loop keys": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, group := range c.groups {
+			<div key={group.ID}>
+				for _, item := range group.Items {
+					@Widget(item)
+				}
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, group.ID, __idx_1), func() tui.Component {",
+			},
+		},
+		"component element inherits wrapper key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			<div key={item.ID}>
+				<textarea placeholder={item.Name} />
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+			},
+		},
+		"own key composes after inherited wrapper key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			<div key={item.ID}>
+				<markdown key={item.Sub} source={item.Text} />
+			</div>
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID, item.Sub), func() tui.Component {",
+			},
+		},
+		"nested keyed wrappers compose": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div key={c.userID}>
+		<div key={c.tabID}>
+			<textarea placeholder="notes" />
+		</div>
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.userID, c.tabID), func() tui.Component {",
+			},
+		},
+		"let-bound keyed wrapper keys descendants": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	label := <div key={c.activeID}>
+		<textarea placeholder="notes" />
+	</div>
+	<div>{label}</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.activeID), func() tui.Component {",
+			},
+		},
+		"modal children inherit the modal's own key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<modal key={c.sessionID} open={c.show}>
+		<textarea placeholder="notes" />
+	</modal>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.sessionID), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(1, c.sessionID), func() tui.Component {",
+			},
+		},
+		"keyed wrapper inside conditional": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for _, item := range c.items {
+			if item.Visible {
+				<div key={item.ID}>
+					<textarea placeholder={item.Name} />
+				</div>
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+			},
+		},
+		"sibling after keyed wrapper falls back to loop key": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div>
+		for i, item := range c.items {
+			<div key={item.ID}>
+				<textarea placeholder={item.Name} />
+			</div>
+			<markdown source={item.Text} />
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, item.ID), func() tui.Component {",
+				"app.Mount(c, tui.MountKey(1, i), func() tui.Component {",
+			},
+		},
+		"standalone keyed wrapper uses sweepable Mount": {
+			input: `package x
+
+type app struct{}
+
+templ (c *app) Render() {
+	<div key={c.activeID}>
+		<textarea placeholder="notes" />
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(c, tui.MountKey(0, c.activeID), func() tui.Component {",
+			},
+		},
 	}
 
 	for name, tt := range tests {

@@ -439,7 +439,7 @@ func helper(s string) string {
 | `class` | `string` | Tailwind-style classes |
 | `disabled` | `bool` | Disable interaction |
 | `ref` | expression | Bind element to a `tui.Ref`/`RefList`/`RefMap` variable |
-| `key` | expression | Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): mount cache key for component elements, RefMap key with `ref` |
+| `key` | expression | Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): mount cache key for component elements, RefMap key with `ref`; a key on a container element keys the components mounted inside it |
 | `deps` | expression | Explicit state dependencies for reactive bindings |
 
 ### Layout Attributes

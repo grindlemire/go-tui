@@ -50,9 +50,11 @@ type Generator struct {
 	// to emit app.Mount(receiverVar, index, factory).
 	currentReceiver string
 
-	// loopIndexStack tracks loop index variable names for nested for loops.
-	// Used by generateStructMount to generate unique mount indices per iteration.
+	// loopIndexStack names synthetic loop index variables (__idx_N) by depth.
 	loopIndexStack []string
+
+	// mountKeyParts holds the identity segments in scope for mount key expressions.
+	mountKeyParts []mountKeySegment
 
 	// fileDecls stores the current file's GoDecl nodes for struct lookup.
 	// Used by generateUpdateProps to find struct definitions for method components.
@@ -340,6 +342,7 @@ func (g *Generator) pushLoopIndex(loop *ForLoop) string {
 		idxVar = fmt.Sprintf("__idx_%d", len(g.loopIndexStack))
 	}
 	g.loopIndexStack = append(g.loopIndexStack, idxVar)
+	g.mountKeyParts = append(slices.Clone(g.mountKeyParts), mountKeySegment{expr: idxVar, fromLoop: true})
 	return idxVar
 }
 
@@ -348,25 +351,44 @@ func (g *Generator) popLoopIndex() {
 	if len(g.loopIndexStack) > 0 {
 		g.loopIndexStack = g.loopIndexStack[:len(g.loopIndexStack)-1]
 	}
+	if len(g.mountKeyParts) > 0 {
+		g.mountKeyParts = g.mountKeyParts[:len(g.mountKeyParts)-1]
+	}
 }
 
-// mountKeyExpr returns the Go expression for a component's mount cache key:
-// the static site index alone, or tui.MountKey(site, loopVars...) inside
-// loops. A userKey (from key={...}) replaces the innermost loop's value,
-// matching React's sibling-scoped key semantics.
-func (g *Generator) mountKeyExpr(baseIndex int, userKey string) string {
-	parts := slices.Clone(g.loopIndexStack)
-	if userKey != "" {
-		if len(parts) == 0 {
-			parts = []string{userKey}
-		} else {
-			parts[len(parts)-1] = userKey
-		}
+// mountKeySegment is one mount key identity segment: a loop variable or a
+// key={...} expression.
+type mountKeySegment struct {
+	expr     string
+	fromLoop bool
+}
+
+// pushElementKey scopes a key={...} override until the returned restore func
+// runs: the key replaces the innermost segment when it came from a loop
+// (React sibling scoping) and appends under another key (depths compose).
+func (g *Generator) pushElementKey(key string) func() {
+	saved := g.mountKeyParts
+	parts := slices.Clone(saved)
+	if n := len(parts); n > 0 && parts[n-1].fromLoop {
+		parts[n-1] = mountKeySegment{expr: key}
+	} else {
+		parts = append(parts, mountKeySegment{expr: key})
 	}
-	if len(parts) == 0 {
+	g.mountKeyParts = parts
+	return func() { g.mountKeyParts = saved }
+}
+
+// mountKeyExpr returns the mount cache key expression: the site index alone,
+// or tui.MountKey(site, parts...) from the in-scope identity segments.
+func (g *Generator) mountKeyExpr(baseIndex int) string {
+	if len(g.mountKeyParts) == 0 {
 		return fmt.Sprintf("%d", baseIndex)
 	}
-	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(parts, ", "))
+	exprs := make([]string, len(g.mountKeyParts))
+	for i, part := range g.mountKeyParts {
+		exprs[i] = part.expr
+	}
+	return fmt.Sprintf("tui.MountKey(%d, %s)", baseIndex, strings.Join(exprs, ", "))
 }
 
 // stateNameSet returns a set of state variable names for quick lookup.

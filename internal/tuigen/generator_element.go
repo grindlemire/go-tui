@@ -60,6 +60,10 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 
 	// Generate children - skip if text element already has content in WithText
 	if !skipTextChildren(elem) {
+		// A key={...} on a plain element keys the mounts of its descendants.
+		if elem.RefKey != nil {
+			defer g.pushElementKey(elem.RefKey.Code)()
+		}
 		g.generateChildrenWithRefs(varName, elem.Children, inLoop, inConditional, inForLoop)
 	}
 
@@ -433,11 +437,11 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	baseIndex := g.mountIndex
 	g.mountIndex++
 
-	userKey := ""
+	// An own key={...} scopes over this mount and its children (modal).
 	if elem.RefKey != nil {
-		userKey = elem.RefKey.Code
+		defer g.pushElementKey(elem.RefKey.Code)()
 	}
-	indexExpr := g.mountKeyExpr(baseIndex, userKey)
+	indexExpr := g.mountKeyExpr(baseIndex)
 
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)
@@ -451,12 +455,10 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 		}
 	}
 
-	// Data-derived identities (loops, key={...}) use sweepable Mount since
-	// persisting an unbounded key domain would leak. MountPersistent stays
-	// for positional standalone sites so conditionally hidden components
-	// keep state (e.g. a textarea's draft).
+	// Data-derived identities (loops, key={...}) use sweepable Mount;
+	// persisting an unbounded key domain would leak.
 	mountFunc := "app.MountPersistent"
-	if len(g.loopIndexStack) > 0 || userKey != "" {
+	if len(g.mountKeyParts) > 0 {
 		mountFunc = "app.Mount"
 	}
 	g.writef("%s := %s(%s, %s, func() tui.Component {\n", varName, mountFunc, g.currentReceiver, indexExpr)

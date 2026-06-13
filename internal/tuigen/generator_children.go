@@ -187,8 +187,8 @@ func (g *Generator) generateStructMount(call *ComponentCall, parentVar string) s
 	baseIndex := g.mountIndex
 	g.mountIndex++
 
-	// Component calls have no key attribute.
-	indexExpr := g.mountKeyExpr(baseIndex, "")
+	// Component calls have no key attribute; a keyed wrapper element keys them.
+	indexExpr := g.mountKeyExpr(baseIndex)
 
 	// Build children slice if the component call has children
 	childrenVar := ""
