@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.17.0](https://github.com/grindlemire/go-tui/compare/v0.16.0...v0.17.0) (2026-06-13)
+
+
+### Features
+
+* identity-based mount keys with React-like key attribute ([bb82b57](https://github.com/grindlemire/go-tui/commit/bb82b579e1728d40c393cd24fa6f000d91e5b228))
+* **tuigen:** key on a container element keys descendant component mounts ([#94](https://github.com/grindlemire/go-tui/issues/94)) ([488fbfe](https://github.com/grindlemire/go-tui/commit/488fbfe13cf6fb2fd103dea52eb87b5099e07e34))
+
+
+### Bug Fixes
+
+* **lsp:** wait for gopls to exit before canceling its command context ([464d8b3](https://github.com/grindlemire/go-tui/commit/464d8b30c68d266fcb17a87bf3bf719d740a6cd5))
+* **textarea:** guard moveEnd at phantom row and overlay cursor on hard-newline boundary ([ddf4f55](https://github.com/grindlemire/go-tui/commit/ddf4f55658d6bae4987d6cd5da29d519f3217bee))
+* **textarea:** keep cursor visible at display-full wrap boundaries ([c2da185](https://github.com/grindlemire/go-tui/commit/c2da185c4753c221b5ff15122a5727d1875d501c))
+* **textarea:** keep the cursor visible at display-full wrap boundaries ([3a2c768](https://github.com/grindlemire/go-tui/commit/3a2c76812ac1c551e45688a241b2c5cf6e4d485a))
+* **textarea:** wrap wide characters at display-width boundaries ([61fb8c8](https://github.com/grindlemire/go-tui/commit/61fb8c8a5dc548b45574cea6135c9ae95cd9c3e0))
+* **textarea:** wrap wide characters at the display-width boundary ([c385312](https://github.com/grindlemire/go-tui/commit/c385312853f4b5c9a5ddd97d3c753b0bb5a8ba66))
+* **tuigen:** avoid receiver shadowing in generated UpdateProps ([6912b40](https://github.com/grindlemire/go-tui/commit/6912b4086e7f38497f60bf6a26b2c49832e0964c))
+* **tuigen:** avoid receiver shadowing in generated UpdateProps ([57378db](https://github.com/grindlemire/go-tui/commit/57378db6a418b2d4bdcbd0b802c05f729709ca4c))
+* **tuigen:** handle let bindings with call or expression RHS and keep component expression comments ([f0bb13a](https://github.com/grindlemire/go-tui/commit/f0bb13aa97e5cd1f2bc39dd6bf6830d495e13ade))
+* **tuigen:** parenthesize nested loop mount key expressions so multipliers compound ([53765bb](https://github.com/grindlemire/go-tui/commit/53765bbef6f350e20f9d4def3c3273db8cc8a86b))
+* **tuigen:** prevent loop mount keys from colliding with other mount call sites ([d823710](https://github.com/grindlemire/go-tui/commit/d823710174755e5238a28b4250e07662bf1e90e0))
+* **tuigen:** prevent loop mount keys from colliding with standalone component keys ([cda2c0a](https://github.com/grindlemire/go-tui/commit/cda2c0a02290644e1da922afb712a3979919f7ae))
+
 ## [0.16.0](https://github.com/grindlemire/go-tui/compare/v0.15.1...v0.16.0) (2026-06-07)
 
 
