@@ -50,13 +50,10 @@ type Generator struct {
 	// to emit app.Mount(receiverVar, index, factory).
 	currentReceiver string
 
-	// loopIndexStack tracks loop index variable names for nested for loops.
-	// Used by generateStructMount to generate unique mount indices per iteration.
+	// loopIndexStack names synthetic loop index variables (__idx_N) by depth.
 	loopIndexStack []string
 
-	// mountKeyParts tracks the mount key segments in scope: enclosing loops'
-	// key variables with key={...} element overrides applied. Consumed by
-	// mountKeyExpr to build tui.MountKey expressions.
+	// mountKeyParts holds the identity segments in scope for mount key expressions.
 	mountKeyParts []mountKeySegment
 
 	// fileDecls stores the current file's GoDecl nodes for struct lookup.
@@ -359,20 +356,16 @@ func (g *Generator) popLoopIndex() {
 	}
 }
 
-// mountKeySegment is one identity segment of a mount key: a loop's key
-// variable, or a key={...} expression. The kind decides how a nested
-// key={...} composes (replace a loop position, append after another key).
+// mountKeySegment is one mount key identity segment: a loop variable or a
+// key={...} expression.
 type mountKeySegment struct {
 	expr     string
 	fromLoop bool
 }
 
-// pushElementKey scopes a key={...} identity override for every mount
-// generated until the returned restore func runs. A key replaces the
-// innermost segment when it came from a loop (the key substitutes for the
-// item's position at that level, like React keys) and appends when nested
-// under another key (a deeper identity level composes rather than erasing
-// the outer one).
+// pushElementKey scopes a key={...} override until the returned restore func
+// runs: the key replaces the innermost segment when it came from a loop
+// (React sibling scoping) and appends under another key (depths compose).
 func (g *Generator) pushElementKey(key string) func() {
 	saved := g.mountKeyParts
 	parts := slices.Clone(saved)
@@ -385,9 +378,8 @@ func (g *Generator) pushElementKey(key string) func() {
 	return func() { g.mountKeyParts = saved }
 }
 
-// mountKeyExpr returns the Go expression for a component's mount cache key:
-// the static site index alone, or tui.MountKey(site, parts...) built from
-// the in-scope identity segments.
+// mountKeyExpr returns the mount cache key expression: the site index alone,
+// or tui.MountKey(site, parts...) from the in-scope identity segments.
 func (g *Generator) mountKeyExpr(baseIndex int) string {
 	if len(g.mountKeyParts) == 0 {
 		return fmt.Sprintf("%d", baseIndex)

@@ -455,10 +455,8 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 		}
 	}
 
-	// Data-derived identities (loops, key={...}) use sweepable Mount since
-	// persisting an unbounded key domain would leak. MountPersistent stays
-	// for positional standalone sites so conditionally hidden components
-	// keep state (e.g. a textarea's draft).
+	// Data-derived identities (loops, key={...}) use sweepable Mount;
+	// persisting an unbounded key domain would leak.
 	mountFunc := "app.MountPersistent"
 	if len(g.mountKeyParts) > 0 {
 		mountFunc = "app.Mount"
