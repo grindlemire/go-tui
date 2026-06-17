@@ -134,7 +134,14 @@ func TestIntegration_RenderOutput(t *testing.T) {
 		var row strings.Builder
 		for x := range 10 {
 			cell := buf.Cell(x, y)
-			row.WriteString(cell.Text)
+			r := cell.Rune
+			if r == 0 {
+				r = ' '
+			}
+			row.WriteRune(r)
+			if cell.Combining != "" {
+				row.WriteString(cell.Combining)
+			}
 		}
 		if row.String() != expected[y] {
 			t.Errorf("row %d = %q, want %q", y, row.String(), expected[y])
@@ -249,8 +256,9 @@ func extractBufferLine(buf *Buffer, y, width int) string {
 	var b strings.Builder
 	for x := range width {
 		cell := buf.Cell(x, y)
-		if cell.Text != "" {
-			b.WriteString(cell.Text)
+		if cell.Rune != 0 {
+			b.WriteRune(cell.Rune)
+			b.WriteString(cell.Combining)
 		} else {
 			b.WriteByte(' ')
 		}
@@ -304,7 +312,7 @@ func TestIntegration_TextAlignment(t *testing.T) {
 			// Find where 'H' appears
 			foundX := -1
 			for x := 0; x < tt.boxWidth; x++ {
-				if buf.Cell(x, 0).Text == "H" {
+				if buf.Cell(x, 0).Rune == 'H' {
 					foundX = x
 					break
 				}

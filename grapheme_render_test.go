@@ -13,8 +13,8 @@ func TestBuffer_SetString_Cluster(t *testing.T) {
 	b.SetString(0, 0, emojiFlagUS+"x", NewStyle())
 
 	lead := b.Cell(0, 0)
-	if lead.Text != emojiFlagUS {
-		t.Errorf("cell(0,0).Text = %q, want the whole flag %q", lead.Text, emojiFlagUS)
+	if cellGlyph(lead) != emojiFlagUS {
+		t.Errorf("cell(0,0) glyph = %q, want the whole flag %q", cellGlyph(lead), emojiFlagUS)
 	}
 	if lead.Width != 2 {
 		t.Errorf("cell(0,0).Width = %d, want 2", lead.Width)
@@ -23,8 +23,8 @@ func TestBuffer_SetString_Cluster(t *testing.T) {
 		t.Errorf("cell(1,0) should be a continuation cell")
 	}
 	// The trailing 'x' lands at column 2, not 4: the flag consumed two columns.
-	if got := b.Cell(2, 0).Text; got != "x" {
-		t.Errorf("cell(2,0).Text = %q, want \"x\" (flag is 2 cols wide, not 4)", got)
+	if got := b.Cell(2, 0).Rune; got != 'x' {
+		t.Errorf("cell(2,0).Rune = %q, want 'x' (flag is 2 cols wide, not 4)", got)
 	}
 
 	// Emission writes the cluster's full bytes back out.
@@ -44,14 +44,14 @@ func TestBuffer_SetStringGradient_Cluster(t *testing.T) {
 		t.Errorf("SetStringGradient returned width %d, want 3 (flag 2 + x 1)", w)
 	}
 	lead := b.Cell(0, 0)
-	if lead.Text != emojiFlagUS || lead.Width != 2 {
-		t.Errorf("cell(0,0) = {%q, w%d}, want the flag at width 2", lead.Text, lead.Width)
+	if cellGlyph(lead) != emojiFlagUS || lead.Width != 2 {
+		t.Errorf("cell(0,0) = {%q, w%d}, want the flag at width 2", cellGlyph(lead), lead.Width)
 	}
 	if !b.Cell(1, 0).IsContinuation() {
 		t.Errorf("cell(1,0) should be a continuation cell")
 	}
-	if got := b.Cell(2, 0).Text; got != "x" {
-		t.Errorf("cell(2,0).Text = %q, want \"x\"", got)
+	if got := b.Cell(2, 0).Rune; got != 'x' {
+		t.Errorf("cell(2,0).Rune = %q, want 'x'", got)
 	}
 	if lead.Style.Fg.IsDefault() {
 		t.Errorf("gradient color was not applied to the flag cell")
@@ -143,10 +143,13 @@ func contentRow(b *Buffer, y int) string {
 		if cell.IsContinuation() {
 			continue
 		}
-		if cell.Text == "" {
-			sb.WriteRune(' ')
-		} else {
-			sb.WriteString(cell.Text)
+		r := cell.Rune
+		if r == 0 {
+			r = ' '
+		}
+		sb.WriteRune(r)
+		if cell.Combining != "" {
+			sb.WriteString(cell.Combining)
 		}
 	}
 	return sb.String()

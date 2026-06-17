@@ -216,10 +216,13 @@ func (m *MockTerminal) String() string {
 			if cell.IsContinuation() {
 				continue // Skip continuation cells
 			}
-			if cell.Text == "" {
-				sb.WriteRune(' ')
-			} else {
-				sb.WriteString(cell.Text)
+			r := cell.Rune
+			if r == 0 {
+				r = ' '
+			}
+			sb.WriteRune(r)
+			if cell.Combining != "" {
+				sb.WriteString(cell.Combining)
 			}
 		}
 		if y < m.height-1 {
@@ -239,10 +242,13 @@ func (m *MockTerminal) StringTrimmed() string {
 			if cell.IsContinuation() {
 				continue
 			}
-			if cell.Text == "" {
-				line.WriteRune(' ')
-			} else {
-				line.WriteString(cell.Text)
+			r := cell.Rune
+			if r == 0 {
+				r = ' '
+			}
+			line.WriteRune(r)
+			if cell.Combining != "" {
+				line.WriteString(cell.Combining)
 			}
 		}
 		sb.WriteString(strings.TrimRight(line.String(), " "))

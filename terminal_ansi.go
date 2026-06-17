@@ -139,11 +139,14 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 			t.lastStyle = ch.Cell.Style
 		}
 
-		// Write the cluster text (empty cell renders as a space).
-		if ch.Cell.Text != "" {
-			t.esc.WriteString(ch.Cell.Text)
-		} else {
-			t.esc.WriteRune(' ')
+		// Write the cluster glyph (empty cell renders as a space).
+		r := ch.Cell.Rune
+		if r == 0 {
+			r = ' '
+		}
+		t.esc.WriteRune(r)
+		if ch.Cell.Combining != "" {
+			t.esc.WriteString(ch.Cell.Combining)
 		}
 
 		lastX = ch.X

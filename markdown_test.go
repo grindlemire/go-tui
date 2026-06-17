@@ -126,8 +126,8 @@ func TestMarkdown_RenderBlockquote(t *testing.T) {
 	if !strings.Contains(out, "quoted line one") {
 		t.Fatalf("blockquote text missing:\n%s", out)
 	}
-	if buf.Cell(0, 0).Text != "│" {
-		t.Errorf("expected │ bar at (0,0), got %q", buf.Cell(0, 0).Text)
+	if buf.Cell(0, 0).Rune != '│' {
+		t.Errorf("expected │ bar at (0,0), got %q", buf.Cell(0, 0).Rune)
 	}
 }
 
@@ -234,14 +234,14 @@ func TestMarkdown_HeadingHasTrailingSpace(t *testing.T) {
 	buf := NewBuffer(20, 5)
 	m.Render(nil).Render(buf, 20, 5)
 	// Heading on row 0, a blank line on row 1, body on row 2.
-	if buf.Cell(0, 0).Text != "T" {
-		t.Fatalf("heading should be on row 0, got %q", buf.Cell(0, 0).Text)
+	if buf.Cell(0, 0).Rune != 'T' {
+		t.Fatalf("heading should be on row 0, got %q", buf.Cell(0, 0).Rune)
 	}
-	if r := buf.Cell(0, 1).Text; r != "" && r != " " {
+	if r := buf.Cell(0, 1).Rune; r != 0 && r != ' ' {
 		t.Errorf("expected a blank line after the heading, got %q at (0,1)", r)
 	}
-	if buf.Cell(0, 2).Text != "b" {
-		t.Errorf("body should be on row 2 after heading + blank line, got %q", buf.Cell(0, 2).Text)
+	if buf.Cell(0, 2).Rune != 'b' {
+		t.Errorf("body should be on row 2 after heading + blank line, got %q", buf.Cell(0, 2).Rune)
 	}
 }
 
@@ -254,7 +254,7 @@ func TestMarkdown_TableRuleBetweenEveryRow(t *testing.T) {
 	// each starting with the left-tee junction.
 	tees := 0
 	for y := range 10 {
-		if buf.Cell(0, y).Text == "├" {
+		if buf.Cell(0, y).Rune == '├' {
 			tees++
 		}
 	}
@@ -281,20 +281,20 @@ func TestMarkdown_HeadingSpacingBeforeAndAfterDeduped(t *testing.T) {
 	m := NewMarkdown(WithMarkdownSource("# A\n\n## B\n\nbody"), WithMarkdownWidth(20))
 	buf := NewBuffer(20, 8)
 	m.Render(nil).Render(buf, 20, 8)
-	rune0 := func(y int) string { return buf.Cell(0, y).Text }
-	if rune0(0) != "A" {
+	rune0 := func(y int) rune { return buf.Cell(0, y).Rune }
+	if rune0(0) != 'A' {
 		t.Fatalf("row 0 should be 'A', got %q", rune0(0))
 	}
-	if r := rune0(1); r != "" && r != " " {
+	if r := rune0(1); r != 0 && r != ' ' {
 		t.Errorf("row 1 should be blank between the two headings, got %q", r)
 	}
-	if rune0(2) != "B" {
+	if rune0(2) != 'B' {
 		t.Errorf("row 2 should be 'B' (one blank between headings), got %q", rune0(2))
 	}
-	if r := rune0(3); r != "" && r != " " {
+	if r := rune0(3); r != 0 && r != ' ' {
 		t.Errorf("row 3 should be blank after the heading, got %q", r)
 	}
-	if rune0(4) != "b" {
+	if rune0(4) != 'b' {
 		t.Errorf("row 4 should be 'body', got %q", rune0(4))
 	}
 }
@@ -321,8 +321,8 @@ func TestMarkdown_TableFullGrid(t *testing.T) {
 
 	// DefaultMarkdownTheme draws a full rounded grid: outer corners, a top
 	// column junction, a header-rule cross, and column separators.
-	if buf.Cell(0, 0).Text != "╭" {
-		t.Errorf("top-left corner should be ╭, got %q", buf.Cell(0, 0).Text)
+	if buf.Cell(0, 0).Rune != '╭' {
+		t.Errorf("top-left corner should be ╭, got %q", buf.Cell(0, 0).Rune)
 	}
 	for _, want := range []rune{'┬', '┼', '┴', '│'} {
 		if !strings.ContainsRune(out, want) {
@@ -358,9 +358,9 @@ func TestMarkdown_BlockquoteWrapsLongContent(t *testing.T) {
 		t.Fatalf("blockquote content should wrap, not clip; got:\n%s", out)
 	}
 	// Content occupies more than one row, and the bar spans each content row.
-	if buf.Cell(0, 0).Text != "│" || buf.Cell(0, 1).Text != "│" {
+	if buf.Cell(0, 0).Rune != '│' || buf.Cell(0, 1).Rune != '│' {
 		t.Errorf("bar should span wrapped content rows; row0=%q row1=%q",
-			buf.Cell(0, 0).Text, buf.Cell(0, 1).Text)
+			buf.Cell(0, 0).Rune, buf.Cell(0, 1).Rune)
 	}
 }
 
@@ -380,11 +380,10 @@ func TestMarkdown_ListWrapsLongContent(t *testing.T) {
 
 // findCell returns the row,col of the first occurrence of r in the buffer.
 func findCell(buf *Buffer, r rune) (int, int) {
-	want := string(r)
 	w, h := buf.Size()
 	for y := range h {
 		for x := range w {
-			if buf.Cell(x, y).Text == want {
+			if buf.Cell(x, y).Rune == r {
 				return y, x
 			}
 		}

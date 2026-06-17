@@ -37,8 +37,8 @@ func TestNewCell(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			c := NewCell(tt.r, tt.style)
-			if c.Text != string(tt.r) {
-				t.Errorf("NewCell().Text = %q, want %q", c.Text, string(tt.r))
+			if c.Rune != tt.r {
+				t.Errorf("NewCell().Rune = %q, want %q", c.Rune, tt.r)
 			}
 			if !c.Style.Equal(tt.style) {
 				t.Errorf("NewCell().Style doesn't match expected style")
@@ -53,10 +53,10 @@ func TestNewCell(t *testing.T) {
 func TestNewCellWithWidth(t *testing.T) {
 	style := NewStyle().Foreground(Red)
 
-	// Test explicit width for continuation cell (empty text)
+	// Test explicit width for continuation cell (empty glyph)
 	c := NewCellWithWidth(0, style, 0)
-	if c.Text != "" {
-		t.Errorf("NewCellWithWidth().Text = %q, want \"\"", c.Text)
+	if c.Rune != 0 {
+		t.Errorf("NewCellWithWidth().Rune = %q, want 0", c.Rune)
 	}
 	if c.Width != 0 {
 		t.Errorf("NewCellWithWidth().Width = %d, want 0", c.Width)
@@ -344,8 +344,8 @@ func TestCell_ZeroValue(t *testing.T) {
 	var c Cell
 
 	// Zero value cell
-	if c.Text != "" {
-		t.Errorf("zero value Cell.Text = %q, want \"\"", c.Text)
+	if c.Rune != 0 {
+		t.Errorf("zero value Cell.Rune = %q, want 0", c.Rune)
 	}
 	if c.Width != 0 {
 		t.Errorf("zero value Cell.Width = %d, want 0", c.Width)

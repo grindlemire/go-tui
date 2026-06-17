@@ -320,20 +320,20 @@ func TestRenderInline_PreservesEraseToEOL(t *testing.T) {
 
 	// After renderInline: tail must be blank (EraseToEOL cleared it).
 	for x := 2; x < w; x++ {
-		if c := term.CellAt(x, 0+inlineStartRow); c.Text != " " {
+		if c := term.CellAt(x, 0+inlineStartRow); c.Rune != ' ' {
 			t.Errorf("cell (%d, %d): got %q, want space — EraseToEOL not applied. "+
 				"Check app_render.go:128 copies EraseToEOL.",
-				x, 0+inlineStartRow, c.Text)
+				x, 0+inlineStartRow, c.Rune)
 			return
 		}
 	}
 
 	// Cols 0-1 ("hi") must be intact.
-	if c := term.CellAt(0, 0+inlineStartRow); c.Text != "h" {
-		t.Errorf("col 0: got %q, want 'h'", c.Text)
+	if c := term.CellAt(0, 0+inlineStartRow); c.Rune != 'h' {
+		t.Errorf("col 0: got %q, want 'h'", c.Rune)
 	}
-	if c := term.CellAt(1, 0+inlineStartRow); c.Text != "i" {
-		t.Errorf("col 1: got %q, want 'i'", c.Text)
+	if c := term.CellAt(1, 0+inlineStartRow); c.Rune != 'i' {
+		t.Errorf("col 1: got %q, want 'i'", c.Rune)
 	}
 }
 

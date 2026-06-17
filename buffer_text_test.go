@@ -11,8 +11,8 @@ func TestBuffer_SetRune_ASCII(t *testing.T) {
 	b.SetRune(3, 2, 'A', style)
 
 	cell := b.Cell(3, 2)
-	if cell.Text != "A" {
-		t.Errorf("Cell(3, 2).Rune = %q, want 'A'", cell.Text)
+	if cell.Rune != 'A' {
+		t.Errorf("Cell(3, 2).Rune = %q, want 'A'", cell.Rune)
 	}
 	if !cell.Style.Equal(style) {
 		t.Error("Cell(3, 2) has wrong style")
@@ -25,8 +25,8 @@ func TestBuffer_SetRune_ASCII(t *testing.T) {
 	neighbors := []struct{ x, y int }{{2, 2}, {4, 2}, {3, 1}, {3, 3}}
 	for _, n := range neighbors {
 		c := b.Cell(n.x, n.y)
-		if c.Text != " " {
-			t.Errorf("Cell(%d, %d).Rune = %q, want ' ' (unchanged)", n.x, n.y, c.Text)
+		if c.Rune != ' ' {
+			t.Errorf("Cell(%d, %d).Rune = %q, want ' ' (unchanged)", n.x, n.y, c.Rune)
 		}
 	}
 }
@@ -39,8 +39,8 @@ func TestBuffer_SetRune_WideChar(t *testing.T) {
 
 	// Primary cell
 	cell := b.Cell(3, 2)
-	if cell.Text != "你" {
-		t.Errorf("Cell(3, 2).Rune = %q, want '你'", cell.Text)
+	if cell.Rune != '你' {
+		t.Errorf("Cell(3, 2).Rune = %q, want '你'", cell.Rune)
 	}
 	if cell.Width != 2 {
 		t.Errorf("Cell(3, 2).Width = %d, want 2", cell.Width)
@@ -51,8 +51,8 @@ func TestBuffer_SetRune_WideChar(t *testing.T) {
 	if !cont.IsContinuation() {
 		t.Error("Cell(4, 2) should be a continuation cell")
 	}
-	if cont.Text != "" {
-		t.Errorf("Cell(4, 2).Rune = %q, want 0", cont.Text)
+	if cont.Rune != 0 {
+		t.Errorf("Cell(4, 2).Rune = %q, want 0", cont.Rune)
 	}
 	if cont.Width != 0 {
 		t.Errorf("Cell(4, 2).Width = %d, want 0", cont.Width)
@@ -67,7 +67,7 @@ func TestBuffer_SetRune_OverwriteContinuation(t *testing.T) {
 	b.SetRune(2, 0, '好', style)
 
 	// Verify initial state
-	if b.Cell(2, 0).Text != "好" {
+	if b.Cell(2, 0).Rune != '好' {
 		t.Fatal("Failed to set initial wide char")
 	}
 	if !b.Cell(3, 0).IsContinuation() {
@@ -78,13 +78,13 @@ func TestBuffer_SetRune_OverwriteContinuation(t *testing.T) {
 	b.SetRune(3, 0, 'X', style)
 
 	// The wide char should be cleared (replaced with space)
-	if b.Cell(2, 0).Text != " " {
-		t.Errorf("Cell(2, 0).Rune = %q, want ' ' (cleared)", b.Cell(2, 0).Text)
+	if b.Cell(2, 0).Rune != ' ' {
+		t.Errorf("Cell(2, 0).Rune = %q, want ' ' (cleared)", b.Cell(2, 0).Rune)
 	}
 
 	// Position 3 should now have 'X'
-	if b.Cell(3, 0).Text != "X" {
-		t.Errorf("Cell(3, 0).Rune = %q, want 'X'", b.Cell(3, 0).Text)
+	if b.Cell(3, 0).Rune != 'X' {
+		t.Errorf("Cell(3, 0).Rune = %q, want 'X'", b.Cell(3, 0).Rune)
 	}
 }
 
@@ -99,13 +99,13 @@ func TestBuffer_SetRune_OverwriteWideCharStart(t *testing.T) {
 	b.SetRune(2, 0, 'Y', style)
 
 	// Position 2 should now have 'Y'
-	if b.Cell(2, 0).Text != "Y" {
-		t.Errorf("Cell(2, 0).Rune = %q, want 'Y'", b.Cell(2, 0).Text)
+	if b.Cell(2, 0).Rune != 'Y' {
+		t.Errorf("Cell(2, 0).Rune = %q, want 'Y'", b.Cell(2, 0).Rune)
 	}
 
 	// Position 3 should be cleared (the continuation was replaced)
-	if b.Cell(3, 0).Text != " " {
-		t.Errorf("Cell(3, 0).Rune = %q, want ' ' (cleared)", b.Cell(3, 0).Text)
+	if b.Cell(3, 0).Rune != ' ' {
+		t.Errorf("Cell(3, 0).Rune = %q, want ' ' (cleared)", b.Cell(3, 0).Rune)
 	}
 }
 
@@ -121,16 +121,16 @@ func TestBuffer_SetRune_WideCharOverlapExisting(t *testing.T) {
 	b.SetRune(2, 0, '文', style)
 
 	// Position 2 should have '文'
-	if b.Cell(2, 0).Text != "文" {
-		t.Errorf("Cell(2, 0).Rune = %q, want '文'", b.Cell(2, 0).Text)
+	if b.Cell(2, 0).Rune != '文' {
+		t.Errorf("Cell(2, 0).Rune = %q, want '文'", b.Cell(2, 0).Rune)
 	}
 	// Position 3 should be continuation of '文'
 	if !b.Cell(3, 0).IsContinuation() {
 		t.Error("Cell(3, 0) should be continuation")
 	}
 	// Position 4 should be cleared (was continuation of '中')
-	if b.Cell(4, 0).Text != " " {
-		t.Errorf("Cell(4, 0).Rune = %q, want ' ' (cleared)", b.Cell(4, 0).Text)
+	if b.Cell(4, 0).Rune != ' ' {
+		t.Errorf("Cell(4, 0).Rune = %q, want ' ' (cleared)", b.Cell(4, 0).Rune)
 	}
 }
 
@@ -143,8 +143,8 @@ func TestBuffer_SetRune_WideCharAtLastColumn(t *testing.T) {
 
 	// Should place a space instead (wide char doesn't fit)
 	cell := b.Cell(4, 0)
-	if cell.Text != " " {
-		t.Errorf("Cell(4, 0).Rune = %q, want ' ' (wide char doesn't fit)", cell.Text)
+	if cell.Rune != ' ' {
+		t.Errorf("Cell(4, 0).Rune = %q, want ' ' (wide char doesn't fit)", cell.Rune)
 	}
 }
 
@@ -161,8 +161,8 @@ func TestBuffer_SetString_ASCII(t *testing.T) {
 	expected := "Hello"
 	for i, r := range expected {
 		cell := b.Cell(2+i, 1)
-		if cell.Text != string(r) {
-			t.Errorf("Cell(%d, 1).Rune = %q, want %q", 2+i, cell.Text, r)
+		if cell.Rune != r {
+			t.Errorf("Cell(%d, 1).Rune = %q, want %q", 2+i, cell.Rune, r)
 		}
 		if !cell.Style.Equal(style) {
 			t.Errorf("Cell(%d, 1) has wrong style", 2+i)
@@ -182,19 +182,19 @@ func TestBuffer_SetString_MixedWidths(t *testing.T) {
 	}
 
 	// Check each position
-	if b.Cell(0, 0).Text != "H" {
+	if b.Cell(0, 0).Rune != 'H' {
 		t.Error("Position 0 should be 'H'")
 	}
-	if b.Cell(1, 0).Text != "i" {
+	if b.Cell(1, 0).Rune != 'i' {
 		t.Error("Position 1 should be 'i'")
 	}
-	if b.Cell(2, 0).Text != "你" {
+	if b.Cell(2, 0).Rune != '你' {
 		t.Error("Position 2 should be '你'")
 	}
 	if !b.Cell(3, 0).IsContinuation() {
 		t.Error("Position 3 should be continuation")
 	}
-	if b.Cell(4, 0).Text != "好" {
+	if b.Cell(4, 0).Rune != '好' {
 		t.Error("Position 4 should be '好'")
 	}
 	if !b.Cell(5, 0).IsContinuation() {
@@ -216,8 +216,8 @@ func TestBuffer_SetString_Truncation(t *testing.T) {
 	// Only "Hello" should fit
 	expected := "Hello"
 	for i, r := range expected {
-		if b.Cell(i, 0).Text != string(r) {
-			t.Errorf("Cell(%d, 0).Rune = %q, want %q", i, b.Cell(i, 0).Text, r)
+		if b.Cell(i, 0).Rune != r {
+			t.Errorf("Cell(%d, 0).Rune = %q, want %q", i, b.Cell(i, 0).Rune, r)
 		}
 	}
 }
@@ -251,8 +251,8 @@ func TestBuffer_SetString_NegativeStart(t *testing.T) {
 	if width != 3 {
 		t.Errorf("SetString returned width %d, want 3", width)
 	}
-	if b.Cell(0, 0).Text != "l" {
-		t.Errorf("Cell(0, 0).Rune = %q, want 'l'", b.Cell(0, 0).Text)
+	if b.Cell(0, 0).Rune != 'l' {
+		t.Errorf("Cell(0, 0).Rune = %q, want 'l'", b.Cell(0, 0).Rune)
 	}
 }
 
@@ -281,13 +281,13 @@ func TestBuffer_WideChar_ChainedOverwrite(t *testing.T) {
 	b.SetRune(4, 0, '吗', style) // occupies 4-5
 
 	// Verify initial state
-	if b.Cell(0, 0).Text != "你" {
+	if b.Cell(0, 0).Rune != '你' {
 		t.Error("Initial: position 0 should be '你'")
 	}
-	if b.Cell(2, 0).Text != "好" {
+	if b.Cell(2, 0).Rune != '好' {
 		t.Error("Initial: position 2 should be '好'")
 	}
-	if b.Cell(4, 0).Text != "吗" {
+	if b.Cell(4, 0).Rune != '吗' {
 		t.Error("Initial: position 4 should be '吗'")
 	}
 
@@ -296,18 +296,18 @@ func TestBuffer_WideChar_ChainedOverwrite(t *testing.T) {
 	b.SetRune(3, 0, 'Y', style)
 
 	// Position 2 should be X, position 3 should be Y
-	if b.Cell(2, 0).Text != "X" {
-		t.Errorf("Cell(2, 0).Rune = %q, want 'X'", b.Cell(2, 0).Text)
+	if b.Cell(2, 0).Rune != 'X' {
+		t.Errorf("Cell(2, 0).Rune = %q, want 'X'", b.Cell(2, 0).Rune)
 	}
-	if b.Cell(3, 0).Text != "Y" {
-		t.Errorf("Cell(3, 0).Rune = %q, want 'Y'", b.Cell(3, 0).Text)
+	if b.Cell(3, 0).Rune != 'Y' {
+		t.Errorf("Cell(3, 0).Rune = %q, want 'Y'", b.Cell(3, 0).Rune)
 	}
 
 	// Surrounding wide chars should still be intact
-	if b.Cell(0, 0).Text != "你" {
-		t.Errorf("Cell(0, 0).Rune = %q, want '你'", b.Cell(0, 0).Text)
+	if b.Cell(0, 0).Rune != '你' {
+		t.Errorf("Cell(0, 0).Rune = %q, want '你'", b.Cell(0, 0).Rune)
 	}
-	if b.Cell(4, 0).Text != "吗" {
-		t.Errorf("Cell(4, 0).Rune = %q, want '吗'", b.Cell(4, 0).Text)
+	if b.Cell(4, 0).Rune != '吗' {
+		t.Errorf("Cell(4, 0).Rune = %q, want '吗'", b.Cell(4, 0).Rune)
 	}
 }

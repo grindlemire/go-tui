@@ -52,11 +52,14 @@ func bufferRowToANSI(buf *Buffer, row int, esc *escBuilder, caps Capabilities) s
 			styleSet = true
 		}
 
-		// Emit the cluster text (empty cell renders as a space).
-		if c.Text != "" {
-			esc.WriteString(c.Text)
-		} else {
-			esc.WriteRune(' ')
+		// Emit the cluster glyph (empty cell renders as a space).
+		r := c.Rune
+		if r == 0 {
+			r = ' '
+		}
+		esc.WriteRune(r)
+		if c.Combining != "" {
+			esc.WriteString(c.Combining)
 		}
 	}
 

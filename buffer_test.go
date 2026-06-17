@@ -71,8 +71,8 @@ func TestBuffer_InitializedWithSpaces(t *testing.T) {
 	for y := range 3 {
 		for x := range 5 {
 			cell := b.Cell(x, y)
-			if cell.Text != " " {
-				t.Errorf("Cell(%d, %d).Rune = %q, want ' '", x, y, cell.Text)
+			if cell.Rune != ' ' {
+				t.Errorf("Cell(%d, %d).Rune = %q, want ' '", x, y, cell.Rune)
 			}
 			if !cell.Style.Equal(defaultStyle) {
 				t.Errorf("Cell(%d, %d) has non-default style", x, y)
@@ -165,8 +165,8 @@ func TestBuffer_Fill(t *testing.T) {
 	for y := 1; y <= 2; y++ {
 		for x := 2; x <= 5; x++ {
 			cell := b.Cell(x, y)
-			if cell.Text != "#" {
-				t.Errorf("Cell(%d, %d).Rune = %q, want '#'", x, y, cell.Text)
+			if cell.Rune != '#' {
+				t.Errorf("Cell(%d, %d).Rune = %q, want '#'", x, y, cell.Rune)
 			}
 			if !cell.Style.Equal(style) {
 				t.Errorf("Cell(%d, %d) has wrong style", x, y)
@@ -175,10 +175,10 @@ func TestBuffer_Fill(t *testing.T) {
 	}
 
 	// Check unfilled area (outside rect)
-	if b.Cell(1, 1).Text != " " {
+	if b.Cell(1, 1).Rune != ' ' {
 		t.Error("Cell outside fill rect should be unchanged")
 	}
-	if b.Cell(6, 1).Text != " " {
+	if b.Cell(6, 1).Rune != ' ' {
 		t.Error("Cell outside fill rect should be unchanged")
 	}
 }
@@ -194,8 +194,8 @@ func TestBuffer_Fill_WideChar(t *testing.T) {
 	// Should have 3 wide chars (each taking 2 columns)
 	for i := range 3 {
 		x := i * 2
-		if b.Cell(x, 0).Text != "好" {
-			t.Errorf("Cell(%d, 0).Rune = %q, want '好'", x, b.Cell(x, 0).Text)
+		if b.Cell(x, 0).Rune != '好' {
+			t.Errorf("Cell(%d, 0).Rune = %q, want '好'", x, b.Cell(x, 0).Rune)
 		}
 		if !b.Cell(x+1, 0).IsContinuation() {
 			t.Errorf("Cell(%d, 0) should be continuation", x+1)
@@ -214,8 +214,8 @@ func TestBuffer_Fill_ClipsToBuffer(t *testing.T) {
 	// All cells should be filled
 	for y := range 3 {
 		for x := range 5 {
-			if b.Cell(x, y).Text != "X" {
-				t.Errorf("Cell(%d, %d).Rune = %q, want 'X'", x, y, b.Cell(x, y).Text)
+			if b.Cell(x, y).Rune != 'X' {
+				t.Errorf("Cell(%d, %d).Rune = %q, want 'X'", x, y, b.Cell(x, y).Rune)
 			}
 		}
 	}
@@ -240,8 +240,8 @@ func TestBuffer_Clear(t *testing.T) {
 	for y := range 3 {
 		for x := range 5 {
 			cell := b.Cell(x, y)
-			if cell.Text != " " {
-				t.Errorf("Cell(%d, %d).Rune = %q, want ' '", x, y, cell.Text)
+			if cell.Rune != ' ' {
+				t.Errorf("Cell(%d, %d).Rune = %q, want ' '", x, y, cell.Rune)
 			}
 			if !cell.Style.Equal(defaultStyle) {
 				t.Errorf("Cell(%d, %d) should have default style", x, y)
@@ -266,8 +266,8 @@ func TestBuffer_ClearRect(t *testing.T) {
 	for y := 1; y <= 2; y++ {
 		for x := 2; x <= 4; x++ {
 			cell := b.Cell(x, y)
-			if cell.Text != " " {
-				t.Errorf("Cell(%d, %d).Rune = %q, want ' ' (cleared)", x, y, cell.Text)
+			if cell.Rune != ' ' {
+				t.Errorf("Cell(%d, %d).Rune = %q, want ' ' (cleared)", x, y, cell.Rune)
 			}
 			if !cell.Style.Equal(defaultStyle) {
 				t.Errorf("Cell(%d, %d) should have default style", x, y)
@@ -276,10 +276,10 @@ func TestBuffer_ClearRect(t *testing.T) {
 	}
 
 	// Check non-cleared area
-	if b.Cell(1, 1).Text != "X" {
+	if b.Cell(1, 1).Rune != 'X' {
 		t.Error("Cell outside clear rect should be unchanged")
 	}
-	if b.Cell(5, 1).Text != "X" {
+	if b.Cell(5, 1).Rune != 'X' {
 		t.Error("Cell outside clear rect should be unchanged")
 	}
 }
@@ -297,13 +297,13 @@ func TestBuffer_ClearRect_ClearsWideCharEdges(t *testing.T) {
 	b.ClearRect(rect)
 
 	// Position 1 should be cleared (was start of wide char, continuation was in clear zone)
-	if b.Cell(1, 0).Text != " " {
-		t.Errorf("Cell(1, 0).Rune = %q, want ' ' (wide char cleared)", b.Cell(1, 0).Text)
+	if b.Cell(1, 0).Rune != ' ' {
+		t.Errorf("Cell(1, 0).Rune = %q, want ' ' (wide char cleared)", b.Cell(1, 0).Rune)
 	}
 
 	// Position 5 should be cleared (was continuation, start was in clear zone)
-	if b.Cell(5, 0).Text != " " {
-		t.Errorf("Cell(5, 0).Rune = %q, want ' ' (continuation cleared)", b.Cell(5, 0).Text)
+	if b.Cell(5, 0).Rune != ' ' {
+		t.Errorf("Cell(5, 0).Rune = %q, want ' ' (continuation cleared)", b.Cell(5, 0).Rune)
 	}
 }
 
@@ -323,16 +323,16 @@ func TestBuffer_Resize_Grow(t *testing.T) {
 	}
 
 	// Original content should be preserved
-	if b.Cell(0, 0).Text != "A" {
-		t.Errorf("Cell(0, 0).Rune = %q, want 'A'", b.Cell(0, 0).Text)
+	if b.Cell(0, 0).Rune != 'A' {
+		t.Errorf("Cell(0, 0).Rune = %q, want 'A'", b.Cell(0, 0).Rune)
 	}
-	if b.Cell(2, 1).Text != "B" {
-		t.Errorf("Cell(2, 1).Rune = %q, want 'B'", b.Cell(2, 1).Text)
+	if b.Cell(2, 1).Rune != 'B' {
+		t.Errorf("Cell(2, 1).Rune = %q, want 'B'", b.Cell(2, 1).Rune)
 	}
 
 	// New area should be spaces
-	if b.Cell(4, 3).Text != " " {
-		t.Errorf("Cell(4, 3).Rune = %q, want ' '", b.Cell(4, 3).Text)
+	if b.Cell(4, 3).Rune != ' ' {
+		t.Errorf("Cell(4, 3).Rune = %q, want ' '", b.Cell(4, 3).Rune)
 	}
 }
 
@@ -353,15 +353,15 @@ func TestBuffer_Resize_Shrink(t *testing.T) {
 	}
 
 	// Content within new bounds preserved
-	if b.Cell(0, 0).Text != "A" {
-		t.Errorf("Cell(0, 0).Rune = %q, want 'A'", b.Cell(0, 0).Text)
+	if b.Cell(0, 0).Rune != 'A' {
+		t.Errorf("Cell(0, 0).Rune = %q, want 'A'", b.Cell(0, 0).Rune)
 	}
-	if b.Cell(2, 1).Text != "M" {
-		t.Errorf("Cell(2, 1).Rune = %q, want 'M'", b.Cell(2, 1).Text)
+	if b.Cell(2, 1).Rune != 'M' {
+		t.Errorf("Cell(2, 1).Rune = %q, want 'M'", b.Cell(2, 1).Rune)
 	}
 
 	// Old position (4, 3) is now out of bounds
-	if b.Cell(4, 3).Text != "" {
+	if b.Cell(4, 3).Rune != 0 {
 		t.Error("Cell outside new bounds should return empty")
 	}
 }
@@ -378,7 +378,7 @@ func TestBuffer_Resize_SameSize(t *testing.T) {
 	if b.Width() != 5 || b.Height() != 3 {
 		t.Errorf("Size changed unexpectedly")
 	}
-	if b.Cell(2, 1).Text != "X" {
+	if b.Cell(2, 1).Rune != 'X' {
 		t.Errorf("Content changed unexpectedly")
 	}
 }
@@ -405,7 +405,7 @@ func TestBuffer_Resize_PreservesFrontBuffer(t *testing.T) {
 	// Should have change for 'B' at (1,0) since it wasn't swapped
 	found := false
 	for _, c := range changes {
-		if c.X == 1 && c.Y == 0 && c.Cell.Text == "B" {
+		if c.X == 1 && c.Y == 0 && c.Cell.Rune == 'B' {
 			found = true
 		}
 	}
@@ -450,8 +450,8 @@ func TestBuffer_SetStringGradient(t *testing.T) {
 			// Verify first character has start color
 			if len(tt.text) > 0 {
 				cell := buf.Cell(0, 0)
-				if cell.Text != tt.text[:1] {
-					t.Errorf("First cell rune = %s, want %s", cell.Text, tt.text[:1])
+				if cell.Rune != []rune(tt.text)[0] {
+					t.Errorf("First cell rune = %q, want %q", cell.Rune, []rune(tt.text)[0])
 				}
 			}
 		})
@@ -472,8 +472,8 @@ func TestBuffer_ApplyDim(t *testing.T) {
 	if !cell.Style.HasAttr(AttrBold) {
 		t.Error("expected cell to retain bold attribute after ApplyDim")
 	}
-	if cell.Text != "A" {
-		t.Errorf("expected rune 'A', got %q", cell.Text)
+	if cell.Rune != 'A' {
+		t.Errorf("expected rune 'A', got %q", cell.Rune)
 	}
 }
 
@@ -484,8 +484,8 @@ func TestBuffer_FillBlank(t *testing.T) {
 	buf.FillBlank()
 
 	cell := buf.Cell(0, 0)
-	if cell.Text != " " {
-		t.Errorf("expected space after FillBlank, got %q", cell.Text)
+	if cell.Rune != ' ' {
+		t.Errorf("expected space after FillBlank, got %q", cell.Rune)
 	}
 	if cell.Style != NewStyle() {
 		t.Error("expected default style after FillBlank")
@@ -534,12 +534,12 @@ func TestBuffer_FillGradient(t *testing.T) {
 func TestSetRuneLink(t *testing.T) {
 	buf := NewBuffer(4, 1)
 	buf.SetRuneLink(0, 0, 'a', NewStyle(), "https://example.com")
-	if got := buf.Cell(0, 0); got.Text != "a" || got.Link != "https://example.com" {
-		t.Errorf("got rune=%q link=%q, want 'a' / the URL", got.Text, got.Link)
+	if got := buf.Cell(0, 0); got.Rune != 'a' || got.Link != "https://example.com" {
+		t.Errorf("got rune=%q link=%q, want 'a' / the URL", got.Rune, got.Link)
 	}
 	// Empty link leaves Link clear (and still writes the rune).
 	buf.SetRuneLink(1, 0, 'b', NewStyle(), "")
-	if got := buf.Cell(1, 0); got.Text != "b" || got.Link != "" {
-		t.Errorf("got rune=%q link=%q, want 'b' / empty", got.Text, got.Link)
+	if got := buf.Cell(1, 0); got.Rune != 'b' || got.Link != "" {
+		t.Errorf("got rune=%q link=%q, want 'b' / empty", got.Rune, got.Link)
 	}
 }

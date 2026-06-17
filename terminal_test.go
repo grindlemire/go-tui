@@ -82,8 +82,8 @@ func TestMockTerminal_FlushUpdatesCorrectCells(t *testing.T) {
 			m.Flush(tt.changes)
 
 			cell := m.CellAt(tt.checkX, tt.checkY)
-			if cell.Text != string(tt.expected) {
-				t.Errorf("CellAt(%d, %d).Text = %q, want %q", tt.checkX, tt.checkY, cell.Text, string(tt.expected))
+			if cell.Rune != tt.expected {
+				t.Errorf("CellAt(%d, %d).Rune = %q, want %q", tt.checkX, tt.checkY, cell.Rune, string(tt.expected))
 			}
 		})
 	}
@@ -103,13 +103,13 @@ func TestMockTerminal_FlushIgnoresOutOfBounds(t *testing.T) {
 	m.Flush(changes)
 
 	// Border cells should still be spaces
-	if m.CellAt(0, 0).Text != " " {
+	if m.CellAt(0, 0).Rune != ' ' {
 		t.Error("Out-of-bounds flush affected (0,0)")
 	}
-	if m.CellAt(9, 0).Text != " " {
+	if m.CellAt(9, 0).Rune != ' ' {
 		t.Error("Out-of-bounds flush affected (9,0)")
 	}
-	if m.CellAt(0, 9).Text != " " {
+	if m.CellAt(0, 9).Rune != ' ' {
 		t.Error("Out-of-bounds flush affected (0,9)")
 	}
 }
@@ -160,10 +160,10 @@ func TestMockTerminal_Clear(t *testing.T) {
 	m.Clear()
 
 	// Check that cells are cleared
-	if m.CellAt(0, 0).Text != " " {
+	if m.CellAt(0, 0).Rune != ' ' {
 		t.Errorf("Clear() did not reset cell (0,0)")
 	}
-	if m.CellAt(5, 5).Text != " " {
+	if m.CellAt(5, 5).Rune != ' ' {
 		t.Errorf("Clear() did not reset cell (5,5)")
 	}
 
@@ -311,8 +311,8 @@ func TestMockTerminal_CellAt(t *testing.T) {
 	})
 
 	cell := m.CellAt(3, 4)
-	if cell.Text != "Z" {
-		t.Errorf("CellAt(3,4).Text = %q, want \"Z\"", cell.Text)
+	if cell.Rune != 'Z' {
+		t.Errorf("CellAt(3,4).Rune = %q, want \"Z\"", cell.Rune)
 	}
 	if !cell.Style.HasAttr(AttrBold) {
 		t.Error("Cell should be bold")
@@ -327,13 +327,13 @@ func TestMockTerminal_CellAtOutOfBounds(t *testing.T) {
 
 	// Out of bounds should return empty cell
 	cell := m.CellAt(-1, 0)
-	if cell.Text != "" {
-		t.Errorf("CellAt(-1,0).Text = %q, want \"\"", cell.Text)
+	if cell.Rune != 0 {
+		t.Errorf("CellAt(-1,0).Rune = %q, want \"\"", cell.Rune)
 	}
 
 	cell = m.CellAt(10, 0)
-	if cell.Text != "" {
-		t.Errorf("CellAt(10,0).Text = %q, want \"\"", cell.Text)
+	if cell.Rune != 0 {
+		t.Errorf("CellAt(10,0).Rune = %q, want \"\"", cell.Rune)
 	}
 }
 
@@ -351,7 +351,7 @@ func TestMockTerminal_Reset(t *testing.T) {
 	m.Reset()
 
 	// Verify all states are reset
-	if m.CellAt(0, 0).Text != " " {
+	if m.CellAt(0, 0).Rune != ' ' {
 		t.Error("Reset() should clear cells")
 	}
 	x, y := m.Cursor()
@@ -435,13 +435,13 @@ func TestMockTerminal_Resize(t *testing.T) {
 			// Check content preservation
 			cell := m.CellAt(tt.checkAfter.x, tt.checkAfter.y)
 			if tt.checkAfter.shouldPreserve {
-				if cell.Text != string(tt.checkAfter.expectedRune) {
-					t.Errorf("CellAt(%d,%d).Text = %q, want %q", tt.checkAfter.x, tt.checkAfter.y, cell.Text, string(tt.checkAfter.expectedRune))
+				if cell.Rune != tt.checkAfter.expectedRune {
+					t.Errorf("CellAt(%d,%d).Rune = %q, want %q", tt.checkAfter.x, tt.checkAfter.y, cell.Rune, string(tt.checkAfter.expectedRune))
 				}
 			} else {
 				// Out of bounds should return empty cell
-				if cell.Text != "" && cell.Text != " " {
-					t.Errorf("CellAt(%d,%d) should be empty after shrink, got %q", tt.checkAfter.x, tt.checkAfter.y, cell.Text)
+				if cell.Rune != 0 && cell.Rune != ' ' {
+					t.Errorf("CellAt(%d,%d) should be empty after shrink, got %q", tt.checkAfter.x, tt.checkAfter.y, cell.Rune)
 				}
 			}
 		})
@@ -460,8 +460,8 @@ func TestMockTerminal_FlushWithWideCharacters(t *testing.T) {
 
 	// Check primary cell
 	cell := m.CellAt(0, 0)
-	if cell.Text != "中" {
-		t.Errorf("CellAt(0,0).Text = %q, want \"中\"", cell.Text)
+	if cell.Rune != '中' {
+		t.Errorf("CellAt(0,0).Rune = %q, want \"中\"", cell.Rune)
 	}
 	if cell.Width != 2 {
 		t.Errorf("CellAt(0,0).Width = %d, want 2", cell.Width)
