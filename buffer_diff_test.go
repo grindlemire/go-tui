@@ -28,8 +28,8 @@ func TestBuffer_Diff_SingleChange(t *testing.T) {
 	if changes[0].X != 2 || changes[0].Y != 1 {
 		t.Errorf("Change at (%d, %d), want (2, 1)", changes[0].X, changes[0].Y)
 	}
-	if changes[0].Cell.Rune != 'A' {
-		t.Errorf("Change cell rune = %q, want 'A'", changes[0].Cell.Rune)
+	if changes[0].Cell.Text != "A" {
+		t.Errorf("Change cell rune = %q, want 'A'", changes[0].Cell.Text)
 	}
 }
 
@@ -60,8 +60,8 @@ func TestBuffer_Diff_MultipleChanges(t *testing.T) {
 		if changes[i].X != e.x || changes[i].Y != e.y {
 			t.Errorf("Change %d at (%d, %d), want (%d, %d)", i, changes[i].X, changes[i].Y, e.x, e.y)
 		}
-		if changes[i].Cell.Rune != e.r {
-			t.Errorf("Change %d rune = %q, want %q", i, changes[i].Cell.Rune, e.r)
+		if changes[i].Cell.Text != string(e.r) {
+			t.Errorf("Change %d rune = %q, want %q", i, changes[i].Cell.Text, e.r)
 		}
 	}
 }

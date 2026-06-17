@@ -279,13 +279,16 @@ func (t *TextArea) Watchers() []Watcher {
 
 // --- Key Handlers ---
 
-// insertChar inserts a character at the cursor position.
+// insertChar inserts a character at the cursor position. The cursor then lands
+// on the cluster boundary after the resulting cluster (a combining mark merges
+// into the preceding cluster; see Input.insertChar).
 func (t *TextArea) insertChar(ke KeyEvent) {
 	runes := []rune(t.text.Get())
 	pos := t.clampCursorPos()
 	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
-	t.text.Set(string(newRunes))
-	t.cursorPos.Set(pos + 1)
+	newText := string(newRunes)
+	t.text.Set(newText)
+	t.cursorPos.Set(clusterEndAfterInsert(newText, pos))
 	t.blink.Set(true)
 }
 
@@ -299,52 +302,79 @@ func (t *TextArea) insertNewline(ke KeyEvent) {
 	t.blink.Set(true)
 }
 
-// backspace deletes the character before the cursor.
+// backspace deletes the cluster before the cursor.
 func (t *TextArea) backspace(ke KeyEvent) {
 	runes := []rune(t.text.Get())
 	pos := t.clampCursorPos()
 	if pos > 0 {
-		newRunes := append(runes[:pos-1], runes[pos:]...)
+		prev := t.prevClusterBoundary(pos)
+		newRunes := append(runes[:prev], runes[pos:]...)
 		t.text.Set(string(newRunes))
-		t.cursorPos.Set(pos - 1)
+		t.cursorPos.Set(prev)
 	}
 }
 
-// delete deletes the character at the cursor.
+// delete deletes the cluster at the cursor.
 func (t *TextArea) delete(ke KeyEvent) {
 	runes := []rune(t.text.Get())
 	pos := t.clampCursorPos()
 	if pos < len(runes) {
-		newRunes := append(runes[:pos], runes[pos+1:]...)
+		next := t.nextClusterBoundary(pos)
+		newRunes := append(runes[:pos], runes[next:]...)
 		t.text.Set(string(newRunes))
 	}
 }
 
-// moveLeft moves cursor left.
+// moveLeft moves cursor to the previous cluster boundary.
 func (t *TextArea) moveLeft(ke KeyEvent) {
-	pos := t.cursorPos.Get()
+	pos := t.clampCursorPos()
 	if pos > 0 {
-		t.cursorPos.Set(pos - 1)
+		t.cursorPos.Set(t.prevClusterBoundary(pos))
 		t.blink.Set(true)
 	}
 }
 
-// moveRight moves cursor right.
+// moveRight moves cursor to the next cluster boundary.
 func (t *TextArea) moveRight(ke KeyEvent) {
-	pos := t.cursorPos.Get()
+	pos := t.clampCursorPos()
 	if pos < utf8.RuneCountInString(t.text.Get()) {
-		t.cursorPos.Set(pos + 1)
+		t.cursorPos.Set(t.nextClusterBoundary(pos))
 		t.blink.Set(true)
 	}
 }
 
-// moveUp moves cursor up one line.
+// prevClusterBoundary returns the rune index of the cluster boundary immediately
+// before the given (cluster-aligned) rune position.
+func (t *TextArea) prevClusterBoundary(pos int) int {
+	starts := clusterRuneStarts(t.text.Get())
+	prev := 0
+	for _, st := range starts {
+		if st >= pos {
+			break
+		}
+		prev = st
+	}
+	return prev
+}
+
+// nextClusterBoundary returns the rune index of the cluster boundary immediately
+// after the given (cluster-aligned) rune position.
+func (t *TextArea) nextClusterBoundary(pos int) int {
+	starts := clusterRuneStarts(t.text.Get())
+	for _, st := range starts {
+		if st > pos {
+			return st
+		}
+	}
+	return starts[len(starts)-1]
+}
+
+// moveUp moves cursor up one line, preserving the cursor's rune column.
 func (t *TextArea) moveUp(ke KeyEvent) {
 	lines := t.wrapText()
 	row, col := t.cursorRowCol(lines)
 	if row > 0 {
-		prevLine := lines[row-1]
-		prevLen := utf8.RuneCountInString(prevLine)
+		prevLen := utf8.RuneCountInString(lines[row-1])
 		if col > prevLen {
 			col = prevLen
 		}
@@ -353,13 +383,12 @@ func (t *TextArea) moveUp(ke KeyEvent) {
 	}
 }
 
-// moveDown moves cursor down one line.
+// moveDown moves cursor down one line, preserving the cursor's rune column.
 func (t *TextArea) moveDown(ke KeyEvent) {
 	lines := t.wrapText()
 	row, col := t.cursorRowCol(lines)
 	if row < len(lines)-1 {
-		nextLine := lines[row+1]
-		nextLen := utf8.RuneCountInString(nextLine)
+		nextLen := utf8.RuneCountInString(lines[row+1])
 		if col > nextLen {
 			col = nextLen
 		}
@@ -409,11 +438,12 @@ func (t *TextArea) wrapWidth() int {
 	return w
 }
 
-// wrapText wraps the text to fit within the content width, respecting
-// embedded newlines. Lines break at display-column boundaries (CJK and emoji
-// runes occupy two columns), never mid-rune: a wide rune that does not fit
-// moves to the next line. Cursor math stays in rune indices, which remain
-// consistent because wrapping only changes where lines split, not their runes.
+// wrapText wraps the text to fit within the content width, respecting embedded
+// newlines. Lines break at display-column boundaries on grapheme-cluster
+// boundaries (CJK, emoji, flags, and ZWJ families occupy whole columns), never
+// mid-cluster: a cluster that does not fit moves to the next line. Cursor math
+// stays in rune indices, which remain consistent because wrapping only changes
+// where lines split, not their runes.
 func (t *TextArea) wrapText() []string {
 	text := t.text.Get()
 	if text == "" {
@@ -432,28 +462,36 @@ func (t *TextArea) wrapText() []string {
 			continue
 		}
 
-		// Wrap this paragraph to width
-		currentLine := make([]rune, 0)
+		// Wrap this paragraph to width on cluster boundaries.
+		var currentLine strings.Builder
 		currentWidth := 0
-		for _, r := range para {
-			rw := RuneWidth(r)
-			// The len guard keeps a rune wider than the wrap width on a line
-			// of its own instead of emitting empty lines before it.
-			if width > 0 && len(currentLine) > 0 && currentWidth+rw > width {
-				lines = append(lines, string(currentLine))
-				currentLine = currentLine[:0]
+		rest := para
+		for len(rest) > 0 {
+			cluster, cw, size := nextCluster(rest)
+			if size == 0 {
+				break
+			}
+			rest = rest[size:]
+			// The non-empty guard keeps a cluster wider than the wrap width on a
+			// line of its own instead of emitting empty lines before it.
+			if width > 0 && currentLine.Len() > 0 && currentWidth+cw > width {
+				lines = append(lines, currentLine.String())
+				currentLine.Reset()
 				currentWidth = 0
 			}
-			currentLine = append(currentLine, r)
-			currentWidth += rw
+			currentLine.WriteString(cluster)
+			currentWidth += cw
 		}
-		lines = append(lines, string(currentLine))
+		lines = append(lines, currentLine.String())
 	}
 
 	return lines
 }
 
-// cursorRowCol returns the row and column of the cursor.
+// cursorRowCol returns the row and column (a rune index within the wrapped line)
+// of the cursor. Because navigation and editing keep cursorPos on a cluster
+// boundary, the reported column always lands between clusters, so a wide or
+// multi-rune cluster is never split by the cursor.
 //
 // A cursor at the end of a display-full line has no column left to render in,
 // so it moves to the start of the next visual line (downstream affinity). This
@@ -497,7 +535,8 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	return currentRow, currentCol
 }
 
-// posFromRowCol converts row/col back to absolute position.
+// posFromRowCol converts row/col (a rune index within the line) back to an
+// absolute rune position.
 func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	text := t.text.Get()
 	textRunes := []rune(text)
@@ -580,6 +619,7 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 		if !t.blink.Get() {
 			cursor = " "
 		}
+		// col is a rune index within the line (always on a cluster boundary).
 		runes := []rune(line)
 		if col >= len(runes) {
 			// A display-full line ended by a hard newline keeps the cursor at
@@ -609,12 +649,14 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 
 func (t *TextArea) clampCursorPos() int {
 	pos := t.cursorPos.Get()
+	text := t.text.Get()
 	if pos < 0 {
 		return 0
 	}
-	max := utf8.RuneCountInString(t.text.Get())
+	max := utf8.RuneCountInString(text)
 	if pos > max {
 		return max
 	}
-	return pos
+	// Snap to a cluster boundary so the cursor never sits inside a cluster.
+	return snapRuneToClusterStart(text, pos)
 }

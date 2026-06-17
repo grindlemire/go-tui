@@ -39,21 +39,27 @@ func wrapParagraph(text string, maxWidth int) []string {
 		ww := stringWidth(word)
 
 		if ww > maxWidth {
-			// Word is longer than line — flush then break character by character
+			// Word is longer than line — flush then break on cluster boundaries
+			// so a grapheme cluster is never split mid-line.
 			if lineWidth > 0 {
 				lines = append(lines, buf.String())
 				buf.Reset()
 				lineWidth = 0
 			}
-			for _, r := range word {
-				rw := RuneWidth(r)
-				if lineWidth+rw > maxWidth && lineWidth > 0 {
+			rest := word
+			for len(rest) > 0 {
+				cluster, cw, size := nextCluster(rest)
+				if size == 0 {
+					break
+				}
+				rest = rest[size:]
+				if lineWidth+cw > maxWidth && lineWidth > 0 {
 					lines = append(lines, buf.String())
 					buf.Reset()
 					lineWidth = 0
 				}
-				buf.WriteRune(r)
-				lineWidth += rw
+				buf.WriteString(cluster)
+				lineWidth += cw
 			}
 			continue
 		}
@@ -87,12 +93,80 @@ type styledRune struct {
 	link string
 }
 
+// styledCluster is one grapheme cluster carrying the style and link of its base
+// rune's source span, with the cluster's display width.
+type styledCluster struct {
+	text  string
+	width int
+	st    Style
+	link  string
+}
+
+// segmentStyledRunes segments a styled-rune stream into grapheme clusters. A
+// cluster takes its base (first) rune's style and link, so a cluster whose base
+// and combining mark fall in adjacent spans stays one styled unit.
+func segmentStyledRunes(rs []styledRune) []styledCluster {
+	if len(rs) == 0 {
+		return nil
+	}
+	// Build the concatenated text and a parallel byte->index map to recover the
+	// base rune's style/link for each cluster.
+	var b strings.Builder
+	starts := make([]int, 0, len(rs)) // byte offset where each styledRune begins
+	for _, sr := range rs {
+		starts = append(starts, b.Len())
+		b.WriteRune(sr.r)
+	}
+	s := b.String()
+
+	var out []styledCluster
+	pos := 0
+	ri := 0
+	for pos < len(s) {
+		cluster, w, size := nextCluster(s[pos:])
+		if size == 0 {
+			break
+		}
+		// Advance ri to the styledRune whose byte offset matches pos (the base).
+		for ri < len(starts) && starts[ri] < pos {
+			ri++
+		}
+		base := rs[0]
+		if ri < len(rs) {
+			base = rs[ri]
+		}
+		out = append(out, styledCluster{
+			text:  cluster,
+			width: w,
+			st:    base.st,
+			link:  base.link,
+		})
+		pos += size
+	}
+	return out
+}
+
+// segmentLineClusters flattens a wrapped rich-text line into a styled-cluster
+// stream. Each cluster's style is the element base merged with its span style.
+func segmentLineClusters(line []TextSpan, base Style) []styledCluster {
+	var rs []styledRune
+	for _, span := range line {
+		st := mergeSpanStyle(base, span.Style)
+		for _, r := range span.Text {
+			rs = append(rs, styledRune{r: r, st: st, link: span.Link})
+		}
+	}
+	return segmentStyledRunes(rs)
+}
+
 // wrapSpans wraps styled spans to maxWidth using word boundaries, mirroring
 // wrapParagraph. Words are delimited by actual whitespace in the concatenated
 // text (a span boundary is NOT a word boundary), so a single word may mix styles
-// (e.g. "a**b**c" is one word "abc"). Each rune keeps its source span's style, so
-// a styled run stays styled across a line break. Adjacent same-style runes on a
-// line are merged into one segment. Newlines start new lines.
+// (e.g. "a**b**c" is one word "abc"). The flattened styled-rune stream is
+// segmented into grapheme clusters, so a cluster is never split at a line break
+// or at a span boundary; each cluster keeps its base rune's style/link. Adjacent
+// same-style clusters on a line are merged into one segment. Newlines start new
+// lines.
 func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 	if maxWidth < 1 {
 		return [][]TextSpan{{}}
@@ -107,13 +181,13 @@ func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 		cur = nil
 		lineWidth = 0
 	}
-	// emit appends styled runes to cur, merging same-style into the last segment.
-	emit := func(rs []styledRune) {
-		for _, sr := range rs {
-			if n := len(cur); n > 0 && cur[n-1].Style == sr.st && cur[n-1].Link == sr.link {
-				cur[n-1].Text += string(sr.r)
+	// emit appends styled clusters to cur, merging same-style into the last segment.
+	emit := func(cs []styledCluster) {
+		for _, sc := range cs {
+			if n := len(cur); n > 0 && cur[n-1].Style == sc.st && cur[n-1].Link == sc.link {
+				cur[n-1].Text += sc.text
 			} else {
-				cur = append(cur, TextSpan{Text: string(sr.r), Style: sr.st, Link: sr.link})
+				cur = append(cur, TextSpan{Text: sc.text, Style: sc.st, Link: sc.link})
 			}
 		}
 	}
@@ -132,53 +206,54 @@ func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 	}
 
 	var word []styledRune
-	wordWidth := 0
 	placeWord := func() {
 		if len(word) == 0 {
 			return
 		}
+		clusters := segmentStyledRunes(word)
+		wordWidth := 0
+		for _, c := range clusters {
+			wordWidth += c.width
+		}
 		if wordWidth > maxWidth {
-			// Word longer than the line: flush current, then hard-break by rune.
+			// Word longer than the line: flush current, then hard-break by cluster.
 			if lineWidth > 0 {
 				flush()
 			}
-			for _, sr := range word {
-				rw := RuneWidth(sr.r)
-				if lineWidth+rw > maxWidth && lineWidth > 0 {
+			for _, c := range clusters {
+				if lineWidth+c.width > maxWidth && lineWidth > 0 {
 					flush()
 				}
-				emit([]styledRune{sr})
-				lineWidth += rw
+				emit([]styledCluster{c})
+				lineWidth += c.width
 			}
 			word = word[:0]
-			wordWidth = 0
 			return
 		}
 		switch {
 		case lineWidth == 0:
-			emit(word)
+			emit(clusters)
 			lineWidth = wordWidth
 		case lineWidth+1+wordWidth <= maxWidth:
 			// If the separator sits between two words of the same link, give it
 			// that link's style+target so the link renders as one continuous run.
 			var sepSt Style
 			var sepLink string
-			if len(word) > 0 && word[0].link != "" {
-				if n := len(cur); n > 0 && cur[n-1].Link == word[0].link {
-					sepSt = word[0].st
-					sepLink = word[0].link
+			if len(clusters) > 0 && clusters[0].link != "" {
+				if n := len(cur); n > 0 && cur[n-1].Link == clusters[0].link {
+					sepSt = clusters[0].st
+					sepLink = clusters[0].link
 				}
 			}
 			emitSpace(sepSt, sepLink)
-			emit(word)
+			emit(clusters)
 			lineWidth += 1 + wordWidth
 		default:
 			flush()
-			emit(word)
+			emit(clusters)
 			lineWidth = wordWidth
 		}
 		word = word[:0]
-		wordWidth = 0
 	}
 
 	for _, sp := range spans {
@@ -193,7 +268,6 @@ func wrapSpans(spans []TextSpan, maxWidth int) [][]TextSpan {
 				placeWord()
 			default:
 				word = append(word, styledRune{r: r, st: sp.Style, link: sp.Link})
-				wordWidth += RuneWidth(r)
 			}
 		}
 	}

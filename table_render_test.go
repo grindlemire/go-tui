@@ -64,9 +64,9 @@ func TestTableRender(t *testing.T) {
 
 			for pos, expectedRune := range tt.expectCells {
 				cell := buf.Cell(pos[0], pos[1])
-				if cell.Rune != expectedRune {
+				if cell.Text != string(expectedRune) {
 					t.Errorf("at (%d,%d): expected rune %q, got %q",
-						pos[0], pos[1], string(expectedRune), string(cell.Rune))
+						pos[0], pos[1], string(expectedRune), cell.Text)
 				}
 			}
 

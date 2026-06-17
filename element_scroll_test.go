@@ -127,8 +127,8 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 		// Rightmost column should be the scrollbar, not the child's red fill.
 		for y := range height {
 			cell := buf.Cell(width-1, y)
-			if cell.Rune != '█' && cell.Rune != '│' {
-				t.Errorf("row %d rightmost column rune = %q, want scrollbar glyph", y, cell.Rune)
+			if cell.Text != "█" && cell.Text != "│" {
+				t.Errorf("row %d rightmost column rune = %q, want scrollbar glyph", y, cell.Text)
 			}
 			if cell.Style.Bg.Equal(Red) {
 				t.Errorf("row %d rightmost column bg = Red, expected scrollbar to cover child", y)

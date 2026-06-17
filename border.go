@@ -382,62 +382,72 @@ func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, 
 	drawBoxTitle(buf, rect, title, style)
 }
 
+// titleCluster is one grapheme cluster of a border title with its display width.
+type titleCluster struct {
+	text  string
+	width int
+}
+
 // drawBoxTitle draws a centered title string on the top border line of the box.
 // drawBoxTitle does not draw the box itself — use DrawBoxWithTitle for that.
 func drawBoxTitle(buf *Buffer, rect Rect, title string, style Style) {
-	runes, startX, ok := prepareTitle(title, rect)
+	clusters, startX, ok := prepareTitle(title, rect)
 	if !ok {
 		return
 	}
 	x := startX
-	for _, r := range runes {
-		buf.SetRune(x, rect.Y, r, style)
-		x += RuneWidth(r)
+	for _, c := range clusters {
+		buf.setCluster(x, rect.Y, c.text, c.width, style, "")
+		x += c.width
 	}
 }
 
 // drawBoxTitleClipped draws a centered title string on the top border line,
-// skipping any rune outside the given clip rectangle.
+// skipping any cluster outside the given clip rectangle.
 func drawBoxTitleClipped(buf *Buffer, rect Rect, title string, style Style, clipRect Rect) {
 	// Reject if the title row is outside the clip rect's Y range.
 	if rect.Y < clipRect.Y || rect.Y >= clipRect.Y+clipRect.Height {
 		return
 	}
-	runes, startX, ok := prepareTitle(title, rect)
+	clusters, startX, ok := prepareTitle(title, rect)
 	if !ok {
 		return
 	}
 	x := startX
-	for _, r := range runes {
-		if x >= clipRect.X && x+RuneWidth(r) <= clipRect.X+clipRect.Width {
-			buf.SetRune(x, rect.Y, r, style)
+	for _, c := range clusters {
+		if x >= clipRect.X && x+c.width <= clipRect.X+clipRect.Width {
+			buf.setCluster(x, rect.Y, c.text, c.width, style, "")
 		}
-		x += RuneWidth(r)
+		x += c.width
 	}
 }
 
-// prepareTitle truncates and centers a title for the given rectangle.
-func prepareTitle(title string, rect Rect) (runes []rune, startX int, ok bool) {
+// prepareTitle truncates and centers a title for the given rectangle, breaking
+// on grapheme-cluster boundaries so a cluster is never split at the clip edge.
+func prepareTitle(title string, rect Rect) (clusters []titleCluster, startX int, ok bool) {
 	availableWidth := rect.Width - 2
 	if availableWidth <= 0 {
 		return nil, 0, false
 	}
-	titleRunes := []rune(title)
 	titleWidth := 0
-	truncatedRunes := make([]rune, 0, len(titleRunes))
-	for _, r := range titleRunes {
-		w := RuneWidth(r)
+	rest := title
+	for len(rest) > 0 {
+		cluster, w, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
 		if titleWidth+w > availableWidth {
 			break
 		}
-		truncatedRunes = append(truncatedRunes, r)
+		clusters = append(clusters, titleCluster{text: cluster, width: w})
 		titleWidth += w
+		rest = rest[size:]
 	}
-	if len(truncatedRunes) == 0 {
+	if len(clusters) == 0 {
 		return nil, 0, false
 	}
 	startX = rect.X + 1 + (availableWidth-titleWidth)/2
-	return truncatedRunes, startX, true
+	return clusters, startX, true
 }
 
 // FillBox fills the interior of a box (excluding the border) with a character and style.

@@ -211,7 +211,7 @@ func TestMount_FullAppRenderPipeline(t *testing.T) {
 	for y := range 24 {
 		for x := range 80 {
 			c := app.buffer.Cell(x, y)
-			if c.Rune == '╭' {
+			if c.Text == "╭" {
 				found = true
 				break
 			}
@@ -269,7 +269,7 @@ func extractBufferText(buf *Buffer, width, height int) string {
 	for y := range height {
 		for x := range width {
 			c := buf.Cell(x, y)
-			sb.WriteRune(c.Rune)
+			sb.WriteString(c.Text)
 		}
 		sb.WriteRune('\n')
 	}

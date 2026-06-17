@@ -40,15 +40,22 @@ func (sw *StreamWriter) WriteStyled(text string, style Style) (int, error) {
 	sw.esc.WriteString(text)
 	sw.esc.ResetStyle()
 
-	// Track column position.
-	for _, r := range text {
-		if r == '\n' {
+	// Track column position by cluster width.
+	rest := text
+	for len(rest) > 0 {
+		if rest[0] == '\n' {
+			rest = rest[1:]
 			sw.col = 0
-		} else {
-			sw.col += RuneWidth(r)
-			if sw.width > 0 && sw.col >= sw.width {
-				sw.col = 0
-			}
+			continue
+		}
+		_, cw, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
+		sw.col += cw
+		if sw.width > 0 && sw.col >= sw.width {
+			sw.col = 0
 		}
 	}
 
@@ -75,15 +82,24 @@ func (sw *StreamWriter) WriteGradient(text string, g Gradient, base ...Style) (i
 
 	sw.esc.Reset()
 
-	for _, r := range text {
-		if r == '\n' {
+	rest := text
+	for len(rest) > 0 {
+		if rest[0] == '\n' {
+			rest = rest[1:]
 			sw.esc.ResetStyle()
 			sw.esc.WriteRune('\n')
 			sw.col = 0
 			continue
 		}
 
-		// Compute gradient position.
+		// Emit one cluster with a single gradient color for the whole cluster.
+		cluster, cw, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
+
+		// Compute gradient position from the cluster's starting column.
 		w := sw.width
 		if w < 1 {
 			w = 80
@@ -96,9 +112,9 @@ func (sw *StreamWriter) WriteGradient(text string, g Gradient, base ...Style) (i
 		charStyle := baseStyle
 		charStyle.Fg = g.At(t)
 		sw.esc.SetStyle(charStyle, sw.caps)
-		sw.esc.WriteRune(r)
+		sw.esc.WriteString(cluster)
 
-		sw.col += RuneWidth(r)
+		sw.col += cw
 		if sw.width > 0 && sw.col >= sw.width {
 			sw.col = 0
 		}

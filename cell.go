@@ -1,33 +1,68 @@
 package tui
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
 
 // Cell represents a single character cell in the terminal buffer.
-// Wide characters (CJK, emoji) occupy multiple cells; the first cell holds
-// the rune, subsequent cells are marked as continuations.
+// Wide characters (CJK, emoji) and grapheme clusters (flags, ZWJ families,
+// skin-tone emoji, accented letters) occupy multiple cells; the first cell
+// holds the cluster's text, subsequent cells are marked as continuations.
+//
+// Cells own their text: a single rune is stored as string(r) (ASCII is
+// staticbytes-backed, no allocation) and a multi-rune cluster sliced from a
+// larger source is cloned before storage, so front/back buffers never pin a
+// large source string alive.
 type Cell struct {
-	Rune  rune   // The character (0 for continuation cells)
+	Text  string // The cluster's display text ("" for continuation/blank cells)
 	Style Style  // Visual styling
 	Width uint8  // Display width (1 or 2; 0 for continuation)
 	Link  string // Optional OSC 8 hyperlink target ("" = none)
 }
 
-// NewCell creates a new Cell with automatic width detection.
+// NewCell creates a new Cell from a single rune with automatic width detection.
 func NewCell(r rune, style Style) Cell {
 	return Cell{
-		Rune:  r,
+		Text:  string(r),
 		Style: style,
 		Width: uint8(RuneWidth(r)),
 	}
 }
 
-// NewCellWithWidth creates a new Cell with an explicit width.
+// NewCellWithWidth creates a new Cell from a single rune with an explicit width.
 // Use this for continuation cells (width 0) or when width is already known.
+// A continuation cell (width 0) or a zero rune stores empty text, so the cell
+// reads as empty.
 func NewCellWithWidth(r rune, style Style, width uint8) Cell {
+	text := ""
+	if width != 0 && r != 0 {
+		text = string(r)
+	}
 	return Cell{
-		Rune:  r,
+		Text:  text,
 		Style: style,
 		Width: width,
+	}
+}
+
+// newClusterCell creates a Cell holding a multi-rune (or single-rune) grapheme
+// cluster. The text is cloned when it is a slice of a larger source so the cell
+// owns an independent backing array. Pass width 0 for continuation cells.
+func newClusterCell(text string, width uint8, style Style, link string) Cell {
+	if width != 0 && len(text) > 0 {
+		// Clone multi-byte text sliced from a larger source so the cell does not
+		// pin the source alive. A single ASCII byte is staticbytes-backed; a
+		// single multibyte rune is short enough that cloning is cheap and safe.
+		text = strings.Clone(text)
+	} else if width == 0 {
+		text = ""
+	}
+	return Cell{
+		Text:  text,
+		Style: style,
+		Width: width,
+		Link:  link,
 	}
 }
 
@@ -39,18 +74,18 @@ func (c Cell) IsContinuation() bool {
 
 // Equal returns true if both cells are identical.
 func (c Cell) Equal(other Cell) bool {
-	return c.Rune == other.Rune && c.Style.Equal(other.Style) && c.Width == other.Width && c.Link == other.Link
+	return c.Text == other.Text && c.Style.Equal(other.Style) && c.Width == other.Width && c.Link == other.Link
 }
 
 // IsEmpty returns true if this cell represents an empty/blank cell.
-// A cell is empty if it's a space (or zero rune) with default styling.
+// A cell is empty if its text is empty (or a single space) with default styling.
 func (c Cell) IsEmpty() bool {
-	// Zero rune with any style is considered empty
-	if c.Rune == 0 {
+	// Empty text (zero/continuation cell) is considered empty
+	if c.Text == "" {
 		return true
 	}
 	// Space with default style is considered empty
-	if c.Rune == ' ' {
+	if c.Text == " " {
 		return c.Style.Equal(NewStyle())
 	}
 	return false

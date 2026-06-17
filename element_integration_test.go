@@ -35,8 +35,8 @@ func TestIntegration_BasicFlow(t *testing.T) {
 
 	// Verify border was rendered (check top-left corner)
 	cell := buf.Cell(panelRect.X, panelRect.Y)
-	if cell.Rune != '┌' {
-		t.Errorf("top-left cell = %q, want '┌'", cell.Rune)
+	if cell.Text != "┌" {
+		t.Errorf("top-left cell = %q, want '┌'", cell.Text)
 	}
 }
 
@@ -264,8 +264,8 @@ func TestIntegration_MixedElementAndText(t *testing.T) {
 
 	// Check border was drawn
 	topLeft := buf.Cell(panelRect.X, panelRect.Y)
-	if topLeft.Rune != '╭' {
-		t.Errorf("border top-left = %q, want '╭'", topLeft.Rune)
+	if topLeft.Text != "╭" {
+		t.Errorf("border top-left = %q, want '╭'", topLeft.Text)
 	}
 
 	// Verify text was rendered
@@ -277,7 +277,7 @@ func TestIntegration_MixedElementAndText(t *testing.T) {
 	foundX := -1
 	for y := contentRect.Y; y < contentRect.Bottom(); y++ {
 		for x := contentRect.X; x < contentRect.Right(); x++ {
-			if buf.Cell(x, y).Rune == 'H' {
+			if buf.Cell(x, y).Text == "H" {
 				found = true
 				foundX = x
 				break
@@ -322,14 +322,14 @@ func TestIntegration_BackgroundAndBorder(t *testing.T) {
 
 	interiorCell := buf.Cell(interiorX, interiorY)
 	// Background should be space with blue background
-	if interiorCell.Rune != ' ' {
-		t.Errorf("interior cell rune = %q, want ' '", interiorCell.Rune)
+	if interiorCell.Text != " " {
+		t.Errorf("interior cell rune = %q, want ' '", interiorCell.Text)
 	}
 
 	// Check border style (red foreground)
 	borderCell := buf.Cell(panel.Rect().X, panel.Rect().Y)
-	if borderCell.Rune != '┌' {
-		t.Errorf("border cell = %q, want '┌'", borderCell.Rune)
+	if borderCell.Text != "┌" {
+		t.Errorf("border cell = %q, want '┌'", borderCell.Text)
 	}
 	if borderCell.Style.Fg != Red {
 		t.Errorf("border foreground = %d, want %d (Red)", borderCell.Style.Fg, Red)

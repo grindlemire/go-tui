@@ -191,16 +191,21 @@ func wrapInlineStyledRows(text string, width int) []string {
 		}
 
 		r, size := utf8.DecodeRuneInString(text[i:])
-		i += size
 
 		if r == '\n' {
+			i += size
 			flush()
 			continue
 		}
 
-		w := max(RuneWidth(r), 1)
+		// Consume a whole grapheme cluster so a flag, ZWJ family, or combining
+		// mark is never split across a wrapped row.
+		cluster, cw, csize := nextCluster(text[i:])
+		i += csize
+		w := max(cw, 1)
 		if w > width {
-			r = '?'
+			// A cluster wider than the whole row degrades to '?' as before.
+			cluster = "?"
 			w = 1
 		}
 
@@ -208,7 +213,7 @@ func wrapInlineStyledRows(text string, width int) []string {
 			flush()
 		}
 
-		row.WriteRune(r)
+		row.WriteString(cluster)
 		col += w
 	}
 
@@ -219,7 +224,7 @@ func wrapInlineStyledRows(text string, width int) []string {
 	return rows
 }
 
-// wrapInlineVisualRows converts text into terminal visual rows using RuneWidth.
+// wrapInlineVisualRows converts text into terminal visual rows using cluster widths.
 func wrapInlineVisualRows(text string, width int) []string {
 	if width < 1 {
 		width = 1
@@ -238,15 +243,23 @@ func wrapInlineVisualRows(text string, width int) []string {
 		col = 0
 	}
 
-	for _, r := range text {
-		if r == '\n' {
+	for i := 0; i < len(text); {
+		if text[i] == '\n' {
+			i++
 			flush()
 			continue
 		}
 
-		w := max(RuneWidth(r), 1)
+		// Consume a whole grapheme cluster so a flag, ZWJ family, or combining
+		// mark is never split across a visual row.
+		cluster, cw, csize := nextCluster(text[i:])
+		if csize == 0 {
+			break
+		}
+		i += csize
+		w := max(cw, 1)
 		if w > width {
-			r = '?'
+			cluster = "?"
 			w = 1
 		}
 
@@ -254,7 +267,7 @@ func wrapInlineVisualRows(text string, width int) []string {
 			flush()
 		}
 
-		row.WriteRune(r)
+		row.WriteString(cluster)
 		col += w
 	}
 

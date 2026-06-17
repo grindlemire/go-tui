@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -25,7 +26,7 @@ type Input struct {
 	// Reactive state
 	text      *State[string]
 	cursorPos *State[int]
-	scrollPos *State[int] // horizontal scroll offset (first visible rune index)
+	scrollPos *State[int] // horizontal scroll offset (first visible display column, snapped to a cluster boundary)
 	blink     *State[bool]
 	focused   *State[bool]
 }
@@ -105,26 +106,56 @@ func (inp *Input) visibleWidth() int {
 	return w
 }
 
-// ensureCursorVisible adjusts scrollPos so the cursor is within the visible window.
+// ensureCursorVisible adjusts scrollPos (a display column, always snapped to a
+// cluster boundary) so the cursor column is within the visible window.
 func (inp *Input) ensureCursorVisible() {
+	text := inp.text.Get()
 	pos := inp.clampCursorPos()
+	cursorCol := runeIndexToDisplayCol(text, pos)
 	scroll := inp.scrollPos.Get()
 	visible := inp.visibleWidth()
 	if visible <= 0 {
 		return
 	}
 
-	// Cursor is left of the visible window
-	if pos < scroll {
-		inp.scrollPos.Set(pos)
+	// Cursor is left of the visible window: scroll so the cursor's column is the
+	// first visible column (already a cluster boundary).
+	if cursorCol < scroll {
+		inp.scrollPos.Set(cursorCol)
 		return
 	}
 
-	// Cursor is right of the visible window.
-	// Reserve 1 column for the cursor character itself.
-	if pos >= scroll+visible {
-		inp.scrollPos.Set(pos - visible + 1)
+	// Cursor is right of the visible window. Reserve 1 column for the cursor
+	// character itself, then snap the new scroll column down to a cluster start.
+	if cursorCol >= scroll+visible {
+		want := cursorCol - visible + 1
+		inp.scrollPos.Set(inp.snapColToClusterStart(want))
 	}
+}
+
+// snapColToClusterStart snaps a display column down to the nearest cluster-start
+// column at or before it.
+func (inp *Input) snapColToClusterStart(col int) int {
+	if col <= 0 {
+		return 0
+	}
+	text := inp.text.Get()
+	cur := 0
+	for len(text) > 0 {
+		_, w, size := nextCluster(text)
+		if size == 0 {
+			break
+		}
+		if cur+w > col {
+			return cur
+		}
+		cur += w
+		text = text[size:]
+		if cur == col {
+			return cur
+		}
+	}
+	return cur
 }
 
 // Render returns the element tree for the input.
@@ -262,7 +293,11 @@ func (inp *Input) Watchers() []Watcher {
 
 // --- Key Handlers ---
 
-// insertChar inserts a character at the cursor position.
+// insertChar inserts a character at the cursor position. After inserting, the
+// cursor lands on the cluster boundary immediately following the resulting
+// cluster: a base char advances one cluster; a combining mark typed after a base
+// merges into the preceding cluster, and the cursor lands after that combined
+// cluster.
 func (inp *Input) insertChar(ke KeyEvent) {
 	runes := []rune(inp.text.Get())
 	pos := inp.clampCursorPos()
@@ -270,8 +305,12 @@ func (inp *Input) insertChar(ke KeyEvent) {
 	newRunes = append(newRunes, runes[:pos]...)
 	newRunes = append(newRunes, ke.Rune)
 	newRunes = append(newRunes, runes[pos:]...)
-	inp.text.Set(string(newRunes))
-	inp.cursorPos.Set(pos + 1)
+	newText := string(newRunes)
+	inp.text.Set(newText)
+
+	// Re-segment from the previous cluster boundary at/under the old position and
+	// move to the end of the cluster that now contains the inserted rune.
+	inp.cursorPos.Set(clusterEndAfterInsert(newText, pos))
 	inp.blink.Set(true)
 	inp.ensureCursorVisible()
 	if inp.onChange != nil {
@@ -279,66 +318,81 @@ func (inp *Input) insertChar(ke KeyEvent) {
 	}
 }
 
-// backspace deletes the character before the cursor.
+// backspace deletes the cluster before the cursor.
 func (inp *Input) backspace(ke KeyEvent) {
 	runes := []rune(inp.text.Get())
 	pos := inp.clampCursorPos()
 	if pos > 0 {
-		newRunes := append(runes[:pos-1], runes[pos:]...)
+		prev := inp.prevClusterBoundary(pos)
+		newRunes := append(runes[:prev], runes[pos:]...)
 		inp.text.Set(string(newRunes))
-		newPos := pos - 1
-		inp.cursorPos.Set(newPos)
-		// Pin cursor to the right edge while text exceeds visible width,
-		// so each delete scrolls one more character into view.
-		visible := inp.visibleWidth()
-		if len(newRunes) >= visible && newPos >= visible {
-			inp.scrollPos.Set(newPos - visible + 1)
-		} else {
-			inp.scrollPos.Set(0)
-		}
+		inp.cursorPos.Set(prev)
+		inp.ensureCursorVisible()
 		if inp.onChange != nil {
 			inp.onChange(inp.text.Get())
 		}
 	}
 }
 
-// delete deletes the character at the cursor.
+// delete deletes the cluster at the cursor.
 func (inp *Input) delete(ke KeyEvent) {
 	runes := []rune(inp.text.Get())
 	pos := inp.clampCursorPos()
 	if pos < len(runes) {
-		newRunes := append(runes[:pos], runes[pos+1:]...)
+		next := inp.nextClusterBoundary(pos)
+		newRunes := append(runes[:pos], runes[next:]...)
 		inp.text.Set(string(newRunes))
-		visible := inp.visibleWidth()
-		if len(newRunes) >= visible && pos >= visible {
-			inp.scrollPos.Set(pos - visible + 1)
-		} else {
-			inp.scrollPos.Set(0)
-		}
+		inp.ensureCursorVisible()
 		if inp.onChange != nil {
 			inp.onChange(inp.text.Get())
 		}
 	}
 }
 
-// moveLeft moves cursor left.
+// moveLeft moves cursor to the previous cluster boundary.
 func (inp *Input) moveLeft(ke KeyEvent) {
-	pos := inp.cursorPos.Get()
+	pos := inp.clampCursorPos()
 	if pos > 0 {
-		inp.cursorPos.Set(pos - 1)
+		inp.cursorPos.Set(inp.prevClusterBoundary(pos))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}
 }
 
-// moveRight moves cursor right.
+// moveRight moves cursor to the next cluster boundary.
 func (inp *Input) moveRight(ke KeyEvent) {
-	pos := inp.cursorPos.Get()
+	pos := inp.clampCursorPos()
 	if pos < utf8.RuneCountInString(inp.text.Get()) {
-		inp.cursorPos.Set(pos + 1)
+		inp.cursorPos.Set(inp.nextClusterBoundary(pos))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}
+}
+
+// prevClusterBoundary returns the rune index of the cluster boundary immediately
+// before the given (cluster-aligned) rune position.
+func (inp *Input) prevClusterBoundary(pos int) int {
+	starts := clusterRuneStarts(inp.text.Get())
+	prev := 0
+	for _, st := range starts {
+		if st >= pos {
+			break
+		}
+		prev = st
+	}
+	return prev
+}
+
+// nextClusterBoundary returns the rune index of the cluster boundary immediately
+// after the given (cluster-aligned) rune position.
+func (inp *Input) nextClusterBoundary(pos int) int {
+	starts := clusterRuneStarts(inp.text.Get())
+	for _, st := range starts {
+		if st > pos {
+			return st
+		}
+	}
+	return starts[len(starts)-1]
 }
 
 // moveHome moves cursor to start.
@@ -364,63 +418,102 @@ func (inp *Input) submit(ke KeyEvent) {
 
 // --- Display ---
 
-// displayText returns a viewport-clamped slice of the text with cursor overlay.
+// displayText returns a viewport-clamped slice of the text (by display column)
+// with the cursor glyph overlaid at the cursor's display column. It walks
+// clusters, emits those inside the column window, and pads a single space for a
+// wide cluster whose left half is scrolled off so columns stay aligned.
 func (inp *Input) displayText() string {
 	text := inp.text.Get()
-	runes := []rune(text)
 	pos := inp.clampCursorPos()
 	visible := inp.visibleWidth()
+	focused := inp.focused.Get()
 
 	inp.ensureCursorVisible()
-	scroll := min(
-		// Clamp scroll to valid range
-		max(
+	scroll := max(inp.scrollPos.Get(), 0)
 
-			inp.scrollPos.Get(), 0), len(runes))
-
-	if !inp.focused.Get() {
-		if len(runes) == 0 {
-			return " "
-		}
-		// Show viewport slice
-		end := min(scroll+visible, len(runes))
-		return string(runes[scroll:end])
-	}
-
-	// Build the visible slice with cursor inserted
+	cursorCol := runeIndexToDisplayCol(text, pos)
 	cursor := inp.cursorRune
 	if !inp.blink.Get() {
 		cursor = ' '
 	}
 
-	// Insert cursor into the full rune slice at pos
-	withCursor := make([]rune, 0, len(runes)+1)
-	withCursor = append(withCursor, runes[:pos]...)
-	withCursor = append(withCursor, cursor)
-	withCursor = append(withCursor, runes[pos:]...)
-
-	// The cursor insertion shifts indices after pos by 1.
-	// Adjust scroll start: characters before cursor are unshifted,
-	// characters at/after cursor position are shifted by 1.
-	viewStart := scroll
-	if scroll > pos {
-		viewStart = scroll + 1
+	// Build the column-space stream of glyph units. When focused, a one-column
+	// cursor unit is inserted at the cursor's column, which shifts later glyphs one
+	// column to the right (with-cursor space).
+	type unit struct {
+		s string
+		w int
 	}
+	var units []unit
+	inserted := false
+	col := 0 // running text column
+	insertCursor := func() {
+		if focused && !inserted && col == cursorCol {
+			units = append(units, unit{string(cursor), 1})
+			inserted = true
+		}
+	}
+	rest := text
+	for len(rest) > 0 {
+		insertCursor()
+		cluster, w, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
+		units = append(units, unit{cluster, w})
+		col += w
+	}
+	insertCursor() // cursor at end of text
 
-	// visible+1 because the cursor character takes a column
-	viewEnd := min(viewStart+visible+1, len(withCursor))
+	// The window is `visible` text columns wide, plus one column for the inserted
+	// cursor when focused. scroll is a text column; shift it into with-cursor space
+	// when it sits past the cursor (the cursor added a column before the window).
+	windowWidth := visible
+	wcScroll := scroll
+	if focused {
+		windowWidth = visible + 1
+		if scroll > cursorCol {
+			wcScroll = scroll + 1
+		}
+	}
+	windowEnd := wcScroll + windowWidth
 
-	return string(withCursor[viewStart:viewEnd])
+	var b strings.Builder
+	wc := 0 // running with-cursor column
+	for _, u := range units {
+		start, end := wc, wc+u.w
+		wc = end
+		if end <= wcScroll {
+			continue
+		}
+		if start >= windowEnd {
+			break
+		}
+		if start < wcScroll {
+			// Wide glyph straddling the left edge: pad its hidden half so columns
+			// stay aligned.
+			b.WriteRune(' ')
+			continue
+		}
+		b.WriteString(u.s)
+	}
+	if b.Len() == 0 {
+		return " "
+	}
+	return b.String()
 }
 
 func (inp *Input) clampCursorPos() int {
 	pos := inp.cursorPos.Get()
+	text := inp.text.Get()
 	if pos < 0 {
 		return 0
 	}
-	max := utf8.RuneCountInString(inp.text.Get())
+	max := utf8.RuneCountInString(text)
 	if pos > max {
 		return max
 	}
-	return pos
+	// Snap to a cluster boundary so the cursor never sits inside a cluster.
+	return snapRuneToClusterStart(text, pos)
 }

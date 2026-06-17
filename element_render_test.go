@@ -19,8 +19,8 @@ func TestRichText_BoldSurvivesWrap(t *testing.T) {
 	RenderTree(buf, para)
 
 	// Row 0 starts "see " (plain) then "this" (bold).
-	if buf.Cell(0, 0).Rune != 's' || buf.Cell(0, 0).Style.Attrs&AttrBold != 0 {
-		t.Errorf("cell(0,0) should be plain 's', got %q attrs=%v", buf.Cell(0, 0).Rune, buf.Cell(0, 0).Style.Attrs)
+	if buf.Cell(0, 0).Text != "s" || buf.Cell(0, 0).Style.Attrs&AttrBold != 0 {
+		t.Errorf("cell(0,0) should be plain 's', got %q attrs=%v", buf.Cell(0, 0).Text, buf.Cell(0, 0).Style.Attrs)
 	}
 	// "see " is 4 cells; the bold word "this" begins at x=4 on row 0.
 	if buf.Cell(4, 0).Style.Attrs&AttrBold == 0 {
@@ -30,7 +30,7 @@ func TestRichText_BoldSurvivesWrap(t *testing.T) {
 	rowsWithText := 0
 	for y := range 6 {
 		for x := range 10 {
-			if buf.Cell(x, y).Rune != ' ' {
+			if buf.Cell(x, y).Text != " " {
 				rowsWithText++
 				break
 			}
@@ -61,16 +61,16 @@ func TestRichText_ClippedLinesBelowAnOverflowingLineStillRender(t *testing.T) {
 	RenderTree(buf, parent)
 
 	// Line 0 is clipped to 3 columns.
-	if buf.Cell(0, 0).Rune != 'a' || buf.Cell(2, 0).Rune != 'a' {
+	if buf.Cell(0, 0).Text != "a" || buf.Cell(2, 0).Text != "a" {
 		t.Errorf("line 0 not rendered/clipped as expected: %q%q",
-			buf.Cell(0, 0).Rune, buf.Cell(2, 0).Rune)
+			buf.Cell(0, 0).Text, buf.Cell(2, 0).Text)
 	}
-	if buf.Cell(3, 0).Rune == 'a' {
+	if buf.Cell(3, 0).Text == "a" {
 		t.Errorf("line 0 leaked past the clip at x=3")
 	}
 	// The regression assertion: line 1 must still render after line 0 overflowed.
-	if buf.Cell(0, 1).Rune != 'b' {
-		t.Errorf("line 1 was dropped after line 0 hit the clip edge: cell(0,1)=%q, want 'b'", buf.Cell(0, 1).Rune)
+	if buf.Cell(0, 1).Text != "b" {
+		t.Errorf("line 1 was dropped after line 0 hit the clip edge: cell(0,1)=%q, want 'b'", buf.Cell(0, 1).Text)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestRichText_RendersInsideScrollableContainer(t *testing.T) {
 	RenderTree(buf, container)
 
 	// Text must appear (this is the bug the spec warns about).
-	if got := buf.Cell(0, 0).Rune; got != 'a' {
+	if got := buf.Cell(0, 0).Text; got != "a" {
 		t.Errorf("rich text not rendered in scroll container: cell(0,0)=%q, want 'a'", got)
 	}
 	if buf.Cell(2, 0).Style.Attrs&AttrBold == 0 {
@@ -114,7 +114,7 @@ func TestRenderTree_RichTextStylesPerSegment(t *testing.T) {
 
 	// "abcd" laid out left to right.
 	for x, want := range []rune{'a', 'b', 'c', 'd'} {
-		if got := buf.Cell(x, 0).Rune; got != want {
+		if got := buf.Cell(x, 0).Text; got != string(want) {
 			t.Errorf("cell(%d,0).Rune = %q, want %q", x, got, want)
 		}
 	}
@@ -146,8 +146,8 @@ func TestRenderTree_DrawsBackground(t *testing.T) {
 	for y := range 5 {
 		for x := range 10 {
 			cell := buf.Cell(x, y)
-			if cell.Rune != ' ' {
-				t.Errorf("cell(%d,%d).Rune = %q, want ' '", x, y, cell.Rune)
+			if cell.Text != " " {
+				t.Errorf("cell(%d,%d).Rune = %q, want ' '", x, y, cell.Text)
 			}
 			if cell.Style.Bg != Blue {
 				t.Errorf("cell(%d,%d).Style.Bg = %v, want Blue", x, y, cell.Style.Bg)
@@ -169,49 +169,49 @@ func TestRenderTree_DrawsBorder(t *testing.T) {
 
 	// Check corners
 	topLeft := buf.Cell(0, 0)
-	if topLeft.Rune != '┌' {
-		t.Errorf("top-left corner = %q, want '┌'", topLeft.Rune)
+	if topLeft.Text != "┌" {
+		t.Errorf("top-left corner = %q, want '┌'", topLeft.Text)
 	}
 	if topLeft.Style.Fg != Red {
 		t.Errorf("top-left color = %v, want Red", topLeft.Style.Fg)
 	}
 
 	topRight := buf.Cell(9, 0)
-	if topRight.Rune != '┐' {
-		t.Errorf("top-right corner = %q, want '┐'", topRight.Rune)
+	if topRight.Text != "┐" {
+		t.Errorf("top-right corner = %q, want '┐'", topRight.Text)
 	}
 
 	bottomLeft := buf.Cell(0, 4)
-	if bottomLeft.Rune != '└' {
-		t.Errorf("bottom-left corner = %q, want '└'", bottomLeft.Rune)
+	if bottomLeft.Text != "└" {
+		t.Errorf("bottom-left corner = %q, want '└'", bottomLeft.Text)
 	}
 
 	bottomRight := buf.Cell(9, 4)
-	if bottomRight.Rune != '┘' {
-		t.Errorf("bottom-right corner = %q, want '┘'", bottomRight.Rune)
+	if bottomRight.Text != "┘" {
+		t.Errorf("bottom-right corner = %q, want '┘'", bottomRight.Text)
 	}
 
 	// Check horizontal edges
 	for x := 1; x < 9; x++ {
 		top := buf.Cell(x, 0)
-		if top.Rune != '─' {
-			t.Errorf("top edge at %d = %q, want '─'", x, top.Rune)
+		if top.Text != "─" {
+			t.Errorf("top edge at %d = %q, want '─'", x, top.Text)
 		}
 		bottom := buf.Cell(x, 4)
-		if bottom.Rune != '─' {
-			t.Errorf("bottom edge at %d = %q, want '─'", x, bottom.Rune)
+		if bottom.Text != "─" {
+			t.Errorf("bottom edge at %d = %q, want '─'", x, bottom.Text)
 		}
 	}
 
 	// Check vertical edges
 	for y := 1; y < 4; y++ {
 		left := buf.Cell(0, y)
-		if left.Rune != '│' {
-			t.Errorf("left edge at %d = %q, want '│'", y, left.Rune)
+		if left.Text != "│" {
+			t.Errorf("left edge at %d = %q, want '│'", y, left.Text)
 		}
 		right := buf.Cell(9, y)
-		if right.Rune != '│' {
-			t.Errorf("right edge at %d = %q, want '│'", y, right.Rune)
+		if right.Text != "│" {
+			t.Errorf("right edge at %d = %q, want '│'", y, right.Text)
 		}
 	}
 }
@@ -244,8 +244,8 @@ func TestRenderTree_NestedElements(t *testing.T) {
 
 	// Check child border corner exists
 	topLeft := buf.Cell(2, 2)
-	if topLeft.Rune != '┌' {
-		t.Errorf("child top-left = %q, want '┌'", topLeft.Rune)
+	if topLeft.Text != "┌" {
+		t.Errorf("child top-left = %q, want '┌'", topLeft.Text)
 	}
 }
 
@@ -265,8 +265,8 @@ func TestRenderTree_CullsElementsOutsideBuffer(t *testing.T) {
 	for y := range 10 {
 		for x := range 10 {
 			cell := buf.Cell(x, y)
-			if cell.Rune != ' ' {
-				t.Errorf("cell(%d,%d) should be space, got %q", x, y, cell.Rune)
+			if cell.Text != " " {
+				t.Errorf("cell(%d,%d) should be space, got %q", x, y, cell.Text)
 			}
 		}
 	}
@@ -311,12 +311,12 @@ func TestRenderTree_TextCenterAlignment(t *testing.T) {
 	// Center position: (10 - 2) / 2 = 4
 	// Text should be at x=4
 	cell := buf.Cell(4, 0)
-	if cell.Rune != 'H' {
-		t.Errorf("centered text at x=4 = %q, want 'H'", cell.Rune)
+	if cell.Text != "H" {
+		t.Errorf("centered text at x=4 = %q, want 'H'", cell.Text)
 	}
 	cell = buf.Cell(5, 0)
-	if cell.Rune != 'i' {
-		t.Errorf("centered text at x=5 = %q, want 'i'", cell.Rune)
+	if cell.Text != "i" {
+		t.Errorf("centered text at x=5 = %q, want 'i'", cell.Text)
 	}
 }
 
@@ -335,12 +335,12 @@ func TestRenderTree_TextRightAlignment(t *testing.T) {
 	// "Hi" is 2 chars wide, in a 10-wide container
 	// Right-aligned position: 10 - 2 = 8
 	cell := buf.Cell(8, 0)
-	if cell.Rune != 'H' {
-		t.Errorf("right-aligned text at x=8 = %q, want 'H'", cell.Rune)
+	if cell.Text != "H" {
+		t.Errorf("right-aligned text at x=8 = %q, want 'H'", cell.Text)
 	}
 	cell = buf.Cell(9, 0)
-	if cell.Rune != 'i' {
-		t.Errorf("right-aligned text at x=9 = %q, want 'i'", cell.Rune)
+	if cell.Text != "i" {
+		t.Errorf("right-aligned text at x=9 = %q, want 'i'", cell.Text)
 	}
 }
 
@@ -361,8 +361,8 @@ func TestRenderTree_TextWithBorderAndPadding(t *testing.T) {
 
 	// Border should be drawn at edge
 	corner := buf.Cell(0, 0)
-	if corner.Rune != '┌' {
-		t.Errorf("border corner = %q, want '┌'", corner.Rune)
+	if corner.Text != "┌" {
+		t.Errorf("border corner = %q, want '┌'", corner.Text)
 	}
 
 	// Content rect accounts for border (1) + padding (1) = 2
@@ -392,8 +392,8 @@ func TestElement_Render_CalculatesIfDirty(t *testing.T) {
 
 	// Border should be drawn
 	corner := buf.Cell(0, 0)
-	if corner.Rune != '┌' {
-		t.Errorf("border corner = %q, want '┌'", corner.Rune)
+	if corner.Text != "┌" {
+		t.Errorf("border corner = %q, want '┌'", corner.Text)
 	}
 }
 
@@ -503,8 +503,8 @@ func checkString(t *testing.T, buf *Buffer, x, y int, expected string) {
 	curX := x
 	for _, r := range expected {
 		cell := buf.Cell(curX, y)
-		if cell.Rune != r {
-			t.Errorf("buf.Cell(%d,%d).Rune = %q, want %q", curX, y, cell.Rune, r)
+		if cell.Text != string(r) {
+			t.Errorf("buf.Cell(%d,%d).Rune = %q, want %q", curX, y, cell.Text, r)
 		}
 		curX += RuneWidth(r)
 	}
@@ -557,20 +557,20 @@ func TestRenderTree_TextWithBorder(t *testing.T) {
 
 			// Check border corners render correctly
 			topLeft := buf.Cell(rect.X, rect.Y)
-			if topLeft.Rune != '┌' {
-				t.Errorf("top-left = %q, want '┌'", topLeft.Rune)
+			if topLeft.Text != "┌" {
+				t.Errorf("top-left = %q, want '┌'", topLeft.Text)
 			}
 			topRight := buf.Cell(rect.X+rect.Width-1, rect.Y)
-			if topRight.Rune != '┐' {
-				t.Errorf("top-right = %q, want '┐'", topRight.Rune)
+			if topRight.Text != "┐" {
+				t.Errorf("top-right = %q, want '┐'", topRight.Text)
 			}
 			bottomLeft := buf.Cell(rect.X, rect.Y+rect.Height-1)
-			if bottomLeft.Rune != '└' {
-				t.Errorf("bottom-left = %q, want '└'", bottomLeft.Rune)
+			if bottomLeft.Text != "└" {
+				t.Errorf("bottom-left = %q, want '└'", bottomLeft.Text)
 			}
 			bottomRight := buf.Cell(rect.X+rect.Width-1, rect.Y+rect.Height-1)
-			if bottomRight.Rune != '┘' {
-				t.Errorf("bottom-right = %q, want '┘'", bottomRight.Rune)
+			if bottomRight.Text != "┘" {
+				t.Errorf("bottom-right = %q, want '┘'", bottomRight.Text)
 			}
 
 			// Text inside border
@@ -610,23 +610,23 @@ func TestRenderTree_TextBorderInScrollable(t *testing.T) {
 	sy := parentCR.Y + spanR.Y
 
 	topLeft := buf.Cell(sx, sy)
-	if topLeft.Rune != '┌' {
-		t.Errorf("span top-left at (%d,%d) = %q, want '┌'", sx, sy, topLeft.Rune)
+	if topLeft.Text != "┌" {
+		t.Errorf("span top-left at (%d,%d) = %q, want '┌'", sx, sy, topLeft.Text)
 	}
 
 	topRight := buf.Cell(sx+spanR.Width-1, sy)
-	if topRight.Rune != '┐' {
-		t.Errorf("span top-right at (%d,%d) = %q, want '┐'", sx+spanR.Width-1, sy, topRight.Rune)
+	if topRight.Text != "┐" {
+		t.Errorf("span top-right at (%d,%d) = %q, want '┐'", sx+spanR.Width-1, sy, topRight.Text)
 	}
 
 	bottomLeft := buf.Cell(sx, sy+spanR.Height-1)
-	if bottomLeft.Rune != '└' {
-		t.Errorf("span bottom-left at (%d,%d) = %q, want '└'", sx, sy+spanR.Height-1, bottomLeft.Rune)
+	if bottomLeft.Text != "└" {
+		t.Errorf("span bottom-left at (%d,%d) = %q, want '└'", sx, sy+spanR.Height-1, bottomLeft.Text)
 	}
 
 	bottomRight := buf.Cell(sx+spanR.Width-1, sy+spanR.Height-1)
-	if bottomRight.Rune != '┘' {
-		t.Errorf("span bottom-right at (%d,%d) = %q, want '┘'", sx+spanR.Width-1, sy+spanR.Height-1, bottomRight.Rune)
+	if bottomRight.Text != "┘" {
+		t.Errorf("span bottom-right at (%d,%d) = %q, want '┘'", sx+spanR.Width-1, sy+spanR.Height-1, bottomRight.Text)
 	}
 
 	// Text should be inside the border
@@ -774,8 +774,8 @@ func TestRenderTree_BorderStyleDoesNotInherit(t *testing.T) {
 	// Child's border should use default style, not parent's red border style
 	childRect := child.Rect()
 	corner := buf.Cell(childRect.X, childRect.Y)
-	if corner.Rune != '┌' {
-		t.Errorf("child border corner = %q, want '┌'", corner.Rune)
+	if corner.Text != "┌" {
+		t.Errorf("child border corner = %q, want '┌'", corner.Text)
 	}
 	if corner.Style.Fg != DefaultColor() {
 		t.Errorf("child border Fg = %v, want Default (border should not inherit)", corner.Style.Fg)
@@ -797,8 +797,8 @@ func TestRenderTree_HRInheritsTextStyle(t *testing.T) {
 	// HR should render with inherited cyan color
 	hrRect := hr.Rect()
 	cell := buf.Cell(hrRect.X, hrRect.Y)
-	if cell.Rune != '─' {
-		t.Errorf("HR rune = %q, want '─'", cell.Rune)
+	if cell.Text != "─" {
+		t.Errorf("HR rune = %q, want '─'", cell.Text)
 	}
 	if cell.Style.Fg != Cyan {
 		t.Errorf("HR inherited Fg = %v, want Cyan", cell.Style.Fg)

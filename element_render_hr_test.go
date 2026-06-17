@@ -17,16 +17,16 @@ func TestRenderHRDefault(t *testing.T) {
 	// HR should draw '─' characters across its width
 	for x := range 10 {
 		cell := buf.Cell(x, 0)
-		if cell.Rune != '─' {
-			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Rune)
+		if cell.Text != "─" {
+			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Text)
 		}
 	}
 
 	// Beyond the HR width should be untouched (spaces)
 	for x := 10; x < 20; x++ {
 		cell := buf.Cell(x, 0)
-		if cell.Rune != ' ' {
-			t.Errorf("beyond HR at x=%d = %q, want ' '", x, cell.Rune)
+		if cell.Text != " " {
+			t.Errorf("beyond HR at x=%d = %q, want ' '", x, cell.Text)
 		}
 	}
 }
@@ -42,8 +42,8 @@ func TestRenderHRDouble(t *testing.T) {
 	// HR with BorderDouble should draw '═' characters
 	for x := range 10 {
 		cell := buf.Cell(x, 0)
-		if cell.Rune != '═' {
-			t.Errorf("HR double at x=%d = %q, want '═'", x, cell.Rune)
+		if cell.Text != "═" {
+			t.Errorf("HR double at x=%d = %q, want '═'", x, cell.Text)
 		}
 	}
 }
@@ -59,8 +59,8 @@ func TestRenderHRThick(t *testing.T) {
 	// HR with BorderThick should draw '━' characters
 	for x := range 10 {
 		cell := buf.Cell(x, 0)
-		if cell.Rune != '━' {
-			t.Errorf("HR thick at x=%d = %q, want '━'", x, cell.Rune)
+		if cell.Text != "━" {
+			t.Errorf("HR thick at x=%d = %q, want '━'", x, cell.Text)
 		}
 	}
 }
@@ -80,8 +80,8 @@ func TestRenderHRWithColor(t *testing.T) {
 	// HR should respect textStyle for color
 	for x := range 10 {
 		cell := buf.Cell(x, 0)
-		if cell.Rune != '─' {
-			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Rune)
+		if cell.Text != "─" {
+			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Text)
 		}
 		if cell.Style.Fg != Cyan {
 			t.Errorf("HR style at x=%d Fg = %v, want Cyan", x, cell.Style.Fg)
@@ -113,8 +113,8 @@ func TestRenderHRInContainer(t *testing.T) {
 	// Check that HR drew '─' characters across the full width
 	for x := range 20 {
 		cell := buf.Cell(x, 0)
-		if cell.Rune != '─' {
-			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Rune)
+		if cell.Text != "─" {
+			t.Errorf("HR at x=%d = %q, want '─'", x, cell.Text)
 		}
 	}
 }
@@ -176,8 +176,8 @@ func TestRenderHRInScrollableContainer(t *testing.T) {
 	// The container starts at (0,0), padding is 1, so HR line is at y=1, x=1 to x=18
 	for x := 1; x < 19; x++ {
 		cell := buf.Cell(x, 1)
-		if cell.Rune != '─' {
-			t.Errorf("HR at x=%d, y=1 = %q, want '─'", x, cell.Rune)
+		if cell.Text != "─" {
+			t.Errorf("HR at x=%d, y=1 = %q, want '─'", x, cell.Text)
 		}
 	}
 }

@@ -67,7 +67,7 @@ func (s *styledByteScanner) next() bool {
 			return true
 		}
 
-		// Decode UTF-8 rune.
+		// Decode UTF-8 rune to validate and to drop control chars.
 		r, size := utf8.DecodeRune(s.data[s.pos:])
 		if r == utf8.RuneError && size == 1 {
 			s.pos++
@@ -80,12 +80,16 @@ func (s *styledByteScanner) next() bool {
 			continue
 		}
 
+		// Consume a whole grapheme cluster so flags, ZWJ families, skin-tone
+		// emoji, and combining marks stay together. The base rune is reported in
+		// runeVal; bytes() spans the full cluster; runeWidth is the cluster width.
+		clusterWidth, clusterSize, base := nextClusterBytes(s.data[s.pos:])
 		s.kind = tokenRune
 		s.start = s.pos
-		s.pos += size
+		s.pos += clusterSize
 		s.end = s.pos
-		s.runeVal = r
-		s.runeWidth = RuneWidth(r)
+		s.runeVal = base
+		s.runeWidth = clusterWidth
 		return true
 	}
 	return false
