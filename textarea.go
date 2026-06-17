@@ -630,7 +630,11 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 				if !t.blink.Get() {
 					return line
 				}
-				return string(runes[:len(runes)-1]) + string(t.cursorRune)
+				// Overlay the whole final grapheme cluster, not just its last
+				// rune, so a flag or ZWJ family at the line end is not split.
+				starts := clusterRuneStarts(line)
+				lastStart := starts[len(starts)-2]
+				return string(runes[:lastStart]) + string(t.cursorRune)
 			}
 			return line + cursor
 		}

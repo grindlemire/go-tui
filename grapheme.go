@@ -11,10 +11,10 @@ import (
 //
 // The cluster profile targets terminal text: combining marks, ZWJ emoji
 // sequences, regional-indicator pairs, emoji modifiers (skin tones), and
-// variation selectors. It is not full UAX #29 (see GRAPHEME_CLUSTER_SPEC.md
-// section 15 for documented limitations). Width 0 is never returned: the buffer
-// model reserves 0 for continuation cells, and a defective leading combining
-// mark becomes a width-1 cluster.
+// variation selectors. It is not full UAX #29: Hangul jamo composition, Prepend,
+// Indic conjuncts, and emoji tag sequences (subdivision flags) are not handled.
+// Width 0 is never returned: the buffer model reserves 0 for continuation cells,
+// and a defective leading combining mark becomes a width-1 cluster.
 func nextCluster(s string) (cluster string, width, size int) {
 	if len(s) == 0 {
 		return "", 0, 0
@@ -151,7 +151,11 @@ func baseRuneWidth(r rune) int {
 // It deliberately does NOT include the whole unicode.Cf category: most format
 // characters (bidi controls, ZWSP U+200B) have UAX #29 GCB=Control and must
 // break, not glue. The cost is that emoji tag sequences (Cf tag chars) do not
-// cluster, documented in GRAPHEME_CLUSTER_SPEC.md section 15.
+// cluster.
+//
+// Keep this deliberately narrower than isZeroWidthRune in cell.go (which uses the
+// broad unicode.Cf, fine for per-rune width). Do not unify the two predicates, or
+// format controls would wrongly glue into grapheme clusters.
 func graphemeExtend(r rune) bool {
 	if r >= 0x1F3FB && r <= 0x1F3FF {
 		return true
