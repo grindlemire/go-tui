@@ -298,54 +298,53 @@ func (b *Buffer) Fill(rect Rect, r rune, style Style) {
 	}
 }
 
-// SetStringGradient writes a string with a gradient applied per-character.
-// The gradient is applied horizontally along the string.
+// SetStringGradient writes a string with a gradient applied per grapheme cluster.
+// The gradient is applied horizontally along the string; each cluster (CJK, emoji,
+// flag, ZWJ family) gets a single color and occupies its full display width.
 // Returns the total display width consumed (handles wide characters).
 func (b *Buffer) SetStringGradient(x, y int, s string, g Gradient, baseStyle Style) int {
-	if y < 0 || y >= b.height {
+	if y < 0 || y >= b.height || s == "" {
 		return 0
 	}
 
-	runes := []rune(s)
-	if len(runes) == 0 {
-		return 0
-	}
-
+	total := clusterCount(s)
 	totalWidth := 0
 	curX := x
+	idx := 0
 
-	for i, r := range runes {
+	for len(s) > 0 {
+		cluster, width, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		s = s[size:]
+
 		if curX >= b.width {
 			break
 		}
 		if curX < 0 {
-			// Skip characters before the visible area
-			curX += RuneWidth(r)
+			// Skip clusters before the visible area.
+			curX += width
+			idx++
 			continue
 		}
-
-		width := RuneWidth(r)
-
-		// Check if wide char fits
+		// Wide cluster that does not fit at the right edge: stop.
 		if width == 2 && curX+1 >= b.width {
-			// Wide char doesn't fit, stop here
 			break
 		}
 
-		// Calculate gradient position t in [0, 1]
-		t := float64(i) / float64(len(runes)-1)
-		if len(runes) == 1 {
-			t = 0
+		// Gradient position t in [0, 1], one step per cluster.
+		t := 0.0
+		if total > 1 {
+			t = float64(idx) / float64(total-1)
 		}
-
-		// Get gradient color and apply to style
-		gradColor := g.At(t)
 		style := baseStyle
-		style.Fg = gradColor
+		style.Fg = g.At(t)
 
-		b.SetRune(curX, y, r, style)
+		b.setCluster(curX, y, cluster, width, style, "")
 		curX += width
 		totalWidth += width
+		idx++
 	}
 
 	return totalWidth

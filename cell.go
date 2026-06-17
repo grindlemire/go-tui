@@ -163,6 +163,10 @@ var emojiWideRanges = []runeRange{
 	{min: 0x1FA70, max: 0x1FAFF}, // Symbols/pictographs ext. A
 }
 
+// isZeroWidthRune feeds the per-rune RuneWidth fallback only, where the broad
+// unicode.Cf is harmless. It is intentionally broader than graphemeExtend in
+// grapheme.go (which excludes general Cf for cluster boundaries); do not unify
+// the two.
 func isZeroWidthRune(r rune) bool {
 	return unicode.In(r, unicode.Mn, unicode.Me, unicode.Cf, unicode.Variation_Selector, unicode.Join_Control)
 }
