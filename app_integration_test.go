@@ -21,16 +21,16 @@ func TestIntegration_RenderPipeline(t *testing.T) {
 	// Verify the content is in the mock terminal
 	for i, r := range "Hello" {
 		cell := term.CellAt(5+i, 2)
-		if cell.Rune != r {
-			t.Errorf("Cell(%d, 2).Rune = %q, want %q", 5+i, cell.Rune, r)
+		if cell.Text != string(r) {
+			t.Errorf("Cell(%d, 2).Rune = %q, want %q", 5+i, cell.Text, r)
 		}
 	}
 
 	// Verify surrounding cells are spaces
-	if term.CellAt(4, 2).Rune != ' ' {
+	if term.CellAt(4, 2).Text != " " {
 		t.Error("Cell before text should be space")
 	}
-	if term.CellAt(10, 2).Rune != ' ' {
+	if term.CellAt(10, 2).Text != " " {
 		t.Error("Cell after text should be space")
 	}
 }
@@ -53,17 +53,17 @@ func TestIntegration_BorderedBoxWithTitle(t *testing.T) {
 	// "  └─────────────┘"
 
 	// Check corners
-	if term.CellAt(2, 1).Rune != '┌' {
-		t.Errorf("TopLeft = %q, want '┌'", term.CellAt(2, 1).Rune)
+	if term.CellAt(2, 1).Text != "┌" {
+		t.Errorf("TopLeft = %q, want '┌'", term.CellAt(2, 1).Text)
 	}
-	if term.CellAt(16, 1).Rune != '┐' {
-		t.Errorf("TopRight = %q, want '┐'", term.CellAt(16, 1).Rune)
+	if term.CellAt(16, 1).Text != "┐" {
+		t.Errorf("TopRight = %q, want '┐'", term.CellAt(16, 1).Text)
 	}
-	if term.CellAt(2, 4).Rune != '└' {
-		t.Errorf("BottomLeft = %q, want '└'", term.CellAt(2, 4).Rune)
+	if term.CellAt(2, 4).Text != "└" {
+		t.Errorf("BottomLeft = %q, want '└'", term.CellAt(2, 4).Text)
 	}
-	if term.CellAt(16, 4).Rune != '┘' {
-		t.Errorf("BottomRight = %q, want '┘'", term.CellAt(16, 4).Rune)
+	if term.CellAt(16, 4).Text != "┘" {
+		t.Errorf("BottomRight = %q, want '┘'", term.CellAt(16, 4).Text)
 	}
 
 	// Check that "Title" appears in the top border
@@ -89,19 +89,19 @@ func TestIntegration_StyledTextInBox(t *testing.T) {
 	Render(term, buf)
 
 	// Verify box corners (rounded)
-	if term.CellAt(1, 1).Rune != '╭' {
-		t.Errorf("TopLeft = %q, want '╭'", term.CellAt(1, 1).Rune)
+	if term.CellAt(1, 1).Text != "╭" {
+		t.Errorf("TopLeft = %q, want '╭'", term.CellAt(1, 1).Text)
 	}
-	if term.CellAt(20, 1).Rune != '╮' {
-		t.Errorf("TopRight = %q, want '╮'", term.CellAt(20, 1).Rune)
+	if term.CellAt(20, 1).Text != "╮" {
+		t.Errorf("TopRight = %q, want '╮'", term.CellAt(20, 1).Text)
 	}
 
 	// Verify text
 	expected := "Hello, World!"
 	for i, r := range expected {
 		cell := term.CellAt(3+i, 3)
-		if cell.Rune != r {
-			t.Errorf("Text char %d = %q, want %q", i, cell.Rune, r)
+		if cell.Text != string(r) {
+			t.Errorf("Text char %d = %q, want %q", i, cell.Text, r)
 		}
 		if !cell.Style.HasAttr(AttrBold) {
 			t.Errorf("Text char %d should be bold", i)
@@ -128,23 +128,23 @@ func TestIntegration_WideCharacters(t *testing.T) {
 
 	// Verify wide characters
 	// "你好世界" = 4 wide chars = 8 columns
-	if term.CellAt(2, 1).Rune != '你' {
-		t.Errorf("Position 2 = %q, want '你'", term.CellAt(2, 1).Rune)
+	if term.CellAt(2, 1).Text != "你" {
+		t.Errorf("Position 2 = %q, want '你'", term.CellAt(2, 1).Text)
 	}
 	if !term.CellAt(3, 1).IsContinuation() {
 		t.Error("Position 3 should be continuation")
 	}
-	if term.CellAt(4, 1).Rune != '好' {
-		t.Errorf("Position 4 = %q, want '好'", term.CellAt(4, 1).Rune)
+	if term.CellAt(4, 1).Text != "好" {
+		t.Errorf("Position 4 = %q, want '好'", term.CellAt(4, 1).Text)
 	}
 	if !term.CellAt(5, 1).IsContinuation() {
 		t.Error("Position 5 should be continuation")
 	}
-	if term.CellAt(6, 1).Rune != '世' {
-		t.Errorf("Position 6 = %q, want '世'", term.CellAt(6, 1).Rune)
+	if term.CellAt(6, 1).Text != "世" {
+		t.Errorf("Position 6 = %q, want '世'", term.CellAt(6, 1).Text)
 	}
-	if term.CellAt(8, 1).Rune != '界' {
-		t.Errorf("Position 8 = %q, want '界'", term.CellAt(8, 1).Rune)
+	if term.CellAt(8, 1).Text != "界" {
+		t.Errorf("Position 8 = %q, want '界'", term.CellAt(8, 1).Text)
 	}
 }
 
@@ -158,7 +158,7 @@ func TestIntegration_ResizeAndRerender(t *testing.T) {
 	Render(term, buf)
 
 	// Verify initial render
-	if term.CellAt(0, 0).Rune != 'H' {
+	if term.CellAt(0, 0).Text != "H" {
 		t.Fatal("Initial render failed")
 	}
 
@@ -174,10 +174,10 @@ func TestIntegration_ResizeAndRerender(t *testing.T) {
 	Render(term, buf)
 
 	// Verify both old and new content
-	if term.CellAt(0, 0).Rune != 'H' {
+	if term.CellAt(0, 0).Text != "H" {
 		t.Error("Original content should be preserved")
 	}
-	if term.CellAt(10, 6).Rune != 'N' {
+	if term.CellAt(10, 6).Text != "N" {
 		t.Error("New content should be visible")
 	}
 }
@@ -201,8 +201,8 @@ func TestIntegration_DiffMinimalChanges(t *testing.T) {
 	if len(changes) != 1 {
 		t.Errorf("Diff() returned %d changes, want 1", len(changes))
 	}
-	if len(changes) > 0 && changes[0].Cell.Rune != 'B' {
-		t.Errorf("Change rune = %q, want 'B'", changes[0].Cell.Rune)
+	if len(changes) > 0 && changes[0].Cell.Text != "B" {
+		t.Errorf("Change rune = %q, want 'B'", changes[0].Cell.Text)
 	}
 }
 
@@ -239,10 +239,10 @@ func TestIntegration_RenderFull(t *testing.T) {
 	RenderFull(term, buf)
 
 	// Verify content is present
-	if term.CellAt(2, 2).Rune != 'T' {
+	if term.CellAt(2, 2).Text != "T" {
 		t.Error("RenderFull should render all content")
 	}
-	if term.CellAt(3, 2).Rune != 'e' {
+	if term.CellAt(3, 2).Text != "e" {
 		t.Error("RenderFull should render all content")
 	}
 }
@@ -262,13 +262,13 @@ func TestIntegration_ClearAndRedraw(t *testing.T) {
 	Render(term, buf)
 
 	// Verify new content
-	if term.CellAt(0, 0).Rune != 'W' {
-		t.Errorf("After clear, Cell(0, 0) = %q, want 'W'", term.CellAt(0, 0).Rune)
+	if term.CellAt(0, 0).Text != "W" {
+		t.Errorf("After clear, Cell(0, 0) = %q, want 'W'", term.CellAt(0, 0).Text)
 	}
 
 	// Verify old content is gone (position 4 was 'o' in "Hello", now 'd' in "World")
-	if term.CellAt(4, 0).Rune != 'd' {
-		t.Errorf("After clear, Cell(4, 0) = %q, want 'd'", term.CellAt(4, 0).Rune)
+	if term.CellAt(4, 0).Text != "d" {
+		t.Errorf("After clear, Cell(4, 0) = %q, want 'd'", term.CellAt(4, 0).Text)
 	}
 }
 
@@ -287,20 +287,20 @@ func TestIntegration_MultipleBorders(t *testing.T) {
 
 	// Verify each box type
 	// Single
-	if term.CellAt(0, 0).Rune != '┌' {
-		t.Errorf("Single top-left = %q, want '┌'", term.CellAt(0, 0).Rune)
+	if term.CellAt(0, 0).Text != "┌" {
+		t.Errorf("Single top-left = %q, want '┌'", term.CellAt(0, 0).Text)
 	}
 	// Double
-	if term.CellAt(12, 0).Rune != '╔' {
-		t.Errorf("Double top-left = %q, want '╔'", term.CellAt(12, 0).Rune)
+	if term.CellAt(12, 0).Text != "╔" {
+		t.Errorf("Double top-left = %q, want '╔'", term.CellAt(12, 0).Text)
 	}
 	// Rounded
-	if term.CellAt(0, 5).Rune != '╭' {
-		t.Errorf("Rounded top-left = %q, want '╭'", term.CellAt(0, 5).Rune)
+	if term.CellAt(0, 5).Text != "╭" {
+		t.Errorf("Rounded top-left = %q, want '╭'", term.CellAt(0, 5).Text)
 	}
 	// Thick
-	if term.CellAt(12, 5).Rune != '┏' {
-		t.Errorf("Thick top-left = %q, want '┏'", term.CellAt(12, 5).Rune)
+	if term.CellAt(12, 5).Text != "┏" {
+		t.Errorf("Thick top-left = %q, want '┏'", term.CellAt(12, 5).Text)
 	}
 }
 
@@ -321,18 +321,18 @@ func TestIntegration_NestedBoxes(t *testing.T) {
 	Render(term, buf)
 
 	// Verify outer box
-	if term.CellAt(0, 0).Rune != '╔' {
-		t.Errorf("Outer top-left = %q, want '╔'", term.CellAt(0, 0).Rune)
+	if term.CellAt(0, 0).Text != "╔" {
+		t.Errorf("Outer top-left = %q, want '╔'", term.CellAt(0, 0).Text)
 	}
 
 	// Verify inner box
-	if term.CellAt(2, 1).Rune != '┌' {
-		t.Errorf("Inner top-left = %q, want '┌'", term.CellAt(2, 1).Rune)
+	if term.CellAt(2, 1).Text != "┌" {
+		t.Errorf("Inner top-left = %q, want '┌'", term.CellAt(2, 1).Text)
 	}
 
 	// Verify content
-	if term.CellAt(4, 4).Rune != 'C' {
-		t.Errorf("Content = %q, want 'C'", term.CellAt(4, 4).Rune)
+	if term.CellAt(4, 4).Text != "C" {
+		t.Errorf("Content = %q, want 'C'", term.CellAt(4, 4).Text)
 	}
 }
 

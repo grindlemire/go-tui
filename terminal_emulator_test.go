@@ -109,9 +109,9 @@ func (e *EmulatorTerminal) Flush(changes []CellChange) {
 			continue
 		}
 		if ch.X >= 0 && ch.X < e.width {
-			r := ch.Cell.Rune
-			if r == 0 {
-				r = ' '
+			r := ' '
+			if ch.Cell.Text != "" {
+				r = []rune(ch.Cell.Text)[0]
 			}
 			e.screen[ch.Y][ch.X] = r
 		}

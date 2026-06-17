@@ -139,9 +139,9 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 			t.lastStyle = ch.Cell.Style
 		}
 
-		// Write the character
-		if ch.Cell.Rune != 0 {
-			t.esc.WriteRune(ch.Cell.Rune)
+		// Write the cluster text (empty cell renders as a space).
+		if ch.Cell.Text != "" {
+			t.esc.WriteString(ch.Cell.Text)
 		} else {
 			t.esc.WriteRune(' ')
 		}

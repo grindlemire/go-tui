@@ -104,11 +104,18 @@ func (b *Buffer) SetCell(x, y int, c Cell) {
 // Handles wide characters by setting continuation cells.
 // Properly clears overlapped wide characters.
 func (b *Buffer) SetRune(x, y int, r rune, style Style) {
+	b.setCluster(x, y, string(r), RuneWidth(r), style, "")
+}
+
+// setCluster writes a grapheme cluster (text with display width 1 or 2) at
+// position (x, y) with the given style and optional hyperlink. It applies the
+// same overlap/continuation clearing as a single rune and clones text that is a
+// slice of a larger source so the cell owns its bytes.
+func (b *Buffer) setCluster(x, y int, text string, width int, style Style, link string) {
 	if x < 0 || x >= b.width || y < 0 || y >= b.height {
 		return
 	}
 
-	width := RuneWidth(r)
 	currentCell := b.Cell(x, y)
 
 	// If target position is a continuation cell, clear the originating wide char
@@ -141,8 +148,8 @@ func (b *Buffer) SetRune(x, y int, r rune, style Style) {
 		return
 	}
 
-	// Set the primary cell
-	b.SetCell(x, y, NewCellWithWidth(r, style, uint8(width)))
+	// Set the primary cell (cloning multi-rune text it owns).
+	b.SetCell(x, y, newClusterCell(text, uint8(width), style, link))
 
 	// Set continuation cell for wide characters
 	if width == 2 {
@@ -153,13 +160,7 @@ func (b *Buffer) SetRune(x, y int, r rune, style Style) {
 // SetRuneLink sets a rune like SetRune and, when link is non-empty, attaches it
 // as the cell's OSC 8 hyperlink target. Wide-character handling matches SetRune.
 func (b *Buffer) SetRuneLink(x, y int, r rune, style Style, link string) {
-	b.SetRune(x, y, r, style)
-	if link == "" {
-		return
-	}
-	if idx := b.idx(x, y); idx >= 0 {
-		b.back[idx].Link = link
-	}
+	b.setCluster(x, y, string(r), RuneWidth(r), style, link)
 }
 
 // clearWideCharAt clears a wide character that includes position (x, y).
@@ -195,25 +196,29 @@ func (b *Buffer) SetString(x, y int, s string, style Style) int {
 	totalWidth := 0
 	curX := x
 
-	for _, r := range s {
+	for len(s) > 0 {
+		cluster, width, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		s = s[size:]
+
 		if curX >= b.width {
 			break
 		}
 		if curX < 0 {
-			// Skip characters before the visible area
-			curX += RuneWidth(r)
+			// Skip clusters before the visible area
+			curX += width
 			continue
 		}
 
-		width := RuneWidth(r)
-
-		// Check if wide char fits
+		// Check if wide cluster fits
 		if width == 2 && curX+1 >= b.width {
-			// Wide char doesn't fit, stop here
+			// Wide cluster doesn't fit, stop here
 			break
 		}
 
-		b.SetRune(curX, y, r, style)
+		b.setCluster(curX, y, cluster, width, style, "")
 		curX += width
 		totalWidth += width
 	}
@@ -232,8 +237,12 @@ func (b *Buffer) SetStringClipped(x, y int, s string, style Style, clipRect Rect
 	totalWidth := 0
 	curX := x
 
-	for _, r := range s {
-		width := RuneWidth(r)
+	for len(s) > 0 {
+		cluster, width, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		s = s[size:]
 
 		// Skip if entirely before clip region
 		if curX+width <= clipRect.X {
@@ -248,13 +257,13 @@ func (b *Buffer) SetStringClipped(x, y int, s string, style Style, clipRect Rect
 
 		// Render if within clip (also check buffer bounds)
 		if curX >= clipRect.X && curX < clipRect.Right() {
-			// For wide characters, ensure both cells fit in clip region
+			// For wide clusters, ensure both cells fit in clip region
 			if width == 2 && curX+1 >= clipRect.Right() {
-				// Wide char doesn't fit, skip it
+				// Wide cluster doesn't fit, skip it
 				curX += width
 				continue
 			}
-			b.SetRune(curX, y, r, style)
+			b.setCluster(curX, y, cluster, width, style, "")
 			totalWidth += width
 		}
 
@@ -543,10 +552,10 @@ func (b *Buffer) String() string {
 			if cell.IsContinuation() {
 				continue // Skip continuation cells
 			}
-			if cell.Rune == 0 {
+			if cell.Text == "" {
 				sb.WriteRune(' ')
 			} else {
-				sb.WriteRune(cell.Rune)
+				sb.WriteString(cell.Text)
 			}
 		}
 		if y < b.height-1 {
@@ -566,10 +575,10 @@ func (b *Buffer) StringTrimmed() string {
 			if cell.IsContinuation() {
 				continue
 			}
-			if cell.Rune == 0 {
+			if cell.Text == "" {
 				line.WriteRune(' ')
 			} else {
-				line.WriteRune(cell.Rune)
+				line.WriteString(cell.Text)
 			}
 		}
 		sb.WriteString(strings.TrimRight(line.String(), " "))

@@ -121,8 +121,8 @@ func TestPanel_RendersBorder(t *testing.T) {
 	}
 
 	cell := buf.Cell(rect.X, rect.Y)
-	if cell.Rune != '┌' {
-		t.Errorf("top-left = %q, want '┌'", cell.Rune)
+	if cell.Text != "┌" {
+		t.Errorf("top-left = %q, want '┌'", cell.Text)
 	}
 }
 

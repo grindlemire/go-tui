@@ -336,18 +336,26 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			}
 
 			if needPerCell {
-				runes := []rune(line)
-				if len(runes) > 0 {
+				totalClusters := clusterCount(line)
+				if totalClusters > 0 {
 					curX := textX
-					for i, r := range runes {
+					rest := line
+					clusterIdx := 0
+					for len(rest) > 0 {
+						cluster, width, size := nextCluster(rest)
+						if size == 0 {
+							break
+						}
+						rest = rest[size:]
+						idx := clusterIdx
+						clusterIdx++
 						if curX >= clipRect.Right() {
 							break
 						}
 						if curX < clipRect.X {
-							curX += RuneWidth(r)
+							curX += width
 							continue
 						}
-						width := RuneWidth(r)
 						if width == 2 && curX+1 >= clipRect.Right() {
 							break
 						}
@@ -360,13 +368,13 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 								}
 							}
 							if e.textGradient != nil {
-								t := float64(i) / float64(len(runes)-1)
-								if len(runes) == 1 {
+								t := float64(idx) / float64(totalClusters-1)
+								if totalClusters == 1 {
 									t = 0
 								}
 								style.Fg = e.textGradient.At(t)
 							}
-							buf.SetRune(curX, textY, r, style)
+							buf.setCluster(curX, textY, cluster, width, style, "")
 						}
 						curX += width
 					}
@@ -438,15 +446,20 @@ func truncateText(text string, maxWidth int) string {
 	if textWidth <= maxWidth {
 		return text
 	}
-	// Need to truncate: fit as many runes as possible + ellipsis (1 cell wide)
-	runes := []rune(text)
+	// Need to truncate: fit as many clusters as possible + ellipsis (1 cell wide),
+	// never splitting a cluster.
 	curWidth := 0
-	for i, r := range runes {
-		w := RuneWidth(r)
+	consumed := 0
+	for consumed < len(text) {
+		_, w, size := nextCluster(text[consumed:])
+		if size == 0 {
+			break
+		}
 		if curWidth+w+1 > maxWidth { // +1 for ellipsis
-			return string(runes[:i]) + "…"
+			return text[:consumed] + "…"
 		}
 		curWidth += w
+		consumed += size
 	}
 	return text
 }
@@ -529,16 +542,17 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 		maxLines = contentRect.Height
 	}
 
-	// Total rune count across visible lines (for gradient calculation)
-	totalRunes := 0
+	// Total cluster count across visible lines (for gradient calculation).
+	// One gradient color is applied per cluster.
+	totalClusters := 0
 	if e.textGradient != nil {
 		for i := startLine; i < startLine+maxLines && i < len(lines); i++ {
-			totalRunes += len([]rune(lines[i]))
+			totalClusters += clusterCount(lines[i])
 		}
 	}
 
 	needPerCell := e.textGradient != nil || ts.Bg.IsDefault()
-	runeOffset := 0 // running offset for gradient
+	clusterOffset := 0 // running offset for gradient
 
 	for lineIdx := 0; lineIdx < maxLines; lineIdx++ {
 		srcIdx := startLine + lineIdx
@@ -566,11 +580,16 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 
 		if needPerCell {
 			curX := x
-			for _, r := range line {
+			rest := line
+			for len(rest) > 0 {
+				cluster, width, size := nextCluster(rest)
+				if size == 0 {
+					break
+				}
+				rest = rest[size:]
 				if curX >= contentRect.Right() {
 					break
 				}
-				width := RuneWidth(r)
 				if width == 2 && curX+1 >= contentRect.Right() {
 					break
 				}
@@ -583,13 +602,13 @@ func renderTextContent(buf *Buffer, e *Element, textStyle Style, bg *Style) {
 				}
 				if e.textGradient != nil {
 					t := 0.0
-					if totalRunes > 1 {
-						t = float64(runeOffset) / float64(totalRunes-1)
+					if totalClusters > 1 {
+						t = float64(clusterOffset) / float64(totalClusters-1)
 					}
 					style.Fg = e.textGradient.At(t)
-					runeOffset++
+					clusterOffset++
 				}
-				buf.SetRune(curX, y, r, style)
+				buf.setCluster(curX, y, cluster, width, style, "")
 				curX += width
 			}
 		} else {
@@ -619,30 +638,30 @@ nextLine:
 				x += contentWidth - lw
 			}
 		}
-		for _, span := range line {
-			st := mergeSpanStyle(base, span.Style)
-			for _, r := range span.Text {
-				// Reached the right clip edge: clip this line and move to the
-				// next one (matching the plain-text paths' per-line break),
-				// rather than abandoning all remaining lines.
-				if x >= clip.Right() {
-					continue nextLine
-				}
-				w := RuneWidth(r)
-				if w == 2 && x+1 >= clip.Right() {
-					continue nextLine
-				}
-				if x >= clip.X {
-					style := st
-					if style.Bg.IsDefault() {
-						if cellBg := buf.Cell(x, y).Style.Bg; !cellBg.IsDefault() {
-							style.Bg = cellBg
-						}
-					}
-					buf.SetRuneLink(x, y, r, style, span.Link)
-				}
-				x += w
+		// Flatten the line's spans into a styled-rune stream, then segment into
+		// clusters so a cluster whose base and combining mark fall in adjacent
+		// spans stays one cell. Each cluster takes its base rune's style/link.
+		clusters := segmentLineClusters(line, base)
+		for _, cl := range clusters {
+			// Reached the right clip edge: clip this line and move to the next
+			// (matching the plain-text paths' per-line break), rather than
+			// abandoning all remaining lines.
+			if x >= clip.Right() {
+				continue nextLine
 			}
+			if cl.width == 2 && x+1 >= clip.Right() {
+				continue nextLine
+			}
+			if x >= clip.X {
+				style := cl.st
+				if style.Bg.IsDefault() {
+					if cellBg := buf.Cell(x, y).Style.Bg; !cellBg.IsDefault() {
+						style.Bg = cellBg
+					}
+				}
+				buf.setCluster(x, y, cl.text, cl.width, style, cl.link)
+			}
+			x += cl.width
 		}
 	}
 }

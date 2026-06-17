@@ -183,10 +183,10 @@ func renderedRows(t *testing.T, c Component, width int) []string {
 			if cell.IsContinuation() {
 				continue
 			}
-			if cell.Rune == 0 {
+			if cell.Text == "" {
 				sb.WriteRune(' ')
 			} else {
-				sb.WriteRune(cell.Rune)
+				sb.WriteString(cell.Text)
 			}
 		}
 		rows = append(rows, sb.String())
