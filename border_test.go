@@ -387,6 +387,46 @@ func TestDrawBoxWithTitle_WideCharTitle(t *testing.T) {
 	}
 }
 
+type alignTC struct {
+	align []TextAlign
+	want  int // expected startX of the title
+}
+
+func TestDrawBoxWithTitle_Alignment(t *testing.T) {
+	tests := map[string]alignTC{
+		"LeftAligned":           {align: []TextAlign{TextAlignLeft}, want: 1},
+		"RightAligned":          {align: []TextAlign{TextAlignRight}, want: 10},
+		"DefaultBackwardCompat": {align: nil, want: 5},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := NewBuffer(20, 5)
+			rectWidth := 15
+			style := NewStyle()
+			DrawBoxWithTitle(buf, NewRect(0, 0, 15, 3), BorderSingle, "Test", style, tt.align...)
+			if buf.Cell(0, 0).Rune != '┌' {
+				t.Errorf("TopLeft = %q, want '┌'", buf.Cell(0, 0).Rune)
+			}
+			if buf.Cell(14, 0).Rune != '┐' {
+				t.Errorf("TopRight = %q, want '┐'", buf.Cell(14, 0).Rune)
+			}
+			for i, r := range "Test" {
+				cell := buf.Cell(tt.want+i, 0)
+				if cell.Rune != r {
+					t.Errorf("Title at %d = %q, want %q", tt.want+i, cell.Rune, r)
+				}
+			}
+			// Horizontal line should appear adjacent to the title
+			adjX := tt.want + len("Test")
+			if adjX < rectWidth-1 {
+				if buf.Cell(adjX, 0).Rune != '─' {
+					t.Errorf("Horizontal line at %d = %q, want '─'", adjX, buf.Cell(adjX, 0).Rune)
+				}
+			}
+		})
+	}
+}
+
 func TestDrawBoxClipped(t *testing.T) {
 	type tc struct {
 		boxRect  Rect

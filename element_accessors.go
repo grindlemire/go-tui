@@ -47,6 +47,16 @@ func (e *Element) SetBorderTitle(title string) {
 	e.borderTitle = title
 }
 
+// BorderTitleAlign returns the alignment of the border title.
+func (e *Element) BorderTitleAlign() TextAlign {
+	return e.borderTitleAlign
+}
+
+// SetBorderTitleAlign sets the alignment of the border title.
+func (e *Element) SetBorderTitleAlign(align TextAlign) {
+	e.borderTitleAlign = align
+}
+
 // Background returns the background style, or nil if transparent.
 func (e *Element) Background() *Style {
 	return e.background

@@ -365,9 +365,9 @@ func DrawBoxGradientClipped(buf *Buffer, rect Rect, border BorderStyle, g Gradie
 }
 
 // DrawBoxWithTitle draws a box border with a title in the top border.
-// The title is centered in the top border and truncated if too long.
+// The title is aligned (default: center) and truncated if too long.
 // If the rectangle is smaller than 2x2, the function does nothing.
-func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, style Style) {
+func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, style Style, align ...TextAlign) {
 	if rect.Width < 2 || rect.Height < 2 {
 		return
 	}
@@ -379,7 +379,7 @@ func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, 
 	DrawBox(buf, rect, border, style)
 
 	// Draw the title
-	drawBoxTitle(buf, rect, title, style)
+	drawBoxTitle(buf, rect, title, style, align...)
 }
 
 // titleCluster is one grapheme cluster of a border title with its display width.
@@ -388,10 +388,14 @@ type titleCluster struct {
 	width int
 }
 
-// drawBoxTitle draws a centered title string on the top border line of the box.
+// drawBoxTitle draws an aligned title string on the top border line of the box.
 // drawBoxTitle does not draw the box itself — use DrawBoxWithTitle for that.
-func drawBoxTitle(buf *Buffer, rect Rect, title string, style Style) {
-	clusters, startX, ok := prepareTitle(title, rect)
+func drawBoxTitle(buf *Buffer, rect Rect, title string, style Style, align ...TextAlign) {
+	titleAlign := TextAlignCenter
+	if len(align) > 0 {
+		titleAlign = align[0]
+	}
+	clusters, startX, ok := prepareTitle(title, rect, titleAlign)
 	if !ok {
 		return
 	}
@@ -402,14 +406,18 @@ func drawBoxTitle(buf *Buffer, rect Rect, title string, style Style) {
 	}
 }
 
-// drawBoxTitleClipped draws a centered title string on the top border line,
+// drawBoxTitleClipped draws an aligned title string on the top border line,
 // skipping any cluster outside the given clip rectangle.
-func drawBoxTitleClipped(buf *Buffer, rect Rect, title string, style Style, clipRect Rect) {
+func drawBoxTitleClipped(buf *Buffer, rect Rect, title string, style Style, clipRect Rect, align ...TextAlign) {
 	// Reject if the title row is outside the clip rect's Y range.
 	if rect.Y < clipRect.Y || rect.Y >= clipRect.Y+clipRect.Height {
 		return
 	}
-	clusters, startX, ok := prepareTitle(title, rect)
+	titleAlign := TextAlignCenter
+	if len(align) > 0 {
+		titleAlign = align[0]
+	}
+	clusters, startX, ok := prepareTitle(title, rect, titleAlign)
 	if !ok {
 		return
 	}
@@ -422,9 +430,9 @@ func drawBoxTitleClipped(buf *Buffer, rect Rect, title string, style Style, clip
 	}
 }
 
-// prepareTitle truncates and centers a title for the given rectangle, breaking
+// prepareTitle truncates and aligns a title for the given rectangle, breaking
 // on grapheme-cluster boundaries so a cluster is never split at the clip edge.
-func prepareTitle(title string, rect Rect) (clusters []titleCluster, startX int, ok bool) {
+func prepareTitle(title string, rect Rect, align TextAlign) (clusters []titleCluster, startX int, ok bool) {
 	availableWidth := rect.Width - 2
 	if availableWidth <= 0 {
 		return nil, 0, false
@@ -446,7 +454,14 @@ func prepareTitle(title string, rect Rect) (clusters []titleCluster, startX int,
 	if len(clusters) == 0 {
 		return nil, 0, false
 	}
-	startX = rect.X + 1 + (availableWidth-titleWidth)/2
+	switch align {
+	case TextAlignLeft:
+		startX = rect.X + 1
+	case TextAlignRight:
+		startX = rect.X + rect.Width - 1 - titleWidth
+	default:
+		startX = rect.X + 1 + (availableWidth-titleWidth)/2
+	}
 	return clusters, startX, true
 }
 
