@@ -114,11 +114,13 @@ func fakeGoplsServe(in io.Reader, out io.Writer) {
 			reply(string(data))
 		case "test/error":
 			writeFramed(out, fmt.Sprintf(
-				`{"jsonrpc":"2.0","id":%d,"error":{"code":-32601,"message":"method not found"}}`, req.ID))
+				`{"jsonrpc":"2.0","id":%d,"error":{"code":-32601,"message":"method not found"}}`, req.ID,
+			))
 		case "test/publishDiagnostics":
 			// Echo the params back as a server-initiated diagnostics notification.
 			writeFramed(out, fmt.Sprintf(
-				`{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":%s}`, string(req.Params)))
+				`{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":%s}`, string(req.Params),
+			))
 		case "test/sendBare":
 			// Response with no id and no method: readResponses must skip it.
 			writeFramed(out, `{"jsonrpc":"2.0","result":{}}`)

@@ -368,3 +368,41 @@ func TestPostRenderHook(t *testing.T) {
 		})
 	}
 }
+
+func TestApp_PreRenderHook_FiresDuringRender(t *testing.T) {
+	type tc struct {
+		render func(a *App)
+	}
+
+	tests := map[string]tc{
+		"fires during Render()":     {render: func(a *App) { a.Render() }},
+		"fires during RenderFull()": {render: func(a *App) { a.RenderFull() }},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var hookFired bool
+			app := &App{
+				terminal:      NewMockTerminal(80, 24),
+				focus:         newFocusManager(),
+				buffer:        NewBuffer(80, 24),
+				preRenderHook: func() { hookFired = true },
+				updates:       make(chan Event, 256),
+				merged:        make(chan Event, 256),
+				watcherQueue:  make(chan func(), 256),
+				stopCh:        make(chan struct{}),
+				stopped:       false,
+				mounts:        newMountState(),
+				batch:         newBatchContext(),
+			}
+
+			// Render() checks dirty flag, so set it for that path
+			app.dirty.Store(true)
+			tt.render(app)
+
+			if !hookFired {
+				t.Errorf("preRenderHook was not called during %s", name)
+			}
+		})
+	}
+}

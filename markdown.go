@@ -254,7 +254,8 @@ func (m *Markdown) renderBlockquote(b markdown.Block, contentWidth int) *Element
 	if contentWidth > 0 {
 		childWidth = max(
 			// bar (1) + gap (1)
-			contentWidth-2, 1)
+			contentWidth-2, 1,
+		)
 	}
 
 	// Constrain the content width (when known) so paragraphs wrap to it; this

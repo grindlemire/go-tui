@@ -317,6 +317,7 @@ func TestMouseOptions(t *testing.T) {
 
 func TestAppFlagAndCallbackOptions(t *testing.T) {
 	globalKeyCalls := 0
+	preRenderCalls := 0
 	postRenderCalls := 0
 
 	type tc struct {
@@ -372,6 +373,20 @@ func TestAppFlagAndCallbackOptions(t *testing.T) {
 				app.postRenderHook()
 				if postRenderCalls != 1 {
 					t.Fatalf("hook called %d times, want 1", postRenderCalls)
+				}
+			},
+		},
+		"WithPreRenderHook stores a working hook": {
+			opt: WithPreRenderHook(func() {
+				preRenderCalls++
+			}),
+			assert: func(t *testing.T, app *App) {
+				if app.preRenderHook == nil {
+					t.Fatal("expected preRenderHook to be set")
+				}
+				app.preRenderHook()
+				if preRenderCalls != 1 {
+					t.Fatalf("hook called %d times, want 1", preRenderCalls)
 				}
 			},
 		},
