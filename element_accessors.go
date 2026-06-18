@@ -50,6 +50,26 @@ func (e *Element) BorderStyle() Style {
 	return e.borderStyle
 }
 
+// FocusBorderStyle returns the border style used when focused, or nil.
+func (e *Element) FocusBorderStyle() *Style {
+	return e.focusBorderStyle
+}
+
+// SetFocusBorderStyle sets the border style used when focused (nil = no change on focus).
+func (e *Element) SetFocusBorderStyle(s *Style) {
+	e.focusBorderStyle = s
+}
+
+// activeBorderStyle returns the border style to use for rendering.
+// If the element is focused and a focus border style is set, that is used;
+// otherwise the normal border style is the fallback.
+func (e *Element) activeBorderStyle() Style {
+	if e.focused && e.focusBorderStyle != nil {
+		return *e.focusBorderStyle
+	}
+	return e.borderStyle
+}
+
 // SetBorderStyle sets the style used to render the border.
 func (e *Element) SetBorderStyle(style Style) {
 	e.borderStyle = style

@@ -202,6 +202,14 @@ func WithBorderTitleAlign(align TextAlign) Option {
 	}
 }
 
+// WithFocusBorderStyle sets the border style used when the element is focused.
+// If not set, the border style (WithBorderStyle) is used regardless of focus state.
+func WithFocusBorderStyle(s Style) Option {
+	return func(e *Element) {
+		e.focusBorderStyle = &s
+	}
+}
+
 // WithBorderStyle sets the color/attributes for the border.
 func WithBorderStyle(style Style) Option {
 	return func(e *Element) {
