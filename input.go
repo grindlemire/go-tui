@@ -496,6 +496,15 @@ func (inp *Input) displayText() string {
 			b.WriteRune(' ')
 			continue
 		}
+		if end > windowEnd {
+			// Wide glyph straddling the right edge: pad the visible columns instead
+			// of writing the whole cluster, which would overflow the viewport and
+			// then be clip-dropped (the glyph would silently vanish).
+			for range windowEnd - start {
+				b.WriteRune(' ')
+			}
+			break
+		}
 		b.WriteString(u.s)
 	}
 	if b.Len() == 0 {

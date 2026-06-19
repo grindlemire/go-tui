@@ -473,3 +473,42 @@ func TestWrapInlineStyledRows_Oversized(t *testing.T) {
 		})
 	}
 }
+
+// TestInput_WideGlyphAtRightEdge guards displayText against emitting a string
+// wider than the viewport when a wide cluster lands on the last visible column
+// (cursor at the head of long content, scroll 0). An over-wide string is
+// clip-dropped downstream, silently vanishing the glyph.
+func TestInput_WideGlyphAtRightEdge(t *testing.T) {
+	type tc struct {
+		name    string
+		focused bool
+	}
+	cases := []tc{
+		{name: "unfocused", focused: false},
+		{name: "focused", focused: true},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			inp := newTestInput(WithInputWidth(5)) // no border -> visibleWidth 5
+			// 你 (2 cols) starts on the last visible column (col 4) at scroll 0.
+			inp.SetText("abcd你ef")
+			inp.cursorPos.Set(0)
+			inp.scrollPos.Set(0)
+			inp.focused.Set(tt.focused)
+
+			window := inp.visibleWidth()
+			if tt.focused {
+				window++ // focused inserts a one-column cursor glyph
+			}
+			got := inp.displayText()
+			if w := stringWidth(got); w > window {
+				t.Errorf("displayText() = %q is %d cols, exceeds viewport %d", got, w, window)
+			}
+			// 你 cannot fit in the single trailing column, so it must be omitted
+			// whole, never written as an overflowing or half cluster.
+			if strings.ContainsRune(got, '你') {
+				t.Errorf("displayText() = %q should omit 你 (does not fit at the edge)", got)
+			}
+		})
+	}
+}
