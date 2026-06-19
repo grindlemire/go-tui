@@ -1,6 +1,10 @@
 package tui
 
-import "github.com/grindlemire/go-tui/internal/debug"
+import (
+	"strings"
+
+	"github.com/grindlemire/go-tui/internal/debug"
+)
 
 // inheritedStyle carries cascading visual properties down the element tree.
 // Text style (Fg, Attrs) and background color cascade from parent to child.
@@ -448,7 +452,8 @@ func truncateText(text string, maxWidth int) string {
 	}
 	// Need to truncate: fit as many clusters as possible + ellipsis (1 cell wide)
 	curWidth := 0
-	var truncated string
+	var truncated strings.Builder
+	truncated.Grow(len(text))
 	rest := text
 	for len(rest) > 0 {
 		cluster, w, size := nextCluster(rest)
@@ -456,9 +461,9 @@ func truncateText(text string, maxWidth int) string {
 			break
 		}
 		if curWidth+w+1 > maxWidth { // +1 for ellipsis
-			return truncated + "…"
+			return truncated.String() + "…"
 		}
-		truncated += cluster
+		truncated.WriteString(cluster)
 		curWidth += w
 		rest = rest[size:]
 	}
