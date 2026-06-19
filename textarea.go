@@ -628,10 +628,11 @@ func (t *TextArea) clampCursorPos() int {
 	if pos < 0 {
 		return 0
 	}
-	max := utf8.RuneCountInString(t.text.Get())
+	text := t.text.Get()
+	max := utf8.RuneCountInString(text)
 	if pos > max {
 		return max
 	}
 	// Snap to cluster start so cursor cannot sit inside a cluster.
-	return snapRuneToClusterStart(t.text.Get(), pos)
+	return snapRuneToClusterStart(text, pos)
 }

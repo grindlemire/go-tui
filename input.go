@@ -541,10 +541,11 @@ func (inp *Input) clampCursorPos() int {
 	if pos < 0 {
 		return 0
 	}
-	max := utf8.RuneCountInString(inp.text.Get())
+	text := inp.text.Get()
+	max := utf8.RuneCountInString(text)
 	if pos > max {
 		return max
 	}
 	// Snap to cluster start so cursor cannot sit inside a cluster.
-	return snapRuneToClusterStart(inp.text.Get(), pos)
+	return snapRuneToClusterStart(text, pos)
 }
