@@ -290,7 +290,7 @@ func (t *TextArea) insertChar(ke KeyEvent) {
 	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
 	newText := string(newRunes)
 	t.text.Set(newText)
-	t.cursorPos.Set(clusterEndAfterInsert(newText, pos))
+	t.cursorPos.Set(clusterEnd(newText, pos))
 	t.blink.Set(true)
 }
 
@@ -323,7 +323,7 @@ func (t *TextArea) delete(ke KeyEvent) {
 	runes := []rune(text)
 	pos := t.clampCursorPos()
 	if pos < len(runes) {
-		end := clusterEndAfterInsert(text, pos)
+		end := clusterEnd(text, pos)
 		newRunes := append(runes[:pos], runes[end:]...)
 		t.text.Set(string(newRunes))
 	}
@@ -344,7 +344,7 @@ func (t *TextArea) moveRight(ke KeyEvent) {
 	text := t.text.Get()
 	pos := t.cursorPos.Get()
 	if pos < utf8.RuneCountInString(text) {
-		t.cursorPos.Set(clusterEndAfterInsert(text, pos))
+		t.cursorPos.Set(clusterEnd(text, pos))
 		t.blink.Set(true)
 	}
 }

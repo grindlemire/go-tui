@@ -284,7 +284,7 @@ func (inp *Input) insertChar(ke KeyEvent) {
 	newText := string(newRunes)
 
 	inp.text.Set(newText)
-	inp.cursorPos.Set(clusterEndAfterInsert(newText, pos))
+	inp.cursorPos.Set(clusterEnd(newText, pos))
 	inp.blink.Set(true)
 	inp.ensureCursorVisible()
 	if inp.onChange != nil {
@@ -323,7 +323,7 @@ func (inp *Input) delete(ke KeyEvent) {
 	pos := inp.clampCursorPos()
 	if pos < len(runes) {
 		// Find the end of the cluster at pos.
-		end := clusterEndAfterInsert(text, pos)
+		end := clusterEnd(text, pos)
 		newRunes := append(runes[:pos], runes[end:]...)
 		inp.text.Set(string(newRunes))
 		// Re-compute scroll so the cursor is visible.
@@ -350,7 +350,7 @@ func (inp *Input) moveRight(ke KeyEvent) {
 	text := inp.text.Get()
 	pos := inp.cursorPos.Get()
 	if pos < utf8.RuneCountInString(text) {
-		inp.cursorPos.Set(clusterEndAfterInsert(text, pos))
+		inp.cursorPos.Set(clusterEnd(text, pos))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}

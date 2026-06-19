@@ -220,47 +220,62 @@ func clusterRuneStarts(s string) []int {
 	return starts
 }
 
-// clusterEndAfterInsert returns the rune index at the end of the cluster that
-// contains the rune at insertedRuneIdx in s. It re-segments from the cluster
-// start at/under insertedRuneIdx, so a combining mark inserted after a base lands
-// the cursor after the combined cluster, and a base char lands one cluster on.
-func clusterEndAfterInsert(s string, insertedRuneIdx int) int {
-	starts := clusterRuneStarts(s)
-	// Find the cluster whose [start, end) range contains insertedRuneIdx.
-	for i := 0; i+1 < len(starts); i++ {
-		if insertedRuneIdx >= starts[i] && insertedRuneIdx < starts[i+1] {
-			return starts[i+1]
+// clusterEnd returns the rune index at the end of the cluster that contains the
+// rune at clusterStartRuneIdx in s. clusterStartRuneIdx must be at a cluster
+// boundary (guaranteed by clampCursorPos which calls snapRuneToClusterStart first).
+// Unlike the O(N) clusterRuneStarts-based approach, this walks clusters
+// incrementally and stops as soon as it passes the target, making it O(pos).
+func clusterEnd(s string, clusterStartRuneIdx int) int {
+	// clusterStartRuneIdx must be at a cluster boundary. Walk clusters and
+	// return the rune index at the end of the cluster that starts at or
+	// contains the target position.
+	runeAt := 0
+	for len(s) > 0 {
+		_, _, size := nextCluster(s)
+		if size == 0 {
+			break
 		}
+		clusterRunes := utf8.RuneCountInString(s[:size])
+		if runeAt >= clusterStartRuneIdx {
+			// This cluster starts at or contains the target. Return its end.
+			return runeAt + clusterRunes
+		}
+		runeAt += clusterRunes
+		s = s[size:]
 	}
-	// At or past the end (e.g. appended at the very end): cursor at total.
-	return starts[len(starts)-1]
+	return runeAt
 }
 
 // snapRuneToClusterStart snaps a rune index down to the nearest cluster start at
-// or before it (clamped to [0, total]).
+// or before it (clamped to [0, total]). Walks clusters incrementally and stops
+// as soon as it passes the target, making it O(pos) instead of O(N).
 func snapRuneToClusterStart(s string, runeIdx int) int {
-	starts := clusterRuneStarts(s)
-	if runeIdx <= 0 {
+	if len(s) == 0 || runeIdx <= 0 {
 		return 0
 	}
-	last := starts[len(starts)-1]
-	if runeIdx >= last {
-		return last
-	}
-	snapped := 0
-	for _, st := range starts {
-		if st <= runeIdx {
-			snapped = st
-		} else {
+	runeAt := 0
+	lastStart := 0
+	for len(s) > 0 {
+		_, _, size := nextCluster(s)
+		if size == 0 {
 			break
 		}
+		clusterRunes := utf8.RuneCountInString(s[:size])
+		if runeAt+clusterRunes > runeIdx {
+			// runeIdx is inside this cluster: snap to its start.
+			return lastStart
+		}
+		runeAt += clusterRunes
+		lastStart = runeAt
+		s = s[size:]
 	}
-	return snapped
+	return runeAt
 }
 
 // runeIndexToDisplayCol returns the display column at the given rune index,
 // summing cluster widths from the start of s. The index is snapped to a cluster
 // boundary first so a position inside a cluster reports that cluster's start col.
+// Walks clusters incrementally and stops at the target, making it O(pos).
 func runeIndexToDisplayCol(s string, runeIdx int) int {
 	col := 0
 	runeAt := 0
