@@ -237,8 +237,13 @@ func wrapInlineStyledRows(text string, width int) []string {
 
 // nextClusterWidth consumes the next grapheme cluster from text starting at
 // position *pos, advances *pos past the cluster (in bytes), and returns the
-// cluster's display width. ANSI escape sequences in the middle of the cluster
-// are transparent: they don't break the cluster nor contribute to its width.
+// cluster's display width. ANSI escape sequences are treated as cluster
+// boundaries — they don't affect the width.
+//
+// This is the AN SI-aware analogue of clusterAdvance/nextCluster. The
+// extending loop (combining marks, ZWJ+base, RI pairs) mirrors the logic
+// in clusterAdvance (grapheme.go). If you modify the extension rules there,
+// update this function to match.
 func nextClusterWidth(text string, pos *int) int {
 	start := *pos
 	// Decode the base rune and its width.

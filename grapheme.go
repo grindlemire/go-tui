@@ -193,33 +193,6 @@ func clusterCount(s string) int {
 	return n
 }
 
-// clusterRuneStarts returns the rune index where each grapheme cluster begins,
-// followed by the total rune count. For "ab" it returns [0,1,2]; for the family
-// emoji (7 runes, one cluster) it returns [0,7]. Used by editable widgets to
-// snap a cursor rune index onto a cluster boundary.
-func clusterRuneStarts(s string) []int {
-	starts := []int{0}
-	runeIdx := 0
-	for len(s) > 0 {
-		_, _, size := nextCluster(s)
-		if size == 0 {
-			break
-		}
-		// Count runes in this cluster.
-		for i := 0; i < size; {
-			_, rs := utf8.DecodeRuneInString(s[i:])
-			if rs == 0 {
-				break
-			}
-			i += rs
-			runeIdx++
-		}
-		starts = append(starts, runeIdx)
-		s = s[size:]
-	}
-	return starts
-}
-
 // clusterEnd returns the rune index at the end of the cluster that contains the
 // rune at clusterStartRuneIdx in s. The target may be at a cluster boundary
 // (normal case after clampCursorPos) or inside a multi-rune cluster (insertChar

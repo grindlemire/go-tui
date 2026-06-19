@@ -16,6 +16,32 @@ import (
 //	1️⃣                       keycap digit one
 //	é                             "e" + combining acute ("é", decomposed)
 //	a​b                            "a" + zero-width space + "b"
+
+// clusterRuneStarts returns the rune index where each grapheme cluster begins,
+// followed by the total rune count. For "ab" it returns [0,1,2]; for the family
+// emoji (7 runes, one cluster) it returns [0,7].
+func clusterRuneStarts(s string) []int {
+	starts := []int{0}
+	runeIdx := 0
+	for len(s) > 0 {
+		_, _, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		// Count runes in this cluster.
+		for i := 0; i < size; {
+			_, rs := utf8.DecodeRuneInString(s[i:])
+			if rs == 0 {
+				break
+			}
+			i += rs
+			runeIdx++
+		}
+		starts = append(starts, runeIdx)
+		s = s[size:]
+	}
+	return starts
+}
 const (
 	emojiRocket  = "\U0001F680"
 	emojiFlagUS  = "\U0001F1FA\U0001F1F8"
