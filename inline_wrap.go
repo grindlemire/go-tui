@@ -240,7 +240,7 @@ func wrapInlineStyledRows(text string, width int) []string {
 // cluster's display width. ANSI escape sequences are treated as cluster
 // boundaries — they don't affect the width.
 //
-// This is the AN SI-aware analogue of clusterAdvance/nextCluster. The
+// This is the ANSI-aware analogue of clusterAdvance/nextCluster. The
 // extending loop (combining marks, ZWJ+base, RI pairs) mirrors the logic
 // in clusterAdvance (grapheme.go). If you modify the extension rules there,
 // update this function to match.
@@ -259,13 +259,13 @@ func nextClusterWidth(text string, pos *int) int {
 	*pos += sz
 
 	// Extend past any trailing combining marks, ZWJ sequences, and RI pairs
-	// that form one grapheme cluster. ANSI sequences between runes are skipped
-	// (they do not break grapheme clusters).
+	// that form one grapheme cluster. ANSI sequences between runes are NOT
+	// crossed — they act as cluster boundaries.
 	lastWasZWJ := false
 	for *pos < len(text) {
-		// Skip ANSI sequences — they are transparent to grapheme boundaries.
+		// ANSI sequence between base and trailing runes: treat as boundary.
 		if text[*pos] == 0x1b {
-			break // ANSI between base and combining is a style edge case; don't cross it
+			break
 		}
 
 		r2, sz2 := utf8.DecodeRuneInString(text[*pos:])

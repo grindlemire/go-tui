@@ -41,7 +41,7 @@ func TestViewportText_ClusterBoundary(t *testing.T) {
 			// backward. We use cursorCol as the approximate rune index.
 			inp.cursorPos.Set(tt.cursorCol)
 			inp.scrollPos.Set(tt.scroll)
-			got := inp.viewportText(tt.clusters, 0, tt.visible)
+			got := inp.viewportText(tt.clusters, tt.visible)
 			if got != tt.want {
 				t.Errorf("viewportText(scroll=%d, visible=%d) = %q, want %q", tt.scroll, tt.visible, got, tt.want)
 			}

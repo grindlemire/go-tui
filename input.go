@@ -449,7 +449,7 @@ func (inp *Input) displayText() string {
 		if len(allClusters) == 0 {
 			return " "
 		}
-		return inp.viewportText(allClusters, pos, visible)
+		return inp.viewportText(allClusters, visible)
 	}
 
 	// Build a cluster list with the cursor inserted as an extra cluster.
@@ -486,13 +486,13 @@ func (inp *Input) displayText() string {
 	withCursor = append(withCursor, cursorCluster)
 	withCursor = append(withCursor, allClusters[insertIdx:]...)
 
-	return inp.viewportText(withCursor, pos, visible)
+	return inp.viewportText(withCursor, visible)
 }
 
 // viewportText returns the visible slice of clusters starting at scrollPos
 // (display column), filling at most visible display columns. The cursor is
 // expected to already be inserted into the cluster list.
-func (inp *Input) viewportText(clusters []displayCluster, _ int, visible int) string {
+func (inp *Input) viewportText(clusters []displayCluster, visible int) string {
 	inp.ensureCursorVisible()
 	scroll := max(inp.scrollPos.Get(), 0)
 	if visible <= 0 {
