@@ -19,6 +19,17 @@ import (
 // NextCluster is the exported wrapper. It behaves identically.
 func NextCluster(s string) (cluster string, width, size int) { return nextCluster(s) }
 
+// NextClusterRunes is like NextCluster but also returns the number of Unicode
+// code points (runes) in the cluster. This avoids a separate utf8.RuneCountInString
+// call for callers that need both the cluster text and its rune length.
+func NextClusterRunes(s string) (cluster string, width, size, runes int) {
+	cluster, width, size = nextCluster(s)
+	if size > 0 {
+		runes = utf8.RuneCountInString(cluster)
+	}
+	return
+}
+
 func nextCluster(s string) (cluster string, width, size int) {
 	if len(s) == 0 {
 		return "", 0, 0
