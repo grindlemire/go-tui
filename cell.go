@@ -175,11 +175,75 @@ var emojiWideRanges = []runeRange{
 	{min: 0x25B6, max: 0x25B6}, // Play button
 	{min: 0x25C0, max: 0x25C0}, // Reverse button
 	{min: 0x25FB, max: 0x25FE}, // Medium squares
-	{min: 0x2600, max: 0x27BF}, // Misc symbols, dingbats, emoji
+	// BMP emoji (Miscellaneous Symbols, Dingbats, arrows, etc.)
+	{min: 0x2600, max: 0x2604}, // Sun, cloud, umbrella, snowman, comet
+	{min: 0x260E, max: 0x260E}, // Telephone
+	{min: 0x2611, max: 0x2611}, // Check box
+	{min: 0x2614, max: 0x2615}, // Umbrella, hot beverage
+	{min: 0x2618, max: 0x2618}, // Shamrock
+	{min: 0x261D, max: 0x261D}, // Index pointing up
+	{min: 0x2620, max: 0x2620}, // Skull
+	{min: 0x2622, max: 0x2623}, // Radioactive, biohazard
+	{min: 0x2626, max: 0x2626}, // Orthodox cross
+	{min: 0x262A, max: 0x262A}, // Star and crescent
+	{min: 0x262E, max: 0x262F}, // Peace, yin yang
+	{min: 0x2638, max: 0x263A}, // Wheel, frowning, smiling
+	{min: 0x2640, max: 0x2640}, // Female sign
+	{min: 0x2642, max: 0x2642}, // Male sign
+	{min: 0x2648, max: 0x2653}, // Zodiac
+	{min: 0x265F, max: 0x265F}, // Chess pawn
+	{min: 0x2660, max: 0x2660}, // Spade
+	{min: 0x2663, max: 0x2663}, // Club
+	{min: 0x2665, max: 0x2666}, // Heart, diamond
+	{min: 0x2668, max: 0x2668}, // Hot springs
+	{min: 0x267B, max: 0x267B}, // Recycling
+	{min: 0x267E, max: 0x267F}, // Infinity, wheelchair
+	{min: 0x2692, max: 0x2697}, // Hammer, anchor, swords, scales, alembic, gear
+	{min: 0x2699, max: 0x2699}, // Gear (alternate)
+	{min: 0x269B, max: 0x269C}, // Atom, fleur-de-lis
+	{min: 0x26A0, max: 0x26A1}, // Warning, high voltage
+	{min: 0x26A7, max: 0x26A7}, // Transgender symbol
+	{min: 0x26AA, max: 0x26AB}, // Circles
+	{min: 0x26B0, max: 0x26B1}, // Coffin, urn
+	{min: 0x26BD, max: 0x26BE}, // Soccer, baseball
+	{min: 0x26C4, max: 0x26C5}, // Snowman, sun behind cloud
+	{min: 0x26C8, max: 0x26C8}, // Thunder cloud
+	{min: 0x26CE, max: 0x26CE}, // Ophiuchus
+	{min: 0x26CF, max: 0x26CF}, // Pick
+	{min: 0x26D1, max: 0x26D1}, // Helmet
+	{min: 0x26D3, max: 0x26D4}, // Chains, no entry
+	{min: 0x26E9, max: 0x26EA}, // Shinto shrine, church
+	{min: 0x26F0, max: 0x26F5}, // Mountain, umbrella, fountain, tent, sailboat
+	{min: 0x26F7, max: 0x26FA}, // Skier, ice skate, basket, woman with staff
+	{min: 0x26FD, max: 0x26FD}, // Fuel pump
+	{min: 0x2702, max: 0x2702}, // Scissors
+	{min: 0x2705, max: 0x2705}, // Check mark
+	{min: 0x2708, max: 0x270D}, // Airplane, envelope, fist, hand, victory
+	{min: 0x270F, max: 0x270F}, // Pencil
+	{min: 0x2712, max: 0x2712}, // Black nib
+	{min: 0x2714, max: 0x2714}, // Check mark (heavy)
+	{min: 0x2716, max: 0x2716}, // X mark
+	{min: 0x271D, max: 0x271D}, // Latin cross
+	{min: 0x2721, max: 0x2721}, // Star of David
+	{min: 0x2728, max: 0x2728}, // Sparkles
+	{min: 0x2733, max: 0x2734}, // Eight spoked asterisks
+	{min: 0x2744, max: 0x2744}, // Snowflake
+	{min: 0x2747, max: 0x2747}, // Sparkle
+	{min: 0x274C, max: 0x274C}, // Cross mark
+	{min: 0x274E, max: 0x274E}, // Cross mark (box)
+	{min: 0x2753, max: 0x2755}, // Question marks
+	{min: 0x2757, max: 0x2757}, // Exclamation mark
+	{min: 0x2763, max: 0x2763}, // Heart exclamation
+	{min: 0x2764, max: 0x2764}, // Red heart
+	{min: 0x2795, max: 0x2797}, // Plus, minus, division
+	{min: 0x27A1, max: 0x27A1}, // Right arrow
+	{min: 0x27B0, max: 0x27B0}, // Curly loop
+	{min: 0x27BF, max: 0x27BF}, // Double curly loop
 	{min: 0x2934, max: 0x2935}, // Curved arrows
 	{min: 0x2B05, max: 0x2B07}, // Arrow heads
 	{min: 0x2B1B, max: 0x2B1C}, // Large squares
-	{min: 0x2B50, max: 0x2B55}, // Star, hot spring, radioation
+	{min: 0x2B50, max: 0x2B50}, // Star
+	{min: 0x2B55, max: 0x2B55}, // Hollow red circle
 	{min: 0x1F004, max: 0x1F004}, // Mahjong tile red dragon
 	{min: 0x1F0CF, max: 0x1F0CF}, // Playing card black joker
 	{min: 0x1F18E, max: 0x1F18E}, // Negative squared AB
