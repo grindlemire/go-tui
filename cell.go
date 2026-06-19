@@ -180,10 +180,6 @@ var emojiWideRanges = []runeRange{
 	{min: 0x2B05, max: 0x2B07}, // Arrow heads
 	{min: 0x2B1B, max: 0x2B1C}, // Large squares
 	{min: 0x2B50, max: 0x2B55}, // Star, hot spring, radioation
-	{min: 0x3030, max: 0x3030}, // Wavy dash
-	{min: 0x303D, max: 0x303D}, // Part alternation mark
-	{min: 0x3297, max: 0x3297}, // Circled CJK ideograph
-	{min: 0x3299, max: 0x3299}, // Circled CJK ideograph
 	{min: 0x1F004, max: 0x1F004}, // Mahjong tile red dragon
 	{min: 0x1F0CF, max: 0x1F0CF}, // Playing card black joker
 	{min: 0x1F18E, max: 0x1F18E}, // Negative squared AB
