@@ -19,9 +19,9 @@ type styledByteScanner struct {
 
 	// Current token (valid after next() returns true).
 	kind      styledTokenKind
-	start     int // start offset in data
-	end       int // end offset in data (exclusive)
-	runeWidth int // display width for tokenRune
+	start     int  // start offset in data
+	end       int  // end offset in data (exclusive)
+	runeWidth int  // display width for tokenRune
 	runeVal   rune // base rune only; use bytes() for the full cluster glyph
 }
 
