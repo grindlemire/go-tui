@@ -194,16 +194,11 @@ func TestInput_ZWJInsert(t *testing.T) {
 	inp.HandleEvent(KeyEvent{Key: KeyRune, Rune: '\u200D'})
 	inp.HandleEvent(KeyEvent{Key: KeyRune, Rune: '\U0001F469'})
 
-	want := "a\u200d\U0001F469"
-	// Check that the man+ZWJ+woman formed a single cluster
-	// The text should be: 'a' + man + ZWJ + woman
-	if text := inp.Text(); strings.Count(text, "\u200d") != 1 {
-		t.Errorf("text = %q, should contain one ZWJ", text)
+	// 'a' + man (U+1F468) + ZWJ (U+200D) + woman (U+1F469)
+	want := "a\U0001F468\u200D\U0001F469"
+	if text := inp.Text(); text != want {
+		t.Errorf("text = %q, want %q", text, want)
 	}
-	if text := inp.Text(); !strings.Contains(text, "\U0001F468") || !strings.Contains(text, "\U0001F469") {
-		t.Errorf("text = %q should contain both emoji", text)
-	}
-	_ = want
 }
 
 // TestBuffer_String_Combining verifies String/StringTrimmed preserve clusters.

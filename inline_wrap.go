@@ -210,11 +210,13 @@ func wrapInlineStyledRows(text string, width int) []string {
 		}
 
 		if cw > width {
-			row.WriteString("?")
-			col++
-			if col > width {
+			cw = 1
+			// Fall through so the normal pre-flush check runs before writing "?".
+			if col+cw > width {
 				flush()
 			}
+			row.WriteString("?")
+			col++
 			continue
 		}
 
