@@ -193,21 +193,21 @@ func wrapInlineStyledRows(text string, width int) []string {
 			continue
 		}
 
-		// Decode the first rune — this is the base of the grapheme cluster.
-		r, size := utf8.DecodeRuneInString(text[i:])
-		i += size
+		// Consume the next grapheme cluster: nextClusterWidth handles
+		// decoding the base rune, extending past combining marks, ZWJ+base
+		// sequences, and regional-indicator pairs. It advances i past the
+		// whole cluster and returns the correct display width.
+		clusterStart := i
+		cw := nextClusterWidth(text, &i)
 
-		if r == '\n' {
-			flush()
+		if cw == 0 {
+			// Reached end-of-string or newline.
+			if i < len(text) && text[i] == '\n' {
+				flush()
+				i++
+			}
 			continue
 		}
-
-		// Consume the full grapheme cluster starting from the base rune.
-		// We advance i past any trailing combining marks, ZWJ+base sequences,
-		// and regional-indicator pairs so the cluster is never split across
-		// a line break and its width is measured correctly.
-		clusterStart := i - size
-		cw := nextClusterWidth(text, &i)
 
 		if cw > width {
 			row.WriteString("?")
@@ -241,7 +241,11 @@ func nextClusterWidth(text string, pos *int) int {
 	start := *pos
 	// Decode the base rune and its width.
 	r, sz := utf8.DecodeRuneInString(text[start:])
-	if sz == 0 || r == '\n' {
+	if sz == 0 {
+		return 0
+	}
+	if r == '\n' {
+		// Leave pos unchanged; caller can detect and flush.
 		return 0
 	}
 	w := max(RuneWidth(r), 1)
