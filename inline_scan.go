@@ -22,7 +22,7 @@ type styledByteScanner struct {
 	start     int // start offset in data
 	end       int // end offset in data (exclusive)
 	runeWidth int // display width for tokenRune
-	runeVal   rune
+	runeVal   rune // base rune only; use bytes() for the full cluster glyph
 }
 
 func (s *styledByteScanner) reset(data []byte) {

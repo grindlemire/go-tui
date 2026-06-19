@@ -128,9 +128,9 @@ func (inp *Input) ensureCursorVisible() {
 
 	// Cursor is right of the visible window (reserve 1 column for the cursor
 	// glyph itself): scroll forward so cursor is at the rightmost column.
-	// Snap the new scroll down to the nearest cluster-start column so that
-	// viewportText doesn't land in the middle of a wide cluster and push
-	// the cursor out of the visible window.
+	// Snap the new scroll to a cluster-start column so that viewportText
+	// doesn't land in the middle of a wide cluster and push the cursor
+	// out of the visible window.
 	if cursorCol >= scroll+visible {
 		want := cursorCol - visible + 1
 		inp.scrollPos.Set(snapColToClusterStart(text, want))
@@ -382,9 +382,8 @@ func (inp *Input) submit(ke KeyEvent) {
 	}
 }
 
-// snapColToClusterStart snaps a display column up to the nearest column
-// that aligns with a cluster boundary (the start of the next cluster after
-// col). For ASCII text every column is a boundary, so this is a no-op.
+// snapColToClusterStart advances col to the next cluster boundary at or after
+// col. For ASCII text every column is a boundary, so this is a no-op.
 // For CJK/emoji where clusters are 2 columns wide, this ensures the scroll
 // position never splits a cluster.
 func snapColToClusterStart(s string, col int) int {

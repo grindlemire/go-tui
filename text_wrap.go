@@ -131,7 +131,7 @@ func segmentStyledRunes(rs []styledRune) []styledCluster {
 		for ri < len(starts) && starts[ri] < pos {
 			ri++
 		}
-		base := rs[0]
+		base := rs[0] // fallback — unreachable for valid input (ri never outruns rs)
 		if ri < len(rs) {
 			base = rs[ri]
 		}
