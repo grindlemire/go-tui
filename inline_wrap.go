@@ -255,7 +255,7 @@ func nextClusterWidth(text string, pos *int) int {
 		// Leave pos unchanged; caller can detect and flush.
 		return 0
 	}
-	w := max(RuneWidth(r), 1)
+	w := max(baseRuneWidth(r), 1)
 	*pos += sz
 
 	// Extend past any trailing combining marks, ZWJ sequences, and RI pairs
