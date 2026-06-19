@@ -174,6 +174,7 @@ func (e *Element) Component() Component {
 //
 // StringWidth is the exported wrapper.
 func StringWidth(s string) int { return stringWidth(s) }
+
 func stringWidth(s string) int {
 	width := 0
 	for len(s) > 0 {
