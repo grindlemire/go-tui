@@ -190,31 +190,40 @@ func wrapInlineStyledRows(text string, width int) []string {
 			continue
 		}
 
-		r, size := utf8.DecodeRuneInString(text[i:])
+		// Consume the next grapheme cluster: nextClusterWidth handles
+		// decoding the base rune, extending past combining marks, ZWJ+base
+		// sequences, and regional-indicator pairs. It advances i past the
+		// whole cluster and returns the correct display width.
+		clusterStart := i
+		cw := nextClusterWidth(text, &i)
 
-		if r == '\n' {
-			i += size
-			flush()
+		if cw == 0 {
+			// Reached end-of-string or newline.
+			if i < len(text) && text[i] == '\n' {
+				flush()
+				i++
+			}
 			continue
 		}
 
-		// Consume a whole grapheme cluster so a flag, ZWJ family, or combining
-		// mark is never split across a wrapped row.
-		cluster, cw, csize := nextCluster(text[i:])
-		i += csize
-		w := max(cw, 1)
-		if w > width {
-			// A cluster wider than the whole row degrades to '?' as before.
-			cluster = "?"
-			w = 1
+		if cw > width {
+			cw = 1
+			// Run the pre-flush check before writing "?" so an already-full row
+			// is flushed first (mirrors wrapInlineVisualRows behavior).
+			if col+cw > width {
+				flush()
+			}
+			row.WriteString("?")
+			col++
+			continue
 		}
 
-		if col+w > width {
+		if col+cw > width {
 			flush()
 		}
 
-		row.WriteString(cluster)
-		col += w
+		row.WriteString(text[clusterStart:i])
+		col += cw
 	}
 
 	if row.Len() > 0 || len(rows) == 0 {
@@ -222,6 +231,66 @@ func wrapInlineStyledRows(text string, width int) []string {
 	}
 
 	return rows
+}
+
+// nextClusterWidth consumes the next grapheme cluster from text starting at
+// position *pos, advances *pos past the cluster (in bytes), and returns the
+// cluster's display width. ANSI escape sequences are treated as cluster
+// boundaries — they don't affect the width.
+//
+// This is the ANSI-aware analogue of clusterAdvance/nextCluster. Width
+// updates for combining marks, VS16, and VS15 are delegated to the shared
+// clusterExtendUpdateWidth helper so both state machines stay in sync.
+func nextClusterWidth(text string, pos *int) int {
+	start := *pos
+	// Decode the base rune and its width.
+	r, sz := utf8.DecodeRuneInString(text[start:])
+	if sz == 0 {
+		return 0
+	}
+	if r == '\n' {
+		// Leave pos unchanged; caller can detect and flush.
+		return 0
+	}
+	w := max(RuneWidth(r), 1)
+	*pos += sz
+
+	// Extend past any trailing combining marks, ZWJ sequences, and RI pairs
+	// that form one grapheme cluster. ANSI sequences between runes are NOT
+	// crossed — they act as cluster boundaries.
+	lastWasZWJ := false
+	for *pos < len(text) {
+		// ANSI sequence between base and trailing runes: treat as boundary.
+		if text[*pos] == 0x1b {
+			break
+		}
+
+		r2, sz2 := utf8.DecodeRuneInString(text[*pos:])
+		if sz2 == 0 || r2 == '\n' {
+			break
+		}
+
+		// Regional-indicator pair: two consecutive RIs form one 2-col cluster.
+		if regionalIndicator(r) && regionalIndicator(r2) && *pos == start+sz {
+			*pos += sz2
+			return 2
+		}
+
+		if graphemeExtend(r2) {
+			*pos += sz2
+			w = clusterExtendUpdateWidth(r2, r, w)
+			lastWasZWJ = isZWJ(r2)
+			continue
+		}
+		if lastWasZWJ {
+			*pos += sz2
+			w = 2
+			lastWasZWJ = false
+			continue
+		}
+		break
+	}
+	return w
 }
 
 // wrapInlineVisualRows converts text into terminal visual rows using cluster widths.

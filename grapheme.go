@@ -108,9 +108,7 @@ func clusterAdvance(decode decodeStep) (width, size int, base rune) {
 		}
 		if graphemeExtend(r) {
 			pos += sz
-			if isVS16(r) {
-				w = 2 // emoji presentation forces wide
-			}
+			w = clusterExtendUpdateWidth(r, r0, w)
 			lastWasZWJ = isZWJ(r)
 			continue
 		}
@@ -125,6 +123,22 @@ func clusterAdvance(decode decodeStep) (width, size int, base rune) {
 	}
 
 	return w, pos, r0
+}
+
+// clusterExtendUpdateWidth returns the updated width when a grapheme-extend
+// rune attaches to the base rune. VS16 forces wide (2), VS15 can narrow an
+// emoji base (but not CJK) to 1, and all other extenders preserve the width.
+//
+// This is shared between clusterAdvance and nextClusterWidth so both
+// state machines agree on width after a combining mark, VS16, or VS15.
+func clusterExtendUpdateWidth(extendRune, baseRune rune, currentWidth int) int {
+	if isVS16(extendRune) {
+		return 2
+	}
+	if extendRune == 0xFE0E && baseRuneWidth(baseRune) == 2 && inRuneRanges(baseRune, emojiWideRanges) {
+		return 1
+	}
+	return currentWidth
 }
 
 // baseRuneWidth returns the display width of a base rune ignoring the
