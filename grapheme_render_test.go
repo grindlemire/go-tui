@@ -133,3 +133,145 @@ func TestCellGlyph(t *testing.T) {
 		t.Errorf("cellGlyph(empty) = %q, want empty string", g3)
 	}
 }
+
+// TestWrapInlineStyledRows_ASCII verifies the ANSI-styled wrapping path
+// handles plain ASCII text correctly (no ANSI sequences).
+func TestWrapInlineStyledRows_ASCII(t *testing.T) {
+	type tc struct {
+		name  string
+		text  string
+		width int
+		want  []string
+	}
+
+	tests := []tc{
+		{name: "empty", text: "", width: 10, want: []string{""}},
+		{name: "fits on one line", text: "hello", width: 10, want: []string{"hello"}},
+		// wrapInlineStyledRows wraps by visual column, not word boundary.
+		// The space is written before the flush check triggers, so it
+		// becomes the first character of the next line.
+		{name: "wraps at boundary", text: "hello world", width: 5, want: []string{"hello", " worl", "d"}},
+		{name: "newline breaks", text: "ab\ncd", width: 10, want: []string{"ab", "cd"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapInlineStyledRows(tt.text, tt.width)
+			if len(got) != len(tt.want) {
+				t.Fatalf("wrapInlineStyledRows = %q, want %q", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("row[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestWrapInlineStyledRows_ANSI verifies ANSI sequences pass through unchanged
+// and don't count toward column width.
+func TestWrapInlineStyledRows_ANSI(t *testing.T) {
+	type tc struct {
+		name  string
+		text  string
+		width int
+		want  []string
+	}
+
+	tests := []tc{
+		// ANSI around plain text
+		{name: "ansi bold", text: "\x1b[1mhello\x1b[0m", width: 10, want: []string{"\x1b[1mhello\x1b[0m"}},
+		// wrapInlineStyledRows wraps by visual column, not word boundary.
+		// The space is written before the flush check fires.
+		{name: "ansi wraps", text: "\x1b[31mhello world\x1b[0m", width: 5, want: []string{"\x1b[31mhello", " worl", "d\x1b[0m"}},
+		// ANSI at wrap boundary
+		{name: "ansi at boundary", text: "ab\x1b[1mcdef\x1b[0m", width: 4, want: []string{"ab\x1b[1mcd", "ef\x1b[0m"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapInlineStyledRows(tt.text, tt.width)
+			if len(got) != len(tt.want) {
+				t.Fatalf("wrapInlineStyledRows = %q, want %q", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("row[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestWrapInlineStyledRows_Cluster verifies that multi-rune grapheme clusters
+// (flags, decomposed accents, CJK) are not split by the ANSI-styled path.
+func TestWrapInlineStyledRows_Cluster(t *testing.T) {
+	type tc struct {
+		name  string
+		text  string
+		width int
+		want  []string
+	}
+
+	tests := []tc{
+		// Flag (2 cols) + ascii: fits one line at width 6
+		{name: "flag plus ascii", text: emojiFlagUS + "abcd", width: 6, want: []string{emojiFlagUS + "abcd"}},
+		// Flag wraps as atomic unit
+		{name: "flag wraps atomic", text: "a" + emojiFlagUS + "b", width: 2, want: []string{"a", emojiFlagUS, "b"}},
+		// CJK (2 cols each)
+		{name: "cjk wraps", text: "你好世界", width: 4, want: []string{"你好", "世界"}},
+		// ANSI + flag (realistic: styled flag emoji)
+		{name: "ansi flag", text: "\x1b[33m" + emojiFlagUS + "\x1b[0m", width: 4, want: []string{"\x1b[33m" + emojiFlagUS + "\x1b[0m"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapInlineStyledRows(tt.text, tt.width)
+			if len(got) != len(tt.want) {
+				t.Fatalf("wrapInlineStyledRows = %q, want %q", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("row[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestWrapInlineStyledRows_Oversized verifies that a cluster wider than the
+// entire line is replaced with "?" without exceeding the width.
+func TestWrapInlineStyledRows_Oversized(t *testing.T) {
+	type tc struct {
+		name  string
+		text  string
+		width int
+		want  []string
+	}
+
+	tests := []tc{
+		// Single CJK at width 1: too wide, replaced with ?
+		{name: "cjk at width 1", text: "你", width: 1, want: []string{"?"}},
+		// CJK at width 2: fits exactly
+		{name: "cjk at width 2", text: "你", width: 2, want: []string{"你"}},
+		// Flag at width 1: replaced with ?
+		{name: "flag at width 1", text: emojiFlagUS, width: 1, want: []string{"?"}},
+		// ASCII 'a' then CJK at width 1. 'a' fills line, CJK too wide → ? on new line
+		{name: "ascii then cjk at width 1", text: "a你", width: 1, want: []string{"a", "?"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapInlineStyledRows(tt.text, tt.width)
+			if len(got) != len(tt.want) {
+				t.Fatalf("wrapInlineStyledRows = %q, want %q", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("row[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}

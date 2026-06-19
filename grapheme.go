@@ -221,8 +221,9 @@ func clusterRuneStarts(s string) []int {
 }
 
 // clusterEnd returns the rune index at the end of the cluster that contains the
-// rune at clusterStartRuneIdx in s. clusterStartRuneIdx must be at a cluster
-// boundary (guaranteed by clampCursorPos which calls snapRuneToClusterStart first).
+// rune at clusterStartRuneIdx in s. The target may be at a cluster boundary
+// (normal case after clampCursorPos) or inside a multi-rune cluster (insertChar
+// after inserting a combining mark).
 // Unlike the O(N) clusterRuneStarts-based approach, this walks clusters
 // incrementally and stops as soon as it passes the target, making it O(pos).
 func clusterEnd(s string, clusterStartRuneIdx int) int {

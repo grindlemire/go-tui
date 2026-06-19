@@ -256,7 +256,7 @@ func nextClusterWidth(text string, pos *int) int {
 	// Extend past any trailing combining marks, ZWJ sequences, and RI pairs
 	// that form one grapheme cluster. ANSI sequences between runes are skipped
 	// (they do not break grapheme clusters).
-	lastWasZWJ := isZWJ(r)
+	lastWasZWJ := false
 	for *pos < len(text) {
 		// Skip ANSI sequences — they are transparent to grapheme boundaries.
 		if text[*pos] == 0x1b {
