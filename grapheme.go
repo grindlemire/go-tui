@@ -265,16 +265,24 @@ func runeIndexToDisplayCol(s string, runeIdx int) int {
 	col := 0
 	runeAt := 0
 	for len(s) > 0 {
-		if runeAt >= runeIdx {
-			break
-		}
 		_, w, size := nextCluster(s)
 		if size == 0 {
 			break
 		}
 		clusterRunes := utf8.RuneCountInString(s[:size])
 		if runeAt+clusterRunes > runeIdx {
-			// Inside this cluster: report its starting column (snap behavior).
+			// runeIdx is at the boundary between runes within or before
+			// this cluster. If this cluster is multi-rune we cannot position
+			// the cursor inside it, so snap to the cluster's start column.
+			// For a single-rune cluster, runeAt == runeIdx means we are at
+			// the boundary before it (already accumulated); runeAt < runeIdx
+			// means we are inside the cluster (snap to start).
+			if clusterRunes > 1 && runeAt+clusterRunes >= runeIdx && runeAt < runeIdx {
+				// Inside a multi-rune cluster: snap to the cluster's start.
+				return col
+			}
+			// At a single-rune cluster boundary or past end: col is already
+			// at the boundary.
 			break
 		}
 		col += w
