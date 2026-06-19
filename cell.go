@@ -157,6 +157,33 @@ var eastAsianWideRanges = []runeRange{
 
 // Emoji ranges that terminals commonly render as 2-cell glyphs.
 var emojiWideRanges = []runeRange{
+	{min: 0x00A9, max: 0x00A9}, // Copyright
+	{min: 0x00AE, max: 0x00AE}, // Registered
+	{min: 0x203C, max: 0x203C}, // Double exclamation mark
+	{min: 0x2049, max: 0x2049}, // Interrobang
+	{min: 0x2122, max: 0x2122}, // Trade mark
+	{min: 0x2139, max: 0x2139}, // Information source
+	{min: 0x2194, max: 0x2199}, // Directional arrows
+	{min: 0x21A9, max: 0x21AA}, // Curly arrows
+	{min: 0x231A, max: 0x231B}, // Watch, hourglass
+	{min: 0x2328, max: 0x2328}, // Keyboard
+	{min: 0x23CF, max: 0x23CF}, // Eject
+	{min: 0x23E9, max: 0x23F3}, // Clock face + timer + watch
+	{min: 0x23F8, max: 0x23FA}, // Record/pause/stop buttons
+	{min: 0x24C2, max: 0x24C2}, // Circled M
+	{min: 0x25AA, max: 0x25AB}, // Black/white small squares
+	{min: 0x25B6, max: 0x25B6}, // Play button
+	{min: 0x25C0, max: 0x25C0}, // Reverse button
+	{min: 0x25FB, max: 0x25FE}, // Medium squares
+	{min: 0x2600, max: 0x27BF}, // Misc symbols, dingbats, emoji
+	{min: 0x2934, max: 0x2935}, // Curved arrows
+	{min: 0x2B05, max: 0x2B07}, // Arrow heads
+	{min: 0x2B1B, max: 0x2B1C}, // Large squares
+	{min: 0x2B50, max: 0x2B55}, // Star, hot spring, radioation
+	{min: 0x3030, max: 0x3030}, // Wavy dash
+	{min: 0x303D, max: 0x303D}, // Part alternation mark
+	{min: 0x3297, max: 0x3297}, // Circled CJK ideograph
+	{min: 0x3299, max: 0x3299}, // Circled CJK ideograph
 	{min: 0x1F004, max: 0x1F004}, // Mahjong tile red dragon
 	{min: 0x1F0CF, max: 0x1F0CF}, // Playing card black joker
 	{min: 0x1F18E, max: 0x1F18E}, // Negative squared AB

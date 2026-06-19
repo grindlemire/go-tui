@@ -239,6 +239,14 @@ func TestRuneWidth_Emoji(t *testing.T) {
 	// Common emoji should be width 2
 	emojis := []rune{
 		'😀', '😁', '🎉', '🚀', '💻', '🌟',
+		// BMP emoji that were missing from emojiWideRanges
+		'✨', // U+2728 Sparkles
+		'⭐', // U+2B50 Star
+		'☕', // U+2615 Hot Beverage
+		'✅', // U+2705 Check Mark
+		'❤',  // U+2764 Heavy Black Heart
+		'☀',  // U+2600 Sun
+		'⚡', // U+26A1 High Voltage
 	}
 
 	for _, r := range emojis {
