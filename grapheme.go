@@ -216,23 +216,6 @@ func ClusterCount(s string) int {
 // clusterCount is the internal equivalent for use inside the package.
 func clusterCount(s string) int { return ClusterCount(s) }
 
-// ClusterRuneCount returns the total number of Unicode code points (runes)
-// in s by walking grapheme clusters via NextCluster. This is equivalent to
-// utf8.RuneCountInString but uses the grapheme iterator so the two stay in
-// sync for callers that need both cluster counts and rune counts.
-func ClusterRuneCount(s string) int {
-	n := 0
-	for len(s) > 0 {
-		_, _, size := NextCluster(s)
-		if size == 0 {
-			break
-		}
-		n += utf8.RuneCountInString(s[:size])
-		s = s[size:]
-	}
-	return n
-}
-
 // clusterEnd returns the rune index at the end of the cluster that contains the
 // rune at clusterStartRuneIdx in s. The target may be at a cluster boundary
 // (normal case after clampCursorPos) or inside a multi-rune cluster (insertChar
