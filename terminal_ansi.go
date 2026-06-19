@@ -139,9 +139,12 @@ func (t *ANSITerminal) Flush(changes []CellChange) {
 			t.lastStyle = ch.Cell.Style
 		}
 
-		// Write the character
+		// Write the cluster glyph
 		if ch.Cell.Rune != 0 {
 			t.esc.WriteRune(ch.Cell.Rune)
+			if ch.Cell.Combining != "" {
+				t.esc.WriteString(ch.Cell.Combining)
+			}
 		} else {
 			t.esc.WriteRune(' ')
 		}

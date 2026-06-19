@@ -263,15 +263,23 @@ func (inp *Input) Watchers() []Watcher {
 // --- Key Handlers ---
 
 // insertChar inserts a character at the cursor position.
+// Cursor advances past the cluster that contains the inserted character,
+// so combining marks join the previous base and the cursor lands after
+// the combined cluster.
 func (inp *Input) insertChar(ke KeyEvent) {
-	runes := []rune(inp.text.Get())
+	text := inp.text.Get()
 	pos := inp.clampCursorPos()
+
+	// Insert the rune into the string at the rune index.
+	runes := []rune(text)
 	newRunes := make([]rune, 0, len(runes)+1)
 	newRunes = append(newRunes, runes[:pos]...)
 	newRunes = append(newRunes, ke.Rune)
 	newRunes = append(newRunes, runes[pos:]...)
-	inp.text.Set(string(newRunes))
-	inp.cursorPos.Set(pos + 1)
+	newText := string(newRunes)
+
+	inp.text.Set(newText)
+	inp.cursorPos.Set(clusterEndAfterInsert(newText, pos))
 	inp.blink.Set(true)
 	inp.ensureCursorVisible()
 	if inp.onChange != nil {
@@ -280,19 +288,24 @@ func (inp *Input) insertChar(ke KeyEvent) {
 }
 
 // backspace deletes the character before the cursor.
+// The cursor snaps to the previous cluster boundary, so a multi-rune
+// cluster is deleted as one unit.
 func (inp *Input) backspace(ke KeyEvent) {
-	runes := []rune(inp.text.Get())
+	text := inp.text.Get()
 	pos := inp.clampCursorPos()
 	if pos > 0 {
-		newRunes := append(runes[:pos-1], runes[pos:]...)
-		inp.text.Set(string(newRunes))
-		newPos := pos - 1
-		inp.cursorPos.Set(newPos)
+		// Snap to the start of the cluster that contains pos-1.
+		snapped := snapRuneToClusterStart(text, pos-1)
+		runes := []rune(text)
+		newRunes := append(runes[:snapped], runes[pos:]...)
+		newText := string(newRunes)
+		inp.text.Set(newText)
+		inp.cursorPos.Set(snapped)
 		// Pin cursor to the right edge while text exceeds visible width,
 		// so each delete scrolls one more character into view.
 		visible := inp.visibleWidth()
-		if len(newRunes) >= visible && newPos >= visible {
-			inp.scrollPos.Set(newPos - visible + 1)
+		if len(newRunes) >= visible && snapped >= visible {
+			inp.scrollPos.Set(snapped - visible + 1)
 		} else {
 			inp.scrollPos.Set(0)
 		}
@@ -303,11 +316,16 @@ func (inp *Input) backspace(ke KeyEvent) {
 }
 
 // delete deletes the character at the cursor.
+// The cursor stays at the same cluster boundary, so a multi-rune cluster
+// is deleted as one unit.
 func (inp *Input) delete(ke KeyEvent) {
-	runes := []rune(inp.text.Get())
+	text := inp.text.Get()
+	runes := []rune(text)
 	pos := inp.clampCursorPos()
 	if pos < len(runes) {
-		newRunes := append(runes[:pos], runes[pos+1:]...)
+		// Find the end of the cluster at pos.
+		end := clusterEndAfterInsert(text, pos)
+		newRunes := append(runes[:pos], runes[end:]...)
 		inp.text.Set(string(newRunes))
 		visible := inp.visibleWidth()
 		if len(newRunes) >= visible && pos >= visible {
@@ -321,21 +339,23 @@ func (inp *Input) delete(ke KeyEvent) {
 	}
 }
 
-// moveLeft moves cursor left.
+// moveLeft moves cursor left by one grapheme cluster.
 func (inp *Input) moveLeft(ke KeyEvent) {
+	text := inp.text.Get()
 	pos := inp.cursorPos.Get()
 	if pos > 0 {
-		inp.cursorPos.Set(pos - 1)
+		inp.cursorPos.Set(snapRuneToClusterStart(text, pos-1))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}
 }
 
-// moveRight moves cursor right.
+// moveRight moves cursor right by one grapheme cluster.
 func (inp *Input) moveRight(ke KeyEvent) {
+	text := inp.text.Get()
 	pos := inp.cursorPos.Get()
-	if pos < utf8.RuneCountInString(inp.text.Get()) {
-		inp.cursorPos.Set(pos + 1)
+	if pos < utf8.RuneCountInString(text) {
+		inp.cursorPos.Set(clusterEndAfterInsert(text, pos))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}
@@ -422,5 +442,6 @@ func (inp *Input) clampCursorPos() int {
 	if pos > max {
 		return max
 	}
-	return pos
+	// Snap to cluster start so cursor cannot sit inside a cluster.
+	return snapRuneToClusterStart(inp.text.Get(), pos)
 }

@@ -67,7 +67,7 @@ func (s *styledByteScanner) next() bool {
 			return true
 		}
 
-		// Decode UTF-8 rune.
+		// Decode UTF-8 rune, then consume the full grapheme cluster.
 		r, size := utf8.DecodeRune(s.data[s.pos:])
 		if r == utf8.RuneError && size == 1 {
 			s.pos++
@@ -80,12 +80,20 @@ func (s *styledByteScanner) next() bool {
 			continue
 		}
 
+		// Consume the whole grapheme cluster from the current position.
+		cw, csize, _ := nextClusterBytes(s.data[s.pos:])
+		if csize == 0 {
+			// Fallback: try the single rune.
+			cw = RuneWidth(r)
+			csize = size
+		}
+
 		s.kind = tokenRune
 		s.start = s.pos
-		s.pos += size
+		s.pos += csize
 		s.end = s.pos
 		s.runeVal = r
-		s.runeWidth = RuneWidth(r)
+		s.runeWidth = cw
 		return true
 	}
 	return false

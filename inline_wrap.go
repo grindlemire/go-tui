@@ -219,7 +219,8 @@ func wrapInlineStyledRows(text string, width int) []string {
 	return rows
 }
 
-// wrapInlineVisualRows converts text into terminal visual rows using RuneWidth.
+// wrapInlineVisualRows converts text into terminal visual rows using
+// grapheme cluster widths.
 func wrapInlineVisualRows(text string, width int) []string {
 	if width < 1 {
 		width = 1
@@ -238,24 +239,30 @@ func wrapInlineVisualRows(text string, width int) []string {
 		col = 0
 	}
 
-	for _, r := range text {
-		if r == '\n' {
+	rest := text
+	for len(rest) > 0 {
+		cluster, cw, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
+
+		if cluster == "\n" {
 			flush()
 			continue
 		}
 
-		w := max(RuneWidth(r), 1)
-		if w > width {
-			r = '?'
-			w = 1
+		if cw > width {
+			cluster = "?"
+			cw = 1
 		}
 
-		if col+w > width {
+		if col+cw > width {
 			flush()
 		}
 
-		row.WriteRune(r)
-		col += w
+		row.WriteString(cluster)
+		col += cw
 	}
 
 	if row.Len() > 0 || len(rows) == 0 {

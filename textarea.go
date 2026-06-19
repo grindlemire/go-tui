@@ -280,12 +280,17 @@ func (t *TextArea) Watchers() []Watcher {
 // --- Key Handlers ---
 
 // insertChar inserts a character at the cursor position.
+// Cursor advances past the cluster that contains the inserted character,
+// so combining marks join the previous base and the cursor lands after
+// the combined cluster.
 func (t *TextArea) insertChar(ke KeyEvent) {
-	runes := []rune(t.text.Get())
+	text := t.text.Get()
 	pos := t.clampCursorPos()
+	runes := []rune(text)
 	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
-	t.text.Set(string(newRunes))
-	t.cursorPos.Set(pos + 1)
+	newText := string(newRunes)
+	t.text.Set(newText)
+	t.cursorPos.Set(clusterEndAfterInsert(newText, pos))
 	t.blink.Set(true)
 }
 
@@ -299,41 +304,47 @@ func (t *TextArea) insertNewline(ke KeyEvent) {
 	t.blink.Set(true)
 }
 
-// backspace deletes the character before the cursor.
+// backspace deletes the cluster before the cursor.
 func (t *TextArea) backspace(ke KeyEvent) {
-	runes := []rune(t.text.Get())
+	text := t.text.Get()
 	pos := t.clampCursorPos()
 	if pos > 0 {
-		newRunes := append(runes[:pos-1], runes[pos:]...)
+		snapped := snapRuneToClusterStart(text, pos-1)
+		runes := []rune(text)
+		newRunes := append(runes[:snapped], runes[pos:]...)
 		t.text.Set(string(newRunes))
-		t.cursorPos.Set(pos - 1)
+		t.cursorPos.Set(snapped)
 	}
 }
 
-// delete deletes the character at the cursor.
+// delete deletes the cluster at the cursor.
 func (t *TextArea) delete(ke KeyEvent) {
-	runes := []rune(t.text.Get())
+	text := t.text.Get()
+	runes := []rune(text)
 	pos := t.clampCursorPos()
 	if pos < len(runes) {
-		newRunes := append(runes[:pos], runes[pos+1:]...)
+		end := clusterEndAfterInsert(text, pos)
+		newRunes := append(runes[:pos], runes[end:]...)
 		t.text.Set(string(newRunes))
 	}
 }
 
-// moveLeft moves cursor left.
+// moveLeft moves cursor left by one grapheme cluster.
 func (t *TextArea) moveLeft(ke KeyEvent) {
+	text := t.text.Get()
 	pos := t.cursorPos.Get()
 	if pos > 0 {
-		t.cursorPos.Set(pos - 1)
+		t.cursorPos.Set(snapRuneToClusterStart(text, pos-1))
 		t.blink.Set(true)
 	}
 }
 
-// moveRight moves cursor right.
+// moveRight moves cursor right by one grapheme cluster.
 func (t *TextArea) moveRight(ke KeyEvent) {
+	text := t.text.Get()
 	pos := t.cursorPos.Get()
-	if pos < utf8.RuneCountInString(t.text.Get()) {
-		t.cursorPos.Set(pos + 1)
+	if pos < utf8.RuneCountInString(text) {
+		t.cursorPos.Set(clusterEndAfterInsert(text, pos))
 		t.blink.Set(true)
 	}
 }
@@ -410,10 +421,10 @@ func (t *TextArea) wrapWidth() int {
 }
 
 // wrapText wraps the text to fit within the content width, respecting
-// embedded newlines. Lines break at display-column boundaries (CJK and emoji
-// runes occupy two columns), never mid-rune: a wide rune that does not fit
-// moves to the next line. Cursor math stays in rune indices, which remain
-// consistent because wrapping only changes where lines split, not their runes.
+// embedded newlines. Lines break at display-column boundaries, never
+// mid-grapheme-cluster: a wide cluster that does not fit moves to the next
+// line. Cursor math stays in rune indices, which remain consistent because
+// wrapping only changes where lines split, not their runes.
 func (t *TextArea) wrapText() []string {
 	text := t.text.Get()
 	if text == "" {
@@ -433,21 +444,26 @@ func (t *TextArea) wrapText() []string {
 		}
 
 		// Wrap this paragraph to width
-		currentLine := make([]rune, 0)
+		var currentLine strings.Builder
 		currentWidth := 0
-		for _, r := range para {
-			rw := RuneWidth(r)
-			// The len guard keeps a rune wider than the wrap width on a line
+		rest := para
+		for len(rest) > 0 {
+			cluster, cw, size := nextCluster(rest)
+			if size == 0 {
+				break
+			}
+			rest = rest[size:]
+			// The len guard keeps a cluster wider than the wrap width on a line
 			// of its own instead of emitting empty lines before it.
-			if width > 0 && len(currentLine) > 0 && currentWidth+rw > width {
-				lines = append(lines, string(currentLine))
-				currentLine = currentLine[:0]
+			if width > 0 && currentLine.Len() > 0 && currentWidth+cw > width {
+				lines = append(lines, currentLine.String())
+				currentLine.Reset()
 				currentWidth = 0
 			}
-			currentLine = append(currentLine, r)
-			currentWidth += rw
+			currentLine.WriteString(cluster)
+			currentWidth += cw
 		}
-		lines = append(lines, string(currentLine))
+		lines = append(lines, currentLine.String())
 	}
 
 	return lines
@@ -616,5 +632,6 @@ func (t *TextArea) clampCursorPos() int {
 	if pos > max {
 		return max
 	}
-	return pos
+	// Snap to cluster start so cursor cannot sit inside a cluster.
+	return snapRuneToClusterStart(t.text.Get(), pos)
 }

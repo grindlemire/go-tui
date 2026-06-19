@@ -1,15 +1,28 @@
 package tui
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
 
 // Cell represents a single character cell in the terminal buffer.
-// Wide characters (CJK, emoji) occupy multiple cells; the first cell holds
-// the rune, subsequent cells are marked as continuations.
+// Wide characters (CJK, emoji) and grapheme clusters (flags, ZWJ families,
+// skin-tone emoji, accented letters) occupy multiple cells; the first cell
+// holds the cluster's glyph, subsequent cells are marked as continuations.
+//
+// A cell stores its glyph as a base Rune plus an optional Combining string
+// holding the remaining runes of a multi-rune cluster. The vast majority of
+// cells (all ASCII, all CJK, single-code-point emoji) are a single rune stored
+// inline with no allocation. Only genuine multi-rune clusters (flags, ZWJ
+// families, decomposed accents, skin-tone, keycaps) populate Combining, which
+// newClusterCell clones so the buffer never pins a large source string alive.
 type Cell struct {
-	Rune  rune   // The character (0 for continuation cells)
-	Style Style  // Visual styling
-	Width uint8  // Display width (1 or 2; 0 for continuation)
-	Link  string // Optional OSC 8 hyperlink target ("" = none)
+	Rune      rune   // Base (first) rune of the cluster; 0 for continuation/blank cells
+	Combining string // Remaining runes of the cluster ("" for single-rune cells)
+	Style     Style  // Visual styling
+	Width     uint8  // Display width (1 or 2; 0 for continuation)
+	Link      string // Optional OSC 8 hyperlink target ("" = none)
 }
 
 // NewCell creates a new Cell with automatic width detection.
@@ -21,13 +34,46 @@ func NewCell(r rune, style Style) Cell {
 	}
 }
 
-// NewCellWithWidth creates a new Cell with an explicit width.
+// NewCellWithWidth creates a new Cell from a single rune with an explicit width.
 // Use this for continuation cells (width 0) or when width is already known.
+// A continuation cell (width 0) or a zero rune leaves Rune 0, so the cell reads
+// as empty.
 func NewCellWithWidth(r rune, style Style, width uint8) Cell {
+	if width == 0 || r == 0 {
+		return Cell{
+			Style: style,
+			Width: width,
+		}
+	}
 	return Cell{
 		Rune:  r,
 		Style: style,
 		Width: width,
+	}
+}
+
+// newClusterCell creates a Cell holding a multi-rune (or single-rune) grapheme
+// cluster. The cluster's base rune is stored inline; only the remaining runes of
+// a true multi-rune cluster are cloned so the cell owns an independent backing
+// array without pinning a larger source string. Pass width 0 for continuation
+// cells.
+func newClusterCell(text string, width uint8, style Style, link string) Cell {
+	if width == 0 || text == "" {
+		return Cell{Width: width, Style: style, Link: link} // Rune 0, Combining ""
+	}
+	r, sz := utf8.DecodeRuneInString(text)
+	var comb string
+	if sz < len(text) {
+		// Only true multi-rune clusters reach here; clone so the cell does not
+		// pin the source string alive.
+		comb = strings.Clone(text[sz:])
+	}
+	return Cell{
+		Rune:      r,
+		Combining: comb,
+		Style:     style,
+		Width:     width,
+		Link:      link,
 	}
 }
 
@@ -39,18 +85,18 @@ func (c Cell) IsContinuation() bool {
 
 // Equal returns true if both cells are identical.
 func (c Cell) Equal(other Cell) bool {
-	return c.Rune == other.Rune && c.Style.Equal(other.Style) && c.Width == other.Width && c.Link == other.Link
+	return c.Rune == other.Rune && c.Combining == other.Combining && c.Style.Equal(other.Style) && c.Width == other.Width && c.Link == other.Link
 }
 
 // IsEmpty returns true if this cell represents an empty/blank cell.
-// A cell is empty if it's a space (or zero rune) with default styling.
+// A cell is empty if it holds no glyph (or a single space) with default styling.
 func (c Cell) IsEmpty() bool {
-	// Zero rune with any style is considered empty
+	// No glyph (zero/continuation cell) is considered empty
 	if c.Rune == 0 {
 		return true
 	}
 	// Space with default style is considered empty
-	if c.Rune == ' ' {
+	if c.Rune == ' ' && c.Combining == "" {
 		return c.Style.Equal(NewStyle())
 	}
 	return false

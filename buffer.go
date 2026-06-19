@@ -150,16 +150,60 @@ func (b *Buffer) SetRune(x, y int, r rune, style Style) {
 	}
 }
 
+// setCluster writes a grapheme cluster (text with display width 1 or 2) at
+// position (x, y) with the given style and optional hyperlink. It applies the
+// same overlap/continuation clearing as a single rune and clones text that is a
+// slice of a larger source so the cell owns its bytes.
+func (b *Buffer) setCluster(x, y int, text string, width int, style Style, link string) {
+	if x < 0 || x >= b.width || y < 0 || y >= b.height {
+		return
+	}
+
+	currentCell := b.Cell(x, y)
+
+	// If target position is a continuation cell, clear the originating wide char
+	if currentCell.IsContinuation() {
+		b.clearWideCharAt(x, y)
+	}
+
+	// If target position is the START of a wide character, clear its continuation
+	if currentCell.Width == 2 && x+1 < b.width {
+		b.SetCell(x+1, y, NewCell(' ', NewStyle()))
+	}
+
+	// If placing a wide char would overlap an existing wide char at x+1, clear it
+	if width == 2 && x+1 < b.width {
+		next := b.Cell(x+1, y)
+		// If next cell is the start of a wide char (width 2), clear it and its continuation
+		if next.Width == 2 {
+			b.clearWideCharAt(x+1, y)
+		}
+		// If next cell is a continuation, clear its originating wide char
+		if next.IsContinuation() {
+			b.clearWideCharAt(x+1, y)
+		}
+	}
+
+	// Handle edge case: wide char at last column - can't fit, skip it
+	if width == 2 && x+1 >= b.width {
+		// Place a space instead since the wide char can't fit
+		b.SetCell(x, y, NewCell(' ', style))
+		return
+	}
+
+	// Set the primary cell using newClusterCell
+	b.SetCell(x, y, newClusterCell(text, uint8(width), style, link))
+
+	// Set continuation cell for wide characters
+	if width == 2 {
+		b.SetCell(x+1, y, NewCellWithWidth(0, style, 0))
+	}
+}
+
 // SetRuneLink sets a rune like SetRune and, when link is non-empty, attaches it
 // as the cell's OSC 8 hyperlink target. Wide-character handling matches SetRune.
 func (b *Buffer) SetRuneLink(x, y int, r rune, style Style, link string) {
-	b.SetRune(x, y, r, style)
-	if link == "" {
-		return
-	}
-	if idx := b.idx(x, y); idx >= 0 {
-		b.back[idx].Link = link
-	}
+	b.setCluster(x, y, string(r), RuneWidth(r), style, link)
 }
 
 // clearWideCharAt clears a wide character that includes position (x, y).
@@ -185,8 +229,8 @@ func (b *Buffer) clearWideCharAt(x, y int) {
 }
 
 // SetString writes a string starting at position (x, y) with the given style.
-// Returns the total display width consumed (handles wide characters).
-// Stops at buffer edge without wrapping.
+// Returns the total display width consumed (handles wide characters and
+// grapheme clusters). Stops at buffer edge without wrapping.
 func (b *Buffer) SetString(x, y int, s string, style Style) int {
 	if y < 0 || y >= b.height {
 		return 0
@@ -194,18 +238,25 @@ func (b *Buffer) SetString(x, y int, s string, style Style) int {
 
 	totalWidth := 0
 	curX := x
+	rest := s
 
-	for _, r := range s {
+	for len(rest) > 0 {
 		if curX >= b.width {
 			break
 		}
+
+		// Get the next grapheme cluster (or single rune)
+		cluster, width, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
+
 		if curX < 0 {
 			// Skip characters before the visible area
-			curX += RuneWidth(r)
+			curX += width
 			continue
 		}
-
-		width := RuneWidth(r)
 
 		// Check if wide char fits
 		if width == 2 && curX+1 >= b.width {
@@ -213,7 +264,7 @@ func (b *Buffer) SetString(x, y int, s string, style Style) int {
 			break
 		}
 
-		b.SetRune(curX, y, r, style)
+		b.setCluster(curX, y, cluster, width, style, "")
 		curX += width
 		totalWidth += width
 	}
@@ -231,9 +282,14 @@ func (b *Buffer) SetStringClipped(x, y int, s string, style Style, clipRect Rect
 
 	totalWidth := 0
 	curX := x
+	rest := s
 
-	for _, r := range s {
-		width := RuneWidth(r)
+	for len(rest) > 0 {
+		cluster, width, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
 
 		// Skip if entirely before clip region
 		if curX+width <= clipRect.X {
@@ -254,7 +310,7 @@ func (b *Buffer) SetStringClipped(x, y int, s string, style Style, clipRect Rect
 				curX += width
 				continue
 			}
-			b.SetRune(curX, y, r, style)
+			b.setCluster(curX, y, cluster, width, style, "")
 			totalWidth += width
 		}
 
@@ -289,33 +345,45 @@ func (b *Buffer) Fill(rect Rect, r rune, style Style) {
 	}
 }
 
-// SetStringGradient writes a string with a gradient applied per-character.
-// The gradient is applied horizontally along the string.
-// Returns the total display width consumed (handles wide characters).
+// SetStringGradient writes a string with a gradient applied per-cluster.
+// The gradient is applied horizontally along the string, one gradient color
+// per grapheme cluster. Returns the total display width consumed.
 func (b *Buffer) SetStringGradient(x, y int, s string, g Gradient, baseStyle Style) int {
 	if y < 0 || y >= b.height {
 		return 0
 	}
 
-	runes := []rune(s)
-	if len(runes) == 0 {
+	if len(s) == 0 {
+		return 0
+	}
+
+	totalClusters := clusterCount(s)
+	if totalClusters == 0 {
 		return 0
 	}
 
 	totalWidth := 0
 	curX := x
+	rest := s
+	clusterIdx := 0
 
-	for i, r := range runes {
+	for len(rest) > 0 {
 		if curX >= b.width {
 			break
 		}
+
+		cluster, width, size := nextCluster(rest)
+		if size == 0 {
+			break
+		}
+		rest = rest[size:]
+
 		if curX < 0 {
 			// Skip characters before the visible area
-			curX += RuneWidth(r)
+			curX += width
+			clusterIdx++
 			continue
 		}
-
-		width := RuneWidth(r)
 
 		// Check if wide char fits
 		if width == 2 && curX+1 >= b.width {
@@ -324,8 +392,8 @@ func (b *Buffer) SetStringGradient(x, y int, s string, g Gradient, baseStyle Sty
 		}
 
 		// Calculate gradient position t in [0, 1]
-		t := float64(i) / float64(len(runes)-1)
-		if len(runes) == 1 {
+		t := float64(clusterIdx) / float64(totalClusters-1)
+		if totalClusters == 1 {
 			t = 0
 		}
 
@@ -334,9 +402,10 @@ func (b *Buffer) SetStringGradient(x, y int, s string, g Gradient, baseStyle Sty
 		style := baseStyle
 		style.Fg = gradColor
 
-		b.SetRune(curX, y, r, style)
+		b.setCluster(curX, y, cluster, width, style, "")
 		curX += width
 		totalWidth += width
+		clusterIdx++
 	}
 
 	return totalWidth
@@ -547,6 +616,9 @@ func (b *Buffer) String() string {
 				sb.WriteRune(' ')
 			} else {
 				sb.WriteRune(cell.Rune)
+				if cell.Combining != "" {
+					sb.WriteString(cell.Combining)
+				}
 			}
 		}
 		if y < b.height-1 {
@@ -570,6 +642,9 @@ func (b *Buffer) StringTrimmed() string {
 				line.WriteRune(' ')
 			} else {
 				line.WriteRune(cell.Rune)
+				if cell.Combining != "" {
+					line.WriteString(cell.Combining)
+				}
 			}
 		}
 		sb.WriteString(strings.TrimRight(line.String(), " "))

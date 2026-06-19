@@ -52,12 +52,15 @@ func bufferRowToANSI(buf *Buffer, row int, esc *escBuilder, caps Capabilities) s
 			styleSet = true
 		}
 
-		// Emit the rune (zero rune = empty cell, render as space).
+		// Emit the cluster glyph (empty cell renders as a space).
 		r := c.Rune
 		if r == 0 {
 			r = ' '
 		}
 		esc.WriteRune(r)
+		if c.Combining != "" {
+			esc.WriteString(c.Combining)
+		}
 	}
 
 	// Close any open hyperlink before resetting style.

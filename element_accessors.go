@@ -167,11 +167,19 @@ func (e *Element) Component() Component {
 	return e.component
 }
 
-// stringWidth returns the display width of a string in terminal cells.
+// stringWidth returns the display width of a string in terminal cells, measured
+// per grapheme cluster. A flag, ZWJ family emoji, skin-tone emoji, or decomposed
+// accented letter counts as the single glyph the terminal paints rather than the
+// sum of its code points.
 func stringWidth(s string) int {
 	width := 0
-	for _, r := range s {
-		width += RuneWidth(r)
+	for len(s) > 0 {
+		_, cw, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		width += cw
+		s = s[size:]
 	}
 	return width
 }
