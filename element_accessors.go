@@ -171,6 +171,9 @@ func (e *Element) Component() Component {
 // per grapheme cluster. A flag, ZWJ family emoji, skin-tone emoji, or decomposed
 // accented letter counts as the single glyph the terminal paints rather than the
 // sum of its code points.
+//
+// StringWidth is the exported wrapper.
+func StringWidth(s string) int { return stringWidth(s) }
 func stringWidth(s string) int {
 	width := 0
 	for len(s) > 0 {

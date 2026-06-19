@@ -15,6 +15,9 @@ import (
 // Indic conjuncts, and emoji tag sequences (subdivision flags) are not handled.
 // Width 0 is never returned: the buffer model reserves 0 for continuation cells,
 // and a defective leading combining mark becomes a width-1 cluster.
+//
+// NextCluster is the exported wrapper. It behaves identically.
+func NextCluster(s string) (cluster string, width, size int) { return nextCluster(s) }
 func nextCluster(s string) (cluster string, width, size int) {
 	if len(s) == 0 {
 		return "", 0, 0
@@ -206,6 +209,11 @@ func clusterCount(s string) int {
 	}
 	return n
 }
+
+// ClusterCount returns the number of user-perceived characters (grapheme
+// clusters) in s. This accounts for multi-rune clusters — flags, ZWJ emoji
+// families, and decomposed accents each count as one cluster.
+func ClusterCount(s string) int { return clusterCount(s) }
 
 // clusterEnd returns the rune index at the end of the cluster that contains the
 // rune at clusterStartRuneIdx in s. The target may be at a cluster boundary
