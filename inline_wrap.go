@@ -211,7 +211,8 @@ func wrapInlineStyledRows(text string, width int) []string {
 
 		if cw > width {
 			cw = 1
-			// Fall through so the normal pre-flush check runs before writing "?".
+			// Run the pre-flush check before writing "?" so an already-full row
+			// is flushed first (mirrors wrapInlineVisualRows behavior).
 			if col+cw > width {
 				flush()
 			}
@@ -240,10 +241,9 @@ func wrapInlineStyledRows(text string, width int) []string {
 // cluster's display width. ANSI escape sequences are treated as cluster
 // boundaries — they don't affect the width.
 //
-// This is the ANSI-aware analogue of clusterAdvance/nextCluster. The
-// extending loop (combining marks, ZWJ+base, RI pairs) mirrors the logic
-// in clusterAdvance (grapheme.go). If you modify the extension rules there,
-// update this function to match.
+// This is the ANSI-aware analogue of clusterAdvance/nextCluster. Width
+// updates for combining marks, VS16, and VS15 are delegated to the shared
+// clusterExtendUpdateWidth helper so both state machines stay in sync.
 func nextClusterWidth(text string, pos *int) int {
 	start := *pos
 	// Decode the base rune and its width.
@@ -281,9 +281,7 @@ func nextClusterWidth(text string, pos *int) int {
 
 		if graphemeExtend(r2) {
 			*pos += sz2
-			if isVS16(r2) {
-				w = 2
-			}
+			w = clusterExtendUpdateWidth(r2, r, w)
 			lastWasZWJ = isZWJ(r2)
 			continue
 		}
