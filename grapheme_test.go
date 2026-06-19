@@ -42,6 +42,7 @@ func clusterRuneStarts(s string) []int {
 	}
 	return starts
 }
+
 const (
 	emojiRocket  = "\U0001F680"
 	emojiFlagUS  = "\U0001F1FA\U0001F1F8"
