@@ -450,8 +450,8 @@ func TestBuffer_SetStringGradient(t *testing.T) {
 			// Verify first character has start color
 			if len(tt.text) > 0 {
 				cell := buf.Cell(0, 0)
-				if cell.Rune != rune(tt.text[0]) {
-					t.Errorf("First cell rune = %c, want %c", cell.Rune, rune(tt.text[0]))
+				if cell.Rune != []rune(tt.text)[0] {
+					t.Errorf("First cell rune = %q, want %q", cell.Rune, []rune(tt.text)[0])
 				}
 			}
 		})

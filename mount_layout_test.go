@@ -268,8 +268,11 @@ func extractBufferText(buf *Buffer, width, height int) string {
 	var sb strings.Builder
 	for y := range height {
 		for x := range width {
-			c := buf.Cell(x, y)
-			sb.WriteRune(c.Rune)
+				c := buf.Cell(x, y)
+			if c.Rune != 0 {
+				sb.WriteRune(c.Rune)
+				sb.WriteString(c.Combining)
+			}
 		}
 		sb.WriteRune('\n')
 	}
