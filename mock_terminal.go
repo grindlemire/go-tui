@@ -220,6 +220,9 @@ func (m *MockTerminal) String() string {
 				sb.WriteRune(' ')
 			} else {
 				sb.WriteRune(cell.Rune)
+				if cell.Combining != "" {
+					sb.WriteString(cell.Combining)
+				}
 			}
 		}
 		if y < m.height-1 {
@@ -243,6 +246,9 @@ func (m *MockTerminal) StringTrimmed() string {
 				line.WriteRune(' ')
 			} else {
 				line.WriteRune(cell.Rune)
+				if cell.Combining != "" {
+					line.WriteString(cell.Combining)
+				}
 			}
 		}
 		sb.WriteString(strings.TrimRight(line.String(), " "))
