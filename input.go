@@ -111,7 +111,8 @@ func (inp *Input) visibleWidth() int {
 // window. scrollPos stores a display column; the cursor's display column
 // is computed from its rune index via runeIndexToDisplayCol.
 func (inp *Input) ensureCursorVisible() {
-	cursorCol := runeIndexToDisplayCol(inp.text.Get(), inp.clampCursorPos())
+	text := inp.text.Get()
+	cursorCol := runeIndexToDisplayCol(text, inp.clampCursorPos())
 	scroll := inp.scrollPos.Get()
 	visible := inp.visibleWidth()
 	if visible <= 0 {
@@ -127,8 +128,12 @@ func (inp *Input) ensureCursorVisible() {
 
 	// Cursor is right of the visible window (reserve 1 column for the cursor
 	// glyph itself): scroll forward so cursor is at the rightmost column.
+	// Snap the new scroll down to the nearest cluster-start column so that
+	// viewportText doesn't land in the middle of a wide cluster and push
+	// the cursor out of the visible window.
 	if cursorCol >= scroll+visible {
-		inp.scrollPos.Set(cursorCol - visible + 1)
+		want := cursorCol - visible + 1
+		inp.scrollPos.Set(snapColToClusterStart(text, want))
 	}
 }
 
@@ -377,6 +382,37 @@ func (inp *Input) submit(ke KeyEvent) {
 	}
 }
 
+// snapColToClusterStart snaps a display column up to the nearest column
+// that aligns with a cluster boundary (the start of the next cluster after
+// col). For ASCII text every column is a boundary, so this is a no-op.
+// For CJK/emoji where clusters are 2 columns wide, this ensures the scroll
+// position never splits a cluster.
+func snapColToClusterStart(s string, col int) int {
+	if col <= 0 {
+		return 0
+	}
+	cur := 0
+	for len(s) > 0 {
+		_, w, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		s = s[size:]
+		next := cur + w
+		if next >= col {
+			// col falls at or before the boundary after this cluster.
+			// If col is already at cur (a boundary), return it.
+			// If col is inside (cur < col < next), snap up to next.
+			if col == cur {
+				return col
+			}
+			return next
+		}
+		cur = next
+	}
+	return col
+}
+
 // --- Display ---
 
 // displayCluster represents one grapheme cluster in the display stream.
@@ -463,19 +499,23 @@ func (inp *Input) viewportText(clusters []displayCluster, _ int, visible int) st
 		return ""
 	}
 
-	// Find the first cluster whose column range includes or follows scrollPos.
-	startIdx := 0
+	// Find the first cluster whose column range starts at or after scrollPos.
+	// If scroll falls inside a cluster (between its start and end), that
+	// cluster is skipped — we can't show half a cluster. The next cluster
+	// whose start column is >= scroll becomes the first visible one.
+	startIdx := len(clusters)
 	col := 0
 	for i, c := range clusters {
-		if col+c.width > scroll {
-			// This cluster's column range contains or exceeds scroll.
-			// scrollPos is computed by ensureCursorVisible which always lands
-			// on a column boundary, so this never splits a cluster in practice.
+		if col >= scroll {
 			startIdx = i
 			break
 		}
 		col += c.width
-		startIdx = i + 1
+		if col > scroll {
+			// scroll fell inside this cluster: skip it.
+			startIdx = i + 1
+			break
+		}
 	}
 
 	// Build the visible string up to visible columns.
