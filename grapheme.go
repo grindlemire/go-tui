@@ -197,11 +197,13 @@ func regionalIndicator(r rune) bool {
 	return r >= 0x1F1E6 && r <= 0x1F1FF
 }
 
-// clusterCount returns the number of grapheme clusters in s.
-func clusterCount(s string) int {
+// ClusterCount returns the number of user-perceived characters (grapheme
+// clusters) in s. This accounts for multi-rune clusters — flags, ZWJ emoji
+// families, and decomposed accents each count as one cluster.
+func ClusterCount(s string) int {
 	n := 0
 	for len(s) > 0 {
-		_, _, size := nextCluster(s)
+		_, _, size := NextCluster(s)
 		if size == 0 {
 			break
 		}
@@ -211,10 +213,25 @@ func clusterCount(s string) int {
 	return n
 }
 
-// ClusterCount returns the number of user-perceived characters (grapheme
-// clusters) in s. This accounts for multi-rune clusters — flags, ZWJ emoji
-// families, and decomposed accents each count as one cluster.
-func ClusterCount(s string) int { return clusterCount(s) }
+// clusterCount is the internal equivalent for use inside the package.
+func clusterCount(s string) int { return ClusterCount(s) }
+
+// ClusterRuneCount returns the total number of Unicode code points (runes)
+// in s by walking grapheme clusters via NextCluster. This is equivalent to
+// utf8.RuneCountInString but uses the grapheme iterator so the two stay in
+// sync for callers that need both cluster counts and rune counts.
+func ClusterRuneCount(s string) int {
+	n := 0
+	for len(s) > 0 {
+		_, _, size := NextCluster(s)
+		if size == 0 {
+			break
+		}
+		n += utf8.RuneCountInString(s[:size])
+		s = s[size:]
+	}
+	return n
+}
 
 // clusterEnd returns the rune index at the end of the cluster that contains the
 // rune at clusterStartRuneIdx in s. The target may be at a cluster boundary
