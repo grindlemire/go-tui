@@ -201,11 +201,9 @@ func wrapInlineStyledRows(text string, width int) []string {
 		cw := nextClusterWidth(text, &i)
 
 		if cw == 0 {
-			// Reached end-of-string or newline.
-			if i < len(text) && text[i] == '\n' {
-				flush()
-				i++
-			}
+			// Reached end-of-string or newline. newline was already consumed
+			// and *pos advanced past it. Flush the current row.
+			flush()
 			continue
 		}
 
@@ -238,8 +236,10 @@ func wrapInlineStyledRows(text string, width int) []string {
 
 // nextClusterWidth consumes the next grapheme cluster from text starting at
 // position *pos, advances *pos past the cluster (in bytes), and returns the
-// cluster's display width. ANSI escape sequences are treated as cluster
-// boundaries — they don't affect the width.
+// cluster's display width. Returns 0 for both EOF (sz == 0) and newline; in
+// the newline case *pos is advanced past the newline so callers can flush
+// without peeking. ANSI escape sequences are treated as cluster boundaries
+// — they don't affect the width.
 //
 // This is the ANSI-aware analogue of clusterAdvance/nextCluster. Width
 // updates for combining marks, VS16, and VS15 are delegated to the shared
@@ -252,8 +252,9 @@ func nextClusterWidth(text string, pos *int) int {
 		return 0
 	}
 	if r == '\n' {
-		// Leave pos unchanged; caller can detect and flush.
-		return 0
+		// Advance past the newline so the caller doesn't need to peek.
+		*pos += sz
+		return 0 // signal to caller: flush
 	}
 	w := max(baseRuneWidth(r), 1)
 	*pos += sz

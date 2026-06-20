@@ -56,7 +56,8 @@ func NewCellWithWidth(r rune, style Style, width uint8) Cell {
 // cluster. The cluster's base rune is stored inline; only the remaining runes of
 // a true multi-rune cluster are cloned so the cell owns an independent backing
 // array without pinning a larger source string. Pass width 0 for continuation
-// cells.
+// cells (text is ignored). RuneWidth never returns 0 for printable characters,
+// so width==0 only occurs for explicit continuation-cell writes.
 func newClusterCell(text string, width uint8, style Style, link string) Cell {
 	if width == 0 || text == "" {
 		return Cell{Width: width, Style: style, Link: link} // Rune 0, Combining ""
