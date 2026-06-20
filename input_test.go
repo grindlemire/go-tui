@@ -643,8 +643,8 @@ func TestInput_DisplayText(t *testing.T) {
 			width: 10, text: "abc", cursorPos: 3, focused: false, want: "abc",
 		},
 		"unfocused long text shows scrolled viewport": {
-			// cursor at end forces scroll to 4, viewport shows the tail
-			width: 5, text: "abcdefgh", cursorPos: 8, focused: false, want: "efgh",
+			// scrollPos set to 4 shows the tail
+			width: 5, text: "abcdefgh", cursorPos: 8, scrollPos: 4, focused: false, want: "efgh",
 		},
 		"focused shows cursor at position": {
 			width: 10, text: "abc", cursorPos: 1, focused: true, blink: true, want: "a▌bc",

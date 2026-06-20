@@ -133,7 +133,7 @@ func (inp *Input) ensureCursorVisible() {
 	// out of the visible window.
 	if cursorCol >= scroll+visible {
 		want := cursorCol - visible + 1
-		inp.scrollPos.Set(snapColToClusterStart(text, want))
+		inp.scrollPos.Set(snapColToNextClusterBoundary(text, want))
 	}
 }
 
@@ -382,11 +382,11 @@ func (inp *Input) submit(ke KeyEvent) {
 	}
 }
 
-// snapColToClusterStart advances col to the next cluster boundary at or after
+// snapColToNextClusterBoundary advances col to the next cluster boundary at or after
 // col. For ASCII text every column is a boundary, so this is a no-op.
 // For CJK/emoji where clusters are 2 columns wide, this ensures the scroll
 // position never splits a cluster.
-func snapColToClusterStart(s string, col int) int {
+func snapColToNextClusterBoundary(s string, col int) int {
 	if col <= 0 {
 		return 0
 	}
@@ -448,6 +448,9 @@ func (inp *Input) displayText() string {
 		if len(allClusters) == 0 {
 			return " "
 		}
+		// In the unfocused path, scroll adjustment preserves the previously-set
+		// scroll position. ensureCursorVisible is only called in the focused path
+		// so that manually-scrolled text doesn't jump when the user blurs.
 		return inp.viewportText(allClusters, visible)
 	}
 
@@ -485,14 +488,16 @@ func (inp *Input) displayText() string {
 	withCursor = append(withCursor, cursorCluster)
 	withCursor = append(withCursor, allClusters[insertIdx:]...)
 
+	inp.ensureCursorVisible()
 	return inp.viewportText(withCursor, visible)
 }
 
 // viewportText returns the visible slice of clusters starting at scrollPos
 // (display column), filling at most visible display columns. The cursor is
 // expected to already be inserted into the cluster list.
+// Callers must call ensureCursorVisible first (focused path) or decide
+// whether scroll adjustment is desired (unfocused path skips it).
 func (inp *Input) viewportText(clusters []displayCluster, visible int) string {
-	inp.ensureCursorVisible()
 	scroll := max(inp.scrollPos.Get(), 0)
 	if visible <= 0 {
 		return ""
