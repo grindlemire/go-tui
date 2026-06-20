@@ -259,9 +259,9 @@ func TestRuneWidth_Emoji(t *testing.T) {
 
 	// BMP emoji with Emoji_Presentation=No — width 1 without VS16
 	narrowBmp := []rune{
-		'❤',  // U+2764 Heavy Black Heart (text-default)
-		'☀',  // U+2600 Sun (text-default)
-		'✔',  // U+2714 Check Mark (text-default)
+		'❤', // U+2764 Heavy Black Heart (text-default)
+		'☀', // U+2600 Sun (text-default)
+		'✔', // U+2714 Check Mark (text-default)
 	}
 	for _, r := range narrowBmp {
 		if w := RuneWidth(r); w != 1 {
@@ -421,29 +421,29 @@ func TestRuneWidth_EmojiRangeValidation(t *testing.T) {
 		0x2614, 0x2615, // Umbrella, hot beverage
 		0x2648, 0x2649, 0x264A, 0x264B, 0x264C, 0x264D,
 		0x264E, 0x264F, 0x2650, 0x2651, 0x2652, 0x2653, // Zodiac
-		0x267F, // Wheelchair
-		0x2693, // Anchor
-		0x26A1, // High voltage
+		0x267F,         // Wheelchair
+		0x2693,         // Anchor
+		0x26A1,         // High voltage
 		0x26AA, 0x26AB, // Circles
 		0x26BD, 0x26BE, // Soccer, baseball
 		0x26C4, 0x26C5, // Snowman, sun
-		0x26CE, // Ophiuchus
-		0x26D4, // No entry
-		0x26EA, // Church
+		0x26CE,         // Ophiuchus
+		0x26D4,         // No entry
+		0x26EA,         // Church
 		0x26F2, 0x26F3, // Fountain, flag
-		0x26F5, // Sailboat
-		0x26FA, // Tent
-		0x26FD, // Fuel pump
-		0x2705, // Check mark button
+		0x26F5,         // Sailboat
+		0x26FA,         // Tent
+		0x26FD,         // Fuel pump
+		0x2705,         // Check mark button
 		0x270A, 0x270B, // Fist, hand
-		0x2728, // Sparkles
-		0x274C, // Cross mark
-		0x274E, // Cross mark box
+		0x2728,                 // Sparkles
+		0x274C,                 // Cross mark
+		0x274E,                 // Cross mark box
 		0x2753, 0x2754, 0x2755, // Question/exclamation marks
-		0x2757, // Exclamation
+		0x2757,                 // Exclamation
 		0x2795, 0x2796, 0x2797, // Plus, minus, divide
-		0x27B0, // Curly loop
-		0x27BF, // Double curly loop
+		0x27B0,         // Curly loop
+		0x27BF,         // Double curly loop
 		0x2B1B, 0x2B1C, // Black/white large squares
 		0x2B50, // Star
 		0x2B55, // Hollow red circle
@@ -495,11 +495,20 @@ func TestRuneWidth_EmojiRangeValidation(t *testing.T) {
 
 	// Verify no overlaps with eastAsianWideRanges
 	eastAsian := []runeRange{
-		{0x1100, 0x115F}, {0x2329, 0x232A}, {0x2E80, 0x303E},
-		{0x3040, 0xA4CF}, {0xAC00, 0xD7A3}, {0xF900, 0xFAFF},
-		{0xFE10, 0xFE19}, {0xFE30, 0xFE6F}, {0xFF00, 0xFF60},
-		{0xFFE0, 0xFFE6}, {0x1B000, 0x1B12F}, {0x1B130, 0x1B167},
-		{0x20000, 0x2FFFD}, {0x30000, 0x3FFFD},
+		{0x1100, 0x115F},
+		{0x2329, 0x232A},
+		{0x2E80, 0x303E},
+		{0x3040, 0xA4CF},
+		{0xAC00, 0xD7A3},
+		{0xF900, 0xFAFF},
+		{0xFE10, 0xFE19},
+		{0xFE30, 0xFE6F},
+		{0xFF00, 0xFF60},
+		{0xFFE0, 0xFFE6},
+		{0x1B000, 0x1B12F},
+		{0x1B130, 0x1B167},
+		{0x20000, 0x2FFFD},
+		{0x30000, 0x3FFFD},
 	}
 	emoji := emojiWideRanges
 	for _, er := range emoji {
