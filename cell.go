@@ -159,7 +159,9 @@ var eastAsianWideRanges = []runeRange{
 var emojiWideRanges = []runeRange{
 	// Emoji_Presentation=Yes BMP emoji — these render at width 2 without VS16.
 	{min: 0x231A, max: 0x231B}, // Watch, hourglass
-	{min: 0x23E9, max: 0x23F3}, // Clock face + timer + watch
+	{min: 0x23E9, max: 0x23EC}, // Fast-forward, rewind, etc.
+	{min: 0x23F0, max: 0x23F0}, // Alarm clock
+	{min: 0x23F3, max: 0x23F3}, // Hourglass not done
 	{min: 0x25FD, max: 0x25FE}, // Medium-small squares
 	{min: 0x2614, max: 0x2615}, // Umbrella, hot beverage
 	{min: 0x2648, max: 0x2653}, // Zodiac
@@ -177,10 +179,16 @@ var emojiWideRanges = []runeRange{
 	{min: 0x26FA, max: 0x26FA}, // Tent
 	{min: 0x26FD, max: 0x26FD}, // Fuel pump
 	{min: 0x270A, max: 0x270B}, // Raised fist, raised hand
+	{min: 0x2705, max: 0x2705}, // Check mark button
+	{min: 0x2728, max: 0x2728}, // Sparkles
 	{min: 0x274C, max: 0x274C}, // Cross mark
 	{min: 0x274E, max: 0x274E}, // Cross mark in box
+	{min: 0x2753, max: 0x2755}, // Question, exclamation marks
 	{min: 0x2757, max: 0x2757}, // Exclamation mark
+	{min: 0x2795, max: 0x2797}, // Plus, minus, divide
+	{min: 0x27B0, max: 0x27B0}, // Curly loop
 	{min: 0x27BF, max: 0x27BF}, // Double curly loop
+	{min: 0x2B1B, max: 0x2B1C}, // Black/white large squares
 	{min: 0x2B50, max: 0x2B50}, // Star
 	{min: 0x2B55, max: 0x2B55}, // Hollow red circle
 	// SMP emoji (U+1Fxxx) — all are Emoji_Presentation=Yes (emoji-default).

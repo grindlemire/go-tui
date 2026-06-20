@@ -243,6 +243,12 @@ func TestRuneWidth_Emoji(t *testing.T) {
 		'☕', // U+2615 Hot Beverage
 		'⚡', // U+26A1 High Voltage
 		'⭐', // U+2B50 Star
+		'✅', // U+2705 Check Mark Button
+		'✨', // U+2728 Sparkles
+		'❓', // U+2753 Red Question Mark
+		'➕', // U+2795 Plus
+		'➰', // U+27B0 Curly Loop
+		'⬛', // U+2B1B Black Large Square
 	}
 
 	for _, r := range emojis {
@@ -253,10 +259,9 @@ func TestRuneWidth_Emoji(t *testing.T) {
 
 	// BMP emoji with Emoji_Presentation=No — width 1 without VS16
 	narrowBmp := []rune{
-		'✨', // U+2728 Sparkles (text-default)
-		'✅', // U+2705 Check Mark (text-default)
 		'❤',  // U+2764 Heavy Black Heart (text-default)
 		'☀',  // U+2600 Sun (text-default)
+		'✔',  // U+2714 Check Mark (text-default)
 	}
 	for _, r := range narrowBmp {
 		if w := RuneWidth(r); w != 1 {
@@ -409,8 +414,9 @@ func TestRuneWidth_EmojiRangeValidation(t *testing.T) {
 	// Emoji_Presentation=Yes BMP emoji + all SMP emoji — always width 2
 	mustBeWide := []rune{
 		0x231A, 0x231B, // Watch, hourglass
-		0x23E9, 0x23EA, 0x23EB, 0x23EC, 0x23ED, 0x23EE,
-		0x23EF, 0x23F0, 0x23F1, 0x23F2, 0x23F3,
+		0x23E9, 0x23EA, 0x23EB, 0x23EC, // Fast-forward etc.
+		0x23F0, // Alarm clock
+		0x23F3, // Hourglass not done
 		0x25FD, 0x25FE,
 		0x2614, 0x2615, // Umbrella, hot beverage
 		0x2648, 0x2649, 0x264A, 0x264B, 0x264C, 0x264D,
@@ -428,11 +434,17 @@ func TestRuneWidth_EmojiRangeValidation(t *testing.T) {
 		0x26F5, // Sailboat
 		0x26FA, // Tent
 		0x26FD, // Fuel pump
+		0x2705, // Check mark button
 		0x270A, 0x270B, // Fist, hand
+		0x2728, // Sparkles
 		0x274C, // Cross mark
 		0x274E, // Cross mark box
+		0x2753, 0x2754, 0x2755, // Question/exclamation marks
 		0x2757, // Exclamation
+		0x2795, 0x2796, 0x2797, // Plus, minus, divide
+		0x27B0, // Curly loop
 		0x27BF, // Double curly loop
+		0x2B1B, 0x2B1C, // Black/white large squares
 		0x2B50, // Star
 		0x2B55, // Hollow red circle
 		0x1F004, 0x1F0CF, 0x1F18E, 0x1F191, 0x1F192,
