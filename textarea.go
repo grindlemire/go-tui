@@ -242,18 +242,21 @@ func (t *TextArea) KeyMap() KeyMap {
 	}
 
 	if t.submitKey == KeyEnter {
-		km = append(km,
+		km = append(
+			km,
 			OnFocused(Rune('j').Ctrl(), t.insertNewline),
 			OnFocused(KeyEnter, t.submit),
 		)
 	} else {
-		km = append(km,
+		km = append(
+			km,
 			OnFocused(KeyEnter, t.insertNewline),
 			OnFocused(t.submitKey, t.submit),
 		)
 	}
 
-	km = append(km,
+	km = append(
+		km,
 		OnFocused(KeyEscape, func(ke KeyEvent) {
 			if app := ke.App(); app != nil {
 				app.BlurFocused()
@@ -482,7 +485,7 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	pos := t.clampCursorPos()
 
 	currentRow := 0
-	currentRuneCol := 0 // rune index within the current line (returned as col)
+	currentRuneCol := 0    // rune index within the current line (returned as col)
 	currentDisplayCol := 0 // display column for wrap boundary detection
 	lineIdx := 0
 	width := t.wrapWidth()
@@ -514,7 +517,7 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 			lineIdx++
 		}
 
-		currentRuneCol += rc // rune index for callers
+		currentRuneCol += rc    // rune index for callers
 		currentDisplayCol += cw // display column for wrap detection
 		runePos += rc
 		rest = rest[size:]
