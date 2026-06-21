@@ -142,13 +142,12 @@ func TestTextArea_CursorRowCol_WideChars(t *testing.T) {
 	}
 
 	// width 10, "一二三四五六七八九十" wraps to ["一二三四五", "六七八九十"].
-	// Both wrapped lines are display-full, so boundary positions move to the
-	// next visual line (downstream affinity); end of text lands on a phantom
-	// row past the last line.
+	// Both wrapped lines are display-full (10 columns each).
+	// Col values are now display columns (2 per CJK char).
 	tests := map[string]tc{
 		"start of text":              {pos: 0, wantRow: 0, wantCol: 0},
 		"soft wrap boundary":         {pos: 5, wantRow: 1, wantCol: 0},
-		"after first rune of second": {pos: 6, wantRow: 1, wantCol: 1},
+		"after first rune of second": {pos: 6, wantRow: 1, wantCol: 2},
 		"end of text":                {pos: 10, wantRow: 2, wantCol: 0},
 	}
 
@@ -244,8 +243,10 @@ func TestTextArea_CursorRowCol_WrapBoundaryAffinity(t *testing.T) {
 			text: "abcdefgh", width: 4, pos: 4, wantRow: 1, wantCol: 0,
 		},
 		"soft boundary on non-full line stays at line end": {
-			// "ab界" is 4 columns in width 5, so the cursor still fits there
-			text: "ab界界", width: 5, pos: 3, wantRow: 0, wantCol: 3,
+			// "ab界" is 4 display columns (1+1+2) in width 5, "ab界界" is 6,
+			// so wrap splits to ["ab界", "界"]. Cursor at rune 3 (second 界's
+			// first display col) sits at display column 4 on row 0.
+			text: "ab界界", width: 5, pos: 3, wantRow: 0, wantCol: 4,
 		},
 		"hard newline after full line stays at line end": {
 			text: "abcd\nef", width: 4, pos: 4, wantRow: 0, wantCol: 4,

@@ -36,9 +36,13 @@ func nextCluster(s string) (cluster string, width, size int) {
 	}
 
 	// ASCII fast path: only when the next byte is also ASCII (or we are at the
-	// end). A non-ASCII next byte (leading byte >= 0x80, e.g. 0xCC starting a
-	// combining accent) is NOT a continuation byte but could still attach to
-	// this base, so it forces the full decode below.
+	// end). A non-ASCII next byte (leading byte or continuation byte >= 0x80)
+	// forces the full clusterAdvance path. For a bare ASCII byte followed by a
+	// raw continuation byte (malformed UTF-8), clusterAdvance correctly returns
+	// just the ASCII byte — the continuation byte starts its own cluster.
+	// Examples that skip the fast path:
+	//   'a' + 0xCC (leading byte of a combining mark) — attaches via graphemeExtend
+	//   'a' + 0x80 (raw continuation byte, malformed) — breaks, 'a' is its own cluster
 	if s[0] < 0x80 {
 		if len(s) == 1 || s[1] < 0x80 {
 			return s[:1], 1, 1

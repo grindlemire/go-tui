@@ -480,7 +480,6 @@ func (t *TextArea) wrapText() []string {
 func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	text := t.text.Get()
 	pos := t.clampCursorPos()
-	textRunes := []rune(text)
 
 	currentRow := 0
 	currentCol := 0
@@ -488,25 +487,38 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	width := t.wrapWidth()
 	wrapping := width > 0
 
-	for i := 0; i < len(textRunes) && i < pos; i++ {
-		if textRunes[i] == '\n' {
+	runePos := 0
+	rest := text
+	for len(rest) > 0 && runePos < pos {
+		cluster, cw, size, rc := NextClusterRunes(rest)
+		if size == 0 {
+			break
+		}
+
+		if cluster == "\n" {
 			currentRow++
 			currentCol = 0
 			lineIdx++
-		} else {
-			currentCol++
-			if wrapping && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
-				currentRow++
-				currentCol = 1
-				lineIdx++
-			}
+			runePos += rc
+			rest = rest[size:]
+			continue
 		}
+
+		if wrapping && lineIdx < len(lines) && currentCol > 0 && currentCol+cw > stringWidth(lines[lineIdx]) {
+			currentRow++
+			currentCol = 0
+			lineIdx++
+		}
+
+		currentCol += cw
+		runePos += rc
+		rest = rest[size:]
 	}
 
+	// Check for the phantom cursor row: cursor at end of a display-full line.
 	if wrapping && lineIdx < len(lines) && currentCol > 0 &&
-		currentCol == utf8.RuneCountInString(lines[lineIdx]) &&
-		stringWidth(lines[lineIdx]) >= width &&
-		(pos == len(textRunes) || textRunes[pos] != '\n') {
+		currentCol == stringWidth(lines[lineIdx]) && currentCol >= width &&
+		(pos == utf8.RuneCountInString(text) || rest == "" || (len(rest) > 0 && rest[0] != '\n')) {
 		return currentRow + 1, 0
 	}
 
@@ -516,46 +528,54 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 // posFromRowCol converts row/col back to absolute position.
 func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	text := t.text.Get()
-	textRunes := []rune(text)
 
 	currentRow := 0
 	currentCol := 0
 	lineIdx := 0
 	wrapping := t.wrapWidth() > 0
 
-	for i := range textRunes {
+	runePos := 0
+	rest := text
+	for len(rest) > 0 {
 		if currentRow == targetRow && currentCol == targetCol {
-			return i
+			return runePos
 		}
 
-		if textRunes[i] == '\n' {
+		cluster, cw, size, rc := NextClusterRunes(rest)
+		if size == 0 {
+			return runePos
+		}
+
+		if cluster == "\n" {
 			if currentRow == targetRow {
-				return i
+				return runePos
 			}
 			currentRow++
 			currentCol = 0
 			lineIdx++
-		} else {
-			currentCol++
-			if wrapping && lineIdx < len(lines) && currentCol > utf8.RuneCountInString(lines[lineIdx]) {
-				if currentRow == targetRow {
-					return i
-				}
-				currentRow++
-				currentCol = 1
-				lineIdx++
-				// The position before rune i is the start of the new line, so
-				// (row, 0) targets on soft-wrapped lines resolve here. Without
-				// this, column-0 targets after a soft wrap fall through the
-				// loop and land at the end of the text.
-				if currentRow == targetRow && targetCol == 0 {
-					return i
-				}
+			runePos += rc
+			rest = rest[size:]
+			continue
+		}
+
+		if wrapping && lineIdx < len(lines) && currentCol > 0 && currentCol+cw > stringWidth(lines[lineIdx]) {
+			if currentRow == targetRow {
+				return runePos
+			}
+			currentRow++
+			currentCol = 0
+			lineIdx++
+			if currentRow == targetRow && targetCol == 0 {
+				return runePos
 			}
 		}
+
+		currentCol += cw
+		runePos += rc
+		rest = rest[size:]
 	}
 
-	return len(textRunes)
+	return runePos
 }
 
 // phantomCursorRow reports whether the cursor sits one row past the last

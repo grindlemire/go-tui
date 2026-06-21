@@ -136,7 +136,7 @@ func segmentStyledRunes(rs []styledRune) []styledCluster {
 			base = rs[ri]
 		}
 		out = append(out, styledCluster{
-			text:  cluster,
+			text:  strings.Clone(cluster),
 			width: w,
 			st:    base.st,
 			link:  base.link,
