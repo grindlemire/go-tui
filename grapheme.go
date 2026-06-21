@@ -251,10 +251,6 @@ func ClusterRuneCount(s string) int {
 // Unlike the O(N) clusterRuneStarts-based approach, this walks clusters
 // incrementally and stops as soon as it passes the target, making it O(pos).
 func clusterEnd(s string, clusterStartRuneIdx int) int {
-	// Return the rune index at the end of the cluster that contains the target
-	// rune position. The target may be at a cluster boundary (normal case after
-	// clampCursorPos) or inside a multi-rune cluster (insertChar after inserting
-	// a combining mark).
 	runeAt := 0
 	for len(s) > 0 {
 		_, _, size := nextCluster(s)
