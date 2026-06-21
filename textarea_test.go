@@ -417,3 +417,15 @@ func TestTextArea_HideVirtualCursor(t *testing.T) {
 		})
 	}
 }
+
+func TestTextArea_BlockCursor_AtHardNewline_DoesNotSplitCluster(t *testing.T) {
+	ta := NewTextArea(WithTextAreaWidth(4))
+	ta.BindApp(testApp)
+	ta.Focus()
+	ta.SetText("ab\U0001F1FA\U0001F1F8\n")
+	ta.cursorPos.Set(3)
+	result := ta.lineWithCursor(0)
+	if strings.Contains(result, "🇺") && !strings.Contains(result, "🇺🇸") {
+		t.Errorf("lineWithCursor split the flag cluster: %q", result)
+	}
+}

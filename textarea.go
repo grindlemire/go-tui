@@ -645,7 +645,7 @@ func (t *TextArea) lineWithCursor(lineIdx int) string {
 				if !t.blink.Get() {
 					return line
 				}
-				return string(runes[:len(runes)-1]) + string(t.cursorRune)
+				return string(runes[:snapRuneToClusterStart(line, len(runes)-1)]) + string(t.cursorRune)
 			}
 			return line + cursor
 		}
