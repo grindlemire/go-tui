@@ -482,7 +482,8 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	pos := t.clampCursorPos()
 
 	currentRow := 0
-	currentCol := 0
+	currentRuneCol := 0 // rune index within the current line (returned as col)
+	currentDisplayCol := 0 // display column for wrap boundary detection
 	lineIdx := 0
 	width := t.wrapWidth()
 	wrapping := width > 0
@@ -497,35 +498,40 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 
 		if cluster == "\n" {
 			currentRow++
-			currentCol = 0
+			currentRuneCol = 0
+			currentDisplayCol = 0
 			lineIdx++
 			runePos += rc
 			rest = rest[size:]
 			continue
 		}
 
-		if wrapping && lineIdx < len(lines) && currentCol > 0 && currentCol+cw > stringWidth(lines[lineIdx]) {
+		// Check if this cluster crosses the wrap boundary.
+		if wrapping && lineIdx < len(lines) && currentDisplayCol > 0 && currentDisplayCol+cw > stringWidth(lines[lineIdx]) {
 			currentRow++
-			currentCol = 0
+			currentRuneCol = 0
+			currentDisplayCol = 0
 			lineIdx++
 		}
 
-		currentCol += cw
+		currentRuneCol += rc // rune index for callers
+		currentDisplayCol += cw // display column for wrap detection
 		runePos += rc
 		rest = rest[size:]
 	}
 
 	// Check for the phantom cursor row: cursor at end of a display-full line.
-	if wrapping && lineIdx < len(lines) && currentCol > 0 &&
-		currentCol == stringWidth(lines[lineIdx]) && currentCol >= width &&
-		(pos == utf8.RuneCountInString(text) || rest == "" || (len(rest) > 0 && rest[0] != '\n')) {
+	if wrapping && lineIdx < len(lines) && currentRuneCol > 0 &&
+		currentDisplayCol == stringWidth(lines[lineIdx]) && currentDisplayCol >= width &&
+		(pos == utf8.RuneCountInString(text) || (len(rest) > 0 && rest[0] != '\n')) {
 		return currentRow + 1, 0
 	}
 
-	return currentRow, currentCol
+	return currentRow, currentRuneCol
 }
 
-// posFromRowCol converts row/col back to absolute position.
+// posFromRowCol converts row/col back to absolute rune position.
+// The col parameter is a rune index within the target row.
 func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	text := t.text.Get()
 
@@ -534,6 +540,10 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 	lineIdx := 0
 	wrapping := t.wrapWidth() > 0
 
+	// Walk clusters, tracking display columns for wrap detection,
+	// but keeping currentCol as a rune index so targetCol (a rune index)
+	// can be matched.
+	displayCol := 0
 	runePos := 0
 	rest := text
 	for len(rest) > 0 {
@@ -552,25 +562,31 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 			}
 			currentRow++
 			currentCol = 0
+			displayCol = 0
 			lineIdx++
 			runePos += rc
 			rest = rest[size:]
 			continue
 		}
 
-		if wrapping && lineIdx < len(lines) && currentCol > 0 && currentCol+cw > stringWidth(lines[lineIdx]) {
+		// Check if this cluster crosses the wrap boundary.
+		if wrapping && lineIdx < len(lines) && displayCol > 0 && displayCol+cw > stringWidth(lines[lineIdx]) {
 			if currentRow == targetRow {
+				// The wrap boundary is the start of the next line.
 				return runePos
 			}
 			currentRow++
 			currentCol = 0
+			displayCol = 0
 			lineIdx++
+			// Handle targetCol == 0 on a soft-wrapped line.
 			if currentRow == targetRow && targetCol == 0 {
 				return runePos
 			}
 		}
 
-		currentCol += cw
+		currentCol += rc
+		displayCol += cw
 		runePos += rc
 		rest = rest[size:]
 	}
