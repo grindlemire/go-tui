@@ -1,15 +1,28 @@
 package tui
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
 
 // Cell represents a single character cell in the terminal buffer.
-// Wide characters (CJK, emoji) occupy multiple cells; the first cell holds
-// the rune, subsequent cells are marked as continuations.
+// Wide characters (CJK, emoji) and grapheme clusters (flags, ZWJ families,
+// skin-tone emoji, accented letters) occupy multiple cells; the first cell
+// holds the cluster's glyph, subsequent cells are marked as continuations.
+//
+// A cell stores its glyph as a base Rune plus an optional Combining string
+// holding the remaining runes of a multi-rune cluster. The vast majority of
+// cells (all ASCII, all CJK, single-code-point emoji) are a single rune stored
+// inline with no allocation. Only genuine multi-rune clusters (flags, ZWJ
+// families, decomposed accents, skin-tone, keycaps) populate Combining, which
+// newClusterCell clones so the buffer never pins a large source string alive.
 type Cell struct {
-	Rune  rune   // The character (0 for continuation cells)
-	Style Style  // Visual styling
-	Width uint8  // Display width (1 or 2; 0 for continuation)
-	Link  string // Optional OSC 8 hyperlink target ("" = none)
+	Rune      rune   // Base (first) rune of the cluster; 0 for continuation/blank cells
+	Combining string // Remaining runes of the cluster ("" for single-rune cells)
+	Style     Style  // Visual styling
+	Width     uint8  // Display width (1 or 2; 0 for continuation)
+	Link      string // Optional OSC 8 hyperlink target ("" = none)
 }
 
 // NewCell creates a new Cell with automatic width detection.
@@ -21,13 +34,47 @@ func NewCell(r rune, style Style) Cell {
 	}
 }
 
-// NewCellWithWidth creates a new Cell with an explicit width.
+// NewCellWithWidth creates a new Cell from a single rune with an explicit width.
 // Use this for continuation cells (width 0) or when width is already known.
+// A continuation cell (width 0) or a zero rune leaves Rune 0, so the cell reads
+// as empty.
 func NewCellWithWidth(r rune, style Style, width uint8) Cell {
+	if width == 0 || r == 0 {
+		return Cell{
+			Style: style,
+			Width: width,
+		}
+	}
 	return Cell{
 		Rune:  r,
 		Style: style,
 		Width: width,
+	}
+}
+
+// newClusterCell creates a Cell holding a multi-rune (or single-rune) grapheme
+// cluster. The cluster's base rune is stored inline; only the remaining runes of
+// a true multi-rune cluster are cloned so the cell owns an independent backing
+// array without pinning a larger source string. Pass width 0 for continuation
+// cells (text is ignored). RuneWidth never returns 0 for printable characters,
+// so width==0 only occurs for explicit continuation-cell writes.
+func newClusterCell(text string, width uint8, style Style, link string) Cell {
+	if width == 0 || text == "" {
+		return Cell{Width: width, Style: style, Link: link} // Rune 0, Combining ""
+	}
+	r, sz := utf8.DecodeRuneInString(text)
+	var comb string
+	if sz < len(text) {
+		// Only true multi-rune clusters reach here; clone so the cell does not
+		// pin the source string alive.
+		comb = strings.Clone(text[sz:])
+	}
+	return Cell{
+		Rune:      r,
+		Combining: comb,
+		Style:     style,
+		Width:     width,
+		Link:      link,
 	}
 }
 
@@ -39,18 +86,18 @@ func (c Cell) IsContinuation() bool {
 
 // Equal returns true if both cells are identical.
 func (c Cell) Equal(other Cell) bool {
-	return c.Rune == other.Rune && c.Style.Equal(other.Style) && c.Width == other.Width && c.Link == other.Link
+	return c.Rune == other.Rune && c.Combining == other.Combining && c.Style.Equal(other.Style) && c.Width == other.Width && c.Link == other.Link
 }
 
 // IsEmpty returns true if this cell represents an empty/blank cell.
-// A cell is empty if it's a space (or zero rune) with default styling.
+// A cell is empty if it holds no glyph (or a single space) with default styling.
 func (c Cell) IsEmpty() bool {
-	// Zero rune with any style is considered empty
+	// No glyph (zero/continuation cell) is considered empty
 	if c.Rune == 0 {
 		return true
 	}
 	// Space with default style is considered empty
-	if c.Rune == ' ' {
+	if c.Rune == ' ' && c.Combining == "" {
 		return c.Style.Equal(NewStyle())
 	}
 	return false
@@ -111,6 +158,41 @@ var eastAsianWideRanges = []runeRange{
 
 // Emoji ranges that terminals commonly render as 2-cell glyphs.
 var emojiWideRanges = []runeRange{
+	// Emoji_Presentation=Yes BMP emoji — these render at width 2 without VS16.
+	{min: 0x231A, max: 0x231B}, // Watch, hourglass
+	{min: 0x23E9, max: 0x23EC}, // Fast-forward, rewind, etc.
+	{min: 0x23F0, max: 0x23F0}, // Alarm clock
+	{min: 0x23F3, max: 0x23F3}, // Hourglass not done
+	{min: 0x25FD, max: 0x25FE}, // Medium-small squares
+	{min: 0x2614, max: 0x2615}, // Umbrella, hot beverage
+	{min: 0x2648, max: 0x2653}, // Zodiac
+	{min: 0x267F, max: 0x267F}, // Wheelchair
+	{min: 0x2693, max: 0x2693}, // Anchor
+	{min: 0x26A1, max: 0x26A1}, // High voltage
+	{min: 0x26AA, max: 0x26AB}, // Circles
+	{min: 0x26BD, max: 0x26BE}, // Soccer, baseball
+	{min: 0x26C4, max: 0x26C5}, // Snowman, sun behind cloud
+	{min: 0x26CE, max: 0x26CE}, // Ophiuchus
+	{min: 0x26D4, max: 0x26D4}, // No entry
+	{min: 0x26EA, max: 0x26EA}, // Church
+	{min: 0x26F2, max: 0x26F3}, // Fountain, flag in hole
+	{min: 0x26F5, max: 0x26F5}, // Sailboat
+	{min: 0x26FA, max: 0x26FA}, // Tent
+	{min: 0x26FD, max: 0x26FD}, // Fuel pump
+	{min: 0x270A, max: 0x270B}, // Raised fist, raised hand
+	{min: 0x2705, max: 0x2705}, // Check mark button
+	{min: 0x2728, max: 0x2728}, // Sparkles
+	{min: 0x274C, max: 0x274C}, // Cross mark
+	{min: 0x274E, max: 0x274E}, // Cross mark in box
+	{min: 0x2753, max: 0x2755}, // Question, exclamation marks
+	{min: 0x2757, max: 0x2757}, // Exclamation mark
+	{min: 0x2795, max: 0x2797}, // Plus, minus, divide
+	{min: 0x27B0, max: 0x27B0}, // Curly loop
+	{min: 0x27BF, max: 0x27BF}, // Double curly loop
+	{min: 0x2B1B, max: 0x2B1C}, // Black/white large squares
+	{min: 0x2B50, max: 0x2B50}, // Star
+	{min: 0x2B55, max: 0x2B55}, // Hollow red circle
+	// SMP emoji (U+1Fxxx) — all are Emoji_Presentation=Yes (emoji-default).
 	{min: 0x1F004, max: 0x1F004}, // Mahjong tile red dragon
 	{min: 0x1F0CF, max: 0x1F0CF}, // Playing card black joker
 	{min: 0x1F18E, max: 0x1F18E}, // Negative squared AB

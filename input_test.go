@@ -180,8 +180,8 @@ func TestInput_EnsureCursorVisible(t *testing.T) {
 		"cursor inside window leaves scroll alone": {
 			width: 5, text: "abcdefgh", cursorPos: 3, scrollPos: 2, wantScroll: 2,
 		},
-		"zero visible width returns early": {
-			width: 0, text: "abcdefgh", cursorPos: 8, scrollPos: 3, wantScroll: 3,
+		"zero visible width resets scroll to zero": {
+			width: 0, text: "abcdefgh", cursorPos: 8, scrollPos: 3, wantScroll: 0,
 		},
 	}
 
@@ -643,8 +643,8 @@ func TestInput_DisplayText(t *testing.T) {
 			width: 10, text: "abc", cursorPos: 3, focused: false, want: "abc",
 		},
 		"unfocused long text shows scrolled viewport": {
-			// cursor at end forces scroll to 4, viewport shows the tail
-			width: 5, text: "abcdefgh", cursorPos: 8, focused: false, want: "efgh",
+			// scrollPos set to 4 shows the tail
+			width: 5, text: "abcdefgh", cursorPos: 8, scrollPos: 4, focused: false, want: "efgh",
 		},
 		"focused shows cursor at position": {
 			width: 10, text: "abc", cursorPos: 1, focused: true, blink: true, want: "a▌bc",
@@ -661,13 +661,14 @@ func TestInput_DisplayText(t *testing.T) {
 		"focused scrolled viewport keeps cursor visible": {
 			width: 5, text: "abcdefgh", cursorPos: 8, focused: true, blink: true, want: "efgh▌",
 		},
-		"scroll beyond cursor shifts view start": {
-			// width 0 disables ensureCursorVisible, exercising the
-			// scroll > pos adjustment in displayText directly.
-			width: 0, text: "abc", cursorPos: 1, scrollPos: 2, focused: true, blink: true, want: "c",
+		"scroll before visible area shows from scroll column": {
+			width: 5, text: "abcdefgh", cursorPos: 1, scrollPos: 3, focused: true, blink: true,
+			// Cursor at col 1 (runeIndex=1), scroll at col 3. Cursor left of
+			// window: ensureCursorVisible snaps scroll to cursor col = 1.
+			want: "▌bcde",
 		},
 		"negative scroll clamps to zero": {
-			width: 0, text: "ab", cursorPos: 0, scrollPos: -3, focused: true, blink: true, want: "▌",
+			width: 5, text: "abc", cursorPos: 0, scrollPos: -3, focused: true, blink: true, want: "▌abc",
 		},
 	}
 

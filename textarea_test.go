@@ -142,9 +142,8 @@ func TestTextArea_CursorRowCol_WideChars(t *testing.T) {
 	}
 
 	// width 10, "一二三四五六七八九十" wraps to ["一二三四五", "六七八九十"].
-	// Both wrapped lines are display-full, so boundary positions move to the
-	// next visual line (downstream affinity); end of text lands on a phantom
-	// row past the last line.
+	// Each CJK char is 1 rune, 2 display columns.
+	// cursorRowCol returns col as a rune index within the line.
 	tests := map[string]tc{
 		"start of text":              {pos: 0, wantRow: 0, wantCol: 0},
 		"soft wrap boundary":         {pos: 5, wantRow: 1, wantCol: 0},
@@ -183,10 +182,13 @@ func renderedRows(t *testing.T, c Component, width int) []string {
 			if cell.IsContinuation() {
 				continue
 			}
-			if cell.Rune == 0 {
-				sb.WriteRune(' ')
-			} else {
-				sb.WriteRune(cell.Rune)
+			r := cell.Rune
+			if r == 0 {
+				r = ' '
+			}
+			sb.WriteRune(r)
+			if cell.Combining != "" {
+				sb.WriteString(cell.Combining)
 			}
 		}
 		rows = append(rows, sb.String())
@@ -241,7 +243,9 @@ func TestTextArea_CursorRowCol_WrapBoundaryAffinity(t *testing.T) {
 			text: "abcdefgh", width: 4, pos: 4, wantRow: 1, wantCol: 0,
 		},
 		"soft boundary on non-full line stays at line end": {
-			// "ab界" is 4 columns in width 5, so the cursor still fits there
+			// "ab界界" = 4 runes (a=0,b=1,界=2,界=3), width 5.
+			// wrap splits to ["ab界", "界"]. Cursor at rune 3 (second 界)
+			// is rune index 3 on row 0, which fits (line has 3 runes).
 			text: "ab界界", width: 5, pos: 3, wantRow: 0, wantCol: 3,
 		},
 		"hard newline after full line stays at line end": {
@@ -411,5 +415,17 @@ func TestTextArea_HideVirtualCursor(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestTextArea_BlockCursor_AtHardNewline_DoesNotSplitCluster(t *testing.T) {
+	ta := NewTextArea(WithTextAreaWidth(4))
+	ta.BindApp(testApp)
+	ta.Focus()
+	ta.SetText("ab\U0001F1FA\U0001F1F8\n")
+	ta.cursorPos.Set(3)
+	result := ta.lineWithCursor(0)
+	if strings.Contains(result, "🇺") && !strings.Contains(result, "🇺🇸") {
+		t.Errorf("lineWithCursor split the flag cluster: %q", result)
 	}
 }

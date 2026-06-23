@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -25,7 +26,7 @@ type Input struct {
 	// Reactive state
 	text      *State[string]
 	cursorPos *State[int]
-	scrollPos *State[int] // horizontal scroll offset (first visible rune index)
+	scrollPos *State[int] // horizontal scroll offset (first visible display column)
 	blink     *State[bool]
 	focused   *State[bool]
 }
@@ -83,6 +84,7 @@ func (inp *Input) Text() string {
 func (inp *Input) SetText(s string) {
 	inp.text.Set(s)
 	inp.cursorPos.Set(utf8.RuneCountInString(s))
+	inp.ensureCursorVisible()
 }
 
 // Clear clears the input.
@@ -105,25 +107,33 @@ func (inp *Input) visibleWidth() int {
 	return w
 }
 
-// ensureCursorVisible adjusts scrollPos so the cursor is within the visible window.
+// ensureCursorVisible adjusts scrollPos so the cursor is within the visible
+// window. scrollPos stores a display column; the cursor's display column
+// is computed from its rune index via runeIndexToDisplayCol.
 func (inp *Input) ensureCursorVisible() {
-	pos := inp.clampCursorPos()
+	text := inp.text.Get()
+	cursorCol := runeIndexToDisplayCol(text, inp.clampCursorPos())
 	scroll := inp.scrollPos.Get()
 	visible := inp.visibleWidth()
 	if visible <= 0 {
+		inp.scrollPos.Set(0)
 		return
 	}
 
-	// Cursor is left of the visible window
-	if pos < scroll {
-		inp.scrollPos.Set(pos)
+	// Cursor is left of the visible window: scroll back so cursor is at col 0.
+	if cursorCol < scroll {
+		inp.scrollPos.Set(cursorCol)
 		return
 	}
 
-	// Cursor is right of the visible window.
-	// Reserve 1 column for the cursor character itself.
-	if pos >= scroll+visible {
-		inp.scrollPos.Set(pos - visible + 1)
+	// Cursor is right of the visible window (reserve 1 column for the cursor
+	// glyph itself): scroll forward so cursor is at the rightmost column.
+	// Snap the new scroll to a cluster-start column so that viewportText
+	// doesn't land in the middle of a wide cluster and push the cursor
+	// out of the visible window.
+	if cursorCol >= scroll+visible {
+		want := cursorCol - visible + 1
+		inp.scrollPos.Set(snapColToNextClusterBoundary(text, want))
 	}
 }
 
@@ -263,15 +273,23 @@ func (inp *Input) Watchers() []Watcher {
 // --- Key Handlers ---
 
 // insertChar inserts a character at the cursor position.
+// Cursor advances past the cluster that contains the inserted character,
+// so combining marks join the previous base and the cursor lands after
+// the combined cluster.
 func (inp *Input) insertChar(ke KeyEvent) {
-	runes := []rune(inp.text.Get())
+	text := inp.text.Get()
 	pos := inp.clampCursorPos()
+
+	// Insert the rune into the string at the rune index.
+	runes := []rune(text)
 	newRunes := make([]rune, 0, len(runes)+1)
 	newRunes = append(newRunes, runes[:pos]...)
 	newRunes = append(newRunes, ke.Rune)
 	newRunes = append(newRunes, runes[pos:]...)
-	inp.text.Set(string(newRunes))
-	inp.cursorPos.Set(pos + 1)
+	newText := string(newRunes)
+
+	inp.text.Set(newText)
+	inp.cursorPos.Set(clusterEnd(newText, pos))
 	inp.blink.Set(true)
 	inp.ensureCursorVisible()
 	if inp.onChange != nil {
@@ -280,22 +298,21 @@ func (inp *Input) insertChar(ke KeyEvent) {
 }
 
 // backspace deletes the character before the cursor.
+// The cursor snaps to the previous cluster boundary, so a multi-rune
+// cluster is deleted as one unit.
 func (inp *Input) backspace(ke KeyEvent) {
-	runes := []rune(inp.text.Get())
+	text := inp.text.Get()
 	pos := inp.clampCursorPos()
 	if pos > 0 {
-		newRunes := append(runes[:pos-1], runes[pos:]...)
-		inp.text.Set(string(newRunes))
-		newPos := pos - 1
-		inp.cursorPos.Set(newPos)
-		// Pin cursor to the right edge while text exceeds visible width,
-		// so each delete scrolls one more character into view.
-		visible := inp.visibleWidth()
-		if len(newRunes) >= visible && newPos >= visible {
-			inp.scrollPos.Set(newPos - visible + 1)
-		} else {
-			inp.scrollPos.Set(0)
-		}
+		// Snap to the start of the cluster that contains pos-1.
+		snapped := snapRuneToClusterStart(text, pos-1)
+		runes := []rune(text)
+		newRunes := append(runes[:snapped], runes[pos:]...)
+		newText := string(newRunes)
+		inp.text.Set(newText)
+		inp.cursorPos.Set(snapped)
+		// Re-compute scroll so the cursor is visible.
+		inp.ensureCursorVisible()
 		if inp.onChange != nil {
 			inp.onChange(inp.text.Get())
 		}
@@ -303,39 +320,42 @@ func (inp *Input) backspace(ke KeyEvent) {
 }
 
 // delete deletes the character at the cursor.
+// The cursor stays at the same cluster boundary, so a multi-rune cluster
+// is deleted as one unit.
 func (inp *Input) delete(ke KeyEvent) {
-	runes := []rune(inp.text.Get())
+	text := inp.text.Get()
+	runes := []rune(text)
 	pos := inp.clampCursorPos()
 	if pos < len(runes) {
-		newRunes := append(runes[:pos], runes[pos+1:]...)
+		// Find the end of the cluster at pos.
+		end := clusterEnd(text, pos)
+		newRunes := append(runes[:pos], runes[end:]...)
 		inp.text.Set(string(newRunes))
-		visible := inp.visibleWidth()
-		if len(newRunes) >= visible && pos >= visible {
-			inp.scrollPos.Set(pos - visible + 1)
-		} else {
-			inp.scrollPos.Set(0)
-		}
+		// Re-compute scroll so the cursor is visible.
+		inp.ensureCursorVisible()
 		if inp.onChange != nil {
 			inp.onChange(inp.text.Get())
 		}
 	}
 }
 
-// moveLeft moves cursor left.
+// moveLeft moves cursor left by one grapheme cluster.
 func (inp *Input) moveLeft(ke KeyEvent) {
+	text := inp.text.Get()
 	pos := inp.cursorPos.Get()
 	if pos > 0 {
-		inp.cursorPos.Set(pos - 1)
+		inp.cursorPos.Set(snapRuneToClusterStart(text, pos-1))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}
 }
 
-// moveRight moves cursor right.
+// moveRight moves cursor right by one grapheme cluster.
 func (inp *Input) moveRight(ke KeyEvent) {
+	text := inp.text.Get()
 	pos := inp.cursorPos.Get()
-	if pos < utf8.RuneCountInString(inp.text.Get()) {
-		inp.cursorPos.Set(pos + 1)
+	if pos < utf8.RuneCountInString(text) {
+		inp.cursorPos.Set(clusterEnd(text, pos))
 		inp.blink.Set(true)
 		inp.ensureCursorVisible()
 	}
@@ -362,55 +382,162 @@ func (inp *Input) submit(ke KeyEvent) {
 	}
 }
 
+// snapColToNextClusterBoundary advances col to the next cluster boundary at or after
+// col. For ASCII text every column is a boundary, so this is a no-op.
+// For CJK/emoji where clusters are 2 columns wide, this ensures the scroll
+// position never splits a cluster.
+func snapColToNextClusterBoundary(s string, col int) int {
+	if col <= 0 {
+		return 0
+	}
+	cur := 0
+	for len(s) > 0 {
+		_, w, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		s = s[size:]
+		next := cur + w
+		if next >= col {
+			// col falls at or before the boundary after this cluster.
+			// If col is already at cur (a boundary), return it.
+			// If col is inside (cur < col < next), snap up to next.
+			if col == cur {
+				return col
+			}
+			return next
+		}
+		cur = next
+	}
+	return col
+}
+
 // --- Display ---
+
+// displayCluster represents one grapheme cluster in the display stream.
+type displayCluster struct {
+	text  string
+	width int
+}
+
+// textToClusters segments s into grapheme clusters and returns them along with
+// the total display width.
+func textToClusters(s string) (clusters []displayCluster, totalWidth int) {
+	for len(s) > 0 {
+		cl, w, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		clusters = append(clusters, displayCluster{text: cl, width: w})
+		totalWidth += w
+		s = s[size:]
+	}
+	return
+}
 
 // displayText returns a viewport-clamped slice of the text with cursor overlay.
 func (inp *Input) displayText() string {
 	text := inp.text.Get()
-	runes := []rune(text)
 	pos := inp.clampCursorPos()
 	visible := inp.visibleWidth()
 
-	inp.ensureCursorVisible()
-	scroll := min(
-		// Clamp scroll to valid range
-		max(
-
-			inp.scrollPos.Get(), 0), len(runes))
+	// Build the cluster list from the full text.
+	allClusters, _ := textToClusters(text)
 
 	if !inp.focused.Get() {
-		if len(runes) == 0 {
+		if len(allClusters) == 0 {
 			return " "
 		}
-		// Show viewport slice
-		end := min(scroll+visible, len(runes))
-		return string(runes[scroll:end])
+		// In the unfocused path, scroll adjustment preserves the previously-set
+		// scroll position. ensureCursorVisible is only called in the focused path
+		// so that manually-scrolled text doesn't jump when the user blurs.
+		return inp.viewportText(allClusters, visible)
 	}
 
-	// Build the visible slice with cursor inserted
-	cursor := inp.cursorRune
+	// Build a cluster list with the cursor inserted as an extra cluster.
+	cursorR := inp.cursorRune
 	if !inp.blink.Get() {
-		cursor = ' '
+		cursorR = ' '
+	}
+	cursorCluster := displayCluster{text: string(cursorR), width: 1}
+
+	// Insert the cursor cluster at the cursor's rune position within the
+	// cluster list. The cursor is inserted before the cluster that contains
+	// the rune at pos. For a combining mark inserted after a base (pos inside
+	// a multi-rune cluster), the cursor goes after that cluster.
+	insertIdx := len(allClusters)
+	runeCount := 0
+	for i, c := range allClusters {
+		clusterRunes := utf8.RuneCountInString(c.text)
+		if runeCount == pos {
+			// Cursor is at the start of this cluster: insert before it.
+			insertIdx = i
+			break
+		}
+		if runeCount+clusterRunes > pos {
+			// Cursor is inside this cluster (e.g. after a combining mark).
+			// Insert after this cluster.
+			insertIdx = i + 1
+			break
+		}
+		runeCount += clusterRunes
 	}
 
-	// Insert cursor into the full rune slice at pos
-	withCursor := make([]rune, 0, len(runes)+1)
-	withCursor = append(withCursor, runes[:pos]...)
-	withCursor = append(withCursor, cursor)
-	withCursor = append(withCursor, runes[pos:]...)
+	withCursor := make([]displayCluster, 0, len(allClusters)+1)
+	withCursor = append(withCursor, allClusters[:insertIdx]...)
+	withCursor = append(withCursor, cursorCluster)
+	withCursor = append(withCursor, allClusters[insertIdx:]...)
 
-	// The cursor insertion shifts indices after pos by 1.
-	// Adjust scroll start: characters before cursor are unshifted,
-	// characters at/after cursor position are shifted by 1.
-	viewStart := scroll
-	if scroll > pos {
-		viewStart = scroll + 1
+	inp.ensureCursorVisible()
+	return inp.viewportText(withCursor, visible)
+}
+
+// viewportText returns the visible slice of clusters starting at scrollPos
+// (display column), filling at most visible display columns. The cursor is
+// expected to already be inserted into the cluster list.
+// Callers must call ensureCursorVisible first (focused path) or decide
+// whether scroll adjustment is desired (unfocused path skips it).
+func (inp *Input) viewportText(clusters []displayCluster, visible int) string {
+	scroll := max(inp.scrollPos.Get(), 0)
+	if visible <= 0 {
+		return ""
 	}
 
-	// visible+1 because the cursor character takes a column
-	viewEnd := min(viewStart+visible+1, len(withCursor))
+	// Find the first cluster whose column range starts at or after scrollPos.
+	// If scroll falls inside a cluster (between its start and end), that
+	// cluster is skipped — we can't show half a cluster. The next cluster
+	// whose start column is >= scroll becomes the first visible one.
+	startIdx := len(clusters)
+	col := 0
+	for i, c := range clusters {
+		if col >= scroll {
+			startIdx = i
+			break
+		}
+		col += c.width
+		if col > scroll {
+			// scroll fell inside this cluster: skip it.
+			startIdx = i + 1
+			break
+		}
+	}
 
-	return string(withCursor[viewStart:viewEnd])
+	// Build the visible string up to visible columns.
+	var sb strings.Builder
+	col = 0
+	for _, c := range clusters[startIdx:] {
+		if col+c.width > visible {
+			break
+		}
+		sb.WriteString(c.text)
+		col += c.width
+	}
+
+	// Ensure we return at least one space for an empty viewport.
+	if sb.Len() == 0 {
+		sb.WriteRune(' ')
+	}
+	return sb.String()
 }
 
 func (inp *Input) clampCursorPos() int {
@@ -418,9 +545,11 @@ func (inp *Input) clampCursorPos() int {
 	if pos < 0 {
 		return 0
 	}
-	max := utf8.RuneCountInString(inp.text.Get())
+	text := inp.text.Get()
+	max := utf8.RuneCountInString(text)
 	if pos > max {
 		return max
 	}
-	return pos
+	// Snap to cluster start so cursor cannot sit inside a cluster.
+	return snapRuneToClusterStart(text, pos)
 }

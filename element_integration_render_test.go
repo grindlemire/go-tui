@@ -134,7 +134,14 @@ func TestIntegration_RenderOutput(t *testing.T) {
 		var row strings.Builder
 		for x := range 10 {
 			cell := buf.Cell(x, y)
-			row.WriteRune(cell.Rune)
+			r := cell.Rune
+			if r == 0 {
+				r = ' '
+			}
+			row.WriteRune(r)
+			if cell.Combining != "" {
+				row.WriteString(cell.Combining)
+			}
 		}
 		if row.String() != expected[y] {
 			t.Errorf("row %d = %q, want %q", y, row.String(), expected[y])
@@ -251,6 +258,9 @@ func extractBufferLine(buf *Buffer, y, width int) string {
 		cell := buf.Cell(x, y)
 		if cell.Rune != 0 {
 			b.WriteRune(cell.Rune)
+			if cell.Combining != "" {
+				b.WriteString(cell.Combining)
+			}
 		} else {
 			b.WriteByte(' ')
 		}

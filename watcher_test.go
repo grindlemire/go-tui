@@ -117,14 +117,10 @@ func TestWatch_ExitsWhenStopChCloses(t *testing.T) {
 		t.Fatal("timed out waiting for first event")
 	}
 
-	// Close stop channel
+	// Close both stop channel and watcher input channel so the goroutine
+	// exits regardless of which select case it picks first.
 	close(stopCh)
-
-	// Try to send more — may or may not go in depending on timing
-	select {
-	case ch <- "second":
-	default:
-	}
+	close(ch)
 
 	drainEvents(eventQueue, 200*time.Millisecond)
 
