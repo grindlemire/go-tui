@@ -2,16 +2,17 @@
 //
 // Usage:
 //
-//	tui generate [path...]    Generate Go code from .gsx files
-//	tui check [path...]       Check .gsx files without generating
-//	tui help                  Show help
+//	tui generate [options...] [path...]    Generate Go code from .gsx files
+//	tui check [path...]                    Check .gsx files without generating
+//	tui help                               Show help
 //
 // Examples:
 //
-//	tui generate ./...        Recursively find and compile all .gsx files
-//	tui generate ./components Process a specific directory
-//	tui generate header.gsx   Process a specific file
-//	tui check header.gsx      Check syntax without generating
+//	tui generate ./...                                  Recursively find and compile all .gsx files
+//	tui generate ./internal/components                  Process a specific directory
+//	tui generate -o ./components/ ./internal/components Process a specific directory
+//	tui generate header.gsx                             Process a specific file
+//	tui check header.gsx                                Check syntax without generating
 package main
 
 import (
@@ -47,18 +48,20 @@ Commands:
 
 Options:
   -v          Verbose output
+  -o <dir>    Output directory for generated files (generate only)
 
 Examples:
-  tui generate ./...              Recursively process all .gsx files
-  tui generate ./components       Process files in a directory
-  tui generate header.gsx         Process a specific file
-  tui generate -v ./...           Verbose output during generation
-  tui check header.gsx            Check syntax without generating
-  tui fmt ./...                   Format all .gsx files recursively
-  tui fmt --check ./...           Check formatting without modifying
-  tui fmt --stdout file.gsx       Print formatted output to stdout
-  tui lsp                         Start LSP server on stdio
-  tui lsp --log /tmp/tui-lsp.log  Start with debug logging
+  tui generate ./...                          Recursively process all .gsx files
+  tui generate ./components                   Process files in a directory
+  tui generate header.gsx                     Process a specific file
+  tui generate -v ./...                       Verbose output during generation
+  tui generate -o components/ ./...           Write generated files to a directory
+  tui check header.gsx                        Check syntax without generating
+  tui fmt ./...                               Format all .gsx files recursively
+  tui fmt --check ./...                       Check formatting without modifying
+  tui fmt --stdout file.gsx                   Print formatted output to stdout
+  tui lsp                                     Start LSP server on stdio
+  tui lsp --log /tmp/tui-lsp.log              Start with debug logging
 
 For more information, see https://github.com/grindlemire/go-tui
 `

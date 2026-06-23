@@ -14,14 +14,22 @@ import (
 // It processes .gsx files and generates corresponding Go source files.
 func runGenerate(args []string) error {
 	verbose := false
+	outputPath := ""
 	var paths []string
 
 	// Parse arguments
-	for _, arg := range args {
-		if arg == "-v" || arg == "--verbose" {
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "-v", "--verbose":
 			verbose = true
-		} else {
-			paths = append(paths, arg)
+		case "-o", "--output":
+			if i+1 >= len(args) {
+				return fmt.Errorf("missing value for %s", args[i])
+			}
+			outputPath = args[i+1]
+			i++ // skip the value we just consumed
+		default:
+			paths = append(paths, args[i])
 		}
 	}
 
@@ -47,13 +55,13 @@ func runGenerate(args []string) error {
 	// Process each file
 	var errorCount int
 	for _, inputPath := range files {
-		outputPath := outputFileName(inputPath)
+		finalPath := outputFileName(inputPath, outputPath)
 
 		if verbose {
-			fmt.Printf("Processing %s -> %s\n", inputPath, outputPath)
+			fmt.Printf("Processing %s -> %s\n", inputPath, finalPath)
 		}
 
-		if err := generateFile(inputPath, outputPath); err != nil {
+		if err := generateFile(inputPath, finalPath); err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", inputPath, err)
 			errorCount++
 			continue
@@ -133,20 +141,19 @@ func collectGsxFiles(paths []string) ([]string, error) {
 //	header.gsx     -> header_gsx.go
 //	my-app.gsx     -> my_app_gsx.go
 //	components.gsx -> components_gsx.go
-func outputFileName(inputPath string) string {
-	dir := filepath.Dir(inputPath)
-	base := filepath.Base(inputPath)
+func outputFileName(inputPath, outputDir string) string {
+	// outputDir is an explicit target directory; otherwise mirror the input file.
+	dir := outputDir
+	if dir == "" {
+		dir = filepath.Dir(inputPath)
+	}
 
-	// Remove .gsx extension
-	name := strings.TrimSuffix(base, ".gsx")
-
-	// Replace hyphens with underscores (Go doesn't like hyphens in filenames)
+	// Strip .gsx and replace hyphens (Go doesn't like hyphens in filenames).
+	name := strings.TrimSuffix(filepath.Base(inputPath), ".gsx")
 	name = strings.ReplaceAll(name, "-", "_")
 
-	// Add _gsx.go suffix
-	output := name + "_gsx.go"
-
-	return filepath.Join(dir, output)
+	// filepath.Join cleans any trailing slash on dir for us.
+	return filepath.Join(dir, name+"_gsx.go")
 }
 
 // generateFile parses a .gsx file and generates the corresponding Go file.
@@ -180,6 +187,13 @@ func generateFile(inputPath, outputPath string) error {
 	output, err := generator.Generate(file, filename)
 	if err != nil {
 		return fmt.Errorf("generating code: %w", err)
+	}
+
+	// Ensure the output directory exists (MkdirAll is a no-op if it already does).
+	if dir := filepath.Dir(outputPath); dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("creating output directory: %w", err)
+		}
 	}
 
 	// Write output file
