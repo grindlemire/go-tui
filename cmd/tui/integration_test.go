@@ -69,6 +69,34 @@ func TestCLI_Fmt_Stdout(t *testing.T) {
 	}
 }
 
+func TestCLI_Generate_Output(t *testing.T) {
+	src := filepath.Join("testdata", "simple.gsx")
+	if _, err := os.Stat(src); err != nil {
+		t.Skipf("missing fixture %s: %v", src, err)
+	}
+
+	// Use a nested, non-existent directory to also exercise dir creation.
+	outDir := filepath.Join(t.TempDir(), "gen", "nested")
+
+	cmd := exec.Command(testBin, "generate", "-o", outDir, src)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate -o failed: %v\n%s", err, out)
+	}
+
+	want := filepath.Join(outDir, "simple_gsx.go")
+	if _, err := os.Stat(want); err != nil {
+		t.Errorf("expected generated file %s: %v", want, err)
+	}
+}
+
+func TestCLI_Generate_Output_MissingValue(t *testing.T) {
+	cmd := exec.Command(testBin, "generate", "-o")
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatalf("expected error when -o has no value, got success:\n%s", out)
+	}
+}
+
 func TestCLI_Version(t *testing.T) {
 	cmd := exec.Command(testBin, "version")
 	out, err := cmd.CombinedOutput()
