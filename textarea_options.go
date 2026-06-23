@@ -133,3 +133,13 @@ func WithTextAreaOnSubmit(fn func(string)) TextAreaOption {
 		t.onSubmit = fn
 	}
 }
+
+// WithTextAreaOnChange sets the callback called when the text content changes.
+// The callback receives the full text content after each change.
+// It fires on all user edits (typing, backspace, delete) and programmatic
+// writes via SetText/Clear.
+func WithTextAreaOnChange(fn func(string)) TextAreaOption {
+	return func(t *TextArea) {
+		t.onChange = fn
+	}
+}
