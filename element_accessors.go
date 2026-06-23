@@ -12,6 +12,24 @@ func (e *Element) SetStyle(style LayoutStyle) {
 	e.MarkDirty()
 }
 
+// SetHeight updates the element's height after creation and marks it (and its
+// ancestors) dirty so layout recomputes on the next frame. Intended for retained
+// elements held across renders; a setter on an element recreated each render has
+// no lasting effect. Pass tui.Fixed(n), tui.Percent(p), or tui.Auto().
+func (e *Element) SetHeight(v Value) {
+	e.style.Height = v
+	e.MarkDirty()
+}
+
+// SetWidth updates the element's width after creation and marks it (and its
+// ancestors) dirty so layout recomputes on the next frame. Intended for retained
+// elements held across renders; a setter on an element recreated each render has
+// no lasting effect. Pass tui.Fixed(n), tui.Percent(p), or tui.Auto().
+func (e *Element) SetWidth(v Value) {
+	e.style.Width = v
+	e.MarkDirty()
+}
+
 // Style returns the current layout style.
 func (e *Element) Style() LayoutStyle {
 	return e.style
