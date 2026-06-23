@@ -93,6 +93,56 @@ func (t *TextArea) Clear() {
 	t.cursorPos.Set(0)
 }
 
+// CursorPos returns the cursor position as a grapheme-cluster index: the count
+// of whole glyphs before the cursor. This is the unit SetCursorPos accepts; it
+// is not a byte or rune offset, so do not use it to slice the text directly.
+func (t *TextArea) CursorPos() int {
+	return runeIndexToClusterIndex(t.text.Get(), t.clampCursorPos())
+}
+
+// SetCursorPos moves the cursor to the given grapheme-cluster index. The index
+// is clamped to [0, ClusterCount(text)] and always lands on a cluster boundary.
+func (t *TextArea) SetCursorPos(pos int) {
+	text := t.text.Get()
+	if pos < 0 {
+		pos = 0
+	}
+	t.cursorPos.Set(clusterIndexToRuneIndex(text, pos))
+	t.blink.Set(true)
+}
+
+// InsertText inserts s at the cursor and advances the cursor past it. Insertion
+// routes through the same internal path that typing uses, so the bound text and
+// the cursor stay cluster-consistent (combining marks join the preceding base,
+// and the cursor lands after the final whole cluster).
+func (t *TextArea) InsertText(s string) {
+	t.insertString(s)
+}
+
+// insertString splices s into the text at the cursor's rune index and advances
+// the cursor to the end of the inserted content, snapped to a cluster boundary
+// via clusterEnd. This is the single insert path shared by insertChar,
+// insertNewline, and InsertText.
+func (t *TextArea) insertString(s string) {
+	if s == "" {
+		return
+	}
+	text := t.text.Get()
+	pos := t.clampCursorPos()
+	runes := []rune(text)
+	insert := []rune(s)
+	newRunes := make([]rune, 0, len(runes)+len(insert))
+	newRunes = append(newRunes, runes[:pos]...)
+	newRunes = append(newRunes, insert...)
+	newRunes = append(newRunes, runes[pos:]...)
+	newText := string(newRunes)
+	t.text.Set(newText)
+	// Advance to the end of the cluster that contains the last inserted rune so
+	// a trailing combining mark glues to its base and the cursor lands after it.
+	t.cursorPos.Set(clusterEnd(newText, pos+len(insert)-1))
+	t.blink.Set(true)
+}
+
 // contentRows returns the number of content rows to render: the wrapped
 // lines plus the phantom cursor row, clamped to maxHeight. Note that when
 // content exceeds maxHeight the rows below the clamp (including the cursor's
@@ -287,24 +337,12 @@ func (t *TextArea) Watchers() []Watcher {
 // so combining marks join the previous base and the cursor lands after
 // the combined cluster.
 func (t *TextArea) insertChar(ke KeyEvent) {
-	text := t.text.Get()
-	pos := t.clampCursorPos()
-	runes := []rune(text)
-	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
-	newText := string(newRunes)
-	t.text.Set(newText)
-	t.cursorPos.Set(clusterEnd(newText, pos))
-	t.blink.Set(true)
+	t.insertString(string(ke.Rune))
 }
 
 // insertNewline inserts a newline character at the cursor position.
 func (t *TextArea) insertNewline(ke KeyEvent) {
-	runes := []rune(t.text.Get())
-	pos := t.clampCursorPos()
-	newRunes := append(runes[:pos], append([]rune{'\n'}, runes[pos:]...)...)
-	t.text.Set(string(newRunes))
-	t.cursorPos.Set(pos + 1)
-	t.blink.Set(true)
+	t.insertString("\n")
 }
 
 // backspace deletes the cluster before the cursor.

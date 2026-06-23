@@ -94,6 +94,62 @@ func (inp *Input) Clear() {
 	inp.scrollPos.Set(0)
 }
 
+// CursorPos returns the cursor position as a grapheme-cluster index: the count
+// of whole glyphs before the cursor. This is the unit SetCursorPos accepts; it
+// is not a byte or rune offset, so do not use it to slice the text directly.
+func (inp *Input) CursorPos() int {
+	return runeIndexToClusterIndex(inp.text.Get(), inp.clampCursorPos())
+}
+
+// SetCursorPos moves the cursor to the given grapheme-cluster index. The index
+// is clamped to [0, ClusterCount(text)] and always lands on a cluster boundary.
+func (inp *Input) SetCursorPos(pos int) {
+	text := inp.text.Get()
+	if pos < 0 {
+		pos = 0
+	}
+	inp.cursorPos.Set(clusterIndexToRuneIndex(text, pos))
+	inp.blink.Set(true)
+	inp.ensureCursorVisible()
+}
+
+// InsertText inserts s at the cursor and advances the cursor past it. Insertion
+// routes through the same internal path that typing uses, so the bound text and
+// the cursor stay cluster-consistent (combining marks join the preceding base,
+// and the cursor lands after the final whole cluster).
+func (inp *Input) InsertText(s string) {
+	inp.insertString(s)
+}
+
+// insertString splices s into the text at the cursor's rune index and advances
+// the cursor to the end of the inserted content, snapped to a cluster boundary
+// via clusterEnd. This is the single insert path shared by insertChar and
+// InsertText; it keeps scroll and onChange consistent.
+func (inp *Input) insertString(s string) {
+	if s == "" {
+		return
+	}
+	text := inp.text.Get()
+	pos := inp.clampCursorPos()
+	runes := []rune(text)
+	insert := []rune(s)
+	newRunes := make([]rune, 0, len(runes)+len(insert))
+	newRunes = append(newRunes, runes[:pos]...)
+	newRunes = append(newRunes, insert...)
+	newRunes = append(newRunes, runes[pos:]...)
+	newText := string(newRunes)
+
+	inp.text.Set(newText)
+	// Advance to the end of the cluster that contains the last inserted rune so
+	// a trailing combining mark glues to its base and the cursor lands after it.
+	inp.cursorPos.Set(clusterEnd(newText, pos+len(insert)-1))
+	inp.blink.Set(true)
+	inp.ensureCursorVisible()
+	if inp.onChange != nil {
+		inp.onChange(inp.text.Get())
+	}
+}
+
 // --- Component Interface ---
 
 // visibleWidth returns the number of characters visible inside the input.
@@ -277,24 +333,7 @@ func (inp *Input) Watchers() []Watcher {
 // so combining marks join the previous base and the cursor lands after
 // the combined cluster.
 func (inp *Input) insertChar(ke KeyEvent) {
-	text := inp.text.Get()
-	pos := inp.clampCursorPos()
-
-	// Insert the rune into the string at the rune index.
-	runes := []rune(text)
-	newRunes := make([]rune, 0, len(runes)+1)
-	newRunes = append(newRunes, runes[:pos]...)
-	newRunes = append(newRunes, ke.Rune)
-	newRunes = append(newRunes, runes[pos:]...)
-	newText := string(newRunes)
-
-	inp.text.Set(newText)
-	inp.cursorPos.Set(clusterEnd(newText, pos))
-	inp.blink.Set(true)
-	inp.ensureCursorVisible()
-	if inp.onChange != nil {
-		inp.onChange(inp.text.Get())
-	}
+	inp.insertString(string(ke.Rune))
 }
 
 // backspace deletes the character before the cursor.
