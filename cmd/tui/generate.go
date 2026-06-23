@@ -189,11 +189,10 @@ func generateFile(inputPath, outputPath string) error {
 		return fmt.Errorf("generating code: %w", err)
 	}
 
-	// Ensure the output directory exists (MkdirAll is a no-op if it already does).
-	if dir := filepath.Dir(outputPath); dir != "" {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("creating output directory: %w", err)
-		}
+	// Ensure the output directory exists. filepath.Dir always returns a
+	// non-empty path (at least "."), and MkdirAll is a no-op if it exists.
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+		return fmt.Errorf("creating output directory: %w", err)
 	}
 
 	// Write output file
