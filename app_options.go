@@ -140,11 +140,26 @@ func WithoutMouse() AppOption {
 	}
 }
 
-// WithCursor keeps the cursor visible during app execution.
-// By default, the cursor is hidden.
+// WithManualCursor disables framework-driven terminal cursor management. By
+// default the App places the real terminal cursor at the focused widget's
+// reported position at the end of every frame (see CursorReporter). Use this
+// when the application drives the cursor itself, or wants no cursor at all.
+func WithManualCursor() AppOption {
+	return func(a *App) error {
+		a.manualCursor = true
+		return nil
+	}
+}
+
+// WithCursor is deprecated and now a no-op. The framework drives the real
+// terminal cursor automatically at the focused text widget; use the default
+// behavior, or WithManualCursor to opt out. Retained as an alias so existing
+// call sites keep compiling.
+//
+// Deprecated: cursor visibility is managed by the framework; this option does
+// nothing. Use WithManualCursor to disable framework cursor management.
 func WithCursor() AppOption {
 	return func(a *App) error {
-		a.cursorVisible = true
 		return nil
 	}
 }

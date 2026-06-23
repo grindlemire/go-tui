@@ -56,11 +56,27 @@ func TestInputOptions_ConfigureFields(t *testing.T) {
 				}
 			},
 		},
-		"WithInputCursor sets cursor rune": {
-			opt: WithInputCursor('_'),
+		"WithInputCursorRune sets cursor rune": {
+			opt: WithInputCursorRune('_'),
 			check: func(t *testing.T, inp *Input) {
 				if inp.cursorRune != '_' {
 					t.Errorf("cursorRune = %q, want '_'", inp.cursorRune)
+				}
+			},
+		},
+		"WithInputCursor alias sets cursor rune": {
+			opt: WithInputCursor('#'),
+			check: func(t *testing.T, inp *Input) {
+				if inp.cursorRune != '#' {
+					t.Errorf("cursorRune = %q, want '#'", inp.cursorRune)
+				}
+			},
+		},
+		"WithInputVirtualCursor enables drawn glyph": {
+			opt: WithInputVirtualCursor(),
+			check: func(t *testing.T, inp *Input) {
+				if inp.hideVirtualCursor {
+					t.Error("expected hideVirtualCursor to be false after WithInputVirtualCursor()")
 				}
 			},
 		},

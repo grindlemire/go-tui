@@ -97,6 +97,35 @@ func (a *App) renderFrame() {
 	if a.postRenderHook != nil {
 		a.postRenderHook()
 	}
+	// Place the real terminal cursor last so it survives all cell writes and the
+	// postRenderHook. This is the final terminal op of the frame.
+	a.placeCursor()
+}
+
+// placeCursor drives the real terminal cursor from the focused element's
+// CursorReporter at the end of a frame. It is the final terminal operation, run
+// after Flush and postRenderHook so cell writes cannot clobber the placement.
+// In inline mode the reported coordinates are offset by the inline start row,
+// mirroring the renderer. No-op when WithManualCursor disabled management.
+func (a *App) placeCursor() {
+	if a.manualCursor {
+		return
+	}
+	reporter, ok := a.focus.Focused().(CursorReporter)
+	if !ok {
+		a.terminal.HideCursor()
+		return
+	}
+	x, y, vis := reporter.ReportCursor()
+	if !vis {
+		a.terminal.HideCursor()
+		return
+	}
+	if !a.inAlternateScreen && a.inlineHeight > 0 {
+		y += a.inlineStartRow
+	}
+	a.terminal.SetCursor(x, y)
+	a.terminal.ShowCursor()
 }
 
 // renderInline handles rendering for inline mode by offsetting Y coordinates.
@@ -171,6 +200,7 @@ func (a *App) RenderFull() {
 	if a.postRenderHook != nil {
 		a.postRenderHook()
 	}
+	a.placeCursor()
 }
 
 // rerenderComponent re-renders the root component to produce a fresh element tree.

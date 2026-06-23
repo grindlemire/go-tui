@@ -43,8 +43,8 @@ func TestTextAreaOptions(t *testing.T) {
 				if ta.submitKey != KeyEnter {
 					t.Fatalf("submitKey = %v, want KeyEnter", ta.submitKey)
 				}
-				if ta.hideVirtualCursor {
-					t.Fatal("hideVirtualCursor should default to false")
+				if !ta.hideVirtualCursor {
+					t.Fatal("hideVirtualCursor should default to true (real cursor is the default)")
 				}
 				if ta.autoFocus {
 					t.Fatal("autoFocus should default to false")
@@ -111,27 +111,27 @@ func TestTextAreaOptions(t *testing.T) {
 				}
 			},
 		},
-		"WithTextAreaCursor sets cursor rune": {
-			opts: []TextAreaOption{WithTextAreaCursor('_')},
+		"WithTextAreaCursorRune sets cursor rune": {
+			opts: []TextAreaOption{WithTextAreaCursorRune('_')},
 			assert: func(t *testing.T, ta *TextArea) {
 				if ta.cursorRune != '_' {
 					t.Fatalf("cursorRune = %q, want '_'", ta.cursorRune)
 				}
 			},
 		},
-		"WithTextAreaVirtualCursor false hides virtual cursor": {
-			opts: []TextAreaOption{WithTextAreaVirtualCursor(false)},
+		"WithTextAreaCursor alias sets cursor rune": {
+			opts: []TextAreaOption{WithTextAreaCursor('#')},
 			assert: func(t *testing.T, ta *TextArea) {
-				if !ta.hideVirtualCursor {
-					t.Fatal("expected hideVirtualCursor to be true")
+				if ta.cursorRune != '#' {
+					t.Fatalf("cursorRune = %q, want '#'", ta.cursorRune)
 				}
 			},
 		},
-		"WithTextAreaVirtualCursor true keeps virtual cursor": {
-			opts: []TextAreaOption{WithTextAreaVirtualCursor(true)},
+		"WithTextAreaVirtualCursor enables drawn glyph": {
+			opts: []TextAreaOption{WithTextAreaVirtualCursor()},
 			assert: func(t *testing.T, ta *TextArea) {
 				if ta.hideVirtualCursor {
-					t.Fatal("expected hideVirtualCursor to be false")
+					t.Fatal("expected hideVirtualCursor to be false after WithTextAreaVirtualCursor()")
 				}
 			},
 		},

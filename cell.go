@@ -103,8 +103,13 @@ func (c Cell) IsEmpty() bool {
 	return false
 }
 
-// RuneWidth returns the display width of a rune in terminal cells.
+// RuneWidth returns the display width of a single rune in terminal cells.
 // Returns 1 for most characters, 2 for wide characters (CJK/fullwidth, emoji).
+//
+// RuneWidth is low-level and per-rune: it is wrong for multi-rune grapheme
+// clusters (a combining mark, ZWJ joiner, or regional-indicator half counts as
+// 1 here). For string and cursor-column math use StringWidth, which measures
+// whole clusters.
 //
 // Note: this cell model reserves Width==0 for continuation cells only.
 // Runes that are logically zero-width (combining marks, variation selectors,

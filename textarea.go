@@ -60,7 +60,10 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
 		cursorRune:       '▌',
-		submitKey:        KeyEnter,
+		// Real terminal cursor is the default; the drawn glyph is opt-in via
+		// WithTextAreaVirtualCursor.
+		hideVirtualCursor: true,
+		submitKey:         KeyEnter,
 
 		// State
 		text:      NewState(""),
@@ -211,6 +214,11 @@ func (t *TextArea) Render(app *App) *Element {
 	root.SetOnBlur(func(e *Element) {
 		t.Blur()
 	})
+
+	// Drive the real terminal cursor unless the drawn glyph is opted in.
+	if t.hideVirtualCursor {
+		root.SetCursorSource(t.cursorColRow)
+	}
 
 	// Render placeholder or content
 	if t.text.Get() == "" && t.placeholder != "" && !t.focused.Get() {
@@ -639,11 +647,40 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 // wrapped line (end of text on a display-full line), which needs an extra
 // rendered row to host the cursor.
 func (t *TextArea) phantomCursorRow(lines []string) bool {
-	if !t.focused.Get() || t.hideVirtualCursor {
+	if !t.focused.Get() {
 		return false
 	}
 	row, _ := t.cursorRowCol(lines)
 	return row >= len(lines)
+}
+
+// cursorColRow returns the cursor's content-local position (display column, row)
+// within the textarea's content area and whether it is visible. It shares the
+// row/column computation (cursorRowCol) with the drawn-glyph path in
+// lineWithCursor; the display column is the width of the line prefix up to the
+// cursor's rune column, so wide clusters before the cursor advance it correctly.
+// The textarea has no internal horizontal scroll; vertical scroll, if any, is
+// owned by an enclosing scrollable element and applied by Element.ReportCursor.
+func (t *TextArea) cursorColRow() (col, row int, visible bool) {
+	if !t.focused.Get() {
+		return 0, 0, false
+	}
+	lines := t.wrapText()
+	r, runeCol := t.cursorRowCol(lines)
+
+	// On the phantom row past the last wrapped line the cursor sits at column 0.
+	if r >= len(lines) {
+		return 0, r, true
+	}
+
+	// Convert the rune column within the line to a display column.
+	line := lines[r]
+	runes := []rune(line)
+	if runeCol > len(runes) {
+		runeCol = len(runes)
+	}
+	col = stringWidth(string(runes[:runeCol]))
+	return col, r, true
 }
 
 // lineWithCursor returns a line with the cursor character inserted.

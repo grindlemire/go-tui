@@ -53,6 +53,7 @@ type App struct {
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
 	cursorVisible    bool          // Whether cursor is visible (default false)
+	manualCursor     bool          // Disable framework-driven cursor placement (WithManualCursor)
 	legacyKeyboard   bool          // Force legacy keyboard mode (skip Kitty protocol negotiation)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
 	onResume         func()        // Called after resuming (SIGCONT)

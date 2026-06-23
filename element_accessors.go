@@ -191,6 +191,13 @@ func (e *Element) Component() Component {
 // sum of its code points.
 //
 // StringWidth is the exported wrapper.
+//
+// StringWidth is the correct width function for strings and for cursor-column
+// math: it measures whole grapheme clusters, so a multi-rune glyph advances the
+// column by the cell width the terminal actually paints. Use it (not RuneWidth)
+// when computing a cursor position or the width of a span of text. RuneWidth is
+// low-level: it reports a single rune's width and is wrong for multi-rune
+// clusters (a combining mark or ZWJ joiner counts as 1 there).
 func StringWidth(s string) int { return stringWidth(s) }
 
 func stringWidth(s string) int {

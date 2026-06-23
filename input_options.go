@@ -38,10 +38,30 @@ func WithInputPlaceholderStyle(s Style) InputOption {
 	}
 }
 
-// WithInputCursor sets the cursor character (defaults to '▌').
-func WithInputCursor(r rune) InputOption {
+// WithInputCursorRune sets the drawn cursor glyph used in virtual-cursor mode
+// (defaults to '▌'). Only takes effect together with WithInputVirtualCursor; the
+// default real-cursor mode draws no glyph.
+func WithInputCursorRune(r rune) InputOption {
 	return func(inp *Input) {
 		inp.cursorRune = r
+	}
+}
+
+// WithInputCursor sets the drawn cursor glyph.
+//
+// Deprecated: use WithInputCursorRune. Retained as an alias so existing call
+// sites keep compiling.
+func WithInputCursor(r rune) InputOption {
+	return WithInputCursorRune(r)
+}
+
+// WithInputVirtualCursor switches the input to the drawn '▌' cursor glyph
+// instead of the framework-driven real terminal cursor. Presence enables it; the
+// glyph is customizable via WithInputCursorRune. By default (option absent) the
+// real terminal cursor is used and no glyph is drawn.
+func WithInputVirtualCursor() InputOption {
+	return func(inp *Input) {
+		inp.hideVirtualCursor = false
 	}
 }
 

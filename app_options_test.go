@@ -325,11 +325,22 @@ func TestAppFlagAndCallbackOptions(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"WithCursor keeps cursor visible": {
+		"WithCursor is a no-op": {
 			opt: WithCursor(),
 			assert: func(t *testing.T, app *App) {
-				if !app.cursorVisible {
-					t.Fatal("expected cursorVisible to be true")
+				if app.cursorVisible {
+					t.Fatal("WithCursor should be a no-op and not set cursorVisible")
+				}
+				if app.manualCursor {
+					t.Fatal("WithCursor should not enable manual cursor")
+				}
+			},
+		},
+		"WithManualCursor disables framework cursor management": {
+			opt: WithManualCursor(),
+			assert: func(t *testing.T, app *App) {
+				if !app.manualCursor {
+					t.Fatal("expected manualCursor to be true")
 				}
 			},
 		},

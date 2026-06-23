@@ -674,7 +674,9 @@ func TestInput_DisplayText(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			inp := newTestInput(WithInputWidth(tt.width))
+			// displayText draws the cursor glyph only in virtual-cursor mode; the
+			// real-cursor default draws no glyph in the text.
+			inp := newTestInput(WithInputWidth(tt.width), WithInputVirtualCursor())
 			inp.text.Set(tt.text)
 			inp.cursorPos.Set(tt.cursorPos)
 			inp.scrollPos.Set(tt.scrollPos)
@@ -704,9 +706,11 @@ func TestInput_Render_ContentAndPlaceholder(t *testing.T) {
 			wantStyle: Style{}.Dim(),
 		},
 		"placeholder hidden when focused": {
+			// Real-cursor default draws no glyph: focused empty input renders a
+			// bare space, and the placeholder is hidden.
 			opts:      []InputOption{WithInputPlaceholder("type here")},
 			focused:   true,
-			wantChild: "▌",
+			wantChild: " ",
 		},
 		"text shown instead of placeholder": {
 			opts:      []InputOption{WithInputPlaceholder("type here")},
@@ -885,7 +889,9 @@ func TestInput_Render_Output(t *testing.T) {
 			wantSubstr: "hi",
 		},
 		"focused input renders cursor": {
-			opts:       []InputOption{WithInputWidth(10)},
+			// Assert the drawn glyph: opt into virtual-cursor mode since the real
+			// terminal cursor is the default and draws no glyph.
+			opts:       []InputOption{WithInputWidth(10), WithInputVirtualCursor()},
 			text:       "ab",
 			focus:      true,
 			width:      10,

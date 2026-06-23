@@ -130,6 +130,11 @@ type Element struct {
 
 	// Component that produced this element (set by Mount, read during tree walks)
 	component Component
+
+	// Content-local cursor source. When set, the element reports a terminal
+	// cursor position via ReportCursor. Returns (col, row) within the element's
+	// content area and whether the cursor is visible. nil = no cursor.
+	cursorSource cursorSource
 }
 
 // New creates a new Element with the given options.

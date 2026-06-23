@@ -10,18 +10,19 @@ import (
 // It implements Component, KeyListener, WatcherProvider, and Focusable interfaces.
 type Input struct {
 	// Configuration (set via options, immutable after construction)
-	width            int
-	border           BorderStyle
-	textStyle        Style
-	placeholder      string
-	placeholderStyle Style
-	cursorRune       rune
-	focusColor       *Color
-	borderGradient   *Gradient
-	focusGradient    *Gradient
-	autoFocus        bool
-	onSubmit         func(string)
-	onChange         func(string)
+	width             int
+	border            BorderStyle
+	textStyle         Style
+	placeholder       string
+	placeholderStyle  Style
+	cursorRune        rune
+	hideVirtualCursor bool
+	focusColor        *Color
+	borderGradient    *Gradient
+	focusGradient     *Gradient
+	autoFocus         bool
+	onSubmit          func(string)
+	onChange          func(string)
 
 	// Reactive state
 	text      *State[string]
@@ -59,6 +60,9 @@ func NewInput(opts ...InputOption) *Input {
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
 		cursorRune:       '▌',
+		// Real terminal cursor is the default; the drawn glyph is opt-in via
+		// WithInputVirtualCursor.
+		hideVirtualCursor: true,
 
 		// State
 		text:      NewState(""),
@@ -230,6 +234,11 @@ func (inp *Input) Render(app *App) *Element {
 	root.SetOnBlur(func(e *Element) {
 		inp.Blur()
 	})
+
+	// Drive the real terminal cursor unless the drawn glyph is opted in.
+	if inp.hideVirtualCursor {
+		root.SetCursorSource(inp.cursorColRow)
+	}
 
 	// Render placeholder or content
 	if inp.text.Get() == "" && inp.placeholder != "" && !inp.focused.Get() {
@@ -474,6 +483,27 @@ func textToClusters(s string) (clusters []displayCluster, totalWidth int) {
 	return
 }
 
+// cursorColRow returns the cursor's content-local position (display column, row)
+// within the input's content area and whether it is visible. It shares the
+// horizontal-scroll model with the drawn-glyph path: the column is the cursor's
+// display column minus scrollPos (ensureCursorVisible keeps it in the window).
+// A cursor scrolled outside the visible width reports visible=false. The row is
+// always 0 (single-line). Visibility also requires focus.
+func (inp *Input) cursorColRow() (col, row int, visible bool) {
+	if !inp.focused.Get() {
+		return 0, 0, false
+	}
+	inp.ensureCursorVisible()
+	text := inp.text.Get()
+	cursorCol := runeIndexToDisplayCol(text, inp.clampCursorPos())
+	col = cursorCol - max(inp.scrollPos.Get(), 0)
+	vw := inp.visibleWidth()
+	if col < 0 || (vw > 0 && col >= vw) {
+		return 0, 0, false
+	}
+	return col, 0, true
+}
+
 // displayText returns a viewport-clamped slice of the text with cursor overlay.
 func (inp *Input) displayText() string {
 	text := inp.text.Get()
@@ -490,6 +520,13 @@ func (inp *Input) displayText() string {
 		// In the unfocused path, scroll adjustment preserves the previously-set
 		// scroll position. ensureCursorVisible is only called in the focused path
 		// so that manually-scrolled text doesn't jump when the user blurs.
+		return inp.viewportText(allClusters, visible)
+	}
+
+	// Real-cursor mode: keep the cursor in view but draw no glyph. The framework
+	// places the hardware cursor via the content-local cursor source.
+	if inp.hideVirtualCursor {
+		inp.ensureCursorVisible()
 		return inp.viewportText(allClusters, visible)
 	}
 
