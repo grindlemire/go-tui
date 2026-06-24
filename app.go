@@ -52,7 +52,7 @@ type App struct {
 	eventQueueSize   int           // Capacity of event queue (default 256, used during construction)
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
-	cursorVisible    bool          // Whether cursor is visible (default false)
+	cursorVisible    bool          // Currently always false (WithCursor is a no-op); the cursor is driven per-frame by placeCursor. Field and its `if !a.cursorVisible` guards are retained for the resume/suspend paths and a possible future opt-in.
 	manualCursor     bool          // Disable framework-driven cursor placement (WithManualCursor)
 	legacyKeyboard   bool          // Force legacy keyboard mode (skip Kitty protocol negotiation)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)

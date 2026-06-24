@@ -484,16 +484,16 @@ func textToClusters(s string) (clusters []displayCluster, totalWidth int) {
 }
 
 // cursorColRow returns the cursor's content-local position (display column, row)
-// within the input's content area and whether it is visible. It shares the
-// horizontal-scroll model with the drawn-glyph path: the column is the cursor's
-// display column minus scrollPos (ensureCursorVisible keeps it in the window).
-// A cursor scrolled outside the visible width reports visible=false. The row is
-// always 0 (single-line). Visibility also requires focus.
+// within the input's content area and whether it is visible. It is a pure read:
+// the column is the cursor's display column minus scrollPos, which is already
+// kept synced by every mutating key handler and by displayText on the render
+// path (which runs before placeCursor calls this source). A cursor scrolled
+// outside the visible width reports visible=false. The row is always 0
+// (single-line). Visibility also requires focus.
 func (inp *Input) cursorColRow() (col, row int, visible bool) {
 	if !inp.focused.Get() {
 		return 0, 0, false
 	}
-	inp.ensureCursorVisible()
 	text := inp.text.Get()
 	cursorCol := runeIndexToDisplayCol(text, inp.clampCursorPos())
 	col = cursorCol - max(inp.scrollPos.Get(), 0)
