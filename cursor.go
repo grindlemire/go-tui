@@ -43,33 +43,42 @@ func (e *Element) ReportCursor() (int, int, bool) {
 		return 0, 0, false
 	}
 
-	// Start at the cursor cell in the element's own layout base. An element under
-	// a scrollable ancestor is laid out in that ancestor's content space (the
-	// whole subtree is rebased toward 0,0), so the position must be translated up
-	// through each scrollable ancestor exactly as the renderer does:
-	//   screen = ancestorContentOrigin - ancestorScroll + posInAncestorContentSpace
-	// and clipped to each ancestor's viewport (out-of-view hides the cursor).
+	// Cursor cell in the element's own layout base. Under a scrollable ancestor the
+	// whole subtree is laid out in that ancestor's content space (rebased toward
+	// 0,0), so this is already content-local there.
 	cr := e.ContentRect()
 	x := cr.X + col
 	y := cr.Y + row
 
+	// Mirror the renderer: only the OUTERMOST scrollable ancestor's transform is
+	// applied to the entire clipped subtree (renderClippedElement recurses into
+	// descendants without re-basing at nested scrollables). Apply that one
+	// transform and clip against its viewport. No scrollable ancestor means the
+	// content-local position is already screen-absolute.
+	var outer *Element
 	for anc := e.parent; anc != nil; anc = anc.parent {
-		if !anc.IsScrollable() {
-			continue
-		}
-		// Map (x,y) from this scrollable's content space into the scrollable's own
-		// base (its parent's coordinate space), mirroring renderClippedElement.
-		clip := anc.ContentRect() // viewport, expressed in the scrollable's base
-		sx, sy := anc.ScrollOffset()
-		x += clip.X - sx
-		y += clip.Y - sy
-
-		// Clip against the viewport in the scrollable's base. A cursor scrolled
-		// out of view is hidden.
-		if x < clip.X || x >= clip.Right() || y < clip.Y || y >= clip.Bottom() {
-			return 0, 0, false
+		if anc.IsScrollable() {
+			outer = anc
 		}
 	}
+	if outer == nil {
+		return x, y, true
+	}
 
+	clip := outer.ContentRect()
+	sx, sy := outer.ScrollOffset()
+	x += clip.X - sx
+	y += clip.Y - sy
+
+	// The renderer reserves the last content column for a vertical scrollbar, so
+	// shrink the clip to match before the visibility test.
+	if outer.needsVerticalScrollbar() {
+		clip.Width = max(0, clip.Width-1)
+	}
+
+	// A cursor scrolled outside the viewport is hidden.
+	if x < clip.X || x >= clip.Right() || y < clip.Y || y >= clip.Bottom() {
+		return 0, 0, false
+	}
 	return x, y, true
 }

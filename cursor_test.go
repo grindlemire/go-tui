@@ -247,3 +247,80 @@ func TestElement_ReportCursor_ScrollableAncestorShiftsAndClips(t *testing.T) {
 		t.Fatalf("ReportCursor = (%d,%d), want (%d,%d)", x, y, clip.X+1, clip.Y+0)
 	}
 }
+
+// findGlyph scans the buffer for the first cell whose reconstructed glyph equals
+// want, returning its coordinates. Used to pin cursor reporting to the position
+// the renderer actually drew at, rather than to a re-derivation of the formula.
+func findGlyph(b *Buffer, want string) (x, y int, found bool) {
+	w, h := b.Size()
+	for yy := range h {
+		for xx := range w {
+			if cellGlyph(b.Cell(xx, yy)) == want {
+				return xx, yy, true
+			}
+		}
+	}
+	return 0, 0, false
+}
+
+func TestElement_ReportCursor_NestedScrollablesMirrorRenderer(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// Outer scrollable viewport.
+	outer := New(WithDirection(Column), WithWidth(20), WithHeight(6), WithScrollable(ScrollVertical))
+	// Inner scrollable with a border, so its content origin is offset within the
+	// outer scrollable's content space. The renderer applies only the outer
+	// scrollable's transform to the whole clipped subtree; the previous
+	// per-ancestor accumulation also added this inner offset and mis-placed the
+	// cursor by exactly the inner scrollable's content origin.
+	middle := New(WithDirection(Column), WithWidth(16), WithHeight(8), WithScrollable(ScrollVertical), WithBorder(BorderSingle))
+	cursorChild := New(WithWidth(10), WithHeight(2))
+	cursorChild.SetText("Z") // marker rendered at the cursor's content origin
+	cursorChild.SetCursorSource(func() (int, int, bool) { return 0, 0, true })
+
+	middle.AddChild(cursorChild)
+	outer.AddChild(middle)
+	root := New(WithDirection(Column))
+	root.AddChild(outer)
+	app.SetRoot(root)
+	app.MarkDirty()
+	app.Render()
+
+	zx, zy, found := findGlyph(app.buffer, "Z")
+	if !found {
+		t.Fatal("cursor marker 'Z' was not rendered inside the nested viewports")
+	}
+
+	x, y, vis := cursorChild.ReportCursor()
+	if !vis {
+		t.Fatal("expected cursor visible inside nested viewports")
+	}
+	if x != zx || y != zy {
+		t.Fatalf("ReportCursor = (%d,%d), but glyph rendered at (%d,%d)", x, y, zx, zy)
+	}
+}
+
+func TestElement_ReportCursor_HidesCursorUnderScrollbarGutter(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// A scrollable whose content overflows vertically, so the renderer reserves
+	// the last content column for the vertical scrollbar and shrinks the clip by
+	// one. A cursor in that last column sits under the gutter and must be hidden.
+	scroller := New(WithDirection(Column), WithWidth(10), WithHeight(3), WithScrollable(ScrollVertical))
+	tall := New(WithWidth(10), WithHeight(5)) // taller than the viewport => scrollbar shows
+	tall.SetCursorSource(func() (int, int, bool) { return 9, 0, true })
+	scroller.AddChild(tall)
+
+	root := New(WithDirection(Column))
+	root.AddChild(scroller)
+	app.SetRoot(root)
+	app.MarkDirty()
+	app.Render()
+
+	if !scroller.needsVerticalScrollbar() {
+		t.Fatal("test setup: expected scroller to need a vertical scrollbar")
+	}
+	if _, _, vis := tall.ReportCursor(); vis {
+		t.Fatal("cursor in the scrollbar gutter column should be reported hidden")
+	}
+}
