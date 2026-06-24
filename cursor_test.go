@@ -324,3 +324,28 @@ func TestElement_ReportCursor_HidesCursorUnderScrollbarGutter(t *testing.T) {
 		t.Fatal("cursor in the scrollbar gutter column should be reported hidden")
 	}
 }
+
+func TestElement_ReportCursor_HiddenScrollbarReclaimsGutter(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// Same overflowing viewport, but with the scrollbar hidden the gutter column
+	// is reclaimed: needsVerticalScrollbar is false, so the last column stays
+	// inside the clip and a cursor there remains visible.
+	scroller := New(WithDirection(Column), WithWidth(10), WithHeight(3), WithScrollable(ScrollVertical), WithScrollbarHidden(true))
+	tall := New(WithWidth(10), WithHeight(5))
+	tall.SetCursorSource(func() (int, int, bool) { return 9, 0, true })
+	scroller.AddChild(tall)
+
+	root := New(WithDirection(Column))
+	root.AddChild(scroller)
+	app.SetRoot(root)
+	app.MarkDirty()
+	app.Render()
+
+	if scroller.needsVerticalScrollbar() {
+		t.Fatal("test setup: hidden scrollbar should not reserve a gutter")
+	}
+	if _, _, vis := tall.ReportCursor(); !vis {
+		t.Fatal("cursor in the last column should be visible when the gutter is reclaimed")
+	}
+}
