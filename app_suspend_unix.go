@@ -85,9 +85,7 @@ func (a *App) resumeTerminal() {
 		a.terminal.Clear()
 	}
 
-	if !a.cursorVisible {
-		a.terminal.HideCursor()
-	}
+	a.terminal.HideCursor()
 
 	a.enableInputReporting()
 

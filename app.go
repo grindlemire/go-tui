@@ -52,7 +52,6 @@ type App struct {
 	eventQueueSize   int           // Capacity of event queue (default 256, used during construction)
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
-	cursorVisible    bool          // Currently always false (WithCursor is a no-op); the cursor is driven per-frame by placeCursor. Field and its `if !a.cursorVisible` guards are retained for the resume/suspend paths and a possible future opt-in.
 	manualCursor     bool          // Disable framework-driven cursor placement (WithManualCursor)
 	legacyKeyboard   bool          // Force legacy keyboard mode (skip Kitty protocol negotiation)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
@@ -138,7 +137,6 @@ func NewApp(opts ...AppOption) (*App, error) {
 		inputLatency:   InputLatencyBlocking,  // Default: block until input arrives
 		frameDuration:  16 * time.Millisecond, // Default ~60fps
 		eventQueueSize: 256,                   // Default queue size
-		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
 		batch:          newBatchContext(),
 	}
@@ -184,9 +182,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 
 	// Apply terminal settings based on options
 	app.enableInputReporting()
-	if !app.cursorVisible {
-		terminal.HideCursor()
-	}
+	terminal.HideCursor()
 
 	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
 	if interruptible, ok := reader.(InterruptibleReader); ok {
@@ -194,9 +190,7 @@ func NewApp(opts ...AppOption) (*App, error) {
 			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
 			app.disableInputReporting()
-			if !app.cursorVisible {
-				terminal.ShowCursor()
-			}
+			terminal.ShowCursor()
 			if app.inlineHeight == 0 {
 				terminal.ExitAltScreen()
 			}
@@ -244,7 +238,6 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 		inputLatency:   InputLatencyBlocking,  // Default: block until input arrives
 		frameDuration:  16 * time.Millisecond, // Default ~60fps
 		eventQueueSize: 256,                   // Default queue size
-		cursorVisible:  false,                 // Cursor hidden by default
 		mounts:         newMountState(),
 		batch:          newBatchContext(),
 	}
@@ -290,9 +283,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 
 	// Apply terminal settings based on options
 	app.enableInputReporting()
-	if !app.cursorVisible {
-		terminal.HideCursor()
-	}
+	terminal.HideCursor()
 
 	// Enable interrupt capability on the reader for SIGWINCH and shutdown wakeup
 	if interruptible, ok := reader.(InterruptibleReader); ok {
@@ -300,9 +291,7 @@ func NewAppWithReader(reader EventReader, opts ...AppOption) (*App, error) {
 			app.Stop() // Stop background goroutines (startWatcherBridge, startEventMerge)
 			reader.Close()
 			app.disableInputReporting()
-			if !app.cursorVisible {
-				terminal.ShowCursor()
-			}
+			terminal.ShowCursor()
 			if app.inlineHeight == 0 {
 				terminal.ExitAltScreen()
 			}

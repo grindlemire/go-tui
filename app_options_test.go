@@ -328,9 +328,6 @@ func TestAppFlagAndCallbackOptions(t *testing.T) {
 		"WithCursor is a no-op": {
 			opt: WithCursor(),
 			assert: func(t *testing.T, app *App) {
-				if app.cursorVisible {
-					t.Fatal("WithCursor should be a no-op and not set cursorVisible")
-				}
 				if app.manualCursor {
 					t.Fatal("WithCursor should not enable manual cursor")
 				}

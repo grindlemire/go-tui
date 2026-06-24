@@ -31,10 +31,8 @@ func (a *App) Close() error {
 		// Disable mouse event reporting, or alternate-scroll if that was used.
 		a.disableInputReporting()
 
-		// Show cursor (only if it was hidden)
-		if !a.cursorVisible {
-			a.terminal.ShowCursor()
-		}
+		// Show cursor (it is hidden for the lifetime of the app)
+		a.terminal.ShowCursor()
 
 		// Handle screen cleanup based on mode
 		if a.inAlternateScreen {
