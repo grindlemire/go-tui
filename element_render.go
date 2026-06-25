@@ -135,7 +135,7 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 			DrawBox(buf, rect, e.border, e.borderStyle)
 		}
 		if e.borderTitle != "" {
-			drawBoxTitle(buf, rect, e.borderTitle, e.borderStyle)
+			drawBoxTitle(buf, rect, e.borderTitle, e.borderStyle, e.borderTitleAlign)
 		}
 	}
 
@@ -276,7 +276,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			DrawBoxClipped(buf, screenRect, e.border, e.borderStyle, clipRect)
 		}
 		if e.borderTitle != "" {
-			drawBoxTitleClipped(buf, screenRect, e.borderTitle, e.borderStyle, clipRect)
+			drawBoxTitleClipped(buf, screenRect, e.borderTitle, e.borderStyle, clipRect, e.borderTitleAlign)
 		}
 	}
 

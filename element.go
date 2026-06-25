@@ -57,10 +57,11 @@ type Element struct {
 	dirty  bool
 
 	// Visual properties
-	border      BorderStyle
-	borderStyle Style
-	background  *Style // nil = transparent
-	borderTitle string // title text drawn in the top border (DrawBoxWithTitle)
+	border           BorderStyle
+	borderStyle      Style
+	background       *Style    // nil = transparent
+	borderTitle      string    // title text drawn in the top border (DrawBoxWithTitle)
+	borderTitleAlign TextAlign // alignment of the border title (default TextAlignCenter)
 
 	// Text properties
 	text         string
@@ -153,8 +154,9 @@ type cursorReport struct {
 // By default, an Element has Auto width/height (flexes to fill available space).
 func New(opts ...Option) *Element {
 	e := &Element{
-		style: DefaultLayoutStyle(),
-		dirty: true,
+		style:            DefaultLayoutStyle(),
+		borderTitleAlign: TextAlignCenter,
+		dirty:            true,
 	}
 	for _, opt := range opts {
 		opt(e)

@@ -194,6 +194,14 @@ func WithBorderTitle(title string) Option {
 	}
 }
 
+// WithBorderTitleAlign sets the alignment of the border title (left, center, or right).
+// Default is TextAlignCenter (original behavior).
+func WithBorderTitleAlign(align TextAlign) Option {
+	return func(e *Element) {
+		e.borderTitleAlign = align
+	}
+}
+
 // WithBorderStyle sets the color/attributes for the border.
 func WithBorderStyle(style Style) Option {
 	return func(e *Element) {
