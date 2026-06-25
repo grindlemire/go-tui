@@ -169,7 +169,8 @@ func (dt *dispatchTable) dispatch(ke KeyEvent) bool {
 func (dt *dispatchTable) validate() error {
 	// Track patterns that already have a Stop handler
 	type stopInfo struct {
-		position int
+		position    int
+		droppedGate bool
 	}
 	stopPatterns := make(map[KeyPattern]stopInfo)
 
@@ -177,8 +178,12 @@ func (dt *dispatchTable) validate() error {
 		if !entry.stop {
 			continue
 		}
-		// Focus-gated entries cannot conflict because only one can be focused at a time
-		if entry.pattern.FocusRequired {
+		// A focus-gated entry is exempt only when its focus check resolved: the
+		// owning component implements IsFocused (and was mounted), so at most one
+		// such binding is active at a time. When focusCheck is nil the gate was
+		// dropped — the binding fires unconditionally — so treat it as an ordinary
+		// stop handler that can conflict.
+		if entry.pattern.FocusRequired && entry.focusCheck != nil {
 			continue
 		}
 		// Preemptive entries (modal overlay) run in a separate dispatch pass
@@ -186,17 +191,29 @@ func (dt *dispatchTable) validate() error {
 		if entry.preempt {
 			continue
 		}
+		// Reaching here with FocusRequired means focusCheck was nil: the focus gate
+		// was dropped (owner has no IsFocused, or the widget was not mounted).
+		droppedGate := entry.pattern.FocusRequired
 		// Strip FocusRequired for comparison so focus-gated and broadcast entries
 		// with the same key don't conflict
 		comparePattern := entry.pattern
 		comparePattern.FocusRequired = false
 		if existing, conflict := stopPatterns[comparePattern]; conflict {
+			if droppedGate || existing.droppedGate {
+				return fmt.Errorf(
+					"focus-gated key binding for pattern %+v at tree positions %d and %d fires "+
+						"unconditionally because its owning component does not implement IsFocused() "+
+						"or was not mounted; mount each focusable widget as its own component "+
+						"(app.Mount) instead of aggregating their KeyMaps onto a host",
+					entry.pattern, existing.position, entry.position,
+				)
+			}
 			return fmt.Errorf(
 				"conflicting stop handlers for key pattern %+v at tree positions %d and %d",
 				entry.pattern, existing.position, entry.position,
 			)
 		}
-		stopPatterns[comparePattern] = stopInfo{position: entry.position}
+		stopPatterns[comparePattern] = stopInfo{position: entry.position, droppedGate: droppedGate}
 	}
 
 	return nil
