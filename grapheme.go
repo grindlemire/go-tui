@@ -324,3 +324,52 @@ func runeIndexToDisplayCol(s string, runeIdx int) int {
 	}
 	return col
 }
+
+// runeIndexToClusterIndex returns the grapheme-cluster index for a rune index in
+// s: the number of whole clusters that start strictly before runeIdx. A runeIdx
+// inside a multi-rune cluster reports that cluster (the marks join the base), so
+// the result counts clusters wholly preceding the position. Walks incrementally
+// and stops at the target, making it O(runeIdx).
+func runeIndexToClusterIndex(s string, runeIdx int) int {
+	if runeIdx <= 0 {
+		return 0
+	}
+	clusters := 0
+	runeAt := 0
+	for len(s) > 0 {
+		_, _, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		clusterRunes := utf8.RuneCountInString(s[:size])
+		if runeAt+clusterRunes > runeIdx {
+			// runeIdx is at or inside this cluster: it does not advance past it.
+			break
+		}
+		clusters++
+		runeAt += clusterRunes
+		s = s[size:]
+	}
+	return clusters
+}
+
+// clusterIndexToRuneIndex returns the rune index at the start of the cluster at
+// the given cluster index. A cluster index past the end clamps to the total rune
+// count. Walks incrementally and stops at the target, making it O(clusterIdx).
+func clusterIndexToRuneIndex(s string, clusterIdx int) int {
+	runeAt := 0
+	clusters := 0
+	for len(s) > 0 {
+		if clusters == clusterIdx {
+			return runeAt
+		}
+		_, _, size := nextCluster(s)
+		if size == 0 {
+			break
+		}
+		runeAt += utf8.RuneCountInString(s[:size])
+		clusters++
+		s = s[size:]
+	}
+	return runeAt
+}

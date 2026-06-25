@@ -163,6 +163,22 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 			renderElement(buf, child, rc.childInherited)
 		}
 	}
+
+	// Capture the cursor at its draw site (after children, so a scrollable's
+	// scrollbar state is settled). The content origin is absolute here; a
+	// scrollable also clips its own cursor to its viewport (gutter-aware).
+	if e.cursorSource != nil {
+		cr := e.ContentRect()
+		clip := buf.Rect()
+		if e.IsScrollable() {
+			viewport := cr
+			if e.needsVerticalScrollbar() {
+				viewport.Width = max(0, viewport.Width-1)
+			}
+			clip = clip.Intersect(viewport)
+		}
+		e.captureCursor(cr.X, cr.Y, clip)
+	}
 }
 
 // renderScrollableChildren renders children with scroll offset and clipping.
@@ -214,6 +230,19 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	visibleRect := screenRect.Intersect(clipRect)
 	if visibleRect.IsEmpty() {
 		return
+	}
+
+	// Capture the cursor at its draw site, using the same content origin and the
+	// active clip (already gutter-shrunk by the enclosing scrollable) the renderer
+	// uses for this element's text.
+	if e.cursorSource != nil {
+		ox := screenX + e.style.Padding.Left
+		oy := screenY + e.style.Padding.Top
+		if e.border != BorderNone {
+			ox++
+			oy++
+		}
+		e.captureCursor(ox, oy, clipRect)
 	}
 
 	// Resolve effective styles (inheritance + <th> bold)

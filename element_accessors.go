@@ -12,6 +12,24 @@ func (e *Element) SetStyle(style LayoutStyle) {
 	e.MarkDirty()
 }
 
+// SetHeight updates the element's height after creation and marks it (and its
+// ancestors) dirty so layout recomputes on the next frame. Intended for retained
+// elements held across renders; a setter on an element recreated each render has
+// no lasting effect. Pass tui.Fixed(n), tui.Percent(p), or tui.Auto().
+func (e *Element) SetHeight(v Value) {
+	e.style.Height = v
+	e.MarkDirty()
+}
+
+// SetWidth updates the element's width after creation and marks it (and its
+// ancestors) dirty so layout recomputes on the next frame. Intended for retained
+// elements held across renders; a setter on an element recreated each render has
+// no lasting effect. Pass tui.Fixed(n), tui.Percent(p), or tui.Auto().
+func (e *Element) SetWidth(v Value) {
+	e.style.Width = v
+	e.MarkDirty()
+}
+
 // Style returns the current layout style.
 func (e *Element) Style() LayoutStyle {
 	return e.style
@@ -173,6 +191,13 @@ func (e *Element) Component() Component {
 // sum of its code points.
 //
 // StringWidth is the exported wrapper.
+//
+// StringWidth is the correct width function for strings and for cursor-column
+// math: it measures whole grapheme clusters, so a multi-rune glyph advances the
+// column by the cell width the terminal actually paints. Use it (not RuneWidth)
+// when computing a cursor position or the width of a span of text. RuneWidth is
+// low-level: it reports a single rune's width and is wrong for multi-rune
+// clusters (a combining mark or ZWJ joiner counts as 1 there).
 func StringWidth(s string) int { return stringWidth(s) }
 
 func stringWidth(s string) int {

@@ -324,6 +324,17 @@ func WithScrollOffset(x, y int) Option {
 	}
 }
 
+// WithCursorSource installs a content-local cursor source on the element so the
+// framework can place the real terminal cursor when this element is focused. The
+// function returns (col, row) in display cells from the element's content origin
+// and whether the cursor is visible. See SetCursorSource for the post-creation
+// setter.
+func WithCursorSource(fn func() (col, row int, visible bool)) Option {
+	return func(e *Element) {
+		e.cursorSource = fn
+	}
+}
+
 // WithScrollbarStyle sets the style for the scrollbar track.
 func WithScrollbarStyle(style Style) Option {
 	return func(e *Element) {

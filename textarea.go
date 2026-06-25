@@ -60,7 +60,10 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
 		cursorRune:       '▌',
-		submitKey:        KeyEnter,
+		// Real terminal cursor is the default; the drawn glyph is opt-in via
+		// WithTextAreaVirtualCursor.
+		hideVirtualCursor: true,
+		submitKey:         KeyEnter,
 
 		// State
 		text:      NewState(""),
@@ -91,6 +94,56 @@ func (t *TextArea) SetText(s string) {
 func (t *TextArea) Clear() {
 	t.text.Set("")
 	t.cursorPos.Set(0)
+}
+
+// CursorPos returns the cursor position as a grapheme-cluster index: the count
+// of whole glyphs before the cursor. This is the unit SetCursorPos accepts; it
+// is not a byte or rune offset, so do not use it to slice the text directly.
+func (t *TextArea) CursorPos() int {
+	return runeIndexToClusterIndex(t.text.Get(), t.clampCursorPos())
+}
+
+// SetCursorPos moves the cursor to the given grapheme-cluster index. The index
+// is clamped to [0, ClusterCount(text)] and always lands on a cluster boundary.
+func (t *TextArea) SetCursorPos(pos int) {
+	text := t.text.Get()
+	if pos < 0 {
+		pos = 0
+	}
+	t.cursorPos.Set(clusterIndexToRuneIndex(text, pos))
+	t.blink.Set(true)
+}
+
+// InsertText inserts s at the cursor and advances the cursor past it. Insertion
+// routes through the same internal path that typing uses, so the bound text and
+// the cursor stay cluster-consistent (combining marks join the preceding base,
+// and the cursor lands after the final whole cluster).
+func (t *TextArea) InsertText(s string) {
+	t.insertString(s)
+}
+
+// insertString splices s into the text at the cursor's rune index and advances
+// the cursor to the end of the inserted content, snapped to a cluster boundary
+// via clusterEnd. This is the single insert path shared by insertChar,
+// insertNewline, and InsertText.
+func (t *TextArea) insertString(s string) {
+	if s == "" {
+		return
+	}
+	text := t.text.Get()
+	pos := t.clampCursorPos()
+	runes := []rune(text)
+	insert := []rune(s)
+	newRunes := make([]rune, 0, len(runes)+len(insert))
+	newRunes = append(newRunes, runes[:pos]...)
+	newRunes = append(newRunes, insert...)
+	newRunes = append(newRunes, runes[pos:]...)
+	newText := string(newRunes)
+	t.text.Set(newText)
+	// Advance to the end of the cluster that contains the last inserted rune so
+	// a trailing combining mark glues to its base and the cursor lands after it.
+	t.cursorPos.Set(clusterEnd(newText, pos+len(insert)-1))
+	t.blink.Set(true)
 }
 
 // contentRows returns the number of content rows to render: the wrapped
@@ -161,6 +214,11 @@ func (t *TextArea) Render(app *App) *Element {
 	root.SetOnBlur(func(e *Element) {
 		t.Blur()
 	})
+
+	// Drive the real terminal cursor unless the drawn glyph is opted in.
+	if t.hideVirtualCursor {
+		root.SetCursorSource(t.cursorColRow)
+	}
 
 	// Render placeholder or content
 	if t.text.Get() == "" && t.placeholder != "" && !t.focused.Get() {
@@ -287,24 +345,12 @@ func (t *TextArea) Watchers() []Watcher {
 // so combining marks join the previous base and the cursor lands after
 // the combined cluster.
 func (t *TextArea) insertChar(ke KeyEvent) {
-	text := t.text.Get()
-	pos := t.clampCursorPos()
-	runes := []rune(text)
-	newRunes := append(runes[:pos], append([]rune{ke.Rune}, runes[pos:]...)...)
-	newText := string(newRunes)
-	t.text.Set(newText)
-	t.cursorPos.Set(clusterEnd(newText, pos))
-	t.blink.Set(true)
+	t.insertString(string(ke.Rune))
 }
 
 // insertNewline inserts a newline character at the cursor position.
 func (t *TextArea) insertNewline(ke KeyEvent) {
-	runes := []rune(t.text.Get())
-	pos := t.clampCursorPos()
-	newRunes := append(runes[:pos], append([]rune{'\n'}, runes[pos:]...)...)
-	t.text.Set(string(newRunes))
-	t.cursorPos.Set(pos + 1)
-	t.blink.Set(true)
+	t.insertString("\n")
 }
 
 // backspace deletes the cluster before the cursor.
@@ -601,11 +647,40 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 // wrapped line (end of text on a display-full line), which needs an extra
 // rendered row to host the cursor.
 func (t *TextArea) phantomCursorRow(lines []string) bool {
-	if !t.focused.Get() || t.hideVirtualCursor {
+	if !t.focused.Get() {
 		return false
 	}
 	row, _ := t.cursorRowCol(lines)
 	return row >= len(lines)
+}
+
+// cursorColRow returns the cursor's content-local position (display column, row)
+// within the textarea's content area and whether it is visible. It shares the
+// row/column computation (cursorRowCol) with the drawn-glyph path in
+// lineWithCursor; the display column is the width of the line prefix up to the
+// cursor's rune column, so wide clusters before the cursor advance it correctly.
+// The textarea has no internal horizontal scroll; vertical scroll, if any, is
+// owned by an enclosing scrollable element and applied by Element.ReportCursor.
+func (t *TextArea) cursorColRow() (col, row int, visible bool) {
+	if !t.focused.Get() {
+		return 0, 0, false
+	}
+	lines := t.wrapText()
+	r, runeCol := t.cursorRowCol(lines)
+
+	// On the phantom row past the last wrapped line the cursor sits at column 0.
+	if r >= len(lines) {
+		return 0, r, true
+	}
+
+	// Convert the rune column within the line to a display column.
+	line := lines[r]
+	runes := []rune(line)
+	if runeCol > len(runes) {
+		runeCol = len(runes)
+	}
+	col = stringWidth(string(runes[:runeCol]))
+	return col, r, true
 }
 
 // lineWithCursor returns a line with the cursor character inserted.

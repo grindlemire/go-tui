@@ -10,18 +10,19 @@ import (
 // It implements Component, KeyListener, WatcherProvider, and Focusable interfaces.
 type Input struct {
 	// Configuration (set via options, immutable after construction)
-	width            int
-	border           BorderStyle
-	textStyle        Style
-	placeholder      string
-	placeholderStyle Style
-	cursorRune       rune
-	focusColor       *Color
-	borderGradient   *Gradient
-	focusGradient    *Gradient
-	autoFocus        bool
-	onSubmit         func(string)
-	onChange         func(string)
+	width             int
+	border            BorderStyle
+	textStyle         Style
+	placeholder       string
+	placeholderStyle  Style
+	cursorRune        rune
+	hideVirtualCursor bool
+	focusColor        *Color
+	borderGradient    *Gradient
+	focusGradient     *Gradient
+	autoFocus         bool
+	onSubmit          func(string)
+	onChange          func(string)
 
 	// Reactive state
 	text      *State[string]
@@ -59,6 +60,9 @@ func NewInput(opts ...InputOption) *Input {
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
 		cursorRune:       '▌',
+		// Real terminal cursor is the default; the drawn glyph is opt-in via
+		// WithInputVirtualCursor.
+		hideVirtualCursor: true,
 
 		// State
 		text:      NewState(""),
@@ -92,6 +96,62 @@ func (inp *Input) Clear() {
 	inp.text.Set("")
 	inp.cursorPos.Set(0)
 	inp.scrollPos.Set(0)
+}
+
+// CursorPos returns the cursor position as a grapheme-cluster index: the count
+// of whole glyphs before the cursor. This is the unit SetCursorPos accepts; it
+// is not a byte or rune offset, so do not use it to slice the text directly.
+func (inp *Input) CursorPos() int {
+	return runeIndexToClusterIndex(inp.text.Get(), inp.clampCursorPos())
+}
+
+// SetCursorPos moves the cursor to the given grapheme-cluster index. The index
+// is clamped to [0, ClusterCount(text)] and always lands on a cluster boundary.
+func (inp *Input) SetCursorPos(pos int) {
+	text := inp.text.Get()
+	if pos < 0 {
+		pos = 0
+	}
+	inp.cursorPos.Set(clusterIndexToRuneIndex(text, pos))
+	inp.blink.Set(true)
+	inp.ensureCursorVisible()
+}
+
+// InsertText inserts s at the cursor and advances the cursor past it. Insertion
+// routes through the same internal path that typing uses, so the bound text and
+// the cursor stay cluster-consistent (combining marks join the preceding base,
+// and the cursor lands after the final whole cluster).
+func (inp *Input) InsertText(s string) {
+	inp.insertString(s)
+}
+
+// insertString splices s into the text at the cursor's rune index and advances
+// the cursor to the end of the inserted content, snapped to a cluster boundary
+// via clusterEnd. This is the single insert path shared by insertChar and
+// InsertText; it keeps scroll and onChange consistent.
+func (inp *Input) insertString(s string) {
+	if s == "" {
+		return
+	}
+	text := inp.text.Get()
+	pos := inp.clampCursorPos()
+	runes := []rune(text)
+	insert := []rune(s)
+	newRunes := make([]rune, 0, len(runes)+len(insert))
+	newRunes = append(newRunes, runes[:pos]...)
+	newRunes = append(newRunes, insert...)
+	newRunes = append(newRunes, runes[pos:]...)
+	newText := string(newRunes)
+
+	inp.text.Set(newText)
+	// Advance to the end of the cluster that contains the last inserted rune so
+	// a trailing combining mark glues to its base and the cursor lands after it.
+	inp.cursorPos.Set(clusterEnd(newText, pos+len(insert)-1))
+	inp.blink.Set(true)
+	inp.ensureCursorVisible()
+	if inp.onChange != nil {
+		inp.onChange(inp.text.Get())
+	}
 }
 
 // --- Component Interface ---
@@ -174,6 +234,11 @@ func (inp *Input) Render(app *App) *Element {
 	root.SetOnBlur(func(e *Element) {
 		inp.Blur()
 	})
+
+	// Drive the real terminal cursor unless the drawn glyph is opted in.
+	if inp.hideVirtualCursor {
+		root.SetCursorSource(inp.cursorColRow)
+	}
 
 	// Render placeholder or content
 	if inp.text.Get() == "" && inp.placeholder != "" && !inp.focused.Get() {
@@ -277,24 +342,7 @@ func (inp *Input) Watchers() []Watcher {
 // so combining marks join the previous base and the cursor lands after
 // the combined cluster.
 func (inp *Input) insertChar(ke KeyEvent) {
-	text := inp.text.Get()
-	pos := inp.clampCursorPos()
-
-	// Insert the rune into the string at the rune index.
-	runes := []rune(text)
-	newRunes := make([]rune, 0, len(runes)+1)
-	newRunes = append(newRunes, runes[:pos]...)
-	newRunes = append(newRunes, ke.Rune)
-	newRunes = append(newRunes, runes[pos:]...)
-	newText := string(newRunes)
-
-	inp.text.Set(newText)
-	inp.cursorPos.Set(clusterEnd(newText, pos))
-	inp.blink.Set(true)
-	inp.ensureCursorVisible()
-	if inp.onChange != nil {
-		inp.onChange(inp.text.Get())
-	}
+	inp.insertString(string(ke.Rune))
 }
 
 // backspace deletes the character before the cursor.
@@ -435,6 +483,27 @@ func textToClusters(s string) (clusters []displayCluster, totalWidth int) {
 	return
 }
 
+// cursorColRow returns the cursor's content-local position (display column, row)
+// within the input's content area and whether it is visible. It is a pure read:
+// the column is the cursor's display column minus scrollPos, which is already
+// kept synced by every mutating key handler and by displayText on the render
+// path (which runs before placeCursor calls this source). A cursor scrolled
+// outside the visible width reports visible=false. The row is always 0
+// (single-line). Visibility also requires focus.
+func (inp *Input) cursorColRow() (col, row int, visible bool) {
+	if !inp.focused.Get() {
+		return 0, 0, false
+	}
+	text := inp.text.Get()
+	cursorCol := runeIndexToDisplayCol(text, inp.clampCursorPos())
+	col = cursorCol - max(inp.scrollPos.Get(), 0)
+	vw := inp.visibleWidth()
+	if col < 0 || (vw > 0 && col >= vw) {
+		return 0, 0, false
+	}
+	return col, 0, true
+}
+
 // displayText returns a viewport-clamped slice of the text with cursor overlay.
 func (inp *Input) displayText() string {
 	text := inp.text.Get()
@@ -451,6 +520,13 @@ func (inp *Input) displayText() string {
 		// In the unfocused path, scroll adjustment preserves the previously-set
 		// scroll position. ensureCursorVisible is only called in the focused path
 		// so that manually-scrolled text doesn't jump when the user blurs.
+		return inp.viewportText(allClusters, visible)
+	}
+
+	// Real-cursor mode: keep the cursor in view but draw no glyph. The framework
+	// places the hardware cursor via the content-local cursor source.
+	if inp.hideVirtualCursor {
+		inp.ensureCursorVisible()
 		return inp.viewportText(allClusters, visible)
 	}
 

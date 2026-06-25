@@ -820,6 +820,8 @@ func (c *myComponent) KeyMap() tui.KeyMap {
 
 The `OnPreemptStop` variant fires in a preemptive pass before all normal handlers. Used by the Modal component to block parent key handlers when the modal is open.
 
+When a hand-written component hosts more than one focusable widget (say a `TextArea` next to an `Input`), mount each with `app.Mount` instead of merging their `KeyMap()`s onto the host. `OnFocused` only gates on focus when the binding's owning component implements `IsFocused()` and is mounted, so merging keymaps onto a host without `IsFocused()` drops the gate and the first widget swallows every key; the dispatch builder now errors when it detects this.
+
 ### Mouse Click Handling
 
 Implement `MouseListener` with ref-based hit testing:

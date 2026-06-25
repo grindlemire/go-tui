@@ -1072,3 +1072,64 @@ func TestDispatch_KittyCtrlH_DistinctFromBackspace(t *testing.T) {
 		t.Errorf("0x08: calls = %v, want [ctrl-h]", calls)
 	}
 }
+
+// mockFocusableKeyComponent implements Component, KeyListener, and focusQuerier,
+// so its OnFocused bindings keep their focus gate at dispatch time.
+type mockFocusableKeyComponent struct {
+	keyMap  KeyMap
+	focused bool
+}
+
+func (m *mockFocusableKeyComponent) Render(app *App) *Element { return New() }
+func (m *mockFocusableKeyComponent) KeyMap() KeyMap           { return m.keyMap }
+func (m *mockFocusableKeyComponent) IsFocused() bool          { return m.focused }
+
+func TestBuildDispatchTable_DroppedFocusGateConflicts(t *testing.T) {
+	noop := func(KeyEvent) {}
+
+	type tc struct {
+		root      *Element
+		wantError bool
+	}
+
+	tests := map[string]tc{
+		"aggregated OnFocused on a host without IsFocused errors": {
+			// Mirrors hand-aggregating two widgets' KeyMaps onto one host: the host
+			// has no IsFocused, so both AnyRune focus gates drop and fire always.
+			root: buildTestTree(&mockKeyComponent{keyMap: KeyMap{
+				OnFocused(AnyRune, noop),
+				OnFocused(AnyRune, noop),
+			}}),
+			wantError: true,
+		},
+		"single OnFocused on a host without IsFocused is fine": {
+			// One aggregated focusable widget is the common generated pattern; with
+			// no second binding to conflict, it stays valid.
+			root: buildTestTree(&mockKeyComponent{keyMap: KeyMap{
+				OnFocused(AnyRune, noop),
+			}}),
+			wantError: false,
+		},
+		"per-widget OnFocused on mounted focusable components is fine": {
+			// The correct multi-widget shape: each widget is its own component with
+			// IsFocused, so gates resolve and only one fires at a time.
+			root: buildTestTree(
+				&mockFocusableKeyComponent{keyMap: KeyMap{OnFocused(AnyRune, noop)}},
+				&mockFocusableKeyComponent{keyMap: KeyMap{OnFocused(AnyRune, noop)}},
+			),
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := buildDispatchTable(nil, tt.root)
+			if tt.wantError && err == nil {
+				t.Fatal("expected a dispatch-table error, got nil")
+			}
+			if !tt.wantError && err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+		})
+	}
+}

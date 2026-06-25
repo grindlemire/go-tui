@@ -49,19 +49,30 @@ func WithTextAreaPlaceholderStyle(s Style) TextAreaOption {
 	}
 }
 
-// WithTextAreaCursor sets the cursor character (defaults to '▌').
-func WithTextAreaCursor(r rune) TextAreaOption {
+// WithTextAreaCursorRune sets the drawn cursor glyph used in virtual-cursor
+// mode (defaults to '▌'). Only takes effect together with
+// WithTextAreaVirtualCursor; the default real-cursor mode draws no glyph.
+func WithTextAreaCursorRune(r rune) TextAreaOption {
 	return func(t *TextArea) {
 		t.cursorRune = r
 	}
 }
 
-// WithTextAreaVirtualCursor controls whether the virtual cursor character
-// is drawn in the text. When false, lineWithCursor returns the line unchanged
-// and applications can position the terminal's hardware cursor instead.
-func WithTextAreaVirtualCursor(visible bool) TextAreaOption {
+// WithTextAreaCursor sets the drawn cursor glyph.
+//
+// Deprecated: use WithTextAreaCursorRune. Retained as an alias so existing call
+// sites keep compiling.
+func WithTextAreaCursor(r rune) TextAreaOption {
+	return WithTextAreaCursorRune(r)
+}
+
+// WithTextAreaVirtualCursor switches the text area to the drawn '▌' cursor glyph
+// instead of the framework-driven real terminal cursor. Presence enables it; the
+// glyph is customizable via WithTextAreaCursorRune. By default (option absent)
+// the real terminal cursor is used and no glyph is drawn.
+func WithTextAreaVirtualCursor() TextAreaOption {
 	return func(t *TextArea) {
-		t.hideVirtualCursor = !visible
+		t.hideVirtualCursor = false
 	}
 }
 

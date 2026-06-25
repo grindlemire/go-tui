@@ -130,6 +130,23 @@ type Element struct {
 
 	// Component that produced this element (set by Mount, read during tree walks)
 	component Component
+
+	// Content-local cursor source. When set, the element reports a terminal
+	// cursor position via ReportCursor. Returns (col, row) within the element's
+	// content area and whether the cursor is visible. nil = no cursor.
+	cursorSource cursorSource
+
+	// cursorReport caches where the cursor landed on screen, captured by the
+	// renderer at this element's draw site and returned by ReportCursor.
+	cursorReport cursorReport
+}
+
+// cursorReport is the screen-space result captured for an element's cursor during
+// render. visible is false when there is no source, the source reports invisible,
+// or the cursor is clipped out of view.
+type cursorReport struct {
+	x, y    int
+	visible bool
 }
 
 // New creates a new Element with the given options.

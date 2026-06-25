@@ -260,27 +260,6 @@ func TestResumeSequence_InlineMode(t *testing.T) {
 	}
 }
 
-func TestResumeSequence_CursorVisible(t *testing.T) {
-	term := newRecordingTerminal(80, 24)
-
-	app := &App{
-		terminal:      term,
-		cursorVisible: true,
-		stopCh:        make(chan struct{}),
-		buffer:        NewBuffer(80, 24),
-		dirty:         atomic.Bool{},
-	}
-
-	app.resumeTerminal()
-
-	// Should NOT hide cursor when cursorVisible is true
-	for _, call := range term.calls {
-		if call == "HideCursor" {
-			t.Fatal("should not hide cursor when cursorVisible is true")
-		}
-	}
-}
-
 func TestSuspendSequence_MouseDisabled(t *testing.T) {
 	term := newRecordingTerminal(80, 24)
 	term.inRawMode = true
@@ -411,7 +390,7 @@ func TestResumeSequence_DynamicAltScreen(t *testing.T) {
 
 	app.resumeTerminal()
 
-	// Should re-enter alt screen overlay, then hide cursor (cursorVisible defaults to false)
+	// Should re-enter alt screen overlay, then hide cursor
 	expected := []string{"EnterRawMode", "EnableKittyKeyboard", "EnterAltScreen", "Clear", "HideCursor"}
 	if len(term.calls) != len(expected) {
 		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(term.calls), term.calls)

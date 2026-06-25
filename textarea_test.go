@@ -352,7 +352,9 @@ func TestTextArea_CursorVisibleAtWrapBoundary(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ta := NewTextArea(WithTextAreaWidth(tt.width))
+			// Assert on the drawn glyph: opt into virtual-cursor mode since the
+			// real terminal cursor is the default and draws no glyph.
+			ta := NewTextArea(WithTextAreaWidth(tt.width), WithTextAreaVirtualCursor())
 			ta.BindApp(testApp)
 			ta.SetText(tt.text)
 			ta.Focus()
@@ -399,9 +401,9 @@ func TestTextArea_HideVirtualCursor(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ta := NewTextArea(
-				WithTextAreaVirtualCursor(false),
-			)
+			// The default real-cursor mode draws no glyph, so lineWithCursor
+			// returns the line unchanged (this is what the option used to force).
+			ta := NewTextArea()
 			ta.BindApp(testApp)
 			ta.SetText(tt.text)
 			ta.Focus()
@@ -419,7 +421,8 @@ func TestTextArea_HideVirtualCursor(t *testing.T) {
 }
 
 func TestTextArea_BlockCursor_AtHardNewline_DoesNotSplitCluster(t *testing.T) {
-	ta := NewTextArea(WithTextAreaWidth(4))
+	// Block-cursor overlay only exists in virtual-cursor mode.
+	ta := NewTextArea(WithTextAreaWidth(4), WithTextAreaVirtualCursor())
 	ta.BindApp(testApp)
 	ta.Focus()
 	ta.SetText("ab\U0001F1FA\U0001F1F8\n")
