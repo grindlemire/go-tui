@@ -61,6 +61,11 @@ func (a *App) renderFrame() {
 		renderHeight = a.inlineHeight
 	}
 
+	// Reset the focused element's cursor capture before rendering, so an element
+	// that no longer draws this frame (hidden, or scrolled fully out of view)
+	// reports no cursor instead of a stale position.
+	a.resetFocusedCursor()
+
 	// If root exists, render the element tree
 	if a.root != nil {
 		a.root.Render(a.buffer, width, renderHeight)
@@ -100,6 +105,15 @@ func (a *App) renderFrame() {
 	// Place the real terminal cursor last so it survives all cell writes and the
 	// postRenderHook. This is the final terminal op of the frame.
 	a.placeCursor()
+}
+
+// resetFocusedCursor clears the focused element's cursor capture before a render
+// so an element that stops drawing this frame reports no cursor rather than a
+// stale one. The render re-captures it if it draws.
+func (a *App) resetFocusedCursor() {
+	if f, ok := a.focus.Focused().(*Element); ok {
+		f.clearCursorReport()
+	}
 }
 
 // placeCursor drives the real terminal cursor from the focused element's
@@ -185,6 +199,9 @@ func (a *App) RenderFull() {
 
 	// Re-render the component tree so overlays and state are up to date.
 	a.rerenderComponent()
+
+	// Reset the focused element's cursor capture (mirrors renderFrame).
+	a.resetFocusedCursor()
 
 	// If root exists, render the element tree
 	if a.root != nil {

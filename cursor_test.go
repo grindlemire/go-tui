@@ -349,3 +349,115 @@ func TestElement_ReportCursor_HiddenScrollbarReclaimsGutter(t *testing.T) {
 		t.Fatal("cursor in the last column should be visible when the gutter is reclaimed")
 	}
 }
+
+func TestElement_ReportCursor_OverflowHiddenAncestorHidesCursor(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// An overflow-hidden parent clips its children to its content box just like a
+	// scrollable does, but it is not scrollable. A cursor on a child positioned
+	// below the clip must be reported hidden, matching the renderer (which draws
+	// nothing for that child).
+	parent := New(WithDirection(Column), WithWidth(10), WithHeight(2), WithOverflow(OverflowHidden))
+	inClip := New(WithWidth(10), WithHeight(2))
+	inClip.SetText("A")
+	below := New(WithWidth(10), WithHeight(2))
+	below.SetText("Z")
+	below.SetCursorSource(func() (int, int, bool) { return 0, 0, true })
+	parent.AddChild(inClip)
+	parent.AddChild(below)
+
+	root := New(WithDirection(Column))
+	root.AddChild(parent)
+	app.SetRoot(root)
+	app.MarkDirty()
+	app.Render()
+
+	if _, _, found := findGlyph(app.buffer, "A"); !found {
+		t.Fatal("test setup: in-clip child should render")
+	}
+	if _, _, found := findGlyph(app.buffer, "Z"); found {
+		t.Fatal("test setup: below-clip child should be clipped out by overflow-hidden")
+	}
+	if _, _, vis := below.ReportCursor(); vis {
+		t.Fatal("cursor clipped out by an overflow-hidden ancestor should be reported hidden")
+	}
+}
+
+func TestElement_ReportCursor_OverflowHiddenInClipVisible(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// Counterpart to the hidden case: a cursor within the overflow-hidden clip is
+	// reported at the cell where its glyph actually rendered.
+	parent := New(WithDirection(Column), WithWidth(10), WithHeight(3), WithOverflow(OverflowHidden))
+	child := New(WithWidth(10), WithHeight(2))
+	child.SetText("Z")
+	child.SetCursorSource(func() (int, int, bool) { return 0, 0, true })
+	parent.AddChild(child)
+
+	root := New(WithDirection(Column))
+	root.AddChild(parent)
+	app.SetRoot(root)
+	app.MarkDirty()
+	app.Render()
+
+	zx, zy, found := findGlyph(app.buffer, "Z")
+	if !found {
+		t.Fatal("cursor marker 'Z' should render inside the overflow-hidden clip")
+	}
+	x, y, vis := child.ReportCursor()
+	if !vis {
+		t.Fatal("cursor inside the overflow-hidden clip should be visible")
+	}
+	if x != zx || y != zy {
+		t.Fatalf("ReportCursor = (%d,%d), but glyph rendered at (%d,%d)", x, y, zx, zy)
+	}
+}
+
+func TestElement_ReportCursor_SelfScrollableClipsOwnCursor(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// A cursor source installed directly on a scrollable element must be clipped to
+	// that element's own viewport. A row past the viewport height is out of view.
+	scroller := New(WithDirection(Column), WithWidth(10), WithHeight(2), WithScrollable(ScrollVertical))
+	scroller.SetCursorSource(func() (int, int, bool) { return 0, 5, true }) // row 5, viewport is 2 tall
+
+	root := New(WithDirection(Column))
+	root.AddChild(scroller)
+	app.SetRoot(root)
+	app.MarkDirty()
+	app.Render()
+
+	if _, _, vis := scroller.ReportCursor(); vis {
+		t.Fatal("cursor past the scrollable's own viewport should be reported hidden")
+	}
+}
+
+func TestApp_RenderFull_ResetsCursorForElementThatStopsDrawing(t *testing.T) {
+	app := newTestApp(40, 10)
+
+	// A persistent (SetRoot) focused element with a cursor source. After it stops
+	// drawing, a full redraw must not leave a stale cursor on screen.
+	cursorEl := New(WithWidth(10), WithHeight(2), WithFocusable(true))
+	cursorEl.SetText("X")
+	cursorEl.SetCursorSource(func() (int, int, bool) { return 0, 0, true })
+	root := New(WithDirection(Column))
+	root.AddChild(cursorEl)
+	app.SetRoot(root)
+	app.focus.Register(cursorEl)
+	app.focus.SetFocus(cursorEl)
+
+	app.MarkDirty()
+	app.Render()
+
+	mt := app.terminal.(*MockTerminal)
+	if mt.IsCursorHidden() {
+		t.Fatal("setup: cursor should be visible while the focused element draws")
+	}
+
+	cursorEl.SetHidden(true)
+	app.RenderFull()
+	if !mt.IsCursorHidden() {
+		x, y := mt.Cursor()
+		t.Fatalf("cursor should be hidden after the focused element stops drawing, shown at (%d,%d)", x, y)
+	}
+}

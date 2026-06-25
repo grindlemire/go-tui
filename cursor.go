@@ -31,54 +31,41 @@ func (e *Element) SetCursorSource(fn cursorSource) {
 }
 
 // ReportCursor implements CursorReporter. It returns the absolute terminal cell
-// for the element's content-local cursor, or visible=false when no source is
-// set, the source reports invisible, or the cursor is scrolled out of view in a
-// scrollable ancestor.
+// captured for the element's cursor during the most recent render, or
+// visible=false when no source is set, the source reported invisible, or the
+// cursor was clipped out of view. The value is produced by captureCursor at the
+// element's draw site, so it always matches where the renderer placed the
+// content (nested scrollables, overflow-hidden clipping, and the scrollbar gutter
+// included) rather than re-deriving the transform here.
 func (e *Element) ReportCursor() (int, int, bool) {
+	return e.cursorReport.x, e.cursorReport.y, e.cursorReport.visible
+}
+
+// captureCursor records where the element's content-local cursor lands on screen
+// for ReportCursor to return. originX/originY is the element's content origin in
+// screen space and clip is the visible region (the active ancestor clip already
+// intersected with the element's own viewport when it is scrollable). It is
+// called by the renderer at the element's draw site so the cursor uses the exact
+// transform and clip the renderer applied to the element's content.
+func (e *Element) captureCursor(originX, originY int, clip Rect) {
+	e.cursorReport = cursorReport{}
 	if e.cursorSource == nil {
-		return 0, 0, false
+		return
 	}
 	col, row, vis := e.cursorSource()
 	if !vis {
-		return 0, 0, false
+		return
 	}
-
-	// Cursor cell in the element's own layout base. Under a scrollable ancestor the
-	// whole subtree is laid out in that ancestor's content space (rebased toward
-	// 0,0), so this is already content-local there.
-	cr := e.ContentRect()
-	x := cr.X + col
-	y := cr.Y + row
-
-	// Mirror the renderer: only the OUTERMOST scrollable ancestor's transform is
-	// applied to the entire clipped subtree (renderClippedElement recurses into
-	// descendants without re-basing at nested scrollables). Apply that one
-	// transform and clip against its viewport. No scrollable ancestor means the
-	// content-local position is already screen-absolute.
-	var outer *Element
-	for anc := e.parent; anc != nil; anc = anc.parent {
-		if anc.IsScrollable() {
-			outer = anc
-		}
-	}
-	if outer == nil {
-		return x, y, true
-	}
-
-	clip := outer.ContentRect()
-	sx, sy := outer.ScrollOffset()
-	x += clip.X - sx
-	y += clip.Y - sy
-
-	// The renderer reserves the last content column for a vertical scrollbar, so
-	// shrink the clip to match before the visibility test.
-	if outer.needsVerticalScrollbar() {
-		clip.Width = max(0, clip.Width-1)
-	}
-
-	// A cursor scrolled outside the viewport is hidden.
+	x, y := originX+col, originY+row
 	if x < clip.X || x >= clip.Right() || y < clip.Y || y >= clip.Bottom() {
-		return 0, 0, false
+		return
 	}
-	return x, y, true
+	e.cursorReport = cursorReport{x: x, y: y, visible: true}
+}
+
+// clearCursorReport marks the element's cursor hidden until the next capture. The
+// renderer clears the focused element each frame so an element that no longer
+// draws (hidden, or scrolled fully out of view) stops reporting a stale cursor.
+func (e *Element) clearCursorReport() {
+	e.cursorReport = cursorReport{}
 }
