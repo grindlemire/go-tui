@@ -51,6 +51,11 @@ func (a *App) renderFrame() {
 	// Clear overlay registrations from previous frame
 	a.clearOverlays()
 
+	// Pre-render hook runs before component re-render (buffer is clear, state is fresh)
+	if a.preRenderHook != nil {
+		a.preRenderHook()
+	}
+
 	// If a root component is set, re-render it to get a fresh element tree.
 	// This is the core of the reactivity cycle: state changes → dirty → re-render
 	// component → new element tree with updated state reads.
@@ -196,6 +201,11 @@ func (a *App) RenderFull() {
 
 	// Clear overlay registrations from previous frame
 	a.clearOverlays()
+
+	// Pre-render hook runs before component re-render (buffer is clear, state is fresh)
+	if a.preRenderHook != nil {
+		a.preRenderHook()
+	}
 
 	// Re-render the component tree so overlays and state are up to date.
 	a.rerenderComponent()

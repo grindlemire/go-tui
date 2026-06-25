@@ -122,6 +122,16 @@ func WithMouse() AppOption {
 	}
 }
 
+// WithPreRenderHook sets a callback that runs at the start of every render cycle,
+// after the buffer is cleared but before the component tree is re-rendered.
+// This is useful for state updates that must happen before the render.
+func WithPreRenderHook(fn func()) AppOption {
+	return func(a *App) error {
+		a.preRenderHook = fn
+		return nil
+	}
+}
+
 // WithPostRenderHook sets a callback that runs after every render cycle.
 func WithPostRenderHook(fn func()) AppOption {
 	return func(a *App) error {

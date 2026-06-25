@@ -121,7 +121,8 @@ func (m *Modal) KeyMap() KeyMap {
 		}))
 	}
 	if m.trapFocus && m.app != nil {
-		km = append(km,
+		km = append(
+			km,
 			OnPreemptStop(KeyTab, func(ke KeyEvent) {
 				m.app.FocusNext()
 			}),

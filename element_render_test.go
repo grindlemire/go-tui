@@ -867,7 +867,8 @@ func TestRenderTree_AutoContrast(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			var parentOpts []Option
-			parentOpts = append(parentOpts,
+			parentOpts = append(
+				parentOpts,
 				WithSize(20, 10),
 				WithBackground(NewStyle().Background(tt.bgColor)),
 			)
