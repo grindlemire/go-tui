@@ -182,3 +182,62 @@ func TestFocusIntegration_TabFocusesInput(t *testing.T) {
 		t.Error("app should NOT be stopped - 'q' should be captured by focused input")
 	}
 }
+
+// testTwoInputApp mounts two focusable inputs so dispatch must route a key to the
+// focused one and skip the other. Each is its own mounted component, so its
+// OnFocused bindings carry its own IsFocused gate.
+type testTwoInputApp struct{}
+
+func (c *testTwoInputApp) Render(app *App) *Element {
+	root := New(WithDirection(Column))
+	root.AddChild(app.MountPersistent(c, 0, func() Component { return newTestInputComponent() }))
+	root.AddChild(app.MountPersistent(c, 1, func() Component { return newTestInputComponent() }))
+	return root
+}
+
+func (c *testTwoInputApp) KeyMap() KeyMap {
+	return KeyMap{
+		On(KeyTab, func(ke KeyEvent) { ke.App().FocusNext() }),
+	}
+}
+
+func mountedInput(app *App, parent Component, key int) *testInputComponent {
+	if comp, ok := app.mounts.cache[mountKey{parent: parent, key: key}]; ok {
+		return comp.(*testInputComponent)
+	}
+	return nil
+}
+
+// TestFocusIntegration_RoutesKeysToFocusedWidget pins the behavior that broke when
+// widgets were hand-aggregated instead of mounted: with two focusable widgets, a
+// typed key reaches only the focused one. The single-input integration test above
+// cannot catch a regression here because it has nothing for the wrong widget to be.
+func TestFocusIntegration_RoutesKeysToFocusedWidget(t *testing.T) {
+	host := &testTwoInputApp{}
+	app := newTestApp(80, 24)
+	app.SetRootComponent(host)
+	app.MarkDirty()
+	app.Render()
+
+	in0 := mountedInput(app, host, 0)
+	in1 := mountedInput(app, host, 1)
+	if in0 == nil || in1 == nil {
+		t.Fatal("both inputs should be mounted")
+	}
+
+	// Tab focuses the first input: 'a' lands there only.
+	app.Dispatch(KeyEvent{Key: KeyTab})
+	app.Render()
+	app.Dispatch(KeyEvent{Key: KeyRune, Rune: 'a'})
+	if in0.text.Get() != "a" || in1.text.Get() != "" {
+		t.Fatalf("after Tab to input 0: in0=%q in1=%q, want in0=\"a\" in1=\"\"", in0.text.Get(), in1.text.Get())
+	}
+
+	// Tab moves focus to the second input: 'b' lands there, input 0 is untouched.
+	app.Dispatch(KeyEvent{Key: KeyTab})
+	app.Render()
+	app.Dispatch(KeyEvent{Key: KeyRune, Rune: 'b'})
+	if in1.text.Get() != "b" || in0.text.Get() != "a" {
+		t.Fatalf("after Tab to input 1: in0=%q in1=%q, want in0=\"a\" in1=\"b\"", in0.text.Get(), in1.text.Get())
+	}
+}
