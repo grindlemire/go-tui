@@ -62,6 +62,7 @@ type Element struct {
 	background       *Style    // nil = transparent
 	borderTitle      string    // title text drawn in the top border (DrawBoxWithTitle)
 	borderTitleAlign TextAlign // alignment of the border title (default TextAlignCenter)
+	borderTitleStyle *Style    // title text style (nil = use borderStyle)
 
 	// Text properties
 	text         string

@@ -75,6 +75,26 @@ func (e *Element) SetBorderTitleAlign(align TextAlign) {
 	e.borderTitleAlign = align
 }
 
+// BorderTitleStyle returns the title text style, or nil if using borderStyle.
+func (e *Element) BorderTitleStyle() *Style {
+	return e.borderTitleStyle
+}
+
+// SetBorderTitleStyle sets the title text style (nil = use borderStyle).
+func (e *Element) SetBorderTitleStyle(s *Style) {
+	e.borderTitleStyle = s
+}
+
+// titleStyle returns the style to use for the border title.
+// If a specific title style was set via WithBorderTitleStyle, it is used;
+// otherwise the element's border style is the fallback.
+func (e *Element) titleStyle() Style {
+	if e.borderTitleStyle != nil {
+		return *e.borderTitleStyle
+	}
+	return e.borderStyle
+}
+
 // Background returns the background style, or nil if transparent.
 func (e *Element) Background() *Style {
 	return e.background

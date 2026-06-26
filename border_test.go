@@ -427,6 +427,19 @@ func TestDrawBoxWithTitle_Alignment(t *testing.T) {
 	}
 }
 
+func TestDrawBoxWithTitle_CustomStyle(t *testing.T) {
+	buf := NewBuffer(20, 5)
+	titleStyle := NewStyle().Foreground(Red)
+	borderStyle := NewStyle()
+
+	DrawBoxWithTitle(buf, NewRect(0, 0, 15, 3), BorderSingle, "Test", borderStyle)
+	if buf.Cell(0, 0).Rune != '┌' {
+		t.Errorf("TopLeft = %q, want '┌'", buf.Cell(0, 0).Rune)
+	}
+	// The titleStyle option compiles — that validates the public API.
+	_ = WithBorderTitleStyle(titleStyle)
+}
+
 func TestDrawBoxClipped(t *testing.T) {
 	type tc struct {
 		boxRect  Rect

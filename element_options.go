@@ -202,6 +202,14 @@ func WithBorderTitleAlign(align TextAlign) Option {
 	}
 }
 
+// WithBorderTitleStyle sets the style for the border title text.
+// If not set, the border style (WithBorderStyle) is used.
+func WithBorderTitleStyle(s Style) Option {
+	return func(e *Element) {
+		e.borderTitleStyle = &s
+	}
+}
+
 // WithBorderStyle sets the color/attributes for the border.
 func WithBorderStyle(style Style) Option {
 	return func(e *Element) {

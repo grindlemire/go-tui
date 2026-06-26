@@ -228,6 +228,20 @@ func TestWithBorderStyle(t *testing.T) {
 	}
 }
 
+func TestWithBorderTitleStyle(t *testing.T) {
+	style := NewStyle().Bold().Foreground(Green)
+	e := New(WithBorderTitleStyle(style))
+	if e.borderTitleStyle == nil {
+		t.Fatal("WithBorderTitleStyle: borderTitleStyle is nil")
+	}
+	if *e.borderTitleStyle != style {
+		t.Errorf("WithBorderTitleStyle() = %+v, want %+v", *e.borderTitleStyle, style)
+	}
+	if got := e.titleStyle(); got != style {
+		t.Errorf("titleStyle() = %+v, want %+v", got, style)
+	}
+}
+
 func TestWithBackground(t *testing.T) {
 	style := NewStyle().Background(Blue)
 	e := New(WithBackground(style))
