@@ -228,6 +228,20 @@ func TestWithBorderStyle(t *testing.T) {
 	}
 }
 
+func TestWithBorderTitleStyle(t *testing.T) {
+	style := NewStyle().Bold().Foreground(Green)
+	e := New(WithBorderTitleStyle(style))
+	if e.borderTitleStyle == nil {
+		t.Fatal("WithBorderTitleStyle: borderTitleStyle is nil")
+	}
+	if *e.borderTitleStyle != style {
+		t.Errorf("WithBorderTitleStyle() = %+v, want %+v", *e.borderTitleStyle, style)
+	}
+	if got := e.titleStyle(); got != style {
+		t.Errorf("titleStyle() = %+v, want %+v", got, style)
+	}
+}
+
 func TestWithBackground(t *testing.T) {
 	style := NewStyle().Background(Blue)
 	e := New(WithBackground(style))
@@ -322,5 +336,75 @@ func TestWithFocusable_False(t *testing.T) {
 
 	if e.focusable {
 		t.Error("WithFocusable(false) should override focusable to false")
+	}
+}
+
+type focusStyleTC struct {
+	focused bool
+	focusBC *Style // focusBorderStyle
+	borderS Style  // borderStyle
+	want    *Style // expected return of activeBorderStyle, nil = expect borderStyle
+}
+
+func TestWithFocusBorderStyle(t *testing.T) {
+	e := New()
+	if e.FocusBorderStyle() != nil {
+		t.Error("expected nil default FocusBorderStyle")
+	}
+
+	s := NewStyle().Foreground(Red)
+	WithFocusBorderStyle(s)(e)
+
+	if e.FocusBorderStyle() == nil {
+		t.Fatal("expected FocusBorderStyle to be set")
+	}
+	if *e.FocusBorderStyle() != s {
+		t.Errorf("FocusBorderStyle = %+v, want %+v", *e.FocusBorderStyle(), s)
+	}
+}
+
+func TestActiveBorderStyle(t *testing.T) {
+	red := NewStyle().Foreground(Red)
+	green := NewStyle().Foreground(Green)
+
+	tests := map[string]focusStyleTC{
+		"not_focused_returns_borderStyle": {
+			focused: false,
+			borderS: red,
+			want:    &red,
+		},
+		"not_focused_with_focusStyle_returns_borderStyle": {
+			focused: false,
+			focusBC: &green,
+			borderS: red,
+			want:    &red,
+		},
+		"focused_with_focusStyle_returns_focusStyle": {
+			focused: true,
+			focusBC: &green,
+			borderS: red,
+			want:    &green,
+		},
+		"focused_without_focusStyle_returns_borderStyle": {
+			focused: true,
+			focusBC: nil,
+			borderS: red,
+			want:    &red,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(WithBorderStyle(tt.borderS))
+			e.focusBorderStyle = tt.focusBC
+			e.focused = tt.focused
+			got := e.activeBorderStyle()
+			if tt.want == nil {
+				if got != tt.borderS {
+					t.Errorf("activeBorderStyle() = %+v, want borderStyle %+v", got, tt.borderS)
+				}
+			} else if got != *tt.want {
+				t.Errorf("activeBorderStyle() = %+v, want %+v", got, *tt.want)
+			}
+		})
 	}
 }

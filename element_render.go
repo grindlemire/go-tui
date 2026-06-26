@@ -130,12 +130,12 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 
 	if e.border != BorderNone {
 		if e.borderGradient != nil {
-			DrawBoxGradient(buf, rect, e.border, *e.borderGradient, e.borderStyle)
+			DrawBoxGradient(buf, rect, e.border, *e.borderGradient, e.activeBorderStyle())
 		} else {
-			DrawBox(buf, rect, e.border, e.borderStyle)
+			DrawBox(buf, rect, e.border, e.activeBorderStyle())
 		}
 		if e.borderTitle != "" {
-			drawBoxTitle(buf, rect, e.borderTitle, e.borderStyle, e.borderTitleAlign)
+			drawBoxTitle(buf, rect, e.borderTitle, e.titleStyle(), e.borderTitleAlign)
 		}
 	}
 
@@ -271,12 +271,12 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	// Render border clipped to viewport (border style does NOT inherit)
 	if e.border != BorderNone {
 		if e.borderGradient != nil {
-			DrawBoxGradientClipped(buf, screenRect, e.border, *e.borderGradient, e.borderStyle, clipRect)
+			DrawBoxGradientClipped(buf, screenRect, e.border, *e.borderGradient, e.activeBorderStyle(), clipRect)
 		} else {
-			DrawBoxClipped(buf, screenRect, e.border, e.borderStyle, clipRect)
+			DrawBoxClipped(buf, screenRect, e.border, e.activeBorderStyle(), clipRect)
 		}
 		if e.borderTitle != "" {
-			drawBoxTitleClipped(buf, screenRect, e.borderTitle, e.borderStyle, clipRect, e.borderTitleAlign)
+			drawBoxTitleClipped(buf, screenRect, e.borderTitle, e.titleStyle(), clipRect, e.borderTitleAlign)
 		}
 	}
 

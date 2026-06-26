@@ -427,6 +427,46 @@ func TestDrawBoxWithTitle_Alignment(t *testing.T) {
 	}
 }
 
+func TestDrawBoxWithTitle_CustomStyle(t *testing.T) {
+	// Build an element where the title style differs from the border style
+	// and verify the rendered title cells carry the title style.
+	app := newTestApp(20, 5)
+	borderStyle := NewStyle().Foreground(Red)
+	titleStyle := NewStyle().Foreground(Green).Bold()
+
+	e := New(
+		WithBorder(BorderSingle),
+		WithBorderTitle("Test"),
+		WithBorderStyle(borderStyle),
+		WithBorderTitleStyle(titleStyle),
+		WithWidth(15),
+		WithHeight(3),
+	)
+	app.SetRoot(e)
+	app.Render()
+
+	// The centered title "Test" should be at columns 5-8 on row 0.
+	// Title cells must carry the title style.
+	for i, r := range "Test" {
+		cell := app.buffer.Cell(5+i, 0)
+		if cell.Rune != r {
+			t.Errorf("title cell %d: rune = %q, want %q", i, cell.Rune, r)
+		}
+		if !cell.Style.Equal(titleStyle) {
+			t.Errorf("title cell %d: style = %+v, want %+v", i, cell.Style, titleStyle)
+		}
+	}
+
+	// Border corners must carry the border style, not the title style.
+	for _, pos := range [][2]int{{0, 0}, {14, 0}, {0, 2}, {14, 2}} {
+		x, y := pos[0], pos[1]
+		cell := app.buffer.Cell(x, y)
+		if !cell.Style.Equal(borderStyle) {
+			t.Errorf("border cell (%d,%d): style = %+v, want %+v", x, y, cell.Style, borderStyle)
+		}
+	}
+}
+
 func TestDrawBoxClipped(t *testing.T) {
 	type tc struct {
 		boxRect  Rect
