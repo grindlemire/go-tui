@@ -1,0 +1,10 @@
+{
+  // Nest generated `_gsx.go` files under their `.gsx` source in the Explorer.
+  // The go-tui VS Code extension contributes the pattern; this flips on the
+  // (workspace-wide) master switch and repeats the pattern so nesting works
+  // even when the extension isn't installed.
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.gsx": "${capture}_gsx.go"
+  }
+}

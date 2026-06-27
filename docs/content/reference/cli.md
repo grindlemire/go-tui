@@ -142,6 +142,16 @@ Install the official go-tui extension, which bundles the LSP client, syntax high
 
 The extension automatically runs `tui lsp` for `.gsx` files. No manual configuration needed.
 
+The extension also registers a file nesting pattern so each generated `*_gsx.go` file collapses under its `.gsx` source in the Explorer. VS Code's file nesting is off by default, so enable it once to use it:
+
+```json
+{
+  "explorer.fileNesting.enabled": true
+}
+```
+
+Put that in a project's `.vscode/settings.json` to scope nesting to that project rather than every repository you open.
+
 ### Neovim
 
 With [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig), add a custom server configuration:

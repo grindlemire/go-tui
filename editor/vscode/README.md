@@ -31,6 +31,8 @@ Syntax highlighting and language support for `.gsx` files used with the [go-tui]
   - Semantic token highlighting
   - Code formatting
 
+- **File Nesting**: Collapses each generated `*_gsx.go` file under its `.gsx` source in the Explorer (opt-in, see below)
+
 ## Installation
 
 ### From Source
@@ -119,6 +121,25 @@ templ (c *counter) Render() {
     </div>
 }
 ```
+
+## File Nesting
+
+Each `.gsx` file generates a sibling `*_gsx.go` file in the same directory (`header.gsx` produces `header_gsx.go`). The extension registers a VS Code [file nesting](https://code.visualstudio.com/docs/getstarted/userinterface#_file-nesting) pattern that tucks the generated file under its source, so the Explorer shows one entry per component instead of two.
+
+The pattern ships with the extension, but VS Code's file nesting is off by default. Turn it on once in your settings:
+
+```json
+{
+  "explorer.fileNesting.enabled": true
+}
+```
+
+To scope it to a single project, put that line in the project's `.vscode/settings.json` instead of your user settings. Adding the line there (rather than extension-wide) keeps file nesting from also reorganizing your non-gsx repositories.
+
+Notes:
+
+- This is VS Code only. Other editors have their own nesting mechanisms.
+- Source files with hyphens do not nest: the generator rewrites `my-app.gsx` to `my_app_gsx.go`, which the file nesting glob cannot match. Dot and underscore names nest normally.
 
 ## Supported Constructs
 
