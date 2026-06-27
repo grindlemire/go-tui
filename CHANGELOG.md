@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.18.0](https://github.com/grindlemire/go-tui/compare/v0.17.0...v0.18.0) (2026-06-27)
+
+
+### Upgrade notes
+
+0.18.0 keeps the public API compatible, so it stays a minor release. Two runtime behaviors changed in ways an existing app can notice.
+
+Text widgets now drive the real terminal cursor. `Input` and `TextArea` place the terminal's own cursor at the editing position and no longer draw the `▌` glyph, so the cursor blinks and behaves natively. To keep the drawn glyph, add `WithInputVirtualCursor()` or `WithTextAreaVirtualCursor()`; to take over cursor placement, build the app with `WithManualCursor()`. `WithInputCursor` and `WithTextAreaCursor` are now deprecated aliases for `WithInputCursorRune` and `WithTextAreaCursorRune`, which set the glyph used in virtual-cursor mode.
+
+Text is now measured with an in-house grapheme engine. Width, wrapping, and cursor math run through go-tui's own grapheme-cluster code, so emoji, combining marks, and other wide or multi-rune clusters can measure or wrap a cell differently than in 0.17.0. If your tests assert exact column counts or wrap points, re-baseline them against 0.18.0.
+
+
+### Features
+
+* add border title alignment support (left/center/right) ([#98](https://github.com/grindlemire/go-tui/issues/98)) ([3fac7cc](https://github.com/grindlemire/go-tui/commit/3fac7ccd4abd235f6f846457b1279deb979f3ce8))
+* add WithBorderTitleStyle and WithFocusBorderStyle for independent title and focus styling ([#107](https://github.com/grindlemire/go-tui/issues/107)) ([af23124](https://github.com/grindlemire/go-tui/commit/af23124a9a4215fd1cedcaff788e9adb7f1af2ac))
+* add WithPreRenderHook that fires before every render cycle ([#99](https://github.com/grindlemire/go-tui/issues/99)) ([42f603f](https://github.com/grindlemire/go-tui/commit/42f603fe1d31dfb43c320e0ae326650bb64d3834))
+* add WithTextAreaOnChange callback for text-mutation notifications ([#101](https://github.com/grindlemire/go-tui/issues/101)) ([bdb505e](https://github.com/grindlemire/go-tui/commit/bdb505e7b3bfe01b3a8a206e0370ddeb07f9393d))
+* **editor:** nest generated _gsx.go files under .gsx sources in VS Code ([#109](https://github.com/grindlemire/go-tui/issues/109)) ([af323df](https://github.com/grindlemire/go-tui/commit/af323df15f13995e3cc4231a75a96ed73e5238d9))
+* implement in-house grapheme cluster-aware rendering system ([#103](https://github.com/grindlemire/go-tui/issues/103)) ([2a4aa99](https://github.com/grindlemire/go-tui/commit/2a4aa998b3639c9277ed0b4cc8bd0b6e1d64a9e7))
+* TextArea/Input editing API, element resize setters, and real-cursor protocol ([#106](https://github.com/grindlemire/go-tui/issues/106)) ([64b8b59](https://github.com/grindlemire/go-tui/commit/64b8b592fb022763e7c137d988b101186577082c))
+
 ## [0.17.0](https://github.com/grindlemire/go-tui/compare/v0.16.0...v0.17.0) (2026-06-13)
 
 
