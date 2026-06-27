@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.18.0](https://github.com/grindlemire/go-tui/compare/v0.17.0...v0.18.0) (2026-06-27)
+
+
+### Features
+
+* add border title alignment support (left/center/right) ([#98](https://github.com/grindlemire/go-tui/issues/98)) ([3fac7cc](https://github.com/grindlemire/go-tui/commit/3fac7ccd4abd235f6f846457b1279deb979f3ce8))
+* add WithBorderTitleStyle and WithFocusBorderStyle for independent title and focus styling ([#107](https://github.com/grindlemire/go-tui/issues/107)) ([af23124](https://github.com/grindlemire/go-tui/commit/af23124a9a4215fd1cedcaff788e9adb7f1af2ac))
+* add WithPreRenderHook that fires before every render cycle ([#99](https://github.com/grindlemire/go-tui/issues/99)) ([42f603f](https://github.com/grindlemire/go-tui/commit/42f603fe1d31dfb43c320e0ae326650bb64d3834))
+* add WithTextAreaOnChange callback for text-mutation notifications ([#101](https://github.com/grindlemire/go-tui/issues/101)) ([bdb505e](https://github.com/grindlemire/go-tui/commit/bdb505e7b3bfe01b3a8a206e0370ddeb07f9393d))
+* **editor:** nest generated _gsx.go files under .gsx sources in VS Code ([#109](https://github.com/grindlemire/go-tui/issues/109)) ([af323df](https://github.com/grindlemire/go-tui/commit/af323df15f13995e3cc4231a75a96ed73e5238d9))
+* implement in-house grapheme cluster-aware rendering system ([#103](https://github.com/grindlemire/go-tui/issues/103)) ([2a4aa99](https://github.com/grindlemire/go-tui/commit/2a4aa998b3639c9277ed0b4cc8bd0b6e1d64a9e7))
+* TextArea/Input editing API, element resize setters, and real-cursor protocol ([#106](https://github.com/grindlemire/go-tui/issues/106)) ([64b8b59](https://github.com/grindlemire/go-tui/commit/64b8b592fb022763e7c137d988b101186577082c))
+
 ## [0.17.0](https://github.com/grindlemire/go-tui/compare/v0.16.0...v0.17.0) (2026-06-13)
 
 
