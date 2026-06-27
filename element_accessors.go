@@ -50,6 +50,26 @@ func (e *Element) BorderStyle() Style {
 	return e.borderStyle
 }
 
+// FocusBorderStyle returns the border style used when focused, or nil.
+func (e *Element) FocusBorderStyle() *Style {
+	return e.focusBorderStyle
+}
+
+// SetFocusBorderStyle sets the border style used when focused (nil = no change on focus).
+func (e *Element) SetFocusBorderStyle(s *Style) {
+	e.focusBorderStyle = s
+}
+
+// activeBorderStyle returns the border style to use for rendering.
+// If the element is focused and a focus border style is set, that is used;
+// otherwise the normal border style is the fallback.
+func (e *Element) activeBorderStyle() Style {
+	if e.focused && e.focusBorderStyle != nil {
+		return *e.focusBorderStyle
+	}
+	return e.borderStyle
+}
+
 // SetBorderStyle sets the style used to render the border.
 func (e *Element) SetBorderStyle(style Style) {
 	e.borderStyle = style
@@ -73,6 +93,26 @@ func (e *Element) BorderTitleAlign() TextAlign {
 // SetBorderTitleAlign sets the alignment of the border title.
 func (e *Element) SetBorderTitleAlign(align TextAlign) {
 	e.borderTitleAlign = align
+}
+
+// BorderTitleStyle returns the title text style, or nil if using borderStyle.
+func (e *Element) BorderTitleStyle() *Style {
+	return e.borderTitleStyle
+}
+
+// SetBorderTitleStyle sets the title text style (nil = use borderStyle).
+func (e *Element) SetBorderTitleStyle(s *Style) {
+	e.borderTitleStyle = s
+}
+
+// titleStyle returns the style to use for the border title.
+// If a specific title style was set via WithBorderTitleStyle, it is used;
+// otherwise the element's active border style (focus-aware) is the fallback.
+func (e *Element) titleStyle() Style {
+	if e.borderTitleStyle != nil {
+		return *e.borderTitleStyle
+	}
+	return e.activeBorderStyle()
 }
 
 // Background returns the background style, or nil if transparent.

@@ -31,8 +31,9 @@ func (e *Element) IsFocused() bool {
 // Idempotent: no-op if already focused.
 // Does not cascade to children — only the FocusManager target receives focus.
 //
-// For elements with a border and no explicit onFocus handler, a default
-// cyan border highlight is applied automatically.
+// For elements with a border, no explicit onFocus handler, and no
+// focusBorderStyle configured, a default cyan border highlight is applied
+// automatically.
 func (e *Element) Focus() {
 	if e.focused {
 		return
@@ -40,6 +41,11 @@ func (e *Element) Focus() {
 	e.focused = true
 	if e.onFocus != nil {
 		e.onFocus(e)
+		if e.focusBorderStyle != nil {
+			e.MarkDirty()
+		}
+	} else if e.focusBorderStyle != nil {
+		e.MarkDirty()
 	} else if e.border != BorderNone {
 		e.savedBorderStyle = e.borderStyle
 		e.hasSavedBorder = true
@@ -60,6 +66,15 @@ func (e *Element) Blur() {
 	e.focused = false
 	if e.onBlur != nil {
 		e.onBlur(e)
+		if e.focusBorderStyle != nil {
+			e.MarkDirty()
+		}
+	} else if e.focusBorderStyle != nil {
+		if e.hasSavedBorder {
+			e.borderStyle = e.savedBorderStyle
+			e.hasSavedBorder = false
+		}
+		e.MarkDirty()
 	} else if e.hasSavedBorder {
 		e.borderStyle = e.savedBorderStyle
 		e.hasSavedBorder = false
