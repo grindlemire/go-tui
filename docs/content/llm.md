@@ -573,6 +573,9 @@ tui.WithInlineHeight(rows int)           // Inline mode (not fullscreen)
 tui.WithGlobalKeyHandler(func(KeyEvent) bool)  // Global key intercept
 tui.WithInputLatency(d time.Duration)    // Coalesce rapid input
 tui.WithEventQueueSize(n int)            // Event queue buffer size
+tui.WithPreRenderHook(func())            // Runs at the start of each render cycle
+tui.WithPostRenderHook(func())           // Runs after each render cycle
+tui.WithManualCursor()                   // Disable framework-driven cursor placement
 ```
 
 ## App Methods
@@ -806,7 +809,38 @@ el := tui.New(
     tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta)),
     tui.WithBackgroundGradient(tui.NewGradient(tui.Blue, tui.Cyan)),
     tui.WithBorderGradient(tui.NewGradient(tui.Cyan, tui.Magenta)),
+    tui.WithBorderTitle(" Title "),
+    tui.WithBorderTitleAlign(tui.TextAlignLeft),
+    tui.WithBorderTitleStyle(tui.NewStyle().Bold()),
+    tui.WithFocusBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
+    tui.WithCursorSource(func() (col, row int, visible bool) { return 0, 0, true }),
 )
+```
+
+## Input / TextArea Runtime API
+
+Both `Input` and `TextArea` expose the same programmatic editing methods. Positions are grapheme-cluster indices (whole glyphs before the cursor), not byte or rune offsets.
+
+```go
+w.CursorPos() int          // cluster index of the cursor
+w.SetCursorPos(pos int)    // clamped to [0, ClusterCount(text)]
+w.InsertText(s string)     // insert at cursor, advance past it
+w.Text() string            // current text
+w.SetText(s string)        // replace text, cursor to end
+```
+
+Text widgets drive the real terminal cursor by default and draw no glyph. Opt into the painted `▌` with `WithInputVirtualCursor()` or `WithTextAreaVirtualCursor()`, or disable framework cursor placement app-wide with `tui.WithManualCursor()`.
+
+```go
+tui.WithInputOnChange(func(string))      // Input: fires on every text change
+tui.WithTextAreaOnChange(func(string))   // TextArea: fires on every text change
+```
+
+Resize a retained element between frames:
+
+```go
+el.SetWidth(tui.Fixed(40))   // or tui.Percent(50), tui.Auto()
+el.SetHeight(tui.Fixed(10))
 ```
 
 ## Cross-Component Communication

@@ -151,6 +151,9 @@ tui.New(
 | `WithText(content string)` | Text content for this element |
 | `WithTextStyle(style Style)` | Text color and attributes. Setting this prevents style inheritance from the parent |
 | `WithTextAlign(align TextAlign)` | Text alignment: `TextAlignLeft` (default), `TextAlignCenter`, `TextAlignRight` |
+| `WithBorderTitleAlign(align TextAlign)` | Border title position: `TextAlignLeft`, `TextAlignCenter` (default), or `TextAlignRight` |
+| `WithBorderTitleStyle(style Style)` | Color and attributes for the border title text. Falls back to the active border style when unset |
+| `WithFocusBorderStyle(style Style)` | Border style applied while the element is focused. Falls back to `WithBorderStyle` when unset |
 
 ```go
 // Cyan-bordered box with bold white text on a blue background
@@ -162,6 +165,8 @@ tui.New(
     tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.ANSIColor(tui.White))),
 )
 ```
+
+When `WithFocusBorderStyle` is set, the border switches to it while the element holds focus and returns to `WithBorderStyle` on blur. A title set with `WithBorderTitleStyle` follows the same focus-aware color unless you give the title its own style.
 
 ### Gradient
 
@@ -252,6 +257,22 @@ func (e *Element) SetStyle(style LayoutStyle)
 
 Read or replace the full layout style. `SetStyle` marks the element dirty.
 
+### Dimensions
+
+```go
+func (e *Element) SetWidth(v Value)
+func (e *Element) SetHeight(v Value)
+```
+
+Change an element's width or height after creation. Both mark the element and its ancestors dirty so layout recomputes on the next frame. Pass `tui.Fixed(n)`, `tui.Percent(p)`, or `tui.Auto()`.
+
+These apply to retained elements you hold across renders, such as a cached component's root. A setter on an element that the render rebuilds each frame has no lasting effect, since the next render recreates it from its options.
+
+```go
+// Grow a results dropdown to fit its matches, capped at 8 rows
+dropdown.SetHeight(tui.Fixed(min(len(matches), 8)))
+```
+
 ### Border
 
 ```go
@@ -261,9 +282,17 @@ func (e *Element) BorderStyle() Style
 func (e *Element) SetBorderStyle(style Style)
 func (e *Element) BorderTitle() string
 func (e *Element) SetBorderTitle(title string)
+func (e *Element) BorderTitleAlign() TextAlign
+func (e *Element) SetBorderTitleAlign(align TextAlign)
+func (e *Element) BorderTitleStyle() *Style
+func (e *Element) SetBorderTitleStyle(style *Style)
+func (e *Element) FocusBorderStyle() *Style
+func (e *Element) SetFocusBorderStyle(style *Style)
 ```
 
 `Border()` returns the border shape (`BorderSingle`, `BorderRounded`, etc.). `BorderStyle()` returns the color/attribute style used to draw the border lines. `BorderTitle()` returns the title text drawn in the top border, or `""` when no title is set.
+
+`BorderTitleAlign()` reports where the title sits on the top border, `TextAlignCenter` by default. `BorderTitleStyle()` and `FocusBorderStyle()` return `nil` when no override is set, so the title uses the active border style and the border keeps its base style while focused. Pass `nil` to either setter to clear the override.
 
 ### Background
 
@@ -591,6 +620,28 @@ func (e *Element) ElementAtPoint(x, y int) Focusable
 `ElementAt` finds the deepest element containing the given point. Children are checked in reverse order (last child renders on top, so it gets priority). Returns `nil` if no element contains the point.
 
 `ElementAtPoint` does the same thing but returns a `Focusable` interface to satisfy the internal mouse hit-testing contract.
+
+## Cursor Reporting
+
+The App drives the real terminal cursor. At the end of each frame it asks the focused element where the cursor belongs and moves the hardware cursor there, so the cursor blinks and behaves natively instead of being painted into the buffer.
+
+```go
+func WithCursorSource(fn func() (col, row int, visible bool)) Option
+func (e *Element) SetCursorSource(fn func() (col, row int, visible bool))
+func (e *Element) ReportCursor() (col, row int, visible bool)
+```
+
+An element reports its cursor by installing a source, either with `WithCursorSource` at creation or `SetCursorSource` afterward. The source returns the cursor position in display cells measured from the element's content origin, plus whether it is visible. The framework converts that to an absolute terminal cell, accounting for the scroll offset and any clipping ancestor.
+
+`Input` and `TextArea` install a source on their own, so a focused text widget places the real cursor with no extra wiring. To take over cursor placement yourself, or to suppress it, build the App with `WithManualCursor()` (see the [App Reference](app.md)).
+
+```go
+type CursorReporter interface {
+    ReportCursor() (col, row int, visible bool)
+}
+```
+
+`Element` implements `CursorReporter`. `ReportCursor` returns the absolute cell captured during the most recent render. It reports `visible == false` when no source is set, when the source reports invisible, or when the cursor was clipped out of view.
 
 ## Rendering
 

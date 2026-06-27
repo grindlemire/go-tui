@@ -112,12 +112,12 @@ Use this section to quickly find the right files for a given change.
 ### Changing the public API (Element options, App config, types)
 
 - `element.go` — Element struct definition, TextAlign/ScrollMode/OverflowMode enums
-- `element_options.go` — Option funcs: WithWidth, WithHeight, WithFlexGrow, WithDirection, WithBorder, WithScrollable, WithTruncate, WithHidden, WithOverflow, WithTextGradient, WithBackgroundGradient, WithBorderGradient, etc.
+- `element_options.go` — Option funcs: WithWidth, WithHeight, WithFlexGrow, WithDirection, WithBorder, WithScrollable, WithTruncate, WithHidden, WithOverflow, WithTextGradient, WithBackgroundGradient, WithBorderGradient, WithBorderTitleAlign, WithBorderTitleStyle, WithFocusBorderStyle, WithCursorSource, etc.
 - `element_options_auto.go` — WithWidthAuto(), WithHeightAuto()
-- `element_accessors.go` — Getters/setters: SetText, SetBorder, SetStyle, Background, etc.
+- `element_accessors.go` — Getters/setters: SetText, SetBorder, SetStyle, Background, SetWidth, SetHeight, SetBorderTitleAlign, SetBorderTitleStyle, SetFocusBorderStyle, etc.
 - `element_tree.go` — Tree manipulation: AddChild, RemoveChild, RemoveAllChildren
 - `element_scroll.go` — Scroll methods: ScrollTo, ScrollOffset, MaxScroll, ViewportSize
-- `app_options.go` — AppOption funcs: WithFrameRate, WithMouseEnabled, WithInlineHeight, WithGlobalKeyHandler, WithInputLatency, WithEventQueueSize, etc.
+- `app_options.go` — AppOption funcs: WithFrameRate, WithMouseEnabled, WithInlineHeight, WithGlobalKeyHandler, WithInputLatency, WithEventQueueSize, WithPreRenderHook, WithPostRenderHook, WithManualCursor, etc.
 - `layout.go` — Re-exports from internal/layout (Direction, Justify, Align, Value, etc.)
 - `color.go` — Color type, ANSIColor(), RGBColor(), HexColor(), Gradient, GradientDirection
 - `style.go` — Style type with chainable methods (Bold, Dim, Italic, Foreground, etc.)
