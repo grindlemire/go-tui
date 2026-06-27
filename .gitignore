@@ -25,7 +25,9 @@ vendor/
 
 # IDE/Editor
 .idea/
-.vscode/
+.vscode/*
+# Track shared project settings (file nesting for generated *_gsx.go), ignore personal cruft
+!.vscode/settings.json
 *.swp
 *.swo
 *~

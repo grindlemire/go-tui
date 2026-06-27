@@ -84,6 +84,9 @@
         "rules": {
           "typeParameter:gsx": "#C586C0"
         }
+      },
+      "explorer.fileNesting.patterns": {
+        "*.gsx": "${capture}_gsx.go"
       }
     }
   },
