@@ -208,3 +208,25 @@ func TestInputOptions_Callbacks(t *testing.T) {
 		})
 	}
 }
+
+func TestInputOptions_OnChangeFiresOnSetTextAndClear(t *testing.T) {
+	var changes []string
+	inp := NewInput(WithInputOnChange(func(s string) {
+		changes = append(changes, s)
+	}))
+	inp.BindApp(testApp)
+
+	// SetText fires onChange.
+	changes = nil
+	inp.SetText("hello")
+	if len(changes) != 1 || changes[0] != "hello" {
+		t.Fatalf("after SetText: changes = %v, want [hello]", changes)
+	}
+
+	// Clear fires onChange.
+	changes = nil
+	inp.Clear()
+	if len(changes) != 1 || changes[0] != "" {
+		t.Fatalf("after Clear: changes = %v, want ['']", changes)
+	}
+}

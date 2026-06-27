@@ -23,6 +23,7 @@ type TextArea struct {
 	focusGradient     *Gradient
 	autoFocus         bool
 	submitKey         Key
+	onChange          func(string)
 	onSubmit          func(string)
 
 	// Reactive state
@@ -88,12 +89,18 @@ func (t *TextArea) Text() string {
 func (t *TextArea) SetText(s string) {
 	t.text.Set(s)
 	t.cursorPos.Set(utf8.RuneCountInString(s))
+	if t.onChange != nil {
+		t.onChange(t.text.Get())
+	}
 }
 
 // Clear clears the text area.
 func (t *TextArea) Clear() {
 	t.text.Set("")
 	t.cursorPos.Set(0)
+	if t.onChange != nil {
+		t.onChange(t.text.Get())
+	}
 }
 
 // CursorPos returns the cursor position as a grapheme-cluster index: the count
@@ -144,6 +151,9 @@ func (t *TextArea) insertString(s string) {
 	// a trailing combining mark glues to its base and the cursor lands after it.
 	t.cursorPos.Set(clusterEnd(newText, pos+len(insert)-1))
 	t.blink.Set(true)
+	if t.onChange != nil {
+		t.onChange(t.text.Get())
+	}
 }
 
 // contentRows returns the number of content rows to render: the wrapped
@@ -363,6 +373,9 @@ func (t *TextArea) backspace(ke KeyEvent) {
 		newRunes := append(runes[:snapped], runes[pos:]...)
 		t.text.Set(string(newRunes))
 		t.cursorPos.Set(snapped)
+		if t.onChange != nil {
+			t.onChange(t.text.Get())
+		}
 	}
 }
 
@@ -375,6 +388,9 @@ func (t *TextArea) delete(ke KeyEvent) {
 		end := clusterEnd(text, pos)
 		newRunes := append(runes[:pos], runes[end:]...)
 		t.text.Set(string(newRunes))
+		if t.onChange != nil {
+			t.onChange(t.text.Get())
+		}
 	}
 }
 
@@ -449,7 +465,8 @@ func (t *TextArea) moveEnd(ke KeyEvent) {
 	t.blink.Set(true)
 }
 
-// submit calls the onSubmit callback.
+// submit calls the onSubmit callback. Does not fire onChange
+// because submit does not mutate the text.
 func (t *TextArea) submit(ke KeyEvent) {
 	if t.onSubmit != nil {
 		t.onSubmit(t.text.Get())

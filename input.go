@@ -89,6 +89,9 @@ func (inp *Input) SetText(s string) {
 	inp.text.Set(s)
 	inp.cursorPos.Set(utf8.RuneCountInString(s))
 	inp.ensureCursorVisible()
+	if inp.onChange != nil {
+		inp.onChange(inp.text.Get())
+	}
 }
 
 // Clear clears the input.
@@ -96,6 +99,9 @@ func (inp *Input) Clear() {
 	inp.text.Set("")
 	inp.cursorPos.Set(0)
 	inp.scrollPos.Set(0)
+	if inp.onChange != nil {
+		inp.onChange(inp.text.Get())
+	}
 }
 
 // CursorPos returns the cursor position as a grapheme-cluster index: the count

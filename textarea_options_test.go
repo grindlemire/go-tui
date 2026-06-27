@@ -11,7 +11,9 @@ func TestTextAreaOptions(t *testing.T) {
 	boundState := NewState("héllo")
 
 	submitted := ""
+	changed := ""
 	onSubmit := func(s string) { submitted = s }
+	onChange := func(s string) { changed = s }
 
 	type tc struct {
 		opts   []TextAreaOption
@@ -208,6 +210,61 @@ func TestTextAreaOptions(t *testing.T) {
 				ta.onSubmit("submitted text")
 				if submitted != "submitted text" {
 					t.Fatalf("submitted = %q, want %q", submitted, "submitted text")
+				}
+			},
+		},
+		"WithTextAreaOnChange stores callback and fires on text mutation": {
+			opts: []TextAreaOption{WithTextAreaOnChange(onChange)},
+			assert: func(t *testing.T, ta *TextArea) {
+				if ta.onChange == nil {
+					t.Fatal("expected onChange to be set")
+				}
+				// SetText fires onChange.
+				changed = ""
+				ta.SetText("hello")
+				if changed != "hello" {
+					t.Fatalf("after SetText: changed = %q, want %q", changed, "hello")
+				}
+				// Clear fires onChange.
+				changed = "SENTINEL"
+				ta.Clear()
+				if changed != "" {
+					t.Fatalf("after Clear: changed = %q, want ''", changed)
+				}
+				// insertChar fires onChange via insertString.
+				changed = ""
+				ta.SetText("ab")
+				changed = ""
+				// Simulate typing 'c' at the end (cluster index 2, rune index 2).
+				ta.insertChar(KeyEvent{Rune: 'c'})
+				if changed != "abc" {
+					t.Fatalf("after insertChar: changed = %q, want %q", changed, "abc")
+				}
+				// Backspace fires onChange.
+				changed = ""
+				ta.SetText("abc")
+				ta.cursorPos.Set(3) // at end
+				changed = ""
+				ta.backspace(KeyEvent{})
+				if changed != "ab" {
+					t.Fatalf("after backspace: changed = %q, want %q", changed, "ab")
+				}
+				// Delete fires onChange.
+				changed = ""
+				ta.SetText("abc")
+				ta.cursorPos.Set(0)
+				changed = ""
+				ta.delete(KeyEvent{})
+				if changed != "bc" {
+					t.Fatalf("after delete: changed = %q, want %q", changed, "bc")
+				}
+				// Submit does NOT fire onChange.
+				changed = ""
+				ta.SetText("hello")
+				changed = ""
+				ta.submit(KeyEvent{})
+				if changed != "" {
+					t.Fatalf("after submit: onChange fired (changed = %q), want no call", changed)
 				}
 			},
 		},
