@@ -3,6 +3,15 @@
 ## [0.18.0](https://github.com/grindlemire/go-tui/compare/v0.17.0...v0.18.0) (2026-06-27)
 
 
+### Upgrade notes
+
+0.18.0 keeps the public API compatible, so it stays a minor release. Two runtime behaviors changed in ways an existing app can notice.
+
+Text widgets now drive the real terminal cursor. `Input` and `TextArea` place the terminal's own cursor at the editing position and no longer draw the `▌` glyph, so the cursor blinks and behaves natively. To keep the drawn glyph, add `WithInputVirtualCursor()` or `WithTextAreaVirtualCursor()`; to take over cursor placement, build the app with `WithManualCursor()`. `WithInputCursor` and `WithTextAreaCursor` are now deprecated aliases for `WithInputCursorRune` and `WithTextAreaCursorRune`, which set the glyph used in virtual-cursor mode.
+
+Text is now measured with an in-house grapheme engine. Width, wrapping, and cursor math run through go-tui's own grapheme-cluster code, so emoji, combining marks, and other wide or multi-rune clusters can measure or wrap a cell differently than in 0.17.0. If your tests assert exact column counts or wrap points, re-baseline them against 0.18.0.
+
+
 ### Features
 
 * add border title alignment support (left/center/right) ([#98](https://github.com/grindlemire/go-tui/issues/98)) ([3fac7cc](https://github.com/grindlemire/go-tui/commit/3fac7ccd4abd235f6f846457b1279deb979f3ce8))
