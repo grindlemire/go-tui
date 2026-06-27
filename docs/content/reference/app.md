@@ -178,6 +178,37 @@ func WithCursor() AppOption
 
 Keeps the cursor visible during app execution. By default, the cursor is hidden.
 
+### WithPreRenderHook
+
+```go
+func WithPreRenderHook(fn func()) AppOption
+```
+
+Sets a callback that runs at the start of every render cycle, after the buffer is cleared and before the component tree re-renders. Use it for state that must settle before the frame is drawn, such as syncing a layout value to the current terminal size.
+
+```go
+tui.WithPreRenderHook(func() {
+    w, _ := app.Size()
+    sidebar.SetWidth(tui.Fixed(w / 4))
+})
+```
+
+### WithPostRenderHook
+
+```go
+func WithPostRenderHook(fn func()) AppOption
+```
+
+Sets a callback that runs after every render cycle completes. Use it for work that should follow the frame, such as measurement or frame logging.
+
+### WithManualCursor
+
+```go
+func WithManualCursor() AppOption
+```
+
+Disables framework-driven cursor placement. By default the App moves the real terminal cursor to the focused widget's reported position at the end of each frame (see [Cursor Reporting](element.md#cursor-reporting)). Use this when your app positions the cursor itself or wants no cursor shown. This differs from `WithCursor`, which keeps the cursor visible but leaves placement to the framework.
+
 ### WithInlineHeight
 
 ```go

@@ -38,7 +38,7 @@ Creates a new `Input` with the given options. Default values:
 | TextStyle   | `Style{}`    | Default terminal style                   |
 | Placeholder | `""`         | No placeholder text                      |
 | PlaceholderStyle | `Style{}.Dim()` | Dim text for placeholder          |
-| Cursor      | `'▌'`        | Block cursor character                   |
+| Cursor      | real cursor  | Framework places the terminal cursor; `WithInputVirtualCursor` draws `'▌'` instead |
 | FocusColor  | `Cyan`       | Border color when focused                |
 
 ### Reactive Value Binding
@@ -133,6 +133,23 @@ In `.gsx`:
 |-------------|-----------------------------------|
 | Enter       | Trigger `onSubmit` callback       |
 
+### Programmatic Editing
+
+Move the cursor and insert text from code, for example to seed a value or build an autocomplete.
+
+```go
+func (inp *Input) CursorPos() int
+func (inp *Input) SetCursorPos(pos int)
+func (inp *Input) InsertText(s string)
+```
+
+`CursorPos` returns the cursor position as a grapheme-cluster index, the count of whole glyphs before the cursor. That is the unit `SetCursorPos` accepts, so it is not a byte or rune offset and will not slice the text correctly if used that way. `SetCursorPos` clamps to `[0, ClusterCount(text)]` and lands on a cluster boundary. `InsertText` inserts at the cursor and advances past the inserted text, routing through the same path as typing so combining marks join the preceding glyph.
+
+```go
+inp.SetCursorPos(0)
+inp.InsertText("> ") // prefix the line, cursor ends after the prefix
+```
+
 ### InputOption Functions
 
 | Function | Description |
@@ -149,6 +166,10 @@ In `.gsx`:
 | `WithInputFocusGradient(Gradient)` | Border gradient when focused |
 | `WithInputOnSubmit(func(string))` | Enter key callback |
 | `WithInputOnChange(func(string))` | Text change callback |
+| `WithInputVirtualCursor()` | Draw the `▌` glyph instead of using the real terminal cursor |
+| `WithInputCursorRune(rune)` | Glyph used in virtual-cursor mode (default `▌`) |
+
+By default the Input drives the real terminal cursor and draws no glyph. Pass `WithInputVirtualCursor()` to paint the block glyph instead, and `WithInputCursorRune` to change it. `WithInputCursor` still works as a deprecated alias for `WithInputCursorRune`.
 
 ## TextArea
 
@@ -183,7 +204,7 @@ Creates a new `TextArea` with the given options. Default values:
 | TextStyle   | `Style{}`    | Default terminal style                   |
 | Placeholder | `""`         | No placeholder text                      |
 | PlaceholderStyle | `Style{}.Dim()` | Dim text for placeholder          |
-| Cursor      | `'▌'`        | Block cursor character                   |
+| Cursor      | real cursor  | Framework places the terminal cursor; `WithTextAreaVirtualCursor` draws `'▌'` instead |
 | FocusColor  | `Cyan`       | Border color when focused                |
 | SubmitKey   | `KeyEnter`   | Enter submits, Ctrl+J inserts newline    |
 
@@ -246,6 +267,20 @@ func (t *TextArea) Height() int
 ```
 
 Returns the total rendered height in rows, including border rows if a border is set. The height depends on the current text content and word wrapping. If `maxHeight` is set, the returned value is capped to that limit (plus border rows).
+
+#### Programmatic Editing
+
+```go
+func (t *TextArea) CursorPos() int
+func (t *TextArea) SetCursorPos(pos int)
+func (t *TextArea) InsertText(s string)
+```
+
+`CursorPos` returns the cursor position as a grapheme-cluster index (whole glyphs before the cursor), which is the unit `SetCursorPos` accepts. It is not a byte or rune offset. `SetCursorPos` clamps to `[0, ClusterCount(text)]` and lands on a cluster boundary. `InsertText` inserts at the cursor and advances past it, using the same path as typing so the bound text and cursor stay cluster-consistent.
+
+```go
+ta.InsertText("\n- ") // start a new bullet at the cursor
+```
 
 ### Focus Methods
 
@@ -323,9 +358,11 @@ Binds the TextArea's internal reactive states to the given `App`, so that state 
 
 When `submitKey` is set to something other than `KeyEnter`, the behavior flips: Enter inserts a newline and the configured key triggers submit.
 
-### Cursor Blink
+### Cursor
 
-`TextArea` implements `WatcherProvider` and returns a timer watcher that toggles the cursor visibility every 500ms while focused. The cursor resets to visible on every keystroke so the user always sees where they're typing.
+By default the TextArea drives the real terminal cursor and draws no glyph, so the terminal handles the blink. Pass `WithTextAreaVirtualCursor()` to paint the `▌` glyph in the buffer instead, and `WithTextAreaCursorRune` to change it.
+
+In virtual-cursor mode, `TextArea` implements `WatcherProvider` and returns a timer watcher that toggles the glyph every 500ms while focused. The glyph resets to visible on every keystroke so the user always sees where they are typing.
 
 ### TextAreaOption Functions
 
@@ -407,16 +444,19 @@ ta := tui.NewTextArea(
 )
 ```
 
-#### WithTextAreaCursor
+#### WithTextAreaCursorRune
 
 ```go
-func WithTextAreaCursor(r rune) TextAreaOption
+func WithTextAreaCursorRune(r rune) TextAreaOption
 ```
 
-Sets the cursor character. Default: `'▌'` (left half block).
+Sets the glyph drawn in virtual-cursor mode. Default: `'▌'` (left half block). It takes effect only with `WithTextAreaVirtualCursor`, since the default real-cursor mode draws no glyph. `WithTextAreaCursor` remains as a deprecated alias.
 
 ```go
-ta := tui.NewTextArea(tui.WithTextAreaCursor('█'))
+ta := tui.NewTextArea(
+    tui.WithTextAreaVirtualCursor(),
+    tui.WithTextAreaCursorRune('█'),
+)
 ```
 
 #### WithTextAreaSubmitKey
@@ -449,6 +489,24 @@ ta := tui.NewTextArea(
     }),
 )
 ```
+
+#### WithTextAreaOnChange
+
+```go
+func WithTextAreaOnChange(fn func(string)) TextAreaOption
+```
+
+Sets a callback invoked whenever the text content changes. The callback receives the full text after each change. It fires on user edits (typing, backspace, delete) and on programmatic changes through `SetText`, `Clear`, and `InsertText`. Use it to mirror the text elsewhere or to validate as the user types.
+
+```go
+ta := tui.NewTextArea(
+    tui.WithTextAreaOnChange(func(text string) {
+        charCount.Set(len(text))
+    }),
+)
+```
+
+This is a Go option. Unlike `<input onChange>`, the `<textarea>` tag does not yet expose `onChange` as an attribute, so set it through `WithTextAreaOnChange` when constructing the component.
 
 #### WithTextAreaValue
 
@@ -515,6 +573,14 @@ ta := tui.NewTextArea(
     tui.WithTextAreaFocusGradient(tui.NewGradient(tui.Cyan, tui.Magenta)),
 )
 ```
+
+#### WithTextAreaVirtualCursor
+
+```go
+func WithTextAreaVirtualCursor() TextAreaOption
+```
+
+Switches to the drawn `▌` glyph instead of the real terminal cursor. The glyph is customizable with `WithTextAreaCursorRune`.
 
 ### Example
 
