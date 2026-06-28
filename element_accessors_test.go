@@ -273,3 +273,46 @@ func TestElement_Wrap(t *testing.T) {
 		})
 	}
 }
+
+func TestElement_SetWrap(t *testing.T) {
+	type tc struct {
+		set  bool
+		want bool
+	}
+
+	tests := map[string]tc{
+		"disable wrapping": {
+			set:  false,
+			want: false,
+		},
+		"enable wrapping": {
+			set:  true,
+			want: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(WithWrap(!tt.set))
+			e.SetWrap(tt.set)
+			if got := e.Wrap(); got != tt.want {
+				t.Errorf("Wrap() after SetWrap(%v) = %v, want %v", tt.set, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestElement_SetWrap_MarksDirty(t *testing.T) {
+	// Reset global dirty flag
+	_ = testApp.checkAndClearDirty()
+
+	e := New()
+	e.app = testApp
+	e.dirty = false
+
+	e.SetWrap(false)
+
+	if !testApp.checkAndClearDirty() {
+		t.Error("SetWrap should mark the global dirty flag")
+	}
+}
