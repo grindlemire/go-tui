@@ -6,6 +6,8 @@ go-tui ships with three built-in components: `Input` (single-line text), `TextAr
 
 All three implement `Component`, `KeyListener`, and `AppBinder`. Use them standalone or embed them in a larger UI.
 
+As GSX elements (`<input>`, `<textarea>`, `<modal>`), they mount against the component's receiver, so place them inside a struct method component rather than a pure `templ` function. The same applies to `<markdown>`.
+
 ## Input
 
 A single-line text input with cursor management, horizontal scrolling, and placeholder support.

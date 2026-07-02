@@ -467,8 +467,16 @@ The top row has three equally-sized panels (each with `grow`). The bottom row us
 
 ### Stacked Form Fields
 
+The `<input>` elements mount against a receiver, so this layout is a struct method component rather than a pure `templ` function:
+
 ```gsx
-templ FormLayout() {
+type formLayout struct{}
+
+func FormLayout() *formLayout {
+    return &formLayout{}
+}
+
+templ (f *formLayout) Render() {
     <div class="flex-col gap-1 p-2 w-40">
         <div class="flex-col">
             <span class="font-bold">Username</span>

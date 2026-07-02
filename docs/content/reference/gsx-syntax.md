@@ -55,6 +55,8 @@ templ UserList(users []string, maxVisible int) {
 }
 ```
 
+Pure components cannot host constructs that mount against a receiver: the component elements (`<input>`, `<textarea>`, `<modal>`, `<markdown>`), `@expr` component expressions, and `@Factory()` calls that return a struct component. Put those in a struct method component, which supplies the receiver they mount against. `tui generate` reports an error with a message pointing at the fix if you use one in a pure component.
+
 ### Children slot
 
 Pure components can accept nested content from their caller using `{children...}`:

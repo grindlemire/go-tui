@@ -10,29 +10,31 @@ It is a pure content renderer that owns no scroll position or key handling, so y
 
 The tag is self-closing. Content comes from an expression attribute rather than from children, because the generator cannot tell a literal markdown string apart from a Go expression that returns one.
 
+Because `<markdown>` mounts as a component, it lives inside a struct component's `Render`, with the source on a field of that struct:
+
 ```gsx
-templ Doc() {
-    <markdown source={"# Hello\n\nSome **bold** text and `inline code`."} />
+type viewer struct {
+    doc string
+}
+
+templ (v *viewer) Render() {
+    <markdown source={v.doc} />
 }
 ```
 
-The `source` attribute takes any string expression, so the document usually lives in a variable or a function:
-
-```gsx
-templ Doc(readme string) {
-    <markdown source={readme} />
-}
-```
-
-A markdown string with backticks and newlines is awkward to write inline in `.gsx`. The example keeps its sample document in `main.go` as a plain Go constant, where a double-quoted string concatenation can hold the backticks that code fences and inline code need, then passes it through the component constructor.
+The `source` attribute takes any string expression. A markdown document with backticks and newlines is awkward to write inline in `.gsx`, so the example keeps its sample in `main.go` as a plain Go constant, where double-quoted string concatenation can hold the backticks that code fences and inline code need, and stores it on the struct when it builds the viewer.
 
 ## Static and Reactive Sources
 
-`source` is for content that does not change. When the document updates at runtime, bind a `*State[string]` to the `state` attribute instead and the component re-renders on every change:
+`source` is for content that does not change. When the document updates at runtime, store a `*State[string]` on the struct and bind it to the `state` attribute instead, and the component re-renders on every change:
 
 ```gsx
-templ Preview(text *tui.State[string]) {
-    <markdown state={text} />
+type preview struct {
+    text *tui.State[string]
+}
+
+templ (p *preview) Render() {
+    <markdown state={p.text} />
 }
 ```
 
