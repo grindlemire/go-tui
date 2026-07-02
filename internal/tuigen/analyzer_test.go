@@ -52,14 +52,16 @@ templ Test() {
 		},
 		"textarea self-closing": {
 			input: `package x
-templ Test() {
+type myComp struct{}
+templ (c *myComp) Render() {
 	<textarea />
 }`,
 			wantError: false,
 		},
 		"textarea with children is error": {
 			input: `package x
-templ Test() {
+type myComp struct{}
+templ (c *myComp) Render() {
 	<textarea>text</textarea>
 }`,
 			wantError:     true,
@@ -427,7 +429,8 @@ func TestAnalyzer_KeyAndRefRequireExpressions(t *testing.T) {
 	tests := map[string]tc{
 		"key expression is valid": {
 			input: `package x
-templ Test() {
+type myComp struct{}
+templ (c *myComp) Render() {
 	<div>
 		for _, item := range items {
 			<markdown key={item.ID} source={item.Text} />
@@ -438,7 +441,8 @@ templ Test() {
 		},
 		"key string literal is rejected": {
 			input: `package x
-templ Test() {
+type myComp struct{}
+templ (c *myComp) Render() {
 	<markdown key="myid" source={src} />
 }`,
 			wantError:     true,
@@ -446,7 +450,8 @@ templ Test() {
 		},
 		"ref string literal is rejected": {
 			input: `package x
-templ Test() {
+type myComp struct{}
+templ (c *myComp) Render() {
 	<textarea ref="myref" />
 }`,
 			wantError:     true,

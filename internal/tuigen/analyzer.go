@@ -1,6 +1,7 @@
 package tuigen
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -68,6 +69,10 @@ type Analyzer struct {
 
 	// Track component definitions for children validation
 	componentDefs map[string]bool // name -> accepts children
+
+	// currentComponent is the component whose body is being walked, used to
+	// reject component elements in function templs (no receiver to mount against).
+	currentComponent *Component
 }
 
 // NewAnalyzer creates a new semantic analyzer.
@@ -236,6 +241,7 @@ func (a *Analyzer) Analyze(file *File) error {
 	a.file = file
 	a.letBindings = make(map[string]bool)
 	a.componentDefs = make(map[string]bool)
+	a.currentComponent = nil
 	a.usesElement = false
 	a.usesLayout = false
 	a.usesTUI = false
@@ -298,6 +304,10 @@ func (a *Analyzer) analyzeComponent(comp *Component) {
 	// Track that we use elements
 	a.usesElement = true
 
+	// Record the enclosing component so element validation can tell whether it
+	// is a function templ (no receiver) or a struct component.
+	a.currentComponent = comp
+
 	// Analyze body nodes
 	for _, node := range comp.Body {
 		a.analyzeNode(node)
@@ -331,6 +341,14 @@ func (a *Analyzer) analyzeElement(elem *Element) {
 	// Check if tag is known
 	if !knownTags[elem.Tag] {
 		a.errors.AddErrorf(elem.Position, "unknown element tag <%s>", elem.Tag)
+	}
+
+	// Component elements mount via app.Mount against the host component's
+	// receiver. A function templ has no receiver, so this cannot be generated.
+	if isComponentElement(elem.Tag) && a.currentComponent != nil && a.currentComponent.Receiver == "" {
+		a.errors.Add(NewErrorWithHint(elem.Position,
+			fmt.Sprintf("<%s> can only be used inside a struct component", elem.Tag),
+			fmt.Sprintf("component elements mount against a receiver; give %s a receiver, e.g. templ (c *T) Render() { ... }", a.currentComponent.Name)))
 	}
 
 	// Check for children on void elements

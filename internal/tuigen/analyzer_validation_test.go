@@ -157,8 +157,11 @@ func TestAnalyzer_AllKnownTags(t *testing.T) {
 
 	for _, tag := range tags {
 		t.Run(tag, func(t *testing.T) {
+			// Use a method templ so component elements (input, textarea), which
+			// mount against a receiver, are in a valid context alongside the rest.
 			input := `package x
-templ Test() {
+type myComp struct{}
+templ (c *myComp) Render() {
 	<` + tag + ` />
 }`
 			_, err := AnalyzeFile("test.gsx", input)
