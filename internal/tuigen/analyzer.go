@@ -1,6 +1,7 @@
 package tuigen
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -68,6 +69,16 @@ type Analyzer struct {
 
 	// Track component definitions for children validation
 	componentDefs map[string]bool // name -> accepts children
+
+	// currentComponent is the component whose body is being walked, used to
+	// reject component elements in function templs (no receiver to mount against).
+	currentComponent *Component
+
+	// structComponentFactories holds the names of local functions that return a
+	// struct-component type (a `func Name(...) *T` where T has a method templ).
+	// Calling one via @Name() in a function templ generates broken code, so the
+	// set lets analyzeComponentCall reject it.
+	structComponentFactories map[string]bool
 }
 
 // NewAnalyzer creates a new semantic analyzer.
@@ -236,6 +247,7 @@ func (a *Analyzer) Analyze(file *File) error {
 	a.file = file
 	a.letBindings = make(map[string]bool)
 	a.componentDefs = make(map[string]bool)
+	a.currentComponent = nil
 	a.usesElement = false
 	a.usesLayout = false
 	a.usesTUI = false
@@ -245,6 +257,10 @@ func (a *Analyzer) Analyze(file *File) error {
 		comp.AcceptsChildren = a.containsChildrenSlot(comp.Body)
 		a.componentDefs[comp.Name] = comp.AcceptsChildren
 	}
+
+	// Resolve which local factory functions return a struct component, so
+	// analyzeComponentCall can reject @Factory() calls in function templs.
+	a.structComponentFactories = collectStructComponentFactories(file)
 
 	// Validate method templs using {children...} have a children field on their struct
 	for _, comp := range file.Components {
@@ -298,6 +314,10 @@ func (a *Analyzer) analyzeComponent(comp *Component) {
 	// Track that we use elements
 	a.usesElement = true
 
+	// Record the enclosing component so element validation can tell whether it
+	// is a function templ (no receiver) or a struct component.
+	a.currentComponent = comp
+
 	// Analyze body nodes
 	for _, node := range comp.Body {
 		a.analyzeNode(node)
@@ -321,8 +341,28 @@ func (a *Analyzer) analyzeNode(node Node) {
 		a.analyzeGoCode(n)
 	case *ComponentCall:
 		a.analyzeComponentCall(n)
+	case *ComponentExpr:
+		a.analyzeComponentExpr(n)
 	case *ChildrenSlot:
 		// ChildrenSlot is valid - no additional validation needed
+	}
+}
+
+// analyzeComponentExpr validates a component expression (@expr). Rendering it
+// lowers to expr.Render(app), which a function templ cannot satisfy: its body
+// has no app in scope. Only struct components (with a Render(app) receiver) can.
+func (a *Analyzer) analyzeComponentExpr(expr *ComponentExpr) {
+	a.rejectComponentExprInFunctionTempl(expr.Expr, expr.Position)
+}
+
+// rejectComponentExprInFunctionTempl reports the shared error for a component
+// expression used where no receiver is available. It also covers the
+// `name := @expr` let-binding form, which the generator lowers the same way.
+func (a *Analyzer) rejectComponentExprInFunctionTempl(exprText string, pos Position) {
+	if a.currentComponent != nil && a.currentComponent.Receiver == "" {
+		a.errors.Add(NewErrorWithHint(pos,
+			fmt.Sprintf("component expression @%s can only be used inside a struct component", exprText),
+			fmt.Sprintf("component expressions render against a receiver; give %s a receiver, e.g. templ (c *T) Render() { ... }", a.currentComponent.Name)))
 	}
 }
 
@@ -331,6 +371,14 @@ func (a *Analyzer) analyzeElement(elem *Element) {
 	// Check if tag is known
 	if !knownTags[elem.Tag] {
 		a.errors.AddErrorf(elem.Position, "unknown element tag <%s>", elem.Tag)
+	}
+
+	// Component elements mount via app.Mount against the host component's
+	// receiver. A function templ has no receiver, so this cannot be generated.
+	if isComponentElement(elem.Tag) && a.currentComponent != nil && a.currentComponent.Receiver == "" {
+		a.errors.Add(NewErrorWithHint(elem.Position,
+			fmt.Sprintf("<%s> can only be used inside a struct component", elem.Tag),
+			fmt.Sprintf("component elements mount against a receiver; give %s a receiver, e.g. templ (c *T) Render() { ... }", a.currentComponent.Name)))
 	}
 
 	// Check for children on void elements
@@ -459,6 +507,9 @@ func (a *Analyzer) analyzeLetBinding(let *LetBinding) {
 		a.analyzeComponentCall(let.Call)
 	}
 	if let.Expr != "" {
+		// A let binding's Expr is only set for a `name := @expr` component
+		// expression, so it needs the same receiver check as a bare @expr.
+		a.rejectComponentExprInFunctionTempl(let.Expr, let.Position)
 		if strings.Contains(let.Expr, "tui.") {
 			a.usesTUI = true
 		}
@@ -488,6 +539,16 @@ func (a *Analyzer) analyzeIfStmt(stmt *IfStmt) {
 
 // analyzeComponentCall validates a component call.
 func (a *Analyzer) analyzeComponentCall(call *ComponentCall) {
+	// A @Factory() that returns a struct component mounts via app.Mount against
+	// the caller's receiver. In a function templ there is no receiver, so the
+	// generator falls back to a plain call and accesses .Root on a type that has
+	// none. Reject it here with a clear message instead.
+	if a.currentComponent != nil && a.currentComponent.Receiver == "" && a.structComponentFactories[call.Name] {
+		a.errors.Add(NewErrorWithHint(call.Position,
+			fmt.Sprintf("@%s() mounts a struct component and can only be used inside a struct component", call.Name),
+			fmt.Sprintf("%s returns a struct component; give %s a receiver, e.g. templ (c *T) Render() { ... }", call.Name, a.currentComponent.Name)))
+	}
+
 	// Check if component is defined in this file
 	acceptsChildren, defined := a.componentDefs[call.Name]
 
@@ -514,6 +575,40 @@ func (a *Analyzer) analyzeComponentCall(call *ComponentCall) {
 	for _, child := range call.Children {
 		a.analyzeNode(child)
 	}
+}
+
+// factoryReturnPattern matches a top-level factory function and captures its
+// name and single return type: `func Widget(...) *widget {`. The lazy param
+// group backtracks past nested parens in the parameter list to reach the real
+// return type. Tuple returns and generic result types do not match and stay
+// unflagged, which keeps the check free of false positives on ordinary code.
+var factoryReturnPattern = regexp.MustCompile(`^func\s+(\w+)\s*\([^{]*?\)\s*(\*?[\w.]+)\s*\{`)
+
+// collectStructComponentFactories returns the names of local functions whose
+// return type is a struct-component receiver type (a type with a method templ).
+// These are the @Name() calls that only work inside a struct component.
+func collectStructComponentFactories(file *File) map[string]bool {
+	structTypes := make(map[string]bool)
+	for _, comp := range file.Components {
+		if comp.Receiver != "" {
+			structTypes[strings.TrimPrefix(comp.ReceiverType, "*")] = true
+		}
+	}
+
+	factories := make(map[string]bool)
+	if len(structTypes) == 0 {
+		return factories
+	}
+	for _, fn := range file.Funcs {
+		m := factoryReturnPattern.FindStringSubmatch(strings.TrimSpace(fn.Code))
+		if m == nil {
+			continue
+		}
+		if structTypes[strings.TrimPrefix(m[2], "*")] {
+			factories[m[1]] = true
+		}
+	}
+	return factories
 }
 
 // analyzeGoExpr validates a Go expression.
