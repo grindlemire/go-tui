@@ -189,6 +189,13 @@ func (e *Element) Wrap() bool {
 	return !e.noWrap
 }
 
+// SetWrap sets whether text content wraps within this element's width.
+// Wrapping is enabled by default; disabling it keeps text on a single line.
+func (e *Element) SetWrap(wrap bool) {
+	e.noWrap = !wrap
+	e.MarkDirty()
+}
+
 // --- Hidden API ---
 
 // Hidden returns whether this element is hidden.

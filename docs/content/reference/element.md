@@ -325,6 +325,15 @@ func (e *Element) SetTruncate(truncate bool)
 
 When enabled, text that overflows the element's content width is cut off with an ellipsis character (`…`).
 
+### Wrap
+
+```go
+func (e *Element) Wrap() bool
+func (e *Element) SetWrap(wrap bool)
+```
+
+Controls whether text content wraps within the element's width. Wrapping is enabled by default; disabling it keeps text on a single line.
+
 ### Hidden
 
 ```go
