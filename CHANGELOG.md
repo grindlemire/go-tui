@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/grindlemire/go-tui/compare/v0.18.0...v0.18.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* add SetWrap setter to match the Element wrap API ([#110](https://github.com/grindlemire/go-tui/issues/110)) ([98c07de](https://github.com/grindlemire/go-tui/commit/98c07de85e677f12ef7eab9eaae56079ca77dfd3))
+* reject component elements, expressions, and struct calls in function templs ([#112](https://github.com/grindlemire/go-tui/issues/112)) ([cb149c8](https://github.com/grindlemire/go-tui/commit/cb149c82e1a9c7a3228c14307af49e46506bd21e))
+
 ## [0.18.0](https://github.com/grindlemire/go-tui/compare/v0.17.0...v0.18.0) (2026-06-27)
 
 
