@@ -203,7 +203,7 @@ Called on cached component instances when the parent re-renders and the componen
 
 Without `PropsUpdater`, a mounted component's props are fixed at the values passed during the first render. Implement this interface when the component's constructor takes parameters that may change across renders.
 
-**When to implement:** When your component receives props from a parent and those props can change.
+**When to implement:** When your component receives props from a parent and those props can change. For `.gsx` receiver components the generator emits this automatically; see [Generated lifecycle methods](#generated-lifecycle-methods) for the override and delegation rules.
 
 ```go
 type statusBar struct {
@@ -225,6 +225,29 @@ func (s *statusBar) UpdateProps(fresh tui.Component) {
     }
 }
 ```
+
+## Generated lifecycle methods
+
+For a receiver component defined in a `.gsx` file (`templ (c *T) Render()`), the generator emits `UpdateProps`, `BindApp`, and `UnbindApp` automatically when the struct has fields that need them. If you declare one of these methods yourself in the same `.gsx` file, the generator skips its version and yours is used.
+
+Each generated method is a thin wrapper around an unexported helper containing the actual logic:
+
+| Generated method | Delegation helper |
+|------------------|-------------------|
+| `UpdateProps` | `updatePropsFields(fresh Component)` copies prop fields |
+| `BindApp` | `bindAppFields(app *App)` wires `State`, `Events`, and `*App` fields |
+| `UnbindApp` | `unbindAppFields()` detaches `Events` subscriptions |
+
+The helpers are always emitted, so an override can delegate the generated work and add custom behavior on top:
+
+```go
+func (c *statusBar) UpdateProps(fresh tui.Component) {
+    c.updatePropsFields(fresh)
+    c.recomputeLayout()
+}
+```
+
+The three helper names are reserved by the generator; declaring your own method with one of these names collides with generated code. For function templs (`templ Name()`), the generator also reserves the `<Name>View` type name for the generated view struct.
 
 ## Viewable
 

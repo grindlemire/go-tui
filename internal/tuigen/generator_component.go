@@ -525,7 +525,8 @@ func hasUserUpdatePropsMethod(decls []*GoDecl, funcs []*GoFunc, receiverType str
 
 func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName string) bool {
 	typeName := strings.TrimPrefix(receiverType, "*")
-	pattern := regexp.MustCompile(`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*` + regexp.QuoteMeta(methodName) + `\s*\(`)
+	// The receiver name is optional: func (*row) M() is legal Go.
+	pattern := regexp.MustCompile(`func\s*\(\s*(?:\w+\s+)?\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*` + regexp.QuoteMeta(methodName) + `\s*\(`)
 
 	for _, decl := range decls {
 		if decl.Kind == "func" && pattern.MatchString(decl.Code) {

@@ -1473,6 +1473,56 @@ templ (l *fileList) Render() {
 	}
 }
 
+// TestHasUserMethod verifies user-method detection across the receiver forms
+// Go allows. Unnamed receivers are legal and must be detected, or the
+// generator emits a duplicate lifecycle method.
+func TestHasUserMethod(t *testing.T) {
+	type tc struct {
+		code string
+		want bool
+	}
+
+	tests := map[string]tc{
+		"named pointer receiver": {
+			code: "func (r *row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"named value receiver": {
+			code: "func (r row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"unnamed pointer receiver": {
+			code: "func (*row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"unnamed value receiver": {
+			code: "func (row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"method on another type": {
+			code: "func (r *other) UpdateProps(fresh tui.Component) {}",
+			want: false,
+		},
+		"type name is a prefix of another type": {
+			code: "func (r *rowExtra) UpdateProps(fresh tui.Component) {}",
+			want: false,
+		},
+		"plain function with the method name": {
+			code: "func UpdateProps(fresh tui.Component) {}",
+			want: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			funcs := []*GoFunc{{Code: tt.code}}
+			if got := hasUserMethod(nil, funcs, "*row", "UpdateProps"); got != tt.want {
+				t.Errorf("hasUserMethod(%q) = %v, want %v", tt.code, got, tt.want)
+			}
+		})
+	}
+}
+
 // TestGenerator_UserUpdatePropsSuppressesGenerated verifies that a
 // user-defined UpdateProps on the receiver type suppresses the generated
 // wrapper. Without the check, the generator emitted a second UpdateProps and

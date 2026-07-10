@@ -258,6 +258,9 @@ func (a *Analyzer) Analyze(file *File) error {
 		a.componentDefs[comp.Name] = comp.AcceptsChildren
 	}
 
+	// Reject declarations that collide with generated code
+	a.validateNameCollisions(file)
+
 	// Resolve which local factory functions return a struct component, so
 	// analyzeComponentCall can reject @Factory() calls in function templs.
 	a.structComponentFactories = collectStructComponentFactories(file)
