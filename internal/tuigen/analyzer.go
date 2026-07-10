@@ -75,9 +75,10 @@ type Analyzer struct {
 	currentComponent *Component
 
 	// structComponentFactories holds the names of local functions that return a
-	// struct-component type (a `func Name(...) *T` where T has a method templ).
-	// Calling one via @Name() in a function templ generates broken code, so the
-	// set lets analyzeComponentCall reject it.
+	// component: a struct-component receiver type, a type with a plain-Go
+	// Render(...) *tui.Element method, or the tui.Component interface (see
+	// collectStructComponentFactories). Calling one via @Name() in a function
+	// templ generates broken code, so the set lets analyzeComponentCall reject it.
 	structComponentFactories map[string]bool
 }
 
@@ -260,7 +261,7 @@ func (a *Analyzer) Analyze(file *File) error {
 
 	// Resolve which local factory functions return a struct component, so
 	// analyzeComponentCall can reject @Factory() calls in function templs.
-	a.structComponentFactories = collectStructComponentFactories(file)
+	a.structComponentFactories = collectStructComponentFactories(file, a.getTUIAlias())
 
 	// Validate method templs using {children...} have a children field on their struct
 	for _, comp := range file.Components {
@@ -585,9 +586,11 @@ func (a *Analyzer) analyzeComponentCall(call *ComponentCall) {
 var factoryReturnPattern = regexp.MustCompile(`^func\s+(\w+)\s*\([^{]*?\)\s*(\*?[\w.]+)\s*\{`)
 
 // collectStructComponentFactories returns the names of local functions whose
-// return type is a struct-component receiver type (a type with a method templ).
-// These are the @Name() calls that only work inside a struct component.
-func collectStructComponentFactories(file *File) map[string]bool {
+// return type is a component: a struct-component receiver type (a type with a
+// method templ), a type whose Render method is written in plain Go, or the
+// tui.Component interface itself (issue #115). These are the @Name() calls
+// that only work inside a struct component.
+func collectStructComponentFactories(file *File, tuiAlias string) map[string]bool {
 	structTypes := make(map[string]bool)
 	for _, comp := range file.Components {
 		if comp.Receiver != "" {
@@ -595,16 +598,24 @@ func collectStructComponentFactories(file *File) map[string]bool {
 		}
 	}
 
-	factories := make(map[string]bool)
-	if len(structTypes) == 0 {
-		return factories
+	// A type whose Render(...) *tui.Element method is written in plain Go is a
+	// component too; mounting is the only way to use it from a templ.
+	renderPattern := regexp.MustCompile(
+		`^func\s*\(\s*(?:\w+\s+)?\*?(\w+)\s*\)\s*Render\s*\([^)]*\)\s*\*` + regexp.QuoteMeta(tuiAlias) + `\.Element\s*\{`)
+	for _, fn := range file.Funcs {
+		if m := renderPattern.FindStringSubmatch(strings.TrimSpace(fn.Code)); m != nil {
+			structTypes[m[1]] = true
+		}
 	}
+
+	componentIface := tuiAlias + ".Component"
+	factories := make(map[string]bool)
 	for _, fn := range file.Funcs {
 		m := factoryReturnPattern.FindStringSubmatch(strings.TrimSpace(fn.Code))
 		if m == nil {
 			continue
 		}
-		if structTypes[strings.TrimPrefix(m[2], "*")] {
+		if m[2] == componentIface || structTypes[strings.TrimPrefix(m[2], "*")] {
 			factories[m[1]] = true
 		}
 	}

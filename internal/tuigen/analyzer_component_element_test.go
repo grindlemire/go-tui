@@ -224,6 +224,157 @@ templ (h *host) Render() {
 	}
 }
 
+// A @Factory() call whose factory returns tui.Component (or a local type whose
+// Render method is written in plain Go) also mounts, so it is just as invalid in
+// a function templ as a struct-component factory (issue #115). The analyzer
+// rejects these while leaving method-templ usage alone.
+func TestAnalyzer_ComponentFactoryCallRequiresReceiver(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+		hintContains  string
+	}
+
+	// Shared preamble: a plain-Go component `row` with an interface factory.
+	const ifaceFactory = `package x
+type row struct{}
+func NewRow() tui.Component { return &row{} }
+func (r *row) Render(*tui.App) *tui.Element {
+	return tui.New(tui.WithText("row"))
+}
+`
+
+	tests := map[string]tc{
+		"factory returning tui.Component in function templ errors": {
+			input: ifaceFactory + `templ Field() {
+	@NewRow()
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+			hintContains:  "give Field a receiver",
+		},
+		"factory returning aliased Component in function templ errors": {
+			input: `package x
+import gotui "github.com/grindlemire/go-tui"
+type row struct{}
+func NewRow() gotui.Component { return &row{} }
+func (r *row) Render(*gotui.App) *gotui.Element {
+	return gotui.New(gotui.WithText("row"))
+}
+templ Field() {
+	@NewRow()
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+		},
+		"factory returning plain-Go component pointer in function templ errors": {
+			input: `package x
+type row struct{}
+func NewRow() *row { return &row{} }
+func (r *row) Render(app *tui.App) *tui.Element {
+	return tui.New(tui.WithText("row"))
+}
+templ Field() {
+	@NewRow()
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+		},
+		"factory returning component with unnamed receiver Render in function templ errors": {
+			input: `package x
+type row struct{}
+func NewRow() *row { return &row{} }
+func (*row) Render(*tui.App) *tui.Element {
+	return tui.New(tui.WithText("row"))
+}
+templ Field() {
+	@NewRow()
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+		},
+		"factory returning plain-Go component value in function templ errors": {
+			input: `package x
+type row struct{}
+func NewRow() row { return row{} }
+func (r row) Render(*tui.App) *tui.Element {
+	return tui.New(tui.WithText("row"))
+}
+templ Field() {
+	@NewRow()
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+		},
+		"factory returning tui.Component in let binding in function templ errors": {
+			input: ifaceFactory + `templ Field() {
+	r := @NewRow()
+	<div>{r}</div>
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+		},
+		"factory returning tui.Component in method templ is allowed": {
+			input: ifaceFactory + `type host struct{}
+templ (h *host) Render() {
+	<div>@NewRow()</div>
+}`,
+			wantError: false,
+		},
+		"factory returning plain-Go component in method templ is allowed": {
+			input: `package x
+type row struct{}
+func NewRow() *row { return &row{} }
+func (r *row) Render(*tui.App) *tui.Element {
+	return tui.New(tui.WithText("row"))
+}
+type host struct{}
+templ (h *host) Render() {
+	<div>@NewRow()</div>
+}`,
+			wantError: false,
+		},
+		"helper with Render-free return type is not flagged": {
+			input: `package x
+type stats struct{}
+func Stats() *stats { return &stats{} }
+func (s *stats) Render(indent int) string { return "" }
+templ Page() {
+	<div>hi</div>
+}`,
+			wantError: false,
+		},
+		"factory returning tui.Component in a go expression is not flagged": {
+			input: ifaceFactory + `templ Page() {
+	<div>{NewRow()}</div>
+}`,
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.gsx", tt.input)
+			if tt.wantError {
+				if err == nil {
+					t.Fatalf("expected an error, got nil")
+				}
+				if !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+				if tt.hintContains != "" && !strings.Contains(err.Error(), tt.hintContains) {
+					t.Errorf("error %q does not contain hint %q", err.Error(), tt.hintContains)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+		})
+	}
+}
+
 // A @Factory() call that returns a struct component mounts via app.Mount against
 // the caller's receiver. In a function templ the generator instead emits a plain
 // call and reads .Root on a type that has none. The analyzer rejects the call in
