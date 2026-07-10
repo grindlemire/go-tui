@@ -228,7 +228,9 @@ func (s *statusBar) UpdateProps(fresh tui.Component) {
 
 ## Generated lifecycle methods
 
-For a receiver component defined in a `.gsx` file (`templ (c *T) Render()`), the generator emits `UpdateProps`, `BindApp`, and `UnbindApp` automatically when the struct has fields that need them. If you declare one of these methods yourself in the same `.gsx` file, the generator skips its version and yours is used.
+For a receiver component defined in a `.gsx` file (`templ (c *T) Render()`), the generator emits `UpdateProps`, `BindApp`, and `UnbindApp` automatically when the struct has fields that need them. If you declare one of these methods yourself, in the `.gsx` file or in any plain `.go` file of the same package, the generator skips its version and yours is used. Test files (`_test.go`) are ignored so a test-only method cannot suppress a method production builds need.
+
+Because generation reads sibling files, adding or removing one of these methods in a `.go` file changes what the `.gsx` file should generate. Rerun `tui generate` after such an edit; until then the stale generated file may fail to compile.
 
 Each generated method is a thin wrapper around an unexported helper containing the actual logic:
 

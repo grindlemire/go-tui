@@ -503,24 +503,36 @@ func findStructDecl(decls []*GoDecl, typeName string) *GoDecl {
 	return nil
 }
 
-// hasUserBindAppMethod returns true when the source file already declares a
-// BindApp method on the receiver type.
-func hasUserBindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
-	return hasUserMethod(decls, funcs, receiverType, "BindApp")
+// hasUserBindAppMethod returns true when the user already declares a BindApp
+// method on the receiver type, in this file or a sibling file of the package.
+func (g *Generator) hasUserBindAppMethod(receiverType string) bool {
+	return g.userDeclaresMethod(receiverType, "BindApp")
 }
 
-// hasUserUnbindAppMethod returns true when the source file already declares an
+// hasUserUnbindAppMethod returns true when the user already declares an
 // UnbindApp method on the receiver type. Kept distinct from BindApp detection
 // so that users who override BindApp alone still receive an auto-generated
 // UnbindApp (otherwise their Events fields would leak subscriptions).
-func hasUserUnbindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
-	return hasUserMethod(decls, funcs, receiverType, "UnbindApp")
+func (g *Generator) hasUserUnbindAppMethod(receiverType string) bool {
+	return g.userDeclaresMethod(receiverType, "UnbindApp")
 }
 
-// hasUserUpdatePropsMethod returns true when the source file already declares
-// an UpdateProps method on the receiver type.
-func hasUserUpdatePropsMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
-	return hasUserMethod(decls, funcs, receiverType, "UpdateProps")
+// hasUserUpdatePropsMethod returns true when the user already declares an
+// UpdateProps method on the receiver type.
+func (g *Generator) hasUserUpdatePropsMethod(receiverType string) bool {
+	return g.userDeclaresMethod(receiverType, "UpdateProps")
+}
+
+// userDeclaresMethod reports whether the user declares the method on the
+// receiver type, checking the current file and any sibling-file context.
+func (g *Generator) userDeclaresMethod(receiverType, methodName string) bool {
+	if hasUserMethod(g.fileDecls, g.fileFuncs, receiverType, methodName) {
+		return true
+	}
+	if g.pkgCtx != nil {
+		return g.pkgCtx.HasMethod(strings.TrimPrefix(receiverType, "*"), methodName)
+	}
+	return false
 }
 
 func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName string) bool {
@@ -580,7 +592,7 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// overrides can call it instead of hand-maintaining the copy list.
 	g.emitUpdatePropsFieldsHelper(comp, propFields)
 
-	if hasUserUpdatePropsMethod(decls, g.fileFuncs, comp.ReceiverType) {
+	if g.hasUserUpdatePropsMethod(comp.ReceiverType) {
 		// Still assert PropsUpdater so a user UpdateProps with the wrong
 		// signature fails at compile time instead of silently dropping
 		// prop refresh on cached components.
@@ -708,7 +720,7 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// can call it instead of hand-maintaining the delegation list.
 	g.emitBindAppFieldsHelper(comp, appFields, bindableFields, componentBindFields)
 
-	if hasUserBindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+	if g.hasUserBindAppMethod(comp.ReceiverType) {
 		return
 	}
 
@@ -806,7 +818,7 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 	// Always emit the unbindAppFields helper.
 	g.emitUnbindAppFieldsHelper(comp, unbindFields, componentUnbindFields)
 
-	if hasUserUnbindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+	if g.hasUserUnbindAppMethod(comp.ReceiverType) {
 		return
 	}
 

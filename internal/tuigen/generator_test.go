@@ -1473,6 +1473,77 @@ templ (l *fileList) Render() {
 	}
 }
 
+// TestGenerator_PackageContextSuppressesLifecycleMethods verifies that a
+// lifecycle method declared in a sibling file of the package (via
+// PackageContext) suppresses the generated wrapper, the same as a
+// declaration in the .gsx file itself.
+func TestGenerator_PackageContextSuppressesLifecycleMethods(t *testing.T) {
+	input := `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type row struct {
+	value  string
+	events *tui.Events[string]
+}
+
+templ (r *row) Render() {
+	<span>{r.value}</span>
+}
+`
+	sibling := `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+func (r *row) UpdateProps(fresh tui.Component) {
+	r.updatePropsFields(fresh)
+}
+
+func (r *row) UnbindApp() {
+	r.unbindAppFields()
+}
+`
+
+	lexer := NewLexer("test.gsx", input)
+	parser := NewParser(lexer)
+	file, err := parser.ParseFile()
+	if err != nil {
+		t.Fatalf("parse failed: %v", err)
+	}
+
+	ctx := NewPackageContext()
+	if err := ctx.AddGoSource("sibling.go", sibling); err != nil {
+		t.Fatalf("AddGoSource failed: %v", err)
+	}
+
+	gen := NewGenerator()
+	gen.SkipImports = true
+	gen.SetPackageContext(ctx)
+	output, err := gen.Generate(file, "test.gsx")
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+	code := string(output)
+
+	if strings.Contains(code, "func (r *row) UpdateProps(") {
+		t.Errorf("generated UpdateProps despite sibling declaration\nGot:\n%s", code)
+	}
+	if strings.Contains(code, "func (r *row) UnbindApp(") {
+		t.Errorf("generated UnbindApp despite sibling declaration\nGot:\n%s", code)
+	}
+	// BindApp has no sibling declaration, so it is still generated, and the
+	// delegation helpers are always emitted.
+	for _, want := range []string{
+		"func (r *row) BindApp(app *tui.App) {",
+		"func (r *row) updatePropsFields(fresh tui.Component) {",
+		"func (r *row) unbindAppFields() {",
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+		}
+	}
+}
+
 // TestHasUserMethod verifies user-method detection across the receiver forms
 // Go allows. Unnamed receivers are legal and must be detected, or the
 // generator emits a duplicate lifecycle method.

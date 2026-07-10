@@ -169,14 +169,20 @@ func generateFile(inputPath, outputPath string) error {
 		return err
 	}
 
+	// Sibling declarations in the package inform user-method detection and
+	// collision checks
+	pkgCtx := loadPackageContext(inputPath)
+
 	// Analyze (validates and adds missing imports)
 	analyzer := tuigen.NewAnalyzer()
+	analyzer.SetPackageContext(pkgCtx)
 	if err := analyzer.Analyze(file); err != nil {
 		return err
 	}
 
 	// Generate Go code
 	generator := tuigen.NewGenerator()
+	generator.SetPackageContext(pkgCtx)
 	output, err := generator.Generate(file, filename)
 	if err != nil {
 		return fmt.Errorf("generating code: %w", err)

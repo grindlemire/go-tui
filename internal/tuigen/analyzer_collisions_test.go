@@ -140,3 +140,135 @@ templ Foo() {
 		})
 	}
 }
+
+// TestAnalyzer_CrossFileNameCollisions verifies the same collisions are
+// caught when the conflicting declaration lives in a sibling file of the
+// package, supplied via PackageContext.
+func TestAnalyzer_CrossFileNameCollisions(t *testing.T) {
+	type tc struct {
+		input         string
+		siblingGo     string // parsed as a sibling .go file
+		siblingGSX    string // parsed as a sibling .gsx file
+		wantError     bool
+		errorContains string
+	}
+
+	tests := map[string]tc{
+		"templ conflicts with function in sibling file": {
+			input: `package x
+
+templ Foo() {
+	<span>hi</span>
+}`,
+			siblingGo:     "package x\n\nfunc Foo() string { return \"x\" }",
+			wantError:     true,
+			errorContains: "conflicts with a Go function",
+		},
+		"templ duplicated in sibling gsx file": {
+			input: `package x
+
+templ Foo() {
+	<span>hi</span>
+}`,
+			siblingGSX: `package x
+
+templ Foo() {
+	<span>other</span>
+}`,
+			wantError:     true,
+			errorContains: "another file",
+		},
+		"view struct conflicts with type in sibling file": {
+			input: `package x
+
+templ Foo() {
+	<span>hi</span>
+}`,
+			siblingGo:     "package x\n\ntype FooView struct{ n int }",
+			wantError:     true,
+			errorContains: "conflicts with the view struct",
+		},
+		"handwritten Render in sibling file": {
+			input: `package x
+
+type row struct{ v string }
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			siblingGo:     "package x\n\nimport tui \"github.com/grindlemire/go-tui\"\n\nfunc (r *row) Render(app *tui.App) *tui.Element { return nil }",
+			wantError:     true,
+			errorContains: "already declares a Render method",
+		},
+		"Render templ duplicated in sibling gsx file": {
+			input: `package x
+
+type row struct{ v string }
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			siblingGSX: `package x
+
+templ (r *row) Render() {
+	<span>other</span>
+}`,
+			wantError:     true,
+			errorContains: "another file",
+		},
+		"unrelated sibling declarations are fine": {
+			input: `package x
+
+templ Foo() {
+	<span>hi</span>
+}`,
+			siblingGo: "package x\n\nfunc Bar() {}\n\ntype BarView struct{}",
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := NewPackageContext()
+			if tt.siblingGo != "" {
+				if err := ctx.AddGoSource("sibling.go", tt.siblingGo); err != nil {
+					t.Fatalf("AddGoSource failed: %v", err)
+				}
+			}
+			if tt.siblingGSX != "" {
+				lexer := NewLexer("sibling.gsx", tt.siblingGSX)
+				parser := NewParser(lexer)
+				sib, err := parser.ParseFile()
+				if err != nil {
+					t.Fatalf("sibling parse failed: %v", err)
+				}
+				ctx.AddGSXFile(sib)
+			}
+
+			lexer := NewLexer("test.gsx", tt.input)
+			parser := NewParser(lexer)
+			file, err := parser.ParseFile()
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+
+			analyzer := NewAnalyzer()
+			analyzer.SetPackageContext(ctx)
+			err = analyzer.Analyze(file)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}

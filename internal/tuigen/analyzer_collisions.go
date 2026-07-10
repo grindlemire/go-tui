@@ -30,14 +30,22 @@ func (a *Analyzer) validateFunctionTemplCollisions(file *File, comp *Component, 
 	}
 	seen[comp.Name] = comp.Position
 
-	if hasTopLevelFunc(file.Decls, file.Funcs, comp.Name) {
+	if a.pkgCtx != nil && a.pkgCtx.HasTempl(comp.Name) {
+		a.errors.AddErrorf(comp.Position,
+			"duplicate templ %q (also defined in another file of this package)", comp.Name)
+		return
+	}
+
+	if hasTopLevelFunc(file.Decls, file.Funcs, comp.Name) ||
+		(a.pkgCtx != nil && a.pkgCtx.HasFunc(comp.Name)) {
 		a.errors.Add(NewErrorWithHint(comp.Position,
 			"templ \""+comp.Name+"\" conflicts with a Go function of the same name",
 			"rename the templ or the function"))
 	}
 
 	viewName := comp.Name + "View"
-	if hasTypeDecl(file.Decls, viewName) {
+	if hasTypeDecl(file.Decls, viewName) ||
+		(a.pkgCtx != nil && a.pkgCtx.HasType(viewName)) {
 		a.errors.Add(NewErrorWithHint(comp.Position,
 			"type \""+viewName+"\" conflicts with the view struct generated for templ \""+comp.Name+"\"",
 			"rename the type; the generator reserves the <Name>View suffix for function templs"))
@@ -53,7 +61,14 @@ func (a *Analyzer) validateMethodTemplCollisions(file *File, comp *Component, se
 	}
 	seen[typeName] = comp.Position
 
-	if hasUserMethod(file.Decls, file.Funcs, comp.ReceiverType, "Render") {
+	if a.pkgCtx != nil && a.pkgCtx.HasRenderTempl(typeName) {
+		a.errors.AddErrorf(comp.Position,
+			"duplicate Render templ for receiver type %s (also defined in another file of this package)", typeName)
+		return
+	}
+
+	if hasUserMethod(file.Decls, file.Funcs, comp.ReceiverType, "Render") ||
+		(a.pkgCtx != nil && a.pkgCtx.HasMethod(typeName, "Render")) {
 		a.errors.Add(NewErrorWithHint(comp.Position,
 			typeName+" already declares a Render method; the templ generates Render",
 			"remove the handwritten Render method or the templ"))

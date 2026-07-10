@@ -79,6 +79,17 @@ type Analyzer struct {
 	// Calling one via @Name() in a function templ generates broken code, so the
 	// set lets analyzeComponentCall reject it.
 	structComponentFactories map[string]bool
+
+	// pkgCtx holds declarations from sibling files of the package, so
+	// collision checks also catch conflicts declared outside this .gsx file.
+	// Nil when no context is available.
+	pkgCtx *PackageContext
+}
+
+// SetPackageContext supplies declarations from sibling files of the package
+// for cross-file collision detection.
+func (a *Analyzer) SetPackageContext(ctx *PackageContext) {
+	a.pkgCtx = ctx
 }
 
 // NewAnalyzer creates a new semantic analyzer.

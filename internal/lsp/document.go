@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/grindlemire/go-tui/internal/lsp/provider"
@@ -118,6 +119,7 @@ func (dm *DocumentManager) parseDocument(doc *Document) {
 	// Run analyzer to collect semantic errors (including Tailwind class validation)
 	if ast != nil {
 		analyzer := tuigen.NewAnalyzer()
+		analyzer.SetPackageContext(dm.buildPackageContext(doc))
 		if analyzerErr := analyzer.Analyze(ast); analyzerErr != nil {
 			if errList, ok := analyzerErr.(*tuigen.ErrorList); ok {
 				doc.Errors = append(doc.Errors, errList.Errors()...)
@@ -126,6 +128,40 @@ func (dm *DocumentManager) parseDocument(doc *Document) {
 			}
 		}
 	}
+}
+
+// buildPackageContext collects sibling declarations for cross-file collision
+// detection. Open sibling .gsx documents contribute their in-memory ASTs
+// (unsaved edits included); everything else comes from disk. Callers must
+// hold dm.mu.
+func (dm *DocumentManager) buildPackageContext(doc *Document) *tuigen.PackageContext {
+	ctx := tuigen.NewPackageContext()
+
+	path := uriToPath(doc.URI)
+	dir := filepath.Dir(path)
+
+	// Sibling documents open in the editor: use their parsed ASTs and note
+	// their filenames so the disk scan skips the stale on-disk copies.
+	openSiblings := make(map[string]bool)
+	for uri, other := range dm.docs {
+		if uri == doc.URI {
+			continue
+		}
+		otherPath := uriToPath(uri)
+		if filepath.Dir(otherPath) != dir {
+			continue
+		}
+		openSiblings[filepath.Base(otherPath)] = true
+		if other.AST != nil {
+			ctx.AddGSXFile(other.AST)
+		}
+	}
+
+	self := filepath.Base(path)
+	ctx.AddDirectory(dir, func(filename string) bool {
+		return filename == self || openSiblings[filename]
+	})
+	return ctx
 }
 
 // uriToPath converts a file:// URI to a file path.
