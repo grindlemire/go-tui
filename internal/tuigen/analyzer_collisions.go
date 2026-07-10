@@ -73,6 +73,19 @@ func (a *Analyzer) validateMethodTemplCollisions(file *File, comp *Component, se
 			typeName+" already declares a Render method; the templ generates Render",
 			"remove the handwritten Render method or the templ"))
 	}
+
+	// The generator owns the unexported delegation helpers on templ receiver
+	// types. A user method with one of these names would collide with the
+	// emitted helper (or silently become the generated wrapper's delegation
+	// target), so the names are reserved outright.
+	for _, helper := range []string{"updatePropsFields", "bindAppFields", "unbindAppFields"} {
+		if hasUserMethod(file.Decls, file.Funcs, comp.ReceiverType, helper) ||
+			(a.pkgCtx != nil && a.pkgCtx.HasMethod(typeName, helper)) {
+			a.errors.Add(NewErrorWithHint(comp.Position,
+				typeName+" declares method \""+helper+"\", which is a reserved generated helper name",
+				"rename the method; the generator reserves updatePropsFields, bindAppFields, and unbindAppFields on templ receiver types"))
+		}
+	}
 }
 
 // hasTopLevelFunc reports whether the file declares a plain (receiver-less)

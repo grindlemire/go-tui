@@ -118,6 +118,68 @@ templ Foo() {
 }`,
 			wantError: false,
 		},
+		"reserved helper name updatePropsFields is rejected": {
+			input: `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type row struct{ v string }
+
+func (r *row) updatePropsFields(fresh tui.Component) {}
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			wantError:     true,
+			errorContains: "reserved generated helper name",
+		},
+		"reserved helper name bindAppFields is rejected": {
+			input: `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type row struct{ v string }
+
+func (r *row) bindAppFields(app *tui.App) {}
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			wantError:     true,
+			errorContains: "reserved generated helper name",
+		},
+		"reserved helper name on a type without a templ is fine": {
+			input: `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type other struct{}
+
+func (o *other) updatePropsFields(fresh tui.Component) {}
+
+type row struct{ v string }
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			wantError: false,
+		},
+		"calling the helper from an override is fine": {
+			input: `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type row struct{ v string }
+
+func (r *row) UpdateProps(fresh tui.Component) {
+	r.updatePropsFields(fresh)
+}
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			wantError: false,
+		},
 	}
 
 	for name, tt := range tests {
@@ -224,6 +286,18 @@ templ Foo() {
 }`,
 			siblingGo: "package x\n\nfunc Bar() {}\n\ntype BarView struct{}",
 			wantError: false,
+		},
+		"reserved helper name in sibling file is rejected": {
+			input: `package x
+
+type row struct{ v string }
+
+templ (r *row) Render() {
+	<span>{r.v}</span>
+}`,
+			siblingGo:     "package x\n\nimport tui \"github.com/grindlemire/go-tui\"\n\nfunc (r *row) unbindAppFields() {}",
+			wantError:     true,
+			errorContains: "reserved generated helper name",
 		},
 	}
 

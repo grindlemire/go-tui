@@ -249,7 +249,7 @@ func (c *statusBar) UpdateProps(fresh tui.Component) {
 }
 ```
 
-The three helper names are reserved by the generator; declaring your own method with one of these names collides with generated code. For function templs (`templ Name()`), the generator also reserves the `<Name>View` type name for the generated view struct.
+The three helper names are reserved by the generator; declaring your own method with one of these names on a templ receiver type is rejected at `tui generate`/`tui check` time. For function templs (`templ Name()`), the generator also reserves the `<Name>View` type name for the generated view struct.
 
 ## Viewable
 
