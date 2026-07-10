@@ -281,6 +281,19 @@ templ Field() {
 			wantError:     true,
 			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
 		},
+		"factory returning component with unnamed receiver Render in function templ errors": {
+			input: `package x
+type row struct{}
+func NewRow() *row { return &row{} }
+func (*row) Render(*tui.App) *tui.Element {
+	return tui.New(tui.WithText("row"))
+}
+templ Field() {
+	@NewRow()
+}`,
+			wantError:     true,
+			errorContains: "@NewRow() mounts a struct component and can only be used inside a struct component",
+		},
 		"factory returning plain-Go component value in function templ errors": {
 			input: `package x
 type row struct{}

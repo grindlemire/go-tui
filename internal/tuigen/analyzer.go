@@ -75,9 +75,10 @@ type Analyzer struct {
 	currentComponent *Component
 
 	// structComponentFactories holds the names of local functions that return a
-	// struct-component type (a `func Name(...) *T` where T has a method templ).
-	// Calling one via @Name() in a function templ generates broken code, so the
-	// set lets analyzeComponentCall reject it.
+	// component: a struct-component receiver type, a type with a plain-Go
+	// Render(...) *tui.Element method, or the tui.Component interface (see
+	// collectStructComponentFactories). Calling one via @Name() in a function
+	// templ generates broken code, so the set lets analyzeComponentCall reject it.
 	structComponentFactories map[string]bool
 }
 
@@ -600,7 +601,7 @@ func collectStructComponentFactories(file *File, tuiAlias string) map[string]boo
 	// A type whose Render(...) *tui.Element method is written in plain Go is a
 	// component too; mounting is the only way to use it from a templ.
 	renderPattern := regexp.MustCompile(
-		`^func\s*\(\s*\w+\s+\*?(\w+)\s*\)\s*Render\s*\([^)]*\)\s*\*` + regexp.QuoteMeta(tuiAlias) + `\.Element\s*\{`)
+		`^func\s*\(\s*(?:\w+\s+)?\*?(\w+)\s*\)\s*Render\s*\([^)]*\)\s*\*` + regexp.QuoteMeta(tuiAlias) + `\.Element\s*\{`)
 	for _, fn := range file.Funcs {
 		if m := renderPattern.FindStringSubmatch(strings.TrimSpace(fn.Code)); m != nil {
 			structTypes[m[1]] = true
