@@ -347,7 +347,10 @@ func (a *animationApp) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
-func (a *animationApp) UpdateProps(fresh tui.Component) {
+// updatePropsFields is generated. It copies prop fields from fresh onto
+// the receiver. When you override UpdateProps, call this helper instead
+// of hand-maintaining the copy list.
+func (a *animationApp) updatePropsFields(fresh tui.Component) {
 	f, ok := fresh.(*animationApp)
 	if !ok {
 		return
@@ -355,6 +358,10 @@ func (a *animationApp) UpdateProps(fresh tui.Component) {
 	a.startTime = f.startTime
 	a.frame = f.frame
 	a.paused = f.paused
+}
+
+func (a *animationApp) UpdateProps(fresh tui.Component) {
+	a.updatePropsFields(fresh)
 }
 
 var _ tui.PropsUpdater = (*animationApp)(nil)

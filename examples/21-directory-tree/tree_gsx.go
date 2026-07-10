@@ -485,7 +485,10 @@ func (d *directoryTree) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
-func (d *directoryTree) UpdateProps(fresh tui.Component) {
+// updatePropsFields is generated. It copies prop fields from fresh onto
+// the receiver. When you override UpdateProps, call this helper instead
+// of hand-maintaining the copy list.
+func (d *directoryTree) updatePropsFields(fresh tui.Component) {
 	f, ok := fresh.(*directoryTree)
 	if !ok {
 		return
@@ -496,6 +499,10 @@ func (d *directoryTree) UpdateProps(fresh tui.Component) {
 	d.snapCursor = f.snapCursor
 	d.snapExpanded = f.snapExpanded
 	d.snapSelectedPath = f.snapSelectedPath
+}
+
+func (d *directoryTree) UpdateProps(fresh tui.Component) {
+	d.updatePropsFields(fresh)
 }
 
 var _ tui.PropsUpdater = (*directoryTree)(nil)

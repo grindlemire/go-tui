@@ -517,6 +517,12 @@ func hasUserUnbindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType strin
 	return hasUserMethod(decls, funcs, receiverType, "UnbindApp")
 }
 
+// hasUserUpdatePropsMethod returns true when the source file already declares
+// an UpdateProps method on the receiver type.
+func hasUserUpdatePropsMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
+	return hasUserMethod(decls, funcs, receiverType, "UpdateProps")
+}
+
 func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName string) bool {
 	typeName := strings.TrimPrefix(receiverType, "*")
 	pattern := regexp.MustCompile(`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*` + regexp.QuoteMeta(methodName) + `\s*\(`)
@@ -536,6 +542,11 @@ func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName st
 
 // generateUpdateProps generates an UpdateProps method for a method component.
 // This allows Mount to update cached component instances with fresh props.
+//
+// Like generateBindApp, the generator always emits an updatePropsFields helper
+// so a user-defined UpdateProps override can delegate the prop copying to it.
+// The public UpdateProps is only auto-generated when the user has not declared
+// their own; emitting it unconditionally would produce a duplicate method.
 func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Find the struct declaration for this component's receiver type
 	structDecl := findStructDecl(decls, comp.ReceiverType)
@@ -564,6 +575,31 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Get the receiver type name without pointer
 	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
 
+	// Always emit the updatePropsFields helper so user-defined UpdateProps
+	// overrides can call it instead of hand-maintaining the copy list.
+	g.emitUpdatePropsFieldsHelper(comp, propFields)
+
+	if hasUserUpdatePropsMethod(decls, g.fileFuncs, comp.ReceiverType) {
+		return
+	}
+
+	// Auto-generate UpdateProps: a thin wrapper that calls the helper.
+	g.writef("func (%s) UpdateProps(fresh tui.Component) {\n", comp.Receiver)
+	g.indent++
+	g.writef("%s.updatePropsFields(fresh)\n", comp.ReceiverName)
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+
+	// Add a compile-time check that the type implements PropsUpdater
+	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
+	g.writeln("")
+}
+
+// emitUpdatePropsFieldsHelper writes the unexported updatePropsFields method
+// containing the actual prop copying: type-asserting fresh to the receiver
+// type and copying each prop field onto the receiver.
+func (g *Generator) emitUpdatePropsFieldsHelper(comp *Component, propFields []StructField) {
 	// Pick a local name for the type-asserted fresh component that does not
 	// shadow the receiver; shadowing would turn every prop copy below into a
 	// self-assignment.
@@ -572,8 +608,10 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 		freshName += "f"
 	}
 
-	// Generate UpdateProps method
-	g.writef("func (%s) UpdateProps(fresh tui.Component) {\n", comp.Receiver)
+	g.writef("// updatePropsFields is generated. It copies prop fields from fresh onto\n")
+	g.writef("// the receiver. When you override UpdateProps, call this helper instead\n")
+	g.writef("// of hand-maintaining the copy list.\n")
+	g.writef("func (%s) updatePropsFields(fresh tui.Component) {\n", comp.Receiver)
 	g.indent++
 	g.writef("%s, ok := fresh.(%s)\n", freshName, comp.ReceiverType)
 	g.writeln("if !ok {")
@@ -589,10 +627,6 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 
 	g.indent--
 	g.writeln("}")
-	g.writeln("")
-
-	// Add a compile-time check that the type implements PropsUpdater
-	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
 	g.writeln("")
 }
 

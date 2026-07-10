@@ -1472,3 +1472,94 @@ templ (l *fileList) Render() {
 		})
 	}
 }
+
+// TestGenerator_UserUpdatePropsSuppressesGenerated verifies that a
+// user-defined UpdateProps on the receiver type suppresses the generated
+// wrapper. Without the check, the generator emitted a second UpdateProps and
+// Go rejected the package with a duplicate-method error. The unexported
+// updatePropsFields helper is always emitted so overrides can delegate to it.
+func TestGenerator_UserUpdatePropsSuppressesGenerated(t *testing.T) {
+	type tc struct {
+		input           string
+		wantCount       map[string]int
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"user-defined UpdateProps suppresses the generated wrapper": {
+			input: `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type lifecycleRow struct {
+	value string
+}
+
+func (r *lifecycleRow) UpdateProps(fresh tui.Component) {
+	r.updatePropsFields(fresh)
+}
+
+templ (r *lifecycleRow) Render() {
+	<span>{r.value}</span>
+}`,
+			// The user's own method passes through to the output; the
+			// generator must not add a second one.
+			wantCount: map[string]int{
+				"func (r *lifecycleRow) UpdateProps(": 1,
+			},
+			wantContains: []string{
+				"func (r *lifecycleRow) updatePropsFields(fresh tui.Component) {",
+				"r.value = f.value",
+			},
+			wantNotContains: []string{
+				"var _ tui.PropsUpdater = (*lifecycleRow)(nil)",
+			},
+		},
+		"no user method generates wrapper delegating to helper": {
+			input: `package x
+
+type lifecycleRow struct {
+	value string
+}
+
+templ (r *lifecycleRow) Render() {
+	<span>{r.value}</span>
+}`,
+			wantCount: map[string]int{
+				"func (r *lifecycleRow) UpdateProps(": 1,
+			},
+			wantContains: []string{
+				"func (r *lifecycleRow) updatePropsFields(fresh tui.Component) {",
+				"r.updatePropsFields(fresh)",
+				"var _ tui.PropsUpdater = (*lifecycleRow)(nil)",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+			code := string(output)
+
+			for substr, want := range tt.wantCount {
+				if got := strings.Count(code, substr); got != want {
+					t.Errorf("substring %q appears %d times, want %d\nGot:\n%s", substr, got, want, code)
+				}
+			}
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
