@@ -580,6 +580,11 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	g.emitUpdatePropsFieldsHelper(comp, propFields)
 
 	if hasUserUpdatePropsMethod(decls, g.fileFuncs, comp.ReceiverType) {
+		// Still assert PropsUpdater so a user UpdateProps with the wrong
+		// signature fails at compile time instead of silently dropping
+		// prop refresh on cached components.
+		g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
+		g.writeln("")
 		return
 	}
 

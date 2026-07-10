@@ -1511,8 +1511,9 @@ templ (r *lifecycleRow) Render() {
 			wantContains: []string{
 				"func (r *lifecycleRow) updatePropsFields(fresh tui.Component) {",
 				"r.value = f.value",
-			},
-			wantNotContains: []string{
+				// The assertion is still emitted so a wrong-signature user
+				// UpdateProps fails loudly instead of silently dropping
+				// prop refresh on cached components.
 				"var _ tui.PropsUpdater = (*lifecycleRow)(nil)",
 			},
 		},
