@@ -64,6 +64,11 @@ type Generator struct {
 	// Used to detect user-defined BindApp methods and avoid duplicate generation.
 	fileFuncs []*GoFunc
 
+	// pkgCtx holds declarations from sibling files of the package, so
+	// user-defined lifecycle methods declared outside this .gsx file also
+	// suppress generation. Nil when no context is available.
+	pkgCtx *PackageContext
+
 	// SkipImports uses format.Source instead of imports.Process (faster for tests)
 	SkipImports bool
 
@@ -102,6 +107,13 @@ func viewTypeName(componentName string) string {
 // NewGenerator creates a new code generator.
 func NewGenerator() *Generator {
 	return &Generator{}
+}
+
+// SetPackageContext supplies declarations from sibling files of the package.
+// User-defined lifecycle methods found there suppress generation the same as
+// declarations in the .gsx file itself.
+func (g *Generator) SetPackageContext(ctx *PackageContext) {
+	g.pkgCtx = ctx
 }
 
 // Generate produces Go source code from a parsed and analyzed AST.

@@ -503,23 +503,42 @@ func findStructDecl(decls []*GoDecl, typeName string) *GoDecl {
 	return nil
 }
 
-// hasUserBindAppMethod returns true when the source file already declares a
-// BindApp method on the receiver type.
-func hasUserBindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
-	return hasUserMethod(decls, funcs, receiverType, "BindApp")
+// hasUserBindAppMethod returns true when the user already declares a BindApp
+// method on the receiver type, in this file or a sibling file of the package.
+func (g *Generator) hasUserBindAppMethod(receiverType string) bool {
+	return g.userDeclaresMethod(receiverType, "BindApp")
 }
 
-// hasUserUnbindAppMethod returns true when the source file already declares an
+// hasUserUnbindAppMethod returns true when the user already declares an
 // UnbindApp method on the receiver type. Kept distinct from BindApp detection
 // so that users who override BindApp alone still receive an auto-generated
 // UnbindApp (otherwise their Events fields would leak subscriptions).
-func hasUserUnbindAppMethod(decls []*GoDecl, funcs []*GoFunc, receiverType string) bool {
-	return hasUserMethod(decls, funcs, receiverType, "UnbindApp")
+func (g *Generator) hasUserUnbindAppMethod(receiverType string) bool {
+	return g.userDeclaresMethod(receiverType, "UnbindApp")
+}
+
+// hasUserUpdatePropsMethod returns true when the user already declares an
+// UpdateProps method on the receiver type.
+func (g *Generator) hasUserUpdatePropsMethod(receiverType string) bool {
+	return g.userDeclaresMethod(receiverType, "UpdateProps")
+}
+
+// userDeclaresMethod reports whether the user declares the method on the
+// receiver type, checking the current file and any sibling-file context.
+func (g *Generator) userDeclaresMethod(receiverType, methodName string) bool {
+	if hasUserMethod(g.fileDecls, g.fileFuncs, receiverType, methodName) {
+		return true
+	}
+	if g.pkgCtx != nil {
+		return g.pkgCtx.HasMethod(strings.TrimPrefix(receiverType, "*"), methodName)
+	}
+	return false
 }
 
 func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName string) bool {
 	typeName := strings.TrimPrefix(receiverType, "*")
-	pattern := regexp.MustCompile(`func\s*\(\s*\w+\s+\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*` + regexp.QuoteMeta(methodName) + `\s*\(`)
+	// The receiver name is optional: func (*row) M() is legal Go.
+	pattern := regexp.MustCompile(`func\s*\(\s*(?:\w+\s+)?\*?` + regexp.QuoteMeta(typeName) + `\s*\)\s*` + regexp.QuoteMeta(methodName) + `\s*\(`)
 
 	for _, decl := range decls {
 		if decl.Kind == "func" && pattern.MatchString(decl.Code) {
@@ -536,6 +555,11 @@ func hasUserMethod(decls []*GoDecl, funcs []*GoFunc, receiverType, methodName st
 
 // generateUpdateProps generates an UpdateProps method for a method component.
 // This allows Mount to update cached component instances with fresh props.
+//
+// Like generateBindApp, the generator always emits an updatePropsFields helper
+// so a user-defined UpdateProps override can delegate the prop copying to it.
+// The public UpdateProps is only auto-generated when the user has not declared
+// their own; emitting it unconditionally would produce a duplicate method.
 func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Find the struct declaration for this component's receiver type
 	structDecl := findStructDecl(decls, comp.ReceiverType)
@@ -564,6 +588,36 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Get the receiver type name without pointer
 	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
 
+	// Always emit the updatePropsFields helper so user-defined UpdateProps
+	// overrides can call it instead of hand-maintaining the copy list.
+	g.emitUpdatePropsFieldsHelper(comp, propFields)
+
+	if g.hasUserUpdatePropsMethod(comp.ReceiverType) {
+		// Still assert PropsUpdater so a user UpdateProps with the wrong
+		// signature fails at compile time instead of silently dropping
+		// prop refresh on cached components.
+		g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
+		g.writeln("")
+		return
+	}
+
+	// Auto-generate UpdateProps: a thin wrapper that calls the helper.
+	g.writef("func (%s) UpdateProps(fresh tui.Component) {\n", comp.Receiver)
+	g.indent++
+	g.writef("%s.updatePropsFields(fresh)\n", comp.ReceiverName)
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
+
+	// Add a compile-time check that the type implements PropsUpdater
+	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
+	g.writeln("")
+}
+
+// emitUpdatePropsFieldsHelper writes the unexported updatePropsFields method
+// containing the actual prop copying: type-asserting fresh to the receiver
+// type and copying each prop field onto the receiver.
+func (g *Generator) emitUpdatePropsFieldsHelper(comp *Component, propFields []StructField) {
 	// Pick a local name for the type-asserted fresh component that does not
 	// shadow the receiver; shadowing would turn every prop copy below into a
 	// self-assignment.
@@ -572,8 +626,10 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 		freshName += "f"
 	}
 
-	// Generate UpdateProps method
-	g.writef("func (%s) UpdateProps(fresh tui.Component) {\n", comp.Receiver)
+	g.writef("// updatePropsFields is generated. It copies prop fields from fresh onto\n")
+	g.writef("// the receiver. When you override UpdateProps, call this helper instead\n")
+	g.writef("// of hand-maintaining the copy list.\n")
+	g.writef("func (%s) updatePropsFields(fresh tui.Component) {\n", comp.Receiver)
 	g.indent++
 	g.writef("%s, ok := fresh.(%s)\n", freshName, comp.ReceiverType)
 	g.writeln("if !ok {")
@@ -589,10 +645,6 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 
 	g.indent--
 	g.writeln("}")
-	g.writeln("")
-
-	// Add a compile-time check that the type implements PropsUpdater
-	g.writef("var _ tui.PropsUpdater = (*%s)(nil)\n", typeName)
 	g.writeln("")
 }
 
@@ -668,7 +720,7 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// can call it instead of hand-maintaining the delegation list.
 	g.emitBindAppFieldsHelper(comp, appFields, bindableFields, componentBindFields)
 
-	if hasUserBindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+	if g.hasUserBindAppMethod(comp.ReceiverType) {
 		return
 	}
 
@@ -766,7 +818,7 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 	// Always emit the unbindAppFields helper.
 	g.emitUnbindAppFieldsHelper(comp, unbindFields, componentUnbindFields)
 
-	if hasUserUnbindAppMethod(decls, g.fileFuncs, comp.ReceiverType) {
+	if g.hasUserUnbindAppMethod(comp.ReceiverType) {
 		return
 	}
 

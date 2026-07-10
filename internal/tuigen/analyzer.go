@@ -80,6 +80,17 @@ type Analyzer struct {
 	// collectStructComponentFactories). Calling one via @Name() in a function
 	// templ generates broken code, so the set lets analyzeComponentCall reject it.
 	structComponentFactories map[string]bool
+
+	// pkgCtx holds declarations from sibling files of the package, so
+	// collision checks also catch conflicts declared outside this .gsx file.
+	// Nil when no context is available.
+	pkgCtx *PackageContext
+}
+
+// SetPackageContext supplies declarations from sibling files of the package
+// for cross-file collision detection.
+func (a *Analyzer) SetPackageContext(ctx *PackageContext) {
+	a.pkgCtx = ctx
 }
 
 // NewAnalyzer creates a new semantic analyzer.
@@ -258,6 +269,9 @@ func (a *Analyzer) Analyze(file *File) error {
 		comp.AcceptsChildren = a.containsChildrenSlot(comp.Body)
 		a.componentDefs[comp.Name] = comp.AcceptsChildren
 	}
+
+	// Reject declarations that collide with generated code
+	a.validateNameCollisions(file)
 
 	// Resolve which local factory functions return a struct component, so
 	// analyzeComponentCall can reject @Factory() calls in function templs.

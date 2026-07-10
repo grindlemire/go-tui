@@ -83,12 +83,19 @@ func (c *myModal) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
-func (c *myModal) UpdateProps(fresh tui.Component) {
+// updatePropsFields is generated. It copies prop fields from fresh onto
+// the receiver. When you override UpdateProps, call this helper instead
+// of hand-maintaining the copy list.
+func (c *myModal) updatePropsFields(fresh tui.Component) {
 	f, ok := fresh.(*myModal)
 	if !ok {
 		return
 	}
 	c.app = f.app
+}
+
+func (c *myModal) UpdateProps(fresh tui.Component) {
+	c.updatePropsFields(fresh)
 }
 
 var _ tui.PropsUpdater = (*myModal)(nil)

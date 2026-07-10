@@ -1472,3 +1472,216 @@ templ (l *fileList) Render() {
 		})
 	}
 }
+
+// TestGenerator_PackageContextSuppressesLifecycleMethods verifies that a
+// lifecycle method declared in a sibling file of the package (via
+// PackageContext) suppresses the generated wrapper, the same as a
+// declaration in the .gsx file itself.
+func TestGenerator_PackageContextSuppressesLifecycleMethods(t *testing.T) {
+	input := `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type row struct {
+	value  string
+	events *tui.Events[string]
+}
+
+templ (r *row) Render() {
+	<span>{r.value}</span>
+}
+`
+	sibling := `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+func (r *row) UpdateProps(fresh tui.Component) {
+	r.updatePropsFields(fresh)
+}
+
+func (r *row) UnbindApp() {
+	r.unbindAppFields()
+}
+`
+
+	lexer := NewLexer("test.gsx", input)
+	parser := NewParser(lexer)
+	file, err := parser.ParseFile()
+	if err != nil {
+		t.Fatalf("parse failed: %v", err)
+	}
+
+	ctx := NewPackageContext()
+	if err := ctx.AddGoSource("sibling.go", sibling); err != nil {
+		t.Fatalf("AddGoSource failed: %v", err)
+	}
+
+	gen := NewGenerator()
+	gen.SkipImports = true
+	gen.SetPackageContext(ctx)
+	output, err := gen.Generate(file, "test.gsx")
+	if err != nil {
+		t.Fatalf("generation failed: %v", err)
+	}
+	code := string(output)
+
+	if strings.Contains(code, "func (r *row) UpdateProps(") {
+		t.Errorf("generated UpdateProps despite sibling declaration\nGot:\n%s", code)
+	}
+	if strings.Contains(code, "func (r *row) UnbindApp(") {
+		t.Errorf("generated UnbindApp despite sibling declaration\nGot:\n%s", code)
+	}
+	// BindApp has no sibling declaration, so it is still generated, and the
+	// delegation helpers are always emitted.
+	for _, want := range []string{
+		"func (r *row) BindApp(app *tui.App) {",
+		"func (r *row) updatePropsFields(fresh tui.Component) {",
+		"func (r *row) unbindAppFields() {",
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+		}
+	}
+}
+
+// TestHasUserMethod verifies user-method detection across the receiver forms
+// Go allows. Unnamed receivers are legal and must be detected, or the
+// generator emits a duplicate lifecycle method.
+func TestHasUserMethod(t *testing.T) {
+	type tc struct {
+		code string
+		want bool
+	}
+
+	tests := map[string]tc{
+		"named pointer receiver": {
+			code: "func (r *row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"named value receiver": {
+			code: "func (r row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"unnamed pointer receiver": {
+			code: "func (*row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"unnamed value receiver": {
+			code: "func (row) UpdateProps(fresh tui.Component) {}",
+			want: true,
+		},
+		"method on another type": {
+			code: "func (r *other) UpdateProps(fresh tui.Component) {}",
+			want: false,
+		},
+		"type name is a prefix of another type": {
+			code: "func (r *rowExtra) UpdateProps(fresh tui.Component) {}",
+			want: false,
+		},
+		"plain function with the method name": {
+			code: "func UpdateProps(fresh tui.Component) {}",
+			want: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			funcs := []*GoFunc{{Code: tt.code}}
+			if got := hasUserMethod(nil, funcs, "*row", "UpdateProps"); got != tt.want {
+				t.Errorf("hasUserMethod(%q) = %v, want %v", tt.code, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestGenerator_UserUpdatePropsSuppressesGenerated verifies that a
+// user-defined UpdateProps on the receiver type suppresses the generated
+// wrapper. Without the check, the generator emitted a second UpdateProps and
+// Go rejected the package with a duplicate-method error. The unexported
+// updatePropsFields helper is always emitted so overrides can delegate to it.
+func TestGenerator_UserUpdatePropsSuppressesGenerated(t *testing.T) {
+	type tc struct {
+		input           string
+		wantCount       map[string]int
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"user-defined UpdateProps suppresses the generated wrapper": {
+			input: `package x
+
+import tui "github.com/grindlemire/go-tui"
+
+type lifecycleRow struct {
+	value string
+}
+
+func (r *lifecycleRow) UpdateProps(fresh tui.Component) {
+	r.updatePropsFields(fresh)
+}
+
+templ (r *lifecycleRow) Render() {
+	<span>{r.value}</span>
+}`,
+			// The user's own method passes through to the output; the
+			// generator must not add a second one.
+			wantCount: map[string]int{
+				"func (r *lifecycleRow) UpdateProps(": 1,
+			},
+			wantContains: []string{
+				"func (r *lifecycleRow) updatePropsFields(fresh tui.Component) {",
+				"r.value = f.value",
+				// The assertion is still emitted so a wrong-signature user
+				// UpdateProps fails loudly instead of silently dropping
+				// prop refresh on cached components.
+				"var _ tui.PropsUpdater = (*lifecycleRow)(nil)",
+			},
+		},
+		"no user method generates wrapper delegating to helper": {
+			input: `package x
+
+type lifecycleRow struct {
+	value string
+}
+
+templ (r *lifecycleRow) Render() {
+	<span>{r.value}</span>
+}`,
+			wantCount: map[string]int{
+				"func (r *lifecycleRow) UpdateProps(": 1,
+			},
+			wantContains: []string{
+				"func (r *lifecycleRow) updatePropsFields(fresh tui.Component) {",
+				"r.updatePropsFields(fresh)",
+				"var _ tui.PropsUpdater = (*lifecycleRow)(nil)",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+			code := string(output)
+
+			for substr, want := range tt.wantCount {
+				if got := strings.Count(code, substr); got != want {
+					t.Errorf("substring %q appears %d times, want %d\nGot:\n%s", substr, got, want, code)
+				}
+			}
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}

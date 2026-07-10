@@ -1,6 +1,9 @@
 package lsp
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -22,6 +25,53 @@ func TestDocumentManagerUpdate_UnopenedDocument(t *testing.T) {
 	}
 	if dm.Get(uri) != doc {
 		t.Error("document not registered in the manager")
+	}
+}
+
+// TestDocumentManager_CrossFileCollisions verifies that analysis of one
+// document sees declarations from sibling files: open documents through
+// their in-memory ASTs (unsaved edits included), unopened files from disk.
+func TestDocumentManager_CrossFileCollisions(t *testing.T) {
+	dm := NewDocumentManager()
+
+	// Open a sibling that declares templ Foo. There is no disk file at all,
+	// proving detection went through the open-buffer path.
+	dm.Open("file:///ws/a.gsx", "package x\n\ntempl Foo() {\n\t<span>a</span>\n}\n", 1)
+
+	doc := dm.Open("file:///ws/b.gsx", "package x\n\ntempl Foo() {\n\t<span>b</span>\n}\n", 1)
+
+	found := false
+	for _, e := range doc.Errors {
+		if strings.Contains(e.Message, "duplicate templ") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected duplicate templ error from open sibling, got %v", doc.Errors)
+	}
+
+	// A document in a different directory must not collide.
+	other := dm.Open("file:///elsewhere/c.gsx", "package x\n\ntempl Foo() {\n\t<span>c</span>\n}\n", 1)
+	for _, e := range other.Errors {
+		if strings.Contains(e.Message, "duplicate templ") {
+			t.Errorf("unexpected collision across directories: %v", e.Message)
+		}
+	}
+
+	// Unopened sibling .go file on disk is picked up.
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "helpers.go"), []byte("package x\n\nfunc Bar() string { return \"x\" }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	diskDoc := dm.Open("file://"+filepath.Join(dir, "d.gsx"), "package x\n\ntempl Bar() {\n\t<span>d</span>\n}\n", 1)
+	found = false
+	for _, e := range diskDoc.Errors {
+		if strings.Contains(e.Message, "conflicts with a Go function") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected collision with on-disk sibling function, got %v", diskDoc.Errors)
 	}
 }
 

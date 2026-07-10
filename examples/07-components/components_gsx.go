@@ -730,12 +730,19 @@ func (d *dashboard) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
-func (d *dashboard) UpdateProps(fresh tui.Component) {
+// updatePropsFields is generated. It copies prop fields from fresh onto
+// the receiver. When you override UpdateProps, call this helper instead
+// of hand-maintaining the copy list.
+func (d *dashboard) updatePropsFields(fresh tui.Component) {
 	f, ok := fresh.(*dashboard)
 	if !ok {
 		return
 	}
 	d.tabs = f.tabs
+}
+
+func (d *dashboard) UpdateProps(fresh tui.Component) {
+	d.updatePropsFields(fresh)
 }
 
 var _ tui.PropsUpdater = (*dashboard)(nil)

@@ -90,6 +90,7 @@ func checkFile(inputPath string) error {
 
 	// Analyze (validates elements and attributes)
 	analyzer := tuigen.NewAnalyzer()
+	analyzer.SetPackageContext(loadPackageContext(inputPath))
 	if err := analyzer.Analyze(file); err != nil {
 		return err
 	}
