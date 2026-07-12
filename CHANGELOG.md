@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.2](https://github.com/grindlemire/go-tui/compare/v0.18.1...v0.18.2) (2026-07-10)
+
+
+### Bug Fixes
+
+* honor user-defined UpdateProps on receiver components ([#116](https://github.com/grindlemire/go-tui/issues/116)) ([0592ab2](https://github.com/grindlemire/go-tui/commit/0592ab2ecea9acdf4d4390cb156e34c0502e60c1))
+* reject component factory calls returning tui.Component in function templs ([#117](https://github.com/grindlemire/go-tui/issues/117)) ([df4ed47](https://github.com/grindlemire/go-tui/commit/df4ed47f32ed98ed1e933a84da7cd6b5b33ce514))
+
 ## [0.18.1](https://github.com/grindlemire/go-tui/compare/v0.18.0...v0.18.1) (2026-07-02)
 
 
