@@ -1,7 +1,5 @@
 package tui
 
-import "github.com/grindlemire/go-tui/internal/debug"
-
 // Render performs layout and renders to the terminal if the dirty flag is set.
 // No-op if nothing has changed since the last render. After rendering, the
 // dispatch table is rebuilt from the current component tree.
@@ -25,20 +23,26 @@ func (a *App) renderFrame() {
 		renderHeight = a.inlineHeight
 	}
 
-	// Ensure buffer matches expected size (handles rapid resize)
-	if a.buffer.Width() != width || a.buffer.Height() != renderHeight {
-		if a.inAlternateScreen {
-			// Alternate screen mode: always use full-screen sizing
-			a.terminal.Clear()
-			a.buffer.Resize(width, termHeight)
-		} else if a.inlineHeight > 0 {
-			// Inline mode: keep buffer height fixed to inlineHeight.
+	// Ensure buffer matches expected size (handles rapid resize).
+	// Inline mode additionally re-syncs geometry whenever the live terminal
+	// height differs from the current inlineStartRow, even if the ResizeEvent
+	// for this frame has not been dispatched yet. Without this, the composer
+	// can be drawn at a stale row while the terminal has already grown/shrunk,
+	// leaving the old band behind (the resize-ghost bug). Any geometry change
+	// implies a full redraw so stale rows outside the new viewport get cleared.
+	if !a.inAlternateScreen && a.inlineHeight > 0 {
+		wantStart := termHeight - a.inlineHeight
+		if a.inlineStartRow != wantStart || a.buffer.Width() != width {
 			a.syncInlineGeometryOnResize(width, termHeight)
-		} else {
-			// Full screen mode: clear terminal and resize buffer
-			a.terminal.Clear()
-			a.buffer.Resize(width, termHeight)
+			if a.root != nil {
+				a.root.MarkDirty()
+			}
+			a.needsFullRedraw = true
 		}
+	} else if a.buffer.Width() != width || a.buffer.Height() != renderHeight {
+		// Alternate screen / full screen mode: clear and resize buffer
+		a.terminal.Clear()
+		a.buffer.Resize(width, termHeight)
 		if a.root != nil {
 			a.root.MarkDirty()
 		}
@@ -149,6 +153,14 @@ func (a *App) placeCursor() {
 
 // renderInline handles rendering for inline mode by offsetting Y coordinates.
 func (a *App) renderInline() {
+	// Wrap the whole frame in a synchronized update (DEC 2026). Terminals that
+	// support it buffer the complete frame before painting, so resize drags do
+	// not flash partially-rendered intermediate states. Unsupported terminals
+	// simply ignore the private mode sequences. Mirrors Codex's
+	// stdout().sync_update().
+	a.terminal.WriteDirect([]byte("\x1b[?2026h"))
+	defer a.terminal.WriteDirect([]byte("\x1b[?2026l"))
+
 	var changes []CellChange
 
 	if a.needsFullRedraw {
@@ -162,12 +174,22 @@ func (a *App) renderInline() {
 				changes = append(changes, CellChange{X: x, Y: y + a.inlineStartRow, Cell: cell})
 			}
 		}
-		// Clear only the inline region, not the whole screen
-		debug.Log("renderInline: fullRedraw — SetCursor(0, %d), ClearToEnd, flushing %dx%d cells at Y offset %d",
-			a.inlineStartRow, width, height, a.inlineStartRow)
-		a.terminal.SetCursor(0, a.inlineStartRow)
+		// Clear the union of the previous and current viewport areas before
+		// repainting. Clearing only from the new start row left the old
+		// composer band above the new viewport whenever the terminal grew
+		// (resize ghosts). Codex clears the same union via
+		// clear_after_position(min(old.y, new.y)).
+		if a.prevInlineStartRow < 0 {
+			a.prevInlineStartRow = a.inlineStartRow
+		}
+		clearFrom := a.inlineStartRow
+		if a.prevInlineStartRow < clearFrom {
+			clearFrom = a.prevInlineStartRow
+		}
+		a.terminal.SetCursor(0, clearFrom)
 		a.terminal.ClearToEnd()
 		a.needsFullRedraw = false
+		a.prevInlineStartRow = a.inlineStartRow
 	} else {
 		// Get diff and offset Y coordinates
 		diff := a.buffer.Diff()
@@ -186,6 +208,17 @@ func (a *App) renderInline() {
 		a.terminal.Flush(changes)
 	}
 	a.buffer.Swap()
+}
+
+// ForceFullRedraw marks the next inline render as a full repaint of the whole
+// viewport, independent of the buffer diff. This is useful after raw terminal
+// operations (e.g. clearing scrollback or replaying history outside the app)
+// so the composer is repainted even though the buffer diff would otherwise be
+// empty. Unlike RenderFull, it stays within inline mode and does not draw at
+// full-screen coordinates.
+func (a *App) ForceFullRedraw() {
+	a.needsFullRedraw = true
+	a.MarkDirty()
 }
 
 // RenderFull forces a complete redraw of the buffer to the terminal.

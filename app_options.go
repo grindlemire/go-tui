@@ -192,6 +192,7 @@ func WithInlineHeight(rows int) AppOption {
 			return fmt.Errorf("inline height must be at least 1 row")
 		}
 		a.inlineHeight = rows
+		a.prevInlineStartRow = -1
 		return nil
 	}
 }
