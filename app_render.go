@@ -149,6 +149,14 @@ func (a *App) placeCursor() {
 
 // renderInline handles rendering for inline mode by offsetting Y coordinates.
 func (a *App) renderInline() {
+	// Wrap the whole frame in a synchronized update (DEC 2026). Terminals that
+	// support it buffer the complete frame before painting, so resize drags do
+	// not flash partially-rendered intermediate states. Unsupported terminals
+	// simply ignore the private mode sequences. Mirrors Codex's
+	// stdout().sync_update().
+	a.terminal.WriteDirect([]byte("\x1b[?2026h"))
+	defer a.terminal.WriteDirect([]byte("\x1b[?2026l"))
+
 	var changes []CellChange
 
 	if a.needsFullRedraw {
@@ -186,6 +194,17 @@ func (a *App) renderInline() {
 		a.terminal.Flush(changes)
 	}
 	a.buffer.Swap()
+}
+
+// ForceFullRedraw marks the next inline render as a full repaint of the whole
+// viewport, independent of the buffer diff. This is useful after raw terminal
+// operations (e.g. clearing scrollback or replaying history outside the app)
+// so the composer is repainted even though the buffer diff would otherwise be
+// empty. Unlike RenderFull, it stays within inline mode and does not draw at
+// full-screen coordinates.
+func (a *App) ForceFullRedraw() {
+	a.needsFullRedraw = true
+	a.MarkDirty()
 }
 
 // RenderFull forces a complete redraw of the buffer to the terminal.
