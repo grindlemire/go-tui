@@ -256,6 +256,10 @@ type syncUpdater interface {
 	EndSyncUpdate()
 }
 
+// Compile-time pin: renaming the ANSITerminal methods would otherwise
+// silently disable frame synchronization (tests use their own implementers).
+var _ syncUpdater = (*ANSITerminal)(nil)
+
 func (a *App) beginSyncUpdate() {
 	if s, ok := a.terminal.(syncUpdater); ok {
 		s.BeginSyncUpdate()
