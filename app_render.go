@@ -95,7 +95,12 @@ func (a *App) renderFrame() {
 		a.componentWatchersStarted = true
 	}
 
-	// Flush to terminal (inline mode offsets Y coordinates)
+	// Flush to terminal (inline mode offsets Y coordinates). The output phase
+	// is wrapped in a synchronized update so supporting terminals paint the
+	// frame atomically; deferred so a panicking hook cannot leave the terminal
+	// buffering forever.
+	a.beginSyncUpdate()
+	defer a.endSyncUpdate()
 	if !a.inAlternateScreen && a.inlineHeight > 0 {
 		a.renderInline()
 	} else if a.needsFullRedraw {
@@ -231,7 +236,9 @@ func (a *App) RenderFull() {
 
 	a.renderOverlays(width, height)
 
-	// Full render to terminal
+	// Full render to terminal, wrapped like renderFrame's output phase.
+	a.beginSyncUpdate()
+	defer a.endSyncUpdate()
 	RenderFull(a.terminal, a.buffer)
 
 	a.rebuildDispatchTable()
@@ -239,6 +246,26 @@ func (a *App) RenderFull() {
 		a.postRenderHook()
 	}
 	a.placeCursor()
+}
+
+// syncUpdater is implemented by terminals that support DEC 2026 synchronized
+// updates (ANSITerminal). Kept off the Terminal interface so external
+// implementations keep compiling; non-implementers render unwrapped.
+type syncUpdater interface {
+	BeginSyncUpdate()
+	EndSyncUpdate()
+}
+
+func (a *App) beginSyncUpdate() {
+	if s, ok := a.terminal.(syncUpdater); ok {
+		s.BeginSyncUpdate()
+	}
+}
+
+func (a *App) endSyncUpdate() {
+	if s, ok := a.terminal.(syncUpdater); ok {
+		s.EndSyncUpdate()
+	}
 }
 
 // rerenderComponent re-renders the root component to produce a fresh element tree.
