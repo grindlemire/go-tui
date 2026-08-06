@@ -61,6 +61,8 @@ type App struct {
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight       int               // Number of rows for inline widget (0 = full screen mode)
 	inlineStartRow     int               // Terminal row where inline region starts (calculated at init)
+	inlineClearFromRow int               // Clear from this row on the next inline full redraw (valid when inlineClearPending)
+	inlineClearPending bool              // Set when a resize moved the widget down, leaving stale rows above the new start row
 	inlineStartupMode  InlineStartupMode // Startup behavior for inline viewport ownership
 	inlineLayout       inlineLayoutState
 	inlineSession      *inlineSession

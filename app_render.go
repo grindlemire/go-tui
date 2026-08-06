@@ -162,10 +162,19 @@ func (a *App) renderInline() {
 				changes = append(changes, CellChange{X: x, Y: y + a.inlineStartRow, Cell: cell})
 			}
 		}
-		// Clear only the inline region, not the whole screen
+		// Clear only the inline region, not the whole screen. If a resize moved
+		// the widget down, start clearing at the old start row so the stale
+		// band above the new position is erased too.
+		clearFrom := a.inlineStartRow
+		if a.inlineClearPending {
+			if a.inlineClearFromRow < clearFrom {
+				clearFrom = a.inlineClearFromRow
+			}
+			a.inlineClearPending = false
+		}
 		debug.Log("renderInline: fullRedraw — SetCursor(0, %d), ClearToEnd, flushing %dx%d cells at Y offset %d",
-			a.inlineStartRow, width, height, a.inlineStartRow)
-		a.terminal.SetCursor(0, a.inlineStartRow)
+			clearFrom, width, height, a.inlineStartRow)
+		a.terminal.SetCursor(0, clearFrom)
 		a.terminal.ClearToEnd()
 		a.needsFullRedraw = false
 	} else {
