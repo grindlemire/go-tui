@@ -25,18 +25,18 @@ func (a *App) renderFrame() {
 		renderHeight = a.inlineHeight
 	}
 
-	// Ensure buffer matches expected size (handles rapid resize)
+	// Ensure buffer matches expected size (handles rapid resize). No terminal
+	// clear here: needsFullRedraw routes through RenderFull, which clears
+	// inside the synchronized update window instead of flashing before it.
 	if a.buffer.Width() != width || a.buffer.Height() != renderHeight {
 		if a.inAlternateScreen {
 			// Alternate screen mode: always use full-screen sizing
-			a.terminal.Clear()
 			a.buffer.Resize(width, termHeight)
 		} else if a.inlineHeight > 0 {
 			// Inline mode: keep buffer height fixed to inlineHeight.
 			a.syncInlineGeometryOnResize(width, termHeight)
 		} else {
-			// Full screen mode: clear terminal and resize buffer
-			a.terminal.Clear()
+			// Full screen mode: resize buffer
 			a.buffer.Resize(width, termHeight)
 		}
 		if a.root != nil {
@@ -95,7 +95,12 @@ func (a *App) renderFrame() {
 		a.componentWatchersStarted = true
 	}
 
-	// Flush to terminal (inline mode offsets Y coordinates)
+	// Flush to terminal (inline mode offsets Y coordinates). The output phase
+	// is wrapped in a synchronized update so supporting terminals paint the
+	// frame atomically; deferred so a panicking hook cannot leave the terminal
+	// buffering forever.
+	a.beginSyncUpdate()
+	defer a.endSyncUpdate()
 	if !a.inAlternateScreen && a.inlineHeight > 0 {
 		a.renderInline()
 	} else if a.needsFullRedraw {
@@ -231,7 +236,9 @@ func (a *App) RenderFull() {
 
 	a.renderOverlays(width, height)
 
-	// Full render to terminal
+	// Full render to terminal, wrapped like renderFrame's output phase.
+	a.beginSyncUpdate()
+	defer a.endSyncUpdate()
 	RenderFull(a.terminal, a.buffer)
 
 	a.rebuildDispatchTable()
@@ -239,6 +246,30 @@ func (a *App) RenderFull() {
 		a.postRenderHook()
 	}
 	a.placeCursor()
+}
+
+// syncUpdater is an optional capability in the http.Flusher style: only
+// terminals that can promise atomic frame presentation implement it
+// (ANSITerminal); mocks and emulators render unwrapped instead of stubbing it.
+type syncUpdater interface {
+	BeginSyncUpdate()
+	EndSyncUpdate()
+}
+
+// Compile-time pin: renaming the ANSITerminal methods would otherwise
+// silently disable frame synchronization (tests use their own implementers).
+var _ syncUpdater = (*ANSITerminal)(nil)
+
+func (a *App) beginSyncUpdate() {
+	if s, ok := a.terminal.(syncUpdater); ok {
+		s.BeginSyncUpdate()
+	}
+}
+
+func (a *App) endSyncUpdate() {
+	if s, ok := a.terminal.(syncUpdater); ok {
+		s.EndSyncUpdate()
+	}
 }
 
 // rerenderComponent re-renders the root component to produce a fresh element tree.
