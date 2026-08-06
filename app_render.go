@@ -25,18 +25,18 @@ func (a *App) renderFrame() {
 		renderHeight = a.inlineHeight
 	}
 
-	// Ensure buffer matches expected size (handles rapid resize)
+	// Ensure buffer matches expected size (handles rapid resize). No terminal
+	// clear here: needsFullRedraw routes through RenderFull, which clears
+	// inside the synchronized update window instead of flashing before it.
 	if a.buffer.Width() != width || a.buffer.Height() != renderHeight {
 		if a.inAlternateScreen {
 			// Alternate screen mode: always use full-screen sizing
-			a.terminal.Clear()
 			a.buffer.Resize(width, termHeight)
 		} else if a.inlineHeight > 0 {
 			// Inline mode: keep buffer height fixed to inlineHeight.
 			a.syncInlineGeometryOnResize(width, termHeight)
 		} else {
-			// Full screen mode: clear terminal and resize buffer
-			a.terminal.Clear()
+			// Full screen mode: resize buffer
 			a.buffer.Resize(width, termHeight)
 		}
 		if a.root != nil {

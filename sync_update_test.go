@@ -33,6 +33,16 @@ func (s *syncRecordingTerminal) SetCursor(x, y int) {
 	s.MockTerminal.SetCursor(x, y)
 }
 
+func (s *syncRecordingTerminal) Clear() {
+	s.ops = append(s.ops, "clear")
+	s.MockTerminal.Clear()
+}
+
+func (s *syncRecordingTerminal) ClearToEnd() {
+	s.ops = append(s.ops, "clearToEnd")
+	s.MockTerminal.ClearToEnd()
+}
+
 // assertWrapped checks that ops contain exactly one begin and one end, that
 // begin comes first, end comes last, and at least one output op sits between.
 func assertWrapped(t *testing.T, ops []string) {
@@ -106,6 +116,25 @@ func TestAppRenderFull_WrapsOutputInSyncUpdate(t *testing.T) {
 	}
 
 	app.RenderFull()
+
+	assertWrapped(t, term.ops)
+}
+
+// TestRenderFrame_Resize_AllOutputInsideSyncWindow pins that a resize frame
+// (buffer/terminal size mismatch) emits every terminal write inside the sync
+// window. The screen clear on resize used to run before the window opened,
+// flashing blank on exactly the frame type synchronized updates target.
+func TestRenderFrame_Resize_AllOutputInsideSyncWindow(t *testing.T) {
+	term := newSyncRecordingTerminal(100, 30)
+	app := &App{
+		terminal: term,
+		buffer:   NewBuffer(80, 24), // stale size: forces the resize branch
+		focus:    newFocusManager(),
+		mounts:   newMountState(),
+		root:     New(WithText("hello")),
+	}
+
+	app.renderFrame()
 
 	assertWrapped(t, term.ops)
 }
