@@ -75,6 +75,9 @@ func (a *App) resumeTerminal() {
 		// Recalculate where the widget should be drawn.
 		_, termHeight := a.terminal.Size()
 		a.inlineStartRow = max(termHeight-a.inlineHeight, 0)
+		// The shell may have scrolled the screen while stopped, so a clear
+		// marker recorded before suspension no longer describes what is there.
+		a.inlineClearPending = false
 		// Reset style tracking: the terminal's SGR state is unknown after
 		// going through cooked mode and shell interaction. Without this,
 		// Flush may skip emitting style codes for cells whose style matches

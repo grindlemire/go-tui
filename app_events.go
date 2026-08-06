@@ -127,7 +127,8 @@ func (a *App) syncInlineGeometryOnResize(width, termHeight int) {
 	oldStart := a.inlineStartRow
 	a.inlineStartRow = termHeight - a.inlineHeight
 	// Terminal grew: the old widget band sits above the new start row and must
-	// be cleared on the next full redraw (min across rapid resize events).
+	// be cleared on the next full redraw. Min across rapid resize events: the
+	// band may sit anywhere down to the lowest start row since the last paint.
 	if oldStart < a.inlineStartRow && (!a.inlineClearPending || oldStart < a.inlineClearFromRow) {
 		a.inlineClearFromRow = oldStart
 		a.inlineClearPending = true

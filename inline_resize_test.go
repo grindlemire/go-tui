@@ -92,6 +92,31 @@ func TestInlineResize_TerminalGrowth_RepeatedSteps(t *testing.T) {
 	}
 }
 
+// TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow covers the tiny
+// terminal case: shrinking below the inline height leaves a negative start row
+// (unclamped, pre-existing), and a later grow records it as the pending clear
+// marker. The full redraw must clamp the clear row at 0 rather than emit a
+// negative cursor position.
+func TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow(t *testing.T) {
+	app, term := newInlineResizeTestApp(80, 8, 6)
+	app.root = New(WithText("COMPOSER"))
+
+	app.needsFullRedraw = true
+	app.renderFrame()
+
+	// Shrink below the inline height: start row becomes 4-6 = -2.
+	term.Resize(80, 4)
+	app.Dispatch(ResizeEvent{Width: 80, Height: 4})
+	// Grow back: the negative row is recorded as the clear marker.
+	term.Resize(80, 8)
+	app.Dispatch(ResizeEvent{Width: 80, Height: 8})
+	app.renderFrame()
+
+	if _, cy := term.Cursor(); cy != 0 {
+		t.Fatalf("clear start row = %d, want 0 (clamped)", cy)
+	}
+}
+
 // TestInlineResize_TerminalShrink_UnchangedBehavior pins the shrink path: the
 // new start row is above the old one, so clearing from the new start row
 // already covers the old band. No extra clearing should occur above it.
