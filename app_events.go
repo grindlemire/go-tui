@@ -124,7 +124,15 @@ func (a *App) readInputEvents() {
 }
 
 func (a *App) syncInlineGeometryOnResize(width, termHeight int) {
-	a.inlineStartRow = termHeight - a.inlineHeight
+	oldStart := a.inlineStartRow
+	a.inlineStartRow = max(termHeight-a.inlineHeight, 0)
+	// Terminal grew: the old widget band sits above the new start row and must
+	// be cleared on the next full redraw. Min across rapid resize events: the
+	// band may sit anywhere down to the lowest start row since the last paint.
+	if oldStart < a.inlineStartRow && (!a.inlineClearPending || oldStart < a.inlineClearFromRow) {
+		a.inlineClearFromRow = oldStart
+		a.inlineClearPending = true
+	}
 	if a.buffer.Width() == width {
 		return
 	}

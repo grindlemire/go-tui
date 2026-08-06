@@ -260,6 +260,30 @@ func TestResumeSequence_InlineMode(t *testing.T) {
 	}
 }
 
+func TestResumeSequence_InlineMode_DropsPendingClearMarker(t *testing.T) {
+	term := newRecordingTerminal(80, 24)
+
+	app := &App{
+		terminal:       term,
+		inlineHeight:   5,
+		inlineStartRow: 19,
+		stopCh:         make(chan struct{}),
+		buffer:         NewBuffer(80, 5),
+		dirty:          atomic.Bool{},
+	}
+	// A resize recorded a clear marker, then the app suspended before
+	// rendering. The shell may have scrolled the screen while stopped, so the
+	// marker no longer describes what is at that row.
+	app.inlineClearFromRow = 12
+	app.inlineClearPending = true
+
+	app.resumeTerminal()
+
+	if app.inlineClearPending {
+		t.Fatal("inlineClearPending should be dropped on resume")
+	}
+}
+
 func TestSuspendSequence_MouseDisabled(t *testing.T) {
 	term := newRecordingTerminal(80, 24)
 	term.inRawMode = true
