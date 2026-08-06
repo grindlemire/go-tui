@@ -92,11 +92,32 @@ func TestInlineResize_TerminalGrowth_RepeatedSteps(t *testing.T) {
 	}
 }
 
-// TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow covers the tiny
-// terminal case: shrinking below the inline height leaves a negative start row
-// (unclamped, pre-existing), and a later grow records it as the pending clear
-// marker. The full redraw must clamp the clear row at 0 rather than emit a
-// negative cursor position.
+// TestInlineResize_ShrinkBelowHeight_ClampsStartRow covers issue #122: a
+// terminal shorter than the inline height must clamp the start row at 0, like
+// the startup and resume paths already do, instead of going negative and
+// producing negative cursor rows.
+func TestInlineResize_ShrinkBelowHeight_ClampsStartRow(t *testing.T) {
+	app, term := newInlineResizeTestApp(80, 8, 6)
+	app.root = New(WithText("COMPOSER"))
+
+	app.needsFullRedraw = true
+	app.renderFrame()
+
+	term.Resize(80, 4)
+	app.Dispatch(ResizeEvent{Width: 80, Height: 4})
+
+	if app.inlineStartRow != 0 {
+		t.Fatalf("inlineStartRow = %d, want 0 (clamped)", app.inlineStartRow)
+	}
+	app.renderFrame()
+	if _, cy := term.Cursor(); cy != 0 {
+		t.Fatalf("clear start row = %d, want 0", cy)
+	}
+}
+
+// TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow pins the tiny
+// terminal round trip: shrinking below the inline height then growing back
+// must clear from row 0, never a negative cursor row.
 func TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow(t *testing.T) {
 	app, term := newInlineResizeTestApp(80, 8, 6)
 	app.root = New(WithText("COMPOSER"))
