@@ -248,9 +248,9 @@ func (a *App) RenderFull() {
 	a.placeCursor()
 }
 
-// syncUpdater is implemented by terminals that support DEC 2026 synchronized
-// updates (ANSITerminal). Kept off the Terminal interface so external
-// implementations keep compiling; non-implementers render unwrapped.
+// syncUpdater is an optional capability in the http.Flusher style: only
+// terminals that can promise atomic frame presentation implement it
+// (ANSITerminal); mocks and emulators render unwrapped instead of stubbing it.
 type syncUpdater interface {
 	BeginSyncUpdate()
 	EndSyncUpdate()
