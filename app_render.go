@@ -172,7 +172,7 @@ func (a *App) renderInline() {
 			}
 			a.inlineClearPending = false
 		}
-		// Guard against a negative start row (terminal shorter than inlineHeight).
+		// Defensive: never clear from a negative row, whatever produced it.
 		clearFrom = max(clearFrom, 0)
 		debug.Log("renderInline: fullRedraw — SetCursor(0, %d), ClearToEnd, flushing %dx%d cells at Y offset %d",
 			clearFrom, width, height, a.inlineStartRow)

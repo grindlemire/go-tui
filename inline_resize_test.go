@@ -115,6 +115,27 @@ func TestInlineResize_ShrinkBelowHeight_ClampsStartRow(t *testing.T) {
 	}
 }
 
+// TestExitAlternateScreen_TerminalShorterThanInlineHeight_ClampsStartRow
+// covers the last unclamped start-row computation: a resize while in alt
+// screen only resizes the buffer, so the exit path recomputes the start row
+// and must clamp it at 0 like every other path.
+func TestExitAlternateScreen_TerminalShorterThanInlineHeight_ClampsStartRow(t *testing.T) {
+	app, term := newInlineResizeTestApp(80, 30, 6)
+
+	if err := app.EnterAlternateScreen(); err != nil {
+		t.Fatal(err)
+	}
+	term.Resize(80, 4)
+	app.Dispatch(ResizeEvent{Width: 80, Height: 4})
+	if err := app.ExitAlternateScreen(); err != nil {
+		t.Fatal(err)
+	}
+
+	if app.inlineStartRow != 0 {
+		t.Fatalf("inlineStartRow = %d, want 0 (clamped)", app.inlineStartRow)
+	}
+}
+
 // TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow pins the tiny
 // terminal round trip: shrinking below the inline height then growing back
 // must clear from row 0, never a negative cursor row.
@@ -125,10 +146,10 @@ func TestInlineResize_ShrinkBelowHeightThenGrow_ClampsClearRow(t *testing.T) {
 	app.needsFullRedraw = true
 	app.renderFrame()
 
-	// Shrink below the inline height: start row becomes 4-6 = -2.
+	// Shrink below the inline height: the start row clamps at 0.
 	term.Resize(80, 4)
 	app.Dispatch(ResizeEvent{Width: 80, Height: 4})
-	// Grow back: the negative row is recorded as the clear marker.
+	// Grow back: the clamped row is recorded as the clear marker.
 	term.Resize(80, 8)
 	app.Dispatch(ResizeEvent{Width: 80, Height: 8})
 	app.renderFrame()

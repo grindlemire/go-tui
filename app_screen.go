@@ -68,7 +68,7 @@ func (a *App) ExitAlternateScreen() error {
 	// Reconfigure buffer for restored mode
 	if a.inlineHeight > 0 {
 		// Inline mode: recalculate start row, resize buffer to inline height
-		a.inlineStartRow = height - a.inlineHeight
+		a.inlineStartRow = max(height-a.inlineHeight, 0)
 		a.inlineLayout.clamp(a.inlineStartRow)
 		a.buffer.Resize(width, a.inlineHeight)
 	} else {
