@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.0](https://github.com/grindlemire/go-tui/compare/v0.18.2...v0.19.0) (2026-08-06)
+
+
+### Features
+
+* wrap frame output in DEC 2026 synchronized updates ([#125](https://github.com/grindlemire/go-tui/issues/125)) ([42df440](https://github.com/grindlemire/go-tui/commit/42df4408fbf2a3bf34553af67b1c11d869747a0f))
+
+
+### Bug Fixes
+
+* clear stale inline widget rows when the terminal grows taller ([#123](https://github.com/grindlemire/go-tui/issues/123)) ([b860ff8](https://github.com/grindlemire/go-tui/commit/b860ff8b522fc10ad6db822e12763a8cb4b0fed4))
+
 ## [0.18.2](https://github.com/grindlemire/go-tui/compare/v0.18.1...v0.18.2) (2026-07-10)
 
 
