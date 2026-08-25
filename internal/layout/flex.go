@@ -177,6 +177,12 @@ func buildFlexItems(children []Layoutable, isRow bool, mainSize int) []flexItem 
 // layoutChildren so each child is measured at its final post-flex width, then
 // sums the tallest child of each flex line. Measuring at pre-flex widths
 // underestimates wrapped text heights (issue #126).
+//
+// contentWidth must already exclude the container's padding and border; style
+// is consulted only for FlexWrap, Gap, and JustifyContent, never Padding.
+// Keep the per-line measurement in sync with the wrap pre-sizing pass in
+// calculateNode, which additionally resolves explicit cross sizes against the
+// parent-allocated slot (unknowable here, where the height is indefinite).
 func RowContentHeight(children []Layoutable, style Style, contentWidth int) int {
 	if len(children) == 0 {
 		return 0

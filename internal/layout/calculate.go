@@ -76,7 +76,9 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 			// Break into lines
 			preLines := breakIntoLines(preItems, mainSz, style.Gap)
 
-			// Measure cross size per line
+			// Measure cross size per line. Keep in sync with
+			// RowContentHeight in flex.go, which runs the same measurement
+			// without the explicit cross-size override below.
 			totalCross := 0
 			for _, pl := range preLines {
 				// Distribute the main axis so row children are measured at

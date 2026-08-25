@@ -2,22 +2,23 @@ package tui
 
 import "testing"
 
+// rowWrapLongText is 12 five-char words (71 chars): 1 line at its intrinsic
+// width, 2 lines at width 40, 3 lines at width 30.
+const rowWrapLongText = "aaaaa bbbbb ccccc ddddd eeeee fffff ggggg hhhhh iiiii jjjjj kkkkk lllll"
+
 // Reproduction for issue #126: a wrapping text child in a horizontal flex row
 // receives its final width from flex distribution, but the row's height is
 // estimated from pre-flex (full content width) wrapping, so the row does not
 // grow when the post-flex width wraps to more lines.
 func TestRowHeightGrowsForPostFlexWrappedChild(t *testing.T) {
-	// 12 five-char words: wraps to 2 lines at width 40, 3 lines at width 30.
-	longText := "aaaaa bbbbb ccccc ddddd eeeee fffff ggggg hhhhh iiiii jjjjj kkkkk lllll"
-
-	fullLines := len(wrapText(longText, 40))
-	flexLines := len(wrapText(longText, 30))
+	fullLines := len(wrapText(rowWrapLongText, 40))
+	flexLines := len(wrapText(rowWrapLongText, 30))
 	if flexLines <= fullLines {
 		t.Fatalf("test setup: wrap at 30 (%d lines) must exceed wrap at 40 (%d lines)", flexLines, fullLines)
 	}
 
 	label := New(WithText("label"), WithWidth(10), WithFlexShrink(0), WithWrap(false))
-	wrapped := New(WithText(longText), WithFlexGrow(1), WithMinWidth(0))
+	wrapped := New(WithText(rowWrapLongText), WithFlexGrow(1), WithMinWidth(0))
 
 	row := New(WithDisplay(DisplayFlex), WithDirection(Row), WithWidthPercent(100))
 	row.AddChild(label)
@@ -49,16 +50,13 @@ func TestRowHeightGrowsForPostFlexWrappedChild(t *testing.T) {
 // shrunk to the row width, wrapping its text to more lines than the pre-flex
 // base-size estimate predicted.
 func TestWrapRowHeightGrowsForPostFlexWrappedChild(t *testing.T) {
-	// 71 chars: 1 line at its intrinsic width 71, 2 lines at width 40.
-	longText := "aaaaa bbbbb ccccc ddddd eeeee fffff ggggg hhhhh iiiii jjjjj kkkkk lllll"
-
-	lineLines := len(wrapText(longText, 40))
+	lineLines := len(wrapText(rowWrapLongText, 40))
 	if lineLines != 2 {
 		t.Fatalf("test setup: wrap at 40 = %d lines, want 2", lineLines)
 	}
 
 	label := New(WithText("label"), WithWidth(10), WithFlexShrink(0), WithWrap(false))
-	wrapped := New(WithText(longText), WithFlexGrow(1), WithMinWidth(0))
+	wrapped := New(WithText(rowWrapLongText), WithFlexGrow(1), WithMinWidth(0))
 
 	row := New(WithDisplay(DisplayFlex), WithDirection(Row), WithWidthPercent(100), WithFlexWrap(Wrap))
 	row.AddChild(label)
@@ -88,10 +86,8 @@ func TestWrapRowHeightGrowsForPostFlexWrappedChild(t *testing.T) {
 
 // The post-flex width estimate must account for the row's gap.
 func TestRowHeightForWidthAccountsForGap(t *testing.T) {
-	longText := "aaaaa bbbbb ccccc ddddd eeeee fffff ggggg hhhhh iiiii jjjjj kkkkk lllll"
-
 	label := New(WithText("label"), WithWidth(10), WithFlexShrink(0), WithWrap(false))
-	wrapped := New(WithText(longText), WithFlexGrow(1), WithMinWidth(0))
+	wrapped := New(WithText(rowWrapLongText), WithFlexGrow(1), WithMinWidth(0))
 
 	row := New(WithDisplay(DisplayFlex), WithDirection(Row), WithWidthPercent(100), WithGap(2))
 	row.AddChild(label)
@@ -102,7 +98,7 @@ func TestRowHeightForWidthAccountsForGap(t *testing.T) {
 
 	root.Calculate(40, 24)
 
-	wantLines := len(wrapText(longText, 28)) // 40 - 10 label - 2 gap
+	wantLines := len(wrapText(rowWrapLongText, 28)) // 40 - 10 label - 2 gap
 	if got := wrapped.Rect().Width; got != 28 {
 		t.Fatalf("wrapped child width = %d, want 28", got)
 	}
@@ -138,10 +134,8 @@ func TestRowHeightUnchangedWhenNothingWraps(t *testing.T) {
 
 // An explicit row height wins over the post-flex wrapped estimate.
 func TestRowExplicitHeightWinsOverWrappedEstimate(t *testing.T) {
-	longText := "aaaaa bbbbb ccccc ddddd eeeee fffff ggggg hhhhh iiiii jjjjj kkkkk lllll"
-
 	label := New(WithText("label"), WithWidth(10), WithFlexShrink(0), WithWrap(false))
-	wrapped := New(WithText(longText), WithFlexGrow(1), WithMinWidth(0))
+	wrapped := New(WithText(rowWrapLongText), WithFlexGrow(1), WithMinWidth(0))
 
 	row := New(WithDisplay(DisplayFlex), WithDirection(Row), WithWidthPercent(100), WithHeight(2))
 	row.AddChild(label)
