@@ -71,22 +71,7 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 
 			// Quick Phase 1: compute base sizes
 			children := node.LayoutChildren()
-			preItems := make([]flexItem, len(children))
-			for i, child := range children {
-				childStyle := child.LayoutStyle()
-				var mainMargin int
-				if isRow {
-					mainMargin = childStyle.Margin.Horizontal()
-				} else {
-					mainMargin = childStyle.Margin.Vertical()
-				}
-				childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
-				if isRow {
-					preItems[i].baseSize = childStyle.Width.Resolve(mainSz, childIntrinsicW) + mainMargin
-				} else {
-					preItems[i].baseSize = childStyle.Height.Resolve(mainSz, childIntrinsicH) + mainMargin
-				}
-			}
+			preItems := buildFlexItems(children, isRow, mainSz)
 
 			// Break into lines
 			preLines := breakIntoLines(preItems, mainSz, style.Gap)
@@ -94,6 +79,11 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 			// Measure cross size per line
 			totalCross := 0
 			for _, pl := range preLines {
+				// Distribute the main axis so row children are measured at
+				// their post-flex widths, matching the final layout pass.
+				if isRow {
+					distributeLineMainAxis(preItems[pl.startIdx:pl.endIdx], mainSz, style.Gap, style.JustifyContent, isRow)
+				}
 				maxCross := 0
 				for j := pl.startIdx; j < pl.endIdx; j++ {
 					child := children[j]
@@ -102,7 +92,7 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 
 					var cross int
 					if isRow {
-						childWidth := preItems[j].baseSize - childStyle.Margin.Horizontal()
+						childWidth := preItems[j].mainSize - childStyle.Margin.Horizontal()
 						wrappedH := child.HeightForWidth(childWidth)
 						cross = max(wrappedH, childIntrinsicH)
 						cross += childStyle.Margin.Vertical()

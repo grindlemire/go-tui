@@ -1,5 +1,7 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/layout"
+
 // --- Implement Layoutable interface ---
 
 // LayoutStyle returns the layout style properties for this element.
@@ -274,33 +276,20 @@ func (e *Element) HeightForWidth(width int) int {
 		return totalH
 	}
 
-	// Row containers: recursively compute max child height.
-	// Children share the width via flex, so we approximate by giving each child
-	// its intrinsic width or a fair share. For text wrapping, the key case is
-	// row children with explicit or flex-computed widths which Phase 3.5 handles
-	// directly. Here we just find the max child height for the cross-axis.
+	// Row containers: measure children at their post-flex main-axis widths.
+	// RowContentHeight runs the same flex distribution as the layout pass, so
+	// wrapped text heights match the final layout exactly.
 	if len(e.children) > 0 {
 		contentWidth := width - e.style.Padding.Horizontal()
 		if e.border != BorderNone {
 			contentWidth -= 2
 		}
-		maxH := 0
-		for _, child := range e.children {
-			if child.hidden || child.overlay {
-				continue
-			}
-			// For row children, approximate: give each child the full width
-			// (overestimate). Phase 3.5 handles precise per-child widths.
-			childH := child.HeightForWidth(contentWidth)
-			if childH > maxH {
-				maxH = childH
-			}
-		}
-		maxH += e.style.Padding.Vertical()
+		h := layout.RowContentHeight(e.LayoutChildren(), e.LayoutStyle(), contentWidth)
+		h += e.style.Padding.Vertical()
 		if e.border != BorderNone {
-			maxH += 2
+			h += 2
 		}
-		return maxH
+		return h
 	}
 
 	// Default: intrinsic height

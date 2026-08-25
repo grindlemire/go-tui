@@ -144,6 +144,73 @@ func distributeLineMainAxis(items []flexItem, mainSize, gap int, justify Justify
 	}
 }
 
+// buildFlexItems computes base sizes and flex factors for children (Phase 1).
+func buildFlexItems(children []Layoutable, isRow bool, mainSize int) []flexItem {
+	items := make([]flexItem, len(children))
+	for i, child := range children {
+		item := &items[i]
+		item.node = child
+
+		childStyle := child.LayoutStyle()
+		var mainMargin int
+		if isRow {
+			mainMargin = childStyle.Margin.Horizontal()
+		} else {
+			mainMargin = childStyle.Margin.Vertical()
+		}
+
+		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
+		if isRow {
+			item.baseSize = childStyle.Width.Resolve(mainSize, childIntrinsicW) + mainMargin
+		} else {
+			item.baseSize = childStyle.Height.Resolve(mainSize, childIntrinsicH) + mainMargin
+		}
+
+		item.grow = childStyle.FlexGrow
+		item.shrink = childStyle.FlexShrink
+	}
+	return items
+}
+
+// RowContentHeight measures the content height a row flex container needs at
+// the given content width. It runs the same main-axis distribution as
+// layoutChildren so each child is measured at its final post-flex width, then
+// sums the tallest child of each flex line. Measuring at pre-flex widths
+// underestimates wrapped text heights (issue #126).
+func RowContentHeight(children []Layoutable, style Style, contentWidth int) int {
+	if len(children) == 0 {
+		return 0
+	}
+	items := buildFlexItems(children, true, contentWidth)
+
+	var lines []flexLine
+	if style.FlexWrap == WrapNone {
+		lines = []flexLine{{startIdx: 0, endIdx: len(items)}}
+	} else {
+		lines = breakIntoLines(items, contentWidth, style.Gap)
+	}
+
+	total := 0
+	for _, line := range lines {
+		lineItems := items[line.startIdx:line.endIdx]
+		distributeLineMainAxis(lineItems, contentWidth, style.Gap, style.JustifyContent, true)
+
+		lineH := 0
+		for i := range lineItems {
+			child := lineItems[i].node
+			childStyle := child.LayoutStyle()
+			childWidth := lineItems[i].mainSize - childStyle.Margin.Horizontal()
+			_, intrinsicH := child.IntrinsicSize()
+			h := max(child.HeightForWidth(childWidth), intrinsicH) + childStyle.Margin.Vertical()
+			if h > lineH {
+				lineH = h
+			}
+		}
+		total += lineH
+	}
+	return total
+}
+
 // recomputeTextWrapping runs Phase 3.5 for a slice of items.
 // It calls HeightForWidth to determine if text wrapping changes cross-axis sizes.
 func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, mainSize, crossSize int) {
@@ -256,29 +323,7 @@ func layoutChildren(node Layoutable, contentRect Rect, parentAbsX, parentAbsY fl
 	}
 
 	// Phase 1: Compute base sizes and flex factors
-	items := make([]flexItem, len(children))
-	for i, child := range children {
-		item := &items[i]
-		item.node = child
-
-		childStyle := child.LayoutStyle()
-		var mainMargin int
-		if isRow {
-			mainMargin = childStyle.Margin.Horizontal()
-		} else {
-			mainMargin = childStyle.Margin.Vertical()
-		}
-
-		childIntrinsicW, childIntrinsicH := child.IntrinsicSize()
-		if isRow {
-			item.baseSize = childStyle.Width.Resolve(mainSize, childIntrinsicW) + mainMargin
-		} else {
-			item.baseSize = childStyle.Height.Resolve(mainSize, childIntrinsicH) + mainMargin
-		}
-
-		item.grow = childStyle.FlexGrow
-		item.shrink = childStyle.FlexShrink
-	}
+	items := buildFlexItems(children, isRow, mainSize)
 
 	// Determine lines
 	var lines []flexLine
