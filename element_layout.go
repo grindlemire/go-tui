@@ -205,6 +205,21 @@ func (e *Element) HeightForWidth(width int) int {
 		return h
 	}
 
+	// Tables: resolve column widths (with shrinking) and measure rows at
+	// those widths, rather than falling into the flex row branch below.
+	if e.tag == "table" {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		h := layout.TableHeightForWidth(e, contentWidth)
+		h += e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			h += 2
+		}
+		return h
+	}
+
 	// Text elements with wrapping
 	if e.text != "" && !e.noWrap {
 		contentWidth := width - e.style.Padding.Horizontal()
