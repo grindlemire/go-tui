@@ -12,125 +12,14 @@ func layoutTable(table Layoutable, contentRect Rect, parentAbsX, parentAbsY floa
 		return
 	}
 
-	// 1. Collect grid dimensions: determine number of columns and gather cells.
-	numCols := 0
-	for _, row := range rows {
-		cells := row.LayoutChildren()
-		if len(cells) > numCols {
-			numCols = len(cells)
-		}
-	}
+	// 1-3. Compute grid dimensions and column widths (shrunk to fit).
+	numCols, colWidths := tableColumnWidths(rows, contentRect.Width)
 	if numCols == 0 {
 		return
 	}
 
-	// 2. Compute column widths: max intrinsic width per column.
-	// An explicit (non-Auto) width on a cell overrides its intrinsic width.
-	colWidths := make([]int, numCols)
-	colIsAuto := make([]bool, numCols) // track which columns are auto-sized
-	for i := range colIsAuto {
-		colIsAuto[i] = true
-	}
-
-	for _, row := range rows {
-		cells := row.LayoutChildren()
-		for ci, cell := range cells {
-			cellStyle := cell.LayoutStyle()
-			intrW, _ := cell.IntrinsicSize()
-
-			var cellWidth int
-			if !cellStyle.Width.IsAuto() {
-				// Explicit width overrides intrinsic
-				cellWidth = cellStyle.Width.Resolve(contentRect.Width, intrW)
-				colIsAuto[ci] = false
-			} else {
-				cellWidth = intrW
-			}
-
-			// Include cell padding in column width calculation
-			cellWidth += cellStyle.Padding.Horizontal()
-
-			if cellWidth > colWidths[ci] {
-				colWidths[ci] = cellWidth
-			}
-		}
-	}
-
-	// 3. Shrink auto columns proportionally if total > available width.
-	// Include 1-character gap between columns in total width.
-	columnGap := max(0, numCols-1) // 1 char gap between each pair of columns
-	totalWidth := columnGap
-	for _, w := range colWidths {
-		totalWidth += w
-	}
-
-	if totalWidth > contentRect.Width {
-		// Compute total auto-column width for proportional shrinking
-		totalAutoWidth := 0
-		for ci, w := range colWidths {
-			if colIsAuto[ci] {
-				totalAutoWidth += w
-			}
-		}
-
-		overflow := totalWidth - contentRect.Width
-		if totalAutoWidth > 0 && overflow > 0 {
-			// Shrink auto columns proportionally
-			shrunk := 0
-			lastAutoCol := -1
-			for ci := range colWidths {
-				if colIsAuto[ci] {
-					lastAutoCol = ci
-				}
-			}
-
-			for ci := range colWidths {
-				if colIsAuto[ci] {
-					reduction := int(float64(overflow) * float64(colWidths[ci]) / float64(totalAutoWidth))
-					if ci == lastAutoCol {
-						// Give the remainder to the last auto column to avoid rounding errors
-						reduction = overflow - shrunk
-					}
-					colWidths[ci] = max(1, colWidths[ci]-reduction)
-					shrunk += reduction
-				}
-			}
-		}
-	}
-
-	// 4. Compute row heights: max intrinsic height per row.
-	// Explicit h-N on <tr> overrides the computed max.
-	rowHeights := make([]int, len(rows))
-	for ri, row := range rows {
-		rowStyle := row.LayoutStyle()
-		if !rowStyle.Height.IsAuto() {
-			// Explicit row height overrides cell-based calculation
-			rowHeights[ri] = rowStyle.Height.Resolve(contentRect.Height, 1)
-			continue
-		}
-
-		cells := row.LayoutChildren()
-		maxH := 1 // minimum row height is 1
-		for _, cell := range cells {
-			cellStyle := cell.LayoutStyle()
-			_, intrH := cell.IntrinsicSize()
-
-			var cellHeight int
-			if !cellStyle.Height.IsAuto() {
-				cellHeight = cellStyle.Height.Resolve(contentRect.Height, intrH)
-			} else {
-				cellHeight = intrH
-			}
-
-			// Include cell padding in row height calculation
-			cellHeight += cellStyle.Padding.Vertical()
-
-			if cellHeight > maxH {
-				maxH = cellHeight
-			}
-		}
-		rowHeights[ri] = maxH
-	}
+	// 4. Compute row heights from cells at their final column widths.
+	rowHeights := tableRowHeights(rows, colWidths, contentRect.Height)
 
 	// 5. Position rows top-to-bottom, cells left-to-right at column offsets.
 	// Precompute column X offsets with 1-character gap between columns.
@@ -213,6 +102,155 @@ func layoutTable(table Layoutable, contentRect Rect, parentAbsX, parentAbsY floa
 
 		rowAbsY += float64(rowH)
 	}
+}
+
+// tableColumnWidths computes the number of columns and the final column
+// widths for a table. Each column starts at the max intrinsic (or explicit)
+// cell width in that column; auto columns are then shrunk proportionally when
+// the total exceeds availableWidth. Widths include cell padding.
+func tableColumnWidths(rows []Layoutable, availableWidth int) (numCols int, colWidths []int) {
+	for _, row := range rows {
+		cells := row.LayoutChildren()
+		if len(cells) > numCols {
+			numCols = len(cells)
+		}
+	}
+	if numCols == 0 {
+		return 0, nil
+	}
+
+	colWidths = make([]int, numCols)
+	colIsAuto := make([]bool, numCols) // track which columns are auto-sized
+	for i := range colIsAuto {
+		colIsAuto[i] = true
+	}
+
+	for _, row := range rows {
+		cells := row.LayoutChildren()
+		for ci, cell := range cells {
+			cellStyle := cell.LayoutStyle()
+			intrW, _ := cell.IntrinsicSize()
+
+			var cellWidth int
+			if !cellStyle.Width.IsAuto() {
+				// Explicit width overrides intrinsic
+				cellWidth = cellStyle.Width.Resolve(availableWidth, intrW)
+				colIsAuto[ci] = false
+			} else {
+				cellWidth = intrW
+			}
+
+			// Include cell padding in column width calculation
+			cellWidth += cellStyle.Padding.Horizontal()
+
+			if cellWidth > colWidths[ci] {
+				colWidths[ci] = cellWidth
+			}
+		}
+	}
+
+	// Shrink auto columns proportionally if total > available width.
+	// Include 1-character gap between columns in total width.
+	columnGap := max(0, numCols-1) // 1 char gap between each pair of columns
+	totalWidth := columnGap
+	for _, w := range colWidths {
+		totalWidth += w
+	}
+
+	if totalWidth > availableWidth {
+		// Compute total auto-column width for proportional shrinking
+		totalAutoWidth := 0
+		for ci, w := range colWidths {
+			if colIsAuto[ci] {
+				totalAutoWidth += w
+			}
+		}
+
+		overflow := totalWidth - availableWidth
+		if totalAutoWidth > 0 && overflow > 0 {
+			// Shrink auto columns proportionally
+			shrunk := 0
+			lastAutoCol := -1
+			for ci := range colWidths {
+				if colIsAuto[ci] {
+					lastAutoCol = ci
+				}
+			}
+
+			for ci := range colWidths {
+				if colIsAuto[ci] {
+					reduction := int(float64(overflow) * float64(colWidths[ci]) / float64(totalAutoWidth))
+					if ci == lastAutoCol {
+						// Give the remainder to the last auto column to avoid rounding errors
+						reduction = overflow - shrunk
+					}
+					colWidths[ci] = max(1, colWidths[ci]-reduction)
+					shrunk += reduction
+				}
+			}
+		}
+	}
+
+	return numCols, colWidths
+}
+
+// tableRowHeights computes per-row heights from cells measured at their final
+// column widths. Explicit heights on a <tr> or cell win; auto-height cells
+// grow to their wrapped height when the shrunk column forces text to wrap
+// (issue #127).
+func tableRowHeights(rows []Layoutable, colWidths []int, availableHeight int) []int {
+	rowHeights := make([]int, len(rows))
+	for ri, row := range rows {
+		rowStyle := row.LayoutStyle()
+		if !rowStyle.Height.IsAuto() {
+			// Explicit row height overrides cell-based calculation
+			rowHeights[ri] = rowStyle.Height.Resolve(availableHeight, 1)
+			continue
+		}
+
+		cells := row.LayoutChildren()
+		maxH := 1 // minimum row height is 1
+		for ci, cell := range cells {
+			cellStyle := cell.LayoutStyle()
+			_, intrH := cell.IntrinsicSize()
+
+			var cellHeight int
+			if !cellStyle.Height.IsAuto() {
+				cellHeight = cellStyle.Height.Resolve(availableHeight, intrH)
+			} else {
+				// HeightForWidth equals intrH when nothing wraps, so this
+				// only grows rows whose cells wrap at the shrunk width.
+				cellHeight = max(intrH, cell.HeightForWidth(colWidths[ci]))
+			}
+
+			// Include cell padding in row height calculation
+			cellHeight += cellStyle.Padding.Vertical()
+
+			if cellHeight > maxH {
+				maxH = cellHeight
+			}
+		}
+		rowHeights[ri] = maxH
+	}
+	return rowHeights
+}
+
+// TableHeightForWidth measures the content height a table needs at the given
+// content width: column widths are resolved (including proportional
+// shrinking) and rows are measured at those final widths. availableHeight is
+// indefinite in this context, so explicit percent heights resolve against 0,
+// matching TableIntrinsicSize.
+func TableHeightForWidth(table Layoutable, contentWidth int) int {
+	rows := table.LayoutChildren()
+	numCols, colWidths := tableColumnWidths(rows, contentWidth)
+	if numCols == 0 {
+		return 0
+	}
+	total := 0
+	for _, h := range tableRowHeights(rows, colWidths, 0) {
+		total += h
+	}
+	return total
 }
 
 // TableIntrinsicSize computes the intrinsic size of a table.
