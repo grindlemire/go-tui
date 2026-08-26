@@ -154,6 +154,34 @@ func TestRowExplicitHeightWinsOverWrappedEstimate(t *testing.T) {
 	}
 }
 
+// A child's explicit height must win over its intrinsic height in the row
+// estimate: a bordered text child clamped to height 1 has intrinsic height 3
+// (1 line + 2 border rows), but the row must not grow past the clamp.
+func TestRowHeightHonorsExplicitChildHeight(t *testing.T) {
+	clamped := New(WithText("x"), WithBorder(BorderSingle), WithHeight(1))
+
+	row := New(WithDisplay(DisplayFlex), WithDirection(Row), WithWidthPercent(100))
+	row.AddChild(clamped)
+
+	sentinel := New(WithText("SENTINEL"))
+
+	root := New(WithDisplay(DisplayFlex), WithDirection(Column), WithWidth(40))
+	root.AddChild(row)
+	root.AddChild(sentinel)
+
+	root.Calculate(40, 24)
+
+	if got := row.HeightForWidth(40); got != 1 {
+		t.Errorf("row HeightForWidth(40) = %d, want 1 (explicit child height)", got)
+	}
+	if got := row.Rect().Height; got != 1 {
+		t.Errorf("row height = %d, want 1", got)
+	}
+	if got := sentinel.Rect().Y; got != 1 {
+		t.Errorf("sentinel Y = %d, want 1", got)
+	}
+}
+
 // Degenerate widths must not panic and must not report negative heights.
 func TestRowHeightForWidthDegenerateWidth(t *testing.T) {
 	label := New(WithText("label"), WithWidth(10), WithFlexShrink(0))

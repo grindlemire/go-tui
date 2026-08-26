@@ -99,6 +99,14 @@ func (e *Element) IntrinsicSize() (width, height int) {
 			width += 2
 			height += 2
 		}
+		// Explicit dimensions override content-derived size, matching the
+		// container branch below.
+		if e.style.Width.IsFixed() {
+			width = int(e.style.Width.Amount)
+		}
+		if e.style.Height.IsFixed() {
+			height = int(e.style.Height.Amount)
+		}
 		return width, height
 	}
 
@@ -109,6 +117,12 @@ func (e *Element) IntrinsicSize() (width, height int) {
 		if e.border != BorderNone {
 			width += 2
 			height += 2
+		}
+		if e.style.Width.IsFixed() {
+			width = int(e.style.Width.Amount)
+		}
+		if e.style.Height.IsFixed() {
+			height = int(e.style.Height.Amount)
 		}
 		return width, height
 	}

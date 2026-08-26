@@ -217,12 +217,10 @@ func tableRowHeights(rows []Layoutable, colWidths []int, availableHeight int) []
 			var cellHeight int
 			if !cellStyle.Height.IsAuto() {
 				cellHeight = cellStyle.Height.Resolve(availableHeight, intrH)
-			} else if ci < len(colWidths) {
+			} else {
 				// HeightForWidth equals intrH when nothing wraps, so this
 				// only grows rows whose cells wrap at the shrunk width.
 				cellHeight = max(intrH, cell.HeightForWidth(colWidths[ci]))
-			} else {
-				cellHeight = intrH
 			}
 
 			// Include cell padding in row height calculation

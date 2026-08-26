@@ -206,8 +206,16 @@ func RowContentHeight(children []Layoutable, style Style, contentWidth int) int 
 			child := lineItems[i].node
 			childStyle := child.LayoutStyle()
 			childWidth := lineItems[i].mainSize - childStyle.Margin.Horizontal()
-			_, intrinsicH := child.IntrinsicSize()
-			h := max(child.HeightForWidth(childWidth), intrinsicH) + childStyle.Margin.Vertical()
+			h := child.HeightForWidth(childWidth)
+			// Floor at intrinsic height only for auto-height children: text
+			// elements report intrinsic height without the fixed-height
+			// override, so applying the floor to an explicitly sized child
+			// would inflate it past its fixed height.
+			if childStyle.Height.IsAuto() {
+				_, intrinsicH := child.IntrinsicSize()
+				h = max(h, intrinsicH)
+			}
+			h += childStyle.Margin.Vertical()
 			if h > lineH {
 				lineH = h
 			}

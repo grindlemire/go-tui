@@ -60,11 +60,11 @@ func TestTableHeightForWidthWrapAware(t *testing.T) {
 		t.Errorf("HeightForWidth(%d) = %d, want intrinsic %d", intrW, got, intrH)
 	}
 
-	// Narrow width: columns shrink, the wide cell wraps. Column math: id
-	// column keeps 2, the auto wide column absorbs the overflow.
-	got := table.HeightForWidth(20)
-	if got < 2 {
-		t.Errorf("HeightForWidth(20) = %d, want >= 2 (wrapped cell)", got)
+	// Narrow width: columns shrink, the wide cell wraps. Column math: the id
+	// column keeps 2, the auto wide column absorbs all overflow and lands at
+	// 17 (2 + 17 + 1 gap = 20), wrapping the 29-char text to exactly 2 lines.
+	if got := table.HeightForWidth(20); got != 2 {
+		t.Errorf("HeightForWidth(20) = %d, want 2 (wrapped cell)", got)
 	}
 }
 
