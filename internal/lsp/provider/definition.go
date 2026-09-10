@@ -635,7 +635,7 @@ func (d *definitionProvider) translateGoplsLocations(ctx *CursorContext, goplsLo
 		// passes through like any other external file.
 		if gopls.IsGeneratedGoFile(gl.URI) {
 			tuiURI := gopls.GeneratedGoURIToTuiURI(gl.URI)
-			if d.workspace != nil && d.workspace.GetWorkspaceAST(tuiURI) != nil {
+			if d.gsxAST(tuiURI) != nil {
 				if loc := d.locateInWorkspaceGsx(tuiURI, ctx.Word); loc != nil {
 					locs = append(locs, *loc)
 				} else {
@@ -742,10 +742,10 @@ var goFuncName = regexp.MustCompile(`^func\s+(\w+)\s*[\[(]`)
 // workspace .gsx file at tuiURI. Used to turn a gopls hit inside a generated
 // _gsx.go file into a location in the source the user edits.
 func (d *definitionProvider) locateInWorkspaceGsx(tuiURI, name string) *Location {
-	if d.workspace == nil || name == "" {
+	if name == "" {
 		return nil
 	}
-	ast := d.workspace.GetWorkspaceAST(tuiURI)
+	ast := d.gsxAST(tuiURI)
 	if ast == nil {
 		return nil
 	}
@@ -758,6 +758,21 @@ func (d *definitionProvider) locateInWorkspaceGsx(tuiURI, name string) *Location
 		if m := goFuncName.FindStringSubmatch(fn.Code); m != nil && m[1] == name {
 			return locationAt(tuiURI, fn.Position, len(name))
 		}
+	}
+	return nil
+}
+
+// gsxAST returns the parsed AST for a .gsx in this workspace. An open file
+// lives in the document manager (the server drops it from the workspace cache
+// on didOpen), so both are consulted.
+func (d *definitionProvider) gsxAST(uri string) *tuigen.File {
+	if d.docs != nil {
+		if doc := d.docs.GetDocument(uri); doc != nil && doc.AST != nil {
+			return doc.AST
+		}
+	}
+	if d.workspace != nil {
+		return d.workspace.GetWorkspaceAST(uri)
 	}
 	return nil
 }
