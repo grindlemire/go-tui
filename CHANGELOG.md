@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.1](https://github.com/grindlemire/go-tui/compare/v0.20.0...v0.20.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **editor:** highlight package-qualified component calls in VS Code ([#133](https://github.com/grindlemire/go-tui/issues/133)) ([cbc451a](https://github.com/grindlemire/go-tui/commit/cbc451a271e8985c91c5844440e4492bae1b267f))
+* **lsp:** find a .gsx declaration when the target file is open in the editor ([#134](https://github.com/grindlemire/go-tui/issues/134)) ([aa30b21](https://github.com/grindlemire/go-tui/commit/aa30b217536e05f8bf271b68c03d693d3904290d))
+
 ## [0.20.0](https://github.com/grindlemire/go-tui/compare/v0.19.0...v0.20.0) (2026-09-10)
 
 
