@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/tuigen"
 )
@@ -74,21 +75,9 @@ func (idx *ComponentIndex) Add(uri string, comp *tuigen.Component) {
 	defer idx.mu.Unlock()
 
 	info := &ComponentInfo{
-		Name:   comp.Name,
-		Params: comp.Params,
-		Location: Location{
-			URI: uri,
-			Range: Range{
-				Start: Position{
-					Line:      comp.Position.Line - 1, // tuigen is 1-indexed, LSP is 0-indexed
-					Character: comp.Position.Column - 1,
-				},
-				End: Position{
-					Line:      comp.Position.Line - 1,
-					Character: comp.Position.Column - 1 + len("@component") + 1 + len(comp.Name),
-				},
-			},
-		},
+		Name:     comp.Name,
+		Params:   comp.Params,
+		Location: componentNameLocation(uri, comp),
 	}
 
 	idx.Components[comp.Name] = info
@@ -202,19 +191,7 @@ func (idx *ComponentIndex) AddFunc(uri string, fn *tuigen.GoFunc) {
 		Signature: sig,
 		Params:    params,
 		Returns:   returns,
-		Location: Location{
-			URI: uri,
-			Range: Range{
-				Start: Position{
-					Line:      fn.Position.Line - 1,
-					Character: fn.Position.Column - 1,
-				},
-				End: Position{
-					Line:      fn.Position.Line - 1,
-					Character: fn.Position.Column - 1 + len("func") + 1 + len(name),
-				},
-			},
-		},
+		Location:  funcNameLocation(uri, fn, name),
 	}
 
 	idx.Functions[name] = info
@@ -316,7 +293,7 @@ func (idx *ComponentIndex) AllFunctions() []string {
 // parseFuncSignature extracts function name, signature, params and return type from Go code.
 func parseFuncSignature(code string) (name, signature string, params []FuncParam, returns string) {
 	// Match: func name(params) returns
-	re := regexp.MustCompile(`func\s+(\w+)\s*\(([^)]*)\)\s*([^{]*)`)
+	re := regexp.MustCompile(`func\s+([\p{L}_][\p{L}\p{N}_]*)\s*\(([^)]*)\)\s*([^{]*)`)
 	matches := re.FindStringSubmatch(code)
 	if len(matches) < 2 {
 		return "", "", nil, ""
@@ -370,4 +347,36 @@ func parseFuncSignature(code string) (name, signature string, params []FuncParam
 	}
 
 	return name, signature, params, returns
+}
+
+// componentNameLocation spans the component's name (tuigen is 1-indexed, LSP
+// is 0-indexed, both count runes). Falls back to the templ keyword for ASTs
+// without NamePos.
+func componentNameLocation(uri string, comp *tuigen.Component) Location {
+	pos := comp.NamePos
+	if pos.Line == 0 {
+		pos = comp.Position
+	}
+	start := Position{Line: pos.Line - 1, Character: pos.Column - 1}
+	return Location{
+		URI:   uri,
+		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + utf8.RuneCountInString(comp.Name)}},
+	}
+}
+
+// funcNameRe locates the name in a func declaration's source.
+var funcNameRe = regexp.MustCompile(`func\s+([\p{L}_][\p{L}\p{N}_]*)`)
+
+// funcNameLocation spans the func's name on its first line (LSP columns are
+// 0-indexed runes). Falls back to the func keyword if the name is not found.
+func funcNameLocation(uri string, fn *tuigen.GoFunc, name string) Location {
+	offset := 0
+	if m := funcNameRe.FindStringSubmatchIndex(fn.Code); m != nil && fn.Code[m[2]:m[3]] == name {
+		offset = utf8.RuneCountInString(fn.Code[:m[2]])
+	}
+	start := Position{Line: fn.Position.Line - 1, Character: fn.Position.Column - 1 + offset}
+	return Location{
+		URI:   uri,
+		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + utf8.RuneCountInString(name)}},
+	}
 }

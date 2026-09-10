@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -223,6 +224,73 @@ func TestParseFuncSignature(t *testing.T) {
 				if want.Position.Character != 0 && got.Position.Character != want.Position.Character {
 					t.Errorf("param[%d] position = %d, want %d", i, got.Position.Character, want.Position.Character)
 				}
+			}
+		})
+	}
+}
+
+// The indexed location of a component spans its name so go-to-definition
+// highlights "Header", not "templ ".
+func TestComponentIndex_LocationSpansName(t *testing.T) {
+	idx := NewComponentIndex()
+	idx.Add("file:///w/a.gsx", &tuigen.Component{
+		Name:     "Header",
+		Position: tuigen.Position{Line: 3, Column: 1},
+		NamePos:  tuigen.Position{Line: 3, Column: 7},
+	})
+	info, ok := idx.Lookup("Header")
+	if !ok {
+		t.Fatal("component not indexed")
+	}
+	r := info.Location.Range
+	if r.Start.Line != 2 || r.Start.Character != 6 || r.End.Line != 2 || r.End.Character != 12 {
+		t.Errorf("range = %d:%d..%d:%d, want 2:6..2:12", r.Start.Line, r.Start.Character, r.End.Line, r.End.Character)
+	}
+}
+
+// Columns are rune-based, so a non-ASCII name must not overshoot by its
+// extra UTF-8 bytes.
+func TestComponentIndex_LocationSpansUnicodeName(t *testing.T) {
+	idx := NewComponentIndex()
+	idx.Add("file:///w/a.gsx", &tuigen.Component{
+		Name:     "Café",
+		Position: tuigen.Position{Line: 1, Column: 1},
+		NamePos:  tuigen.Position{Line: 1, Column: 7},
+	})
+	info, _ := idx.Lookup("Café")
+	if got := info.Location.Range.End.Character; got != 10 {
+		t.Errorf("end = %d, want 10 (4 runes after column 6)", got)
+	}
+}
+
+// A func's indexed location spans its name, so @Sidebar(...) highlights
+// "Sidebar" rather than "func Sidebar".
+func TestComponentIndex_FuncLocationSpansName(t *testing.T) {
+	type tc struct {
+		code      string
+		wantStart int
+		wantEnd   int
+	}
+
+	tests := map[string]tc{
+		"plain func":       {code: "func Sidebar(cat *tui.State[string]) *sidebar {\n\treturn nil\n}", wantStart: 5, wantEnd: 12},
+		"extra whitespace": {code: "func   Sidebar(x int) *sidebar {}", wantStart: 7, wantEnd: 14},
+		"unicode name":     {code: "func Café() *sidebar {}", wantStart: 5, wantEnd: 9},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			idx := NewComponentIndex()
+			idx.AddFunc("file:///w/a.gsx", &tuigen.GoFunc{Code: tt.code, Position: tuigen.Position{Line: 10, Column: 1}})
+			fnName := strings.Fields(strings.TrimPrefix(tt.code, "func"))[0]
+			fnName = fnName[:strings.IndexAny(fnName, "([")]
+			info, ok := idx.LookupFunc(fnName)
+			if !ok {
+				t.Fatalf("func %q not indexed", fnName)
+			}
+			r := info.Location.Range
+			if r.Start.Line != 9 || r.Start.Character != tt.wantStart || r.End.Character != tt.wantEnd {
+				t.Errorf("range = %d:%d..%d, want 9:%d..%d", r.Start.Line, r.Start.Character, r.End.Character, tt.wantStart, tt.wantEnd)
 			}
 		})
 	}

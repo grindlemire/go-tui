@@ -2,6 +2,7 @@ package provider
 
 import (
 	"testing"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/gopls"
 
@@ -505,13 +506,15 @@ func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
 		uri      string
 		name     string
 		wantLine int // -1 means no location
+		wantChar int // 0-indexed start of the name; the range must span exactly the name
 	}
 
 	const widgets = "file:///w/widgets.gsx"
 	ws := &stubWorkspaceAST{asts: map[string]*tuigen.File{
 		widgets: {
 			Components: []*tuigen.Component{
-				{Name: "Header", Position: tuigen.Position{Line: 5, Column: 1}},
+				{Name: "Header", Position: tuigen.Position{Line: 5, Column: 1}, NamePos: tuigen.Position{Line: 5, Column: 7}},
+				{Name: "Café", Position: tuigen.Position{Line: 40, Column: 1}, NamePos: tuigen.Position{Line: 40, Column: 7}},
 			},
 			Funcs: []*tuigen.GoFunc{
 				{Code: "func NewCard(label string) *Card {\n\treturn &Card{}\n}", Position: tuigen.Position{Line: 12, Column: 1}},
@@ -522,9 +525,10 @@ func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
 	}}
 
 	tests := map[string]tc{
-		"function templ":        {uri: widgets, name: "Header", wantLine: 4},
-		"struct factory func":   {uri: widgets, name: "NewCard", wantLine: 11},
-		"generic factory func":  {uri: widgets, name: "NewList", wantLine: 29},
+		"function templ":        {uri: widgets, name: "Header", wantLine: 4, wantChar: 6},
+		"struct factory func":   {uri: widgets, name: "NewCard", wantLine: 11, wantChar: 5},
+		"generic factory func":  {uri: widgets, name: "NewList", wantLine: 29, wantChar: 5},
+		"unicode templ name":    {uri: widgets, name: "Café", wantLine: 39, wantChar: 6},
 		"method is not a match": {uri: widgets, name: "helper", wantLine: -1},
 		"unknown name":          {uri: widgets, name: "Nope", wantLine: -1},
 		"file not in workspace": {uri: "file:///w/other.gsx", name: "Header", wantLine: -1},
@@ -547,6 +551,11 @@ func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
 			}
 			if loc.URI != tt.uri || loc.Range.Start.Line != tt.wantLine {
 				t.Errorf("got %s:%d, want %s:%d", loc.URI, loc.Range.Start.Line, tt.uri, tt.wantLine)
+			}
+			wantEnd := tt.wantChar + utf8.RuneCountInString(tt.name)
+			if loc.Range.Start.Character != tt.wantChar || loc.Range.End.Character != wantEnd {
+				t.Errorf("range = %d..%d, want %d..%d (the name itself)",
+					loc.Range.Start.Character, loc.Range.End.Character, tt.wantChar, wantEnd)
 			}
 		})
 	}
@@ -649,5 +658,38 @@ func TestDefinition_QualifiedCallNotShadowedByLocalFunc(t *testing.T) {
 		if loc.URI == "file:///w/local.gsx" {
 			t.Fatalf("qualified call resolved to the local func: %+v", loc)
 		}
+	}
+}
+
+// Definition on a component's own declaration name resolves to that
+// declaration, not to another file's component that shares the name (every
+// method templ is called Render).
+func TestDefinition_ComponentDeclarationResolvesToItself(t *testing.T) {
+	index := newStubIndex()
+	index.components["Render"] = &ComponentInfo{
+		Name:     "Render",
+		Location: Location{URI: "file:///w/widgets/header.gsx", Range: Range{Start: Position{Line: 16, Character: 16}}},
+	}
+	dp := newTestDefinitionProvider(index)
+
+	doc := parseTestDoc("package test")
+	ctx := makeCtx(doc, NodeKindComponent, "Render")
+	ctx.Node = &tuigen.Component{
+		Name:     "Render",
+		Receiver: "a *app",
+		Position: tuigen.Position{Line: 9, Column: 1},
+		NamePos:  tuigen.Position{Line: 9, Column: 17},
+	}
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 {
+		t.Fatalf("expected 1 location, got %d: %+v", len(result), result)
+	}
+	got := result[0]
+	if got.URI != doc.URI || got.Range.Start.Line != 8 || got.Range.Start.Character != 16 || got.Range.End.Character != 22 {
+		t.Errorf("got %s %d:%d..%d, want %s 8:16..22", got.URI, got.Range.Start.Line, got.Range.Start.Character, got.Range.End.Character, doc.URI)
 	}
 }

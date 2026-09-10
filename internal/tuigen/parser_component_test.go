@@ -881,3 +881,44 @@ func TestParser_ComponentCallMissingParen(t *testing.T) {
 		})
 	}
 }
+
+// NamePos points at the component name itself, not the templ keyword, so
+// editors can highlight the name on go-to-definition.
+func TestParser_ComponentNamePos(t *testing.T) {
+	type tc struct {
+		input    string
+		wantName string
+		wantLine int
+		wantCol  int
+	}
+
+	tests := map[string]tc{
+		"function templ": {
+			input:    "package x\n\ntempl Header(title string) {\n\t<span>{title}</span>\n}",
+			wantName: "Header", wantLine: 3, wantCol: 7,
+		},
+		"method templ": {
+			input:    "package x\n\ntype Card struct{}\n\ntempl (c *Card) Render() {\n\t<span>x</span>\n}",
+			wantName: "Render", wantLine: 5, wantCol: 17,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			file, err := NewParser(NewLexer("test.gsx", tt.input)).ParseFile()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+			c := file.Components[0]
+			if c.Name != tt.wantName {
+				t.Fatalf("Name = %q, want %q", c.Name, tt.wantName)
+			}
+			if c.NamePos.Line != tt.wantLine || c.NamePos.Column != tt.wantCol {
+				t.Errorf("NamePos = %d:%d, want %d:%d", c.NamePos.Line, c.NamePos.Column, tt.wantLine, tt.wantCol)
+			}
+		})
+	}
+}

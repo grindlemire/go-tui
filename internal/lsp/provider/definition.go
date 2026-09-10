@@ -3,6 +3,7 @@ package provider
 import (
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/gopls"
 	"github.com/grindlemire/go-tui/internal/lsp/log"
@@ -87,6 +88,16 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		}
 		// Fall through to gopls
 	case NodeKindFunction, NodeKindComponent, NodeKindGoDecl:
+		// The cursor on a component's own name is its definition. Resolving
+		// by name instead would land on any other templ called the same
+		// thing, and every method templ is called Render.
+		if comp, ok := ctx.Node.(*tuigen.Component); ok && comp != nil && comp.Name == word {
+			pos := comp.NamePos
+			if pos.Line == 0 {
+				pos = comp.Position
+			}
+			return []Location{*locationAt(ctx.Document.URI, pos, 0, utf8.RuneCountInString(comp.Name))}, nil
+		}
 		// Try local AST-based lookup first (avoids gopls offset issues)
 		if ctx.Document.AST != nil && word != "" {
 			if loc := d.findGoDeclNameInAST(ctx.Document.AST, word, ctx.Document.URI); loc != nil {
@@ -736,7 +747,7 @@ func offsetToLineChar(content string, offset int) (int, int) {
 
 // goFuncName matches the name of a top-level (receiver-less) func declaration,
 // generic or not.
-var goFuncName = regexp.MustCompile(`^func\s+(\w+)\s*[\[(]`)
+var goFuncName = regexp.MustCompile(`^func\s+([\p{L}_][\p{L}\p{N}_]*)\s*[\[(]`)
 
 // locateInWorkspaceGsx finds the templ or top-level func named name in the
 // workspace .gsx file at tuiURI. Used to turn a gopls hit inside a generated
@@ -751,12 +762,18 @@ func (d *definitionProvider) locateInWorkspaceGsx(tuiURI, name string) *Location
 	}
 	for _, comp := range ast.Components {
 		if comp.Name == name {
-			return locationAt(tuiURI, comp.Position, len(name))
+			pos := comp.NamePos
+			if pos.Line == 0 {
+				pos = comp.Position
+			}
+			return locationAt(tuiURI, pos, 0, utf8.RuneCountInString(name))
 		}
 	}
 	for _, fn := range ast.Funcs {
-		if m := goFuncName.FindStringSubmatch(fn.Code); m != nil && m[1] == name {
-			return locationAt(tuiURI, fn.Position, len(name))
+		// The name is on the func's first line, so its byte offset into Code
+		// is its column offset from the func keyword.
+		if m := goFuncName.FindStringSubmatchIndex(fn.Code); m != nil && fn.Code[m[2]:m[3]] == name {
+			return locationAt(tuiURI, fn.Position, utf8.RuneCountInString(fn.Code[:m[2]]), utf8.RuneCountInString(name))
 		}
 	}
 	return nil
@@ -777,9 +794,10 @@ func (d *definitionProvider) gsxAST(uri string) *tuigen.File {
 	return nil
 }
 
-// locationAt converts a 1-indexed tuigen position into a single-line LSP location.
-func locationAt(uri string, pos tuigen.Position, length int) *Location {
-	start := Position{Line: pos.Line - 1, Character: pos.Column - 1}
+// locationAt converts a 1-indexed tuigen position plus a same-line rune offset
+// into a single-line LSP location of the given rune length.
+func locationAt(uri string, pos tuigen.Position, offset, length int) *Location {
+	start := Position{Line: pos.Line - 1, Character: pos.Column - 1 + offset}
 	return &Location{
 		URI:   uri,
 		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + length}},
