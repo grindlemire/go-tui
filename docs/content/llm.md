@@ -106,6 +106,28 @@ templ (p *panel) Render() {
 }
 ```
 
+### Cross-Package Components
+
+Components are plain Go, so they can be imported from other packages. Qualify the call with the package name:
+
+```gsx
+package main
+
+import "example.com/myapp/widgets"
+
+// Function templ from package widgets
+templ App() {
+    @widgets.Header("Dashboard")
+}
+
+// Struct component constructor from package widgets, mounted like a local one
+templ (a *app) Render() {
+    @widgets.NewSidebar(a.items)
+}
+```
+
+Fields holding a `Component` work the same way from any package: `@a.panel` where `panel *settings.Panel`.
+
 ### Control Flow
 
 ```gsx

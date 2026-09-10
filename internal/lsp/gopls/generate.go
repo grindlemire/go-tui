@@ -426,6 +426,15 @@ func (g *generator) generateComponentCall(call *tuigen.ComponentCall, indent str
 	if call == nil {
 		return
 	}
+	// Map the name (after the @) onto the callee in "_ = name(args)".
+	g.sourceMap.AddMapping(Mapping{
+		TuiLine: call.Position.Line - 1,
+		TuiCol:  call.Position.Column, // 1-indexed column of @, so 0-indexed name start
+		GoLine:  g.goLine,
+		GoCol:   len(indent) + len("_ = "),
+		Length:  len(call.Name),
+	})
+
 	// Record mapping for the arguments
 	// Position.Column is 1-indexed from parser, convert to 0-indexed then add offset
 	if call.Args != "" {

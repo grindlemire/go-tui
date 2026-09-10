@@ -1102,3 +1102,27 @@ templ Hello() {
 		})
 	}
 }
+
+func TestFormatQualifiedComponentCall(t *testing.T) {
+	input := `package main
+
+import "example.com/app/widgets"
+
+templ App() {
+	<div>
+		@widgets.Header("hi")
+		@widgets.Card("t") {
+			<span>Child</span>
+		}
+	</div>
+}
+`
+	fmtr := newTestFormatter()
+	got, err := fmtr.Format("test.gsx", input)
+	if err != nil {
+		t.Fatalf("Format() error = %v", err)
+	}
+	if got != input {
+		t.Errorf("qualified component calls not preserved:\ngot:\n%s\nwant:\n%s", got, input)
+	}
+}

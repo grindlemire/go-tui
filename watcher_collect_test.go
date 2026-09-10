@@ -117,3 +117,54 @@ func TestCollectComponentWatchers(t *testing.T) {
 type simpleComponent struct{}
 
 func (s *simpleComponent) Render(app *App) *Element { return New() }
+
+// testViewComponent mimics a generated view struct: it implements Viewable
+// (GetRoot/GetWatchers) but not WatcherProvider.
+type testViewComponent struct {
+	root     *Element
+	watchers []Watcher
+}
+
+func (v *testViewComponent) Render(app *App) *Element { return v.root }
+func (v *testViewComponent) GetRoot() *Element        { return v.root }
+func (v *testViewComponent) GetWatchers() []Watcher   { return v.watchers }
+
+// testDualWatcherComponent implements both interfaces; only Watchers() counts.
+type testDualWatcherComponent struct {
+	testViewComponent
+}
+
+func (d *testDualWatcherComponent) Watchers() []Watcher { return d.watchers }
+
+func TestCollectComponentWatchers_MountedView(t *testing.T) {
+	type tc struct {
+		comp     Component
+		expected int
+	}
+
+	two := []Watcher{OnTimer(time.Second, func() {}), OnTimer(time.Minute, func() {})}
+	tests := map[string]tc{
+		"view exposing only GetWatchers is collected": {
+			comp:     &testViewComponent{root: New(), watchers: two},
+			expected: 2,
+		},
+		"component with both interfaces is counted once": {
+			comp:     &testDualWatcherComponent{testViewComponent{root: New(), watchers: two}},
+			expected: 2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			root := New()
+			child := New()
+			child.component = tt.comp
+			root.AddChild(child)
+
+			got := collectComponentWatchers(nil, root)
+			if len(got) != tt.expected {
+				t.Errorf("collected %d watchers, want %d", len(got), tt.expected)
+			}
+		})
+	}
+}

@@ -163,17 +163,16 @@ func (l *Lexer) readAtKeyword() Token {
 		return l.makeToken(TokenError, "@let")
 	default:
 		if len(keyword) > 0 {
-			firstRune, _ := utf8.DecodeRuneInString(keyword)
-			if unicode.IsUpper(firstRune) {
-				// Uppercase: component function call @Header()
-				return l.makeToken(TokenAtCall, keyword)
-			}
-			// Lowercase: component expression @c.textarea (renders a Component)
-			// Continue reading the full expression (field access, etc.)
 			for l.ch == '.' || isLetter(l.ch) || isDigit(l.ch) {
 				l.readChar()
 			}
 			expr := l.source[startPos:l.pos]
+			firstRune, _ := utf8.DecodeRuneInString(keyword)
+			// The paren must be adjacent so inline text like "@c.icon (beta)"
+			// stays an expression.
+			if unicode.IsUpper(firstRune) || l.ch == '(' {
+				return l.makeToken(TokenAtCall, expr)
+			}
 			return l.makeToken(TokenAtExpr, expr)
 		}
 		l.errors.AddErrorf(l.position(), "unknown @ keyword: @%s", keyword)

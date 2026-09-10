@@ -3,6 +3,8 @@ package provider
 import (
 	"testing"
 
+	"github.com/grindlemire/go-tui/internal/lsp/gopls"
+
 	"github.com/grindlemire/go-tui/internal/tuigen"
 )
 
@@ -493,5 +495,147 @@ func TestContainsVarDecl(t *testing.T) {
 				t.Errorf("containsVarDecl(%q, %q) = %v, want %v", tt.code, tt.varName, got, tt.want)
 			}
 		})
+	}
+}
+
+// A gopls hit inside a generated _gsx.go file is translated to the templ or
+// func declaration in the sibling .gsx via the workspace AST.
+func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
+	type tc struct {
+		uri      string
+		name     string
+		wantLine int // -1 means no location
+	}
+
+	const widgets = "file:///w/widgets.gsx"
+	ws := &stubWorkspaceAST{asts: map[string]*tuigen.File{
+		widgets: {
+			Components: []*tuigen.Component{
+				{Name: "Header", Position: tuigen.Position{Line: 5, Column: 1}},
+			},
+			Funcs: []*tuigen.GoFunc{
+				{Code: "func NewCard(label string) *Card {\n\treturn &Card{}\n}", Position: tuigen.Position{Line: 12, Column: 1}},
+				{Code: "func (c *Card) helper() {}", Position: tuigen.Position{Line: 20, Column: 1}},
+				{Code: "func NewList[T any](items []T) *List[T] {\n\treturn nil\n}", Position: tuigen.Position{Line: 30, Column: 1}},
+			},
+		},
+	}}
+
+	tests := map[string]tc{
+		"function templ":        {uri: widgets, name: "Header", wantLine: 4},
+		"struct factory func":   {uri: widgets, name: "NewCard", wantLine: 11},
+		"generic factory func":  {uri: widgets, name: "NewList", wantLine: 29},
+		"method is not a match": {uri: widgets, name: "helper", wantLine: -1},
+		"unknown name":          {uri: widgets, name: "Nope", wantLine: -1},
+		"file not in workspace": {uri: "file:///w/other.gsx", name: "Header", wantLine: -1},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			dp := newTestDefinitionProvider(newStubIndex())
+			dp.workspace = ws
+
+			loc := dp.locateInWorkspaceGsx(tt.uri, tt.name)
+			if tt.wantLine < 0 {
+				if loc != nil {
+					t.Fatalf("expected no location, got %+v", *loc)
+				}
+				return
+			}
+			if loc == nil {
+				t.Fatal("expected a location, got nil")
+			}
+			if loc.URI != tt.uri || loc.Range.Start.Line != tt.wantLine {
+				t.Errorf("got %s:%d, want %s:%d", loc.URI, loc.Range.Start.Line, tt.uri, tt.wantLine)
+			}
+		})
+	}
+}
+
+// gopls locations inside generated _gsx.go files map to the sibling .gsx when
+// that file is in the workspace, and pass through untouched when it is not
+// (a dependency in the module cache).
+func TestDefinition_TranslateGoplsLocations(t *testing.T) {
+	type tc struct {
+		goURI    string
+		word     string
+		wantURI  string
+		wantLine int
+		wantNone bool
+	}
+
+	ws := &stubWorkspaceAST{asts: map[string]*tuigen.File{
+		"file:///w/widgets.gsx": {
+			Components: []*tuigen.Component{{Name: "Header", Position: tuigen.Position{Line: 5, Column: 1}}},
+		},
+	}}
+
+	tests := map[string]tc{
+		"workspace generated file maps to its .gsx": {
+			goURI: "file:///w/widgets_gsx.go", word: "Header",
+			wantURI: "file:///w/widgets.gsx", wantLine: 4,
+		},
+		"workspace generated file with unknown name is skipped": {
+			goURI: "file:///w/widgets_gsx.go", word: "Nope",
+			wantNone: true,
+		},
+		"module cache generated file passes through": {
+			goURI: "file:///go/pkg/mod/example.com/dep@v1.0.0/dep_gsx.go", word: "Header",
+			wantURI: "file:///go/pkg/mod/example.com/dep@v1.0.0/dep_gsx.go", wantLine: 57,
+		},
+		"plain go file passes through": {
+			goURI: "file:///usr/local/go/src/fmt/print.go", word: "Println",
+			wantURI: "file:///usr/local/go/src/fmt/print.go", wantLine: 57,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			dp := newTestDefinitionProvider(newStubIndex())
+			dp.workspace = ws
+			ctx := makeCtx(parseTestDoc("package test"), NodeKindComponentCall, tt.word)
+
+			got := dp.translateGoplsLocations(ctx, []gopls.Location{{
+				URI:   tt.goURI,
+				Range: gopls.Range{Start: gopls.Position{Line: 57, Character: 5}, End: gopls.Position{Line: 57, Character: 11}},
+			}})
+
+			if tt.wantNone {
+				if len(got) != 0 {
+					t.Fatalf("expected no locations, got %+v", got)
+				}
+				return
+			}
+			if len(got) != 1 {
+				t.Fatalf("expected 1 location, got %d: %+v", len(got), got)
+			}
+			if got[0].URI != tt.wantURI || got[0].Range.Start.Line != tt.wantLine {
+				t.Errorf("got %s:%d, want %s:%d", got[0].URI, got[0].Range.Start.Line, tt.wantURI, tt.wantLine)
+			}
+		})
+	}
+}
+
+// A local func that happens to share the last segment of a qualified call
+// must not shadow the call's real target.
+func TestDefinition_QualifiedCallNotShadowedByLocalFunc(t *testing.T) {
+	index := newStubIndex()
+	index.functions["Header"] = &FuncInfo{
+		Name:     "Header",
+		Location: Location{URI: "file:///w/local.gsx", Range: Range{Start: Position{Line: 9}}},
+	}
+	dp := newTestDefinitionProvider(index)
+
+	ctx := makeCtx(parseTestDoc("package test"), NodeKindComponentCall, "Header")
+	ctx.Node = &tuigen.ComponentCall{Name: "widgets.Header"}
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, loc := range result {
+		if loc.URI == "file:///w/local.gsx" {
+			t.Fatalf("qualified call resolved to the local func: %+v", loc)
+		}
 	}
 }

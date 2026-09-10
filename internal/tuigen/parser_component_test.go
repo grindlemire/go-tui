@@ -1,6 +1,7 @@
 package tuigen
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -770,4 +771,113 @@ func findComponentCall(nodes []Node) *ComponentCall {
 		}
 	}
 	return nil
+}
+
+func TestParser_QualifiedComponentCall(t *testing.T) {
+	type tc struct {
+		input        string
+		wantName     string
+		wantArgs     string
+		wantChildren int
+	}
+
+	tests := map[string]tc{
+		"qualified call with args": {
+			input: `package x
+templ App() {
+	@widgets.Header("hi")
+}`,
+			wantName: "widgets.Header",
+			wantArgs: `"hi"`,
+		},
+		"qualified call without args": {
+			input: `package x
+templ App() {
+	@widgets.Footer()
+}`,
+			wantName: "widgets.Footer",
+		},
+		"qualified call with children": {
+			input: `package x
+templ App() {
+	@widgets.Card("t") {
+		<span>Child</span>
+	}
+}`,
+			wantName:     "widgets.Card",
+			wantArgs:     `"t"`,
+			wantChildren: 1,
+		},
+		"qualified call inside method templ": {
+			input: `package x
+type Root struct{}
+templ (r *Root) Render() {
+	@widgets.Header("hi")
+}`,
+			wantName: "widgets.Header",
+			wantArgs: `"hi"`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(file.Components) != 1 {
+				t.Fatalf("expected 1 component, got %d", len(file.Components))
+			}
+			body := file.Components[0].Body
+			if len(body) != 1 {
+				t.Fatalf("expected 1 body node, got %d: %#v", len(body), body)
+			}
+			call, ok := body[0].(*ComponentCall)
+			if !ok {
+				t.Fatalf("body[0]: expected *ComponentCall, got %T", body[0])
+			}
+			if call.Name != tt.wantName {
+				t.Errorf("Name = %q, want %q", call.Name, tt.wantName)
+			}
+			if call.Args != tt.wantArgs {
+				t.Errorf("Args = %q, want %q", call.Args, tt.wantArgs)
+			}
+			if len(call.Children) != tt.wantChildren {
+				t.Errorf("children = %d, want %d", len(call.Children), tt.wantChildren)
+			}
+		})
+	}
+}
+
+// A component call whose "(" is on the next line must be reported, not
+// silently dropped from the body.
+func TestParser_ComponentCallMissingParen(t *testing.T) {
+	type tc struct {
+		input string
+	}
+
+	tests := map[string]tc{
+		"bare name": {
+			input: "package x\ntempl App() {\n\t@Header\n\t(\"x\")\n}",
+		},
+		"inside a for body in an element": {
+			input: "package x\ntempl App(items []int) {\n\t<div>\n\t\tfor _, i := range items {\n\t\t\t@Item\n\t\t\t(i)\n\t\t}\n\t</div>\n}",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			_, err := p.ParseFile()
+			if err == nil {
+				t.Fatal("expected a parse error, got nil")
+			}
+			if !strings.Contains(err.Error(), "expected (") {
+				t.Errorf("error should mention the missing paren, got: %v", err)
+			}
+		})
+	}
 }

@@ -117,18 +117,18 @@ func (p *Parser) parseBodyNode() Node {
 // parseControlFlowOrBinding attempts to parse a control flow node (if/for)
 // or a binding (name := <element>, var name = <element>) from the current token.
 // Returns the parsed node, or nil if the current token doesn't match.
-// When nil is returned, the token cursor is guaranteed to be unchanged (via save/restore).
+// Speculative branches restore the cursor on failure; a range-for or @Call
+// has no other reading, so those keep their diagnostics and leave the cursor
+// where parsing stopped.
 func (p *Parser) parseControlFlowOrBinding() Node {
 	switch p.current.Type {
 	case TokenFor:
 		if !p.isRangeForLoop() {
 			return nil // C-style for, let caller handle as GoCode
 		}
-		saved := p.saveState()
 		if f := p.parseFor(); f != nil {
 			return f
 		}
-		p.restoreState(saved)
 	case TokenIf:
 		saved := p.saveState()
 		if i := p.parseIf(); i != nil {
@@ -136,11 +136,9 @@ func (p *Parser) parseControlFlowOrBinding() Node {
 		}
 		p.restoreState(saved)
 	case TokenAtCall:
-		saved := p.saveState()
 		if call := p.parseComponentCall(); call != nil {
 			return call
 		}
-		p.restoreState(saved)
 	case TokenAtExpr:
 		if expr := p.parseComponentExpr(); expr != nil {
 			return expr

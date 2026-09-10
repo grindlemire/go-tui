@@ -665,3 +665,25 @@ func CreateWithCallbacks(cb func() string, mk func(int) (bool, error)) {
                 (identifier)))))))
     body: (function_body
       (go_code_content))))
+
+================================================================================
+Qualified component call
+================================================================================
+
+templ App() {
+	@widgets.Header("Title")
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (component_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (component_body
+      (component_call
+        name: (qualified_identifier
+          (identifier)
+          (identifier))
+        arguments: (argument_list
+          (string))))))
