@@ -163,16 +163,13 @@ func (l *Lexer) readAtKeyword() Token {
 		return l.makeToken(TokenError, "@let")
 	default:
 		if len(keyword) > 0 {
-			// Read the rest of a dotted name: @pkg.Header, @c.textarea, @c.a.b
 			for l.ch == '.' || isLetter(l.ch) || isDigit(l.ch) {
 				l.readChar()
 			}
 			expr := l.source[startPos:l.pos]
 			firstRune, _ := utf8.DecodeRuneInString(keyword)
-			// Uppercase (@Header) or an adjacent paren (@pkg.Header(...)) is a
-			// component call; otherwise it is an expression that renders a
-			// Component held in a field (@c.textarea). The paren must be
-			// adjacent so inline text like "@c.icon (beta)" stays an expression.
+			// The paren must be adjacent so inline text like "@c.icon (beta)"
+			// stays an expression.
 			if unicode.IsUpper(firstRune) || l.ch == '(' {
 				return l.makeToken(TokenAtCall, expr)
 			}

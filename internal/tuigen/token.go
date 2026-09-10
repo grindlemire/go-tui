@@ -29,8 +29,8 @@ const (
 	TokenVar     // var
 
 	// DSL keywords (@ prefixed)
-	TokenAtCall // @Name or @pkg.Name( (uppercase name or adjacent paren, component call)
-	TokenAtExpr // @c.field (lowercase dotted name without call parens, renders a Component)
+	TokenAtCall // @Name(...) or @pkg.Name(...)
+	TokenAtExpr // @c.field (renders a Component)
 
 	// Literals
 	TokenIdent     // identifier

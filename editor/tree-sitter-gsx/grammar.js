@@ -256,7 +256,6 @@ module.exports = grammar({
         ),
       ),
 
-    // Package-qualified component name: @widgets.Header(...)
     qualified_identifier: ($) =>
       seq($.identifier, repeat1(seq(".", $.identifier))),
 
