@@ -737,7 +737,7 @@ func offsetToLineChar(content string, offset int) (int, int) {
 
 // goFuncName matches the name of a top-level (receiver-less) func declaration,
 // generic or not.
-var goFuncName = regexp.MustCompile(`^func\s+(\w+)\s*[\[(]`)
+var goFuncName = regexp.MustCompile(`^func\s+([\p{L}_][\p{L}\p{N}_]*)\s*[\[(]`)
 
 // locateInWorkspaceGsx finds the templ or top-level func named name in the
 // workspace .gsx file at tuiURI. Used to turn a gopls hit inside a generated
