@@ -38,7 +38,10 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 	// returning generated .go files instead of .gsx sources).
 	// Skip this when inside a Go expression — gopls understands the full
 	// context (e.g., field access a.category vs a standalone function call).
-	if word != "" && !ctx.InGoExpr {
+	// A component call resolves through its own (possibly qualified) name
+	// below; matching the bare word here would let a same-named local func
+	// shadow @pkg.Name.
+	if word != "" && !ctx.InGoExpr && ctx.NodeKind != NodeKindComponentCall {
 		funcName := strings.TrimPrefix(word, "@")
 		if funcInfo, ok := d.index.LookupFunc(funcName); ok {
 			log.Server("Found local function %s at %s (before gopls)", funcName, funcInfo.Location.URI)
@@ -591,10 +594,12 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 		return nil, err
 	}
 
-	if len(goplsLocs) == 0 {
-		return nil, nil
-	}
+	return d.translateGoplsLocations(ctx, goplsLocs), nil
+}
 
+// translateGoplsLocations maps gopls results in virtual or generated Go files
+// back to .gsx locations; other files pass through unchanged.
+func (d *definitionProvider) translateGoplsLocations(ctx *CursorContext, goplsLocs []gopls.Location) []Location {
 	var locs []Location
 	for _, gl := range goplsLocs {
 		// Check if this is a virtual file — translate back to .gsx
@@ -625,15 +630,19 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 		// Real generated _gsx.go files have structural differences from
 		// the virtual Go file (different ordering, goimports blank lines),
 		// making source map reverse-translation unreliable. Find the
-		// declaration by name in the sibling .gsx instead; if that fails,
-		// skip and let the word-based fallback handle it via AST lookup.
+		// declaration by name in the sibling .gsx instead. A generated file
+		// outside the workspace (module cache) has no .gsx to offer, so it
+		// passes through like any other external file.
 		if gopls.IsGeneratedGoFile(gl.URI) {
-			if loc := d.locateInWorkspaceGsx(gopls.GeneratedGoURIToTuiURI(gl.URI), ctx.Word); loc != nil {
-				locs = append(locs, *loc)
+			tuiURI := gopls.GeneratedGoURIToTuiURI(gl.URI)
+			if d.workspace != nil && d.workspace.GetWorkspaceAST(tuiURI) != nil {
+				if loc := d.locateInWorkspaceGsx(tuiURI, ctx.Word); loc != nil {
+					locs = append(locs, *loc)
+				} else {
+					log.Server("gopls returned generated file %s, skipping (word-based fallback preferred)", gl.URI)
+				}
 				continue
 			}
-			log.Server("gopls returned generated file %s, skipping (word-based fallback preferred)", gl.URI)
-			continue
 		}
 
 		// External file (standard library, etc.) — return as-is
@@ -646,7 +655,7 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 		})
 	}
 
-	return locs, nil
+	return locs
 }
 
 // --- Import definition ---
@@ -725,8 +734,9 @@ func offsetToLineChar(content string, offset int) (int, int) {
 	return line, offset - lineStart
 }
 
-// goFuncName matches the name of a top-level (receiver-less) func declaration.
-var goFuncName = regexp.MustCompile(`^func\s+(\w+)\s*\(`)
+// goFuncName matches the name of a top-level (receiver-less) func declaration,
+// generic or not.
+var goFuncName = regexp.MustCompile(`^func\s+(\w+)\s*[\[(]`)
 
 // locateInWorkspaceGsx finds the templ or top-level func named name in the
 // workspace .gsx file at tuiURI. Used to turn a gopls hit inside a generated
