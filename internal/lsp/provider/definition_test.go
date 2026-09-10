@@ -2,6 +2,7 @@ package provider
 
 import (
 	"testing"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/gopls"
 
@@ -513,6 +514,7 @@ func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
 		widgets: {
 			Components: []*tuigen.Component{
 				{Name: "Header", Position: tuigen.Position{Line: 5, Column: 1}, NamePos: tuigen.Position{Line: 5, Column: 7}},
+				{Name: "Café", Position: tuigen.Position{Line: 40, Column: 1}, NamePos: tuigen.Position{Line: 40, Column: 7}},
 			},
 			Funcs: []*tuigen.GoFunc{
 				{Code: "func NewCard(label string) *Card {\n\treturn &Card{}\n}", Position: tuigen.Position{Line: 12, Column: 1}},
@@ -526,6 +528,7 @@ func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
 		"function templ":        {uri: widgets, name: "Header", wantLine: 4, wantChar: 6},
 		"struct factory func":   {uri: widgets, name: "NewCard", wantLine: 11, wantChar: 5},
 		"generic factory func":  {uri: widgets, name: "NewList", wantLine: 29, wantChar: 5},
+		"unicode templ name":    {uri: widgets, name: "Café", wantLine: 39, wantChar: 6},
 		"method is not a match": {uri: widgets, name: "helper", wantLine: -1},
 		"unknown name":          {uri: widgets, name: "Nope", wantLine: -1},
 		"file not in workspace": {uri: "file:///w/other.gsx", name: "Header", wantLine: -1},
@@ -549,9 +552,10 @@ func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
 			if loc.URI != tt.uri || loc.Range.Start.Line != tt.wantLine {
 				t.Errorf("got %s:%d, want %s:%d", loc.URI, loc.Range.Start.Line, tt.uri, tt.wantLine)
 			}
-			if loc.Range.Start.Character != tt.wantChar || loc.Range.End.Character != tt.wantChar+len(tt.name) {
+			wantEnd := tt.wantChar + utf8.RuneCountInString(tt.name)
+			if loc.Range.Start.Character != tt.wantChar || loc.Range.End.Character != wantEnd {
 				t.Errorf("range = %d..%d, want %d..%d (the name itself)",
-					loc.Range.Start.Character, loc.Range.End.Character, tt.wantChar, tt.wantChar+len(tt.name))
+					loc.Range.Start.Character, loc.Range.End.Character, tt.wantChar, wantEnd)
 			}
 		})
 	}

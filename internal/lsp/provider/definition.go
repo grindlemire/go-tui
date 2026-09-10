@@ -3,6 +3,7 @@ package provider
 import (
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/gopls"
 	"github.com/grindlemire/go-tui/internal/lsp/log"
@@ -755,14 +756,14 @@ func (d *definitionProvider) locateInWorkspaceGsx(tuiURI, name string) *Location
 			if pos.Line == 0 {
 				pos = comp.Position
 			}
-			return locationAt(tuiURI, pos, 0, len(name))
+			return locationAt(tuiURI, pos, 0, utf8.RuneCountInString(name))
 		}
 	}
 	for _, fn := range ast.Funcs {
 		// The name is on the func's first line, so its byte offset into Code
 		// is its column offset from the func keyword.
 		if m := goFuncName.FindStringSubmatchIndex(fn.Code); m != nil && fn.Code[m[2]:m[3]] == name {
-			return locationAt(tuiURI, fn.Position, m[2], len(name))
+			return locationAt(tuiURI, fn.Position, utf8.RuneCountInString(fn.Code[:m[2]]), utf8.RuneCountInString(name))
 		}
 	}
 	return nil
@@ -783,8 +784,8 @@ func (d *definitionProvider) gsxAST(uri string) *tuigen.File {
 	return nil
 }
 
-// locationAt converts a 1-indexed tuigen position plus a same-line offset into
-// a single-line LSP location of the given length.
+// locationAt converts a 1-indexed tuigen position plus a same-line rune offset
+// into a single-line LSP location of the given rune length.
 func locationAt(uri string, pos tuigen.Position, offset, length int) *Location {
 	start := Position{Line: pos.Line - 1, Character: pos.Column - 1 + offset}
 	return &Location{

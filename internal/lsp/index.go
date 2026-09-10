@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/tuigen"
 )
@@ -361,7 +362,8 @@ func parseFuncSignature(code string) (name, signature string, params []FuncParam
 }
 
 // componentNameLocation spans the component's name (tuigen is 1-indexed, LSP
-// is 0-indexed). Falls back to the templ keyword for ASTs without NamePos.
+// is 0-indexed, both count runes). Falls back to the templ keyword for ASTs
+// without NamePos.
 func componentNameLocation(uri string, comp *tuigen.Component) Location {
 	pos := comp.NamePos
 	if pos.Line == 0 {
@@ -370,6 +372,6 @@ func componentNameLocation(uri string, comp *tuigen.Component) Location {
 	start := Position{Line: pos.Line - 1, Character: pos.Column - 1}
 	return Location{
 		URI:   uri,
-		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + len(comp.Name)}},
+		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + utf8.RuneCountInString(comp.Name)}},
 	}
 }

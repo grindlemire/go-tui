@@ -246,3 +246,18 @@ func TestComponentIndex_LocationSpansName(t *testing.T) {
 		t.Errorf("range = %d:%d..%d:%d, want 2:6..2:12", r.Start.Line, r.Start.Character, r.End.Line, r.End.Character)
 	}
 }
+
+// Columns are rune-based, so a non-ASCII name must not overshoot by its
+// extra UTF-8 bytes.
+func TestComponentIndex_LocationSpansUnicodeName(t *testing.T) {
+	idx := NewComponentIndex()
+	idx.Add("file:///w/a.gsx", &tuigen.Component{
+		Name:     "Café",
+		Position: tuigen.Position{Line: 1, Column: 1},
+		NamePos:  tuigen.Position{Line: 1, Column: 7},
+	})
+	info, _ := idx.Lookup("Café")
+	if got := info.Location.Range.End.Character; got != 10 {
+		t.Errorf("end = %d, want 10 (4 runes after column 6)", got)
+	}
+}
