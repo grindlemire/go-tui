@@ -26,6 +26,7 @@ func (p *Parser) parseFuncOrComponent() Node {
 		return nil
 	}
 
+	namePos := p.position()
 	name := p.current.Literal
 	p.advance()
 
@@ -62,6 +63,7 @@ func (p *Parser) parseFuncOrComponent() Node {
 	if returnType == "Element" {
 		comp := &Component{
 			Name:       name,
+			NamePos:    namePos,
 			Params:     params,
 			ReturnType: "*element.Element", // Internal representation stays the same
 			Position:   pos,
@@ -243,6 +245,7 @@ func (p *Parser) parseTempl() *Component {
 		return nil
 	}
 
+	namePos := p.position()
 	name := p.current.Literal
 	p.advance()
 
@@ -261,6 +264,7 @@ func (p *Parser) parseTempl() *Component {
 
 	comp := &Component{
 		Name:       name,
+		NamePos:    namePos,
 		Params:     params,
 		ReturnType: "*element.Element",
 		Position:   pos,
@@ -327,6 +331,7 @@ func (p *Parser) parseMethodTempl(pos Position) *Component {
 		p.errors.AddError(p.position(), "expected method name after receiver")
 		return nil
 	}
+	namePos := p.position()
 	name := p.current.Literal
 	if name != "Render" {
 		p.errors.AddErrorf(p.position(), "method templ name must be 'Render', got %q", name)
@@ -352,6 +357,7 @@ func (p *Parser) parseMethodTempl(pos Position) *Component {
 
 	comp := &Component{
 		Name:         name,
+		NamePos:      namePos,
 		ReturnType:   "*element.Element",
 		Position:     pos,
 		Receiver:     receiver,

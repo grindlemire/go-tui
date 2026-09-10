@@ -751,12 +751,18 @@ func (d *definitionProvider) locateInWorkspaceGsx(tuiURI, name string) *Location
 	}
 	for _, comp := range ast.Components {
 		if comp.Name == name {
-			return locationAt(tuiURI, comp.Position, len(name))
+			pos := comp.NamePos
+			if pos.Line == 0 {
+				pos = comp.Position
+			}
+			return locationAt(tuiURI, pos, 0, len(name))
 		}
 	}
 	for _, fn := range ast.Funcs {
-		if m := goFuncName.FindStringSubmatch(fn.Code); m != nil && m[1] == name {
-			return locationAt(tuiURI, fn.Position, len(name))
+		// The name is on the func's first line, so its byte offset into Code
+		// is its column offset from the func keyword.
+		if m := goFuncName.FindStringSubmatchIndex(fn.Code); m != nil && fn.Code[m[2]:m[3]] == name {
+			return locationAt(tuiURI, fn.Position, m[2], len(name))
 		}
 	}
 	return nil
@@ -777,9 +783,10 @@ func (d *definitionProvider) gsxAST(uri string) *tuigen.File {
 	return nil
 }
 
-// locationAt converts a 1-indexed tuigen position into a single-line LSP location.
-func locationAt(uri string, pos tuigen.Position, length int) *Location {
-	start := Position{Line: pos.Line - 1, Character: pos.Column - 1}
+// locationAt converts a 1-indexed tuigen position plus a same-line offset into
+// a single-line LSP location of the given length.
+func locationAt(uri string, pos tuigen.Position, offset, length int) *Location {
+	start := Position{Line: pos.Line - 1, Character: pos.Column - 1 + offset}
 	return &Location{
 		URI:   uri,
 		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + length}},

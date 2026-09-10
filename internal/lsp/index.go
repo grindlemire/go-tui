@@ -74,21 +74,9 @@ func (idx *ComponentIndex) Add(uri string, comp *tuigen.Component) {
 	defer idx.mu.Unlock()
 
 	info := &ComponentInfo{
-		Name:   comp.Name,
-		Params: comp.Params,
-		Location: Location{
-			URI: uri,
-			Range: Range{
-				Start: Position{
-					Line:      comp.Position.Line - 1, // tuigen is 1-indexed, LSP is 0-indexed
-					Character: comp.Position.Column - 1,
-				},
-				End: Position{
-					Line:      comp.Position.Line - 1,
-					Character: comp.Position.Column - 1 + len("@component") + 1 + len(comp.Name),
-				},
-			},
-		},
+		Name:     comp.Name,
+		Params:   comp.Params,
+		Location: componentNameLocation(uri, comp),
 	}
 
 	idx.Components[comp.Name] = info
@@ -370,4 +358,18 @@ func parseFuncSignature(code string) (name, signature string, params []FuncParam
 	}
 
 	return name, signature, params, returns
+}
+
+// componentNameLocation spans the component's name (tuigen is 1-indexed, LSP
+// is 0-indexed). Falls back to the templ keyword for ASTs without NamePos.
+func componentNameLocation(uri string, comp *tuigen.Component) Location {
+	pos := comp.NamePos
+	if pos.Line == 0 {
+		pos = comp.Position
+	}
+	start := Position{Line: pos.Line - 1, Character: pos.Column - 1}
+	return Location{
+		URI:   uri,
+		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + len(comp.Name)}},
+	}
 }

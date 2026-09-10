@@ -84,6 +84,7 @@ type Component struct {
 	Body            []Node // Element, GoCode, LetBinding, ForLoop, IfStmt
 	AcceptsChildren bool   // true if body contains {children...}
 	Position        Position
+	NamePos         Position // where Name starts (after the receiver for method templs)
 	// Method receiver fields (for templ (recv) Render() syntax)
 	Receiver     string // Full receiver text, e.g. "s *sidebar" (empty for function components)
 	ReceiverName string // Receiver variable name, e.g. "s" (empty for function components)
