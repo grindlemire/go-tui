@@ -374,3 +374,42 @@ templ List(items []string) {
 		t.Errorf("expected 2 references (decl + usage) for loop variable, got %d", len(result))
 	}
 }
+
+// A method templ is never called by name, so references for Render must be
+// its own declaration only, not another file's Render (VS Code runs
+// references when definition lands on the cursor, so a wrong hit here is a
+// wrong jump).
+func TestReferences_MethodTemplDoesNotMatchOtherRenders(t *testing.T) {
+	src := `package test
+
+type app struct{}
+
+templ (a *app) Render() {
+	<div>x</div>
+}
+`
+	doc := parseTestDoc(src)
+	comp := doc.AST.Components[0]
+
+	index := newStubIndex()
+	index.components["Render"] = &ComponentInfo{
+		Name:     "Render",
+		Location: Location{URI: "file:///w/widgets/header.gsx", Range: Range{Start: Position{Line: 16, Character: 16}}},
+	}
+	rp := newTestReferencesProvider(index, &stubDocAccessor{docs: []*Document{doc}})
+
+	ctx := makeCtx(doc, NodeKindComponent, "Render")
+	ctx.Node = comp
+
+	result, err := rp.References(ctx, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 {
+		t.Fatalf("expected only the declaration, got %d: %+v", len(result), result)
+	}
+	got := result[0]
+	if got.URI != doc.URI || got.Range.Start.Line != 4 || got.Range.Start.Character != 15 {
+		t.Errorf("got %s %d:%d, want %s 4:15 (the name in its own declaration)", got.URI, got.Range.Start.Line, got.Range.Start.Character, doc.URI)
+	}
+}

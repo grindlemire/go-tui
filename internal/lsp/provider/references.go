@@ -2,6 +2,7 @@ package provider
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/grindlemire/go-tui/internal/lsp/log"
 	"github.com/grindlemire/go-tui/internal/tuigen"
@@ -33,7 +34,15 @@ func (r *referencesProvider) References(ctx *CursorContext, includeDecl bool) ([
 
 	// Dispatch based on NodeKind when available
 	switch ctx.NodeKind {
-	case NodeKindComponentCall, NodeKindComponent:
+	case NodeKindComponent:
+		// The declaration under the cursor is the one to report; a by-name
+		// index lookup would pick any templ with the same name, and every
+		// method templ is called Render.
+		if comp, ok := ctx.Node.(*tuigen.Component); ok && comp != nil && comp.Name == word {
+			return r.findDeclaredComponentReferences(ctx.Document.URI, comp, includeDecl), nil
+		}
+		return r.findComponentReferences(strings.TrimPrefix(word, "@"), includeDecl), nil
+	case NodeKindComponentCall:
 		componentName := strings.TrimPrefix(word, "@")
 		return r.findComponentReferences(componentName, includeDecl), nil
 	case NodeKindFunction:
@@ -125,6 +134,33 @@ func (r *referencesProvider) findComponentReferences(name string, includeDecl bo
 	// Search workspace ASTs for files not open in editor
 	r.searchWorkspaceForComponentRefs(name, &refs)
 
+	return refs
+}
+
+// findDeclaredComponentReferences lists references for the component declared
+// at comp in uri. Method templs are mounted through their struct, never called
+// by name, so they have no call sites.
+func (r *referencesProvider) findDeclaredComponentReferences(uri string, comp *tuigen.Component, includeDecl bool) []Location {
+	var refs []Location
+	if includeDecl {
+		pos := comp.NamePos
+		if pos.Line == 0 {
+			pos = comp.Position
+		}
+		refs = append(refs, *locationAt(uri, pos, 0, utf8.RuneCountInString(comp.Name)))
+	}
+	if comp.Receiver != "" {
+		return refs
+	}
+	for _, doc := range r.docs.AllDocuments() {
+		if doc.AST == nil {
+			continue
+		}
+		for _, c := range doc.AST.Components {
+			findComponentCallsInNodes(c.Body, comp.Name, doc.URI, &refs)
+		}
+	}
+	r.searchWorkspaceForComponentRefs(comp.Name, &refs)
 	return refs
 }
 
