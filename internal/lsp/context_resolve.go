@@ -64,8 +64,12 @@ func resolveFromAST(ctx *CursorContext, file *tuigen.File) {
 	// precise match regardless of component ordering.
 	for _, comp := range file.Components {
 		if line == comp.Position.Line {
-			// Check if cursor is on the component name
-			nameStart := comp.Position.Column
+			// Check if cursor is on the component name (NamePos accounts for
+			// the receiver in method templs; older ASTs fall back to the keyword)
+			nameStart := comp.NamePos.Column
+			if comp.NamePos.Line == 0 {
+				nameStart = comp.Position.Column
+			}
 			nameEnd := nameStart + len(comp.Name)
 			if col >= nameStart && col <= nameEnd {
 				ctx.Node = comp

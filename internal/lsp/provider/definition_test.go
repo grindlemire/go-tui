@@ -660,3 +660,36 @@ func TestDefinition_QualifiedCallNotShadowedByLocalFunc(t *testing.T) {
 		}
 	}
 }
+
+// Definition on a component's own declaration name resolves to that
+// declaration, not to another file's component that shares the name (every
+// method templ is called Render).
+func TestDefinition_ComponentDeclarationResolvesToItself(t *testing.T) {
+	index := newStubIndex()
+	index.components["Render"] = &ComponentInfo{
+		Name:     "Render",
+		Location: Location{URI: "file:///w/widgets/header.gsx", Range: Range{Start: Position{Line: 16, Character: 16}}},
+	}
+	dp := newTestDefinitionProvider(index)
+
+	doc := parseTestDoc("package test")
+	ctx := makeCtx(doc, NodeKindComponent, "Render")
+	ctx.Node = &tuigen.Component{
+		Name:     "Render",
+		Receiver: "a *app",
+		Position: tuigen.Position{Line: 9, Column: 1},
+		NamePos:  tuigen.Position{Line: 9, Column: 17},
+	}
+
+	result, err := dp.Definition(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 {
+		t.Fatalf("expected 1 location, got %d: %+v", len(result), result)
+	}
+	got := result[0]
+	if got.URI != doc.URI || got.Range.Start.Line != 8 || got.Range.Start.Character != 16 || got.Range.End.Character != 22 {
+		t.Errorf("got %s %d:%d..%d, want %s 8:16..22", got.URI, got.Range.Start.Line, got.Range.Start.Character, got.Range.End.Character, doc.URI)
+	}
+}

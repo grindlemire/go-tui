@@ -88,6 +88,16 @@ func (d *definitionProvider) Definition(ctx *CursorContext) ([]Location, error) 
 		}
 		// Fall through to gopls
 	case NodeKindFunction, NodeKindComponent, NodeKindGoDecl:
+		// The cursor on a component's own name is its definition. Resolving
+		// by name instead would land on any other templ called the same
+		// thing, and every method templ is called Render.
+		if comp, ok := ctx.Node.(*tuigen.Component); ok && comp != nil && comp.Name == word {
+			pos := comp.NamePos
+			if pos.Line == 0 {
+				pos = comp.Position
+			}
+			return []Location{*locationAt(ctx.Document.URI, pos, 0, utf8.RuneCountInString(comp.Name))}, nil
+		}
 		// Try local AST-based lookup first (avoids gopls offset issues)
 		if ctx.Document.AST != nil && word != "" {
 			if loc := d.findGoDeclNameInAST(ctx.Document.AST, word, ctx.Document.URI); loc != nil {
