@@ -538,10 +538,35 @@ func TestLexer_QualifiedComponentCall(t *testing.T) {
 			wantType:    TokenAtCall,
 			wantLiteral: "widgets.Header",
 		},
-		"qualified call with space before paren": {
-			input:       "@widgets.Header (",
+		"expression followed by spaced paren text stays TokenAtExpr": {
+			input:       "@c.icon (beta)",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.icon",
+		},
+		"nested field expression stays TokenAtExpr": {
+			input:       "@c.a.b",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.a.b",
+		},
+		"receiver method call emits TokenAtCall": {
+			input:       "@c.method(",
 			wantType:    TokenAtCall,
-			wantLiteral: "widgets.Header",
+			wantLiteral: "c.method",
+		},
+		"paren on the next line does not make a call": {
+			input:       "@c.field\n(",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.field",
+		},
+		"expression at EOF stays TokenAtExpr": {
+			input:       "@c.field",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.field",
+		},
+		"call name with digits keeps the digits": {
+			input:       "@Header2(",
+			wantType:    TokenAtCall,
+			wantLiteral: "Header2",
 		},
 		"receiver field without call stays TokenAtExpr": {
 			input:       "@c.textarea",

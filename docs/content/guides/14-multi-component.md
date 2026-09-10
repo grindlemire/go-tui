@@ -353,7 +353,7 @@ templ App() {
 }
 ```
 
-`@widgets.Header(...)` compiles to a plain call to `widgets.Header(...)`, the same as a call within one package. A function templ returns a view struct that the parent adds to the tree. A struct component constructor is mounted through `app.Mount` when called from another struct component. Run `tui generate ./...` from the module root so the `.gsx` files in every package are compiled.
+`@widgets.Header(...)` compiles to a plain call to `widgets.Header(...)`, the same as a call within one package. Called from a function templ, the call returns a view whose root the parent adds to the tree. Called from a struct component's `Render`, it is mounted through `app.Mount`, whether the target is a function templ or a struct constructor. Run `tui generate ./...` from the module root so the `.gsx` files in every package are compiled.
 
 A struct component instance held in a field also works across packages, because `@c.field` only needs a value that implements `Component`:
 
