@@ -12,7 +12,7 @@ func TestNewDefinitionProvider_Constructor(t *testing.T) {
 		Name:     "helper",
 		Location: Location{URI: "file:///lib.gsx", Range: Range{Start: Position{Line: 9, Character: 0}}},
 	}
-	dp := NewDefinitionProvider(index, &nilGoplsProxy{}, &nilVirtualFiles{}, &stubDocAccessor{})
+	dp := NewDefinitionProvider(index, &nilGoplsProxy{}, &nilVirtualFiles{}, &stubDocAccessor{}, &stubWorkspaceAST{})
 	if dp == nil {
 		t.Fatal("expected non-nil provider")
 	}

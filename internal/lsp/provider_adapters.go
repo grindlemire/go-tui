@@ -204,7 +204,7 @@ func (s *Server) CreateProviderRegistry() *Registry {
 	return &Registry{
 		Hover:           newHoverProviderAdapter(provider.NewHoverProvider(indexAdapter, proxyAdapter, vfAdapter)),
 		Completion:      newCompletionProviderAdapter(provider.NewCompletionProvider(indexAdapter, proxyAdapter, vfAdapter)),
-		Definition:      newDefinitionProviderAdapter(provider.NewDefinitionProvider(indexAdapter, proxyAdapter, vfAdapter, docsAdapter)),
+		Definition:      newDefinitionProviderAdapter(provider.NewDefinitionProvider(indexAdapter, proxyAdapter, vfAdapter, docsAdapter, workspaceAdapter)),
 		References:      newReferencesProviderAdapter(provider.NewReferencesProvider(indexAdapter, docsAdapter, workspaceAdapter)),
 		DocumentSymbol:  newDocumentSymbolProviderAdapter(provider.NewDocumentSymbolProvider()),
 		WorkspaceSymbol: newWorkspaceSymbolProviderAdapter(provider.NewWorkspaceSymbolProvider(indexAdapter)),

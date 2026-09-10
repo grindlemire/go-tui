@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/grindlemire/go-tui/internal/lsp/gopls"
@@ -14,15 +15,17 @@ type definitionProvider struct {
 	goplsProxy   GoplsProxyAccessor
 	virtualFiles VirtualFileAccessor
 	docs         DocumentAccessor
+	workspace    WorkspaceASTAccessor
 }
 
 // NewDefinitionProvider creates a new definition provider.
-func NewDefinitionProvider(index ComponentIndex, proxy GoplsProxyAccessor, vf VirtualFileAccessor, docs DocumentAccessor) DefinitionProvider {
+func NewDefinitionProvider(index ComponentIndex, proxy GoplsProxyAccessor, vf VirtualFileAccessor, docs DocumentAccessor, workspace WorkspaceASTAccessor) DefinitionProvider {
 	return &definitionProvider{
 		index:        index,
 		goplsProxy:   proxy,
 		virtualFiles: vf,
 		docs:         docs,
+		workspace:    workspace,
 	}
 }
 
@@ -175,7 +178,9 @@ func (d *definitionProvider) definitionComponentCall(ctx *CursorContext) ([]Loca
 		return []Location{funcInfo.Location}, nil
 	}
 
-	return nil, nil
+	// Not in the workspace index (e.g. @pkg.Name from another package):
+	// the virtual Go file maps the name, so let gopls resolve it.
+	return d.getGoplsDefinition(ctx)
 }
 
 // definitionRefFromScope checks if the word under the cursor matches a
@@ -619,9 +624,14 @@ func (d *definitionProvider) getGoplsDefinition(ctx *CursorContext) ([]Location,
 
 		// Real generated _gsx.go files have structural differences from
 		// the virtual Go file (different ordering, goimports blank lines),
-		// making source map reverse-translation unreliable. Skip these
-		// and let the word-based fallback handle them via AST lookup.
+		// making source map reverse-translation unreliable. Find the
+		// declaration by name in the sibling .gsx instead; if that fails,
+		// skip and let the word-based fallback handle it via AST lookup.
 		if gopls.IsGeneratedGoFile(gl.URI) {
+			if loc := d.locateInWorkspaceGsx(gopls.GeneratedGoURIToTuiURI(gl.URI), ctx.Word); loc != nil {
+				locs = append(locs, *loc)
+				continue
+			}
 			log.Server("gopls returned generated file %s, skipping (word-based fallback preferred)", gl.URI)
 			continue
 		}
@@ -713,4 +723,40 @@ func offsetToLineChar(content string, offset int) (int, int) {
 		}
 	}
 	return line, offset - lineStart
+}
+
+// goFuncName matches the name of a top-level (receiver-less) func declaration.
+var goFuncName = regexp.MustCompile(`^func\s+(\w+)\s*\(`)
+
+// locateInWorkspaceGsx finds the templ or top-level func named name in the
+// workspace .gsx file at tuiURI. Used to turn a gopls hit inside a generated
+// _gsx.go file into a location in the source the user edits.
+func (d *definitionProvider) locateInWorkspaceGsx(tuiURI, name string) *Location {
+	if d.workspace == nil || name == "" {
+		return nil
+	}
+	ast := d.workspace.GetWorkspaceAST(tuiURI)
+	if ast == nil {
+		return nil
+	}
+	for _, comp := range ast.Components {
+		if comp.Name == name {
+			return locationAt(tuiURI, comp.Position, len(name))
+		}
+	}
+	for _, fn := range ast.Funcs {
+		if m := goFuncName.FindStringSubmatch(fn.Code); m != nil && m[1] == name {
+			return locationAt(tuiURI, fn.Position, len(name))
+		}
+	}
+	return nil
+}
+
+// locationAt converts a 1-indexed tuigen position into a single-line LSP location.
+func locationAt(uri string, pos tuigen.Position, length int) *Location {
+	start := Position{Line: pos.Line - 1, Character: pos.Column - 1}
+	return &Location{
+		URI:   uri,
+		Range: Range{Start: start, End: Position{Line: start.Line, Character: start.Character + length}},
+	}
 }

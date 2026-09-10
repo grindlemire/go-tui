@@ -224,3 +224,51 @@ func TestGenerateVirtualGo_ExistingFunctionality(t *testing.T) {
 		t.Fatal("expected non-nil source map")
 	}
 }
+
+// The component call name must be mapped so gopls can resolve definition and
+// hover on a package-qualified call such as @widgets.Header(...).
+func TestGenerateVirtualGo_ComponentCallNameMapping(t *testing.T) {
+	const name = "widgets.Header"
+	file := &tuigen.File{
+		Package: "main",
+		Components: []*tuigen.Component{
+			{
+				Name:       "App",
+				Position:   tuigen.Position{Line: 3, Column: 1},
+				ReturnType: "*element.Element",
+				Body: []tuigen.Node{
+					&tuigen.ComponentCall{
+						Name:     name,
+						Args:     `"hi"`,
+						Position: tuigen.Position{Line: 4, Column: 2}, // points at the @
+					},
+				},
+			},
+		},
+	}
+
+	source, sm := GenerateVirtualGo(file)
+
+	goLine, goCol := -1, -1
+	for i, line := range strings.Split(source, "\n") {
+		if idx := strings.Index(line, "_ = "+name+"("); idx >= 0 {
+			goLine, goCol = i, idx+len("_ = ")
+		}
+	}
+	if goLine < 0 {
+		t.Fatalf("virtual Go lacks the call, got:\n%s", source)
+	}
+
+	// 0-based .gsx position of the first rune of the name (after the @).
+	tuiLine, tuiCol := 3, 2
+	for _, off := range []int{0, len("widgets"), len(name)} {
+		gotLine, gotCol, found := sm.TuiToGo(tuiLine, tuiCol+off)
+		if !found {
+			t.Errorf("offset %d: no mapping for the call name", off)
+			continue
+		}
+		if gotLine != goLine || gotCol != goCol+off {
+			t.Errorf("offset %d: mapped to %d:%d, want %d:%d", off, gotLine, gotCol, goLine, goCol+off)
+		}
+	}
+}

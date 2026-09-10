@@ -495,3 +495,55 @@ func TestContainsVarDecl(t *testing.T) {
 		})
 	}
 }
+
+// A gopls hit inside a generated _gsx.go file is translated to the templ or
+// func declaration in the sibling .gsx via the workspace AST.
+func TestDefinition_LocateInWorkspaceGsx(t *testing.T) {
+	type tc struct {
+		uri      string
+		name     string
+		wantLine int // -1 means no location
+	}
+
+	const widgets = "file:///w/widgets.gsx"
+	ws := &stubWorkspaceAST{asts: map[string]*tuigen.File{
+		widgets: {
+			Components: []*tuigen.Component{
+				{Name: "Header", Position: tuigen.Position{Line: 5, Column: 1}},
+			},
+			Funcs: []*tuigen.GoFunc{
+				{Code: "func NewCard(label string) *Card {\n\treturn &Card{}\n}", Position: tuigen.Position{Line: 12, Column: 1}},
+				{Code: "func (c *Card) helper() {}", Position: tuigen.Position{Line: 20, Column: 1}},
+			},
+		},
+	}}
+
+	tests := map[string]tc{
+		"function templ":        {uri: widgets, name: "Header", wantLine: 4},
+		"struct factory func":   {uri: widgets, name: "NewCard", wantLine: 11},
+		"method is not a match": {uri: widgets, name: "helper", wantLine: -1},
+		"unknown name":          {uri: widgets, name: "Nope", wantLine: -1},
+		"file not in workspace": {uri: "file:///w/other.gsx", name: "Header", wantLine: -1},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			dp := newTestDefinitionProvider(newStubIndex())
+			dp.workspace = ws
+
+			loc := dp.locateInWorkspaceGsx(tt.uri, tt.name)
+			if tt.wantLine < 0 {
+				if loc != nil {
+					t.Fatalf("expected no location, got %+v", *loc)
+				}
+				return
+			}
+			if loc == nil {
+				t.Fatal("expected a location, got nil")
+			}
+			if loc.URI != tt.uri || loc.Range.Start.Line != tt.wantLine {
+				t.Errorf("got %s:%d, want %s:%d", loc.URI, loc.Range.Start.Line, tt.uri, tt.wantLine)
+			}
+		})
+	}
+}

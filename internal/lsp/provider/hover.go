@@ -237,7 +237,8 @@ func (h *hoverProvider) hoverComponentCall(ctx *CursorContext) (*Hover, error) {
 	if info, ok := h.index.Lookup(call.Name); ok {
 		return hoverForComponentInfo(info), nil
 	}
-	return nil, nil
+	// Not in the workspace index (e.g. @pkg.Name from another package).
+	return h.getGoplsHover(ctx)
 }
 
 func (h *hoverProvider) hoverRefAttr(ctx *CursorContext) (*Hover, error) {
