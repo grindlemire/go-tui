@@ -329,6 +329,52 @@ func (s *sidebar) BindApp(app *tui.App) {
 }
 ```
 
+## Components Across Packages
+
+Components are ordinary Go functions and types, so they can live in any package. Import the package and call the component with its qualified name:
+
+```
+myapp/
+  widgets/
+    header.gsx     -> header_gsx.go   (package widgets)
+  main.go
+  app.gsx          -> app_gsx.go      (package main)
+```
+
+```gsx
+package main
+
+import "example.com/myapp/widgets"
+
+templ App() {
+    <div class="flex-col">
+        @widgets.Header("Dashboard")
+    </div>
+}
+```
+
+`@widgets.Header(...)` compiles to a plain call to `widgets.Header(...)`, the same as a call within one package. A function templ returns a view struct that the parent adds to the tree. A struct component constructor is mounted through `app.Mount` when called from another struct component. Run `tui generate ./...` from the module root so the `.gsx` files in every package are compiled.
+
+A struct component instance held in a field also works across packages, because `@c.field` only needs a value that implements `Component`:
+
+```gsx
+package main
+
+import "example.com/myapp/settings"
+
+type app struct {
+    settings *settings.Panel
+}
+
+templ (a *app) Render() {
+    <div class="flex-col">
+        @a.settings
+    </div>
+}
+```
+
+The usual Go rules apply. The component must be exported to be visible outside its package, and a struct component constructor can only be called from a struct component, whichever package it lives in.
+
 ## Architecture Patterns
 
 ### Orchestrator Pattern

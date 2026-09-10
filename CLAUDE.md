@@ -395,11 +395,12 @@ templ Counter(count int) {
     <div>{label}</div>
 }
 
-// Component calls
+// Component calls (qualified names call components from other packages)
 templ App() {
     <div class="flex-col">
         @Header("Hello")
         @Counter(0)
+        @widgets.Footer("v1")
     </div>
 }
 
