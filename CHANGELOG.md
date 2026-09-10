@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.2](https://github.com/grindlemire/go-tui/compare/v0.20.1...v0.20.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* **lsp:** highlight the component name on go-to-definition ([#136](https://github.com/grindlemire/go-tui/issues/136)) ([3b09114](https://github.com/grindlemire/go-tui/commit/3b0911474db61996e037e1444a1be772ecf1b611))
+
 ## [0.20.1](https://github.com/grindlemire/go-tui/compare/v0.20.0...v0.20.1) (2026-09-10)
 
 
