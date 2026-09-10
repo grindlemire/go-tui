@@ -1,6 +1,7 @@
 package tuigen
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -845,6 +846,34 @@ templ (r *Root) Render() {
 			}
 			if len(call.Children) != tt.wantChildren {
 				t.Errorf("children = %d, want %d", len(call.Children), tt.wantChildren)
+			}
+		})
+	}
+}
+
+// A component call whose "(" is on the next line must be reported, not
+// silently dropped from the body.
+func TestParser_ComponentCallMissingParen(t *testing.T) {
+	type tc struct {
+		input string
+	}
+
+	tests := map[string]tc{
+		"bare name": {
+			input: "package x\ntempl App() {\n\t@Header\n\t(\"x\")\n}",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			_, err := p.ParseFile()
+			if err == nil {
+				t.Fatal("expected a parse error, got nil")
+			}
+			if !strings.Contains(err.Error(), "expected (") {
+				t.Errorf("error should mention the missing paren, got: %v", err)
 			}
 		})
 	}

@@ -136,11 +136,11 @@ func (p *Parser) parseControlFlowOrBinding() Node {
 		}
 		p.restoreState(saved)
 	case TokenAtCall:
-		saved := p.saveState()
+		// No restore: an @Call token has no other reading, and restoring
+		// would discard the "expected (" diagnostic.
 		if call := p.parseComponentCall(); call != nil {
 			return call
 		}
-		p.restoreState(saved)
 	case TokenAtExpr:
 		if expr := p.parseComponentExpr(); expr != nil {
 			return expr
