@@ -224,14 +224,14 @@
       ]
     },
     "component-call": {
-      "comment": "@Name(args) or @pkg.Name(args); the paren must be adjacent (matching the lexer), args are Go, and like pkg.Func() only the last segment is coloured",
+      "comment": "@Name(args) or @pkg.Name(args); the paren must be adjacent (matching the lexer) and args are Go",
       "name": "meta.component-call.gsx",
-      "begin": "(@)((?:[a-zA-Z_][a-zA-Z0-9_]*\\.)*)([a-zA-Z_][a-zA-Z0-9_]*)(\\()",
+      "begin": "(@)((?:[a-zA-Z_][a-zA-Z0-9_]*\\.)*[a-zA-Z_][a-zA-Z0-9_]*)(\\()",
       "end": "\\)",
       "beginCaptures": {
         "1": { "name": "punctuation.definition.component-call.gsx" },
-        "3": { "name": "entity.name.function.component-call.gsx" },
-        "4": { "name": "punctuation.definition.arguments.begin.gsx" }
+        "2": { "name": "entity.name.function.component-call.gsx" },
+        "3": { "name": "punctuation.definition.arguments.begin.gsx" }
       },
       "endCaptures": {
         "0": { "name": "punctuation.definition.arguments.end.gsx" }
