@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.20.0](https://github.com/grindlemire/go-tui/compare/v0.19.0...v0.20.0) (2026-09-10)
+
+
+### Features
+
+* support package-qualified component calls ([#132](https://github.com/grindlemire/go-tui/issues/132)) ([f8036c9](https://github.com/grindlemire/go-tui/commit/f8036c9f0f1bb18b6d59913c1eaf77b4a3c89818))
+
+
+### Bug Fixes
+
+* **layout:** measure row heights at post-flex child widths ([#128](https://github.com/grindlemire/go-tui/issues/128)) ([edb4d16](https://github.com/grindlemire/go-tui/commit/edb4d160bbf160d1c706f19a9bda1c15756f37ad))
+
 ## [0.19.0](https://github.com/grindlemire/go-tui/compare/v0.18.2...v0.19.0) (2026-08-06)
 
 
