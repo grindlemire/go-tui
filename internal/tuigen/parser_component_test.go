@@ -862,6 +862,9 @@ func TestParser_ComponentCallMissingParen(t *testing.T) {
 		"bare name": {
 			input: "package x\ntempl App() {\n\t@Header\n\t(\"x\")\n}",
 		},
+		"inside a for body in an element": {
+			input: "package x\ntempl App(items []int) {\n\t<div>\n\t\tfor _, i := range items {\n\t\t\t@Item\n\t\t\t(i)\n\t\t}\n\t</div>\n}",
+		},
 	}
 
 	for name, tt := range tests {
