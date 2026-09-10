@@ -587,12 +587,24 @@ func TestDefinition_TranslateGoplsLocations(t *testing.T) {
 			goURI: "file:///usr/local/go/src/fmt/print.go", word: "Println",
 			wantURI: "file:///usr/local/go/src/fmt/print.go", wantLine: 57,
 		},
+		"open document maps to its .gsx even though the workspace cache dropped it": {
+			goURI: "file:///w/open_gsx.go", word: "Panel",
+			wantURI: "file:///w/open.gsx", wantLine: 2,
+		},
 	}
+
+	// Opening a file moves its AST from the workspace cache to the document
+	// manager, so the provider must consult both.
+	openDocs := &stubDocAccessor{docs: []*Document{{
+		URI: "file:///w/open.gsx",
+		AST: &tuigen.File{Components: []*tuigen.Component{{Name: "Panel", Position: tuigen.Position{Line: 3, Column: 1}}}},
+	}}}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			dp := newTestDefinitionProvider(newStubIndex())
 			dp.workspace = ws
+			dp.docs = openDocs
 			ctx := makeCtx(parseTestDoc("package test"), NodeKindComponentCall, tt.word)
 
 			got := dp.translateGoplsLocations(ctx, []gopls.Location{{
