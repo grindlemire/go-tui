@@ -163,17 +163,18 @@ func (l *Lexer) readAtKeyword() Token {
 		return l.makeToken(TokenError, "@let")
 	default:
 		if len(keyword) > 0 {
-			firstRune, _ := utf8.DecodeRuneInString(keyword)
-			if unicode.IsUpper(firstRune) {
-				// Uppercase: component function call @Header()
-				return l.makeToken(TokenAtCall, keyword)
-			}
-			// Lowercase: component expression @c.textarea (renders a Component)
-			// Continue reading the full expression (field access, etc.)
+			// Read the rest of a dotted name: @pkg.Header, @c.textarea, @c.a.b
 			for l.ch == '.' || isLetter(l.ch) || isDigit(l.ch) {
 				l.readChar()
 			}
 			expr := l.source[startPos:l.pos]
+			firstRune, _ := utf8.DecodeRuneInString(keyword)
+			// Uppercase (@Header) or a call site (@pkg.Header(...)) is a
+			// component call; otherwise it is an expression that renders a
+			// Component held in a field (@c.textarea).
+			if unicode.IsUpper(firstRune) || l.peekPastBlanks() == '(' {
+				return l.makeToken(TokenAtCall, expr)
+			}
 			return l.makeToken(TokenAtExpr, expr)
 		}
 		l.errors.AddErrorf(l.position(), "unknown @ keyword: @%s", keyword)
@@ -238,4 +239,18 @@ func (l *Lexer) SourceRange(start, end int) string {
 		return ""
 	}
 	return l.source[start:end]
+}
+
+// peekPastBlanks returns the first character at or after the current one that
+// is not a space or tab, without consuming input. Returns 0 at EOF.
+func (l *Lexer) peekPastBlanks() rune {
+	if l.ch != ' ' && l.ch != '\t' {
+		return l.ch
+	}
+	for i := l.readPos; i < len(l.source); i++ {
+		if c := l.source[i]; c != ' ' && c != '\t' {
+			return rune(c)
+		}
+	}
+	return 0
 }

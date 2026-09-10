@@ -524,3 +524,52 @@ func TestLexer_Underscore(t *testing.T) {
 		})
 	}
 }
+
+func TestLexer_QualifiedComponentCall(t *testing.T) {
+	type tc struct {
+		input       string
+		wantType    TokenType
+		wantLiteral string
+	}
+
+	tests := map[string]tc{
+		"package-qualified call emits TokenAtCall with full name": {
+			input:       "@widgets.Header(",
+			wantType:    TokenAtCall,
+			wantLiteral: "widgets.Header",
+		},
+		"qualified call with space before paren": {
+			input:       "@widgets.Header (",
+			wantType:    TokenAtCall,
+			wantLiteral: "widgets.Header",
+		},
+		"receiver field without call stays TokenAtExpr": {
+			input:       "@c.textarea",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.textarea",
+		},
+		"exported receiver field without call stays TokenAtExpr": {
+			input:       "@c.Panel",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.Panel",
+		},
+		"bare call unchanged": {
+			input:       "@Header(",
+			wantType:    TokenAtCall,
+			wantLiteral: "Header",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			tok := l.Next()
+			if tok.Type != tt.wantType {
+				t.Errorf("type = %s, want %s", tok.Type, tt.wantType)
+			}
+			if tok.Literal != tt.wantLiteral {
+				t.Errorf("literal = %q, want %q", tok.Literal, tt.wantLiteral)
+			}
+		})
+	}
+}

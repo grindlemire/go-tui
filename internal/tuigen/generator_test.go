@@ -1685,3 +1685,86 @@ templ (r *lifecycleRow) Render() {
 		})
 	}
 }
+
+func TestGenerator_QualifiedComponentCall(t *testing.T) {
+	type tc struct {
+		input           string
+		wantContains    []string
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"function templ calls the qualified function and uses .Root": {
+			input: `package x
+
+import "example.com/app/widgets"
+
+templ Parent() {
+	<div>
+		@widgets.Header("hi")
+	</div>
+}`,
+			wantContains: []string{
+				`__tui_1 := widgets.Header("hi")`,
+				"__tui_0.AddChild(__tui_1.Root)",
+			},
+			wantNotContains: []string{
+				"widgets.Header.Render",
+				`tui.WithText("(")`,
+			},
+		},
+		"method templ mounts the qualified factory": {
+			input: `package x
+
+import "example.com/app/widgets"
+
+type Root struct{}
+
+templ (r *Root) Render() {
+	<div>
+		@widgets.NewCard("hi")
+	</div>
+}`,
+			wantContains: []string{
+				"app.Mount(r, 0, func() tui.Component {",
+				`return widgets.NewCard("hi")`,
+			},
+			wantNotContains: []string{
+				"widgets.NewCard.Render",
+			},
+		},
+		"qualified call in let binding": {
+			input: `package x
+
+import "example.com/app/widgets"
+
+templ Parent() {
+	h := @widgets.Header("hi")
+	<div>{h}</div>
+}`,
+			wantContains: []string{
+				`widgets.Header("hi")`,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing expected string: %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(code, notWant) {
+					t.Errorf("output contains unexpected string: %q\nGot:\n%s", notWant, code)
+				}
+			}
+		})
+	}
+}
