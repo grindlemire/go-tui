@@ -45,6 +45,10 @@
   "@" @punctuation.special
   name: (identifier) @function.call)
 
+(component_call
+  "@" @punctuation.special
+  name: (qualified_identifier) @function.call)
+
 ; ====================
 ; Elements (Tags)
 ; ====================

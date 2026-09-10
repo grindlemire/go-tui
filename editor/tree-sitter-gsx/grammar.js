@@ -250,11 +250,15 @@ module.exports = grammar({
         1,
         seq(
           "@",
-          field("name", $.identifier),
+          field("name", choice($.qualified_identifier, $.identifier)),
           field("arguments", $.argument_list),
           optional(field("children", $.block)),
         ),
       ),
+
+    // Package-qualified component name: @widgets.Header(...)
+    qualified_identifier: ($) =>
+      seq($.identifier, repeat1(seq(".", $.identifier))),
 
     // Children slot: {children...}
     children_slot: ($) => seq("{", "children", "...", "}"),
