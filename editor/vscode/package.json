@@ -94,7 +94,8 @@
     "vscode:prepublish": "bun run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "bunx @vscode/vsce package --allow-missing-repository"
+    "package": "bunx @vscode/vsce package --allow-missing-repository",
+    "test": "bun test"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -102,6 +103,8 @@
   "devDependencies": {
     "@types/node": "^25.0.10",
     "@types/vscode": "^1.75.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   }
 }

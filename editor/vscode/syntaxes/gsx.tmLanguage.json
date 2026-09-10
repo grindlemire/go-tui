@@ -200,9 +200,9 @@
           }
         },
         {
-          "comment": "Short binding: name := <element> or name := @Component()",
+          "comment": "Short binding: name := <element> or name := @Component() / @pkg.Component()",
           "name": "meta.control.binding.gsx",
-          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:=)\\s*(?=<|@[A-Z])",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:=)\\s*(?=<|@[a-zA-Z_])",
           "captures": {
             "1": { "name": "variable.other.gsx" },
             "2": { "name": "keyword.operator.assignment.gsx" }
@@ -224,12 +224,24 @@
       ]
     },
     "component-call": {
+      "comment": "@Name(args) or @pkg.Name(args); the paren must be adjacent (matching the lexer) and args are Go",
       "name": "meta.component-call.gsx",
-      "match": "(@)([A-Z][a-zA-Z0-9_]*)\\s*\\(",
-      "captures": {
+      "begin": "(@)((?:[a-zA-Z_][a-zA-Z0-9_]*\\.)*[a-zA-Z_][a-zA-Z0-9_]*)(\\()",
+      "end": "\\)",
+      "beginCaptures": {
         "1": { "name": "punctuation.definition.component-call.gsx" },
-        "2": { "name": "entity.name.function.component-call.gsx" }
-      }
+        "2": { "name": "entity.name.function.component-call.gsx" },
+        "3": { "name": "punctuation.definition.arguments.begin.gsx" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.arguments.end.gsx" }
+      },
+      "contentName": "meta.embedded.block.go",
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#go-nested-parens" },
+        { "include": "#go-expression-content" }
+      ]
     },
     "element": {
       "patterns": [
@@ -627,6 +639,17 @@
         { "include": "#comments" },
         { "include": "#strings" },
         { "include": "#go-nested-block" },
+        { "include": "#go-expression-content" }
+      ]
+    },
+    "go-nested-parens": {
+      "comment": "Recursive paren matching inside call arguments",
+      "begin": "\\(",
+      "end": "\\)",
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#go-nested-parens" },
         { "include": "#go-expression-content" }
       ]
     },
