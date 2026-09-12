@@ -322,6 +322,56 @@ for _, msg := range s.messages {
 
 Keys compose by depth. A `key` replaces the loop position at its own level, loops nested inside a keyed wrapper still contribute their own identity, and a `key` nested under another `key` appends to it rather than erasing it. One caveat: components passed into a children slot are mounted at the caller's site, so a keyed wrapper inside the receiving component does not re-key them.
 
+### Options attribute
+
+The `options` attribute forwards a slice of option funcs to the element's constructor. It is how a reusable component wraps a built-in element and still lets callers tune it without redeclaring every attribute:
+
+```gsx
+type dialog struct {
+    open     *tui.State[bool]
+    title    string
+    opts     []tui.ModalOption
+    children []*tui.Element
+}
+
+func Dialog(open *tui.State[bool], title string, opts []tui.ModalOption, children []*tui.Element) *dialog {
+    return &dialog{open: open, title: title, opts: opts, children: children}
+}
+
+templ (d *dialog) Render() {
+    <modal open={d.open} class="justify-center items-center" options={d.opts}>
+        <div class="border-rounded p-1 flex-col gap-1">
+            <span class="font-bold">{d.title}</span>
+            {children...}
+        </div>
+    </modal>
+}
+
+templ Card(title string, opts ...tui.Option) {
+    <div class="border-rounded p-1" options={opts}>
+        <span>{title}</span>
+    </div>
+}
+```
+
+A caller then writes `@Card("Stats", tui.WithBorder(tui.BorderDouble))`, or for the dialog:
+
+```gsx
+@Dialog(s.confirm, "Delete?", []tui.ModalOption{tui.WithModalBackdrop("blank")}) {
+    <button class="focusable" onActivate={s.delete}>Delete</button>
+}
+```
+
+`Card` can take a variadic `...tui.Option` because it has no children slot. A templ or constructor that accepts `{children...}` receives the children as its final parameter, so declare the options there as a slice (`opts []tui.ModalOption`) and pass a slice literal at the call site.
+
+Three rules apply:
+
+1. The value must be a Go expression. `options="x"` and `options=1` are compile errors.
+2. The slice type follows the tag. Plain elements take `[]tui.Option`; component elements take their constructor's option type: `[]tui.ModalOption` for `<modal>`, `[]tui.TextAreaOption` for `<textarea>`, `[]tui.InputOption` for `<input>`, and `[]tui.MarkdownOption` for `<markdown>`. Nothing is annotated in the `.gsx` file; the Go compiler checks the generated code.
+3. The slice is applied after the attribute-derived options, so an entry in the slice overrides the matching attribute. The generated code has the shape `tui.New(append([]tui.Option{...attribute options...}, opts...)...)`.
+
+An element accepts one `options` attribute; a second is a compile error. Component elements are mounted once, so like their other attributes the forwarded options take effect on first mount.
+
 ## Attribute reference
 
 ### Generic attributes (all elements)
@@ -334,6 +384,7 @@ Keys compose by depth. A `key` replaces the loop position at its own level, loop
 | `ref` | expression | `ref.Set(el)` | Binds element to a ref |
 | `deps` | expression | -- | Explicit state dependencies |
 | `key` | expression | -- | Loop item identity: component cache key, RefMap key with `ref` |
+| `options` | expression | `append([]tui.Option{...}, opts...)...` | Option slice forwarded to the constructor after attribute options; type follows the tag |
 
 ### Layout attributes
 

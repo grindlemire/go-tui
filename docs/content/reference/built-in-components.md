@@ -663,6 +663,7 @@ All `<modal>` attributes and their types:
 | `trapFocus` | `bool` | Tab/Shift+Tab restricted to modal children; also blocks unhandled keys from parents (default true) |
 | `keyMap` | `expression` | Custom `KeyMap` bindings for the modal |
 | `class` | `string` | Tailwind classes for positioning (e.g. `"justify-center items-center"`) |
+| `options` | `[]ModalOption` | Extra `ModalOption` values applied after the attributes above, so they can override them |
 
 ### Behavior
 
@@ -713,6 +714,36 @@ When closed, it returns a hidden placeholder element with no key bindings.
 ```
 
 The `class` attribute on `<modal>` controls how the dialog is positioned within the full-screen overlay. Use `justify-center items-center` for a centered dialog or `justify-end items-stretch` for a bottom sheet.
+
+To build a reusable dialog that callers can still customize, accept a `[]ModalOption` and forward it with the `options` attribute. The slice is applied after the modal's own attributes, so a caller's `WithModalBackdrop` wins over the wrapper's default. The modal mounts once, so the forwarded options take effect on first mount like the other attributes. The constructor takes a slice rather than a variadic because `{children...}` arrives as its final parameter.
+
+```gsx
+type dialog struct {
+    open     *tui.State[bool]
+    title    string
+    opts     []tui.ModalOption
+    children []*tui.Element
+}
+
+func Dialog(open *tui.State[bool], title string, opts []tui.ModalOption, children []*tui.Element) *dialog {
+    return &dialog{open: open, title: title, opts: opts, children: children}
+}
+
+templ (d *dialog) Render() {
+    <modal open={d.open} class="justify-center items-center" backdrop="dim" options={d.opts}>
+        <div class="border-rounded p-1 flex-col gap-1">
+            <span class="font-bold">{d.title}</span>
+            {children...}
+        </div>
+    </modal>
+}
+```
+
+```gsx
+@Dialog(s.confirm, "Delete file?", []tui.ModalOption{tui.WithModalBackdrop("blank"), tui.WithModalCloseOnEscape(false)}) {
+    <button class="focusable" onActivate={s.delete}>Delete</button>
+}
+```
 
 ### Inline Mode
 
