@@ -200,6 +200,9 @@ var knownAttributes = map[string]bool{
 	"ref": true, // ref={varName} for element references
 	"key": true, // key={expr}: identity for mounts (own, or descendants' when on a container); RefMap key with ref
 
+	// Option slice forwarded to the element constructor, applied after attribute-derived options
+	"options": true,
+
 	// Modal
 	"open":                 true,
 	"backdrop":             true,
@@ -427,7 +430,15 @@ func (a *Analyzer) analyzeElement(elem *Element) {
 	}
 
 	// Check attributes
+	seenOptions := false
 	for _, attr := range elem.Attributes {
+		if attr.Name == "options" {
+			if seenOptions {
+				a.errors.AddError(attr.Position, "duplicate options attribute")
+				continue
+			}
+			seenOptions = true
+		}
 		a.analyzeAttribute(attr, elem.Tag)
 	}
 
@@ -458,6 +469,16 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 		err.Hint = "use " + attr.Name + "={...} with a Go expression, not a literal"
 		a.errors.Add(err)
 		return
+	}
+
+	// options forwards a Go slice, so a literal has no valid meaning.
+	if attr.Name == "options" {
+		if _, ok := attr.Value.(*GoExpr); !ok {
+			err := NewError(attr.Position, "options must be an expression")
+			err.Hint = "use options={...} with a Go expression of the element's option slice type"
+			a.errors.Add(err)
+			return
+		}
 	}
 
 	// Check if class attribute uses Tailwind classes that need imports

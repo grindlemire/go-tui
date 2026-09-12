@@ -31,19 +31,7 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inCond
 	}
 
 	// RHS is an element (existing behavior)
-	elemOpts := g.buildElementOptions(let.Element)
-
-	if len(elemOpts.options) == 0 {
-		g.writef("%s := tui.New()\n", let.Name)
-	} else {
-		g.writef("%s := tui.New(\n", let.Name)
-		g.indent++
-		for _, opt := range elemOpts.options {
-			g.writef("%s,\n", opt)
-		}
-		g.indent--
-		g.writeln(")")
-	}
+	g.writeOptionsCall(let.Name+" := ", "tui.New", "[]tui.Option", g.buildElementOptions(let.Element))
 
 	// Generate children for the let-bound element - skip if text element already has content in WithText
 	if !skipTextChildren(let.Element) {
