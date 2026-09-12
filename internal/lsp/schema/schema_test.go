@@ -140,16 +140,6 @@ func TestGetAttribute(t *testing.T) {
 			attr:    "options",
 			wantCat: "generic",
 		},
-		"modal has options": {
-			tag:     "modal",
-			attr:    "options",
-			wantCat: "generic",
-		},
-		"textarea has options": {
-			tag:     "textarea",
-			attr:    "options",
-			wantCat: "generic",
-		},
 		"unknown tag returns nil": {
 			tag:     "foobar",
 			attr:    "id",
@@ -426,5 +416,18 @@ func TestContainerHasEventAttrs(t *testing.T) {
 	}
 	if !hasOnBlur {
 		t.Error("div should have onBlur attribute")
+	}
+}
+
+func TestEveryElementHasOptions(t *testing.T) {
+	for tag := range Elements {
+		attr := GetAttribute(tag, "options")
+		if attr == nil {
+			t.Errorf("%s: missing options attribute", tag)
+			continue
+		}
+		if attr.Category != "generic" {
+			t.Errorf("%s: options category = %q, want %q", tag, attr.Category, "generic")
+		}
 	}
 }

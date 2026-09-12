@@ -472,8 +472,9 @@ func TestGenerateVirtualGo_OptionsAttribute(t *testing.T) {
 			// The mapping must point at "opts" inside the wrapper, not at the constructor.
 			goLine := strings.Count(source[:strings.Index(source, tt.wantLine)], "\n")
 			goCol := strings.Index(tt.wantLine, "opts")
-			if _, _, ok := sourceMap.GoToTui(goLine, goCol); !ok {
-				t.Errorf("no mapping at Go %d:%d (start of opts): %+v", goLine, goCol, sourceMap.AllMappings())
+			tuiLine, tuiCol, ok := sourceMap.GoToTui(goLine, goCol)
+			if !ok || tuiLine != 3 || tuiCol != 20 {
+				t.Errorf("GoToTui(%d, %d) = (%d, %d, %v), want (3, 20, true)", goLine, goCol, tuiLine, tuiCol, ok)
 			}
 			gotLine, gotCol, ok := sourceMap.TuiToGo(3, 20)
 			if !ok || gotLine != goLine || gotCol != goCol {
