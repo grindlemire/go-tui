@@ -12,6 +12,7 @@ type myModal struct {
 	showModal  *tui.State[bool]
 	gameOver   *tui.State[bool]
 	confirmBtn tui.Ref
+	modalOpts  []tui.ModalOption
 }
 
 func MyModal() *myModal {
@@ -37,11 +38,11 @@ func (c *myModal) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := app.MountPersistent(c, 0, func() tui.Component {
-		return tui.NewModal(
+		return tui.NewModal(append([]tui.ModalOption{
 			tui.WithModalOpen(c.showModal),
 			tui.WithModalBackdrop("dim"),
 			tui.WithModalElementOptions(tui.WithJustify(tui.JustifyCenter), tui.WithAlign(tui.AlignCenter)),
-		)
+		}, c.modalOpts...)...)
 	})
 	__tui_3 := tui.New(
 		tui.WithWidth(40),
@@ -92,6 +93,7 @@ func (c *myModal) updatePropsFields(fresh tui.Component) {
 		return
 	}
 	c.app = f.app
+	c.modalOpts = f.modalOpts
 }
 
 func (c *myModal) UpdateProps(fresh tui.Component) {
