@@ -199,9 +199,16 @@ func (g *generator) generateElement(el *tuigen.Element, indent string) {
 	}
 	// Generate attribute expressions
 	for _, attr := range el.Attributes {
-		if expr, ok := attr.Value.(*tuigen.GoExpr); ok {
-			g.generateGoExpr(expr, indent)
+		expr, ok := attr.Value.(*tuigen.GoExpr)
+		if !ok {
+			continue
 		}
+		if attr.Name == "options" {
+			// Spread into the tag's constructor so gopls checks the slice type.
+			g.generateGoExprWrapped(expr, indent, tuigen.ElementConstructor(el.Tag)+"(", "...)")
+			continue
+		}
+		g.generateGoExpr(expr, indent)
 	}
 
 	// Generate children
@@ -212,6 +219,11 @@ func (g *generator) generateElement(el *tuigen.Element, indent string) {
 
 // generateGoExpr generates a Go expression and records the position mapping.
 func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
+	g.generateGoExprWrapped(expr, indent, "", "")
+}
+
+// generateGoExprWrapped emits "_ = <prefix><code><suffix>", mapping only code.
+func (g *generator) generateGoExprWrapped(expr *tuigen.GoExpr, indent, prefix, suffix string) {
 	if expr == nil {
 		return
 	}
@@ -222,13 +234,13 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 	}
 
 	// Record position mapping before writing
-	// The expression starts after "_ = " (4 characters + indent)
+	// The expression starts after "_ = " (4 characters + indent) and the prefix
 	tuiLine := expr.Position.Line - 1 // convert to 0-indexed
 	// Position.Column is 1-indexed and points to the '{' delimiter.
 	// The expression content starts at Column+1 (1-indexed) = Column (0-indexed).
 	tuiCol := expr.Position.Column
 
-	goExprStartCol := len(indent) + 4 // "_ = " is 4 chars
+	goExprStartCol := len(indent) + 4 + len(prefix) // "_ = " is 4 chars
 
 	m := Mapping{
 		TuiLine: tuiLine,
@@ -242,7 +254,7 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 	g.sourceMap.AddMapping(m)
 
 	// Write dummy assignment
-	g.writeLine(fmt.Sprintf("%s_ = %s", indent, code))
+	g.writeLine(fmt.Sprintf("%s_ = %s%s%s", indent, prefix, code, suffix))
 }
 
 // generateGoCode generates Go code for a GoCode node (non-tui.NewState code).

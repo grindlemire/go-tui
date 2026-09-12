@@ -135,6 +135,21 @@ func TestGetAttribute(t *testing.T) {
 			attr:    "value",
 			wantCat: "generic",
 		},
+		"div has options": {
+			tag:     "div",
+			attr:    "options",
+			wantCat: "generic",
+		},
+		"modal has options": {
+			tag:     "modal",
+			attr:    "options",
+			wantCat: "generic",
+		},
+		"textarea has options": {
+			tag:     "textarea",
+			attr:    "options",
+			wantCat: "generic",
+		},
 		"unknown tag returns nil": {
 			tag:     "foobar",
 			attr:    "id",

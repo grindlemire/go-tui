@@ -118,6 +118,7 @@ var Elements = map[string]*ElementDef{
 		Attributes: []AttributeDef{
 			{Name: "id", Type: "string", Description: "Unique identifier for the element", Category: "generic"},
 			{Name: "class", Type: "string", Description: "Tailwind-style CSS classes", Category: "generic"},
+			optionsAttr("[]tui.Option"),
 		},
 	},
 	"br": {
@@ -128,6 +129,7 @@ var Elements = map[string]*ElementDef{
 		Attributes: []AttributeDef{
 			{Name: "id", Type: "string", Description: "Unique identifier for the element", Category: "generic"},
 			{Name: "class", Type: "string", Description: "Tailwind-style CSS classes", Category: "generic"},
+			optionsAttr("[]tui.Option"),
 		},
 	},
 	"modal": {
@@ -243,6 +245,17 @@ func genericAttrs() []AttributeDef {
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable (tui.NewRef/NewRefList/NewRefMap)", Category: "ref"},
 		{Name: "key", Type: "expression", Description: "Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): used as the mount cache key for component elements and as the RefMap key when combined with ref; on a container element it keys descendant component mounts", Category: "generic"},
+		optionsAttr("[]tui.Option"),
+	}
+}
+
+// optionsAttr returns the options attribute; the slice type follows the tag's constructor.
+func optionsAttr(sliceType string) AttributeDef {
+	return AttributeDef{
+		Name:        "options",
+		Type:        "expression",
+		Description: "A " + sliceType + " forwarded to the element constructor after the attribute-derived options, so entries in the slice override attributes",
+		Category:    "generic",
 	}
 }
 
@@ -386,6 +399,7 @@ func inputAttrs() []AttributeDef {
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "key", Type: "expression", Description: "Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): used as the mount cache key for component elements and as the RefMap key when combined with ref; on a container element it keys descendant component mounts", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
+		optionsAttr("[]tui.InputOption"),
 	}
 }
 
@@ -411,6 +425,7 @@ func textareaAttrs() []AttributeDef {
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "key", Type: "expression", Description: "Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): used as the mount cache key for component elements and as the RefMap key when combined with ref; on a container element it keys descendant component mounts", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
+		optionsAttr("[]tui.TextAreaOption"),
 	}
 }
 
@@ -428,6 +443,7 @@ func modalAttrs() []AttributeDef {
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "key", Type: "expression", Description: "Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): used as the mount cache key for component elements and as the RefMap key when combined with ref; on a container element it keys descendant component mounts", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
+		optionsAttr("[]tui.ModalOption"),
 	}
 }
 
@@ -443,6 +459,7 @@ func markdownAttrs() []AttributeDef {
 		{Name: "ref", Type: "expression", Description: "Bind this element to a ref variable", Category: "ref"},
 		{Name: "key", Type: "expression", Description: "Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): used as the mount cache key for component elements and as the RefMap key when combined with ref; on a container element it keys descendant component mounts", Category: "generic"},
 		{Name: "deps", Type: "expression", Description: "Explicit state dependencies for reactive bindings", Category: "generic"},
+		optionsAttr("[]tui.MarkdownOption"),
 	}
 }
 
@@ -454,5 +471,6 @@ func progressAttrs() []AttributeDef {
 		{Name: "value", Type: "int", Description: "Current progress value (0 to max)", Category: "generic"},
 		{Name: "max", Type: "int", Description: "Maximum progress value", Category: "generic"},
 		{Name: "width", Type: "int", Description: "Progress bar width in characters", Category: "layout"},
+		optionsAttr("[]tui.Option"),
 	}
 }

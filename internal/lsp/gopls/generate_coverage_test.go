@@ -417,6 +417,72 @@ func TestGenerateVirtualGo_ElementAttributesAndReceiver(t *testing.T) {
 	}
 }
 
+func TestGenerateVirtualGo_OptionsAttribute(t *testing.T) {
+	type tc struct {
+		tag      string
+		wantLine string
+	}
+
+	tests := map[string]tc{
+		"plain element spreads into tui.New": {
+			tag:      "div",
+			wantLine: "\t_ = tui.New(opts...)\n",
+		},
+		"modal spreads into tui.NewModal": {
+			tag:      "modal",
+			wantLine: "\t_ = tui.NewModal(opts...)\n",
+		},
+		"textarea spreads into tui.NewTextArea": {
+			tag:      "textarea",
+			wantLine: "\t_ = tui.NewTextArea(opts...)\n",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			file := &tuigen.File{
+				Package: "main",
+				Components: []*tuigen.Component{
+					{
+						Name:       "App",
+						ReturnType: "*element.Element",
+						Position:   tuigen.Position{Line: 3, Column: 1},
+						Body: []tuigen.Node{
+							&tuigen.Element{
+								Tag:      tt.tag,
+								Position: tuigen.Position{Line: 4, Column: 2},
+								Attributes: []*tuigen.Attribute{
+									{
+										Name:  "options",
+										Value: &tuigen.GoExpr{Code: "opts", Position: tuigen.Position{Line: 4, Column: 20}},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			source, sourceMap := GenerateVirtualGo(file)
+
+			if !strings.Contains(source, tt.wantLine) {
+				t.Fatalf("missing wrapped options expression %q in:\n%s", tt.wantLine, source)
+			}
+
+			// The mapping must point at "opts" inside the wrapper, not at the constructor.
+			goLine := strings.Count(source[:strings.Index(source, tt.wantLine)], "\n")
+			goCol := strings.Index(tt.wantLine, "opts")
+			if _, _, ok := sourceMap.GoToTui(goLine, goCol); !ok {
+				t.Errorf("no mapping at Go %d:%d (start of opts): %+v", goLine, goCol, sourceMap.AllMappings())
+			}
+			gotLine, gotCol, ok := sourceMap.TuiToGo(3, 20)
+			if !ok || gotLine != goLine || gotCol != goCol {
+				t.Errorf("TuiToGo(3, 20) = (%d, %d, %v), want (%d, %d, true)", gotLine, gotCol, ok, goLine, goCol)
+			}
+		})
+	}
+}
+
 func TestGenerateVirtualGo_DefaultReturnType(t *testing.T) {
 	file := &tuigen.File{
 		Package: "main",
