@@ -280,17 +280,15 @@ func (a *Analyzer) Analyze(file *File) error {
 	// analyzeComponentCall can reject @Factory() calls in function templs.
 	a.structComponentFactories = collectStructComponentFactories(file, a.getTUIAlias())
 
-	// Validate method templs using {children...} have a children field on their struct
+	// {children...} needs a children field on method templs; on function templs
+	// it becomes a trailing param, so the declared last param cannot be variadic
 	for _, comp := range file.Components {
-		if comp.Receiver != "" && comp.AcceptsChildren {
-			a.validateChildrenField(comp, file.Decls)
+		if !comp.AcceptsChildren {
+			continue
 		}
-	}
-
-	// Function templs using {children...} get a trailing children param, so
-	// their own last param cannot be variadic
-	for _, comp := range file.Components {
-		if comp.Receiver == "" && comp.AcceptsChildren {
+		if comp.Receiver != "" {
+			a.validateChildrenField(comp, file.Decls)
+		} else {
 			a.validateChildrenParams(comp)
 		}
 	}
@@ -775,8 +773,8 @@ func (a *Analyzer) validateChildrenParams(comp *Component) {
 	elemType := strings.TrimSpace(strings.TrimPrefix(typ, "..."))
 	a.errors.Add(NewErrorWithHint(last.Position,
 		fmt.Sprintf("templ %s uses {children...} so its last parameter cannot be variadic", comp.Name),
-		fmt.Sprintf("declare it as a slice, for example %s []%s, and call it as @%s(..., %s) { ... }",
-			last.Name, elemType, comp.Name, last.Name)))
+		fmt.Sprintf("declare it as a slice (%s []%s) and pass a slice at the call site",
+			last.Name, elemType)))
 }
 
 // AnalyzeFile is a convenience function that parses and analyzes a .tui file.

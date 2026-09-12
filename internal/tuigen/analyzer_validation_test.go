@@ -529,7 +529,7 @@ templ Panel(title string, opts ...tui.Option) {
 }`,
 			wantError:     true,
 			errorContains: "templ Panel uses {children...} so its last parameter cannot be variadic",
-			hintContains:  "declare it as a slice, for example opts []tui.Option, and call it as @Panel(..., opts) { ... }",
+			hintContains:  "declare it as a slice (opts []tui.Option) and pass a slice at the call site",
 		},
 		"variadic last param with extra whitespace is rejected": {
 			input: `package x
