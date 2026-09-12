@@ -80,6 +80,8 @@ Call it with children:
 
 `{children...}` is only available in pure `templ` components, not in struct method components.
 
+Because the children are passed as the trailing argument, a templ with a children slot cannot declare a variadic last parameter. Take options as a slice (`opts []tui.Option`) instead of `opts ...tui.Option`; `tui check` reports a variadic parameter here as an error.
+
 ### Struct method components
 
 A struct component has its own state and lifecycle. Define the render method with `templ` using a receiver:

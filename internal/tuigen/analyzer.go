@@ -287,6 +287,14 @@ func (a *Analyzer) Analyze(file *File) error {
 		}
 	}
 
+	// Function templs using {children...} get a trailing children param, so
+	// their own last param cannot be variadic
+	for _, comp := range file.Components {
+		if comp.Receiver == "" && comp.AcceptsChildren {
+			a.validateChildrenParams(comp)
+		}
+	}
+
 	// Second pass: collect := binding names from all components
 	for _, comp := range file.Components {
 		a.collectLetBindings(comp.Body)
@@ -751,6 +759,24 @@ func (a *Analyzer) validateChildrenField(comp *Component, decls []*GoDecl) {
 	a.errors.AddErrorf(comp.Position,
 		"method templ %s uses {children...} but struct %s has no `children` field; add `children []*tui.Element` to the struct",
 		comp.Name, typeName)
+}
+
+// validateChildrenParams rejects a variadic final parameter on a function templ
+// that uses {children...}, since the generator appends `children` after it.
+func (a *Analyzer) validateChildrenParams(comp *Component) {
+	if len(comp.Params) == 0 {
+		return
+	}
+	last := comp.Params[len(comp.Params)-1]
+	typ := strings.TrimSpace(last.Type)
+	if !strings.HasPrefix(typ, "...") {
+		return
+	}
+	elemType := strings.TrimSpace(strings.TrimPrefix(typ, "..."))
+	a.errors.Add(NewErrorWithHint(last.Position,
+		fmt.Sprintf("templ %s uses {children...} so its last parameter cannot be variadic", comp.Name),
+		fmt.Sprintf("declare it as a slice, for example %s []%s, and call it as @%s(..., %s) { ... }",
+			last.Name, elemType, comp.Name, last.Name)))
 }
 
 // AnalyzeFile is a convenience function that parses and analyzes a .tui file.
