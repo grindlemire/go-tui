@@ -628,7 +628,7 @@ func TestParseFuncSignatureForTokens(t *testing.T) {
 		wantTypeParams string
 		wantParams     []*tuigen.Param
 		wantReturns    string
-		wantReturnsAt  int // byte offset of wantReturns in code; checked only when set
+		wantReturnsAt  int // byte offset of wantReturns in code; -1 is expected when wantReturns is empty
 	}
 
 	tests := map[string]tc{
@@ -685,6 +685,12 @@ func TestParseFuncSignatureForTokens(t *testing.T) {
 			wantParams:    []*tuigen.Param{{Name: "a", Type: "int"}},
 			wantReturns:   "(int, error)",
 			wantReturnsAt: 18,
+		},
+		"leading whitespace keeps offset relative to code": {
+			code:          "  func f() int {}",
+			wantName:      "f",
+			wantReturns:   "int",
+			wantReturnsAt: 11,
 		},
 		"not a function": {
 			code: "var x = 1",

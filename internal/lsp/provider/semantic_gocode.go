@@ -498,6 +498,7 @@ func extractVarDeclarationsWithPositions(code string) []varDecl {
 // returnsAt is the byte offset of the return type within code, or -1 when there is none.
 func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string, params []*tuigen.Param, returns string, returnsAt int) {
 	returnsAt = -1
+	lead := len(code) - len(strings.TrimLeft(code, " \t\r\n"))
 	code = strings.TrimSpace(code)
 	if !strings.HasPrefix(code, "func ") {
 		return "", "", "", nil, "", returnsAt
@@ -592,7 +593,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 	after := strings.TrimLeft(rest[closeIdx+1:], " \t\r\n")
 	if braceIdx := strings.Index(after, "{"); braceIdx > 0 {
 		returns = strings.TrimSpace(after[:braceIdx])
-		returnsAt = len(code) - len(after)
+		returnsAt = lead + len(code) - len(after)
 	}
 
 	return name, receiver, typeParams, params, returns, returnsAt
