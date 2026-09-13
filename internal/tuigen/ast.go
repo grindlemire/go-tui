@@ -103,6 +103,9 @@ type Param struct {
 	Name     string
 	Type     string
 	Position Position
+	// Grouped marks a name that shares the next param's type (a, b T);
+	// Type is still filled in, but printers emit only the name.
+	Grouped bool
 }
 
 func (p *Param) node()         {}

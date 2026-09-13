@@ -388,15 +388,26 @@ func (p *Parser) parseMethodTempl(pos Position) *Component {
 	return comp
 }
 
-// parseParams parses function parameters.
+// parseParams parses function parameters, including Go-style grouped
+// names (a, b string) which all receive the shared type.
 func (p *Parser) parseParams() []*Param {
 	var params []*Param
+	var pending []*Param // bare names waiting for the group's type
 	p.skipNewlines()
 
 	for p.current.Type != TokenRParen && p.current.Type != TokenEOF {
 		param := p.parseParam()
 		if param != nil {
-			params = append(params, param)
+			if param.Type == "" {
+				param.Grouped = true
+				pending = append(pending, param)
+			} else {
+				for _, g := range pending {
+					g.Type = param.Type
+				}
+				params = append(append(params, pending...), param)
+				pending = nil
+			}
 		}
 		p.skipNewlines()
 
@@ -412,10 +423,16 @@ func (p *Parser) parseParams() []*Param {
 		}
 	}
 
+	if len(pending) > 0 {
+		last := pending[len(pending)-1]
+		p.errors.AddErrorf(last.Position, "parameter %s is missing a type", last.Name)
+	}
+
 	return params
 }
 
-// parseParam parses a single parameter: name Type
+// parseParam parses a single parameter: name Type. A bare name (a in
+// "a, b T") comes back with an empty Type for parseParams to resolve.
 func (p *Parser) parseParam() *Param {
 	pos := p.position()
 
@@ -428,14 +445,9 @@ func (p *Parser) parseParam() *Param {
 	p.advance()
 
 	// Parse type (could be complex like *element.Element, []string, func())
-	typeStr := p.parseType()
-	if typeStr == "" {
-		return nil
-	}
-
 	return &Param{
 		Name:     name,
-		Type:     typeStr,
+		Type:     p.parseType(),
 		Position: pos,
 	}
 }

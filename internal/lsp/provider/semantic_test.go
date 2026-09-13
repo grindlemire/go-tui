@@ -108,6 +108,17 @@ templ Greeting(name string, count int) {
 			wantClassName: true,
 			wantParams:    2,
 		},
+		"component with grouped params": {
+			content: `package main
+
+templ Pair(a, b string) {
+	<span>{a}</span>
+}
+`,
+			wantKeyword:   true,
+			wantClassName: true,
+			wantParams:    2,
+		},
 	}
 
 	sp := newTestSemanticProvider()
@@ -170,6 +181,30 @@ templ Greeting(name string, count int) {
 		}
 		if !hasTokenAt(tokens, 2, 6, 8, TokenTypeClass) {
 			t.Error("expected Greeting class token at 2:6 with length 8")
+		}
+	})
+
+	// Grouped params: "templ Pair(a, b string)" has a at col 11, b at col 14,
+	// and a single "string" type token at col 17 (owned by b).
+	t.Run("component with grouped params positions", func(t *testing.T) {
+		doc := parseTestDoc(tests["component with grouped params"].content)
+		result, err := sp.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		if !hasTokenAt(tokens, 2, 11, 1, TokenTypeParameter) {
+			t.Error("expected parameter token for a at 2:11")
+		}
+		if !hasTokenAt(tokens, 2, 14, 1, TokenTypeParameter) {
+			t.Error("expected parameter token for b at 2:14")
+		}
+		if !hasTokenAt(tokens, 2, 16, 6, TokenTypeType) {
+			t.Error("expected string type token at 2:16 after b")
+		}
+		if hasTokenAt(tokens, 2, 13, 6, TokenTypeType) {
+			t.Error("grouped name a must not emit a type token at 2:13")
 		}
 	})
 }

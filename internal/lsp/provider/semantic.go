@@ -319,6 +319,9 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				TokenType: TokenTypeParameter,
 				Modifiers: TokenModDeclaration,
 			})
+			if param.Grouped {
+				continue
+			}
 			// Parameter type
 			typeStart := param.Position.Column - 1 + len(param.Name) + 1 // +1 for space
 			emitGoTypeTokens(param.Type, param.Position.Line-1, typeStart, &tokens)

@@ -92,7 +92,7 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Build parameter list and track positions
 	var params []string
 	for _, p := range comp.Params {
-		params = append(params, fmt.Sprintf("%s %s", p.Name, p.Type))
+		params = append(params, paramText(p))
 	}
 
 	// Function signature
@@ -115,22 +115,23 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 
 	// Add mappings for each parameter
 	for _, p := range comp.Params {
+		width := len(paramText(p))
 		if p.Position.Line > 0 && p.Position.Column > 0 {
-			// Map the full parameter (name + space + type) from .gsx to .go
-			// so gopls can resolve types in component signatures
+			// Map the parameter text ("name type", or just "name" for a
+			// grouped name) from .gsx to .go so gopls can resolve types
 			m := Mapping{
 				TuiLine: p.Position.Line - 1,
 				TuiCol:  p.Position.Column - 1,
 				GoLine:  g.goLine,
 				GoCol:   goParamStartCol,
-				Length:  len(p.Name) + 1 + len(p.Type),
+				Length:  width,
 			}
 			log.Generate("PARAM mapping: %s -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
 				p.Name, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, p.Position.Line, p.Position.Column)
 			g.sourceMap.AddMapping(m)
 		}
-		// Move past this param: "name type, "
-		goParamStartCol += len(p.Name) + 1 + len(p.Type) + 2 // +1 for space, +2 for ", "
+		// Move past this param and the ", " separator
+		goParamStartCol += width + 2
 	}
 
 	// Write function/method signature
@@ -156,6 +157,15 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Return nil to make the function valid
 	g.writeLine("\treturn nil")
 	g.writeLine("}")
+}
+
+// paramText returns the parameter as written in a Go signature: a grouped
+// name (a in "a, b T") is just the name, otherwise "name type".
+func paramText(p *tuigen.Param) string {
+	if p.Grouped {
+		return p.Name
+	}
+	return fmt.Sprintf("%s %s", p.Name, p.Type)
 }
 
 // generateNodes generates Go code for a list of nodes.

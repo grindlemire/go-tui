@@ -35,6 +35,20 @@ templ Hello() {
 }
 `,
 		},
+		"grouped params are preserved": {
+			input: `package main
+
+templ Grp(x, y int, opts ...tui.Option) {
+<div options={opts}>{x + y}</div>
+}
+`,
+			want: `package main
+
+templ Grp(x, y int, opts ...tui.Option) {
+	<div options={opts}>{x + y}</div>
+}
+`,
+		},
 		"single import": {
 			input: `package main
 

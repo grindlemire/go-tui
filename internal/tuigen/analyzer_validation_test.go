@@ -531,6 +531,18 @@ templ Panel(title string, opts ...tui.Option) {
 			errorContains: "templ Panel uses {children...} so its last parameter cannot be variadic",
 			hintContains:  "declare it as a slice (opts []tui.Option) and pass a slice at the call site",
 		},
+		"grouped params before variadic last param with children slot is rejected": {
+			input: `package x
+templ Panel(x, y int, opts ...tui.Option) {
+	<div options={opts}>
+		<span>{x + y}</span>
+		{children...}
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "templ Panel uses {children...} so its last parameter cannot be variadic",
+			hintContains:  "declare it as a slice (opts []tui.Option) and pass a slice at the call site",
+		},
 		"variadic last param with extra whitespace is rejected": {
 			input: `package x
 templ Panel(opts ... tui.Option) {

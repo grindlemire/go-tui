@@ -41,7 +41,7 @@ templ Greeting(name string) {
 }
 ```
 
-Parameters use standard Go function parameter syntax. Any valid Go type works:
+Parameters use standard Go function parameter syntax, including grouped names that share a type (`x, y int`). Any valid Go type works:
 
 ```gsx
 templ UserList(users []string, maxVisible int) {

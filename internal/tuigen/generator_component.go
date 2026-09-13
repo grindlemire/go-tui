@@ -144,6 +144,10 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 		if i > 0 {
 			g.write(", ")
 		}
+		if param.Grouped {
+			g.write(param.Name)
+			continue
+		}
 		g.writef("%s %s", param.Name, param.Type)
 	}
 	// Add children parameter if component accepts children

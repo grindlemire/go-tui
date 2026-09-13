@@ -149,6 +149,9 @@ func (p *printer) printComponent(comp *tuigen.Component) {
 				p.write(", ")
 			}
 			p.write(param.Name)
+			if param.Grouped {
+				continue
+			}
 			p.write(" ")
 			p.write(param.Type)
 		}
