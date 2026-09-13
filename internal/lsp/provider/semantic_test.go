@@ -567,6 +567,23 @@ func TestSemanticTokens_GroupedFuncParams(t *testing.T) {
 				{4, 3, 6, TokenTypeType},
 			},
 		},
+		"multi-line list with return type": {
+			content: "package x\n\nfunc f(\n\ta int,\n) string {\n}\n",
+			want: []token{
+				{3, 1, 1, TokenTypeParameter},
+				{3, 3, 3, TokenTypeType},
+				{4, 2, 6, TokenTypeType}, // return type on the close-paren line
+			},
+			wantNoTyp: []token{{2, 14, 6, TokenTypeType}}, // past the end of "func f("
+		},
+		"multi-line list with multi-value return": {
+			content: "package x\n\nfunc g(\n\ta int,\n) (int, error) {\n}\n",
+			want: []token{
+				{3, 1, 1, TokenTypeParameter},
+				{4, 3, 3, TokenTypeType},
+				{4, 8, 5, TokenTypeType},
+			},
+		},
 	}
 
 	sp := newTestSemanticProvider()

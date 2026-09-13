@@ -350,7 +350,7 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 		})
 
 		// Function name (handles plain funcs, methods with receivers, and generics)
-		name, receiverText, typeParamStr, params, returns := parseFuncSignatureForTokens(fn.Code)
+		name, receiverText, typeParamStr, params, returns, returnsAt := parseFuncSignatureForTokens(fn.Code)
 		if name != "" {
 			line := fn.Position.Line - 1
 
@@ -433,20 +433,15 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				}
 			}
 
-			// Return type
-			if returns != "" {
-				returnStart := nameStart + len(name) + 1 // "name("
-				if typeParamStr != "" {
-					returnStart = nameStart + len(name) + len(typeParamStr) + 1 // "name[...]("
+			// Return type: fn.Code starts at fn.Position, so its byte offset gives the
+			// line and column (absolute on continuation lines after a multi-line list)
+			if returnsAt >= 0 {
+				before := fn.Code[:returnsAt]
+				returnLine, returnCol := line, fn.Position.Column-1+returnsAt
+				if nl := strings.LastIndex(before, "\n"); nl >= 0 {
+					returnLine, returnCol = line+strings.Count(before, "\n"), returnsAt-nl-1
 				}
-				for i, p := range params {
-					returnStart += len(p.String())
-					if i < len(params)-1 {
-						returnStart += 2 // ", "
-					}
-				}
-				returnStart += 2 // ") " — close paren + space
-				emitGoTypeTokens(returns, line, returnStart, &tokens)
+				emitGoTypeTokens(returns, returnLine, returnCol, &tokens)
 			}
 
 			// Build parameter names map for body tokenization.
