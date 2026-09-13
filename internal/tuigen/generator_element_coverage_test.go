@@ -191,6 +191,39 @@ templ App() {
 				"Foreground(tui.Red)",
 			},
 		},
+		"options alone spreads into the constructor": {
+			input: `package x
+templ App(opts []tui.Option) {
+	<div options={opts}></div>
+}`,
+			wantContains:    []string{"__tui_0 := tui.New(opts...)\n"},
+			wantNotContains: []string{"append("},
+		},
+		"options after attributes uses append so the slice applies last": {
+			input: `package x
+templ App(opts []tui.Option) {
+	<div class="border-rounded p-1" options={opts}></div>
+}`,
+			wantContains: []string{
+				"__tui_0 := tui.New(append([]tui.Option{\n" +
+					"\t\ttui.WithBorder(tui.BorderRounded),\n" +
+					"\t\ttui.WithPadding(1),\n" +
+					"\t}, opts...)...)\n",
+			},
+			wantNotContains: []string{"tui.WithOptions"},
+		},
+		"let-bound element with options uses append": {
+			input: `package x
+templ App(opts []tui.Option) {
+	card := <div class="p-1" options={opts}></div>
+	<div>{card}</div>
+}`,
+			wantContains: []string{
+				"card := tui.New(append([]tui.Option{\n" +
+					"\t\ttui.WithPadding(1),\n" +
+					"\t}, opts...)...)\n",
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -371,6 +404,35 @@ templ (c *shell) Render() {
 				"tui.WithModalTrapFocus(true)",
 				`tui.WithText("content")`,
 				".AddChild(",
+			},
+		},
+		"modal with open, class, and options appends the slice last": {
+			input: `package x
+
+type shell struct{}
+
+templ (c *shell) Render() {
+	<modal open={c.showModal} class="justify-center items-center" options={c.modalOpts}>
+		<span>content</span>
+	</modal>
+}`,
+			wantContains: []string{
+				"return tui.NewModal(append([]tui.ModalOption{\n" +
+					"\t\t\ttui.WithModalOpen(c.showModal),\n" +
+					"\t\t\ttui.WithModalElementOptions(tui.WithJustify(tui.JustifyCenter), tui.WithAlign(tui.AlignCenter)),\n" +
+					"\t\t}, c.modalOpts...)...)\n",
+			},
+		},
+		"textarea with only options spreads directly": {
+			input: `package x
+
+type form struct{}
+
+templ (c *form) Render() {
+	<textarea options={c.taOpts} />
+}`,
+			wantContains: []string{
+				"return tui.NewTextArea(c.taOpts...)\n",
 			},
 		},
 		"modal open bool literal wrapped in NewState": {

@@ -419,6 +419,76 @@ templ (p *panel) Render() {
 	}
 }
 
+func TestAnalyzer_OptionsAttribute(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+	}
+
+	tests := map[string]tc{
+		"options expression on div is valid": {
+			input: `package x
+templ Card(opts []tui.Option) {
+	<div class="p-1" options={opts}></div>
+}`,
+		},
+		"options expression on modal is valid": {
+			input: `package x
+type dialog struct{}
+templ (d *dialog) Render() {
+	<modal open={d.open} options={d.opts}>
+		<span>hi</span>
+	</modal>
+}`,
+		},
+		"options string literal is rejected": {
+			input: `package x
+templ Card() {
+	<div options="opts"></div>
+}`,
+			wantError:     true,
+			errorContains: "options must be an expression",
+		},
+		"options int literal is rejected": {
+			input: `package x
+templ Card() {
+	<div options=1></div>
+}`,
+			wantError:     true,
+			errorContains: "options must be an expression",
+		},
+		"duplicate options is rejected": {
+			input: `package x
+templ Card(a, b []tui.Option) {
+	<div options={a} options={b}></div>
+}`,
+			wantError:     true,
+			errorContains: "duplicate options attribute",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.gsx", tt.input)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestAnalyzer_KeyAndRefRequireExpressions(t *testing.T) {
 	type tc struct {
 		input         string

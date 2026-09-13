@@ -491,20 +491,17 @@ func extractVarDeclarationsWithPositions(code string) []varDecl {
 	return decls
 }
 
-// funcParam represents a function parameter for semantic tokenization.
-type funcParam struct {
-	Name string
-	Type string
-}
-
 // parseFuncSignatureForTokens extracts function name, receiver, type params, params, and return type from code.
 // For methods like "func (s *Type) Name(...) RetType { ... }", receiver will be "s *Type".
 // For generic functions like "func foo[T any](...)", typeParams will be "[T any]".
 // For plain functions, receiver and typeParams will be "".
-func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string, params []funcParam, returns string) {
+// returnsAt is the byte offset of the return type within code, or -1 when there is none.
+func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string, params []*tuigen.Param, returns string, returnsAt int) {
+	returnsAt = -1
+	lead := len(code) - len(strings.TrimLeft(code, " \t\r\n"))
 	code = strings.TrimSpace(code)
 	if !strings.HasPrefix(code, "func ") {
-		return "", "", "", nil, ""
+		return "", "", "", nil, "", returnsAt
 	}
 	rest := code[5:] // skip "func "
 
@@ -525,7 +522,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 			}
 		}
 		if closeIdx == -1 {
-			return "", "", "", nil, ""
+			return "", "", "", nil, "", returnsAt
 		}
 		receiver = strings.TrimSpace(rest[1:closeIdx])
 		rest = strings.TrimSpace(rest[closeIdx+1:])
@@ -540,7 +537,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 		}
 	}
 	if nameEnd == -1 {
-		return "", "", "", nil, ""
+		return "", "", "", nil, "", returnsAt
 	}
 	name = strings.TrimSpace(rest[:nameEnd])
 	rest = rest[nameEnd:]
@@ -561,7 +558,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 			}
 		}
 		if closeIdx == -1 {
-			return name, receiver, "", nil, ""
+			return name, receiver, "", nil, "", returnsAt
 		}
 		typeParams = rest[:closeIdx+1] // e.g., "[T bool|string]"
 		rest = rest[closeIdx+1:]
@@ -569,7 +566,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 
 	// Now rest should start with "(" for params
 	if len(rest) == 0 || rest[0] != '(' {
-		return name, receiver, typeParams, nil, ""
+		return name, receiver, typeParams, nil, "", returnsAt
 	}
 
 	// Find matching close paren for params
@@ -587,29 +584,19 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 		}
 	}
 	if closeIdx == -1 {
-		return name, receiver, typeParams, nil, ""
+		return name, receiver, typeParams, nil, "", returnsAt
 	}
 
-	paramStr := rest[1:closeIdx]
+	params = tuigen.ParseParamList(rest[1:closeIdx])
 
-	// Parse parameters
-	if paramStr != "" {
-		for p := range strings.SplitSeq(paramStr, ",") {
-			p = strings.TrimSpace(p)
-			parts := strings.SplitN(p, " ", 2)
-			if len(parts) == 2 {
-				params = append(params, funcParam{Name: parts[0], Type: parts[1]})
-			}
-		}
-	}
-
-	// Return type
-	after := strings.TrimSpace(rest[closeIdx+1:])
+	// Return type; rest is always a suffix of code, so its offset is the length difference
+	after := strings.TrimLeft(rest[closeIdx+1:], " \t\r\n")
 	if braceIdx := strings.Index(after, "{"); braceIdx > 0 {
 		returns = strings.TrimSpace(after[:braceIdx])
+		returnsAt = lead + len(code) - len(after)
 	}
 
-	return name, receiver, typeParams, params, returns
+	return name, receiver, typeParams, params, returns, returnsAt
 }
 
 // emitGenericTypeParamTokens tokenizes a generic type parameter section like "[T bool|string]"

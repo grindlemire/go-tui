@@ -144,7 +144,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 		if i > 0 {
 			g.write(", ")
 		}
-		g.writef("%s %s", param.Name, param.Type)
+		g.write(param.String())
 	}
 	// Add children parameter if component accepts children
 	if comp.AcceptsChildren {

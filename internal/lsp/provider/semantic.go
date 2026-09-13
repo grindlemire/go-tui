@@ -319,6 +319,9 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				TokenType: TokenTypeParameter,
 				Modifiers: TokenModDeclaration,
 			})
+			if param.Grouped {
+				continue
+			}
 			// Parameter type
 			typeStart := param.Position.Column - 1 + len(param.Name) + 1 // +1 for space
 			emitGoTypeTokens(param.Type, param.Position.Line-1, typeStart, &tokens)
@@ -347,7 +350,7 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 		})
 
 		// Function name (handles plain funcs, methods with receivers, and generics)
-		name, receiverText, typeParamStr, params, returns := parseFuncSignatureForTokens(fn.Code)
+		name, receiverText, typeParamStr, params, returns, returnsAt := parseFuncSignatureForTokens(fn.Code)
 		if name != "" {
 			line := fn.Position.Line - 1
 
@@ -411,36 +414,34 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				paramStart = nameStart + len(name) + len(typeParamStr) + 1 // +1 for '('
 			}
 			for _, p := range params {
-				// Parameter name
+				// p.Position is 1-based within the list; lines after the first
+				// are whole source lines, so their column is already absolute.
+				pLine, nameStart := line, paramStart+p.Position.Column-1
+				if p.Position.Line > 1 {
+					pLine, nameStart = line+p.Position.Line-1, p.Position.Column-1
+				}
 				tokens = append(tokens, SemanticToken{
-					Line:      line,
-					StartChar: paramStart,
+					Line:      pLine,
+					StartChar: nameStart,
 					Length:    len(p.Name),
 					TokenType: TokenTypeParameter,
 					Modifiers: TokenModDeclaration,
 				})
-				// Parameter type
-				typeStart := paramStart + len(p.Name) + 1 // +1 for space
-				emitGoTypeTokens(p.Type, line, typeStart, &tokens)
-				paramStart += len(p.Name) + 1 + len(p.Type) + 2 // +2 for ", "
+				// Parameter type; a grouped name (a in "a, b T") has none of its own
+				if !p.Grouped {
+					emitGoTypeTokens(p.Type, pLine, nameStart+len(p.Name)+1, &tokens)
+				}
 			}
 
-			// Return type
-			if returns != "" {
-				returnStart := nameStart + len(name) + 1 // "name("
-				if typeParamStr != "" {
-					returnStart = nameStart + len(name) + len(typeParamStr) + 1 // "name[...]("
+			// Return type: fn.Code starts at fn.Position, so its byte offset gives the
+			// line and column (absolute on continuation lines after a multi-line list)
+			if returnsAt >= 0 {
+				before := fn.Code[:returnsAt]
+				returnLine, returnCol := line, fn.Position.Column-1+returnsAt
+				if nl := strings.LastIndex(before, "\n"); nl >= 0 {
+					returnLine, returnCol = line+strings.Count(before, "\n"), returnsAt-nl-1
 				}
-				if len(params) > 0 {
-					for i, p := range params {
-						returnStart += len(p.Name) + 1 + len(p.Type)
-						if i < len(params)-1 {
-							returnStart += 2 // ", "
-						}
-					}
-				}
-				returnStart += 2 // ") " — close paren + space
-				emitGoTypeTokens(returns, line, returnStart, &tokens)
+				emitGoTypeTokens(returns, returnLine, returnCol, &tokens)
 			}
 
 			// Build parameter names map for body tokenization.

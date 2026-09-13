@@ -257,6 +257,43 @@ templ Page() {
 	}
 }
 
+func TestCompletion_OptionsAttribute(t *testing.T) {
+	type tc struct {
+		tag string
+	}
+
+	tests := map[string]tc{
+		"div":   {tag: "div"},
+		"modal": {tag: "modal"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			doc := parseTestDoc("package test\n\ntempl Page() {\n\t<div >\n\t</div>\n}\n")
+			cp := newTestCompletionProvider(newStubIndex())
+
+			ctx := makeCtx(doc, NodeKindUnknown, "")
+			ctx.InElement = true
+			ctx.AttrTag = tt.tag
+
+			result, err := cp.Complete(ctx)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			for _, item := range result.Items {
+				if item.Label != "options" {
+					continue
+				}
+				if item.InsertText != "options={$1}" {
+					t.Errorf("insert text = %q, want %q", item.InsertText, "options={$1}")
+				}
+				return
+			}
+			t.Errorf("expected 'options' in attribute completions for <%s>", tt.tag)
+		})
+	}
+}
+
 func TestCompletion_EventHandlerAttributes(t *testing.T) {
 	src := `package test
 

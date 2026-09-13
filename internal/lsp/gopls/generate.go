@@ -92,7 +92,7 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Build parameter list and track positions
 	var params []string
 	for _, p := range comp.Params {
-		params = append(params, fmt.Sprintf("%s %s", p.Name, p.Type))
+		params = append(params, p.String())
 	}
 
 	// Function signature
@@ -115,22 +115,23 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 
 	// Add mappings for each parameter
 	for _, p := range comp.Params {
+		width := len(p.String())
 		if p.Position.Line > 0 && p.Position.Column > 0 {
-			// Map the full parameter (name + space + type) from .gsx to .go
-			// so gopls can resolve types in component signatures
+			// Map the parameter text ("name type", or just "name" for a
+			// grouped name) from .gsx to .go so gopls can resolve types
 			m := Mapping{
 				TuiLine: p.Position.Line - 1,
 				TuiCol:  p.Position.Column - 1,
 				GoLine:  g.goLine,
 				GoCol:   goParamStartCol,
-				Length:  len(p.Name) + 1 + len(p.Type),
+				Length:  width,
 			}
 			log.Generate("PARAM mapping: %s -> TuiLine=%d TuiCol=%d GoLine=%d GoCol=%d Len=%d (pos.Line=%d pos.Col=%d)",
 				p.Name, m.TuiLine, m.TuiCol, m.GoLine, m.GoCol, m.Length, p.Position.Line, p.Position.Column)
 			g.sourceMap.AddMapping(m)
 		}
-		// Move past this param: "name type, "
-		goParamStartCol += len(p.Name) + 1 + len(p.Type) + 2 // +1 for space, +2 for ", "
+		// Move past this param and the ", " separator
+		goParamStartCol += width + 2
 	}
 
 	// Write function/method signature
@@ -199,9 +200,16 @@ func (g *generator) generateElement(el *tuigen.Element, indent string) {
 	}
 	// Generate attribute expressions
 	for _, attr := range el.Attributes {
-		if expr, ok := attr.Value.(*tuigen.GoExpr); ok {
-			g.generateGoExpr(expr, indent)
+		expr, ok := attr.Value.(*tuigen.GoExpr)
+		if !ok {
+			continue
 		}
+		if attr.Name == "options" {
+			// Spread into the tag's constructor so gopls checks the slice type.
+			g.generateGoExprWrapped(expr, indent, tuigen.ElementConstructor(el.Tag)+"(", "...)")
+			continue
+		}
+		g.generateGoExpr(expr, indent)
 	}
 
 	// Generate children
@@ -212,6 +220,11 @@ func (g *generator) generateElement(el *tuigen.Element, indent string) {
 
 // generateGoExpr generates a Go expression and records the position mapping.
 func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
+	g.generateGoExprWrapped(expr, indent, "", "")
+}
+
+// generateGoExprWrapped emits "_ = <prefix><code><suffix>", mapping only code.
+func (g *generator) generateGoExprWrapped(expr *tuigen.GoExpr, indent, prefix, suffix string) {
 	if expr == nil {
 		return
 	}
@@ -222,13 +235,13 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 	}
 
 	// Record position mapping before writing
-	// The expression starts after "_ = " (4 characters + indent)
+	// The expression starts after "_ = " (4 characters + indent) and the prefix
 	tuiLine := expr.Position.Line - 1 // convert to 0-indexed
 	// Position.Column is 1-indexed and points to the '{' delimiter.
 	// The expression content starts at Column+1 (1-indexed) = Column (0-indexed).
 	tuiCol := expr.Position.Column
 
-	goExprStartCol := len(indent) + 4 // "_ = " is 4 chars
+	goExprStartCol := len(indent) + 4 + len(prefix) // "_ = " is 4 chars
 
 	m := Mapping{
 		TuiLine: tuiLine,
@@ -242,7 +255,7 @@ func (g *generator) generateGoExpr(expr *tuigen.GoExpr, indent string) {
 	g.sourceMap.AddMapping(m)
 
 	// Write dummy assignment
-	g.writeLine(fmt.Sprintf("%s_ = %s", indent, code))
+	g.writeLine(fmt.Sprintf("%s_ = %s%s%s", indent, prefix, code, suffix))
 }
 
 // generateGoCode generates Go code for a GoCode node (non-tui.NewState code).

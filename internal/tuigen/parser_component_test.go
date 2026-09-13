@@ -143,6 +143,196 @@ templ Test(name string, count int, items []string, handler func()) {
 	}
 }
 
+func TestParser_GroupedParams(t *testing.T) {
+	type wantParam struct {
+		name    string
+		typ     string
+		column  int
+		grouped bool
+	}
+	type tc struct {
+		input         string
+		want          []wantParam
+		errorContains string
+	}
+
+	tests := map[string]tc{
+		"single param unchanged": {
+			input: `package x
+templ P(a string) {
+	<span>{a}</span>
+}`,
+			want: []wantParam{{"a", "string", 9, false}},
+		},
+		"two names share a type": {
+			input: `package x
+templ P(a, b string) {
+	<span>{a + b}</span>
+}`,
+			want: []wantParam{{"a", "string", 9, true}, {"b", "string", 12, false}},
+		},
+		"blank identifier": {
+			input: `package x
+templ P(_ int, b string) {
+	<span>{b}</span>
+}`,
+			want: []wantParam{{"_", "int", 9, false}, {"b", "string", 16, false}},
+		},
+		"templ keyword as a name": {
+			input: `package x
+templ P(templ string) {
+	<span>{templ}</span>
+}`,
+			want: []wantParam{{"templ", "string", 9, false}},
+		},
+		"grouped then variadic": {
+			input: `package x
+templ P(x, y int, opts ...tui.Option) {
+	<div options={opts}></div>
+}`,
+			want: []wantParam{
+				{"x", "int", 9, true},
+				{"y", "int", 12, false},
+				{"opts", "...tui.Option", 19, false},
+			},
+		},
+		"grouped variadic": {
+			input: `package x
+templ P(a, b ...tui.Option) {
+	<div options={a}></div>
+}`,
+			want: []wantParam{{"a", "...tui.Option", 9, true}, {"b", "...tui.Option", 12, false}},
+		},
+		"mixed grouped and ungrouped": {
+			input: `package x
+templ P(title string, x, y, z int, on func()) {
+	<span>{title}</span>
+}`,
+			want: []wantParam{
+				{"title", "string", 9, false},
+				{"x", "int", 23, true},
+				{"y", "int", 26, true},
+				{"z", "int", 29, false},
+				{"on", "func()", 36, false},
+			},
+		},
+		"multiline group with trailing comma": {
+			input: `package x
+templ P(
+	a, b string,
+	n int,
+) {
+	<span>{a}</span>
+}`,
+			want: []wantParam{
+				{"a", "string", 2, true},
+				{"b", "string", 5, false},
+				{"n", "int", 2, false},
+			},
+		},
+		"trailing name without a type is an error": {
+			input: `package x
+templ P(a, b) {
+	<span>{a}</span>
+}`,
+			errorContains: "test.gsx:2:12: error: parameter b is missing a type",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			file, err := NewParser(NewLexer("test.gsx", tt.input)).ParseFile()
+			if tt.errorContains != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errorContains) {
+					t.Fatalf("error = %v, want containing %q", err, tt.errorContains)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			params := file.Components[0].Params
+			if len(params) != len(tt.want) {
+				t.Fatalf("got %d params, want %d", len(params), len(tt.want))
+			}
+			for i, w := range tt.want {
+				got := params[i]
+				if got.Name != w.name || got.Type != w.typ || got.Grouped != w.grouped {
+					t.Errorf("param %d = {%s %q grouped=%v}, want {%s %q grouped=%v}",
+						i, got.Name, got.Type, got.Grouped, w.name, w.typ, w.grouped)
+				}
+				if got.Position.Column != w.column {
+					t.Errorf("param %s column = %d, want %d", w.name, got.Position.Column, w.column)
+				}
+			}
+		})
+	}
+}
+
+// ParseParamList is the entry point the LSP uses for raw Go func
+// parameter text; it must resolve grouped names the same way templ does.
+func TestParseParamList(t *testing.T) {
+	type wantParam struct {
+		name    string
+		typ     string
+		column  int
+		grouped bool
+	}
+	type tc struct {
+		list string
+		want []wantParam
+	}
+
+	tests := map[string]tc{
+		"empty": {list: ""},
+		"grouped names share a type": {
+			list: "a, b int",
+			want: []wantParam{{"a", "int", 1, true}, {"b", "int", 4, false}},
+		},
+		"mixed grouped and variadic": {
+			list: "a string, b, c int, opts ...tui.Option",
+			want: []wantParam{
+				{"a", "string", 1, false},
+				{"b", "int", 11, true},
+				{"c", "int", 14, false},
+				{"opts", "...tui.Option", 21, false},
+			},
+		},
+		"commas nested in types": {
+			list: "m map[string]int, fn func(int, int) bool",
+			want: []wantParam{{"m", "map[string]int", 1, false}, {"fn", "func(int, int) bool", 19, false}},
+		},
+		"trailing bare name is dropped": {
+			list: "a int, b",
+			want: []wantParam{{"a", "int", 1, false}},
+		},
+		"blank identifier": {
+			list: "a int, _ string, c bool",
+			want: []wantParam{{"a", "int", 1, false}, {"_", "string", 8, false}, {"c", "bool", 18, false}},
+		},
+		"templ keyword as a name": {
+			list: "templ string, x int",
+			want: []wantParam{{"templ", "string", 1, false}, {"x", "int", 15, false}},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			params := ParseParamList(tt.list)
+			if len(params) != len(tt.want) {
+				t.Fatalf("got %d params, want %d", len(params), len(tt.want))
+			}
+			for i, w := range tt.want {
+				got := params[i]
+				if got.Name != w.name || got.Type != w.typ || got.Grouped != w.grouped || got.Position.Column != w.column {
+					t.Errorf("param %d = {%s %q col=%d grouped=%v}, want {%s %q col=%d grouped=%v}",
+						i, got.Name, got.Type, got.Position.Column, got.Grouped, w.name, w.typ, w.column, w.grouped)
+				}
+			}
+		})
+	}
+}
+
 func TestParser_ComplexTypeSignatures(t *testing.T) {
 	type tc struct {
 		input     string

@@ -145,3 +145,73 @@ func Footer() *FooterView {
 	}
 	return &view
 }
+
+type CardView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *CardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *CardView) GetRoot() *tui.Element { return v.Root }
+
+func (v *CardView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *CardView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *CardView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *CardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*CardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*CardView)(nil)
+
+var _ tui.AppUnbinder = (*CardView)(nil)
+
+var _ tui.PropsUpdater = (*CardView)(nil)
+
+func Card(title string, opts ...tui.Option) *CardView {
+	var view CardView
+	var watchers []tui.Watcher
+
+	__tui_0 := tui.New(append([]tui.Option{
+		tui.WithBorder(tui.BorderRounded),
+		tui.WithPadding(1),
+	}, opts...)...)
+	__tui_1 := tui.New(
+		tui.WithText(title),
+	)
+	__tui_0.AddChild(__tui_1)
+
+	__bindApp := func(app *tui.App) {
+	}
+
+	__unbindApp := func() {
+	}
+
+	view = CardView{
+		Root:      __tui_0,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
+}

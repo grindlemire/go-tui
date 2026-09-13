@@ -705,7 +705,8 @@ func isOffsetInElementTag(content string, offset int) bool {
 }
 
 // findFuncParamAtColumn checks if the cursor column (1-indexed) is on a parameter
-// name in a function declaration. Returns the parameter name if found, empty string otherwise.
+// name on the first line of a function declaration. Returns the parameter name if
+// found, empty string otherwise.
 func findFuncParamAtColumn(fn *tuigen.GoFunc, col int) string {
 	code := fn.Code
 	if !strings.HasPrefix(strings.TrimSpace(code), "func ") {
@@ -716,59 +717,20 @@ func findFuncParamAtColumn(fn *tuigen.GoFunc, col int) string {
 	if parenIdx < 0 {
 		return ""
 	}
-
-	// Find matching close paren (depth-aware for nested parens in types)
-	depth := 0
-	closeIdx := -1
-	for i := parenIdx; i < len(code); i++ {
-		switch code[i] {
-		case '(':
-			depth++
-		case ')':
-			depth--
-			if depth == 0 {
-				closeIdx = i
-			}
-		}
-		if closeIdx >= 0 {
-			break
-		}
-	}
+	closeIdx := matchingParen(code, parenIdx)
 	if closeIdx < 0 {
 		return ""
 	}
 
-	paramStr := code[parenIdx+1 : closeIdx]
 	// Column where param content starts (1-indexed, matching col)
 	paramStartCol := fn.Position.Column + parenIdx + 1
-
-	// Split params at top level (depth-aware for nested parens/brackets in types)
-	depth = 0
-	paramBegin := 0
-	for i := 0; i <= len(paramStr); i++ {
-		if i < len(paramStr) {
-			switch paramStr[i] {
-			case '(', '[':
-				depth++
-			case ')', ']':
-				depth--
-			}
+	for _, p := range tuigen.ParseParamList(code[parenIdx+1 : closeIdx]) {
+		if p.Position.Line != 1 {
+			continue
 		}
-
-		if (i == len(paramStr)) || (paramStr[i] == ',' && depth == 0) {
-			param := paramStr[paramBegin:i]
-			trimmed := strings.TrimSpace(param)
-			fields := strings.Fields(trimmed)
-			if len(fields) >= 2 {
-				paramName := fields[0]
-				// Find name position within the raw param substring
-				nameInParam := strings.Index(param, paramName)
-				nameCol := paramStartCol + paramBegin + nameInParam
-				if col >= nameCol && col < nameCol+len(paramName) {
-					return paramName
-				}
-			}
-			paramBegin = i + 1
+		nameCol := paramStartCol + p.Position.Column - 1
+		if col >= nameCol && col < nameCol+len(p.Name) {
+			return p.Name
 		}
 	}
 

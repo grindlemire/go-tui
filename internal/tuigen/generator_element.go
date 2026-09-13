@@ -29,19 +29,7 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 	varName := g.nextVar()
 
 	// Build options from attributes and tag
-	elemOpts := g.buildElementOptions(elem)
-
-	if len(elemOpts.options) == 0 {
-		g.writef("%s := tui.New()\n", varName)
-	} else {
-		g.writef("%s := tui.New(\n", varName)
-		g.indent++
-		for _, opt := range elemOpts.options {
-			g.writef("%s,\n", opt)
-		}
-		g.indent--
-		g.writeln(")")
-	}
+	g.writeOptionsCall(varName+" := ", "tui.New", "[]tui.Option", g.buildElementOptions(elem))
 
 	// Handle ref binding — emit the appropriate Set/Append/Put call
 	if elem.RefExpr != nil {
@@ -78,6 +66,35 @@ func (g *Generator) generateElementWithRefs(elem *Element, parentVar string, inL
 // elementOptions holds options for an element.
 type elementOptions struct {
 	options []string
+	// spread is the options={...} expression, appended after options so it can override them.
+	spread string
+}
+
+// writeOptionsCall emits "<lhs><ctor>(...)" for the element's options. With a
+// spread the attribute options are wrapped in append so the slice applies last.
+func (g *Generator) writeOptionsCall(lhs, ctor, sliceType string, opts elementOptions) {
+	switch {
+	case len(opts.options) == 0 && opts.spread == "":
+		g.writef("%s%s()\n", lhs, ctor)
+	case len(opts.options) == 0:
+		g.writef("%s%s(%s...)\n", lhs, ctor, opts.spread)
+	case opts.spread == "":
+		g.writef("%s%s(\n", lhs, ctor)
+		g.indent++
+		for _, opt := range opts.options {
+			g.writef("%s,\n", opt)
+		}
+		g.indent--
+		g.writeln(")")
+	default:
+		g.writef("%s%s(append(%s{\n", lhs, ctor, sliceType)
+		g.indent++
+		for _, opt := range opts.options {
+			g.writef("%s,\n", opt)
+		}
+		g.indent--
+		g.writef("}, %s...)...)\n", opts.spread)
+	}
 }
 
 // buildElementOptions generates option expressions for an element.
@@ -125,6 +142,11 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 
 	// Generate options from attributes
 	for _, attr := range elem.Attributes {
+		if attr.Name == "options" {
+			result.spread = g.generateAttributeValue(attr.Value)
+			continue
+		}
+
 		// Handle class attribute specially - parse Tailwind classes
 		if attr.Name == "class" {
 			classValue := g.getClassAttributeValue(attr)
@@ -413,6 +435,32 @@ var markdownAttributeToOption = map[string]string{
 // markdownHandlerAttributes: markdown has no event handlers.
 var markdownHandlerAttributes = map[string]string{}
 
+// ElementConstructor returns the constructor a tag compiles to: tui.New for
+// plain elements or the component constructor for mounted component tags.
+func ElementConstructor(tag string) string {
+	if isComponentElement(tag) {
+		return componentConstructor(tag)
+	}
+	return "tui.New"
+}
+
+// componentOptionType returns the option slice type accepted by a component
+// element's constructor, used to type the options={...} append.
+func componentOptionType(tag string) string {
+	switch tag {
+	case "textarea":
+		return "[]tui.TextAreaOption"
+	case "input":
+		return "[]tui.InputOption"
+	case "modal":
+		return "[]tui.ModalOption"
+	case "markdown":
+		return "[]tui.MarkdownOption"
+	default:
+		return fmt.Sprintf("[]UNKNOWN_COMPONENT_OPTION_%s", tag)
+	}
+}
+
 // componentConstructor returns the tui.New* constructor for a component element tag.
 func componentConstructor(tag string) string {
 	switch tag {
@@ -464,19 +512,7 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	g.writef("%s := %s(%s, %s, func() tui.Component {\n", varName, mountFunc, g.currentReceiver, indexExpr)
 	g.indent++
 
-	constructor := componentConstructor(elem.Tag)
-
-	if len(elemOpts.options) == 0 {
-		g.writef("return %s()\n", constructor)
-	} else {
-		g.writef("return %s(\n", constructor)
-		g.indent++
-		for _, opt := range elemOpts.options {
-			g.writef("%s,\n", opt)
-		}
-		g.indent--
-		g.writef(")\n")
-	}
+	g.writeOptionsCall("return ", componentConstructor(elem.Tag), componentOptionType(elem.Tag), elemOpts)
 
 	g.indent--
 	g.writeln("})")
@@ -513,6 +549,11 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 	attrMap, handlerMap := componentAttributeMaps(elem.Tag)
 
 	for _, attr := range elem.Attributes {
+		if attr.Name == "options" {
+			result.spread = g.generateAttributeValue(attr.Value)
+			continue
+		}
+
 		// Skip generic attributes handled elsewhere
 		if attr.Name == "class" || attr.Name == "id" || attr.Name == "ref" ||
 			attr.Name == "key" || attr.Name == "deps" {

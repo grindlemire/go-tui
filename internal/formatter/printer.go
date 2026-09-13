@@ -148,9 +148,7 @@ func (p *printer) printComponent(comp *tuigen.Component) {
 			if i > 0 {
 				p.write(", ")
 			}
-			p.write(param.Name)
-			p.write(" ")
-			p.write(param.Type)
+			p.write(param.String())
 		}
 
 		p.write(")")

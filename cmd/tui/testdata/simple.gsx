@@ -13,3 +13,9 @@ templ Footer() {
 		<span>Footer content</span>
 	</div>
 }
+
+templ Card(title string, opts ...tui.Option) {
+	<div class="border-rounded p-1" options={opts}>
+		<span>{title}</span>
+	</div>
+}
