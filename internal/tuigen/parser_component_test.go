@@ -255,6 +255,62 @@ templ P(a, b) {
 	}
 }
 
+// ParseParamList is the entry point the LSP uses for raw Go func
+// parameter text; it must resolve grouped names the same way templ does.
+func TestParseParamList(t *testing.T) {
+	type wantParam struct {
+		name    string
+		typ     string
+		column  int
+		grouped bool
+	}
+	type tc struct {
+		list string
+		want []wantParam
+	}
+
+	tests := map[string]tc{
+		"empty": {list: ""},
+		"grouped names share a type": {
+			list: "a, b int",
+			want: []wantParam{{"a", "int", 1, true}, {"b", "int", 4, false}},
+		},
+		"mixed grouped and variadic": {
+			list: "a string, b, c int, opts ...tui.Option",
+			want: []wantParam{
+				{"a", "string", 1, false},
+				{"b", "int", 11, true},
+				{"c", "int", 14, false},
+				{"opts", "...tui.Option", 21, false},
+			},
+		},
+		"commas nested in types": {
+			list: "m map[string]int, fn func(int, int) bool",
+			want: []wantParam{{"m", "map[string]int", 1, false}, {"fn", "func(int, int) bool", 19, false}},
+		},
+		"trailing bare name is dropped": {
+			list: "a int, b",
+			want: []wantParam{{"a", "int", 1, false}},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			params := ParseParamList(tt.list)
+			if len(params) != len(tt.want) {
+				t.Fatalf("got %d params, want %d", len(params), len(tt.want))
+			}
+			for i, w := range tt.want {
+				got := params[i]
+				if got.Name != w.name || got.Type != w.typ || got.Grouped != w.grouped || got.Position.Column != w.column {
+					t.Errorf("param %d = {%s %q col=%d grouped=%v}, want {%s %q col=%d grouped=%v}",
+						i, got.Name, got.Type, got.Position.Column, got.Grouped, w.name, w.typ, w.column, w.grouped)
+				}
+			}
+		})
+	}
+}
+
 func TestParser_ComplexTypeSignatures(t *testing.T) {
 	type tc struct {
 		input     string

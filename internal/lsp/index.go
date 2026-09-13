@@ -290,63 +290,62 @@ func (idx *ComponentIndex) AllFunctions() []string {
 	return names
 }
 
+// funcSigRe locates a plain func declaration's name and opening paren.
+var funcSigRe = regexp.MustCompile(`func\s+([\p{L}_][\p{L}\p{N}_]*)\s*\(`)
+
 // parseFuncSignature extracts function name, signature, params and return type from Go code.
 func parseFuncSignature(code string) (name, signature string, params []FuncParam, returns string) {
-	// Match: func name(params) returns
-	re := regexp.MustCompile(`func\s+([\p{L}_][\p{L}\p{N}_]*)\s*\(([^)]*)\)\s*([^{]*)`)
-	matches := re.FindStringSubmatch(code)
-	if len(matches) < 2 {
+	m := funcSigRe.FindStringSubmatchIndex(code)
+	if m == nil {
 		return "", "", nil, ""
 	}
+	name = code[m[2]:m[3]]
 
-	name = matches[1]
-	paramStr := ""
-	if len(matches) > 2 {
-		paramStr = strings.TrimSpace(matches[2])
+	// The list runs to the matching paren so commas inside func(int, int)
+	// or generic types do not end it early.
+	listStart := m[1]
+	listEnd := matchingParen(code, listStart-1)
+	if listEnd < 0 {
+		return "", "", nil, ""
 	}
-	if len(matches) > 3 {
-		returns = strings.TrimSpace(matches[3])
+	paramStr := strings.TrimSpace(code[listStart:listEnd])
+	returns = strings.TrimSpace(code[listEnd+1:])
+	if brace := strings.Index(returns, "{"); brace >= 0 {
+		returns = strings.TrimSpace(returns[:brace])
 	}
 
-	// Build signature
 	signature = "func " + name + "(" + paramStr + ")"
 	if returns != "" {
 		signature += " " + returns
 	}
 
-	// Parse params with positions relative to code start
-	if paramStr != "" {
-		// Find the opening paren in the original code to calculate positions
-		parenIdx := strings.Index(code, "(")
-		paramContentStart := parenIdx + 1
-
-		paramParts := strings.Split(paramStr, ",")
-		offset := 0
-		for _, rawPart := range paramParts {
-			trimmed := strings.TrimSpace(rawPart)
-			fields := strings.Fields(trimmed)
-			if len(fields) >= 2 {
-				// Find where the name starts within the raw part
-				nameInPart := strings.Index(rawPart, fields[0])
-				charPos := paramContentStart + offset + nameInPart
-				params = append(params, FuncParam{
-					Name: fields[0],
-					Type: strings.Join(fields[1:], " "),
-					Position: Position{
-						Character: charPos, // relative to code start; adjusted to absolute in AddFunc
-					},
-				})
-			} else if len(fields) == 1 {
-				// Type only, no name (or name only)
-				params = append(params, FuncParam{
-					Name: fields[0],
-				})
-			}
-			offset += len(rawPart) + 1 // +1 for comma
-		}
+	for _, p := range tuigen.ParseParamList(code[listStart:listEnd]) {
+		params = append(params, FuncParam{
+			Name: p.Name,
+			Type: p.Type,
+			// Relative to code start; adjusted to absolute in AddFunc.
+			Position: Position{Character: listStart + p.Position.Column - 1},
+		})
 	}
 
 	return name, signature, params, returns
+}
+
+// matchingParen returns the index of the ')' closing the '(' at open, or -1.
+func matchingParen(s string, open int) int {
+	depth := 0
+	for i := open; i < len(s); i++ {
+		switch s[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
 }
 
 // componentNameLocation spans the component's name (tuigen is 1-indexed, LSP

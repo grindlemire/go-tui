@@ -388,6 +388,13 @@ func (p *Parser) parseMethodTempl(pos Position) *Component {
 	return comp
 }
 
+// ParseParamList parses the raw text of a Go parameter list ("a, b int,
+// opts ...T") with the same grouped-name rules as templ signatures. Param
+// positions are 1-based line/column within list.
+func ParseParamList(list string) []*Param {
+	return NewParser(NewLexer("", list)).parseParams()
+}
+
 // parseParams parses function parameters, including Go-style grouped
 // names (a, b string) which all receive the shared type.
 func (p *Parser) parseParams() []*Param {

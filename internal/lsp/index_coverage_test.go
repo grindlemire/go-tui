@@ -183,13 +183,43 @@ func TestParseFuncSignature(t *testing.T) {
 				{Name: "items", Type: "...string", Position: Position{Character: 10}},
 			},
 		},
-		"type only param": {
-			code:     "func cb(int) {",
-			wantName: "cb",
-			wantSig:  "func cb(int)",
+		"type only param is not a named param": {
+			code:       "func cb(int) {",
+			wantName:   "cb",
+			wantSig:    "func cb(int)",
+			wantRet:    "",
+			wantParams: nil,
+		},
+		"grouped names share a type": {
+			code:     "func sum(a, b int) int { return a + b }",
+			wantName: "sum",
+			wantSig:  "func sum(a, b int) int",
+			wantRet:  "int",
+			wantParams: []FuncParam{
+				{Name: "a", Type: "int", Position: Position{Character: 9}},
+				{Name: "b", Type: "int", Position: Position{Character: 12}},
+			},
+		},
+		"mixed grouped and variadic": {
+			code:     "func f(a string, b, c int, opts ...tui.Option) {",
+			wantName: "f",
+			wantSig:  "func f(a string, b, c int, opts ...tui.Option)",
 			wantRet:  "",
 			wantParams: []FuncParam{
-				{Name: "int"},
+				{Name: "a", Type: "string", Position: Position{Character: 7}},
+				{Name: "b", Type: "int", Position: Position{Character: 17}},
+				{Name: "c", Type: "int", Position: Position{Character: 20}},
+				{Name: "opts", Type: "...tui.Option", Position: Position{Character: 27}},
+			},
+		},
+		"commas nested in types": {
+			code:     "func g(m map[string]int, fn func(int, int) bool) bool {",
+			wantName: "g",
+			wantSig:  "func g(m map[string]int, fn func(int, int) bool) bool",
+			wantRet:  "bool",
+			wantParams: []FuncParam{
+				{Name: "m", Type: "map[string]int", Position: Position{Character: 7}},
+				{Name: "fn", Type: "func(int, int) bool", Position: Position{Character: 25}},
 			},
 		},
 		"not a function": {

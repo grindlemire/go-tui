@@ -626,7 +626,7 @@ func TestParseFuncSignatureForTokens(t *testing.T) {
 		wantName       string
 		wantReceiver   string
 		wantTypeParams string
-		wantParams     []funcParam
+		wantParams     []*tuigen.Param
 		wantReturns    string
 	}
 
@@ -634,22 +634,44 @@ func TestParseFuncSignatureForTokens(t *testing.T) {
 		"plain function": {
 			code:        "func helper(s string) string {\n\treturn s\n}",
 			wantName:    "helper",
-			wantParams:  []funcParam{{Name: "s", Type: "string"}},
+			wantParams:  []*tuigen.Param{{Name: "s", Type: "string"}},
 			wantReturns: "string",
 		},
 		"method with receiver": {
 			code:         "func (c *chat) update(h int) int {\n\treturn h\n}",
 			wantName:     "update",
 			wantReceiver: "c *chat",
-			wantParams:   []funcParam{{Name: "h", Type: "int"}},
+			wantParams:   []*tuigen.Param{{Name: "h", Type: "int"}},
 			wantReturns:  "int",
 		},
 		"generic function": {
 			code:           "func pick[T any](a T) T {\n\treturn a\n}",
 			wantName:       "pick",
 			wantTypeParams: "[T any]",
-			wantParams:     []funcParam{{Name: "a", Type: "T"}},
+			wantParams:     []*tuigen.Param{{Name: "a", Type: "T"}},
 			wantReturns:    "T",
+		},
+		"grouped names share a type": {
+			code:        "func sum(a, b int) int {\n\treturn a + b\n}",
+			wantName:    "sum",
+			wantParams:  []*tuigen.Param{{Name: "a", Type: "int", Grouped: true}, {Name: "b", Type: "int"}},
+			wantReturns: "int",
+		},
+		"mixed grouped and variadic": {
+			code:     "func f(a string, b, c int, opts ...tui.Option) {}",
+			wantName: "f",
+			wantParams: []*tuigen.Param{
+				{Name: "a", Type: "string"},
+				{Name: "b", Type: "int", Grouped: true},
+				{Name: "c", Type: "int"},
+				{Name: "opts", Type: "...tui.Option"},
+			},
+		},
+		"commas nested in types": {
+			code:        "func g(m map[string]int, fn func(int, int) bool) bool {}",
+			wantName:    "g",
+			wantParams:  []*tuigen.Param{{Name: "m", Type: "map[string]int"}, {Name: "fn", Type: "func(int, int) bool"}},
+			wantReturns: "bool",
 		},
 		"not a function": {
 			code: "var x = 1",
@@ -689,9 +711,10 @@ func TestParseFuncSignatureForTokens(t *testing.T) {
 			if len(gotParams) != len(tt.wantParams) {
 				t.Fatalf("params = %+v, want %+v", gotParams, tt.wantParams)
 			}
-			for i := range gotParams {
-				if gotParams[i] != tt.wantParams[i] {
-					t.Errorf("param %d = %+v, want %+v", i, gotParams[i], tt.wantParams[i])
+			for i, want := range tt.wantParams {
+				got := gotParams[i]
+				if got.Name != want.Name || got.Type != want.Type || got.Grouped != want.Grouped {
+					t.Errorf("param %d = %+v, want %+v", i, got, want)
 				}
 			}
 			if gotReturns != tt.wantReturns {

@@ -414,18 +414,19 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				paramStart = nameStart + len(name) + len(typeParamStr) + 1 // +1 for '('
 			}
 			for _, p := range params {
-				// Parameter name
+				// Parameter name; p.Position.Column is 1-based within the list
+				nameStart := paramStart + p.Position.Column - 1
 				tokens = append(tokens, SemanticToken{
 					Line:      line,
-					StartChar: paramStart,
+					StartChar: nameStart,
 					Length:    len(p.Name),
 					TokenType: TokenTypeParameter,
 					Modifiers: TokenModDeclaration,
 				})
-				// Parameter type
-				typeStart := paramStart + len(p.Name) + 1 // +1 for space
-				emitGoTypeTokens(p.Type, line, typeStart, &tokens)
-				paramStart += len(p.Name) + 1 + len(p.Type) + 2 // +2 for ", "
+				// Parameter type; a grouped name (a in "a, b T") has none of its own
+				if !p.Grouped {
+					emitGoTypeTokens(p.Type, line, nameStart+len(p.Name)+1, &tokens)
+				}
 			}
 
 			// Return type
@@ -434,12 +435,10 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				if typeParamStr != "" {
 					returnStart = nameStart + len(name) + len(typeParamStr) + 1 // "name[...]("
 				}
-				if len(params) > 0 {
-					for i, p := range params {
-						returnStart += len(p.Name) + 1 + len(p.Type)
-						if i < len(params)-1 {
-							returnStart += 2 // ", "
-						}
+				for i, p := range params {
+					returnStart += len(p.String())
+					if i < len(params)-1 {
+						returnStart += 2 // ", "
 					}
 				}
 				returnStart += 2 // ") " — close paren + space

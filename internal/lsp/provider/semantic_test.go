@@ -508,3 +508,66 @@ templ Hello() {
 		})
 	}
 }
+
+// Grouped parameter names (a, b int) get one parameter token each and a
+// single type token on the shared type.
+func TestSemanticTokens_GroupedFuncParams(t *testing.T) {
+	type token struct {
+		line, col, length, typ int
+	}
+	type tc struct {
+		content   string
+		want      []token
+		wantNoTyp []token // positions that must not carry a type token
+	}
+
+	tests := map[string]tc{
+		"two names share a type": {
+			content: "package main\n\nfunc sum(a, b int) int {\n\treturn a + b\n}\n",
+			want: []token{
+				{2, 5, 3, TokenTypeFunction},
+				{2, 9, 1, TokenTypeParameter},
+				{2, 12, 1, TokenTypeParameter},
+				{2, 14, 3, TokenTypeType},
+				{2, 19, 3, TokenTypeType}, // return type
+				{3, 8, 1, TokenTypeParameter},
+				{3, 12, 1, TokenTypeParameter},
+			},
+			wantNoTyp: []token{{2, 12, 1, TokenTypeType}},
+		},
+		"mixed grouped and variadic": {
+			content: "package main\n\nfunc f(a string, b, c int, opts ...tui.Option) {}\n",
+			want: []token{
+				{2, 7, 1, TokenTypeParameter},
+				{2, 9, 6, TokenTypeType},
+				{2, 17, 1, TokenTypeParameter},
+				{2, 20, 1, TokenTypeParameter},
+				{2, 22, 3, TokenTypeType},
+				{2, 27, 4, TokenTypeParameter},
+			},
+			wantNoTyp: []token{{2, 20, 1, TokenTypeType}},
+		},
+	}
+
+	sp := newTestSemanticProvider()
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := sp.SemanticTokensFull(parseTestDoc(tt.content))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			tokens := decodeTokens(result.Data)
+			for _, w := range tt.want {
+				if !hasTokenAt(tokens, w.line, w.col, w.length, w.typ) {
+					t.Errorf("missing token %+v in %+v", w, tokens)
+				}
+			}
+			for _, w := range tt.wantNoTyp {
+				if hasTokenAt(tokens, w.line, w.col, w.length, w.typ) {
+					t.Errorf("unexpected type token %+v", w)
+				}
+			}
+		})
+	}
+}
