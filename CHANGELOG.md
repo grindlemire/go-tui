@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/grindlemire/go-tui/compare/v0.20.2...v0.21.0) (2026-09-13)
+
+
+### Features
+
+* **gsx:** add options attribute for forwarding option slices ([#139](https://github.com/grindlemire/go-tui/issues/139)) ([069ecde](https://github.com/grindlemire/go-tui/commit/069ecde237e7541c9c3c2ad80c5098024e06784e))
+
 ## [0.20.2](https://github.com/grindlemire/go-tui/compare/v0.20.1...v0.20.2) (2026-09-10)
 
 
