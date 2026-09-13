@@ -414,10 +414,14 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				paramStart = nameStart + len(name) + len(typeParamStr) + 1 // +1 for '('
 			}
 			for _, p := range params {
-				// Parameter name; p.Position.Column is 1-based within the list
-				nameStart := paramStart + p.Position.Column - 1
+				// p.Position is 1-based within the list; lines after the first
+				// are whole source lines, so their column is already absolute.
+				pLine, nameStart := line, paramStart+p.Position.Column-1
+				if p.Position.Line > 1 {
+					pLine, nameStart = line+p.Position.Line-1, p.Position.Column-1
+				}
 				tokens = append(tokens, SemanticToken{
-					Line:      line,
+					Line:      pLine,
 					StartChar: nameStart,
 					Length:    len(p.Name),
 					TokenType: TokenTypeParameter,
@@ -425,7 +429,7 @@ func (s *semanticTokensProvider) collectSemanticTokens(doc *Document) []Semantic
 				})
 				// Parameter type; a grouped name (a in "a, b T") has none of its own
 				if !p.Grouped {
-					emitGoTypeTokens(p.Type, line, nameStart+len(p.Name)+1, &tokens)
+					emitGoTypeTokens(p.Type, pLine, nameStart+len(p.Name)+1, &tokens)
 				}
 			}
 

@@ -171,6 +171,20 @@ templ P(a, b string) {
 }`,
 			want: []wantParam{{"a", "string", 9, true}, {"b", "string", 12, false}},
 		},
+		"blank identifier": {
+			input: `package x
+templ P(_ int, b string) {
+	<span>{b}</span>
+}`,
+			want: []wantParam{{"_", "int", 9, false}, {"b", "string", 16, false}},
+		},
+		"templ keyword as a name": {
+			input: `package x
+templ P(templ string) {
+	<span>{templ}</span>
+}`,
+			want: []wantParam{{"templ", "string", 9, false}},
+		},
 		"grouped then variadic": {
 			input: `package x
 templ P(x, y int, opts ...tui.Option) {
@@ -291,6 +305,14 @@ func TestParseParamList(t *testing.T) {
 		"trailing bare name is dropped": {
 			list: "a int, b",
 			want: []wantParam{{"a", "int", 1, false}},
+		},
+		"blank identifier": {
+			list: "a int, _ string, c bool",
+			want: []wantParam{{"a", "int", 1, false}, {"_", "string", 8, false}, {"c", "bool", 18, false}},
+		},
+		"templ keyword as a name": {
+			list: "templ string, x int",
+			want: []wantParam{{"templ", "string", 1, false}, {"x", "int", 15, false}},
 		},
 	}
 

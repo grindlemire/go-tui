@@ -180,10 +180,10 @@ func (idx *ComponentIndex) AddFunc(uri string, fn *tuigen.GoFunc) {
 
 	// Adjust param positions from code-relative to document-absolute (0-indexed)
 	for i := range params {
-		params[i].Position = Position{
-			Line:      fn.Position.Line - 1,
-			Character: fn.Position.Column - 1 + params[i].Position.Character,
+		if params[i].Position.Line == 0 {
+			params[i].Position.Character += fn.Position.Column - 1
 		}
+		params[i].Position.Line += fn.Position.Line - 1
 	}
 
 	info := &FuncInfo{
@@ -320,12 +320,13 @@ func parseFuncSignature(code string) (name, signature string, params []FuncParam
 	}
 
 	for _, p := range tuigen.ParseParamList(code[listStart:listEnd]) {
-		params = append(params, FuncParam{
-			Name: p.Name,
-			Type: p.Type,
-			// Relative to code start; adjusted to absolute in AddFunc.
-			Position: Position{Character: listStart + p.Position.Column - 1},
-		})
+		// Relative to code start; adjusted to absolute in AddFunc. Lines after
+		// the first are whole source lines, so only line 0 is offset by listStart.
+		pos := Position{Line: p.Position.Line - 1, Character: p.Position.Column - 1}
+		if pos.Line == 0 {
+			pos.Character += listStart
+		}
+		params = append(params, FuncParam{Name: p.Name, Type: p.Type, Position: pos})
 	}
 
 	return name, signature, params, returns

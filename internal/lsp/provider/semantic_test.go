@@ -68,6 +68,17 @@ func countByType(tokens []SemanticToken, tokenType int) int {
 }
 
 // hasTokenAt checks if a token exists at the given position with the given type and length.
+// countTokensAt reports how many tokens start at line:col, whatever their type.
+func countTokensAt(tokens []SemanticToken, line, col int) int {
+	n := 0
+	for _, tok := range tokens {
+		if tok.Line == line && tok.StartChar == col {
+			n++
+		}
+	}
+	return n
+}
+
 func hasTokenAt(tokens []SemanticToken, line, col, length, tokenType int) bool {
 	for _, tok := range tokens {
 		if tok.Line == line && tok.StartChar == col && tok.Length == length && tok.TokenType == tokenType {
@@ -547,6 +558,15 @@ func TestSemanticTokens_GroupedFuncParams(t *testing.T) {
 			},
 			wantNoTyp: []token{{2, 20, 1, TokenTypeType}},
 		},
+		"multi-line list": {
+			content: "package x\n\nfunc f(\n\ta int,\n\tb string,\n) {\n}\n",
+			want: []token{
+				{3, 1, 1, TokenTypeParameter},
+				{3, 3, 3, TokenTypeType},
+				{4, 1, 1, TokenTypeParameter},
+				{4, 3, 6, TokenTypeType},
+			},
+		},
 	}
 
 	sp := newTestSemanticProvider()
@@ -561,6 +581,9 @@ func TestSemanticTokens_GroupedFuncParams(t *testing.T) {
 			for _, w := range tt.want {
 				if !hasTokenAt(tokens, w.line, w.col, w.length, w.typ) {
 					t.Errorf("missing token %+v in %+v", w, tokens)
+				}
+				if n := countTokensAt(tokens, w.line, w.col); n > 1 {
+					t.Errorf("token %+v emitted %d times", w, n)
 				}
 			}
 			for _, w := range tt.wantNoTyp {

@@ -393,13 +393,16 @@ func TestFindFuncParamAtColumn(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"not a func":   {code: "var x = 1", col: 1, want: ""},
-		"no paren":     {code: "func f", col: 1, want: ""},
-		"unbalanced":   {code: "func f(a int", col: 8, want: ""},
-		"first param":  {code: "func f(a int, b string) {}", col: 8, want: "a"},
-		"second param": {code: "func f(a int, b string) {}", col: 15, want: "b"},
-		"nested types": {code: "func g(m map[string]int, fn func(int) bool) {}", col: 26, want: "fn"},
-		"miss":         {code: "func f(a int) {}", col: 11, want: ""},
+		"not a func":          {code: "var x = 1", col: 1, want: ""},
+		"no paren":            {code: "func f", col: 1, want: ""},
+		"unbalanced":          {code: "func f(a int", col: 8, want: ""},
+		"first param":         {code: "func f(a int, b string) {}", col: 8, want: "a"},
+		"second param":        {code: "func f(a int, b string) {}", col: 15, want: "b"},
+		"nested types":        {code: "func g(m map[string]int, fn func(int) bool) {}", col: 26, want: "fn"},
+		"miss":                {code: "func f(a int) {}", col: 11, want: ""},
+		"grouped first name":  {code: "func sum(a, b int) int {}", col: 10, want: "a"},
+		"grouped second name": {code: "func sum(a, b int) int {}", col: 13, want: "b"},
+		"blank identifier":    {code: "func f(_ int, b string) {}", col: 8, want: "_"},
 	}
 
 	for name, tt := range tests {

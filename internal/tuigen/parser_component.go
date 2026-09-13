@@ -390,7 +390,8 @@ func (p *Parser) parseMethodTempl(pos Position) *Component {
 
 // ParseParamList parses the raw text of a Go parameter list ("a, b int,
 // opts ...T") with the same grouped-name rules as templ signatures. Param
-// positions are 1-based line/column within list.
+// positions are 1-based line/column within list. Malformed input yields the
+// params parsed before the error.
 func ParseParamList(list string) []*Param {
 	return NewParser(NewLexer("", list)).parseParams()
 }
@@ -443,7 +444,10 @@ func (p *Parser) parseParams() []*Param {
 func (p *Parser) parseParam() *Param {
 	pos := p.position()
 
-	if p.current.Type != TokenIdent {
+	// _ and templ are lexer tokens but legal Go parameter names.
+	switch p.current.Type {
+	case TokenIdent, TokenUnderscore, TokenTempl:
+	default:
 		p.errors.AddError(p.position(), "expected parameter name")
 		return nil
 	}

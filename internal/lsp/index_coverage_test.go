@@ -222,6 +222,26 @@ func TestParseFuncSignature(t *testing.T) {
 				{Name: "fn", Type: "func(int, int) bool", Position: Position{Character: 25}},
 			},
 		},
+		"blank identifier": {
+			code:     "func f(_ int, b string) {",
+			wantName: "f",
+			wantSig:  "func f(_ int, b string)",
+			wantRet:  "",
+			wantParams: []FuncParam{
+				{Name: "_", Type: "int", Position: Position{Character: 7}},
+				{Name: "b", Type: "string", Position: Position{Character: 14}},
+			},
+		},
+		"multi-line list": {
+			code:     "func f(\n\ta int,\n\tb string,\n) {",
+			wantName: "f",
+			wantSig:  "func f(a int,\n\tb string,)",
+			wantRet:  "",
+			wantParams: []FuncParam{
+				{Name: "a", Type: "int", Position: Position{Line: 1, Character: 1}},
+				{Name: "b", Type: "string", Position: Position{Line: 2, Character: 1}},
+			},
+		},
 		"not a function": {
 			code:     "var x = 1",
 			wantName: "",
@@ -251,8 +271,8 @@ func TestParseFuncSignature(t *testing.T) {
 				if got.Name != want.Name || got.Type != want.Type {
 					t.Errorf("param[%d] = %+v, want %+v", i, got, want)
 				}
-				if want.Position.Character != 0 && got.Position.Character != want.Position.Character {
-					t.Errorf("param[%d] position = %d, want %d", i, got.Position.Character, want.Position.Character)
+				if want.Position.Character != 0 && got.Position != want.Position {
+					t.Errorf("param[%d] position = %+v, want %+v", i, got.Position, want.Position)
 				}
 			}
 		})
@@ -323,5 +343,25 @@ func TestComponentIndex_FuncLocationSpansName(t *testing.T) {
 				t.Errorf("range = %d:%d..%d, want 9:%d..%d", r.Start.Line, r.Start.Character, r.End.Character, tt.wantStart, tt.wantEnd)
 			}
 		})
+	}
+}
+
+// Params on later lines of a multi-line signature keep their own line and
+// column so go-to-definition lands on the right name.
+func TestComponentIndex_AddFuncMultiLineParams(t *testing.T) {
+	idx := NewComponentIndex()
+	idx.AddFunc("file:///w/a.gsx", &tuigen.GoFunc{
+		Code:     "func f(\n\ta int,\n\tb string,\n) {\n}",
+		Position: tuigen.Position{Line: 10, Column: 1},
+	})
+	info, ok := idx.LookupFunc("f")
+	if !ok {
+		t.Fatal("func f not indexed")
+	}
+	want := []Position{{Line: 10, Character: 1}, {Line: 11, Character: 1}}
+	for i, p := range info.Params {
+		if p.Position != want[i] {
+			t.Errorf("param %s = %+v, want %+v", p.Name, p.Position, want[i])
+		}
 	}
 }
