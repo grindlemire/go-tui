@@ -200,6 +200,9 @@ var knownAttributes = map[string]bool{
 	"ref": true, // ref={varName} for element references
 	"key": true, // key={expr}: identity for mounts (own, or descendants' when on a container); RefMap key with ref
 
+	// Option slice forwarded to the element constructor, applied after attribute-derived options
+	"options": true,
+
 	// Modal
 	"open":                 true,
 	"backdrop":             true,
@@ -277,10 +280,16 @@ func (a *Analyzer) Analyze(file *File) error {
 	// analyzeComponentCall can reject @Factory() calls in function templs.
 	a.structComponentFactories = collectStructComponentFactories(file, a.getTUIAlias())
 
-	// Validate method templs using {children...} have a children field on their struct
+	// {children...} needs a children field on method templs; on function templs
+	// it becomes a trailing param, so the declared last param cannot be variadic
 	for _, comp := range file.Components {
-		if comp.Receiver != "" && comp.AcceptsChildren {
+		if !comp.AcceptsChildren {
+			continue
+		}
+		if comp.Receiver != "" {
 			a.validateChildrenField(comp, file.Decls)
+		} else {
+			a.validateChildrenParams(comp)
 		}
 	}
 
@@ -427,7 +436,15 @@ func (a *Analyzer) analyzeElement(elem *Element) {
 	}
 
 	// Check attributes
+	seenOptions := false
 	for _, attr := range elem.Attributes {
+		if attr.Name == "options" {
+			if seenOptions {
+				a.errors.AddError(attr.Position, "duplicate options attribute")
+				continue
+			}
+			seenOptions = true
+		}
 		a.analyzeAttribute(attr, elem.Tag)
 	}
 
@@ -458,6 +475,16 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 		err.Hint = "use " + attr.Name + "={...} with a Go expression, not a literal"
 		a.errors.Add(err)
 		return
+	}
+
+	// options forwards a Go slice, so a literal has no valid meaning.
+	if attr.Name == "options" {
+		if _, ok := attr.Value.(*GoExpr); !ok {
+			err := NewError(attr.Position, "options must be an expression")
+			err.Hint = "use options={...} with a Go expression of the element's option slice type"
+			a.errors.Add(err)
+			return
+		}
 	}
 
 	// Check if class attribute uses Tailwind classes that need imports
@@ -730,6 +757,24 @@ func (a *Analyzer) validateChildrenField(comp *Component, decls []*GoDecl) {
 	a.errors.AddErrorf(comp.Position,
 		"method templ %s uses {children...} but struct %s has no `children` field; add `children []*tui.Element` to the struct",
 		comp.Name, typeName)
+}
+
+// validateChildrenParams rejects a variadic final parameter on a function templ
+// that uses {children...}, since the generator appends `children` after it.
+func (a *Analyzer) validateChildrenParams(comp *Component) {
+	if len(comp.Params) == 0 {
+		return
+	}
+	last := comp.Params[len(comp.Params)-1]
+	typ := strings.TrimSpace(last.Type)
+	if !strings.HasPrefix(typ, "...") {
+		return
+	}
+	elemType := strings.TrimSpace(strings.TrimPrefix(typ, "..."))
+	a.errors.Add(NewErrorWithHint(last.Position,
+		fmt.Sprintf("templ %s uses {children...} so its last parameter cannot be variadic", comp.Name),
+		fmt.Sprintf("declare it as a slice (%s []%s) and pass a slice at the call site",
+			last.Name, elemType)))
 }
 
 // AnalyzeFile is a convenience function that parses and analyzes a .tui file.

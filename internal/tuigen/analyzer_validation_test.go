@@ -509,3 +509,101 @@ templ Test() {
 		t.Error("EndPos should be set for range-based highlighting")
 	}
 }
+
+func TestAnalyzer_VariadicParamWithChildrenSlot(t *testing.T) {
+	type tc struct {
+		input         string
+		wantError     bool
+		errorContains string
+		hintContains  string
+	}
+
+	tests := map[string]tc{
+		"variadic last param with children slot is rejected": {
+			input: `package x
+templ Panel(title string, opts ...tui.Option) {
+	<div options={opts}>
+		<span>{title}</span>
+		{children...}
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "templ Panel uses {children...} so its last parameter cannot be variadic",
+			hintContains:  "declare it as a slice (opts []tui.Option) and pass a slice at the call site",
+		},
+		"grouped params before variadic last param with children slot is rejected": {
+			input: `package x
+templ Panel(x, y int, opts ...tui.Option) {
+	<div options={opts}>
+		<span>{x + y}</span>
+		{children...}
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "templ Panel uses {children...} so its last parameter cannot be variadic",
+			hintContains:  "declare it as a slice (opts []tui.Option) and pass a slice at the call site",
+		},
+		"variadic last param with extra whitespace is rejected": {
+			input: `package x
+templ Panel(opts ... tui.Option) {
+	<div options={opts}>
+		{children...}
+	</div>
+}`,
+			wantError:     true,
+			errorContains: "templ Panel uses {children...} so its last parameter cannot be variadic",
+			hintContains:  "opts []tui.Option",
+		},
+		"variadic last param without children slot is accepted": {
+			input: `package x
+templ Card(title string, opts ...tui.Option) {
+	<div options={opts}>
+		<span>{title}</span>
+	</div>
+}`,
+			wantError: false,
+		},
+		"slice param with children slot is accepted": {
+			input: `package x
+templ Panel(title string, opts []tui.Option) {
+	<div options={opts}>
+		<span>{title}</span>
+		{children...}
+	</div>
+}`,
+			wantError: false,
+		},
+		"no params with children slot is accepted": {
+			input: `package x
+templ Panel() {
+	<div>
+		{children...}
+	</div>
+}`,
+			wantError: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := AnalyzeFile("test.gsx", tt.input)
+
+			if !tt.wantError {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Error("expected error, got nil")
+				return
+			}
+			if !strings.Contains(err.Error(), tt.errorContains) {
+				t.Errorf("error %q does not contain %q", err.Error(), tt.errorContains)
+			}
+			if tt.hintContains != "" && !strings.Contains(err.Error(), tt.hintContains) {
+				t.Errorf("error %q does not contain hint %q", err.Error(), tt.hintContains)
+			}
+		})
+	}
+}

@@ -7,6 +7,7 @@ type myModal struct {
 	showModal  *tui.State[bool]
 	gameOver   *tui.State[bool]
 	confirmBtn tui.Ref
+	modalOpts  []tui.ModalOption
 }
 
 func MyModal() *myModal {
@@ -26,7 +27,7 @@ func (c *myModal) gameOverKeys() tui.KeyMap {
 templ (c *myModal) Render() {
 	<div class="flex-col">
 		<span>Background content</span>
-		<modal open={c.showModal} class="justify-center items-center" backdrop="dim">
+		<modal open={c.showModal} class="justify-center items-center" backdrop="dim" options={c.modalOpts}>
 			<div class="w-40 border-rounded p-2 flex-col gap-1">
 				<span class="font-bold">Are you sure?</span>
 				<button ref={c.confirmBtn}>OK</button>

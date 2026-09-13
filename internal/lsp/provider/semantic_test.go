@@ -68,6 +68,17 @@ func countByType(tokens []SemanticToken, tokenType int) int {
 }
 
 // hasTokenAt checks if a token exists at the given position with the given type and length.
+// countTokensAt reports how many tokens start at line:col, whatever their type.
+func countTokensAt(tokens []SemanticToken, line, col int) int {
+	n := 0
+	for _, tok := range tokens {
+		if tok.Line == line && tok.StartChar == col {
+			n++
+		}
+	}
+	return n
+}
+
 func hasTokenAt(tokens []SemanticToken, line, col, length, tokenType int) bool {
 	for _, tok := range tokens {
 		if tok.Line == line && tok.StartChar == col && tok.Length == length && tok.TokenType == tokenType {
@@ -102,6 +113,17 @@ templ Hello() {
 
 templ Greeting(name string, count int) {
 	<span>{name}</span>
+}
+`,
+			wantKeyword:   true,
+			wantClassName: true,
+			wantParams:    2,
+		},
+		"component with grouped params": {
+			content: `package main
+
+templ Pair(a, b string) {
+	<span>{a}</span>
 }
 `,
 			wantKeyword:   true,
@@ -170,6 +192,30 @@ templ Greeting(name string, count int) {
 		}
 		if !hasTokenAt(tokens, 2, 6, 8, TokenTypeClass) {
 			t.Error("expected Greeting class token at 2:6 with length 8")
+		}
+	})
+
+	// Grouped params: "templ Pair(a, b string)" has a at col 11, b at col 14,
+	// and a single "string" type token at col 17 (owned by b).
+	t.Run("component with grouped params positions", func(t *testing.T) {
+		doc := parseTestDoc(tests["component with grouped params"].content)
+		result, err := sp.SemanticTokensFull(doc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		tokens := decodeTokens(result.Data)
+
+		if !hasTokenAt(tokens, 2, 11, 1, TokenTypeParameter) {
+			t.Error("expected parameter token for a at 2:11")
+		}
+		if !hasTokenAt(tokens, 2, 14, 1, TokenTypeParameter) {
+			t.Error("expected parameter token for b at 2:14")
+		}
+		if !hasTokenAt(tokens, 2, 16, 6, TokenTypeType) {
+			t.Error("expected string type token at 2:16 after b")
+		}
+		if hasTokenAt(tokens, 2, 13, 6, TokenTypeType) {
+			t.Error("grouped name a must not emit a type token at 2:13")
 		}
 	})
 }
@@ -469,6 +515,81 @@ templ Hello() {
 			commentCount := countByType(tokens, TokenTypeComment)
 			if commentCount < tt.wantComment {
 				t.Errorf("got %d comment tokens, want at least %d", commentCount, tt.wantComment)
+			}
+		})
+	}
+}
+
+// Grouped parameter names (a, b int) get one parameter token each and a
+// single type token on the shared type.
+func TestSemanticTokens_GroupedFuncParams(t *testing.T) {
+	type token struct {
+		line, col, length, typ int
+	}
+	type tc struct {
+		content   string
+		want      []token
+		wantNoTyp []token // positions that must not carry a type token
+	}
+
+	tests := map[string]tc{
+		"two names share a type": {
+			content: "package main\n\nfunc sum(a, b int) int {\n\treturn a + b\n}\n",
+			want: []token{
+				{2, 5, 3, TokenTypeFunction},
+				{2, 9, 1, TokenTypeParameter},
+				{2, 12, 1, TokenTypeParameter},
+				{2, 14, 3, TokenTypeType},
+				{2, 19, 3, TokenTypeType}, // return type
+				{3, 8, 1, TokenTypeParameter},
+				{3, 12, 1, TokenTypeParameter},
+			},
+			wantNoTyp: []token{{2, 12, 1, TokenTypeType}},
+		},
+		"mixed grouped and variadic": {
+			content: "package main\n\nfunc f(a string, b, c int, opts ...tui.Option) {}\n",
+			want: []token{
+				{2, 7, 1, TokenTypeParameter},
+				{2, 9, 6, TokenTypeType},
+				{2, 17, 1, TokenTypeParameter},
+				{2, 20, 1, TokenTypeParameter},
+				{2, 22, 3, TokenTypeType},
+				{2, 27, 4, TokenTypeParameter},
+			},
+			wantNoTyp: []token{{2, 20, 1, TokenTypeType}},
+		},
+		"multi-line list": {
+			content: "package x\n\nfunc f(\n\ta int,\n\tb string,\n) {\n}\n",
+			want: []token{
+				{3, 1, 1, TokenTypeParameter},
+				{3, 3, 3, TokenTypeType},
+				{4, 1, 1, TokenTypeParameter},
+				{4, 3, 6, TokenTypeType},
+			},
+		},
+	}
+
+	sp := newTestSemanticProvider()
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := sp.SemanticTokensFull(parseTestDoc(tt.content))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			tokens := decodeTokens(result.Data)
+			for _, w := range tt.want {
+				if !hasTokenAt(tokens, w.line, w.col, w.length, w.typ) {
+					t.Errorf("missing token %+v in %+v", w, tokens)
+				}
+				if n := countTokensAt(tokens, w.line, w.col); n > 1 {
+					t.Errorf("token %+v emitted %d times", w, n)
+				}
+			}
+			for _, w := range tt.wantNoTyp {
+				if hasTokenAt(tokens, w.line, w.col, w.length, w.typ) {
+					t.Errorf("unexpected type token %+v", w)
+				}
 			}
 		})
 	}

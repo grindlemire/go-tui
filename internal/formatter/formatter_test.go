@@ -35,6 +35,20 @@ templ Hello() {
 }
 `,
 		},
+		"grouped params are preserved": {
+			input: `package main
+
+templ Grp(x, y int, opts ...tui.Option) {
+<div options={opts}>{x + y}</div>
+}
+`,
+			want: `package main
+
+templ Grp(x, y int, opts ...tui.Option) {
+	<div options={opts}>{x + y}</div>
+}
+`,
+		},
 		"single import": {
 			input: `package main
 
@@ -584,6 +598,29 @@ templ Test() {
 }
 `,
 		},
+		"options attribute single line": {
+			input: `package main
+
+templ Card(opts []tui.Option) {
+	<div class="border-rounded p-1" options={opts}>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"options attribute multi-line": {
+			input: `package main
+
+templ Card(opts []tui.Option) {
+	<div
+		class="border-rounded p-1"
+		options={opts}
+	>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
 		"closing bracket on own line": {
 			input: `package main
 
@@ -798,6 +835,48 @@ templ Test() {
 
 templ Test() {
 	<div class="very-long-class-name-that-exceeds-100-chars" id="also-very-long-identifier">
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"options attribute prints unchanged on a single line": {
+			input: `package main
+
+templ Card(opts []tui.Option) {
+	<div class="border-rounded p-1" options={opts}>
+		<span>Content</span>
+	</div>
+}
+`,
+			want: `package main
+
+templ Card(opts []tui.Option) {
+	<div class="border-rounded p-1" options={opts}>
+		<span>Content</span>
+	</div>
+}
+`,
+		},
+		"options attribute prints unchanged across multi-line attrs": {
+			input: `package main
+
+templ Card(opts []tui.Option) {
+	<div
+		class="border-rounded p-1"
+		options={opts}
+	>
+		<span>Content</span>
+	</div>
+}
+`,
+			want: `package main
+
+templ Card(opts []tui.Option) {
+	<div
+		class="border-rounded p-1"
+		options={opts}
+	>
 		<span>Content</span>
 	</div>
 }

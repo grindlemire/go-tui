@@ -491,17 +491,11 @@ func extractVarDeclarationsWithPositions(code string) []varDecl {
 	return decls
 }
 
-// funcParam represents a function parameter for semantic tokenization.
-type funcParam struct {
-	Name string
-	Type string
-}
-
 // parseFuncSignatureForTokens extracts function name, receiver, type params, params, and return type from code.
 // For methods like "func (s *Type) Name(...) RetType { ... }", receiver will be "s *Type".
 // For generic functions like "func foo[T any](...)", typeParams will be "[T any]".
 // For plain functions, receiver and typeParams will be "".
-func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string, params []funcParam, returns string) {
+func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string, params []*tuigen.Param, returns string) {
 	code = strings.TrimSpace(code)
 	if !strings.HasPrefix(code, "func ") {
 		return "", "", "", nil, ""
@@ -590,18 +584,7 @@ func parseFuncSignatureForTokens(code string) (name, receiver, typeParams string
 		return name, receiver, typeParams, nil, ""
 	}
 
-	paramStr := rest[1:closeIdx]
-
-	// Parse parameters
-	if paramStr != "" {
-		for p := range strings.SplitSeq(paramStr, ",") {
-			p = strings.TrimSpace(p)
-			parts := strings.SplitN(p, " ", 2)
-			if len(parts) == 2 {
-				params = append(params, funcParam{Name: parts[0], Type: parts[1]})
-			}
-		}
-	}
+	params = tuigen.ParseParamList(rest[1:closeIdx])
 
 	// Return type
 	after := strings.TrimSpace(rest[closeIdx+1:])

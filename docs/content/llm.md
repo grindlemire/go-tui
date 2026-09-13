@@ -281,6 +281,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `disabled` | `bool` | Disable interaction |
 | `ref` | `*tui.Ref` | Bind to a reference |
 | `deps` | expression | Explicit state dependencies |
+| `options` | expression | Option slice forwarded to the constructor after attribute options (`[]tui.Option`, or the component's option type such as `[]tui.ModalOption`) |
 | `focusable` | `bool` | Enable focus |
 | `onFocus` / `onBlur` | `func(*tui.Element)` | Focus callbacks |
 | `onActivate` | `func()` | Enter activation callback |

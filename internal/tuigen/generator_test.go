@@ -51,6 +51,16 @@ templ Greeting(name string, count int) {
 				"type GreetingView struct",
 			},
 		},
+		"component with grouped params": {
+			input: `package x
+templ Grp(x, y int, opts ...tui.Option) {
+	<div options={opts}>{fmt.Sprint(x + y)}</div>
+}`,
+			wantContains: []string{
+				"func Grp(x, y int, opts ...tui.Option) *GrpView",
+				"fmt.Sprint(x + y)",
+			},
+		},
 	}
 
 	for name, tt := range tests {

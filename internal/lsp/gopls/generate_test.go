@@ -225,6 +225,62 @@ func TestGenerateVirtualGo_ExistingFunctionality(t *testing.T) {
 	}
 }
 
+// Grouped names (a, b T) are emitted as written so the .gsx and Go parameter
+// text line up, and each name maps to its own Go column.
+func TestGenerateVirtualGo_GroupedParams(t *testing.T) {
+	type tc struct {
+		params  []*tuigen.Param
+		wantSig string
+		// tui column (1-based) -> expected Go column (0-based) for each name
+		wantGoCol map[int]int
+	}
+
+	tests := map[string]tc{
+		"pair shares a type": {
+			params: []*tuigen.Param{
+				{Name: "a", Type: "string", Grouped: true, Position: tuigen.Position{Line: 3, Column: 12}},
+				{Name: "b", Type: "string", Position: tuigen.Position{Line: 3, Column: 15}},
+			},
+			wantSig:   "func Hello(a, b string) *element.Element",
+			wantGoCol: map[int]int{12: 11, 15: 14},
+		},
+		"grouped then variadic": {
+			params: []*tuigen.Param{
+				{Name: "x", Type: "int", Grouped: true, Position: tuigen.Position{Line: 3, Column: 12}},
+				{Name: "y", Type: "int", Position: tuigen.Position{Line: 3, Column: 15}},
+				{Name: "opts", Type: "...tui.Option", Position: tuigen.Position{Line: 3, Column: 22}},
+			},
+			wantSig:   "func Hello(x, y int, opts ...tui.Option) *element.Element",
+			wantGoCol: map[int]int{12: 11, 15: 14, 22: 21},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			file := &tuigen.File{
+				Package: "main",
+				Components: []*tuigen.Component{{
+					Name:       "Hello",
+					Position:   tuigen.Position{Line: 3, Column: 1},
+					ReturnType: "*element.Element",
+					Params:     tt.params,
+				}},
+			}
+
+			source, sourceMap := GenerateVirtualGo(file)
+			if !strings.Contains(source, tt.wantSig) {
+				t.Errorf("expected signature %q, got:\n%s", tt.wantSig, source)
+			}
+			for tuiCol, wantGoCol := range tt.wantGoCol {
+				_, goCol, ok := sourceMap.TuiToGo(2, tuiCol-1)
+				if !ok || goCol != wantGoCol {
+					t.Errorf("TuiToGo(2, %d) = (%d, %v), want (%d, true)", tuiCol-1, goCol, ok, wantGoCol)
+				}
+			}
+		})
+	}
+}
+
 // The component call name must be mapped so gopls can resolve definition and
 // hover on a package-qualified call such as @widgets.Header(...).
 func TestGenerateVirtualGo_ComponentCallNameMapping(t *testing.T) {
