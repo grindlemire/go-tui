@@ -92,7 +92,7 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Build parameter list and track positions
 	var params []string
 	for _, p := range comp.Params {
-		params = append(params, paramText(p))
+		params = append(params, p.String())
 	}
 
 	// Function signature
@@ -115,7 +115,7 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 
 	// Add mappings for each parameter
 	for _, p := range comp.Params {
-		width := len(paramText(p))
+		width := len(p.String())
 		if p.Position.Line > 0 && p.Position.Column > 0 {
 			// Map the parameter text ("name type", or just "name" for a
 			// grouped name) from .gsx to .go so gopls can resolve types
@@ -157,15 +157,6 @@ func (g *generator) generateComponent(comp *tuigen.Component) {
 	// Return nil to make the function valid
 	g.writeLine("\treturn nil")
 	g.writeLine("}")
-}
-
-// paramText returns the parameter as written in a Go signature: a grouped
-// name (a in "a, b T") is just the name, otherwise "name type".
-func paramText(p *tuigen.Param) string {
-	if p.Grouped {
-		return p.Name
-	}
-	return fmt.Sprintf("%s %s", p.Name, p.Type)
 }
 
 // generateNodes generates Go code for a list of nodes.

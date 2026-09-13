@@ -221,7 +221,7 @@ templ P(
 templ P(a, b) {
 	<span>{a}</span>
 }`,
-			errorContains: "parameter b is missing a type",
+			errorContains: "test.gsx:2:12: error: parameter b is missing a type",
 		},
 	}
 

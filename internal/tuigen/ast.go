@@ -111,6 +111,15 @@ type Param struct {
 func (p *Param) node()         {}
 func (p *Param) Pos() Position { return p.Position }
 
+// String returns the param as written in a signature: a grouped name
+// (a in "a, b T") is just the name, otherwise "name type".
+func (p *Param) String() string {
+	if p.Grouped {
+		return p.Name
+	}
+	return p.Name + " " + p.Type
+}
+
 // Element represents an XML-like element: <tag attrs>children</tag> or <tag />
 type Element struct {
 	Tag        string
