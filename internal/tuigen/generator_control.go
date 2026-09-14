@@ -127,7 +127,7 @@ func (g *Generator) generateForLoopWithRefs(loop *ForLoop, parentVar string, inL
 			g.generateComponentExpr(n, parentVar)
 		case *ChildrenSlot:
 			if parentVar != "" {
-				g.writeln("for _, __child := range children {")
+				g.writef("for _, __child := range %s {\n", g.childrenExpr())
 				g.indent++
 				g.writef("%s.AddChild(__child)\n", parentVar)
 				g.indent--

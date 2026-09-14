@@ -257,6 +257,88 @@ func Card(title string, children []*tui.Element) *CardView {
 	return &view
 }
 
+type StatusCardView struct {
+	Root      *tui.Element
+	watchers  []tui.Watcher
+	bindApp   func(*tui.App)
+	unbindApp func()
+}
+
+func (v *StatusCardView) UnbindApp() {
+	if v.unbindApp != nil {
+		v.unbindApp()
+	}
+}
+
+func (v *StatusCardView) GetRoot() *tui.Element { return v.Root }
+
+func (v *StatusCardView) GetWatchers() []tui.Watcher { return v.watchers }
+
+func (v *StatusCardView) Render(app *tui.App) *tui.Element { return v.Root }
+
+func (v *StatusCardView) BindApp(app *tui.App) {
+	if v.bindApp != nil {
+		v.bindApp(app)
+	}
+}
+
+func (v *StatusCardView) UpdateProps(fresh tui.Component) {
+	f, ok := fresh.(*StatusCardView)
+	if !ok {
+		return
+	}
+	v.Root = f.Root
+	v.watchers = f.watchers
+	v.bindApp = f.bindApp
+	v.unbindApp = f.unbindApp
+}
+
+var _ tui.AppBinder = (*StatusCardView)(nil)
+
+var _ tui.AppUnbinder = (*StatusCardView)(nil)
+
+var _ tui.PropsUpdater = (*StatusCardView)(nil)
+
+func StatusCard(title string, status string, children []*tui.Element) *StatusCardView {
+	var view StatusCardView
+	var watchers []tui.Watcher
+
+	__tui_1_children := []*tui.Element{}
+	__tui_1_children = append(__tui_1_children, children...)
+	__tui_2 := StatusLine("Status:", status)
+	__tui_1_children = append(__tui_1_children, __tui_2.Root)
+	__tui_0 := Card(title, __tui_1_children)
+
+	watchers = append(watchers, __tui_2.GetWatchers()...)
+	watchers = append(watchers, __tui_0.GetWatchers()...)
+
+	__bindApp := func(app *tui.App) {
+		if binder, ok := any(__tui_2).(tui.AppBinder); ok {
+			binder.BindApp(app)
+		}
+		if binder, ok := any(__tui_0).(tui.AppBinder); ok {
+			binder.BindApp(app)
+		}
+	}
+
+	__unbindApp := func() {
+		if unbinder, ok := any(__tui_2).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+		if unbinder, ok := any(__tui_0).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+
+	view = StatusCardView{
+		Root:      __tui_0.Root,
+		watchers:  watchers,
+		bindApp:   __bindApp,
+		unbindApp: __unbindApp,
+	}
+	return &view
+}
+
 type OverviewTabView struct {
 	Root      *tui.Element
 	watchers  []tui.Watcher
@@ -596,7 +678,7 @@ func LogsTab() *LogsTabView {
 	__tui_2_children = append(__tui_2_children, __tui_4.Root)
 	__tui_5 := StatusLine("Errors:", "2")
 	__tui_2_children = append(__tui_2_children, __tui_5.Root)
-	__tui_1 := Card("Application", __tui_2_children)
+	__tui_1 := StatusCard("Application", "healthy", __tui_2_children)
 	__tui_0.AddChild(__tui_1.Root)
 	__tui_7_children := []*tui.Element{}
 	__tui_8 := StatusLine("Auth:", "OK")

@@ -86,6 +86,20 @@ Each `Card` renders its title and divider, then places whatever children you pas
 
 `tui generate` compiles the children into a `[]*tui.Element` slice and passes it as a parameter to the generated function. The slot expands to a loop that adds each child element to the parent container.
 
+A wrapper can forward its own children into another component's call block, so wrappers can be layered without touching the slice directly:
+
+```gsx
+templ DetailsCard(title string) {
+    @Card(title) {
+        <span class="font-dim">Above the content</span>
+        {children...}
+        <span class="font-dim">Below the content</span>
+    }
+}
+```
+
+Inside a call block the slot appends the children to the nested call's slice, keeping its position among the other children.
+
 Struct components also support `{children...}`. See [Children Slot](#children-slot-2) in the struct components section below.
 
 ### When to Use Pure Components
