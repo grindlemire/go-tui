@@ -156,10 +156,7 @@ func (p *printer) printLetBinding(let *tuigen.LetBinding) {
 	if let.Call != nil {
 		p.write("@")
 		p.write(let.Call.Name)
-		p.write("(")
-		p.write(formatInlineBlockComments(let.Call.Args))
-		p.write(")")
-		p.newline()
+		p.printCallArgsAndChildren(let.Call)
 		return
 	}
 
@@ -229,6 +226,12 @@ func (p *printer) printComponentCall(call *tuigen.ComponentCall) {
 	p.writeIndent()
 	p.write("@")
 	p.write(call.Name)
+	p.printCallArgsAndChildren(call)
+}
+
+// printCallArgsAndChildren prints the argument list, the optional children
+// block, and the trailing comment of a call, ending the line.
+func (p *printer) printCallArgsAndChildren(call *tuigen.ComponentCall) {
 	p.write("(")
 
 	if call.MultiLineArgs {

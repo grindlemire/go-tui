@@ -313,7 +313,7 @@ func (g *Generator) childrenExpr() string {
 func (g *Generator) generateSliceChild(node Node, sliceVar string, inConditional bool, inForLoop bool) {
 	switch n := node.(type) {
 	case *Element:
-		elemVar := g.generateElement(n, "")
+		elemVar := g.generateElementWithRefs(n, "", inForLoop, inConditional, inForLoop)
 		g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 	case *ComponentCall:
 		callVar := g.generateComponentCallWithRefs(n, "", inConditional, inForLoop)

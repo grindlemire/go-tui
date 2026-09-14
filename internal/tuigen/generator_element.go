@@ -6,12 +6,6 @@ import (
 	"strings"
 )
 
-// generateElement generates code for an element and returns the variable name.
-// If parentVar is non-empty, adds this element as a child.
-func (g *Generator) generateElement(elem *Element, parentVar string) string {
-	return g.generateElementWithRefs(elem, parentVar, false, false, false)
-}
-
 // isComponentElement returns true if the tag represents a Component that
 // must be mounted via app.Mount() rather than constructed with tui.New().
 func isComponentElement(tag string) bool {

@@ -1,6 +1,7 @@
 package tuigen
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -1108,6 +1109,87 @@ func TestParser_ComponentNamePos(t *testing.T) {
 			}
 			if c.NamePos.Line != tt.wantLine || c.NamePos.Column != tt.wantCol {
 				t.Errorf("NamePos = %d:%d, want %d:%d", c.NamePos.Line, c.NamePos.Column, tt.wantLine, tt.wantCol)
+			}
+		})
+	}
+}
+
+// A children block must open on the same line as the closing paren; a brace
+// node on the next line is a sibling, not the call's block.
+func TestParser_ComponentCallBraceOnNextLine(t *testing.T) {
+	type tc struct {
+		input        string
+		wantChildren int
+		wantSibling  string
+	}
+
+	tests := map[string]tc{
+		"expression on the next line is a sibling": {
+			input: `package x
+templ App(name string) {
+	<div>
+		@Header("x")
+		{name}
+	</div>
+}`,
+			wantChildren: 0,
+			wantSibling:  "*tuigen.GoExpr",
+		},
+		"children slot on the next line is a sibling": {
+			input: `package x
+templ Wrap() {
+	<div>
+		@Header("x")
+		{children...}
+	</div>
+}`,
+			wantChildren: 0,
+			wantSibling:  "*tuigen.ChildrenSlot",
+		},
+		"block on the same line is still the call's children": {
+			input: `package x
+templ Wrap() {
+	<div>
+		@Card("x") {
+			{children...}
+		}
+	</div>
+}`,
+			wantChildren: 1,
+			wantSibling:  "",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			div, ok := file.Components[0].Body[0].(*Element)
+			if !ok {
+				t.Fatalf("body[0]: expected *Element, got %T", file.Components[0].Body[0])
+			}
+			call, ok := div.Children[0].(*ComponentCall)
+			if !ok {
+				t.Fatalf("children[0]: expected *ComponentCall, got %T", div.Children[0])
+			}
+			if len(call.Children) != tt.wantChildren {
+				t.Errorf("len(call.Children) = %d, want %d", len(call.Children), tt.wantChildren)
+			}
+			if tt.wantSibling == "" {
+				if len(div.Children) != 1 {
+					t.Errorf("len(div.Children) = %d, want 1", len(div.Children))
+				}
+				return
+			}
+			if len(div.Children) != 2 {
+				t.Fatalf("len(div.Children) = %d, want 2", len(div.Children))
+			}
+			if got := fmt.Sprintf("%T", div.Children[1]); got != tt.wantSibling {
+				t.Errorf("children[1] = %s, want %s", got, tt.wantSibling)
 			}
 		})
 	}

@@ -370,6 +370,33 @@ templ App(xs []string) {
 }`,
 			wantContains: []string{"[]*InnerView", ":= Inner(x)"},
 		},
+		"element wrapper inside if in a call block hoists the nested call": {
+			input: prelude + `
+templ App(show bool) {
+	<div>
+		@Box() {
+			if show {
+				<div>@Inner("a")</div>
+			}
+		}
+	</div>
+}`,
+			wantContains:    []string{` = Inner("a")`},
+			wantNotContains: []string{`:= Inner("a")`},
+		},
+		"element wrapper inside for in a call block collects nested views": {
+			input: prelude + `
+templ App(xs []string) {
+	<div>
+		@Box() {
+			for _, x := range xs {
+				<div>@Inner(x)</div>
+			}
+		}
+	</div>
+}`,
+			wantContains: []string{"[]*InnerView", ":= Inner(x)"},
+		},
 		"for inside a call block collects nested views": {
 			input: prelude + `
 templ App(xs []string) {
