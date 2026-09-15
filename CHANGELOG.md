@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.1](https://github.com/grindlemire/go-tui/compare/v0.21.0...v0.21.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **editor:** add fileTypes field to TextMate grammar ([#141](https://github.com/grindlemire/go-tui/issues/141)) ([b752376](https://github.com/grindlemire/go-tui/commit/b7523767d01e542d8e12547ae213696a13307ee0))
+* **gsx:** forward {children...} inside component call blocks ([#143](https://github.com/grindlemire/go-tui/issues/143)) ([ad8204a](https://github.com/grindlemire/go-tui/commit/ad8204a1fd1b23ac7c9e40ae36e777d734f88e5f))
+
 ## [0.21.0](https://github.com/grindlemire/go-tui/compare/v0.20.2...v0.21.0) (2026-09-13)
 
 
