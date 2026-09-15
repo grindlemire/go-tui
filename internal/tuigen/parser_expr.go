@@ -172,6 +172,9 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 		return nil
 	}
 
+	// A children block must open on the same line as the closing paren;
+	// a brace on the next line belongs to a sibling node.
+	hasBlock := p.current.Type == TokenLBrace
 	p.skipNewlines()
 
 	call := &ComponentCall{
@@ -184,7 +187,7 @@ func (p *Parser) parseComponentCall() *ComponentCall {
 	}
 
 	// Optional children block
-	if p.current.Type == TokenLBrace {
+	if hasBlock {
 		p.advance()
 		p.skipNewlines()
 		call.Children = p.parseComponentBody()

@@ -25,6 +25,14 @@ templ Card(title string) {
 	</div>
 }
 
+// A wrapper that forwards its children into Card's call block
+templ StatusCard(title string, status string) {
+	@Card(title) {
+		{children...}
+		@StatusLine("Status:", status)
+	}
+}
+
 // Tab content components
 templ OverviewTab() {
 	<div class="flex gap-1">
@@ -58,7 +66,7 @@ templ MetricsTab() {
 
 templ LogsTab() {
 	<div class="flex gap-1">
-		@Card("Application") {
+		@StatusCard("Application", "healthy") {
 			@StatusLine("Level:", "INFO")
 			@StatusLine("Rate:", "84/min")
 			@StatusLine("Errors:", "2")

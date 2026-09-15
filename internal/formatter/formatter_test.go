@@ -1205,3 +1205,24 @@ templ App() {
 		t.Errorf("qualified component calls not preserved:\ngot:\n%s\nwant:\n%s", got, input)
 	}
 }
+
+func TestFormatLetBoundComponentCallChildren(t *testing.T) {
+	input := `package main
+
+templ App() {
+	inner := @Box() {
+		<span>Child</span>
+		{children...}
+	}
+	<div>{inner}</div>
+}
+`
+	fmtr := newTestFormatter()
+	got, err := fmtr.Format("test.gsx", input)
+	if err != nil {
+		t.Fatalf("Format() error = %v", err)
+	}
+	if got != input {
+		t.Errorf("let-bound call children not preserved:\ngot:\n%s\nwant:\n%s", got, input)
+	}
+}
