@@ -587,6 +587,8 @@ current := @t.content[t.active]
 
 The compiler does not type-check the expression. `{t.content[t.active]}` compiles to a `tui.WithText` call and fails in `go build` because the value is not a `string`, and `@t.title` with a `string` field fails the same way because a `string` has no `Render` method. Element expressions require a struct component (a `templ` with a receiver), since they render against the component's `app`.
 
+The generated `BindApp` and `UnbindApp` are forwarded to the components a struct component renders this way. A field used as `@t.footer` is asserted against `tui.AppBinder` directly. A slice or map field rendered through an index (`@t.content[t.active]`) or a `for` loop over the field (`for _, el := range t.items { @el }`) is ranged over, and each value is asserted the same way. Only fields declared with a literal `[]T` or `map[K]V` type get the range loop; a named collection type, an array, or a pointer to a slice must be bound by hand.
+
 ## Control flow
 
 ### if / else

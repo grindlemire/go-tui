@@ -55,3 +55,35 @@ func TestPanes_RendersActiveElementExpression(t *testing.T) {
 		})
 	}
 }
+
+// widget is a component with its own app-bound resources. Its BindApp and
+// UnbindApp record the calls so the test can observe forwarding.
+type widget struct {
+	bound   bool
+	unbound bool
+}
+
+func (w *widget) Render(app *tui.App) *tui.Element {
+	return tui.New(tui.WithText("widget"))
+}
+
+func (w *widget) BindApp(app *tui.App) { w.bound = true }
+
+func (w *widget) UnbindApp() { w.unbound = true }
+
+// The generated BindApp and UnbindApp range over the widgets slice because the
+// template renders it with a for loop, so each component sees both calls.
+func TestPanes_ForwardsBindAppToSliceComponents(t *testing.T) {
+	w := &widget{}
+	p := NewPanes(0, w)
+
+	p.BindApp(nil)
+	if !w.bound {
+		t.Fatal("BindApp was not forwarded to the widget in p.widgets")
+	}
+
+	p.UnbindApp()
+	if !w.unbound {
+		t.Fatal("UnbindApp was not forwarded to the widget in p.widgets")
+	}
+}

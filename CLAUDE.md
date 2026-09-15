@@ -811,7 +811,7 @@ Additional optional interfaces add capabilities:
 | `Initializer` | `Init() func()` | Setup on mount; returned func is cleanup on unmount |
 | `WatcherProvider` | `Watchers() []Watcher` | Timers, tickers, channel watchers |
 | `PropsUpdater` | `UpdateProps(fresh Component)` | Receive updated props when re-rendered from cache |
-| `AppBinder` | `BindApp(app *App)` | Auto-called by mount system for State/Events fields |
+| `AppBinder` | `BindApp(app *App)` | Auto-called by mount system for State/Events fields; the generated method also forwards to component fields rendered with `@expr`, ranging over literal slice and map fields |
 | `AppUnbinder` | `UnbindApp()` | Detach app-bound resources on unmount |
 
 ## Event Handling

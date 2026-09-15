@@ -11,12 +11,14 @@ type panes struct {
 	active  int
 	content []*tui.Element
 	items   []*tui.Element
+	widgets []tui.Component
 	footer  *tui.Element
 }
 
-func NewPanes(active int) *panes {
+func NewPanes(active int, widgets ...tui.Component) *panes {
 	return &panes{
-		active: active,
+		active:  active,
+		widgets: widgets,
 		content: []*tui.Element{
 			tui.New(tui.WithText("Pane A")),
 			tui.New(tui.WithText("Pane B")),
@@ -40,8 +42,13 @@ func (p *panes) Render(app *tui.App) *tui.Element {
 		__tui_2 := el.Render(app)
 		__tui_0.AddChild(__tui_2)
 	}
-	__tui_3 := p.footer.Render(app)
-	__tui_0.AddChild(__tui_3)
+	for __idx_0, w := range p.widgets {
+		_ = __idx_0
+		__tui_3 := w.Render(app)
+		__tui_0.AddChild(__tui_3)
+	}
+	__tui_4 := p.footer.Render(app)
+	__tui_0.AddChild(__tui_4)
 
 	return __tui_0
 }
@@ -57,6 +64,7 @@ func (p *panes) updatePropsFields(fresh tui.Component) {
 	p.active = f.active
 	p.content = f.content
 	p.items = f.items
+	p.widgets = f.widgets
 	p.footer = f.footer
 }
 
@@ -66,12 +74,27 @@ func (p *panes) UpdateProps(fresh tui.Component) {
 
 var _ tui.PropsUpdater = (*panes)(nil)
 
-// bindAppFields is generated. It wires the component's *tui.App,
-// State, Events, and TextArea fields to app. When you override BindApp,
-// call this helper instead of hand-maintaining the delegation list.
+// bindAppFields is generated. It wires the component's *tui.App, State,
+// Events, TextArea, and component fields (slice and map ones included) to app.
+// When you override BindApp, call this helper instead of hand-maintaining the list.
 func (p *panes) bindAppFields(app *tui.App) {
 	if binder, ok := any(p.footer).(tui.AppBinder); ok {
 		binder.BindApp(app)
+	}
+	for _, item := range p.content {
+		if binder, ok := any(item).(tui.AppBinder); ok {
+			binder.BindApp(app)
+		}
+	}
+	for _, item := range p.items {
+		if binder, ok := any(item).(tui.AppBinder); ok {
+			binder.BindApp(app)
+		}
+	}
+	for _, item := range p.widgets {
+		if binder, ok := any(item).(tui.AppBinder); ok {
+			binder.BindApp(app)
+		}
 	}
 }
 
@@ -81,12 +104,27 @@ func (p *panes) BindApp(app *tui.App) {
 
 var _ tui.AppBinder = (*panes)(nil)
 
-// unbindAppFields is generated. It detaches topic-based Events
-// subscriptions and any component-expression AppUnbinder fields.
+// unbindAppFields is generated. It detaches topic-based Events subscriptions
+// and any component-expression AppUnbinder fields, slice and map ones included.
 // Call this from your UnbindApp if you override it.
 func (p *panes) unbindAppFields() {
 	if unbinder, ok := any(p.footer).(tui.AppUnbinder); ok {
 		unbinder.UnbindApp()
+	}
+	for _, item := range p.content {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+	for _, item := range p.items {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+	for _, item := range p.widgets {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
 	}
 }
 
