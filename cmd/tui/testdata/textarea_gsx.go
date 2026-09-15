@@ -52,9 +52,9 @@ func (c *myForm) UpdateProps(fresh tui.Component) {
 
 var _ tui.PropsUpdater = (*myForm)(nil)
 
-// bindAppFields is generated. It wires the component's *tui.App, State,
-// Events, TextArea, and component fields (slice and map ones included) to app.
-// When you override BindApp, call this helper instead of hand-maintaining the list.
+// bindAppFields is generated. It wires the component's *tui.App,
+// State, Events, and TextArea fields to app. When you override BindApp,
+// call this helper instead of hand-maintaining the delegation list.
 func (c *myForm) bindAppFields(app *tui.App) {
 	c.app = app
 }

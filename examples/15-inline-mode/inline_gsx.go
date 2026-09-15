@@ -122,9 +122,9 @@ func (a *myApp) UpdateProps(fresh tui.Component) {
 
 var _ tui.PropsUpdater = (*myApp)(nil)
 
-// bindAppFields is generated. It wires the component's *tui.App, State,
-// Events, TextArea, and component fields (slice and map ones included) to app.
-// When you override BindApp, call this helper instead of hand-maintaining the list.
+// bindAppFields is generated. It wires the component's *tui.App,
+// State, Events, and TextArea fields to app. When you override BindApp,
+// call this helper instead of hand-maintaining the delegation list.
 func (a *myApp) bindAppFields(app *tui.App) {
 	a.app = app
 	if a.showSettings != nil {
@@ -135,8 +135,8 @@ func (a *myApp) bindAppFields(app *tui.App) {
 	}
 }
 
-// unbindAppFields is generated. It detaches topic-based Events subscriptions
-// and any component-expression AppUnbinder fields, slice and map ones included.
+// unbindAppFields is generated. It detaches topic-based Events
+// subscriptions and any component-expression AppUnbinder fields.
 // Call this from your UnbindApp if you override it.
 func (a *myApp) unbindAppFields() {
 	if unbinder, ok := any(a.textarea).(tui.AppUnbinder); ok {

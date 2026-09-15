@@ -8,32 +8,6 @@ import (
 
 func TestGenerator_TrackComponentExprField(t *testing.T) {
 	type tc struct {
-		expr string
-		want []string
-	}
-
-	tests := map[string]tc{
-		"plain field":    {expr: "c.footer", want: []string{"footer"}},
-		"indexed field":  {expr: "c.content[c.active]", want: nil},
-		"literal index":  {expr: "c.content[0]", want: nil},
-		"nested field":   {expr: "c.a.b", want: nil},
-		"method call":    {expr: "c.view()", want: nil},
-		"other receiver": {expr: "x.footer", want: nil},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			g := &Generator{currentReceiver: "c"}
-			g.trackComponentExprField(tt.expr)
-			if !slices.Equal(g.componentExprFields, tt.want) {
-				t.Errorf("componentExprFields = %v, want %v", g.componentExprFields, tt.want)
-			}
-		})
-	}
-}
-
-func TestGenerator_TrackComponentExprIndexedField(t *testing.T) {
-	type tc struct {
 		expr        string
 		loops       []loopVarEntry
 		wantPlain   []string
@@ -41,13 +15,17 @@ func TestGenerator_TrackComponentExprIndexedField(t *testing.T) {
 	}
 
 	tests := map[string]tc{
+		"plain field":         {expr: "c.footer", wantPlain: []string{"footer"}},
+		"nested field":        {expr: "c.a.b"},
+		"method call":         {expr: "c.view()"},
+		"other receiver":      {expr: "x.footer"},
 		"slice index":         {expr: "c.items[i]", wantIndexed: []string{"items"}},
+		"literal index":       {expr: "c.content[0]", wantIndexed: []string{"content"}},
 		"map key":             {expr: `c.m["k"]`, wantIndexed: []string{"m"}},
 		"nested index":        {expr: "c.rows[c.order[0]]", wantIndexed: []string{"rows"}},
 		"bracket in key":      {expr: `c.m["]"]`, wantIndexed: []string{"m"}},
 		"field of indexed":    {expr: "c.items[i].view"},
 		"call on indexed":     {expr: "c.items[i]()"},
-		"plain field":         {expr: "c.footer", wantPlain: []string{"footer"}},
 		"unterminated index":  {expr: "c.items[i"},
 		"loop value of field": {expr: "it", loops: []loopVarEntry{{value: "it", iterable: "c.items"}}, wantIndexed: []string{"items"}},
 		"loop value of local": {expr: "it", loops: []loopVarEntry{{value: "it", iterable: "items"}}},

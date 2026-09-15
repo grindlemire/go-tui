@@ -781,9 +781,9 @@ func (g *Generator) emitRangeAssertions(receiver string, fields []string, name, 
 // State/Events/TextArea fields, AppBinder type-asserting component-expr fields,
 // and ranging over slice or map fields rendered through an index or a loop.
 func (g *Generator) emitBindAppFieldsHelper(comp *Component, appFields, bindableFields []StructField, componentBindFields, rangeBindFields []string) {
-	g.writef("// bindAppFields is generated. It wires the component's *tui.App, State,\n")
-	g.writef("// Events, TextArea, and component fields (slice and map ones included) to app.\n")
-	g.writef("// When you override BindApp, call this helper instead of hand-maintaining the list.\n")
+	g.writef("// bindAppFields is generated. It wires the component's *tui.App,\n")
+	g.writef("// State, Events, and TextArea fields to app. When you override BindApp,\n")
+	g.writef("// call this helper instead of hand-maintaining the delegation list.\n")
 	g.writef("func (%s) bindAppFields(app *tui.App) {\n", comp.Receiver)
 	g.indent++
 	for _, f := range appFields {
@@ -877,8 +877,8 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 
 // emitUnbindAppFieldsHelper writes the unexported unbindAppFields method.
 func (g *Generator) emitUnbindAppFieldsHelper(comp *Component, unbindFields []StructField, componentUnbindFields, rangeUnbindFields []string) {
-	g.writef("// unbindAppFields is generated. It detaches topic-based Events subscriptions\n")
-	g.writef("// and any component-expression AppUnbinder fields, slice and map ones included.\n")
+	g.writef("// unbindAppFields is generated. It detaches topic-based Events\n")
+	g.writef("// subscriptions and any component-expression AppUnbinder fields.\n")
 	g.writef("// Call this from your UnbindApp if you override it.\n")
 	g.writef("func (%s) unbindAppFields() {\n", comp.Receiver)
 	g.indent++
