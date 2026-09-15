@@ -42,11 +42,11 @@ func (e *Element) applyClasses(classes string) {
 	result := tailwind.Parse(classes)
 	ops := result.Ops()
 	for _, op := range ops {
-		classOption(op)(e)
+		e.Apply(classOption(op))
 	}
 	e.classOps = append(e.classOps, ops...)
 	if text := result.Text(); len(text) > 0 {
-		WithTextStyle(classTextStyle(text))(e)
+		e.Apply(WithTextStyle(classTextStyle(text)))
 		e.classText = true
 	}
 }

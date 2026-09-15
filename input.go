@@ -77,13 +77,12 @@ func NewInput(opts ...InputOption) *Input {
 	}
 	// The viewport math reads these fields, so class-derived values must land
 	// here before the first render.
-	if b, w := boxFromOptions(inp.elementOpts); b != BorderNone || w > 0 {
-		if b != BorderNone {
-			inp.border = b
-		}
-		if w > 0 {
-			inp.width = w
-		}
+	b, w := boxFromOptions(inp.elementOpts)
+	if b != BorderNone {
+		inp.border = b
+	}
+	if w > 0 {
+		inp.width = w
 	}
 	return inp
 }

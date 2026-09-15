@@ -570,7 +570,7 @@ Use the `class` attribute for styling:
 Literal class strings are validated and compiled to options. `class={expr}` with a Go
 string expression compiles to `tui.WithClass(expr)`, which resolves the same classes at
 runtime (unknown classes are ignored). Element.SetClass replaces the element's classes: properties
-the previous string set return to their defaults before the new string is applied.
+the previous string set are restored to their pre-class values before the new string is applied.
 
 **Layout Direction**
 

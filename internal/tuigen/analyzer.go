@@ -489,10 +489,10 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 
 	// Literal classes are validated here; expressions become tui.WithClass calls.
 	if attr.Name == "class" {
-		if _, ok := attr.Value.(*GoExpr); ok {
+		switch v := attr.Value.(type) {
+		case *GoExpr:
 			a.usesTUI = true
-		}
-		if v, ok := attr.Value.(*StringLit); ok {
+		case *StringLit:
 			result := ParseTailwindClasses(v.Value)
 			if result.NeedsImports["tui"] {
 				a.usesTUI = true

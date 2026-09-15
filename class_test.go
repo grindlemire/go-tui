@@ -250,6 +250,10 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 func TestSetClass_EveryClassResetsToDefault(t *testing.T) {
 	fresh := snapshotClassState(New())
 	for _, class := range sweepClasses() {
+		if !tailwind.Known(class) {
+			t.Errorf("%q is not a known class", class)
+			continue
+		}
 		e := New(WithClass(class))
 		e.SetClass("")
 		if got := snapshotClassState(e); !reflect.DeepEqual(got, fresh) {
@@ -271,16 +275,6 @@ func sweepClasses() []string {
 		"text-[#abc]", "bg-[#abcdef]", "border-[#123]", "scrollbar-[#123]", "scrollbar-thumb-[#123]",
 		"text-gradient-red-blue", "bg-gradient-red-blue-v", "border-gradient-bright-red-bright-blue-dd",
 	)
-}
-
-func TestWithClass_CoversEveryClass(t *testing.T) {
-	for _, class := range sweepClasses() {
-		if !tailwind.Known(class) {
-			t.Errorf("%q is not a known class", class)
-			continue
-		}
-		New(WithClass(class))
-	}
 }
 
 func TestComponentElementOptions(t *testing.T) {

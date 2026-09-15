@@ -7,7 +7,7 @@ package tailwind
 // Op is one element option produced by a class. Each concrete type below
 // corresponds to a With* option in the root package. Adding a type means a
 // case in tuigen.renderOp and tui.classOption; TestRenderCoversEveryClass and
-// TestWithClass_CoversEveryClass catch a missing case.
+// TestSetClass_EveryClassResetsToDefault catch a missing case.
 type Op interface{ op() }
 
 // TextOp is one modifier chained onto the element's text style.

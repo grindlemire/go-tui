@@ -78,13 +78,12 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 	}
 	// Wrapping and Height() read these fields, so class-derived values must
 	// land here before the first render.
-	if b, w := boxFromOptions(t.elementOpts); b != BorderNone || w > 0 {
-		if b != BorderNone {
-			t.border = b
-		}
-		if w > 0 {
-			t.width = w
-		}
+	b, w := boxFromOptions(t.elementOpts)
+	if b != BorderNone {
+		t.border = b
+	}
+	if w > 0 {
+		t.width = w
 	}
 	return t
 }
