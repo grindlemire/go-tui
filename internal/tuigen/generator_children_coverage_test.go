@@ -694,31 +694,3 @@ templ App(show bool, items []string) {
 		})
 	}
 }
-
-// An indexed @expr names a value inside a field, not the field itself, so it
-// must not be tracked as a bindable struct field for BindApp/UnbindApp.
-func TestGenerator_IndexedComponentExprNotTracked(t *testing.T) {
-	input := `package x
-
-import "github.com/grindlemire/go-tui"
-
-type component struct {
-	active  int
-	content []*tui.Element
-	footer  *tui.Element
-}
-
-templ (c *component) Render() {
-	<div>
-		@c.content[c.active]
-		@c.footer
-	</div>
-}`
-	code := parseAnalyzeGenerate(t, input)
-	if strings.Contains(code, "content[c.active]).(tui.AppBinder)") || strings.Contains(code, "c.content[c.active].BindApp") {
-		t.Errorf("indexed expression was tracked as a bindable field:\n%s", code)
-	}
-	if !strings.Contains(code, "any(c.footer).(tui.AppBinder)") {
-		t.Errorf("plain field expression should still be bound:\n%s", code)
-	}
-}

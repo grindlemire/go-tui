@@ -670,7 +670,7 @@ Package-level function that traverses the element tree and draws each element to
 func (e *Element) Render(app *App) *Element
 ```
 
-Returns the element itself. This makes `Element` satisfy the `Component` interface, so a prebuilt element can be used anywhere a component is accepted, including `@expr` in gsx (see the [GSX Syntax Reference](gsx-syntax.md#go-expressions)). It does not draw anything; use `RenderTo` for that.
+Returns the element itself. This makes `Element` satisfy the `Component` interface, so a prebuilt element can be used anywhere a component is accepted, including `@expr` in gsx (see the [GSX Syntax Reference](gsx-syntax.md#element-expressions)). It does not draw anything; use `RenderTo` for that.
 
 ## Enums
 

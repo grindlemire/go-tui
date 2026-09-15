@@ -698,6 +698,13 @@ func TestLexer_AtExprIndex(t *testing.T) {
 			wantNext:    "<",
 			wantErr:     true,
 		},
+		"unterminated string in index stops at newline": {
+			input:       "@c.m[\"abc]\n<span>x</span>",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.m[\"abc]",
+			wantNext:    "<",
+			wantErr:     true,
+		},
 	}
 
 	for name, tt := range tests {

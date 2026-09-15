@@ -646,7 +646,7 @@ badge := <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</s
 
 Note the `:=` binding assigns both element expressions (starting with `<`) to a local variable as well as normal Go expressions.
 
-`@badge` is the general form for inserting a bound element and works for any expression that yields an element or component (see [Element expressions](#element-expressions)). `{badge}` keeps working for names bound with `:=` in the same file.
+`@badge` is the general form for inserting a bound element inside a struct component and works for any expression that yields an element or component (see [Element expressions](#element-expressions)). `{badge}` keeps working for names bound with `:=` in the same file.
 
 ## Tailwind class reference
 
