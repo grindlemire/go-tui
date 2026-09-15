@@ -265,7 +265,7 @@ el := tui.New(tui.WithClass("border-rounded p-1 " + theme))
 el.SetClass("border-double text-red")
 ```
 
-Applying classes is additive. Properties the new classes mention are overwritten and everything else keeps its current value, so `SetClass("")` after `"font-bold"` leaves the text bold. Within one class string the last class wins, so `"text-red text-green"` renders green.
+Applying classes is additive. Properties the new classes mention are overwritten and everything else keeps its current value, so `SetClass("")` after `"font-bold"` leaves the text bold. The text style counts as one property, rebuilt from the text classes in the string: `SetClass("text-green")` after `"font-bold"` is green and not bold, the same as `class="text-green"` would compile to. Within one class string the last class wins, so `"text-red text-green"` renders green.
 
 ## Programmatic Styling
 

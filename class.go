@@ -17,9 +17,11 @@ func WithClass(classes string) Option {
 }
 
 // SetClass applies a class string to an existing element. Properties the
-// classes mention are overwritten; everything else is left as is, so a class
-// the previous string set (hidden, font-bold, a border) is not undone by
-// omitting it. Use an attribute or a conditional for styles that toggle off.
+// classes mention are overwritten and everything else is left as is, so a
+// class the previous string set (hidden, a border) is not undone by omitting
+// it. The text style is one property: it is rebuilt from the string's text
+// classes, so "text-green" after "font-bold" is green and not bold, matching
+// what the compiled form of the same classes produces.
 func (e *Element) SetClass(classes string) {
 	e.applyClasses(classes)
 	e.MarkDirty()
