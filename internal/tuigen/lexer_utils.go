@@ -163,10 +163,25 @@ func (l *Lexer) readAtKeyword() Token {
 		return l.makeToken(TokenError, "@let")
 	default:
 		if len(keyword) > 0 {
-			for l.ch == '.' || isLetter(l.ch) || isDigit(l.ch) {
-				l.readChar()
+			indexed := false
+			for {
+				for l.ch == '.' || isLetter(l.ch) || isDigit(l.ch) {
+					l.readChar()
+				}
+				if l.ch != '[' {
+					break
+				}
+				indexed = true
+				if !l.skipIndexSegment() {
+					l.errors.AddErrorf(l.position(), "unterminated index expression in @%s", l.source[startPos:l.pos])
+					break
+				}
 			}
 			expr := l.source[startPos:l.pos]
+			// An index expression can only name a value, never a templ to call.
+			if indexed {
+				return l.makeToken(TokenAtExpr, expr)
+			}
 			firstRune, _ := utf8.DecodeRuneInString(keyword)
 			// The paren must be adjacent so inline text like "@c.icon (beta)"
 			// stays an expression.
@@ -188,6 +203,35 @@ func isLetter(ch rune) bool {
 // isDigit returns true if the rune is a digit.
 func isDigit(ch rune) bool {
 	return unicode.IsDigit(ch)
+}
+
+// skipIndexSegment consumes a balanced [...] starting at the current '['.
+// String and rune literals inside are skipped so brackets in them do not
+// count. It stops at a newline or EOF and reports false when unbalanced.
+func (l *Lexer) skipIndexSegment() bool {
+	depth := 0
+	for l.ch != 0 && l.ch != '\n' {
+		switch l.ch {
+		case '[':
+			depth++
+			l.readChar()
+		case ']':
+			depth--
+			l.readChar()
+			if depth == 0 {
+				return true
+			}
+		case '"':
+			l.skipStringInExpr()
+		case '`':
+			l.skipRawStringInExpr()
+		case '\'':
+			l.skipCharInExpr()
+		default:
+			l.readChar()
+		}
+	}
+	return false
 }
 
 // CurrentChar returns the current character being examined.
