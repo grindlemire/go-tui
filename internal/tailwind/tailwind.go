@@ -7,7 +7,9 @@ import (
 	"strings"
 )
 
-// Class is the resolution of a single class name.
+// Class is the resolution of a single class name. A class carries either Ops
+// or exactly one Text op, never both: the compiler renders a text class as a
+// single Style method call.
 type Class struct {
 	Ops  []Op
 	Text []TextOp

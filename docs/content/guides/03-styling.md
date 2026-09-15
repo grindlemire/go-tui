@@ -256,7 +256,7 @@ func metricColor(value int) string {
 Expression classes compile to a `tui.WithClass(...)` option, which resolves the same class set at runtime. The differences from literal classes:
 
 - Unknown classes in an expression are ignored at runtime. Only literal class strings are validated by `tui check` and the language server.
-- When the expression reads a `State`, the generator also binds it so the element's classes update on change, the same way `{state.Get()}` text does.
+- When the expression reads a `State`, the generator also binds it and re-applies the classes through `SetClass` on change. This is additive (see below), so a class the previous value set is not undone by leaving it out. In a struct component this rarely matters because the element is rebuilt on every render, but for styles that need to toggle off (like `hidden`) use an attribute or a conditional instead.
 
 You can use the same option from Go, and re-apply classes on an existing element with `SetClass`:
 
@@ -265,7 +265,7 @@ el := tui.New(tui.WithClass("border-rounded p-1 " + theme))
 el.SetClass("border-double text-red")
 ```
 
-Applying classes is additive: properties the new classes mention are overwritten, everything else keeps its current value. Within one class string the last class wins, so `"text-red text-green"` renders green.
+Applying classes is additive. Properties the new classes mention are overwritten and everything else keeps its current value, so `SetClass("")` after `"font-bold"` leaves the text bold. Within one class string the last class wins, so `"text-red text-green"` renders green.
 
 ## Programmatic Styling
 

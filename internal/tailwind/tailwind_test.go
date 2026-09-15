@@ -179,6 +179,10 @@ func TestStaticClasses(t *testing.T) {
 		if !Known(c) {
 			t.Errorf("static class %q not Known", c)
 		}
+		r, _ := Resolve(c)
+		if len(r.Text) > 1 || (len(r.Text) > 0 && len(r.Ops) > 0) {
+			t.Errorf("static class %q must carry either ops or one text op, got %d ops and %d text ops", c, len(r.Ops), len(r.Text))
+		}
 	}
 }
 
