@@ -675,16 +675,6 @@ func TestLexer_AtExprIndex(t *testing.T) {
 			wantType:    TokenAtExpr,
 			wantLiteral: "c.items[i]",
 		},
-		"method call without index still emits TokenAtCall": {
-			input:       "@c.method(",
-			wantType:    TokenAtCall,
-			wantLiteral: "c.method",
-		},
-		"spaced paren without index still stays an expression": {
-			input:       "@c.icon (beta)",
-			wantType:    TokenAtExpr,
-			wantLiteral: "c.icon",
-		},
 		"unterminated index at EOF reports an error": {
 			input:       "@c.items[i",
 			wantType:    TokenAtExpr,

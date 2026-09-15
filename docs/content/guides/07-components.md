@@ -215,7 +215,7 @@ templ (t *tabs) Render() {
 }
 ```
 
-`{expr}` is reserved for text and must be a `string`, so `{t.content[t.active]}` is a Go compile error. When the values are components with their own `State` or `Events`, the generated `BindApp` binds them for you: a slice or map field rendered by index or by a `for` loop over the field is ranged over and each value that implements `tui.AppBinder` is bound. See [Element expressions](../reference/gsx-syntax.md#element-expressions) in the syntax reference.
+`{expr}` is reserved for text and must be a `string`, so `{t.content[t.active]}` is a Go compile error. When the values are components with their own `State` or `Events`, the generated `BindApp` binds them for you. See [Element expressions](../reference/gsx-syntax.md#element-expressions) in the syntax reference for the exact rules.
 
 ### The Component Interface
 

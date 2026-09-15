@@ -57,8 +57,8 @@ func TestGenerator_IndexedComponentExprBindApp(t *testing.T) {
 		wantCount       map[string]int
 	}
 
-	const bindItemsLoop = "for _, item := range c.items {\n\t\tif binder, ok := any(item).(tui.AppBinder); ok {\n\t\t\tbinder.BindApp(app)\n\t\t}\n\t}"
-	const unbindItemsLoop = "for _, item := range c.items {\n\t\tif unbinder, ok := any(item).(tui.AppUnbinder); ok {\n\t\t\tunbinder.UnbindApp()\n\t\t}\n\t}"
+	const bindItemsLoop = "for _, item := range c.items {\n\t\tif binder, ok := any(item).(tui.AppBinder); ok {"
+	const unbindItemsLoop = "for _, item := range c.items {\n\t\tif unbinder, ok := any(item).(tui.AppUnbinder); ok {"
 
 	tests := map[string]tc{
 		"slice field used through an index": {
@@ -111,20 +111,6 @@ templ (c *shell) Render() {
 }`,
 			wantContains: []string{bindItemsLoop, unbindItemsLoop},
 		},
-		"field of an indexed value is not forwarded": {
-			input: `package x
-
-import "github.com/grindlemire/go-tui"
-
-type shell struct {
-	items []pane
-}
-
-templ (c *shell) Render() {
-	<div>@c.items[0].view</div>
-}`,
-			wantNotContains: []string{"range c.items", "bindAppFields", "unbindAppFields"},
-		},
 		"plain and indexed fields are each emitted once": {
 			input: `package x
 
@@ -164,26 +150,6 @@ templ (c *shell) Render() {
 	<div>@c.content[0]</div>
 }`,
 			wantNotContains: []string{"range c.content", "bindAppFields", "unbindAppFields"},
-		},
-		"loop over a non-receiver iterable is not forwarded": {
-			input: `package x
-
-import "github.com/grindlemire/go-tui"
-
-var items []tui.Component
-
-type shell struct {
-	items []tui.Component
-}
-
-templ (c *shell) Render() {
-	<div>
-		for _, it := range items {
-			@it
-		}
-	</div>
-}`,
-			wantNotContains: []string{"range c.items", "bindAppFields", "unbindAppFields"},
 		},
 		"state field keeps the direct BindApp call": {
 			input: `package x

@@ -555,7 +555,7 @@ Call components with the `@` prefix or as XML-like tags:
 
 ### Element expressions
 
-The two expression forms differ by the Go type they expect. `{expr}` is a Go expression that must produce a `string`, and the compiler renders it as text. `@expr` is a Go expression that must produce a `*tui.Element` or a `tui.Component`, and the compiler renders its value as a child. `Element` satisfies `Component` (its `Render(app)` returns itself), so a prebuilt element can be inserted anywhere a component can.
+The two expression forms differ by the Go type they expect. `{expr}` is a Go expression that must produce a `string`, and the compiler renders it as text. `@expr` is a Go expression that must produce a `*tui.Element` or a `tui.Component`, and the compiler renders its value as a child. `Element` satisfies `Component`, so a prebuilt element can be inserted anywhere a component can.
 
 The expression after `@` may be a local variable, a receiver field, an index into a slice or map, or a field of an indexed value:
 
@@ -648,7 +648,7 @@ badge := <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</s
 
 Note the `:=` binding assigns both element expressions (starting with `<`) to a local variable as well as normal Go expressions.
 
-`@badge` is the general form for inserting a bound element inside a struct component and works for any expression that yields an element or component (see [Element expressions](#element-expressions)). `{badge}` keeps working for names bound with `:=` in the same file.
+`@badge` is the general form for inserting a bound element inside a struct component and works for any expression that yields an element or component (see [Element expressions](#element-expressions)).
 
 ## Tailwind class reference
 

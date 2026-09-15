@@ -7,8 +7,7 @@ import (
 	tui "github.com/grindlemire/go-tui"
 )
 
-// The generated Render only forwards app to the element expressions, and an
-// Element's Render(app) ignores it, so the component renders without an App.
+// Element.Render ignores app, so nil is fine here.
 func TestPanes_RendersActiveElementExpression(t *testing.T) {
 	type tc struct {
 		active      int
@@ -19,12 +18,12 @@ func TestPanes_RendersActiveElementExpression(t *testing.T) {
 	tests := map[string]tc{
 		"first pane active": {
 			active:      0,
-			wantVisible: []string{"Pane A", "item 1", "item 2", "footer"},
+			wantVisible: []string{"Pane A", "footer"},
 			wantHidden:  "Pane B",
 		},
 		"second pane active": {
 			active:      1,
-			wantVisible: []string{"Pane B", "item 1", "item 2", "footer"},
+			wantVisible: []string{"Pane B", "footer"},
 			wantHidden:  "Pane A",
 		},
 	}
@@ -56,8 +55,6 @@ func TestPanes_RendersActiveElementExpression(t *testing.T) {
 	}
 }
 
-// widget is a component with its own app-bound resources. Its BindApp and
-// UnbindApp record the calls so the test can observe forwarding.
 type widget struct {
 	bound   bool
 	unbound bool

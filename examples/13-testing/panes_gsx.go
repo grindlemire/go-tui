@@ -10,7 +10,6 @@ import (
 type panes struct {
 	active  int
 	content []*tui.Element
-	items   []*tui.Element
 	widgets []tui.Component
 	footer  *tui.Element
 }
@@ -23,10 +22,6 @@ func NewPanes(active int, widgets ...tui.Component) *panes {
 			tui.New(tui.WithText("Pane A")),
 			tui.New(tui.WithText("Pane B")),
 		},
-		items: []*tui.Element{
-			tui.New(tui.WithText("item 1")),
-			tui.New(tui.WithText("item 2")),
-		},
 		footer: tui.New(tui.WithText("footer")),
 	}
 }
@@ -37,18 +32,13 @@ func (p *panes) Render(app *tui.App) *tui.Element {
 	)
 	__tui_1 := p.content[p.active].Render(app)
 	__tui_0.AddChild(__tui_1)
-	for __idx_0, el := range p.items {
-		_ = __idx_0
-		__tui_2 := el.Render(app)
-		__tui_0.AddChild(__tui_2)
-	}
 	for __idx_0, w := range p.widgets {
 		_ = __idx_0
-		__tui_3 := w.Render(app)
-		__tui_0.AddChild(__tui_3)
+		__tui_2 := w.Render(app)
+		__tui_0.AddChild(__tui_2)
 	}
-	__tui_4 := p.footer.Render(app)
-	__tui_0.AddChild(__tui_4)
+	__tui_3 := p.footer.Render(app)
+	__tui_0.AddChild(__tui_3)
 
 	return __tui_0
 }
@@ -63,7 +53,6 @@ func (p *panes) updatePropsFields(fresh tui.Component) {
 	}
 	p.active = f.active
 	p.content = f.content
-	p.items = f.items
 	p.widgets = f.widgets
 	p.footer = f.footer
 }
@@ -82,11 +71,6 @@ func (p *panes) bindAppFields(app *tui.App) {
 		binder.BindApp(app)
 	}
 	for _, item := range p.content {
-		if binder, ok := any(item).(tui.AppBinder); ok {
-			binder.BindApp(app)
-		}
-	}
-	for _, item := range p.items {
 		if binder, ok := any(item).(tui.AppBinder); ok {
 			binder.BindApp(app)
 		}
@@ -112,11 +96,6 @@ func (p *panes) unbindAppFields() {
 		unbinder.UnbindApp()
 	}
 	for _, item := range p.content {
-		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
-			unbinder.UnbindApp()
-		}
-	}
-	for _, item := range p.items {
 		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
 			unbinder.UnbindApp()
 		}

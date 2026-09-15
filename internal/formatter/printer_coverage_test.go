@@ -37,41 +37,37 @@ templ (c *card) Render() {
 			input: `package main
 
 templ (c *card) Render() {
+	x := @c.items[i]
 	<div>
 		@c.content[c.active]
 		for i, el := range c.items {
-			@c.items[i].view
+			if i == c.active {
+				@c.items[i].view
+			} else {
+				@c.m["fallback"]
+			}
 			@el
 		}
+		{x}
 	</div>
 }
 `,
 			want: `package main
 
 templ (c *card) Render() {
+	x := @c.items[i]
 	<div>
 		@c.content[c.active]
 		for i, el := range c.items {
-			@c.items[i].view
+			if i == c.active {
+				@c.items[i].view
+			} else {
+				@c.m["fallback"]
+			}
 			@el
 		}
+		{x}
 	</div>
-}
-`,
-		},
-		"indexed component expression binding formats unchanged": {
-			input: `package main
-
-templ (c *card) Render() {
-	x := @c.items[i]
-	<div>{x}</div>
-}
-`,
-			want: `package main
-
-templ (c *card) Render() {
-	x := @c.items[i]
-	<div>{x}</div>
 }
 `,
 		},
