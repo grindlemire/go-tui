@@ -191,6 +191,21 @@ templ App() {
 				"Foreground(tui.Red)",
 			},
 		},
+		"class expression becomes a runtime WithClass option": {
+			input: `package x
+templ App(cls string) {
+	<div class={cls}></div>
+}`,
+			wantContains: []string{"tui.WithClass(cls)"},
+		},
+		"class expression concatenating a literal stays one runtime option": {
+			input: `package x
+templ App(cls string) {
+	<span class={cls + " font-bold"}>hi</span>
+}`,
+			wantContains:    []string{`tui.WithClass(cls+" font-bold")`},
+			wantNotContains: []string{"Bold()"},
+		},
 		"options alone spreads into the constructor": {
 			input: `package x
 templ App(opts []tui.Option) {
@@ -461,6 +476,16 @@ templ (c *shell) Render() {
 				"tui.WithPadding(2)",
 				"Bold()",
 			},
+		},
+		"modal class expression forwards WithClass through element options": {
+			input: `package x
+
+type shell struct{}
+
+templ (c *shell) Render() {
+	<modal open={c.show} class={c.cls}></modal>
+}`,
+			wantContains: []string{"tui.WithModalElementOptions(tui.WithClass(c.cls))"},
 		},
 		"markdown with source width and theme": {
 			input: `package x

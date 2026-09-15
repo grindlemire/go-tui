@@ -487,8 +487,11 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 		}
 	}
 
-	// Check if class attribute uses Tailwind classes that need imports
+	// Literal classes are validated here; expressions become tui.WithClass calls.
 	if attr.Name == "class" {
+		if _, ok := attr.Value.(*GoExpr); ok {
+			a.usesTUI = true
+		}
 		if v, ok := attr.Value.(*StringLit); ok {
 			result := ParseTailwindClasses(v.Value)
 			if result.NeedsImports["tui"] {

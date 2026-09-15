@@ -141,12 +141,14 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 			continue
 		}
 
-		// Handle class attribute specially - parse Tailwind classes
+		// Literal classes compile to options here; expressions resolve at runtime.
 		if attr.Name == "class" {
-			classValue := g.getClassAttributeValue(attr)
-			if classValue != "" {
+			if opt := g.classExprOption(attr); opt != "" {
+				result.options = append(result.options, opt)
+				continue
+			}
+			if classValue := g.getClassAttributeValue(attr); classValue != "" {
 				twResult := ParseTailwindClasses(classValue)
-				// Add direct options
 				result.options = append(result.options, twResult.Options...)
 				// Collect text style methods for combining later
 				classTextMethods = append(classTextMethods, twResult.TextMethods...)
@@ -180,15 +182,26 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 	return result
 }
 
-// getClassAttributeValue extracts the string value from a class attribute.
+// getClassAttributeValue extracts the literal value from a class attribute.
+// Expression values are handled by classExprOption.
 func (g *Generator) getClassAttributeValue(attr *Attribute) string {
-	switch v := attr.Value.(type) {
-	case *StringLit:
+	if v, ok := attr.Value.(*StringLit); ok {
 		return v.Value
-	default:
-		// class attribute only supports string literals for now
+	}
+	return ""
+}
+
+// classExprOption returns a tui.WithClass option for an expression-valued
+// class attribute, or "" for literals.
+func (g *Generator) classExprOption(attr *Attribute) string {
+	if _, ok := attr.Value.(*GoExpr); !ok {
 		return ""
 	}
+	expr := g.generateAttributeValue(attr.Value)
+	if expr == "" {
+		return ""
+	}
+	return fmt.Sprintf("tui.WithClass(%s)", expr)
 }
 
 // extractTextContent extracts text from element children for WithText.
@@ -594,6 +607,10 @@ func (g *Generator) buildModalClassOptions(elem *Element) []string {
 	var opts []string
 	for _, attr := range elem.Attributes {
 		if attr.Name != "class" {
+			continue
+		}
+		if opt := g.classExprOption(attr); opt != "" {
+			opts = append(opts, opt)
 			continue
 		}
 		classValue := g.getClassAttributeValue(attr)

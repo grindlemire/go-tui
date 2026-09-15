@@ -163,6 +163,7 @@ func (d *demoApp) Render(app *tui.App) *tui.Element {
 	__tui_10.AddChild(__tui_11)
 	__tui_12 := tui.New(
 		tui.WithText(signLabel(d.count.Get())),
+		tui.WithClass(signClass(d.count.Get())),
 	)
 	__tui_10.AddChild(__tui_12)
 	__tui_8.AddChild(__tui_10)

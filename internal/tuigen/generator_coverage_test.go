@@ -243,18 +243,15 @@ templ Counter() {
 				"name.Bind(func(_ string) { __update___tui_1() })",
 			},
 		},
-		"dynamic class binding has no setter": {
+		"dynamic class binding re-applies classes through SetClass": {
 			input: `package x
 templ Styled() {
-	count := tui.NewState(0)
-	<div class={count.Get()}></div>
+	cls := tui.NewState("text-red")
+	<div class={cls.Get()}></div>
 }`,
 			wantContains: []string{
-				"// State bindings",
-			},
-			wantNotContains: []string{
-				".Bind(",
-				"SetClass",
+				"tui.WithClass(cls.Get())",
+				"cls.Bind(func(_ string) {\n\t\t__tui_0.SetClass(cls.Get())\n\t})",
 			},
 		},
 	}

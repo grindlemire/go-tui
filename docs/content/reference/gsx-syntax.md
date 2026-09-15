@@ -835,7 +835,7 @@ tui fmt --check [path...] # check formatting without modifying
 3. The generator produces a `_gsx.go` file in the same directory with the same package name.
 4. Each `templ` block becomes a Go function or method returning `*tui.Element`.
 5. Elements become calls to `tui.New(options...)` with `AddChild` calls for children.
-6. Tailwind classes become element option arguments at compile time (not at runtime).
+6. Literal Tailwind classes become element option arguments at compile time. Expression-valued `class` attributes become a `tui.WithClass(...)` option that resolves the classes at runtime.
 7. Control flow (`if`, `for`, `:=`) becomes standard Go control flow.
 
 Re-run `tui generate` after any `.gsx` change. The generated `_gsx.go` files should be committed to version control but never edited by hand.

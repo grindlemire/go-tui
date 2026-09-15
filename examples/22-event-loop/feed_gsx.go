@@ -232,10 +232,12 @@ func (f *feedApp) Render(app *tui.App) *tui.Element {
 	)
 	__tui_17 := tui.New(
 		tui.WithText(pauseLabel(f.paused.Get())),
+		tui.WithClass(pauseClass(f.paused.Get())),
 	)
 	__tui_16.AddChild(__tui_17)
 	__tui_18 := tui.New(
 		tui.WithText(stickyLabel(f.stickToBottom.Get())),
+		tui.WithClass(stickyClass(f.stickToBottom.Get())),
 	)
 	__tui_16.AddChild(__tui_18)
 	__tui_19 := tui.New(

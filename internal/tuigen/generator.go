@@ -561,10 +561,7 @@ func (g *Generator) getSetterForAttribute(attr string) string {
 	case "text":
 		return "SetText"
 	case "class":
-		// Note: class attribute bindings would need SetClass or similar
-		// For now, we don't support dynamic class bindings since element
-		// doesn't have a SetClass method. This is a future enhancement.
-		return ""
+		return "SetClass"
 	default:
 		return ""
 	}
