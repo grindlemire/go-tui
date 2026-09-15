@@ -2,6 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "GSX",
   "scopeName": "source.gsx",
+  "fileTypes": [
+    "gsx"
+  ],
   "patterns": [
     { "include": "#comments" },
     { "include": "#package-clause" },
