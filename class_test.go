@@ -148,8 +148,9 @@ func renderElementANSI(el *Element) string {
 
 func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 	type tc struct {
-		opts  []Option // initial element
-		next  string   // class string passed to SetClass
+		opts  []Option       // initial element
+		after func(*Element) // optional setter call between New and SetClass
+		next  string         // class string passed to SetClass
 		check func(t *testing.T, e *Element)
 	}
 
@@ -230,11 +231,51 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 				}
 			},
 		},
+		"option applied after the class keeps its value": {
+			opts: []Option{WithClass("border-rounded"), WithBorder(BorderDouble)},
+			next: "p-1",
+			check: func(t *testing.T, e *Element) {
+				if e.Border() != BorderDouble || e.style.Padding != EdgeAll(1) {
+					t.Errorf("border=%v padding=%+v, want BorderDouble and EdgeAll(1)", e.Border(), e.style.Padding)
+				}
+			},
+		},
+		"setter called after the class keeps its value": {
+			opts:  []Option{WithClass("border")},
+			after: func(e *Element) { e.SetBorder(BorderDouble) },
+			next:  "",
+			check: func(t *testing.T, e *Element) {
+				if e.Border() != BorderDouble {
+					t.Errorf("border=%v, want BorderDouble from SetBorder", e.Border())
+				}
+			},
+		},
+		"class property nothing else touched is still restored": {
+			opts: []Option{WithClass("border-rounded"), WithGap(2)},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if e.Border() != BorderNone || e.style.Gap != 2 {
+					t.Errorf("border=%v gap=%d, want BorderNone and gap 2", e.Border(), e.style.Gap)
+				}
+			},
+		},
+		"text style set after the class keeps its value": {
+			opts: []Option{WithClass("font-bold"), WithTextStyle(NewStyle().Italic())},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if got, want := e.TextStyle(), NewStyle().Italic(); got != want || !e.textStyleSet {
+					t.Errorf("TextStyle = %+v (set=%v), want %+v from WithTextStyle", got, e.textStyleSet, want)
+				}
+			},
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			e := New(tt.opts...)
+			if tt.after != nil {
+				tt.after(e)
+			}
 			e.dirty = false
 			e.SetClass(tt.next)
 			if !e.IsDirty() {

@@ -265,9 +265,9 @@ el := tui.New(tui.WithClass("border-rounded p-1 " + theme))
 el.SetClass("border-double text-red")
 ```
 
-`SetClass` replaces the previous class string. Every property the old string set is restored to the value it had before that string was applied, then the new string is applied. So `SetClass("")` after `"font-bold p-1"` removes both, `SetClass("text-green")` after `"font-bold"` is green and not bold, and a border set through the `border` attribute comes back once the class string stops mentioning borders. Within one class string the last class wins, so `"text-red text-green"` renders green.
+`SetClass` replaces the previous class string. Every property the old string set is restored to the value it had before that string was applied, then the new string is applied. So `SetClass("")` after `"font-bold p-1"` removes both, `SetClass("text-green")` after `"font-bold"` is green and not bold, and a border set through the `border` attribute comes back once the class string stops mentioning borders, whichever attribute came first. Within one class string the last class wins, so `"text-red text-green"` renders green.
 
-On `<input>`, `<textarea>`, `<markdown>`, and `<modal>` the `class` attribute is applied to the component's root element after the component's own attributes, so `<input class="border-rounded w-30" />` gets the border, grows to fit it, and takes the class width over the default.
+On `<input>`, `<textarea>`, `<markdown>`, and `<modal>` the `class` attribute is applied to the component's root element after the component's own attributes, so `<input class="border-rounded w-30" />` gets the border, grows to fit it, and takes the class width over the default. Only a fixed width class (`w-N`) sizes the input's viewport and the textarea's wrapping; percentage, fraction, and auto widths size the box only.
 
 ## Programmatic Styling
 

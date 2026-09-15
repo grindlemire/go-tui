@@ -19,18 +19,20 @@ func WithClass(classes string) Option {
 
 // SetClass replaces the element's classes. Every property the previous class
 // string set is restored to the value it had before that string was applied,
-// then the new string is applied, so omitting a class removes it while options
-// set outside the class string keep their effect.
+// then the new string is applied, so omitting a class removes it. A property
+// that an option or setter changed after the class string was applied is left
+// alone, so options set outside the class string keep their effect in either
+// order.
 func (e *Element) SetClass(classes string) {
-	if b := e.classBase; b != nil {
+	if b, a := e.classBase, e.classApplied; b != nil && a != nil {
 		for _, op := range e.classOps {
-			classRestore(e, b, op)
+			classRestore(e, b, a, op)
 		}
-		if e.classText {
+		if e.classText && e.textStyle == a.textStyle && e.textStyleSet == a.textStyleSet {
 			e.textStyle, e.textStyleSet = b.textStyle, b.textStyleSet
 		}
 	}
-	e.classOps, e.classText, e.classBase = nil, false, nil
+	e.classOps, e.classText, e.classBase, e.classApplied = nil, false, nil, nil
 	e.applyClasses(classes)
 	e.MarkDirty()
 }
@@ -49,10 +51,11 @@ func (e *Element) applyClasses(classes string) {
 		e.Apply(WithTextStyle(classTextStyle(text)))
 		e.classText = true
 	}
+	e.classApplied = e.captureClassBase()
 }
 
-// classBase is the state class ops can write, captured before the first class
-// string touches the element.
+// classBase is the state class ops can write. It is captured before the first
+// class string touches the element and again after each string is applied.
 type classBase struct {
 	style                                     LayoutStyle
 	textAlign                                 TextAlign
@@ -82,7 +85,9 @@ func (e *Element) captureClassBase() *classBase {
 
 // boxFromOptions reports the border and fixed width a set of element options
 // would apply, so components that size their content from their own fields
-// can pick up class-derived values before rendering.
+// can pick up class-derived values before rendering. Only a fixed width
+// reaches the component; percent, fraction, and auto widths size the root
+// element but leave the input viewport and textarea wrap width at their defaults.
 func boxFromOptions(opts []Option) (border BorderStyle, width int) {
 	if len(opts) == 0 {
 		return BorderNone, 0
@@ -95,82 +100,94 @@ func boxFromOptions(opts []Option) (border BorderStyle, width int) {
 }
 
 // classRestore puts back the property op overwrote, from the snapshot taken
-// before the class string was applied. Kept next to classOption so the two
-// switches stay in step; TestSetClass_EveryClassResetsToDefault pins it.
-func classRestore(e *Element, b *classBase, op tailwind.Op) {
+// before the class string was applied, but only while the property still
+// holds what the class wrote; a later option or setter wins. Kept next to
+// classOption so the two switches stay in step;
+// TestSetClass_EveryClassResetsToDefault pins it.
+func classRestore(e *Element, b, a *classBase, op tailwind.Op) {
 	switch op.(type) {
 	case tailwind.Display:
-		e.style.Display = b.style.Display
+		restore(&e.style.Display, b.style.Display, a.style.Display)
 	case tailwind.Direction:
-		e.style.Direction = b.style.Direction
+		restore(&e.style.Direction, b.style.Direction, a.style.Direction)
 	case tailwind.FlexWrap:
-		e.style.FlexWrap = b.style.FlexWrap
+		restore(&e.style.FlexWrap, b.style.FlexWrap, a.style.FlexWrap)
 	case tailwind.AlignContent:
-		e.style.AlignContent = b.style.AlignContent
+		restore(&e.style.AlignContent, b.style.AlignContent, a.style.AlignContent)
 	case tailwind.FlexGrow:
-		e.style.FlexGrow = b.style.FlexGrow
+		restore(&e.style.FlexGrow, b.style.FlexGrow, a.style.FlexGrow)
 	case tailwind.FlexShrink:
-		e.style.FlexShrink = b.style.FlexShrink
+		restore(&e.style.FlexShrink, b.style.FlexShrink, a.style.FlexShrink)
 	case tailwind.Justify:
-		e.style.JustifyContent = b.style.JustifyContent
+		restore(&e.style.JustifyContent, b.style.JustifyContent, a.style.JustifyContent)
 	case tailwind.AlignItems:
-		e.style.AlignItems = b.style.AlignItems
+		restore(&e.style.AlignItems, b.style.AlignItems, a.style.AlignItems)
 	case tailwind.AlignSelf:
-		e.style.AlignSelf = b.style.AlignSelf
+		restore(&e.style.AlignSelf, b.style.AlignSelf, a.style.AlignSelf)
 	case tailwind.TextAlign:
-		e.textAlign = b.textAlign
+		restore(&e.textAlign, b.textAlign, a.textAlign)
 	case tailwind.Border:
-		e.border = b.border
+		restore(&e.border, b.border, a.border)
 	case tailwind.BorderColor:
-		e.borderStyle = b.borderStyle
+		restore(&e.borderStyle, b.borderStyle, a.borderStyle)
 	case tailwind.Background:
-		e.background = b.background
+		restore(&e.background, b.background, a.background)
 	case tailwind.ScrollbarColor:
-		e.scrollbarStyle = b.scrollbarStyle
+		restore(&e.scrollbarStyle, b.scrollbarStyle, a.scrollbarStyle)
 	case tailwind.ScrollbarThumbColor:
-		e.scrollbarThumbStyle = b.scrollbarThumbStyle
+		restore(&e.scrollbarThumbStyle, b.scrollbarThumbStyle, a.scrollbarThumbStyle)
 	case tailwind.Scroll:
 		// Mirrors what WithScrollable writes.
-		e.scrollMode, e.focusable = b.scrollMode, b.focusable
-		e.scrollbarStyle, e.scrollbarThumbStyle = b.scrollbarStyle, b.scrollbarThumbStyle
+		restore(&e.scrollMode, b.scrollMode, a.scrollMode)
+		restore(&e.focusable, b.focusable, a.focusable)
+		restore(&e.scrollbarStyle, b.scrollbarStyle, a.scrollbarStyle)
+		restore(&e.scrollbarThumbStyle, b.scrollbarThumbStyle, a.scrollbarThumbStyle)
 	case tailwind.OverflowHidden:
-		e.overflow = b.overflow
+		restore(&e.overflow, b.overflow, a.overflow)
 	case tailwind.Focusable:
-		e.focusable, e.tabStop = b.focusable, b.tabStop
+		restore(&e.focusable, b.focusable, a.focusable)
+		restore(&e.tabStop, b.tabStop, a.tabStop)
 	case tailwind.Hidden:
-		e.hidden = b.hidden
+		restore(&e.hidden, b.hidden, a.hidden)
 	case tailwind.Truncate:
-		e.truncate = b.truncate
+		restore(&e.truncate, b.truncate, a.truncate)
 	case tailwind.ScrollbarHidden:
-		e.scrollbarHidden = b.scrollbarHidden
+		restore(&e.scrollbarHidden, b.scrollbarHidden, a.scrollbarHidden)
 	case tailwind.Wrap:
-		e.noWrap = b.noWrap
+		restore(&e.noWrap, b.noWrap, a.noWrap)
 	case tailwind.Gap:
-		e.style.Gap = b.style.Gap
+		restore(&e.style.Gap, b.style.Gap, a.style.Gap)
 	case tailwind.Padding, tailwind.PaddingEdges:
-		e.style.Padding = b.style.Padding
+		restore(&e.style.Padding, b.style.Padding, a.style.Padding)
 	case tailwind.Margin, tailwind.MarginEdges:
-		e.style.Margin = b.style.Margin
+		restore(&e.style.Margin, b.style.Margin, a.style.Margin)
 	case tailwind.Width, tailwind.WidthPercent, tailwind.WidthFraction, tailwind.WidthAuto:
-		e.style.Width = b.style.Width
+		restore(&e.style.Width, b.style.Width, a.style.Width)
 	case tailwind.Height, tailwind.HeightPercent, tailwind.HeightFraction, tailwind.HeightAuto:
-		e.style.Height = b.style.Height
+		restore(&e.style.Height, b.style.Height, a.style.Height)
 	case tailwind.MinWidth:
-		e.style.MinWidth = b.style.MinWidth
+		restore(&e.style.MinWidth, b.style.MinWidth, a.style.MinWidth)
 	case tailwind.MaxWidth:
-		e.style.MaxWidth = b.style.MaxWidth
+		restore(&e.style.MaxWidth, b.style.MaxWidth, a.style.MaxWidth)
 	case tailwind.MinHeight:
-		e.style.MinHeight = b.style.MinHeight
+		restore(&e.style.MinHeight, b.style.MinHeight, a.style.MinHeight)
 	case tailwind.MaxHeight:
-		e.style.MaxHeight = b.style.MaxHeight
+		restore(&e.style.MaxHeight, b.style.MaxHeight, a.style.MaxHeight)
 	case tailwind.TextGradient:
-		e.textGradient = b.textGradient
+		restore(&e.textGradient, b.textGradient, a.textGradient)
 	case tailwind.BackgroundGradient:
-		e.bgGradient = b.bgGradient
+		restore(&e.bgGradient, b.bgGradient, a.bgGradient)
 	case tailwind.BorderGradient:
-		e.borderGradient = b.borderGradient
+		restore(&e.borderGradient, b.borderGradient, a.borderGradient)
 	default:
 		panic(fmt.Sprintf("tui: unhandled tailwind op %T", op))
+	}
+}
+
+// restore reverts dst to base only if it still holds the class-written value.
+func restore[T comparable](dst *T, base, applied T) {
+	if *dst == applied {
+		*dst = base
 	}
 }
 
