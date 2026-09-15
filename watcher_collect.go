@@ -6,6 +6,10 @@ func collectComponentWatchers(rootComp Component, root *Element) []Watcher {
 	var watchers []Watcher
 
 	walkComponents(rootComp, root, func(comp Component) {
+		// Element watchers are already started by the root tree walk.
+		if _, isEl := comp.(*Element); isEl {
+			return
+		}
 		switch c := comp.(type) {
 		case WatcherProvider:
 			watchers = append(watchers, c.Watchers()...)
