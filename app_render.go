@@ -73,7 +73,7 @@ func (a *App) renderFrame() {
 
 	// If root exists, render the element tree
 	if a.root != nil {
-		a.root.Render(a.buffer, width, renderHeight)
+		a.root.RenderTo(a.buffer, width, renderHeight)
 	}
 
 	a.renderOverlays(width, renderHeight)
@@ -231,7 +231,7 @@ func (a *App) RenderFull() {
 
 	// If root exists, render the element tree
 	if a.root != nil {
-		a.root.Render(a.buffer, width, height)
+		a.root.RenderTo(a.buffer, width, height)
 	}
 
 	a.renderOverlays(width, height)
@@ -330,6 +330,6 @@ func (a *App) renderOverlays(width, height int) {
 				child.background = &bg
 			}
 		}
-		ov.element.Render(a.buffer, width, height)
+		ov.element.RenderTo(a.buffer, width, height)
 	}
 }

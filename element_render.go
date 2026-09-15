@@ -701,14 +701,21 @@ nextLine:
 	}
 }
 
-// Render calculates layout (if needed) and renders the entire tree to the buffer.
+// RenderTo calculates layout (if needed) and renders the entire tree to the buffer.
 // This is the main entry point for rendering an Element tree.
 // Note: onUpdate hooks are called in renderElement for each element in the tree.
-func (e *Element) Render(buf *Buffer, width, height int) {
+func (e *Element) RenderTo(buf *Buffer, width, height int) {
 	if e.dirty {
 		Calculate(e, width, height)
 	}
 	RenderTree(buf, e)
+}
+
+// Render returns the element itself. It makes an Element satisfy Component so
+// a prebuilt element can be used wherever a component is accepted, including
+// @expr in gsx. Drawing to a buffer is RenderTo.
+func (e *Element) Render(app *App) *Element {
+	return e
 }
 
 // hrCharacter returns the horizontal rule character based on border style.

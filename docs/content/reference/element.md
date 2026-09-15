@@ -655,7 +655,7 @@ type CursorReporter interface {
 ## Rendering
 
 ```go
-func (e *Element) Render(buf *Buffer, width, height int)
+func (e *Element) RenderTo(buf *Buffer, width, height int)
 ```
 
 The main rendering entry point. Runs layout (if dirty) and then renders the full element tree to the buffer.
@@ -664,7 +664,13 @@ The main rendering entry point. Runs layout (if dirty) and then renders the full
 func RenderTree(buf *Buffer, root *Element)
 ```
 
-Package-level function that traverses the element tree and draws each element to the buffer. Handles background fills, borders, text, gradients, scroll clipping, and overflow clipping. Called by `Element.Render()` after layout.
+Package-level function that traverses the element tree and draws each element to the buffer. Handles background fills, borders, text, gradients, scroll clipping, and overflow clipping. Called by `Element.RenderTo()` after layout.
+
+```go
+func (e *Element) Render(app *App) *Element
+```
+
+Returns the element itself. This makes `Element` satisfy the `Component` interface, so a prebuilt element can be used anywhere a component is accepted, including `@expr` in gsx (see the [GSX Syntax Reference](gsx-syntax.md#go-expressions)). It does not draw anything; use `RenderTo` for that.
 
 ## Enums
 

@@ -52,7 +52,7 @@ func renderWithTerminal(app *App, term Terminal) {
 
 	// If root exists, render the element tree
 	if app.root != nil {
-		app.root.Render(app.buffer, width, height)
+		app.root.RenderTo(app.buffer, width, height)
 	}
 
 	// Use full redraw after resize to clear artifacts, otherwise use diff-based render

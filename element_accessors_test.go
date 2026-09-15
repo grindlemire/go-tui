@@ -14,7 +14,7 @@ func TestElement_SetOnUpdate_CalledDuringRender(t *testing.T) {
 	})
 
 	buf := NewBuffer(20, 20)
-	e.Render(buf, 20, 20)
+	e.RenderTo(buf, 20, 20)
 
 	if !updateCalled {
 		t.Error("onUpdate hook should be called during Render()")
@@ -28,7 +28,7 @@ func TestElement_Render_NilOnUpdateDoesNotPanic(t *testing.T) {
 	buf := NewBuffer(20, 20)
 
 	// This should not panic
-	e.Render(buf, 20, 20)
+	e.RenderTo(buf, 20, 20)
 }
 
 func TestElement_WithOnUpdate_SetsHook(t *testing.T) {
@@ -41,7 +41,7 @@ func TestElement_WithOnUpdate_SetsHook(t *testing.T) {
 	)
 
 	buf := NewBuffer(20, 20)
-	e.Render(buf, 20, 20)
+	e.RenderTo(buf, 20, 20)
 
 	if !updateCalled {
 		t.Error("WithOnUpdate should set the onUpdate hook")
@@ -58,9 +58,9 @@ func TestElement_OnUpdate_CalledOnEachRender(t *testing.T) {
 	buf := NewBuffer(20, 20)
 
 	// Render multiple times
-	e.Render(buf, 20, 20)
-	e.Render(buf, 20, 20)
-	e.Render(buf, 20, 20)
+	e.RenderTo(buf, 20, 20)
+	e.RenderTo(buf, 20, 20)
+	e.RenderTo(buf, 20, 20)
 
 	if callCount != 3 {
 		t.Errorf("onUpdate should be called on each render, got %d calls, want 3", callCount)
@@ -191,7 +191,7 @@ func TestElement_ScrollBy_MarksDirty(t *testing.T) {
 
 	// Render to compute content bounds (scrollable content needs this)
 	buf := NewBuffer(80, 25)
-	e.Render(buf, 80, 10)
+	e.RenderTo(buf, 80, 10)
 
 	// Clear dirty flags
 	e.dirty = false

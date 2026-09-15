@@ -53,7 +53,7 @@ func TestElement_ScrollTo(t *testing.T) {
 
 			// Force layout calculation
 			buf := NewBuffer(80, 25)
-			e.Render(buf, 80, tt.viewportHeight)
+			e.RenderTo(buf, 80, tt.viewportHeight)
 
 			e.ScrollTo(0, tt.scrollToY)
 
@@ -102,7 +102,7 @@ func TestElement_ScrollBy(t *testing.T) {
 			}
 
 			buf := NewBuffer(80, 25)
-			e.Render(buf, 80, 10)
+			e.RenderTo(buf, 80, 10)
 
 			e.ScrollTo(0, tt.initialY)
 			e.ScrollBy(0, tt.deltaY)
@@ -148,7 +148,7 @@ func TestElement_ContentSize(t *testing.T) {
 			}
 
 			buf := NewBuffer(80, 25)
-			e.Render(buf, 80, 10)
+			e.RenderTo(buf, 80, 10)
 
 			_, h := e.ContentSize()
 			if h != tt.expected {
@@ -200,7 +200,7 @@ func TestElement_ScrollEventHandling(t *testing.T) {
 			}
 
 			buf := NewBuffer(80, 25)
-			e.Render(buf, 80, 10)
+			e.RenderTo(buf, 80, 10)
 
 			e.ScrollTo(0, tt.initialY)
 
@@ -272,7 +272,7 @@ func TestElement_ScrollModes(t *testing.T) {
 			}
 
 			buf := NewBuffer(80, 25)
-			e.Render(buf, 10, 10)
+			e.RenderTo(buf, 10, 10)
 
 			// Test vertical scroll
 			e.ScrollTo(0, 0)
@@ -319,7 +319,7 @@ func TestElement_ScrollRendersThroughTree(t *testing.T) {
 
 	// Render through parent
 	buf := NewBuffer(40, 20)
-	parent.Render(buf, 40, 20)
+	parent.RenderTo(buf, 40, 20)
 
 	// Check that content size was computed
 	_, contentH := scrollable.ContentSize()
@@ -336,7 +336,7 @@ func TestElement_ScrollRendersThroughTree(t *testing.T) {
 
 	// Render again to apply scroll
 	parent.MarkDirty()
-	parent.Render(buf, 40, 20)
+	parent.RenderTo(buf, 40, 20)
 
 	// Verify scroll is clamped correctly (20 items - 10 viewport = 10 max)
 	scrollable.ScrollTo(0, 100)

@@ -184,7 +184,7 @@ func TestApp_RenderWithRoot(t *testing.T) {
 	app.SetRoot(root)
 
 	// Render directly to buffer
-	root.Render(buffer, 80, 24)
+	root.RenderTo(buffer, 80, 24)
 
 	// After rendering, element should no longer be dirty
 	if root.IsDirty() {

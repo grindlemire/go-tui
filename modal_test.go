@@ -285,7 +285,7 @@ func TestModal_HandleMouse_BackdropClick(t *testing.T) {
 	el := m.Render(testApp)
 	// Trigger layout by rendering into a buffer
 	buf := NewBuffer(80, 24)
-	el.Render(buf, 80, 24)
+	el.RenderTo(buf, 80, 24)
 
 	// Click on the overlay element itself (backdrop area, no children)
 	consumed := m.HandleMouse(MouseEvent{
@@ -312,7 +312,7 @@ func TestModal_HandleMouse_BackdropClickDisabled(t *testing.T) {
 
 	el := m.Render(testApp)
 	buf := NewBuffer(80, 24)
-	el.Render(buf, 80, 24)
+	el.RenderTo(buf, 80, 24)
 
 	consumed := m.HandleMouse(MouseEvent{
 		Button: MouseLeft,
@@ -347,7 +347,7 @@ func TestModal_HandleMouse_ChildOnActivate(t *testing.T) {
 
 	// Trigger layout
 	buf := NewBuffer(80, 24)
-	el.Render(buf, 80, 24)
+	el.RenderTo(buf, 80, 24)
 
 	// Click within the button's rendered bounds
 	btnRect := btn.Rect()

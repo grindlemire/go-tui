@@ -66,7 +66,7 @@ func TestMarkdown_RenderHeadingAndParagraph(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(20, 6)
-	root.Render(buf, 20, 6)
+	root.RenderTo(buf, 20, 6)
 
 	out := buf.StringTrimmed()
 	if !strings.Contains(out, "Title") || !strings.Contains(out, "world") {
@@ -84,7 +84,7 @@ func TestMarkdown_RenderCodeFence(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(40, 8)
-	root.Render(buf, 40, 8)
+	root.RenderTo(buf, 40, 8)
 
 	out := buf.StringTrimmed()
 	if !strings.Contains(out, "fmt.Println(1)") || !strings.Contains(out, "fmt.Println(2)") {
@@ -98,7 +98,7 @@ func TestMarkdown_RenderList(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(30, 8)
-	root.Render(buf, 30, 8)
+	root.RenderTo(buf, 30, 8)
 	out := buf.StringTrimmed()
 
 	if !strings.Contains(out, "alpha") || !strings.Contains(out, "beta") || !strings.Contains(out, "nested") {
@@ -120,7 +120,7 @@ func TestMarkdown_RenderBlockquote(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(30, 6)
-	root.Render(buf, 30, 6)
+	root.RenderTo(buf, 30, 6)
 	out := buf.StringTrimmed()
 
 	if !strings.Contains(out, "quoted line one") {
@@ -137,7 +137,7 @@ func TestMarkdown_RenderTable(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(40, 8)
-	root.Render(buf, 40, 8)
+	root.RenderTo(buf, 40, 8)
 	out := buf.StringTrimmed()
 
 	for _, want := range []string{"Name", "Age", "Ann", "30", "Bob", "25"} {
@@ -182,7 +182,7 @@ func TestMarkdown_LinkRendersAsOSC8(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(40, 3)
-	root.Render(buf, 40, 3)
+	root.RenderTo(buf, 40, 3)
 
 	r, c := findCell(buf, 'd') // first 'd' is in "docs"
 	if r < 0 {
@@ -204,7 +204,7 @@ func TestMarkdown_FullDocument(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(60, 30)
-	root.Render(buf, 60, 30)
+	root.RenderTo(buf, 60, 30)
 	out := buf.StringTrimmed()
 
 	for _, want := range []string{
@@ -232,7 +232,7 @@ func TestMarkdown_FullDocument(t *testing.T) {
 func TestMarkdown_HeadingHasTrailingSpace(t *testing.T) {
 	m := NewMarkdown(WithMarkdownSource("# Title\nbody text\n"), WithMarkdownWidth(20))
 	buf := NewBuffer(20, 5)
-	m.Render(nil).Render(buf, 20, 5)
+	m.Render(nil).RenderTo(buf, 20, 5)
 	// Heading on row 0, a blank line on row 1, body on row 2.
 	if buf.Cell(0, 0).Rune != 'T' {
 		t.Fatalf("heading should be on row 0, got %q", buf.Cell(0, 0).Rune)
@@ -249,7 +249,7 @@ func TestMarkdown_TableRuleBetweenEveryRow(t *testing.T) {
 	src := "| A | B |\n| - | - |\n| 1 | 2 |\n| 3 | 4 |\n"
 	m := NewMarkdown(WithMarkdownSource(src), WithMarkdownWidth(20))
 	buf := NewBuffer(20, 10)
-	m.Render(nil).Render(buf, 20, 10)
+	m.Render(nil).RenderTo(buf, 20, 10)
 	// header + 2 body rows => 2 interior rules (after header, between body rows),
 	// each starting with the left-tee junction.
 	tees := 0
@@ -280,7 +280,7 @@ func TestMarkdown_HeadingSpacingBeforeAndAfterDeduped(t *testing.T) {
 	// a heading followed by a paragraph gets one blank line too.
 	m := NewMarkdown(WithMarkdownSource("# A\n\n## B\n\nbody"), WithMarkdownWidth(20))
 	buf := NewBuffer(20, 8)
-	m.Render(nil).Render(buf, 20, 8)
+	m.Render(nil).RenderTo(buf, 20, 8)
 	rune0 := func(y int) rune { return buf.Cell(0, y).Rune }
 	if rune0(0) != 'A' {
 		t.Fatalf("row 0 should be 'A', got %q", rune0(0))
@@ -316,7 +316,7 @@ func TestMarkdown_TableFullGrid(t *testing.T) {
 	src := "| A | B |\n| - | - |\n| 1 | 2 |\n"
 	m := NewMarkdown(WithMarkdownSource(src), WithMarkdownWidth(20))
 	buf := NewBuffer(20, 6)
-	m.Render(nil).Render(buf, 20, 6)
+	m.Render(nil).RenderTo(buf, 20, 6)
 	out := buf.StringTrimmed()
 
 	// DefaultMarkdownTheme draws a full rounded grid: outer corners, a top
@@ -334,7 +334,7 @@ func TestMarkdown_TableFullGrid(t *testing.T) {
 func TestMarkdown_BlockquoteTextIsItalic(t *testing.T) {
 	m := NewMarkdown(WithMarkdownSource("> hello world\n"), WithMarkdownWidth(20))
 	buf := NewBuffer(20, 4)
-	m.Render(nil).Render(buf, 20, 4)
+	m.Render(nil).RenderTo(buf, 20, 4)
 	r, c := findCell(buf, 'h') // first 'h' is "hello"
 	if r < 0 {
 		t.Fatal("blockquote text not found")
@@ -350,7 +350,7 @@ func TestMarkdown_BlockquoteWrapsLongContent(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(24, 10)
-	root.Render(buf, 24, 10)
+	root.RenderTo(buf, 24, 10)
 	out := buf.StringTrimmed()
 
 	// Tail of the line must survive (it was clipped before the wrap fix).
@@ -370,7 +370,7 @@ func TestMarkdown_ListWrapsLongContent(t *testing.T) {
 	root := m.Render(nil)
 
 	buf := NewBuffer(24, 10)
-	root.Render(buf, 24, 10)
+	root.RenderTo(buf, 24, 10)
 	out := buf.StringTrimmed()
 
 	if !strings.Contains(out, "repeatedly") {

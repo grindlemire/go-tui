@@ -118,7 +118,7 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 	t.Run("default shows scrollbar and reserves gutter", func(t *testing.T) {
 		e := makeScrollable()
 		buf := NewBuffer(width, height)
-		e.Render(buf, width, height)
+		e.RenderTo(buf, width, height)
 
 		if !e.needsVerticalScrollbar() {
 			t.Fatalf("expected scrollbar to be needed")
@@ -139,7 +139,7 @@ func TestElement_ScrollbarHidden(t *testing.T) {
 	t.Run("hidden skips scrollbar and reclaims gutter", func(t *testing.T) {
 		e := makeScrollable(WithScrollbarHidden(true))
 		buf := NewBuffer(width, height)
-		e.Render(buf, width, height)
+		e.RenderTo(buf, width, height)
 
 		if e.needsVerticalScrollbar() {
 			t.Fatalf("expected scrollbar to be hidden")
@@ -166,7 +166,7 @@ func TestElement_ScrollToTop(t *testing.T) {
 		e.AddChild(New(WithHeight(1)))
 	}
 	buf := NewBuffer(20, 5)
-	e.Render(buf, 20, 5)
+	e.RenderTo(buf, 20, 5)
 
 	e.ScrollTo(0, 10)
 	e.ScrollToTop()
