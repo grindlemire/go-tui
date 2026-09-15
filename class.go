@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 
+	"github.com/grindlemire/go-tui/internal/layout"
 	"github.com/grindlemire/go-tui/internal/tailwind"
 )
 
@@ -17,23 +18,27 @@ func WithClass(classes string) Option {
 }
 
 // SetClass replaces the element's classes. Every property the previous class
-// string set returns to its default first, then the new string is applied, so
-// omitting a class removes it. Properties set by other options are left alone
-// unless the new string sets them too.
+// string set is restored to the value it had before that string was applied,
+// then the new string is applied, so omitting a class removes it while options
+// set outside the class string keep their effect.
 func (e *Element) SetClass(classes string) {
-	for _, op := range e.classOps {
-		classReset(op)(e)
+	if b := e.classBase; b != nil {
+		for _, op := range e.classOps {
+			classRestore(e, b, op)
+		}
+		if e.classText {
+			e.textStyle, e.textStyleSet = b.textStyle, b.textStyleSet
+		}
 	}
-	if e.classText {
-		e.textStyle = Style{}
-		e.textStyleSet = false
-	}
-	e.classOps, e.classText = nil, false
+	e.classOps, e.classText, e.classBase = nil, false, nil
 	e.applyClasses(classes)
 	e.MarkDirty()
 }
 
 func (e *Element) applyClasses(classes string) {
+	if e.classBase == nil {
+		e.classBase = e.captureClassBase()
+	}
 	result := tailwind.Parse(classes)
 	ops := result.Ops()
 	for _, op := range ops {
@@ -43,6 +48,129 @@ func (e *Element) applyClasses(classes string) {
 	if text := result.Text(); len(text) > 0 {
 		WithTextStyle(classTextStyle(text))(e)
 		e.classText = true
+	}
+}
+
+// classBase is the state class ops can write, captured before the first class
+// string touches the element.
+type classBase struct {
+	style                                     LayoutStyle
+	textAlign                                 TextAlign
+	border                                    BorderStyle
+	borderStyle                               Style
+	background                                *Style
+	scrollbarStyle, scrollbarThumbStyle       Style
+	scrollMode                                ScrollMode
+	focusable, tabStop                        bool
+	overflow                                  OverflowMode
+	hidden, truncate, scrollbarHidden, noWrap bool
+	textGradient, bgGradient, borderGradient  *Gradient
+	textStyle                                 Style
+	textStyleSet                              bool
+}
+
+func (e *Element) captureClassBase() *classBase {
+	return &classBase{
+		style: e.style, textAlign: e.textAlign, border: e.border, borderStyle: e.borderStyle,
+		background: e.background, scrollbarStyle: e.scrollbarStyle, scrollbarThumbStyle: e.scrollbarThumbStyle,
+		scrollMode: e.scrollMode, focusable: e.focusable, tabStop: e.tabStop, overflow: e.overflow,
+		hidden: e.hidden, truncate: e.truncate, scrollbarHidden: e.scrollbarHidden, noWrap: e.noWrap,
+		textGradient: e.textGradient, bgGradient: e.bgGradient, borderGradient: e.borderGradient,
+		textStyle: e.textStyle, textStyleSet: e.textStyleSet,
+	}
+}
+
+// boxFromOptions reports the border and fixed width a set of element options
+// would apply, so components that size their content from their own fields
+// can pick up class-derived values before rendering.
+func boxFromOptions(opts []Option) (border BorderStyle, width int) {
+	if len(opts) == 0 {
+		return BorderNone, 0
+	}
+	probe := New(opts...)
+	if w := probe.LayoutStyle().Width; w.Unit == layout.UnitFixed {
+		width = int(w.Amount)
+	}
+	return probe.Border(), width
+}
+
+// classRestore puts back the property op overwrote, from the snapshot taken
+// before the class string was applied. Kept next to classOption so the two
+// switches stay in step; TestSetClass_EveryClassResetsToDefault pins it.
+func classRestore(e *Element, b *classBase, op tailwind.Op) {
+	switch op.(type) {
+	case tailwind.Display:
+		e.style.Display = b.style.Display
+	case tailwind.Direction:
+		e.style.Direction = b.style.Direction
+	case tailwind.FlexWrap:
+		e.style.FlexWrap = b.style.FlexWrap
+	case tailwind.AlignContent:
+		e.style.AlignContent = b.style.AlignContent
+	case tailwind.FlexGrow:
+		e.style.FlexGrow = b.style.FlexGrow
+	case tailwind.FlexShrink:
+		e.style.FlexShrink = b.style.FlexShrink
+	case tailwind.Justify:
+		e.style.JustifyContent = b.style.JustifyContent
+	case tailwind.AlignItems:
+		e.style.AlignItems = b.style.AlignItems
+	case tailwind.AlignSelf:
+		e.style.AlignSelf = b.style.AlignSelf
+	case tailwind.TextAlign:
+		e.textAlign = b.textAlign
+	case tailwind.Border:
+		e.border = b.border
+	case tailwind.BorderColor:
+		e.borderStyle = b.borderStyle
+	case tailwind.Background:
+		e.background = b.background
+	case tailwind.ScrollbarColor:
+		e.scrollbarStyle = b.scrollbarStyle
+	case tailwind.ScrollbarThumbColor:
+		e.scrollbarThumbStyle = b.scrollbarThumbStyle
+	case tailwind.Scroll:
+		// Mirrors what WithScrollable writes.
+		e.scrollMode, e.focusable = b.scrollMode, b.focusable
+		e.scrollbarStyle, e.scrollbarThumbStyle = b.scrollbarStyle, b.scrollbarThumbStyle
+	case tailwind.OverflowHidden:
+		e.overflow = b.overflow
+	case tailwind.Focusable:
+		e.focusable, e.tabStop = b.focusable, b.tabStop
+	case tailwind.Hidden:
+		e.hidden = b.hidden
+	case tailwind.Truncate:
+		e.truncate = b.truncate
+	case tailwind.ScrollbarHidden:
+		e.scrollbarHidden = b.scrollbarHidden
+	case tailwind.Wrap:
+		e.noWrap = b.noWrap
+	case tailwind.Gap:
+		e.style.Gap = b.style.Gap
+	case tailwind.Padding, tailwind.PaddingEdges:
+		e.style.Padding = b.style.Padding
+	case tailwind.Margin, tailwind.MarginEdges:
+		e.style.Margin = b.style.Margin
+	case tailwind.Width, tailwind.WidthPercent, tailwind.WidthFraction, tailwind.WidthAuto:
+		e.style.Width = b.style.Width
+	case tailwind.Height, tailwind.HeightPercent, tailwind.HeightFraction, tailwind.HeightAuto:
+		e.style.Height = b.style.Height
+	case tailwind.MinWidth:
+		e.style.MinWidth = b.style.MinWidth
+	case tailwind.MaxWidth:
+		e.style.MaxWidth = b.style.MaxWidth
+	case tailwind.MinHeight:
+		e.style.MinHeight = b.style.MinHeight
+	case tailwind.MaxHeight:
+		e.style.MaxHeight = b.style.MaxHeight
+	case tailwind.TextGradient:
+		e.textGradient = b.textGradient
+	case tailwind.BackgroundGradient:
+		e.bgGradient = b.bgGradient
+	case tailwind.BorderGradient:
+		e.borderGradient = b.borderGradient
+	default:
+		panic(fmt.Sprintf("tui: unhandled tailwind op %T", op))
 	}
 }
 
@@ -171,89 +299,6 @@ func classOption(op tailwind.Op) Option {
 		return WithBorderGradient(classGradient(op.Start, op.End, op.Direction))
 	}
 	panic(fmt.Sprintf("tui: unhandled tailwind op %T", op))
-}
-
-// classReset returns the option that restores the New() default of the
-// property op set. Kept next to classOption so the two switches stay in step;
-// TestSetClass_EveryClassResetsToDefault pins that every op resets cleanly.
-func classReset(op tailwind.Op) Option {
-	def := DefaultLayoutStyle()
-	return func(e *Element) {
-		switch op.(type) {
-		case tailwind.Display:
-			e.style.Display = def.Display
-		case tailwind.Direction:
-			e.style.Direction = def.Direction
-		case tailwind.FlexWrap:
-			e.style.FlexWrap = def.FlexWrap
-		case tailwind.AlignContent:
-			e.style.AlignContent = def.AlignContent
-		case tailwind.FlexGrow:
-			e.style.FlexGrow = def.FlexGrow
-		case tailwind.FlexShrink:
-			e.style.FlexShrink = def.FlexShrink
-		case tailwind.Justify:
-			e.style.JustifyContent = def.JustifyContent
-		case tailwind.AlignItems:
-			e.style.AlignItems = def.AlignItems
-		case tailwind.AlignSelf:
-			e.style.AlignSelf = nil
-		case tailwind.TextAlign:
-			e.textAlign = TextAlignLeft
-		case tailwind.Border:
-			e.border = BorderNone
-		case tailwind.BorderColor:
-			e.borderStyle = Style{}
-		case tailwind.Background:
-			e.background = nil
-		case tailwind.ScrollbarColor:
-			e.scrollbarStyle = Style{}
-		case tailwind.ScrollbarThumbColor:
-			e.scrollbarThumbStyle = Style{}
-		case tailwind.Scroll:
-			e.scrollMode = ScrollNone
-			e.focusable, e.tabStop = false, false
-			e.scrollbarStyle, e.scrollbarThumbStyle = Style{}, Style{}
-		case tailwind.OverflowHidden:
-			e.overflow = OverflowVisible
-		case tailwind.Focusable:
-			e.focusable, e.tabStop = false, false
-		case tailwind.Hidden:
-			e.hidden = false
-		case tailwind.Truncate:
-			e.truncate = false
-		case tailwind.ScrollbarHidden:
-			e.scrollbarHidden = false
-		case tailwind.Wrap:
-			e.noWrap = false
-		case tailwind.Gap:
-			e.style.Gap = 0
-		case tailwind.Padding, tailwind.PaddingEdges:
-			e.style.Padding = Edges{}
-		case tailwind.Margin, tailwind.MarginEdges:
-			e.style.Margin = Edges{}
-		case tailwind.Width, tailwind.WidthPercent, tailwind.WidthFraction, tailwind.WidthAuto:
-			e.style.Width = def.Width
-		case tailwind.Height, tailwind.HeightPercent, tailwind.HeightFraction, tailwind.HeightAuto:
-			e.style.Height = def.Height
-		case tailwind.MinWidth:
-			e.style.MinWidth = def.MinWidth
-		case tailwind.MaxWidth:
-			e.style.MaxWidth = def.MaxWidth
-		case tailwind.MinHeight:
-			e.style.MinHeight = def.MinHeight
-		case tailwind.MaxHeight:
-			e.style.MaxHeight = def.MaxHeight
-		case tailwind.TextGradient:
-			e.textGradient = nil
-		case tailwind.BackgroundGradient:
-			e.bgGradient = nil
-		case tailwind.BorderGradient:
-			e.borderGradient = nil
-		default:
-			panic(fmt.Sprintf("tui: unhandled tailwind op %T", op))
-		}
-	}
 }
 
 func classAlign(v tailwind.AlignValue) Align {

@@ -390,7 +390,7 @@ You can set padding and margin on individual sides or axis pairs:
 | `mb-N` | Bottom only |
 | `ml-N` | Left only |
 
-All-sides and per-side classes combine the way they do in Tailwind, with later classes winning side by side: `p-2 px-1` pads 2 above and below and 1 on the left and right, while `px-1 p-2` pads 2 everywhere.
+All-sides and per-side classes merge side by side, with the later class winning: `p-2 px-1` pads 2 above and below and 1 on the left and right, while `px-1 p-2` pads 2 everywhere. This differs from Tailwind, where the per-side class wins regardless of order.
 
 For more control via attributes, use `padding={2}` for uniform or set each side explicitly with the `tui.WithPaddingTRBL(top, right, bottom, left)` option in Go.
 

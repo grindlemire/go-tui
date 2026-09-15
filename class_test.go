@@ -194,6 +194,33 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 				}
 			},
 		},
+		"explicit option sharing a property with the old class is restored": {
+			opts: []Option{WithFocusable(true), WithClass("overflow-y-scroll")},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if !e.IsFocusable() || !e.IsTabStop() {
+					t.Errorf("focusable=%v tabStop=%v, want both true from WithFocusable", e.IsFocusable(), e.IsTabStop())
+				}
+			},
+		},
+		"explicit border returns when the class border goes away": {
+			opts: []Option{WithBorder(BorderDouble), WithClass("border-rounded")},
+			next: "p-1",
+			check: func(t *testing.T, e *Element) {
+				if e.Border() != BorderDouble || e.style.Padding != EdgeAll(1) {
+					t.Errorf("border=%v padding=%+v, want BorderDouble and EdgeAll(1)", e.Border(), e.style.Padding)
+				}
+			},
+		},
+		"scroll reset only undoes what the scroll class set": {
+			opts: []Option{WithScrollable(ScrollVertical), WithTabStop(true), WithClass("overflow-y-scroll")},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if !e.IsTabStop() || e.ScrollModeValue() != ScrollVertical {
+					t.Errorf("tabStop=%v scroll=%v, want explicit tab stop and scroll mode kept", e.IsTabStop(), e.ScrollModeValue())
+				}
+			},
+		},
 		"scroll class resets focus and scrollbar defaults too": {
 			opts: []Option{WithClass("overflow-y-scroll")},
 			next: "",
@@ -264,6 +291,29 @@ func TestComponentElementOptions(t *testing.T) {
 		}
 		if root.LayoutStyle().Height != Fixed(3) {
 			t.Errorf("height = %+v, want Fixed(3) to fit the border", root.LayoutStyle().Height)
+		}
+	})
+	t.Run("input viewport follows the class border and width", func(t *testing.T) {
+		inp := NewInput(WithInputElementOptions(WithClass("border-rounded w-30")))
+		inp.Render(testApp)
+		if got := inp.visibleWidth(); got != 28 {
+			t.Errorf("visibleWidth() = %d, want 28 (30 wide minus the border)", got)
+		}
+	})
+	t.Run("input class height is honored", func(t *testing.T) {
+		root := NewInput(WithInputElementOptions(WithClass("h-5"))).Render(testApp)
+		if root.LayoutStyle().Height != Fixed(5) {
+			t.Errorf("height = %+v, want Fixed(5)", root.LayoutStyle().Height)
+		}
+	})
+	t.Run("textarea wraps inside the class border and reports the rendered height", func(t *testing.T) {
+		ta := NewTextArea(WithTextAreaElementOptions(WithClass("border")))
+		root := ta.Render(testApp)
+		if got := ta.wrapWidth(); got != 38 {
+			t.Errorf("wrapWidth() = %d, want 38 (40 wide minus the border)", got)
+		}
+		if root.LayoutStyle().Height != Fixed(ta.Height()) {
+			t.Errorf("rendered height %+v disagrees with Height() = %d", root.LayoutStyle().Height, ta.Height())
 		}
 	})
 	t.Run("textarea applies element options and sizes for a class border", func(t *testing.T) {

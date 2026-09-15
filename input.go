@@ -75,6 +75,16 @@ func NewInput(opts ...InputOption) *Input {
 	for _, opt := range opts {
 		opt(inp)
 	}
+	// The viewport math reads these fields, so class-derived values must land
+	// here before the first render.
+	if b, w := boxFromOptions(inp.elementOpts); b != BorderNone || w > 0 {
+		if b != BorderNone {
+			inp.border = b
+		}
+		if w > 0 {
+			inp.width = w
+		}
+	}
 	return inp
 }
 
@@ -220,8 +230,8 @@ func (inp *Input) Render(app *App) *Element {
 	root := New(opts...)
 	root.Apply(inp.elementOpts...)
 
-	// Height and focus styling depend on the final border, which element
-	// options (a class border) may have set.
+	// Focus styling and the default height follow the final border, which
+	// element options (a class border) may have set.
 	totalHeight := 1
 	if root.Border() != BorderNone {
 		totalHeight += 2
@@ -235,7 +245,9 @@ func (inp *Input) Render(app *App) *Element {
 			root.Apply(WithBorderGradient(*inp.borderGradient))
 		}
 	}
-	root.Apply(WithHeight(totalHeight))
+	if root.LayoutStyle().Height == Auto() {
+		root.Apply(WithHeight(totalHeight))
+	}
 
 	// Wire Element focus/blur to component focus/blur
 	root.SetOnFocus(func(e *Element) {

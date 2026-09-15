@@ -277,10 +277,11 @@ func Resolve(class string) (Class, bool) {
 }
 
 // Parse resolves a whitespace-separated class list. Unknown classes are skipped.
-// Spacing follows Tailwind: when a per-side class (pt-1, mx-2, ...) is present,
-// all-sides classes (p-2, m-1) fold into the same per-side accumulator in
-// class order, so later classes win side by side. Without a per-side class an
-// all-sides class stays a positional op.
+// When a per-side spacing class (pt-1, mx-2, ...) is present, all-sides
+// classes (p-2, m-1) fold into the same per-side accumulator in class order,
+// so later classes win side by side (Tailwind instead always lets the
+// per-side class win). Without a per-side class an all-sides class stays a
+// positional op.
 func Parse(classes string) Result {
 	var result Result
 	var padding, margin edges

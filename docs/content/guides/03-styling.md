@@ -265,7 +265,7 @@ el := tui.New(tui.WithClass("border-rounded p-1 " + theme))
 el.SetClass("border-double text-red")
 ```
 
-`SetClass` replaces the previous class string. Every property the old string set goes back to its default, then the new string is applied, so `SetClass("")` after `"font-bold p-1"` removes both, and `SetClass("text-green")` after `"font-bold"` is green and not bold. Properties set through other attributes are left alone unless the new string sets them too. Within one class string the last class wins, so `"text-red text-green"` renders green, and per-side spacing merges with all-sides spacing the way Tailwind does: `"p-2 px-1"` pads 2 above and below and 1 on the sides.
+`SetClass` replaces the previous class string. Every property the old string set goes back to its default, then the new string is applied, so `SetClass("")` after `"font-bold p-1"` removes both, and `SetClass("text-green")` after `"font-bold"` is green and not bold. Properties set through other attributes are left alone unless the new string sets them too. Within one class string the last class wins, so `"text-red text-green"` renders green, and per-side spacing merges with all-sides spacing side by side: `"p-2 px-1"` pads 2 above and below and 1 on the sides. (Tailwind itself lets the per-side class win regardless of order.)
 
 On `<input>`, `<textarea>`, `<markdown>`, and `<modal>` the `class` attribute is applied to the component's root element after the component's own attributes, so `<input class="border-rounded w-30" />` gets the border, grows to fit it, and takes the class width over the default.
 

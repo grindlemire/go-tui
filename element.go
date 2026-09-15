@@ -124,9 +124,11 @@ type Element struct {
 	bgGradient     *Gradient
 	borderGradient *Gradient
 
-	// Ops applied by the last class string, undone by the next SetClass.
+	// Ops applied by the current class string and the state they overwrote,
+	// so SetClass can put it back before applying the next string.
 	classOps  []tailwind.Op
 	classText bool
+	classBase *classBase
 
 	// Pre-render hook for custom update logic (polling, animations, etc.)
 	onUpdate func()
