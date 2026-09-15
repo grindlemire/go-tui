@@ -317,13 +317,11 @@ func (a *Analyzer) DetectStateBindings(comp *Component, stateVars []StateVar) []
 				scan(n.Body, true)
 
 			case *IfStmt:
-				// Check if condition references state - if so, elements inside
-				// are rebuilt by the reactive update function and don't need
-				// separate text bindings (similar to loop-scoped elements).
-				condDeps := detectGetCallsInExpr(n.Condition, stateNames)
-				childInLoop := inLoop || len(condDeps) > 0
-				scan(n.Then, childInLoop)
-				scan(n.Else, childInLoop)
+				// Elements in either branch are declared inside the generated if
+				// block, so a binding emitted after it could not reference them.
+				// A reactive if rebuilds its children on change instead.
+				scan(n.Then, true)
+				scan(n.Else, true)
 
 			case *ComponentCall:
 				scan(n.Children, inLoop)

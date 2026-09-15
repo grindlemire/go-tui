@@ -243,6 +243,32 @@ templ Counter() {
 				"name.Bind(func(_ string) { __update___tui_1() })",
 			},
 		},
+		"no class binding for an element declared inside a plain if": {
+			input: `package x
+templ Styled(show bool) {
+	cls := tui.NewState("text-red")
+	<div>
+		if show {
+			<div class={cls.Get()}></div>
+		}
+	</div>
+}`,
+			wantContains:    []string{"tui.WithClass(cls.Get())"},
+			wantNotContains: []string{"SetClass"},
+		},
+		"no text binding for an element declared inside a plain if": {
+			input: `package x
+templ Msg(show bool) {
+	msg := tui.NewState("hi")
+	<div>
+		if show {
+			<span>{msg.Get()}</span>
+		}
+	</div>
+}`,
+			wantContains:    []string{"tui.WithText(msg.Get())"},
+			wantNotContains: []string{"SetText("},
+		},
 		"dynamic class binding re-applies classes through SetClass": {
 			input: `package x
 templ Styled() {
