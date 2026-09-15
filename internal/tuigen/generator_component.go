@@ -2,11 +2,13 @@ package tuigen
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"regexp"
 	"slices"
 	"sort"
 	"strings"
-	"unicode"
 )
 
 // generateComponent generates a Go function from a component.
@@ -18,7 +20,6 @@ func (g *Generator) generateComponent(comp *Component) {
 	g.condCounter = 0
 	g.loopCounter = 0
 	g.mountIndex = 0
-	g.loopIndexStack = nil
 	g.loopVarStack = nil
 	g.mountKeyParts = nil
 	g.currentReceiver = ""
@@ -741,9 +742,7 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	g.writeln("")
 }
 
-// indexedComponentFields returns the struct fields rendered through an index or
-// a loop whose declared type is a literal slice or map, skipping fields already
-// bound directly or asserted as plain component-expr fields.
+// indexedComponentFields returns the literal slice/map fields rendered by index or loop that are not already bound directly.
 func (g *Generator) indexedComponentFields(fields, boundFields []StructField, plainFields []string) []string {
 	var out []string
 	for _, f := range fields {
@@ -990,55 +989,45 @@ func sortedKeys(m map[string]bool) []string {
 	return keys
 }
 
-// trackComponentExprField extracts and tracks receiver field names from
-// component expressions (e.g., "c.settingsView" → tracks "settingsView").
-// An indexed field (c.items[i]) or a loop variable ranging over a receiver
-// field is tracked in componentExprIndexedFields instead.
-// Only tracks when inside a method component (currentReceiver is set).
+// trackComponentExprField records receiver fields used in component expressions: plain fields
+// in componentExprFields, indexed fields and loop variables over a field in componentExprIndexedFields.
 func (g *Generator) trackComponentExprField(expr string) {
 	if g.currentReceiver == "" {
 		return
 	}
-	prefix := g.currentReceiver + "."
-	if !strings.HasPrefix(expr, prefix) {
-		if field := g.loopValueField(expr); field != "" && !slices.Contains(g.componentExprIndexedFields, field) {
-			g.componentExprIndexedFields = append(g.componentExprIndexedFields, field)
-		}
-		return
+	tail, isField := strings.CutPrefix(expr, g.currentReceiver+".")
+	var indexed string
+	if isField {
+		indexed = indexedFieldName(tail)
+	} else {
+		indexed = g.loopValueField(expr)
 	}
-	fieldName := expr[len(prefix):]
-	if field := indexedFieldName(fieldName); field != "" {
-		if !slices.Contains(g.componentExprIndexedFields, field) {
-			g.componentExprIndexedFields = append(g.componentExprIndexedFields, field)
+	if indexed != "" {
+		if !slices.Contains(g.componentExprIndexedFields, indexed) {
+			g.componentExprIndexedFields = append(g.componentExprIndexedFields, indexed)
 		}
 		return
 	}
 	// Only track simple field names (no further dots, calls, or indexes)
-	if strings.ContainsAny(fieldName, ".()[") {
+	if !isField || strings.ContainsAny(tail, ".()[") {
 		return
 	}
-	// Avoid duplicates
-	if slices.Contains(g.componentExprFields, fieldName) {
-		return
+	if !slices.Contains(g.componentExprFields, tail) {
+		g.componentExprFields = append(g.componentExprFields, tail)
 	}
-	g.componentExprFields = append(g.componentExprFields, fieldName)
 }
 
 // loopValueField returns the receiver field an enclosing loop ranges over when
 // expr is that loop's value variable (for _, it := range c.items { @it }).
 // The innermost loop declaring the variable wins, matching Go shadowing.
 func (g *Generator) loopValueField(expr string) string {
-	if !isIdentifier(expr) {
-		return ""
-	}
-	prefix := g.currentReceiver + "."
 	for i := len(g.loopVarStack) - 1; i >= 0; i-- {
 		entry := g.loopVarStack[i]
 		if entry.value != expr {
 			continue
 		}
-		field := strings.TrimPrefix(entry.iterable, prefix)
-		if field == entry.iterable || !isIdentifier(field) {
+		field, ok := strings.CutPrefix(entry.iterable, g.currentReceiver+".")
+		if !ok || !token.IsIdentifier(field) {
 			return ""
 		}
 		return field
@@ -1046,64 +1035,18 @@ func (g *Generator) loopValueField(expr string) string {
 	return ""
 }
 
-// indexedFieldName returns ident when tail has the shape ident[...] and the
-// bracket that opens after ident closes at the very end of tail.
+// indexedFieldName returns ident when tail has the shape ident[...].
 func indexedFieldName(tail string) string {
-	open := strings.IndexByte(tail, '[')
-	if open <= 0 || !isIdentifier(tail[:open]) {
+	expr, err := parser.ParseExpr(tail)
+	if err != nil {
 		return ""
 	}
-	depth := 0
-	for i := open; i < len(tail); i++ {
-		switch tail[i] {
-		case '"', '`', '\'':
-			end := skipStringLiteral(tail, i)
-			if end < 0 {
-				return ""
-			}
-			i = end
-		case '[':
-			depth++
-		case ']':
-			depth--
-			if depth == 0 {
-				if i == len(tail)-1 {
-					return tail[:open]
-				}
-				return ""
-			}
+	if ix, ok := expr.(*ast.IndexExpr); ok {
+		if id, ok := ix.X.(*ast.Ident); ok {
+			return id.Name
 		}
 	}
 	return ""
-}
-
-// skipStringLiteral returns the index of the quote closing the literal that
-// opens at start, or -1 when it never closes.
-func skipStringLiteral(s string, start int) int {
-	quote := s[start]
-	for i := start + 1; i < len(s); i++ {
-		switch {
-		case quote != '`' && s[i] == '\\':
-			i++
-		case s[i] == quote:
-			return i
-		}
-	}
-	return -1
-}
-
-// isIdentifier reports whether s is a plain Go identifier.
-func isIdentifier(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i, r := range s {
-		if r == '_' || unicode.IsLetter(r) || (i > 0 && unicode.IsDigit(r)) {
-			continue
-		}
-		return false
-	}
-	return true
 }
 
 // generateBindAppClosure emits a __bindApp closure for function components.

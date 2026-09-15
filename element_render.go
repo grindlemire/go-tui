@@ -711,9 +711,8 @@ func (e *Element) RenderTo(buf *Buffer, width, height int) {
 	RenderTree(buf, e)
 }
 
-// Render returns the element itself. It makes an Element satisfy Component so
-// a prebuilt element can be used wherever a component is accepted, including
-// @expr in gsx. Drawing to a buffer is RenderTo.
+// Render returns the element itself so an Element satisfies Component (and
+// works with @expr in gsx). RenderTo draws to a buffer.
 func (e *Element) Render(app *App) *Element {
 	return e
 }

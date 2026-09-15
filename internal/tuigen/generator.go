@@ -54,9 +54,6 @@ type Generator struct {
 	// to emit app.Mount(receiverVar, index, factory).
 	currentReceiver string
 
-	// loopIndexStack names synthetic loop index variables (__idx_N) by depth.
-	loopIndexStack []string
-
 	// loopVarStack records each enclosing loop's value variable and iterable by depth.
 	loopVarStack []loopVarEntry
 
@@ -358,9 +355,8 @@ func (g *Generator) pushLoopIndex(loop *ForLoop) string {
 	if loop.Index != "" && loop.Index != "_" {
 		idxVar = loop.Index
 	} else {
-		idxVar = fmt.Sprintf("__idx_%d", len(g.loopIndexStack))
+		idxVar = fmt.Sprintf("__idx_%d", len(g.loopVarStack))
 	}
-	g.loopIndexStack = append(g.loopIndexStack, idxVar)
 	g.loopVarStack = append(g.loopVarStack, loopVarEntry{value: loop.Value, iterable: loop.Iterable})
 	g.mountKeyParts = append(slices.Clone(g.mountKeyParts), mountKeySegment{expr: idxVar, fromLoop: true})
 	return idxVar
@@ -368,9 +364,6 @@ func (g *Generator) pushLoopIndex(loop *ForLoop) string {
 
 // popLoopIndex removes the most recent loop index variable from the stack.
 func (g *Generator) popLoopIndex() {
-	if len(g.loopIndexStack) > 0 {
-		g.loopIndexStack = g.loopIndexStack[:len(g.loopIndexStack)-1]
-	}
 	if len(g.loopVarStack) > 0 {
 		g.loopVarStack = g.loopVarStack[:len(g.loopVarStack)-1]
 	}
