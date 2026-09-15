@@ -465,3 +465,52 @@ templ Page() {
 		})
 	}
 }
+
+// @expr lowers to expr.Render(app) and a function templ has no app in scope,
+// so the indexed form is rejected there exactly like the plain field form.
+func TestAnalyzer_ComponentExprIndexRequiresReceiver(t *testing.T) {
+	type tc struct {
+		input     string
+		wantError string
+	}
+
+	tests := map[string]tc{
+		"indexed expression in function templ errors": {
+			input: `package x
+templ Pick(content []*tui.Element, active int) {
+	<div>@content[active]</div>
+}`,
+			wantError: "component expression @content[active] can only be used inside a struct component",
+		},
+		"indexed binding in function templ errors": {
+			input: `package x
+templ Pick(content []*tui.Element, active int) {
+	el := @content[active]
+	<div>{el}</div>
+}`,
+			wantError: "component expression @content[active] can only be used inside a struct component",
+		},
+		"indexed expression in struct component is accepted": {
+			input: `package x
+templ (c *component) Render() {
+	<div>@c.content[c.active]</div>
+}`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			file := parseFileForTest(t, tt.input)
+			err := NewAnalyzer().Analyze(file)
+			if tt.wantError == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantError) {
+				t.Fatalf("error = %v, want containing %q", err, tt.wantError)
+			}
+		})
+	}
+}

@@ -33,6 +33,48 @@ templ (c *card) Render() {
 }
 `,
 		},
+		"indexed component expression formats unchanged": {
+			input: `package main
+
+templ (c *card) Render() {
+	<div>
+		@c.content[c.active]
+		for i, el := range c.items {
+			@c.items[i].view
+			@el
+		}
+	</div>
+}
+`,
+			want: `package main
+
+templ (c *card) Render() {
+	<div>
+		@c.content[c.active]
+		for i, el := range c.items {
+			@c.items[i].view
+			@el
+		}
+	</div>
+}
+`,
+		},
+		"indexed component expression binding formats unchanged": {
+			input: `package main
+
+templ (c *card) Render() {
+	x := @c.items[i]
+	<div>{x}</div>
+}
+`,
+			want: `package main
+
+templ (c *card) Render() {
+	x := @c.items[i]
+	<div>{x}</div>
+}
+`,
+		},
 		"component expression with leading comment": {
 			input: `package main
 

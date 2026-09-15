@@ -455,6 +455,43 @@ templ (c *shell) Render() {
 				":= c.editor.Render(app)",
 			},
 		},
+		"indexed element expression as element child": {
+			input: `package x
+
+import "github.com/grindlemire/go-tui"
+
+type component struct {
+	active  int
+	content []*tui.Element
+}
+
+templ (c *component) Render() {
+	<div>@c.content[c.active]</div>
+}`,
+			wantContains: []string{
+				":= c.content[c.active].Render(app)",
+				".AddChild(__tui_",
+			},
+		},
+		"loop variable element expression": {
+			input: `package x
+
+type component struct {
+	items []*tui.Element
+}
+
+templ (c *component) Render() {
+	<div>
+		for _, el := range c.items {
+			@el
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"for __idx_0, el := range c.items {",
+				":= el.Render(app)",
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -655,5 +692,33 @@ templ App(show bool, items []string) {
 				}
 			}
 		})
+	}
+}
+
+// An indexed @expr names a value inside a field, not the field itself, so it
+// must not be tracked as a bindable struct field for BindApp/UnbindApp.
+func TestGenerator_IndexedComponentExprNotTracked(t *testing.T) {
+	input := `package x
+
+import "github.com/grindlemire/go-tui"
+
+type component struct {
+	active  int
+	content []*tui.Element
+	footer  *tui.Element
+}
+
+templ (c *component) Render() {
+	<div>
+		@c.content[c.active]
+		@c.footer
+	</div>
+}`
+	code := parseAnalyzeGenerate(t, input)
+	if strings.Contains(code, "content[c.active]).(tui.AppBinder)") || strings.Contains(code, "c.content[c.active].BindApp") {
+		t.Errorf("indexed expression was tracked as a bindable field:\n%s", code)
+	}
+	if !strings.Contains(code, "any(c.footer).(tui.AppBinder)") {
+		t.Errorf("plain field expression should still be bound:\n%s", code)
 	}
 }

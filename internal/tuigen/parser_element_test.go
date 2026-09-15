@@ -455,3 +455,98 @@ templ Test() {
 		}
 	}
 }
+
+// collectComponentExprs gathers the literal of every @expr node, including
+// the RHS of name := @expr bindings, in source order.
+func collectComponentExprs(nodes []Node) []string {
+	var out []string
+	for _, n := range nodes {
+		switch n := n.(type) {
+		case *ComponentExpr:
+			out = append(out, n.Expr)
+		case *LetBinding:
+			if n.Expr != "" {
+				out = append(out, n.Name+" := "+n.Expr)
+			}
+		case *Element:
+			out = append(out, collectComponentExprs(n.Children)...)
+		case *ForLoop:
+			out = append(out, collectComponentExprs(n.Body)...)
+		case *IfStmt:
+			out = append(out, collectComponentExprs(n.Then)...)
+			out = append(out, collectComponentExprs(n.Else)...)
+		}
+	}
+	return out
+}
+
+func TestParser_ComponentExprIndex(t *testing.T) {
+	type tc struct {
+		input string
+		want  []string
+	}
+
+	tests := map[string]tc{
+		"indexed expression as element child": {
+			input: `package x
+templ (c *component) Render() {
+	<div>{c.content[c.active]}</div>
+	<div>@c.content[c.active]</div>
+}`,
+			want: []string{"c.content[c.active]"},
+		},
+		"indexed expression inside for and if": {
+			input: `package x
+templ (c *component) Render() {
+	<div>
+		for i := range c.items {
+			if i == c.active {
+				@c.items[i].view
+			} else {
+				@c.m["fallback"]
+			}
+		}
+	</div>
+}`,
+			want: []string{"c.items[i].view", `c.m["fallback"]`},
+		},
+		"indexed expression binding": {
+			input: `package x
+templ (c *component) Render() {
+	active := @c.content[c.active]
+	<div>{active}</div>
+}`,
+			want: []string{"active := c.content[c.active]"},
+		},
+		"indexed expression followed by text": {
+			input: `package x
+templ (c *component) Render() {
+	<div>
+		@c.content[c.active]
+		<span>after</span>
+	</div>
+}`,
+			want: []string{"c.content[c.active]"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			p := NewParser(l)
+			file, err := p.ParseFile()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			got := collectComponentExprs(file.Components[0].Body)
+			if len(got) != len(tt.want) {
+				t.Fatalf("component exprs = %q, want %q", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("component expr[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}

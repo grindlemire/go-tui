@@ -959,8 +959,8 @@ func (g *Generator) trackComponentExprField(expr string) {
 		return
 	}
 	fieldName := expr[len(prefix):]
-	// Only track simple field names (no further dots or method calls)
-	if strings.ContainsAny(fieldName, ".()") {
+	// Only track simple field names (no further dots, calls, or indexes)
+	if strings.ContainsAny(fieldName, ".()[") {
 		return
 	}
 	// Avoid duplicates
