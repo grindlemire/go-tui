@@ -45,7 +45,27 @@ func TestParse(t *testing.T) {
 		},
 		"fractions and keywords": {
 			input:   "w-1/2 h-2/3 w-full h-auto w-auto h-full",
-			wantOps: []Op{WidthPercent{Percent: 50}, HeightPercent{Percent: float64(2) / float64(3) * 100}, WidthPercent{Percent: 100}, HeightAuto{}, WidthAuto{}, HeightPercent{Percent: 100}},
+			wantOps: []Op{WidthFraction{Num: 1, Den: 2}, HeightFraction{Num: 2, Den: 3}, WidthPercent{Percent: 100}, HeightAuto{}, WidthAuto{}, HeightPercent{Percent: 100}},
+		},
+		"all-sides then per-side padding merges per side": {
+			input:   "p-2 px-1",
+			wantOps: []Op{PaddingEdges{Top: 2, Right: 1, Bottom: 2, Left: 1}},
+		},
+		"per-side then all-sides padding is overridden": {
+			input:   "px-1 p-2",
+			wantOps: []Op{PaddingEdges{Top: 2, Right: 2, Bottom: 2, Left: 2}},
+		},
+		"all-sides padding alone stays positional": {
+			input:   "p-2 gap-1 p-3",
+			wantOps: []Op{Padding{N: 2}, Gap{N: 1}, Padding{N: 3}},
+		},
+		"margin merges the same way": {
+			input:   "m-3 gap-1 mt-1",
+			wantOps: []Op{Gap{N: 1}, MarginEdges{Top: 1, Right: 3, Bottom: 3, Left: 3}},
+		},
+		"per-side padding sandwiching all-sides": {
+			input:   "pt-1 p-2 pb-3",
+			wantOps: []Op{PaddingEdges{Top: 2, Right: 2, Bottom: 3, Left: 2}},
 		},
 		"zero denominator ignored": {input: "w-1/0"},
 		"border styles": {

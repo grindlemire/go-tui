@@ -186,6 +186,11 @@ func renderOp(op tailwind.Op) (code, needsImport string) {
 		return plain("tui.WithWidthPercent(" + strconv.FormatFloat(op.Percent, 'f', 2, 64) + ")")
 	case tailwind.HeightPercent:
 		return plain("tui.WithHeightPercent(" + strconv.FormatFloat(op.Percent, 'f', 2, 64) + ")")
+	case tailwind.WidthFraction:
+		// A constant expression rounds once, matching the runtime's single division.
+		return plain(fmt.Sprintf("tui.WithWidthPercent(100.0 * %d / %d)", op.Num, op.Den))
+	case tailwind.HeightFraction:
+		return plain(fmt.Sprintf("tui.WithHeightPercent(100.0 * %d / %d)", op.Num, op.Den))
 	case tailwind.WidthAuto:
 		return plain("tui.WithWidthAuto()")
 	case tailwind.HeightAuto:

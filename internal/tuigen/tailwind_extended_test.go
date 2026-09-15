@@ -15,27 +15,27 @@ func TestParseTailwindClass_WidthFractions(t *testing.T) {
 		"w-1/2": {
 			input:      "w-1/2",
 			wantOK:     true,
-			wantOption: "tui.WithWidthPercent(50.00)",
+			wantOption: "tui.WithWidthPercent(100.0 * 1 / 2)",
 		},
 		"w-1/3": {
 			input:      "w-1/3",
 			wantOK:     true,
-			wantOption: "tui.WithWidthPercent(33.33)",
+			wantOption: "tui.WithWidthPercent(100.0 * 1 / 3)",
 		},
 		"w-2/3": {
 			input:      "w-2/3",
 			wantOK:     true,
-			wantOption: "tui.WithWidthPercent(66.67)",
+			wantOption: "tui.WithWidthPercent(100.0 * 2 / 3)",
 		},
 		"w-1/4": {
 			input:      "w-1/4",
 			wantOK:     true,
-			wantOption: "tui.WithWidthPercent(25.00)",
+			wantOption: "tui.WithWidthPercent(100.0 * 1 / 4)",
 		},
 		"w-3/4": {
 			input:      "w-3/4",
 			wantOK:     true,
-			wantOption: "tui.WithWidthPercent(75.00)",
+			wantOption: "tui.WithWidthPercent(100.0 * 3 / 4)",
 		},
 	}
 
@@ -64,17 +64,17 @@ func TestParseTailwindClass_HeightFractions(t *testing.T) {
 		"h-1/2": {
 			input:      "h-1/2",
 			wantOK:     true,
-			wantOption: "tui.WithHeightPercent(50.00)",
+			wantOption: "tui.WithHeightPercent(100.0 * 1 / 2)",
 		},
 		"h-1/4": {
 			input:      "h-1/4",
 			wantOK:     true,
-			wantOption: "tui.WithHeightPercent(25.00)",
+			wantOption: "tui.WithHeightPercent(100.0 * 1 / 4)",
 		},
 		"h-3/4": {
 			input:      "h-3/4",
 			wantOK:     true,
-			wantOption: "tui.WithHeightPercent(75.00)",
+			wantOption: "tui.WithHeightPercent(100.0 * 3 / 4)",
 		},
 	}
 

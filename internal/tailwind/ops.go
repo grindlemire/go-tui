@@ -193,6 +193,23 @@ type MarginEdges struct{ Top, Right, Bottom, Left int }
 // WidthPercent sets width as a percentage of the parent.
 type WidthPercent struct{ Percent float64 }
 
+// WidthFraction sets width as Num/Den of the parent (w-1/3). It is kept as a
+// fraction so the compiler and the runtime compute the same float64.
+type WidthFraction struct{ Num, Den int }
+
+// HeightFraction sets height as Num/Den of the parent (h-2/3).
+type HeightFraction struct{ Num, Den int }
+
+// Percent returns the fraction as a percentage with a single rounding step.
+func (f WidthFraction) Percent() float64 { return fractionPercent(f.Num, f.Den) }
+
+// Percent returns the fraction as a percentage with a single rounding step.
+func (f HeightFraction) Percent() float64 { return fractionPercent(f.Num, f.Den) }
+
+// fractionPercent divides once so the result equals the Go constant
+// expression 100.0 * num / den the compiler emits.
+func fractionPercent(num, den int) float64 { return float64(100*num) / float64(den) }
+
 // HeightPercent sets height as a percentage of the parent.
 type HeightPercent struct{ Percent float64 }
 
@@ -285,6 +302,8 @@ func (MaxHeight) op()           {}
 func (PaddingEdges) op()        {}
 func (MarginEdges) op()         {}
 func (WidthPercent) op()        {}
+func (WidthFraction) op()       {}
+func (HeightFraction) op()      {}
 func (HeightPercent) op()       {}
 func (WidthAuto) op()           {}
 func (HeightAuto) op()          {}

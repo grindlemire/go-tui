@@ -1,5 +1,14 @@
 package tui
 
+// WithInputElementOptions applies standard Element options to the input's root
+// element after its own attributes, so class-derived options can override the
+// defaults (a class border grows the height to fit).
+func WithInputElementOptions(opts ...Option) InputOption {
+	return func(inp *Input) {
+		inp.elementOpts = append(inp.elementOpts, opts...)
+	}
+}
+
 // InputOption configures an Input.
 type InputOption func(*Input)
 

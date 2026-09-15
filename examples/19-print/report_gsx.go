@@ -64,7 +64,7 @@ func BuildReport(project string, status string, duration string, tests int, pass
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
 		tui.WithPadding(1),
-		tui.WithWidthPercent(50.00),
+		tui.WithWidthPercent(100.0*1/2),
 	)
 	__tui_2 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),

@@ -366,7 +366,7 @@ func Dashboard() *DashboardView {
 		tui.WithFlexGrow(1),
 	)
 	__tui_12 := tui.New(
-		tui.WithWidthPercent(66.67),
+		tui.WithWidthPercent(100.0*2/3),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(1),
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),

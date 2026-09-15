@@ -229,11 +229,10 @@ func Resolve(class string) (Class, bool) {
 		num, _ := strconv.Atoi(m[2])
 		den, _ := strconv.Atoi(m[3])
 		if den != 0 {
-			pct := float64(num) / float64(den) * 100
 			if m[1] == "w" {
-				return Class{Ops: []Op{WidthPercent{Percent: pct}}}, true
+				return Class{Ops: []Op{WidthFraction{Num: num, Den: den}}}, true
 			}
-			return Class{Ops: []Op{HeightPercent{Percent: pct}}}, true
+			return Class{Ops: []Op{HeightFraction{Num: num, Den: den}}}, true
 		}
 	}
 	if m := keywordPattern.FindStringSubmatch(class); m != nil {
@@ -278,9 +277,23 @@ func Resolve(class string) (Class, bool) {
 }
 
 // Parse resolves a whitespace-separated class list. Unknown classes are skipped.
+// Spacing follows Tailwind: when a per-side class (pt-1, mx-2, ...) is present,
+// all-sides classes (p-2, m-1) fold into the same per-side accumulator in
+// class order, so later classes win side by side. Without a per-side class an
+// all-sides class stays a positional op.
 func Parse(classes string) Result {
 	var result Result
 	var padding, margin edges
+	hasPadSide, hasMarSide := false, false
+	for class := range strings.FieldsSeq(classes) {
+		if isPadding, _, _, ok := parseSide(class); ok {
+			if isPadding {
+				hasPadSide = true
+			} else {
+				hasMarSide = true
+			}
+		}
+	}
 	for class := range strings.FieldsSeq(classes) {
 		if isPadding, side, n, ok := parseSide(class); ok {
 			if isPadding {
@@ -290,9 +303,25 @@ func Parse(classes string) Result {
 			}
 			continue
 		}
-		if c, ok := Resolve(class); ok {
-			result.Classes = append(result.Classes, c)
+		c, ok := Resolve(class)
+		if !ok {
+			continue
 		}
+		if len(c.Ops) == 1 {
+			switch op := c.Ops[0].(type) {
+			case Padding:
+				if hasPadSide {
+					padding.mergeAll(op.N)
+					continue
+				}
+			case Margin:
+				if hasMarSide {
+					margin.mergeAll(op.N)
+					continue
+				}
+			}
+		}
+		result.Classes = append(result.Classes, c)
 	}
 	if padding.set {
 		result.Classes = append(result.Classes, Class{Ops: []Op{padding.op(true)}})
@@ -314,6 +343,12 @@ func (e edges) op(padding bool) Op {
 		return PaddingEdges{Top: e.top, Right: e.right, Bottom: e.bottom, Left: e.left}
 	}
 	return MarginEdges{Top: e.top, Right: e.right, Bottom: e.bottom, Left: e.left}
+}
+
+// mergeAll sets every side, as an all-sides class does.
+func (e *edges) mergeAll(n int) {
+	e.set = true
+	e.top, e.right, e.bottom, e.left = n, n, n, n
 }
 
 func (e *edges) merge(side byte, n int) {

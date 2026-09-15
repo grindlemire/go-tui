@@ -256,7 +256,7 @@ func metricColor(value int) string {
 Expression classes compile to a `tui.WithClass(...)` option, which resolves the same class set at runtime. The differences from literal classes:
 
 - Unknown classes in an expression are ignored at runtime. Only literal class strings are validated by `tui check` and the language server.
-- When the expression reads a `State`, the generator also binds it and re-applies the classes through `SetClass` on change. This is additive (see below), so a class the previous value set is not undone by leaving it out. In a struct component this rarely matters because the element is rebuilt on every render, but for styles that need to toggle off (like `hidden`) use an attribute or a conditional instead.
+- When the expression reads a `State`, the generator also binds it and swaps the classes through `SetClass` on change, so a value with `hidden` and a later value without it hides and shows the element.
 
 You can use the same option from Go, and re-apply classes on an existing element with `SetClass`:
 
@@ -265,7 +265,9 @@ el := tui.New(tui.WithClass("border-rounded p-1 " + theme))
 el.SetClass("border-double text-red")
 ```
 
-Applying classes is additive. Properties the new classes mention are overwritten and everything else keeps its current value, so `SetClass("")` after `"font-bold"` leaves the text bold. The text style counts as one property, rebuilt from the text classes in the string: `SetClass("text-green")` after `"font-bold"` is green and not bold, the same as `class="text-green"` would compile to. Within one class string the last class wins, so `"text-red text-green"` renders green.
+`SetClass` replaces the previous class string. Every property the old string set goes back to its default, then the new string is applied, so `SetClass("")` after `"font-bold p-1"` removes both, and `SetClass("text-green")` after `"font-bold"` is green and not bold. Properties set through other attributes are left alone unless the new string sets them too. Within one class string the last class wins, so `"text-red text-green"` renders green, and per-side spacing merges with all-sides spacing the way Tailwind does: `"p-2 px-1"` pads 2 above and below and 1 on the sides.
+
+On `<input>`, `<textarea>`, `<markdown>`, and `<modal>` the `class` attribute is applied to the component's root element after the component's own attributes, so `<input class="border-rounded w-30" />` gets the border, grows to fit it, and takes the class width over the default.
 
 ## Programmatic Styling
 

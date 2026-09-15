@@ -477,6 +477,36 @@ templ (c *shell) Render() {
 				"Bold()",
 			},
 		},
+		"input literal class compiles into WithInputElementOptions": {
+			input: `package x
+
+type form struct{}
+
+templ (c *form) Render() {
+	<input class="border-rounded w-20" placeholder="x" />
+}`,
+			wantContains: []string{"tui.WithInputElementOptions(tui.WithBorder(tui.BorderRounded), tui.WithWidth(20))"},
+		},
+		"textarea class expression forwards WithClass through element options": {
+			input: `package x
+
+type form struct{}
+
+templ (c *form) Render() {
+	<textarea class={c.cls} />
+}`,
+			wantContains: []string{"tui.WithTextAreaElementOptions(tui.WithClass(c.cls))"},
+		},
+		"markdown class compiles into WithMarkdownElementOptions": {
+			input: `package x
+
+type docs struct{}
+
+templ (c *docs) Render() {
+	<markdown class="p-1 font-bold" source={c.body} />
+}`,
+			wantContains: []string{"tui.WithMarkdownElementOptions(tui.WithPadding(1), tui.WithTextStyle(tui.NewStyle().Bold()))"},
+		},
 		"modal class expression forwards WithClass through element options": {
 			input: `package x
 

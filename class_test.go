@@ -146,31 +146,96 @@ func renderElementANSI(el *Element) string {
 	return strings.Join(rows, "\n")
 }
 
-func TestSetClass(t *testing.T) {
-	e := New(WithClass("text-red p-1"))
-	e.dirty = false
+func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
+	type tc struct {
+		opts  []Option // initial element
+		next  string   // class string passed to SetClass
+		check func(t *testing.T, e *Element)
+	}
 
-	e.SetClass("text-green font-bold border")
+	tests := map[string]tc{
+		"omitted class is undone": {
+			opts: []Option{WithClass("hidden font-bold p-1 border")},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if e.Hidden() || e.textStyleSet || e.style.Padding != (Edges{}) || e.Border() != BorderNone {
+					t.Errorf("previous classes not reset: hidden=%v textStyleSet=%v padding=%+v border=%v", e.Hidden(), e.textStyleSet, e.style.Padding, e.Border())
+				}
+			},
+		},
+		"text style is rebuilt from the new string": {
+			opts: []Option{WithClass("font-bold")},
+			next: "text-green",
+			check: func(t *testing.T, e *Element) {
+				if got, want := e.TextStyle(), NewStyle().Foreground(Green); got != want {
+					t.Errorf("TextStyle = %+v, want %+v", got, want)
+				}
+			},
+		},
+		"properties set outside the class survive": {
+			opts: []Option{WithBorder(BorderDouble), WithClass("p-1"), WithGap(2)},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if e.Border() != BorderDouble || e.style.Gap != 2 {
+					t.Errorf("explicit options were reset: border=%v gap=%d", e.Border(), e.style.Gap)
+				}
+				if e.style.Padding != (Edges{}) {
+					t.Errorf("class padding not reset: %+v", e.style.Padding)
+				}
+			},
+		},
+		"new string wins over the old one": {
+			opts: []Option{WithClass("w-10 text-red")},
+			next: "w-1/2 border-rounded",
+			check: func(t *testing.T, e *Element) {
+				want := New(WithWidthPercent(50), WithBorder(BorderRounded))
+				if !reflect.DeepEqual(snapshotClassState(e), snapshotClassState(want)) {
+					t.Errorf("state =\n  %+v\nwant\n  %+v", snapshotClassState(e), snapshotClassState(want))
+				}
+			},
+		},
+		"scroll class resets focus and scrollbar defaults too": {
+			opts: []Option{WithClass("overflow-y-scroll")},
+			next: "",
+			check: func(t *testing.T, e *Element) {
+				if !reflect.DeepEqual(snapshotClassState(e), snapshotClassState(New())) {
+					t.Errorf("state after reset =\n  %+v\nwant fresh element", snapshotClassState(e))
+				}
+			},
+		},
+	}
 
-	if got, want := e.TextStyle(), NewStyle().Foreground(Green).Bold(); got != want {
-		t.Errorf("TextStyle after SetClass = %+v, want %+v", got, want)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(tt.opts...)
+			e.dirty = false
+			e.SetClass(tt.next)
+			if !e.IsDirty() {
+				t.Errorf("SetClass should mark the element dirty")
+			}
+			tt.check(t, e)
+		})
 	}
-	if e.Border() != BorderSingle {
-		t.Errorf("Border after SetClass = %v, want BorderSingle", e.Border())
-	}
-	if e.style.Padding != EdgeAll(1) {
-		t.Errorf("SetClass should leave properties it does not mention untouched, padding = %+v", e.style.Padding)
-	}
-	if !e.IsDirty() {
-		t.Errorf("SetClass should mark the element dirty")
+}
+
+// Applying then removing any class must leave the element exactly as New()
+// made it, which pins the reset for every op kind.
+func TestSetClass_EveryClassResetsToDefault(t *testing.T) {
+	fresh := snapshotClassState(New())
+	for _, class := range sweepClasses() {
+		e := New(WithClass(class))
+		e.SetClass("")
+		if got := snapshotClassState(e); !reflect.DeepEqual(got, fresh) {
+			t.Errorf("after WithClass(%q) then SetClass(\"\") state =\n  %+v\nwant\n  %+v", class, got, fresh)
+		}
 	}
 }
 
 // Every class the shared table knows must apply at runtime without hitting
 // the unhandled-op panic. Parameterized forms are sampled. Per-kind behavior
 // is pinned by TestWithClass_MatchesExplicitOptions.
-func TestWithClass_CoversEveryClass(t *testing.T) {
-	classes := append(tailwind.StaticClasses(),
+func sweepClasses() []string {
+	return append(tailwind.StaticClasses(),
 		"gap-1", "p-2", "px-1", "py-1", "pt-1", "pr-1", "pb-1", "pl-1",
 		"m-2", "mx-1", "my-1", "mt-1", "mr-1", "mb-1", "ml-1",
 		"w-3", "h-3", "min-w-1", "max-w-1", "min-h-1", "max-h-1",
@@ -179,11 +244,38 @@ func TestWithClass_CoversEveryClass(t *testing.T) {
 		"text-[#abc]", "bg-[#abcdef]", "border-[#123]", "scrollbar-[#123]", "scrollbar-thumb-[#123]",
 		"text-gradient-red-blue", "bg-gradient-red-blue-v", "border-gradient-bright-red-bright-blue-dd",
 	)
-	for _, class := range classes {
+}
+
+func TestWithClass_CoversEveryClass(t *testing.T) {
+	for _, class := range sweepClasses() {
 		if !tailwind.Known(class) {
 			t.Errorf("%q is not a known class", class)
 			continue
 		}
 		New(WithClass(class))
 	}
+}
+
+func TestComponentElementOptions(t *testing.T) {
+	t.Run("input applies element options and sizes for a class border", func(t *testing.T) {
+		root := NewInput(WithInputElementOptions(WithClass("border-rounded w-30"))).Render(testApp)
+		if root.Border() != BorderRounded || root.LayoutStyle().Width != Fixed(30) {
+			t.Errorf("border=%v width=%+v", root.Border(), root.LayoutStyle().Width)
+		}
+		if root.LayoutStyle().Height != Fixed(3) {
+			t.Errorf("height = %+v, want Fixed(3) to fit the border", root.LayoutStyle().Height)
+		}
+	})
+	t.Run("textarea applies element options and sizes for a class border", func(t *testing.T) {
+		root := NewTextArea(WithTextAreaElementOptions(WithBorder(BorderDouble))).Render(testApp)
+		if root.Border() != BorderDouble || root.LayoutStyle().Height != Fixed(3) {
+			t.Errorf("border=%v height=%+v, want BorderDouble and Fixed(3)", root.Border(), root.LayoutStyle().Height)
+		}
+	})
+	t.Run("markdown applies element options to its root", func(t *testing.T) {
+		root := NewMarkdown(WithMarkdownSource("hi"), WithMarkdownElementOptions(WithClass("p-1 border"))).Render(testApp)
+		if root.style.Padding != EdgeAll(1) || root.Border() != BorderSingle {
+			t.Errorf("padding=%+v border=%v", root.style.Padding, root.Border())
+		}
+	})
 }

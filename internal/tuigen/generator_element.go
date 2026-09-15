@@ -501,13 +501,11 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)
 
-	// For modal, also collect class-derived element options
-	if elem.Tag == "modal" {
-		classOpts := g.buildModalClassOptions(elem)
-		if len(classOpts) > 0 {
-			inner := strings.Join(classOpts, ", ")
-			elemOpts.options = append(elemOpts.options, fmt.Sprintf("tui.WithModalElementOptions(%s)", inner))
-		}
+	// Class-derived element options reach the component's root element
+	// through its With*ElementOptions option.
+	if classOpts := g.buildComponentClassOptions(elem); len(classOpts) > 0 {
+		inner := strings.Join(classOpts, ", ")
+		elemOpts.options = append(elemOpts.options, fmt.Sprintf("%s(%s)", componentElementOptions(elem.Tag), inner))
 	}
 
 	// Data-derived identities (loops, key={...}) use sweepable Mount;
@@ -601,9 +599,26 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 	return result
 }
 
-// buildModalClassOptions extracts element options from the class attribute
-// for a modal element. These get wrapped in WithModalElementOptions.
-func (g *Generator) buildModalClassOptions(elem *Element) []string {
+// componentElementOptions returns the option that forwards Element options
+// to a component element's root.
+func componentElementOptions(tag string) string {
+	switch tag {
+	case "input":
+		return "tui.WithInputElementOptions"
+	case "textarea":
+		return "tui.WithTextAreaElementOptions"
+	case "modal":
+		return "tui.WithModalElementOptions"
+	case "markdown":
+		return "tui.WithMarkdownElementOptions"
+	default:
+		return fmt.Sprintf("UNKNOWN_COMPONENT_ELEMENT_OPTIONS_%s", tag)
+	}
+}
+
+// buildComponentClassOptions extracts element options from the class
+// attribute of a component element, for wrapping in With*ElementOptions.
+func (g *Generator) buildComponentClassOptions(elem *Element) []string {
 	var opts []string
 	for _, attr := range elem.Attributes {
 		if attr.Name != "class" {

@@ -377,7 +377,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_49 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
-		tui.WithWidthPercent(50.00),
+		tui.WithWidthPercent(100.0*1/2),
 	)
 	__tui_50 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
@@ -410,7 +410,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 	__tui_54 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithGap(1),
-		tui.WithWidthPercent(50.00),
+		tui.WithWidthPercent(100.0*1/2),
 	)
 	__tui_55 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),

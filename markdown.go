@@ -11,10 +11,11 @@ import (
 // renderer: it owns no scroll state or key bindings. Wrap it in a scrollable
 // container to scroll long documents. Construct with NewMarkdown.
 type Markdown struct {
-	source string
-	state  *State[string] // optional reactive source; takes precedence over source
-	width  int            // 0 = fill available width
-	theme  MarkdownTheme
+	source      string
+	state       *State[string] // optional reactive source; takes precedence over source
+	width       int            // 0 = fill available width
+	theme       MarkdownTheme
+	elementOpts []Option // applied to the root element after its own options
 
 	// single-entry parse cache keyed on the resolved source string
 	lastSource string
@@ -59,6 +60,7 @@ func (m *Markdown) UpdateProps(fresh Component) {
 	m.state = f.state
 	m.width = f.width
 	m.theme = f.theme
+	m.elementOpts = f.elementOpts
 }
 
 // resolveSource returns the current markdown text (state wins when present).
@@ -89,6 +91,7 @@ func (m *Markdown) Render(app *App) *Element {
 		opts = append(opts, WithWidth(m.width))
 	}
 	root := New(opts...)
+	root.Apply(m.elementOpts...)
 	m.appendBlocks(root, m.cached, m.width, m.theme.Paragraph)
 	return root
 }
