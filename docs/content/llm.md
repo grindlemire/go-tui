@@ -148,6 +148,15 @@ for i, item := range items {
 // Local element binding
 badge := <span class="font-bold">{label}</span>
 <div>{badge}</div>
+
+// Element expression: @expr renders a *tui.Element or tui.Component value
+// ({expr} must be a string). Works with fields, index expressions, and loop vars.
+<div>
+    @c.content[c.active]
+    for _, el := range c.items {
+        @el
+    }
+</div>
 ```
 
 ### Go Expressions

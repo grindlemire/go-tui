@@ -553,6 +553,40 @@ Call components with the `@` prefix or as XML-like tags:
 </Card>
 ```
 
+### Element expressions
+
+The two expression forms differ by the Go type they expect. `{expr}` is a Go expression that must produce a `string`, and the compiler renders it as text. `@expr` is a Go expression that must produce a `*tui.Element` or a `tui.Component`, and the compiler renders its value as a child. `Element` satisfies `Component` (its `Render(app)` returns itself), so a prebuilt element can be inserted anywhere a component can.
+
+The expression after `@` may be a local variable, a receiver field, an index into a slice or map, or a field of an indexed value:
+
+```gsx
+type tabs struct {
+    active  int
+    content []*tui.Element
+    items   []*tui.Element
+    footer  *tui.Element
+}
+
+templ (t *tabs) Render() {
+    <div class="flex-col">
+        @t.content[t.active]
+        for _, el := range t.items {
+            @el
+        }
+        @t.footer
+    </div>
+}
+```
+
+The binding form works the same way:
+
+```gsx
+current := @t.content[t.active]
+<div>{current}</div>
+```
+
+The compiler does not type-check the expression. `{t.content[t.active]}` compiles to a `tui.WithText` call and fails in `go build` because the value is not a `string`, and `@t.title` with a `string` field fails the same way because a `string` has no `Render` method. Element expressions require a struct component (a `templ` with a receiver), since they render against the component's `app`.
+
 ## Control flow
 
 ### if / else
@@ -611,6 +645,8 @@ badge := <span class="text-cyan font-bold">{fmt.Sprintf("%d", s.count.Get())}</s
 ```
 
 Note the `:=` binding assigns both element expressions (starting with `<`) to a local variable as well as normal Go expressions.
+
+`@badge` is the general form for inserting a bound element and works for any expression that yields an element or component (see [Element expressions](#element-expressions)). `{badge}` keeps working for names bound with `:=` in the same file.
 
 ## Tailwind class reference
 
