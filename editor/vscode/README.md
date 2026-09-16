@@ -151,6 +151,7 @@ Notes:
 | If/Else | `if condition { ... } else { ... }` |
 | Let binding | `label := <span>text</span>` |
 | Component call | `@ComponentName(args)` |
+| Element expression | `@c.content[c.active]` |
 | Element | `<div class="flex-col gap-1">children</div>` |
 | Self-closing element | `<hr />`, `<br />`, `<input />`, `<progress />` |
 | Ref binding | `<button ref={myRef}>text</button>` |

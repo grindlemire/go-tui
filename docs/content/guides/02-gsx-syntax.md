@@ -328,6 +328,20 @@ Call methods on the receiver or on state variables:
 <span textStyle={s.getHeaderStyle()}>{s.count.Get()}</span>
 ```
 
+### Element Expressions
+
+Braces always produce text. To insert an element or component that already exists, prefix the expression with `@` instead. The expression can be a receiver field, an index into a slice or map, or a loop variable, as long as its value is a `*tui.Element` or a `tui.Component`:
+
+```gsx
+templ (t *tabs) Render() {
+    <div class="flex-col">
+        @t.content[t.active]
+    </div>
+}
+```
+
+`@expr` requires a struct component. See [Prebuilt Elements](components#prebuilt-elements) in the Components guide and [Element expressions](../reference/gsx-syntax.md#element-expressions) in the syntax reference.
+
 ## Control Flow
 
 Three directives control rendering logic: `if`, `for`, and `:=` bindings.
