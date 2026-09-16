@@ -56,21 +56,22 @@ func (e *Element) Focus() {
 // Idempotent: no-op if already blurred.
 // Does not cascade to children — only the FocusManager target loses focus.
 //
-// Restores the unfocused border style if a focus highlight was applied.
+// Restores the unfocused border style if a focus highlight was applied, then
+// calls onBlur, so a handler that refocuses starts from a clean element.
 func (e *Element) Blur() {
 	if !e.focused {
 		return
 	}
 	e.focused = false
-	if e.onBlur != nil {
-		e.onBlur(e)
-	}
 	if e.hasSavedBorder {
 		e.borderStyle = e.savedBorderStyle
 		e.hasSavedBorder = false
 		e.MarkDirty()
 	} else if e.focusBorderStyle != nil {
 		e.MarkDirty()
+	}
+	if e.onBlur != nil {
+		e.onBlur(e)
 	}
 }
 

@@ -211,6 +211,9 @@ func TestElement_BorderStyleWriteWhileFocused(t *testing.T) {
 				if got := e.activeBorderStyle(); got != tt.wantFocused {
 					t.Errorf("focused: visible border = %+v, want %+v", got, tt.wantFocused)
 				}
+				if got := e.BorderStyle(); got != green {
+					t.Errorf("focused: BorderStyle() = %+v, want %+v", got, green)
+				}
 				e.Blur()
 				if got := e.activeBorderStyle(); got != green {
 					t.Errorf("blurred: visible border = %+v, want %+v", got, green)
@@ -220,42 +223,78 @@ func TestElement_BorderStyleWriteWhileFocused(t *testing.T) {
 	}
 }
 
-func TestElement_SetClassWhileFocused_ClearRestoresUnfocusedStyle(t *testing.T) {
+func TestElement_Blur_RefocusInOnBlurKeepsHighlight(t *testing.T) {
 	red := NewStyle().Foreground(Red)
 	cyan := NewStyle().Foreground(Cyan)
 
-	e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true))
+	e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true),
+		WithOnBlur(func(el *Element) { el.Focus() }))
 	e.Focus()
-	e.SetClass("border-green")
-	e.SetClass("")
-	if got := e.activeBorderStyle(); got != cyan {
-		t.Errorf("focused: visible border = %+v, want %+v", got, cyan)
+	e.Blur()
+	if !e.IsFocused() {
+		t.Fatal("onBlur refocus should leave the element focused")
 	}
+	if got := e.activeBorderStyle(); got != cyan {
+		t.Errorf("refocused: visible border = %+v, want %+v", got, cyan)
+	}
+	// Drop the handler so the next Blur really blurs.
+	e.onBlur = nil
 	e.Blur()
 	if got := e.activeBorderStyle(); got != red {
 		t.Errorf("blurred: visible border = %+v, want %+v", got, red)
 	}
-	// A second focus cycle must not have baked the highlight into the base.
-	e.Focus()
-	e.Blur()
-	if got := e.activeBorderStyle(); got != red {
-		t.Errorf("after second cycle: visible border = %+v, want %+v", got, red)
-	}
 }
 
-func TestElement_SetClassWhileFocused_ClearAfterBlur(t *testing.T) {
+func TestElement_SetClassWhileFocused_Clear(t *testing.T) {
 	red := NewStyle().Foreground(Red)
 	green := NewStyle().Foreground(Green)
+	cyan := NewStyle().Foreground(Cyan)
 
-	e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true))
-	e.Focus()
-	e.SetClass("border-green")
-	e.Blur()
-	if got := e.activeBorderStyle(); got != green {
-		t.Errorf("blurred: visible border = %+v, want %+v", got, green)
+	type tc struct {
+		applyBeforeFocus bool  // SetClass("border-green") before Focus instead of during
+		clearAfterBlur   bool  // SetClass("") after Blur instead of while focused
+		wantBlurred      Style // visible style right after Blur
 	}
-	e.SetClass("")
-	if got := e.activeBorderStyle(); got != red {
-		t.Errorf("class cleared: visible border = %+v, want %+v", got, red)
+
+	tests := map[string]tc{
+		"apply and clear while focused":           {wantBlurred: red},
+		"apply while focused, clear after blur":   {clearAfterBlur: true, wantBlurred: green},
+		"apply before focus, clear while focused": {applyBeforeFocus: true, wantBlurred: red},
+		"apply before focus, clear after blur":    {applyBeforeFocus: true, clearAfterBlur: true, wantBlurred: green},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true))
+			if tt.applyBeforeFocus {
+				e.SetClass("border-green")
+			}
+			e.Focus()
+			if !tt.applyBeforeFocus {
+				e.SetClass("border-green")
+			}
+			if !tt.clearAfterBlur {
+				e.SetClass("")
+			}
+			if got := e.activeBorderStyle(); got != cyan {
+				t.Errorf("focused: visible border = %+v, want %+v", got, cyan)
+			}
+			e.Blur()
+			if got := e.activeBorderStyle(); got != tt.wantBlurred {
+				t.Errorf("blurred: visible border = %+v, want %+v", got, tt.wantBlurred)
+			}
+			if tt.clearAfterBlur {
+				e.SetClass("")
+			}
+			if got := e.activeBorderStyle(); got != red {
+				t.Errorf("class cleared: visible border = %+v, want %+v", got, red)
+			}
+			// A second focus cycle must not have baked the highlight into the base.
+			e.Focus()
+			e.Blur()
+			if got := e.activeBorderStyle(); got != red {
+				t.Errorf("after second cycle: visible border = %+v, want %+v", got, red)
+			}
+		})
 	}
 }
