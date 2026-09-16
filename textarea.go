@@ -27,8 +27,10 @@ type TextArea struct {
 	onSubmit          func(string)
 	elementOpts       []Option
 
-	// Content width the layout engine last gave the root; 0 until laid out.
+	// Content width the layout engine last gave the root, valid once laidOut.
+	// Zero is a real width (a fully shrunk flex item), so it cannot mean unset.
 	layoutWidth int
+	laidOut     bool
 
 	// Reactive state
 	text      *State[string]
@@ -225,6 +227,7 @@ func (t *TextArea) Render(app *App) *Element {
 	// re-renders so the rows match the box the engine gave it.
 	root.setOnLayout(func(e *Element) {
 		t.layoutWidth = e.ContentRect().Width
+		t.laidOut = true
 		if t.layoutWidth != wrapWidth {
 			e.MarkDirty()
 		}
@@ -520,7 +523,7 @@ func (t *TextArea) submit(ke KeyEvent) {
 // laid-out content width once the root has been laid out, and before that the
 // configured width minus the border, which is drawn inside the element width.
 func (t *TextArea) wrapWidth() int {
-	if t.layoutWidth > 0 {
+	if t.laidOut {
 		return t.layoutWidth
 	}
 	w := t.width

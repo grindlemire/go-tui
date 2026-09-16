@@ -34,15 +34,21 @@ func (e *Element) LayoutChildren() []Layoutable {
 // SetLayout is called by the layout engine to store computed layout.
 func (e *Element) SetLayout(l LayoutResult) {
 	e.layout = l
+}
+
+// setOnLayout installs a callback the render walk runs once per frame with
+// this element's final computed box.
+func (e *Element) setOnLayout(fn func(*Element)) {
+	e.onLayout = fn
+}
+
+// reportLayout runs the onLayout hook with this frame's final box. The render
+// walk calls it after every layout pass, including a scrollable parent's
+// scrollbar re-layout, so the hook sees each element once per frame.
+func (e *Element) reportLayout() {
 	if e.onLayout != nil {
 		e.onLayout(e)
 	}
-}
-
-// setOnLayout installs a callback that runs with the computed box each time
-// the layout engine lays this element out.
-func (e *Element) setOnLayout(fn func(*Element)) {
-	e.onLayout = fn
 }
 
 // setMeasure installs the content measurer HeightForWidth consults instead of

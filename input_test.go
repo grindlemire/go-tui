@@ -1079,3 +1079,84 @@ func TestInput_RerendersAfterLayoutWidthChange(t *testing.T) {
 		t.Error("frames at the laid-out width keep requesting another frame")
 	}
 }
+
+// scrollProbe renders components in a fixed-size vertically scrollable column.
+// A scrollable parent lays its children out twice per frame when it shows a
+// scrollbar: once at the full width and again minus the gutter.
+type scrollProbe struct {
+	width, height int
+	children      []Component
+}
+
+func (p *scrollProbe) Render(app *App) *Element {
+	root := New(WithWidth(p.width), WithHeight(p.height), WithDirection(Column), WithScrollable(ScrollVertical))
+	for _, c := range p.children {
+		root.AddChild(c.Render(app))
+	}
+	return root
+}
+
+// TestInput_SettlesInsideScrollableContainer verifies inputs that a scrollable
+// parent lays out twice per frame stop requesting frames once they render at
+// the width beside the scrollbar.
+func TestInput_SettlesInsideScrollableContainer(t *testing.T) {
+	app := newTestApp(60, 3)
+	var inputs []*Input
+	children := make([]Component, 0, 5)
+	for range 5 {
+		inp := NewInput(WithInputElementOptions(WithClass("w-full")))
+		inp.BindApp(app)
+		inp.SetText(strings.Repeat("abcde", 5))
+		inputs = append(inputs, inp)
+		children = append(children, inp)
+	}
+	app.SetRootComponent(&scrollProbe{width: 60, height: 3, children: children})
+
+	// Frame 1 renders for the configured width, frame 2 for the laid-out
+	// width and pulls the scroll back, frame 3 changes nothing.
+	for range 3 {
+		app.Render()
+	}
+	if app.dirty.Load() {
+		t.Fatal("input inside a scrollable container keeps requesting frames")
+	}
+	if got := inputs[0].visibleWidth(); got != 59 {
+		t.Errorf("visibleWidth() = %d, want 59 beside the scrollbar", got)
+	}
+}
+
+// rowProbe renders one component after a sibling that takes the whole row,
+// so a flex item with no minimum width shrinks to zero.
+type rowProbe struct {
+	width int
+	child Component
+}
+
+func (p *rowProbe) Render(app *App) *Element {
+	root := New(WithWidth(p.width), WithDisplay(DisplayFlex), WithDirection(Row))
+	root.AddChild(New(WithWidth(p.width), WithFlexShrink(0), WithText("wide")))
+	root.AddChild(p.child.Render(app))
+	return root
+}
+
+// TestInput_ZeroWidthSettles verifies a flex item shrunk to zero width renders
+// at that width and stops requesting frames instead of falling back to the
+// configured width every frame.
+func TestInput_ZeroWidthSettles(t *testing.T) {
+	app := newTestApp(100, 3)
+	inp := NewInput(WithInputElementOptions(WithClass("flex-1 min-w-0")))
+	inp.BindApp(app)
+	inp.SetText("hello")
+	app.SetRootComponent(&rowProbe{width: 100, child: inp})
+
+	// Frame 1 renders for the configured width, frame 2 for zero.
+	for range 2 {
+		app.Render()
+	}
+	if app.dirty.Load() {
+		t.Fatal("zero-width input keeps requesting frames")
+	}
+	if got := inp.visibleWidth(); got != 0 {
+		t.Errorf("visibleWidth() = %d, want 0 for a fully shrunk item", got)
+	}
+}

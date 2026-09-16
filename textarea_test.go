@@ -573,3 +573,47 @@ func TestTextArea_RerendersAfterLayoutWidthChange(t *testing.T) {
 		t.Error("frame at the laid-out width still requests another frame")
 	}
 }
+
+// TestTextArea_SettlesInsideScrollableContainer verifies a textarea that a
+// scrollable parent lays out twice per frame stops requesting frames once it
+// wraps at the width beside the scrollbar.
+func TestTextArea_SettlesInsideScrollableContainer(t *testing.T) {
+	app := newTestApp(60, 3)
+	ta := NewTextArea(WithTextAreaElementOptions(WithClass("w-full")))
+	ta.BindApp(app)
+	ta.SetText(strings.Repeat("0123456789", 20))
+	app.SetRootComponent(&scrollProbe{width: 60, height: 3, children: []Component{ta}})
+
+	// Frame 1 wraps for the configured width, frame 2 for the laid-out width.
+	for range 2 {
+		app.Render()
+	}
+	if app.dirty.Load() {
+		t.Fatal("textarea inside a scrollable container keeps requesting frames")
+	}
+	if got := ta.wrapWidth(); got != 59 {
+		t.Errorf("wrapWidth() = %d, want 59 beside the scrollbar", got)
+	}
+}
+
+// TestTextArea_ZeroWidthSettles verifies a flex item shrunk to zero width
+// wraps at that width and stops requesting frames instead of falling back to
+// the configured width every frame.
+func TestTextArea_ZeroWidthSettles(t *testing.T) {
+	app := newTestApp(100, 3)
+	ta := NewTextArea(WithTextAreaElementOptions(WithClass("flex-1 min-w-0")))
+	ta.BindApp(app)
+	ta.SetText("hello")
+	app.SetRootComponent(&rowProbe{width: 100, child: ta})
+
+	// Frame 1 wraps for the configured width, frame 2 for zero.
+	for range 2 {
+		app.Render()
+	}
+	if app.dirty.Load() {
+		t.Fatal("zero-width textarea keeps requesting frames")
+	}
+	if got := ta.wrapWidth(); got != 0 {
+		t.Errorf("wrapWidth() = %d, want 0 for a fully shrunk item", got)
+	}
+}

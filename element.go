@@ -138,7 +138,8 @@ type Element struct {
 	// width, for components whose height depends on the width layout assigns.
 	measure func(contentWidth int) int
 
-	// onLayout runs when the layout engine stores this element's computed box.
+	// onLayout runs once per frame from the render walk with the element's
+	// final box, after any scroll-container re-layout.
 	onLayout func(*Element)
 
 	// Watchers attached to this element (timers, channel watchers, etc.)

@@ -25,8 +25,10 @@ type Input struct {
 	onChange          func(string)
 	elementOpts       []Option
 
-	// Content width the layout engine last gave the root; 0 until laid out.
+	// Content width the layout engine last gave the root, valid once laidOut.
+	// Zero is a real width (a fully shrunk flex item), so it cannot mean unset.
 	layoutWidth int
+	laidOut     bool
 
 	// Reactive state
 	text      *State[string]
@@ -179,7 +181,7 @@ func (inp *Input) insertString(s string) {
 // laid-out content width once the root has been laid out, and before that the
 // configured width minus the border, which takes 1 char on each side.
 func (inp *Input) visibleWidth() int {
-	if inp.layoutWidth > 0 {
+	if inp.laidOut {
 		return inp.layoutWidth
 	}
 	w := inp.width
@@ -222,7 +224,9 @@ func (inp *Input) ensureCursorVisible() {
 
 // clampScroll pulls scrollPos back when it would hide text on the left while
 // leaving more than the cursor's column empty on the right, as after the
-// viewport grows or the text shrinks. Blur alone never moves the text.
+// viewport grows or the text shrinks. Unlike ensureCursorVisible it also runs
+// on the unfocused path, so a blurred input reclaims slack without jumping to
+// the cursor.
 func (inp *Input) clampScroll(visible int) {
 	_, total := textToClusters(inp.text.Get())
 	maxScroll := max(0, total+1-visible)
@@ -257,6 +261,7 @@ func (inp *Input) Render(app *App) *Element {
 	rendered := inp.visibleWidth()
 	root.setOnLayout(func(e *Element) {
 		inp.layoutWidth = e.ContentRect().Width
+		inp.laidOut = true
 		if inp.layoutWidth != rendered {
 			e.MarkDirty()
 		}
