@@ -302,6 +302,8 @@ func (e *Element) HeightForWidth(width int) int {
 				intrinsicW, _ := child.IntrinsicSize()
 				childWidth = min(intrinsicW, contentWidth)
 			}
+			// Layout applies min/max width to the slot after alignment.
+			childWidth = layout.ClampWidth(child.style, childWidth)
 			childH := child.HeightForWidth(childWidth)
 			totalH += childH
 			if visibleIdx > 0 {

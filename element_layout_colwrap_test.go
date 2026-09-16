@@ -136,3 +136,83 @@ func TestColumnHeightForWidthClampsNonStretchChild(t *testing.T) {
 		t.Errorf("sentinel Y = %d, want 3 (below the inner column)", got)
 	}
 }
+
+// Issue #164: computeBorderBox applies MinWidth/MaxWidth after the slot is
+// assigned, so a column child is laid out at the constrained width. The
+// wrapping measurement must use that same width or the allocated height is
+// wrong whenever the constraint changes how the text wraps.
+func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
+	type tc struct {
+		containerWidth int
+		containerOpts  []Option
+		childOpts      []Option
+		wantChildWidth int
+		wantHeight     int
+	}
+
+	tests := map[string]tc{
+		"max-w-15 items-start": {
+			containerWidth: 20,
+			containerOpts:  []Option{WithAlign(AlignStart)},
+			childOpts:      []Option{WithMaxWidth(15)},
+			wantChildWidth: 15,
+			wantHeight:     3,
+		},
+		"max-w-15 stretch default": {
+			containerWidth: 20,
+			childOpts:      []Option{WithMaxWidth(15)},
+			wantChildWidth: 15,
+			wantHeight:     3,
+		},
+		"max-w-10 items-start": {
+			containerWidth: 20,
+			containerOpts:  []Option{WithAlign(AlignStart)},
+			childOpts:      []Option{WithMaxWidth(10)},
+			wantChildWidth: 10,
+			wantHeight:     5,
+		},
+		// A min width above the slot overflows the column; the child must
+		// be measured at the overflowing width, not the narrower slot.
+		"min-w-25 overflows 12 wide items-start": {
+			containerWidth: 12,
+			containerOpts:  []Option{WithAlign(AlignStart)},
+			childOpts:      []Option{WithMinWidth(25)},
+			wantChildWidth: 25,
+			wantHeight:     2,
+		},
+		"min-w-25 overflows 12 wide stretch default": {
+			containerWidth: 12,
+			childOpts:      []Option{WithMinWidth(25)},
+			wantChildWidth: 25,
+			wantHeight:     2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			child := New(append([]Option{WithText(tableWrapCellText)}, tt.childOpts...)...)
+			sentinel := New(WithText("SENTINEL"))
+
+			rootOpts := append([]Option{
+				WithDisplay(DisplayFlex),
+				WithDirection(Column),
+				WithWidth(tt.containerWidth),
+			}, tt.containerOpts...)
+			root := New(rootOpts...)
+			root.AddChild(child)
+			root.AddChild(sentinel)
+			root.Calculate(tt.containerWidth, 24)
+
+			rect := child.Rect()
+			if rect.Width != tt.wantChildWidth {
+				t.Errorf("child width = %d, want %d", rect.Width, tt.wantChildWidth)
+			}
+			if rect.Height != tt.wantHeight {
+				t.Errorf("child height = %d, want %d", rect.Height, tt.wantHeight)
+			}
+			if got := sentinel.Rect().Y; got != rect.Y+tt.wantHeight {
+				t.Errorf("sentinel Y = %d, want %d (below the child)", got, rect.Y+tt.wantHeight)
+			}
+		})
+	}
+}

@@ -253,6 +253,8 @@ func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, main
 			} else {
 				childWidth = crossStyleValue.Resolve(crossSize-crossMargin, 0)
 			}
+			// computeBorderBox applies min/max width to the assigned slot.
+			childWidth = ClampWidth(childStyle, childWidth)
 		}
 
 		wrappedHeight := child.HeightForWidth(childWidth)
