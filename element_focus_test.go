@@ -155,3 +155,107 @@ func TestElement_HandleEvent_KeyNotHandledByDefault(t *testing.T) {
 		t.Error("HandleEvent should return false for key events (key handling is via component KeyMap)")
 	}
 }
+
+// --- Border style writes while focused ---
+
+// borderWriters are the three ways user code changes a border color.
+var borderWriters = map[string]func(e *Element, s Style){
+	"SetBorderStyle":        func(e *Element, s Style) { e.SetBorderStyle(s) },
+	"Apply WithBorderStyle": func(e *Element, s Style) { e.Apply(WithBorderStyle(s)) },
+	"SetClass border color": func(e *Element, _ Style) { e.SetClass("border-green") },
+}
+
+func TestElement_BorderStyleWriteWhileFocused(t *testing.T) {
+	red := NewStyle().Foreground(Red)
+	green := NewStyle().Foreground(Green)
+	cyan := NewStyle().Foreground(Cyan)
+	magenta := NewStyle().Foreground(Magenta)
+
+	type tc struct {
+		opts           []Option
+		writeUnfocused bool  // write before Focus instead of during
+		wantFocused    Style // visible style after the write, while focused
+	}
+
+	tests := map[string]tc{
+		"default highlight keeps highlight until blur": {
+			opts:        []Option{WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true)},
+			wantFocused: cyan,
+		},
+		"explicit focus style keeps highlight until blur": {
+			opts:        []Option{WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true), WithFocusBorderStyle(magenta)},
+			wantFocused: magenta,
+		},
+		"no highlight applies immediately": {
+			opts:        []Option{WithBorder(BorderSingle), WithBorderStyle(red), WithOnFocus(func(*Element) {})},
+			wantFocused: green,
+		},
+		"write before focus survives focus and blur": {
+			opts:           []Option{WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true)},
+			writeUnfocused: true,
+			wantFocused:    cyan,
+		},
+	}
+
+	for name, tt := range tests {
+		for wname, write := range borderWriters {
+			t.Run(name+"/"+wname, func(t *testing.T) {
+				e := New(tt.opts...)
+				if tt.writeUnfocused {
+					write(e, green)
+				}
+				e.Focus()
+				if !tt.writeUnfocused {
+					write(e, green)
+				}
+				if got := e.activeBorderStyle(); got != tt.wantFocused {
+					t.Errorf("focused: visible border = %+v, want %+v", got, tt.wantFocused)
+				}
+				e.Blur()
+				if got := e.activeBorderStyle(); got != green {
+					t.Errorf("blurred: visible border = %+v, want %+v", got, green)
+				}
+			})
+		}
+	}
+}
+
+func TestElement_SetClassWhileFocused_ClearRestoresUnfocusedStyle(t *testing.T) {
+	red := NewStyle().Foreground(Red)
+	cyan := NewStyle().Foreground(Cyan)
+
+	e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true))
+	e.Focus()
+	e.SetClass("border-green")
+	e.SetClass("")
+	if got := e.activeBorderStyle(); got != cyan {
+		t.Errorf("focused: visible border = %+v, want %+v", got, cyan)
+	}
+	e.Blur()
+	if got := e.activeBorderStyle(); got != red {
+		t.Errorf("blurred: visible border = %+v, want %+v", got, red)
+	}
+	// A second focus cycle must not have baked the highlight into the base.
+	e.Focus()
+	e.Blur()
+	if got := e.activeBorderStyle(); got != red {
+		t.Errorf("after second cycle: visible border = %+v, want %+v", got, red)
+	}
+}
+
+func TestElement_SetClassWhileFocused_ClearAfterBlur(t *testing.T) {
+	red := NewStyle().Foreground(Red)
+	green := NewStyle().Foreground(Green)
+
+	e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true))
+	e.Focus()
+	e.SetClass("border-green")
+	e.Blur()
+	if got := e.activeBorderStyle(); got != green {
+		t.Errorf("blurred: visible border = %+v, want %+v", got, green)
+	}
+	e.SetClass("")
+	if got := e.activeBorderStyle(); got != red {
+		t.Errorf("class cleared: visible border = %+v, want %+v", got, red)
+	}
+}

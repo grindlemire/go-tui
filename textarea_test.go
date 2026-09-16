@@ -432,3 +432,37 @@ func TestTextArea_BlockCursor_AtHardNewline_DoesNotSplitCluster(t *testing.T) {
 		t.Errorf("lineWithCursor split the flag cluster: %q", result)
 	}
 }
+
+func TestTextArea_BorderStyleWriteWhileFocused(t *testing.T) {
+	red := NewStyle().Foreground(Red)
+	green := NewStyle().Foreground(Green)
+	cyan := NewStyle().Foreground(Cyan)
+
+	for wname, write := range borderWriters {
+		t.Run(wname, func(t *testing.T) {
+			ta := NewTextArea(
+				WithTextAreaBorder(BorderSingle),
+				WithTextAreaFocusColor(Cyan),
+				WithTextAreaElementOptions(WithBorderStyle(red)),
+			)
+			ta.BindApp(testApp)
+			ta.Focus()
+			root := ta.Render(testApp)
+			root.Focus()
+			if got := root.activeBorderStyle(); got != cyan {
+				t.Fatalf("focused: visible border = %+v, want %+v", got, cyan)
+			}
+			write(root, green)
+			if got := root.activeBorderStyle(); got != cyan {
+				t.Errorf("focused after write: visible border = %+v, want %+v", got, cyan)
+			}
+			root.Blur()
+			if ta.IsFocused() {
+				t.Fatal("element Blur() should blur the text area")
+			}
+			if got := root.activeBorderStyle(); got != green {
+				t.Errorf("blurred: visible border = %+v, want %+v", got, green)
+			}
+		})
+	}
+}
