@@ -293,22 +293,21 @@ func (a *Analyzer) Analyze(file *File) error {
 		}
 	}
 
-	// Second pass: collect := binding names from all components
+	// Second pass: rewrite {name} references to := bindings into RawGoExpr.
+	// Bindings are scoped to their templ, so the registry is rebuilt per
+	// component rather than collected for the whole file first.
 	for _, comp := range file.Components {
+		a.letBindings = make(map[string]bool)
 		a.collectLetBindings(comp.Body)
-	}
-
-	// Third pass: transform GoExpr references to := bindings into RawGoExpr
-	for _, comp := range file.Components {
 		comp.Body = a.transformElementRefs(comp.Body)
 	}
 
-	// Fourth pass: validate refs
+	// Third pass: validate refs
 	for _, comp := range file.Components {
 		a.validateRefs(comp)
 	}
 
-	// Fifth pass: validate elements and attributes
+	// Fourth pass: validate elements and attributes
 	for _, comp := range file.Components {
 		a.analyzeComponent(comp)
 	}
