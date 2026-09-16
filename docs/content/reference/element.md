@@ -291,7 +291,7 @@ func (e *Element) FocusBorderStyle() *Style
 func (e *Element) SetFocusBorderStyle(style *Style)
 ```
 
-`Border()` returns the border shape (`BorderSingle`, `BorderRounded`, etc.). `BorderStyle()` returns the color/attribute style used to draw the border lines. `BorderTitle()` returns the title text drawn in the top border, or `""` when no title is set.
+`Border()` returns the border shape (`BorderSingle`, `BorderRounded`, etc.). `BorderStyle()` returns the color/attribute style used to draw the border lines when the element is not focused, which is the value `SetBorderStyle()` set even while a focus highlight is showing. `BorderTitle()` returns the title text drawn in the top border, or `""` when no title is set.
 
 `BorderTitleAlign()` reports where the title sits on the top border, `TextAlignCenter` by default. `BorderTitleStyle()` and `FocusBorderStyle()` return `nil` when no override is set, so the title uses the active border style and the border keeps its base style while focused. Pass `nil` to either setter to clear the override.
 
