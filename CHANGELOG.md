@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.22.0](https://github.com/grindlemire/go-tui/compare/v0.21.1...v0.22.0) (2026-09-16)
+
+
+### Features
+
+* render element expressions with [@expr](https://github.com/expr) ([#156](https://github.com/grindlemire/go-tui/issues/156)) ([64e001a](https://github.com/grindlemire/go-tui/commit/64e001ad33927f01db0234c1cd1b67cde6e05965))
+
+
+### Bug Fixes
+
+* **gsx:** apply expression-valued class attributes at runtime ([#152](https://github.com/grindlemire/go-tui/issues/152)) ([e127b0d](https://github.com/grindlemire/go-tui/commit/e127b0dbb562c061a7e7b74af763787ad2516a0c))
+* **gsx:** scope := binding names to their templ ([#161](https://github.com/grindlemire/go-tui/issues/161)) ([204bc6e](https://github.com/grindlemire/go-tui/commit/204bc6e353db42f6c5efaf845b612bb03003220c))
+* keep border style changes made while focused ([#163](https://github.com/grindlemire/go-tui/issues/163)) ([bf66969](https://github.com/grindlemire/go-tui/commit/bf6696903cd7c17740c5f2154551de34c90a26b9))
+* **layout:** measure non-stretch children at the width they receive ([#162](https://github.com/grindlemire/go-tui/issues/162)) ([118a647](https://github.com/grindlemire/go-tui/commit/118a6477600854ca2a65dd355fe2f4163f3a9522))
+* size Input and TextArea viewports from the laid-out width ([#166](https://github.com/grindlemire/go-tui/issues/166)) ([4c7b128](https://github.com/grindlemire/go-tui/commit/4c7b128f9a7248c3e17741643cce80b144034663))
+
 ## [0.21.1](https://github.com/grindlemire/go-tui/compare/v0.21.0...v0.21.1) (2026-09-15)
 
 
