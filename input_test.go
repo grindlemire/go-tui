@@ -960,3 +960,236 @@ func TestInput_BorderStyleWriteWhileFocused(t *testing.T) {
 		})
 	}
 }
+
+// viewportProbe renders a fixed-width column holding one component so the
+// component is laid out at a width the layout engine assigns.
+type viewportProbe struct {
+	width int
+	child Component
+}
+
+func (p *viewportProbe) Render(app *App) *Element {
+	root := New(WithWidth(p.width), WithDirection(Column))
+	root.AddChild(p.child.Render(app))
+	return root
+}
+
+func TestInput_ViewportFollowsLayoutWidth(t *testing.T) {
+	type tc struct {
+		opts        []InputOption
+		rootOpts    []Option
+		label       int  // width of a sibling before the input in a row root
+		layout      bool // lay the input out once before setting text
+		wantVisible int
+		wantShown   string
+	}
+
+	const rootWidth, rootHeight = 60, 4
+	text := strings.Repeat("abcde", 5)
+	// A 20 column viewport scrolls the end of the text into view, keeping one
+	// column free for the cursor.
+	scrolled := text[len(text)-19:]
+
+	tests := map[string]tc{
+		"w-full fills the root": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-full"))},
+			rootOpts:    []Option{WithDirection(Column)},
+			layout:      true,
+			wantVisible: 60,
+			wantShown:   text,
+		},
+		"w-1/2 takes half the root": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-1/2"))},
+			rootOpts:    []Option{WithDirection(Column)},
+			layout:      true,
+			wantVisible: 30,
+			wantShown:   text,
+		},
+		"w-full inside a border": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-full border-rounded"))},
+			rootOpts:    []Option{WithDirection(Column)},
+			layout:      true,
+			wantVisible: 58,
+			wantShown:   text,
+		},
+		"flex-1 fills the space beside a label": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("flex-1"))},
+			rootOpts:    []Option{WithDisplay(DisplayFlex), WithDirection(Row)},
+			label:       10,
+			layout:      true,
+			wantVisible: 50,
+			wantShown:   text,
+		},
+		"w-auto stretches in a column": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-auto"))},
+			rootOpts:    []Option{WithDirection(Column)},
+			layout:      true,
+			wantVisible: 60,
+			wantShown:   text,
+		},
+		"w-auto without stretch keeps the configured width": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-auto"))},
+			rootOpts:    []Option{WithDirection(Column), WithAlign(AlignStart)},
+			layout:      true,
+			wantVisible: 20,
+			wantShown:   scrolled,
+		},
+		"fixed width keeps its viewport": {
+			opts:        []InputOption{WithInputWidth(30)},
+			rootOpts:    []Option{WithDirection(Column)},
+			layout:      true,
+			wantVisible: 30,
+			wantShown:   text,
+		},
+		"fixed class width keeps its viewport": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-30"))},
+			rootOpts:    []Option{WithDirection(Column)},
+			layout:      true,
+			wantVisible: 30,
+			wantShown:   text,
+		},
+		"before any layout the configured width applies": {
+			opts:        []InputOption{WithInputElementOptions(WithClass("w-full"))},
+			rootOpts:    []Option{WithDirection(Column)},
+			wantVisible: 20,
+			wantShown:   scrolled,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			inp := newTestInput(tt.opts...)
+			frame := func() []string {
+				root := New(append([]Option{WithWidth(rootWidth), WithHeight(rootHeight)}, tt.rootOpts...)...)
+				if tt.label > 0 {
+					root.AddChild(New(WithWidth(tt.label), WithText("label")))
+				}
+				root.AddChild(inp.Render(testApp))
+				return renderedRows(t, root, rootWidth)
+			}
+			if tt.layout {
+				frame()
+			}
+			inp.SetText(text)
+			if got := inp.visibleWidth(); got != tt.wantVisible {
+				t.Errorf("visibleWidth() = %d, want %d", got, tt.wantVisible)
+			}
+			rendered := strings.Join(frame(), "\n")
+			if !strings.Contains(rendered, tt.wantShown) {
+				t.Errorf("rendered output missing %q:\n%s", tt.wantShown, rendered)
+			}
+			if tt.wantShown != text && strings.Contains(rendered, text) {
+				t.Errorf("rendered output shows the whole text instead of scrolling:\n%s", rendered)
+			}
+		})
+	}
+}
+
+// TestInput_RerendersAfterLayoutWidthChange verifies a frame laid out at a
+// width the input did not render for requests another frame, so the second
+// frame shows the text at the laid-out viewport.
+func TestInput_RerendersAfterLayoutWidthChange(t *testing.T) {
+	app := newTestApp(60, 3)
+	inp := NewInput(WithInputElementOptions(WithClass("w-full")))
+	app.SetRootComponent(&viewportProbe{width: 60, child: inp})
+	inp.BindApp(app)
+	text := strings.Repeat("abcde", 5)
+	inp.SetText(text)
+
+	app.Render()
+	if !app.dirty.Load() {
+		t.Fatal("first frame laid the input out wider than it rendered for but did not request another frame")
+	}
+	app.Render()
+	term := app.terminal.(*MockTerminal)
+	if got := term.StringTrimmed(); !strings.Contains(got, text) {
+		t.Errorf("second frame does not show the text at the laid-out width:\n%s", got)
+	}
+	// Pulling the scroll back to show the whole text is a state write, which
+	// buys one more frame; after that nothing changes.
+	app.Render()
+	if app.dirty.Load() {
+		t.Error("frames at the laid-out width keep requesting another frame")
+	}
+}
+
+// scrollProbe renders components in a fixed-size vertically scrollable column.
+// A scrollable parent lays its children out twice per frame when it shows a
+// scrollbar: once at the full width and again minus the gutter.
+type scrollProbe struct {
+	width, height int
+	children      []Component
+}
+
+func (p *scrollProbe) Render(app *App) *Element {
+	root := New(WithWidth(p.width), WithHeight(p.height), WithDirection(Column), WithScrollable(ScrollVertical))
+	for _, c := range p.children {
+		root.AddChild(c.Render(app))
+	}
+	return root
+}
+
+// TestInput_SettlesInsideScrollableContainer verifies inputs that a scrollable
+// parent lays out twice per frame stop requesting frames once they render at
+// the width beside the scrollbar.
+func TestInput_SettlesInsideScrollableContainer(t *testing.T) {
+	app := newTestApp(60, 3)
+	var inputs []*Input
+	children := make([]Component, 0, 5)
+	for range 5 {
+		inp := NewInput(WithInputElementOptions(WithClass("w-full")))
+		inp.BindApp(app)
+		inp.SetText(strings.Repeat("abcde", 5))
+		inputs = append(inputs, inp)
+		children = append(children, inp)
+	}
+	app.SetRootComponent(&scrollProbe{width: 60, height: 3, children: children})
+
+	// Frame 1 renders for the configured width, frame 2 for the laid-out
+	// width and pulls the scroll back, frame 3 changes nothing.
+	for range 3 {
+		app.Render()
+	}
+	if app.dirty.Load() {
+		t.Fatal("input inside a scrollable container keeps requesting frames")
+	}
+	if got := inputs[0].visibleWidth(); got != 59 {
+		t.Errorf("visibleWidth() = %d, want 59 beside the scrollbar", got)
+	}
+}
+
+// rowProbe renders one component after a sibling that takes the whole row,
+// so a flex item with no minimum width shrinks to zero.
+type rowProbe struct {
+	width int
+	child Component
+}
+
+func (p *rowProbe) Render(app *App) *Element {
+	root := New(WithWidth(p.width), WithDisplay(DisplayFlex), WithDirection(Row))
+	root.AddChild(New(WithWidth(p.width), WithFlexShrink(0), WithText("wide")))
+	root.AddChild(p.child.Render(app))
+	return root
+}
+
+// TestInput_ZeroWidthSettles verifies a flex item shrunk to zero width renders
+// at that width and stops requesting frames instead of falling back to the
+// configured width every frame.
+func TestInput_ZeroWidthSettles(t *testing.T) {
+	app := newTestApp(100, 3)
+	inp := NewInput(WithInputElementOptions(WithClass("flex-1 min-w-0")))
+	inp.BindApp(app)
+	inp.SetText("hello")
+	app.SetRootComponent(&rowProbe{width: 100, child: inp})
+
+	// Frame 1 renders for the configured width, frame 2 for zero.
+	for range 2 {
+		app.Render()
+	}
+	if app.dirty.Load() {
+		t.Fatal("zero-width input keeps requesting frames")
+	}
+	if got := inp.visibleWidth(); got != 0 {
+		t.Errorf("visibleWidth() = %d, want 0 for a fully shrunk item", got)
+	}
+}

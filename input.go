@@ -25,6 +25,11 @@ type Input struct {
 	onChange          func(string)
 	elementOpts       []Option
 
+	// Content width the layout engine last gave the root, valid once laidOut.
+	// Zero is a real width (a fully shrunk flex item), so it cannot mean unset.
+	layoutWidth int
+	laidOut     bool
+
 	// Reactive state
 	text      *State[string]
 	cursorPos *State[int]
@@ -172,12 +177,15 @@ func (inp *Input) insertString(s string) {
 
 // --- Component Interface ---
 
-// visibleWidth returns the number of characters visible inside the input.
-// Accounts for border taking 1 char on each side.
+// visibleWidth returns the number of characters visible inside the input: the
+// laid-out content width once the root has been laid out, and before that the
+// configured width minus the border, which takes 1 char on each side.
 func (inp *Input) visibleWidth() int {
+	if inp.laidOut {
+		return inp.layoutWidth
+	}
 	w := inp.width
 	if inp.border != BorderNone {
-		// Border chars are drawn inside the element width, reducing text space
 		return w - 2
 	}
 	return w
@@ -189,12 +197,13 @@ func (inp *Input) visibleWidth() int {
 func (inp *Input) ensureCursorVisible() {
 	text := inp.text.Get()
 	cursorCol := runeIndexToDisplayCol(text, inp.clampCursorPos())
-	scroll := inp.scrollPos.Get()
 	visible := inp.visibleWidth()
 	if visible <= 0 {
 		inp.scrollPos.Set(0)
 		return
 	}
+	inp.clampScroll(visible)
+	scroll := inp.scrollPos.Get()
 
 	// Cursor is left of the visible window: scroll back so cursor is at col 0.
 	if cursorCol < scroll {
@@ -213,6 +222,19 @@ func (inp *Input) ensureCursorVisible() {
 	}
 }
 
+// clampScroll pulls scrollPos back when it would hide text on the left while
+// leaving more than the cursor's column empty on the right, as after the
+// viewport grows or the text shrinks. Unlike ensureCursorVisible it also runs
+// on the unfocused path, so a blurred input reclaims slack without jumping to
+// the cursor.
+func (inp *Input) clampScroll(visible int) {
+	_, total := textToClusters(inp.text.Get())
+	maxScroll := max(0, total+1-visible)
+	if inp.scrollPos.Get() > maxScroll {
+		inp.scrollPos.Set(maxScroll)
+	}
+}
+
 // Render returns the element tree for the input.
 func (inp *Input) Render(app *App) *Element {
 	opts := []Option{
@@ -228,6 +250,22 @@ func (inp *Input) Render(app *App) *Element {
 	}
 	root := New(opts...)
 	root.Apply(inp.elementOpts...)
+	// An auto-width root would otherwise size to the viewport text and pin the
+	// viewport there; the configured width acts as its floor instead.
+	style := root.LayoutStyle()
+	if style.Width.IsAuto() && style.MinWidth.IsAuto() && inp.width > 0 {
+		root.Apply(WithMinWidth(inp.width))
+	}
+	// The viewport was sliced for this width; a frame laid out at another
+	// width re-renders so the text fills the box the engine gave it.
+	rendered := inp.visibleWidth()
+	root.setOnLayout(func(e *Element) {
+		inp.layoutWidth = e.ContentRect().Width
+		inp.laidOut = true
+		if inp.layoutWidth != rendered {
+			e.MarkDirty()
+		}
+	})
 
 	// Focus styling and the default height follow the final border, which
 	// element options (a class border) may have set.
@@ -541,6 +579,9 @@ func (inp *Input) displayText() string {
 		// In the unfocused path, scroll adjustment preserves the previously-set
 		// scroll position. ensureCursorVisible is only called in the focused path
 		// so that manually-scrolled text doesn't jump when the user blurs.
+		if visible > 0 {
+			inp.clampScroll(visible)
+		}
 		return inp.viewportText(allClusters, visible)
 	}
 
