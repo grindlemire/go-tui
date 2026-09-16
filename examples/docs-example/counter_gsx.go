@@ -111,6 +111,7 @@ func Badge(label string, value string, color string) *BadgeView {
 	__tui_0.AddChild(__tui_1)
 	__tui_2 := tui.New(
 		tui.WithText(value),
+		tui.WithClass("font-bold "+color),
 	)
 	__tui_0.AddChild(__tui_2)
 

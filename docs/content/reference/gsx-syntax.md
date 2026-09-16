@@ -182,13 +182,13 @@ These hold text content and support text styling but not flex container attribut
 <button ref={s.myBtn} class="px-2 border-rounded text-green">{" Save "}</button>
 ```
 
-**`<input />`** -- Single-line text input. Self-closing. Bind `value` to a `*State[string]` for two-way binding. Also accepts `placeholder`, `width`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `onSubmit`, and `onChange`.
+**`<input />`** -- Single-line text input. Self-closing. Bind `value` to a `*State[string]` for two-way binding. Also accepts `placeholder`, `width`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `onSubmit`, and `onChange`. A `class` attribute is applied to the component's root element after its own attributes.
 
 ```gsx
 <input value={s.text} placeholder="Type here..." width={30} border={tui.BorderRounded} />
 ```
 
-**`<textarea />`** -- Multi-line text input with word wrapping. Self-closing. Bind `value` to a `*State[string]` for two-way binding. Also accepts `placeholder`, `width`, `maxHeight`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `submitKey`, and `onSubmit`.
+**`<textarea />`** -- Multi-line text input with word wrapping. Self-closing. Bind `value` to a `*State[string]` for two-way binding. Also accepts `placeholder`, `width`, `maxHeight`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `submitKey`, and `onSubmit`. A `class` attribute is applied to the component's root element after its own attributes.
 
 ```gsx
 <textarea value={s.note} placeholder="Write here..." width={40} maxHeight={6} border={tui.BorderRounded} />
@@ -207,7 +207,7 @@ These hold text content and support text styling but not flex container attribut
 
 ### Display elements
 
-**`<markdown />`** -- Renders a markdown string into the widget tree. Self-closing. Provide content through `source` (a string expression) or `state` (a `*State[string]` that re-renders on change). Also accepts `width` and `theme`. Owns no scroll or keys, so wrap it in a scrollable container for long documents.
+**`<markdown />`** -- Renders a markdown string into the widget tree. Self-closing. Provide content through `source` (a string expression) or `state` (a `*State[string]` that re-renders on change). Also accepts `width` and `theme`. Owns no scroll or keys, so wrap it in a scrollable container for long documents. A `class` attribute is applied to the component's root element after its own attributes.
 
 ```gsx
 <markdown source={s.doc} width={80} />
@@ -684,9 +684,9 @@ Classes are set via the `class` attribute. Multiple classes are space-separated.
 | `w-N` | `tui.WithWidth(N)` |
 | `w-full` | `tui.WithWidthPercent(100.00)` |
 | `w-auto` | `tui.WithWidthAuto()` |
-| `w-1/2` | `tui.WithWidthPercent(50.00)` |
-| `w-1/3` | `tui.WithWidthPercent(33.33)` |
-| `w-2/3` | `tui.WithWidthPercent(66.67)` |
+| `w-1/2` | `tui.WithWidthPercent(100.0 * 1 / 2)` |
+| `w-1/3` | `tui.WithWidthPercent(100.0 * 1 / 3)` |
+| `w-2/3` | `tui.WithWidthPercent(100.0 * 2 / 3)` |
 | `h-N` | `tui.WithHeight(N)` |
 | `h-full` | `tui.WithHeightPercent(100.00)` |
 | `h-auto` | `tui.WithHeightAuto()` |
@@ -695,7 +695,7 @@ Classes are set via the `class` attribute. Multiple classes are space-separated.
 | `min-h-N` | `tui.WithMinHeight(N)` |
 | `max-h-N` | `tui.WithMaxHeight(N)` |
 
-Fraction syntax (`w-N/D`) computes the percentage at compile time.
+Fraction syntax (`w-N/D`) is emitted as a constant expression, so the compiled value and the runtime value from `tui.WithClass` are the same float64.
 
 ### Spacing
 
@@ -835,7 +835,7 @@ tui fmt --check [path...] # check formatting without modifying
 3. The generator produces a `_gsx.go` file in the same directory with the same package name.
 4. Each `templ` block becomes a Go function or method returning `*tui.Element`.
 5. Elements become calls to `tui.New(options...)` with `AddChild` calls for children.
-6. Tailwind classes become element option arguments at compile time (not at runtime).
+6. Literal Tailwind classes become element option arguments at compile time. Expression-valued `class` attributes become a `tui.WithClass(...)` option that resolves the classes at runtime.
 7. Control flow (`if`, `for`, `:=`) becomes standard Go control flow.
 
 Re-run `tui generate` after any `.gsx` change. The generated `_gsx.go` files should be committed to version control but never edited by hand.

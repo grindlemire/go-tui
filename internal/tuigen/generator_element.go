@@ -141,12 +141,14 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 			continue
 		}
 
-		// Handle class attribute specially - parse Tailwind classes
+		// Literal classes compile to options here; expressions resolve at runtime.
 		if attr.Name == "class" {
-			classValue := g.getClassAttributeValue(attr)
-			if classValue != "" {
+			if opt := g.classExprOption(attr); opt != "" {
+				result.options = append(result.options, opt)
+				continue
+			}
+			if classValue := g.getClassAttributeValue(attr); classValue != "" {
 				twResult := ParseTailwindClasses(classValue)
-				// Add direct options
 				result.options = append(result.options, twResult.Options...)
 				// Collect text style methods for combining later
 				classTextMethods = append(classTextMethods, twResult.TextMethods...)
@@ -180,15 +182,26 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 	return result
 }
 
-// getClassAttributeValue extracts the string value from a class attribute.
+// getClassAttributeValue extracts the literal value from a class attribute.
+// Expression values are handled by classExprOption.
 func (g *Generator) getClassAttributeValue(attr *Attribute) string {
-	switch v := attr.Value.(type) {
-	case *StringLit:
+	if v, ok := attr.Value.(*StringLit); ok {
 		return v.Value
-	default:
-		// class attribute only supports string literals for now
+	}
+	return ""
+}
+
+// classExprOption returns a tui.WithClass option for an expression-valued
+// class attribute, or "" for literals.
+func (g *Generator) classExprOption(attr *Attribute) string {
+	if _, ok := attr.Value.(*GoExpr); !ok {
 		return ""
 	}
+	expr := g.generateAttributeValue(attr.Value)
+	if expr == "" {
+		return ""
+	}
+	return fmt.Sprintf("tui.WithClass(%s)", expr)
 }
 
 // extractTextContent extracts text from element children for WithText.
@@ -488,13 +501,11 @@ func (g *Generator) generateComponentElementWithRefs(elem *Element, parentVar st
 	// Build component-specific options from attributes
 	elemOpts := g.buildComponentElementOptions(elem)
 
-	// For modal, also collect class-derived element options
-	if elem.Tag == "modal" {
-		classOpts := g.buildModalClassOptions(elem)
-		if len(classOpts) > 0 {
-			inner := strings.Join(classOpts, ", ")
-			elemOpts.options = append(elemOpts.options, fmt.Sprintf("tui.WithModalElementOptions(%s)", inner))
-		}
+	// Class-derived element options reach the component's root element
+	// through its With*ElementOptions option.
+	if classOpts := g.buildComponentClassOptions(elem); len(classOpts) > 0 {
+		inner := strings.Join(classOpts, ", ")
+		elemOpts.options = append(elemOpts.options, fmt.Sprintf("%s(%s)", componentElementOptions(elem.Tag), inner))
 	}
 
 	// Data-derived identities (loops, key={...}) use sweepable Mount;
@@ -588,12 +599,33 @@ func (g *Generator) buildComponentElementOptions(elem *Element) elementOptions {
 	return result
 }
 
-// buildModalClassOptions extracts element options from the class attribute
-// for a modal element. These get wrapped in WithModalElementOptions.
-func (g *Generator) buildModalClassOptions(elem *Element) []string {
+// componentElementOptions returns the option that forwards Element options
+// to a component element's root.
+func componentElementOptions(tag string) string {
+	switch tag {
+	case "input":
+		return "tui.WithInputElementOptions"
+	case "textarea":
+		return "tui.WithTextAreaElementOptions"
+	case "modal":
+		return "tui.WithModalElementOptions"
+	case "markdown":
+		return "tui.WithMarkdownElementOptions"
+	default:
+		return fmt.Sprintf("UNKNOWN_COMPONENT_ELEMENT_OPTIONS_%s", tag)
+	}
+}
+
+// buildComponentClassOptions extracts element options from the class
+// attribute of a component element, for wrapping in With*ElementOptions.
+func (g *Generator) buildComponentClassOptions(elem *Element) []string {
 	var opts []string
 	for _, attr := range elem.Attributes {
 		if attr.Name != "class" {
+			continue
+		}
+		if opt := g.classExprOption(attr); opt != "" {
+			opts = append(opts, opt)
 			continue
 		}
 		classValue := g.getClassAttributeValue(attr)

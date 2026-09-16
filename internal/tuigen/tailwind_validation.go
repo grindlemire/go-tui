@@ -1,6 +1,10 @@
 package tuigen
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/grindlemire/go-tui/internal/tailwind"
+)
 
 // TailwindValidationResult contains validation results for a class
 type TailwindValidationResult struct {
@@ -112,12 +116,7 @@ func levenshteinDistance(a, b string) int {
 
 // getAllKnownClassNames returns all known class names for fuzzy matching
 func getAllKnownClassNames() []string {
-	classes := make([]string, 0, len(tailwindClasses)+50)
-
-	// Add all static class names
-	for name := range tailwindClasses {
-		classes = append(classes, name)
-	}
+	classes := tailwind.StaticClasses()
 
 	// Add common pattern-based class examples
 	patternExamples := []string{

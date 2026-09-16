@@ -1,7 +1,10 @@
 package tuigen
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/grindlemire/go-tui/internal/tailwind"
 )
 
 func TestParseTailwindClass_HexColors(t *testing.T) {
@@ -163,73 +166,52 @@ func TestParseTailwindClass_GradientColorParsing(t *testing.T) {
 	}
 }
 
-func TestColorNameToColor(t *testing.T) {
-	type tc struct {
-		name string
-		want string
-	}
-
-	tests := map[string]tc{
-		"red":            {name: "red", want: "tui.Red"},
-		"green":          {name: "green", want: "tui.Green"},
-		"blue":           {name: "blue", want: "tui.Blue"},
-		"cyan":           {name: "cyan", want: "tui.Cyan"},
-		"magenta":        {name: "magenta", want: "tui.Magenta"},
-		"yellow":         {name: "yellow", want: "tui.Yellow"},
-		"white":          {name: "white", want: "tui.White"},
-		"black":          {name: "black", want: "tui.Black"},
-		"bright-red":     {name: "bright-red", want: "tui.BrightRed"},
-		"bright-green":   {name: "bright-green", want: "tui.BrightGreen"},
-		"bright-blue":    {name: "bright-blue", want: "tui.BrightBlue"},
-		"bright-cyan":    {name: "bright-cyan", want: "tui.BrightCyan"},
-		"bright-magenta": {name: "bright-magenta", want: "tui.BrightMagenta"},
-		"bright-yellow":  {name: "bright-yellow", want: "tui.BrightYellow"},
-		"bright-white":   {name: "bright-white", want: "tui.BrightWhite"},
-		"bright-black":   {name: "bright-black", want: "tui.BrightBlack"},
-		"unknown":        {name: "chartreuse", want: "tui.Black"},
-		"empty":          {name: "", want: "tui.Black"},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := colorNameToColor(tt.name); got != tt.want {
-				t.Errorf("colorNameToColor(%q) = %q, want %q", tt.name, got, tt.want)
-			}
-		})
+// Every class the shared table knows must render to Go source without hitting
+// the renderer's unhandled-op panic. Parameterized forms are sampled.
+func TestRenderCoversEveryClass(t *testing.T) {
+	classes := append(tailwind.StaticClasses(),
+		"gap-1", "p-2", "px-1", "py-1", "pt-1", "pr-1", "pb-1", "pl-1",
+		"m-2", "mx-1", "my-1", "mt-1", "mr-1", "mb-1", "ml-1",
+		"w-3", "h-3", "min-w-1", "max-w-1", "min-h-1", "max-h-1",
+		"w-1/2", "h-1/3", "w-full", "w-auto", "h-full", "h-auto",
+		"flex-grow-2", "flex-shrink-2",
+		"text-[#abc]", "bg-[#abcdef]", "border-[#123]", "scrollbar-[#123]", "scrollbar-thumb-[#123]",
+		"text-gradient-red-blue", "bg-gradient-red-blue-v", "border-gradient-bright-red-bright-blue-dd",
+	)
+	for _, class := range classes {
+		m, ok := ParseTailwindClass(class)
+		if !ok {
+			t.Errorf("ParseTailwindClass(%q) not ok", class)
+			continue
+		}
+		code := m.Option
+		if m.IsTextStyle {
+			code = m.TextMethod
+		}
+		if code == "" || !strings.Contains(code, "(") {
+			t.Errorf("ParseTailwindClass(%q) rendered %q", class, code)
+		}
 	}
 }
 
-func TestParseHexToRGB(t *testing.T) {
+func TestColorExpr(t *testing.T) {
 	type tc struct {
-		hex    string
-		wantR  uint8
-		wantG  uint8
-		wantB  uint8
-		wantOK bool
+		color tailwind.Color
+		want  string
 	}
 
 	tests := map[string]tc{
-		"six digit":            {hex: "ff8000", wantR: 255, wantG: 128, wantB: 0, wantOK: true},
-		"three digit expanded": {hex: "f80", wantR: 255, wantG: 136, wantB: 0, wantOK: true},
-		"wrong length":         {hex: "ffff", wantOK: false},
-		"empty":                {hex: "", wantOK: false},
-		"bad red component":    {hex: "zzff00", wantOK: false},
-		"bad green component":  {hex: "ffzz00", wantOK: false},
-		"bad blue component":   {hex: "ff00zz", wantOK: false},
+		"black":        {color: tailwind.Named("black"), want: "tui.Black"},
+		"red":          {color: tailwind.Named("red"), want: "tui.Red"},
+		"bright-white": {color: tailwind.Named("bright-white"), want: "tui.BrightWhite"},
+		"unknown":      {color: tailwind.Named("chartreuse"), want: "tui.Black"},
+		"rgb":          {color: tailwind.RGB(255, 128, 0), want: "tui.RGBColor(255, 128, 0)"},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, g, b, ok := parseHexToRGB(tt.hex)
-			if ok != tt.wantOK {
-				t.Fatalf("parseHexToRGB(%q) ok = %v, want %v", tt.hex, ok, tt.wantOK)
-			}
-			if !tt.wantOK {
-				return
-			}
-			if r != tt.wantR || g != tt.wantG || b != tt.wantB {
-				t.Errorf("parseHexToRGB(%q) = (%d, %d, %d), want (%d, %d, %d)",
-					tt.hex, r, g, b, tt.wantR, tt.wantG, tt.wantB)
+			if got := colorExpr(tt.color); got != tt.want {
+				t.Errorf("colorExpr(%+v) = %q, want %q", tt.color, got, tt.want)
 			}
 		})
 	}

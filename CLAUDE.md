@@ -102,8 +102,8 @@ Terminal (ANSI escape sequences)
 ```
 
 All public API types live in the root `tui` package. Internal packages (`internal/layout`,
-`internal/tuigen`, `internal/formatter`, `internal/lsp`, `internal/debug`) are not importable
-by external consumers.
+`internal/tailwind`, `internal/tuigen`, `internal/formatter`, `internal/lsp`, `internal/debug`)
+are not importable by external consumers.
 
 ## Where to Look (By Task)
 
@@ -114,6 +114,7 @@ Use this section to quickly find the right files for a given change.
 - `element.go` — Element struct definition, TextAlign/ScrollMode/OverflowMode enums
 - `element_options.go` — Option funcs: WithWidth, WithHeight, WithFlexGrow, WithDirection, WithBorder, WithScrollable, WithTruncate, WithHidden, WithOverflow, WithTextGradient, WithBackgroundGradient, WithBorderGradient, WithBorderTitleAlign, WithBorderTitleStyle, WithFocusBorderStyle, WithCursorSource, etc.
 - `element_options_auto.go` — WithWidthAuto(), WithHeightAuto()
+- `class.go` — WithClass(classes) and Element.SetClass: runtime Tailwind class application (used by generated code for `class={expr}`)
 - `element_accessors.go` — Getters/setters: SetText, SetBorder, SetStyle, Background, SetWidth, SetHeight, SetBorderTitleAlign, SetBorderTitleStyle, SetFocusBorderStyle, etc.
 - `element_tree.go` — Tree manipulation: AddChild, RemoveChild, RemoveAllChildren
 - `element_scroll.go` — Scroll methods: ScrollTo, ScrollOffset, MaxScroll, ViewportSize
@@ -228,10 +229,12 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
   - `generator_component.go` — Component function generation
   - `generator_control.go` — Control flow code generation (for, if, let/:= bindings)
 - **Tailwind** (`internal/tuigen/`):
-  - `tailwind.go` — ParseTailwindClasses(): converts class strings to element options
-  - `tailwind_validation.go` — Class syntax validation
-  - `tailwind_data.go` — Class definitions and mappings
+  - `tailwind.go` — ParseTailwindClasses(): renders resolved classes to element option source
+  - `tailwind_validation.go` — Class syntax validation and suggestions
   - `tailwind_autocomplete.go` — Autocomplete suggestions for classes
+- **Class table** (`internal/tailwind/`): the shared class registry, imported by both the compiler and the root package
+  - `ops.go` — Typed ops (Display, Padding, TextGradient, ...) and Color
+  - `tailwind.go` — Class definitions, Parse(), Resolve(), Known(), StaticClasses()
 - `errors.go` — Error struct with position/message/hint, ErrorList
 
 ### Changing the formatter
@@ -292,7 +295,9 @@ The compiler pipeline is: **Lexer → Parser → Analyzer → Generator**
 
 - `internal/lsp/schema/schema.go` — Element definitions and attribute schemas
 - `internal/tuigen/analyzer.go` — Attribute validation rules
-- `internal/tuigen/tailwind.go` — Tailwind class → option mapping
+- `internal/tailwind/tailwind.go` — Tailwind class → op mapping (add the op in `ops.go`)
+- `internal/tuigen/tailwind.go` — Renders each op as option source for generated code
+- `class.go` — Applies each op at runtime for WithClass/SetClass
 - `element_options.go` — New Option funcs for generated code to call
 
 ### Changing modal/overlay behavior
@@ -437,7 +442,7 @@ func helper(s string) string {
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `id` | `string` | Unique identifier |
-| `class` | `string` | Tailwind-style classes |
+| `class` | `string` | Tailwind-style classes (on `<input>`/`<textarea>`/`<markdown>`/`<modal>` applied to the root element after its own attributes) |
 | `disabled` | `bool` | Disable interaction |
 | `ref` | expression | Bind element to a `tui.Ref`/`RefList`/`RefMap` variable |
 | `key` | expression | Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): mount cache key for component elements, RefMap key with `ref`; a key on a container element keys the components mounted inside it |
@@ -561,6 +566,11 @@ Use the `class` attribute for styling:
     <span class="font-dim">Subtitle</span>
 </div>
 ```
+
+Literal class strings are validated and compiled to options. `class={expr}` with a Go
+string expression compiles to `tui.WithClass(expr)`, which resolves the same classes at
+runtime (unknown classes are ignored). Element.SetClass replaces the element's classes: properties
+the previous string set are restored to their pre-class values before the new string is applied.
 
 **Layout Direction**
 

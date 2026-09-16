@@ -25,6 +25,7 @@ type TextArea struct {
 	submitKey         Key
 	onChange          func(string)
 	onSubmit          func(string)
+	elementOpts       []Option
 
 	// Reactive state
 	text      *State[string]
@@ -74,6 +75,15 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 	}
 	for _, opt := range opts {
 		opt(t)
+	}
+	// Wrapping and Height() read these fields, so class-derived values must
+	// land here before the first render.
+	b, w := boxFromOptions(t.elementOpts)
+	if b != BorderNone {
+		t.border = b
+	}
+	if w > 0 {
+		t.width = w
 	}
 	return t
 }
@@ -188,15 +198,8 @@ func (t *TextArea) Render(app *App) *Element {
 	lines := t.wrapText()
 	rows := t.contentRows(lines)
 
-	// Account for border
-	totalHeight := rows
-	if t.border != BorderNone {
-		totalHeight += 2
-	}
-
 	opts := []Option{
 		WithDirection(Column),
-		WithHeight(totalHeight),
 		WithFocusable(true),
 		WithAutoFocus(t.autoFocus),
 	}
@@ -205,17 +208,28 @@ func (t *TextArea) Render(app *App) *Element {
 	}
 	if t.border != BorderNone {
 		opts = append(opts, WithBorder(t.border))
-		if t.focused.Get() {
-			if t.focusGradient != nil {
-				opts = append(opts, WithBorderGradient(*t.focusGradient))
-			} else if t.focusColor != nil {
-				opts = append(opts, WithBorderStyle(NewStyle().Foreground(*t.focusColor)))
-			}
-		} else if t.borderGradient != nil {
-			opts = append(opts, WithBorderGradient(*t.borderGradient))
-		}
 	}
 	root := New(opts...)
+	root.Apply(t.elementOpts...)
+
+	// Height and focus styling depend on the final border, which element
+	// options (a class border) may have set.
+	totalHeight := rows
+	if root.Border() != BorderNone {
+		totalHeight += 2
+		if t.focused.Get() {
+			if t.focusGradient != nil {
+				root.Apply(WithBorderGradient(*t.focusGradient))
+			} else if t.focusColor != nil {
+				root.Apply(WithBorderStyle(NewStyle().Foreground(*t.focusColor)))
+			}
+		} else if t.borderGradient != nil {
+			root.Apply(WithBorderGradient(*t.borderGradient))
+		}
+	}
+	if root.LayoutStyle().Height == Auto() {
+		root.Apply(WithHeight(totalHeight))
+	}
 
 	// Wire Element focus/blur to component focus/blur
 	root.SetOnFocus(func(e *Element) {

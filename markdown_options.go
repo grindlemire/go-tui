@@ -1,5 +1,13 @@
 package tui
 
+// WithMarkdownElementOptions applies standard Element options to the rendered
+// root element (a flex column), for example class-derived padding or a border.
+func WithMarkdownElementOptions(opts ...Option) MarkdownOption {
+	return func(m *Markdown) {
+		m.elementOpts = append(m.elementOpts, opts...)
+	}
+}
+
 // MarkdownOption configures a Markdown component.
 type MarkdownOption func(*Markdown)
 

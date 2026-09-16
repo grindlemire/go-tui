@@ -152,6 +152,7 @@ func (l *listApp) Render(app *tui.App) *tui.Element {
 		_ = i
 		__tui_3 := tui.New(
 			tui.WithText(itemLabel(i, item, i == l.selected.Get())),
+			tui.WithClass(itemClass(i == l.selected.Get())),
 		)
 		__tui_2_children = append(__tui_2_children, __tui_3)
 	}

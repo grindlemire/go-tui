@@ -165,6 +165,7 @@ inp.InsertText("> ") // prefix the line, cursor ends after the prefix
 | `WithInputValue(*State[string])` | Reactive two-way text binding |
 | `WithInputFocusColor(Color)` | Border color when focused (default Cyan) |
 | `WithInputBorderGradient(Gradient)` | Border gradient when unfocused |
+| `WithInputElementOptions(opts ...Option)` | Element options for the root element, applied after the input's own options (used by generated code for `class`). A fixed width or a border set this way also sizes the text viewport |
 | `WithInputFocusGradient(Gradient)` | Border gradient when focused |
 | `WithInputOnSubmit(func(string))` | Enter key callback |
 | `WithInputOnChange(func(string))` | Text change callback |
@@ -446,6 +447,18 @@ ta := tui.NewTextArea(
 )
 ```
 
+
+#### WithTextAreaElementOptions
+
+```go
+func WithTextAreaElementOptions(opts ...Option) TextAreaOption
+```
+
+Applies standard element options to the textarea's root element after its own options; generated code uses it for the `class` attribute. A fixed width or a border set this way also sizes the wrapping and reported height.
+
+```go
+ta := tui.NewTextArea(tui.WithTextAreaElementOptions(tui.WithClass("border-rounded w-60")))
+```
 #### WithTextAreaCursorRune
 
 ```go
@@ -779,6 +792,7 @@ func NewMarkdown(opts ...MarkdownOption) *Markdown
 | `WithMarkdownState(s *State[string])` | Reactive source; takes precedence over the static source and re-renders on change |
 | `WithMarkdownWidth(w int)` | Fixed render width in characters. `0` (the default) fills the width the parent assigns |
 | `WithMarkdownTheme(t MarkdownTheme)` | Override the default styling theme |
+| `WithMarkdownElementOptions(opts ...Option)` | Element options for the rendered root element, applied after its own options (used by generated code for `class`) |
 
 ### GSX Attributes
 

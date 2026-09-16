@@ -154,6 +154,7 @@ tui.New(
 | `WithBorderTitleAlign(align TextAlign)` | Border title position: `TextAlignLeft`, `TextAlignCenter` (default), or `TextAlignRight` |
 | `WithBorderTitleStyle(style Style)` | Color and attributes for the border title text. Falls back to the active border style when unset |
 | `WithFocusBorderStyle(style Style)` | Border style applied while the element is focused. Falls back to `WithBorderStyle` when unset |
+| `WithClass(classes string)` | Applies Tailwind-style classes at runtime, the same set a literal `class` attribute compiles to. Unknown classes are ignored |
 
 ```go
 // Cyan-bordered box with bold white text on a blue background
@@ -315,6 +316,14 @@ func (e *Element) SetTextAlign(align TextAlign)
 ```
 
 `SetText` marks the element dirty. `SetTextStyle` prevents style inheritance from the parent element for this element's text.
+
+### Class
+
+```go
+func (e *Element) SetClass(classes string)
+```
+
+Replaces the classes applied by `WithClass` or a previous `SetClass`. Every property the previous class string set is restored to the value it had before that string was applied, then the new string is applied, so omitting a class removes it. Properties changed by other options or setters after the class keep their values. Marks the element dirty. Generated code calls it for a `class={expr}` attribute that reads state.
 
 ### Truncate
 

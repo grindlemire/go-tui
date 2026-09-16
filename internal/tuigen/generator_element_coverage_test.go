@@ -191,6 +191,21 @@ templ App() {
 				"Foreground(tui.Red)",
 			},
 		},
+		"class expression becomes a runtime WithClass option": {
+			input: `package x
+templ App(cls string) {
+	<div class={cls}></div>
+}`,
+			wantContains: []string{"tui.WithClass(cls)"},
+		},
+		"class expression concatenating a literal stays one runtime option": {
+			input: `package x
+templ App(cls string) {
+	<span class={cls + " font-bold"}>hi</span>
+}`,
+			wantContains:    []string{`tui.WithClass(cls+" font-bold")`},
+			wantNotContains: []string{"Bold()"},
+		},
 		"options alone spreads into the constructor": {
 			input: `package x
 templ App(opts []tui.Option) {
@@ -461,6 +476,46 @@ templ (c *shell) Render() {
 				"tui.WithPadding(2)",
 				"Bold()",
 			},
+		},
+		"input literal class compiles into WithInputElementOptions": {
+			input: `package x
+
+type form struct{}
+
+templ (c *form) Render() {
+	<input class="border-rounded w-20" placeholder="x" />
+}`,
+			wantContains: []string{"tui.WithInputElementOptions(tui.WithBorder(tui.BorderRounded), tui.WithWidth(20))"},
+		},
+		"textarea class expression forwards WithClass through element options": {
+			input: `package x
+
+type form struct{}
+
+templ (c *form) Render() {
+	<textarea class={c.cls} />
+}`,
+			wantContains: []string{"tui.WithTextAreaElementOptions(tui.WithClass(c.cls))"},
+		},
+		"markdown class compiles into WithMarkdownElementOptions": {
+			input: `package x
+
+type docs struct{}
+
+templ (c *docs) Render() {
+	<markdown class="p-1 font-bold" source={c.body} />
+}`,
+			wantContains: []string{"tui.WithMarkdownElementOptions(tui.WithPadding(1), tui.WithTextStyle(tui.NewStyle().Bold()))"},
+		},
+		"modal class expression forwards WithClass through element options": {
+			input: `package x
+
+type shell struct{}
+
+templ (c *shell) Render() {
+	<modal open={c.show} class={c.cls}></modal>
+}`,
+			wantContains: []string{"tui.WithModalElementOptions(tui.WithClass(c.cls))"},
 		},
 		"markdown with source width and theme": {
 			input: `package x

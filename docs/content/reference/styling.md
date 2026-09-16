@@ -91,6 +91,7 @@ Or use the equivalent `Option` functions when building elements in Go:
 | `WithBorderStyle` | `func WithBorderStyle(style Style) Option` | Sets border style (color, attributes) |
 | `WithBackground` | `func WithBackground(style Style) Option` | Sets background fill style |
 | `WithTextAlign` | `func WithTextAlign(align TextAlign) Option` | Sets text alignment |
+| `WithClass` | `func WithClass(classes string) Option` | Applies Tailwind-style classes at runtime (the same set literal `class` attributes compile to) |
 
 ```go
 el := tui.New(

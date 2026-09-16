@@ -1,5 +1,7 @@
 package tui
 
+import "github.com/grindlemire/go-tui/internal/tailwind"
+
 // Compile-time check that Element implements the required interfaces.
 var (
 	_ Viewable   = (*Element)(nil)
@@ -121,6 +123,13 @@ type Element struct {
 	textGradient   *Gradient
 	bgGradient     *Gradient
 	borderGradient *Gradient
+
+	// Ops applied by the current class string, the state they overwrote, and
+	// the state they wrote, so SetClass can put back only what the class set.
+	classOps     []tailwind.Op
+	classText    bool
+	classBase    *classBase
+	classApplied *classBase
 
 	// Pre-render hook for custom update logic (polling, animations, etc.)
 	onUpdate func()

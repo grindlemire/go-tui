@@ -2,7 +2,7 @@
 
 ## Overview
 
-go-tui uses a Tailwind-inspired class system for styling. You set colors, text decorations, borders, and gradients through the `class` attribute on elements, and the code generator converts them into `tui.Element` options at compile time. For cases where classes aren't flexible enough, you can construct `Style` values in Go and pass them through attributes.
+go-tui uses a Tailwind-inspired class system for styling. You set colors, text decorations, borders, and gradients through the `class` attribute on elements. Literal class strings are converted into `tui.Element` options by the code generator at compile time, and class strings built from Go expressions are resolved at runtime (see [Computed Classes](#computed-classes)). For cases where classes aren't flexible enough, you can construct `Style` values in Go and pass them through attributes.
 
 ## Text Styles
 
@@ -226,6 +226,48 @@ The gradient travels around the perimeter of the border, shifting from the start
 | `-v` | Vertical | Top to bottom |
 | `-dd` | Diagonal down | Top-left to bottom-right |
 | `-du` | Diagonal up | Bottom-left to top-right |
+
+## Computed Classes
+
+The `class` attribute also accepts a Go expression that evaluates to a string. This is how a component takes its styling from a parameter, a struct field, or a helper that picks classes based on state:
+
+```gsx
+templ Badge(label string, color string) {
+    <span class={color + " font-bold px-1"}>{label}</span>
+}
+
+templ (d *dashboard) Render() {
+    <span class={metricColor(d.cpu.Get())}>{fmt.Sprintf("%d%%", d.cpu.Get())}</span>
+}
+```
+
+```go
+func metricColor(value int) string {
+    switch {
+    case value >= 80:
+        return "text-red font-bold"
+    case value >= 60:
+        return "text-yellow"
+    }
+    return "text-green"
+}
+```
+
+Expression classes compile to a `tui.WithClass(...)` option, which resolves the same class set at runtime. The differences from literal classes:
+
+- Unknown classes in an expression are ignored at runtime. Only literal class strings are validated by `tui check` and the language server.
+- When the expression reads a `State`, the generator also binds it and swaps the classes through `SetClass` on change, so a value with `hidden` and a later value without it hides and shows the element.
+
+You can use the same option from Go, and re-apply classes on an existing element with `SetClass`:
+
+```go
+el := tui.New(tui.WithClass("border-rounded p-1 " + theme))
+el.SetClass("border-double text-red")
+```
+
+`SetClass` replaces the previous class string. Every property the old string set is restored to the value it had before that string was applied, then the new string is applied. So `SetClass("")` after `"font-bold p-1"` removes both, `SetClass("text-green")` after `"font-bold"` is green and not bold, and a border set through the `border` attribute comes back once the class string stops mentioning borders, whichever attribute came first. Within one class string the last class wins, so `"text-red text-green"` renders green.
+
+On `<input>`, `<textarea>`, `<markdown>`, and `<modal>` the `class` attribute is applied to the component's root element after the component's own attributes, so `<input class="border-rounded w-30" />` gets the border, grows to fit it, and takes the class width over the default. Only a fixed width class (`w-N`) sizes the input's viewport and the textarea's wrapping; percentage, fraction, and auto widths size the box only.
 
 ## Programmatic Styling
 

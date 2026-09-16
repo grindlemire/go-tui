@@ -174,6 +174,7 @@ func (s *streamingApp) Render(app *tui.App) *tui.Element {
 		_ = __idx_0
 		__tui_5 := tui.New(
 			tui.WithText(line),
+			tui.WithClass(lineColor(line)),
 		)
 		__tui_4.AddChild(__tui_5)
 	}

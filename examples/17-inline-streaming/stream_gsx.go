@@ -184,7 +184,7 @@ func ReportCard(people []person) *ReportCardView {
 	__tui_1 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
-		tui.WithWidthPercent(75.00),
+		tui.WithWidthPercent(100.0*3/4),
 		tui.WithPaddingTRBL(0, 1, 0, 1),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.BrightCyan)),
 	)

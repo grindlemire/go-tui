@@ -80,6 +80,7 @@ func Badge(label string, color string) *BadgeView {
 
 	__tui_0 := tui.New(
 		tui.WithText(label),
+		tui.WithClass(color+" font-bold px-1"),
 	)
 
 	__bindApp := func(app *tui.App) {

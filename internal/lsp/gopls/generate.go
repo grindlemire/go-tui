@@ -209,6 +209,11 @@ func (g *generator) generateElement(el *tuigen.Element, indent string) {
 			g.generateGoExprWrapped(expr, indent, tuigen.ElementConstructor(el.Tag)+"(", "...)")
 			continue
 		}
+		if attr.Name == "class" {
+			// Wrap so gopls checks the expression is a string.
+			g.generateGoExprWrapped(expr, indent, "tui.WithClass(", ")")
+			continue
+		}
 		g.generateGoExpr(expr, indent)
 	}
 

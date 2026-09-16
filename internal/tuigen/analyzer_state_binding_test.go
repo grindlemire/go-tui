@@ -324,15 +324,17 @@ templ Toggle() {
 	}
 }
 
-func TestAnalyzer_DetectStateBindings_NonReactiveIfKeepsBindings(t *testing.T) {
-	// Elements inside a non-reactive if (no state in condition) should still
-	// generate text bindings normally.
+func TestAnalyzer_DetectStateBindings_NonReactiveIfSkipsBranchElements(t *testing.T) {
+	// Elements inside a non-reactive if are declared inside the generated if
+	// block, so a binding emitted after it could not reference them. Siblings
+	// after the block are bound as usual.
 	input := `package x
 templ Toggle(count *tui.State[int]) {
 	<div>
 		if true {
 			<span>{count.Get()}</span>
 		}
+		<span>{count.Get()}</span>
 	</div>
 }`
 
@@ -347,17 +349,11 @@ templ Toggle(count *tui.State[int]) {
 	stateVars := analyzer.DetectStateVars(file.Components[0])
 	bindings := analyzer.DetectStateBindings(file.Components[0], stateVars)
 
-	// Should have 1 text binding since if condition doesn't reference state
 	if len(bindings) != 1 {
-		t.Fatalf("expected 1 binding for non-reactive if, got %d", len(bindings))
+		t.Fatalf("expected 1 binding (sibling after the if), got %d: %+v", len(bindings), bindings)
 	}
-
-	b := bindings[0]
-	if b.Attribute != "text" {
-		t.Errorf("Attribute = %q, want %q", b.Attribute, "text")
-	}
-	if len(b.StateVars) != 1 || b.StateVars[0] != "count" {
-		t.Errorf("StateVars = %v, want [count]", b.StateVars)
+	if b := bindings[0]; b.ElementName != "__tui_2" || b.Attribute != "text" {
+		t.Errorf("binding = %+v, want text binding on __tui_2", b)
 	}
 }
 

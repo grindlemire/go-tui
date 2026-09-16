@@ -244,10 +244,12 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_4.AddChild(__tui_5)
 	__tui_6 := tui.New(
 		tui.WithText(metricBar(d.cpu.Get(), 100)),
+		tui.WithClass(metricColor(d.cpu.Get())),
 	)
 	__tui_4.AddChild(__tui_6)
 	__tui_7 := tui.New(
 		tui.WithText(fmt.Sprintf("%d%%", d.cpu.Get())),
+		tui.WithClass(metricColor(d.cpu.Get())+" font-bold"),
 	)
 	__tui_4.AddChild(__tui_7)
 	__tui_3.AddChild(__tui_4)
@@ -266,10 +268,12 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_8.AddChild(__tui_9)
 	__tui_10 := tui.New(
 		tui.WithText(metricBar(d.mem.Get(), 100)),
+		tui.WithClass(metricColor(d.mem.Get())),
 	)
 	__tui_8.AddChild(__tui_10)
 	__tui_11 := tui.New(
 		tui.WithText(fmt.Sprintf("%d%%", d.mem.Get())),
+		tui.WithClass(metricColor(d.mem.Get())+" font-bold"),
 	)
 	__tui_8.AddChild(__tui_11)
 	__tui_3.AddChild(__tui_8)
@@ -288,10 +292,12 @@ func (d *dashboardApp) Render(app *tui.App) *tui.Element {
 	__tui_12.AddChild(__tui_13)
 	__tui_14 := tui.New(
 		tui.WithText(metricBar(d.disk.Get(), 100)),
+		tui.WithClass(metricColor(d.disk.Get())),
 	)
 	__tui_12.AddChild(__tui_14)
 	__tui_15 := tui.New(
 		tui.WithText(fmt.Sprintf("%d%%", d.disk.Get())),
+		tui.WithClass(metricColor(d.disk.Get())+" font-bold"),
 	)
 	__tui_12.AddChild(__tui_15)
 	__tui_3.AddChild(__tui_12)

@@ -597,3 +597,43 @@ func TestGenerateVirtualGo_RefsInNestedNodes(t *testing.T) {
 		}
 	}
 }
+
+// A class expression is wrapped in tui.WithClass so gopls type-checks it as a
+// string, with the mapping pointing at the expression itself.
+func TestGenerateVirtualGo_ClassExpressionWrapped(t *testing.T) {
+	file := &tuigen.File{
+		Package: "main",
+		Components: []*tuigen.Component{
+			{
+				Name:       "App",
+				ReturnType: "*element.Element",
+				Position:   tuigen.Position{Line: 3, Column: 1},
+				Body: []tuigen.Node{
+					&tuigen.Element{
+						Tag:      "div",
+						Position: tuigen.Position{Line: 4, Column: 2},
+						Attributes: []*tuigen.Attribute{
+							{
+								Name:  "class",
+								Value: &tuigen.GoExpr{Code: "cls", Position: tuigen.Position{Line: 4, Column: 13}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	source, sourceMap := GenerateVirtualGo(file)
+
+	const wantLine = "\t_ = tui.WithClass(cls)\n"
+	if !strings.Contains(source, wantLine) {
+		t.Fatalf("missing wrapped class expression %q in:\n%s", wantLine, source)
+	}
+	goLine := strings.Count(source[:strings.Index(source, wantLine)], "\n")
+	goCol := strings.Index(wantLine, "cls")
+	tuiLine, tuiCol, ok := sourceMap.GoToTui(goLine, goCol)
+	if !ok || tuiLine != 3 || tuiCol != 13 {
+		t.Errorf("GoToTui(%d, %d) = (%d, %d, %v), want (3, 13, true)", goLine, goCol, tuiLine, tuiCol, ok)
+	}
+}

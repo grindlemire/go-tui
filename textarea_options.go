@@ -1,5 +1,14 @@
 package tui
 
+// WithTextAreaElementOptions applies standard Element options to the textarea's
+// root element after its own attributes, so class-derived options can override
+// the defaults (a class border grows the height to fit).
+func WithTextAreaElementOptions(opts ...Option) TextAreaOption {
+	return func(t *TextArea) {
+		t.elementOpts = append(t.elementOpts, opts...)
+	}
+}
+
 // TextAreaOption configures a TextArea.
 type TextAreaOption func(*TextArea)
 
