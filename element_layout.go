@@ -291,21 +291,23 @@ func (e *Element) HeightForWidth(width int) int {
 			if child.hidden || child.overlay {
 				continue
 			}
-			// Stretched auto-width children fill the content width; other
-			// auto-width children are clamped to it, matching Phase 5.
-			childWidth := contentWidth
+			// Margins come out of the slot before alignment, as in
+			// recomputeTextWrapping. Stretched auto-width children fill the
+			// remainder; other auto-width children are clamped to it.
+			availableWidth := contentWidth - child.style.Margin.Horizontal()
+			childWidth := availableWidth
 			align := e.style.AlignItems
 			if child.style.AlignSelf != nil {
 				align = *child.style.AlignSelf
 			}
 			if align != AlignStretch && child.style.Width.IsAuto() {
 				intrinsicW, _ := child.IntrinsicSize()
-				childWidth = min(intrinsicW, contentWidth)
+				childWidth = min(intrinsicW, availableWidth)
 			}
 			// Layout applies min/max width to the slot after alignment.
 			childWidth = layout.ClampWidth(child.style, childWidth)
 			childH := child.HeightForWidth(childWidth)
-			totalH += childH
+			totalH += childH + child.style.Margin.Vertical()
 			if visibleIdx > 0 {
 				totalH += e.style.Gap
 			}

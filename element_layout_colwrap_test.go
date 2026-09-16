@@ -216,3 +216,67 @@ func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 		})
 	}
 }
+
+// Issue #165: the column branch of HeightForWidth measured every child at the
+// full content width and ignored margins in both directions, so a nested
+// column reported less height than layout gives its children.
+func TestColumnHeightForWidthIncludesChildMargins(t *testing.T) {
+	type tc struct {
+		innerOpts     []Option
+		childOpts     []Option
+		wantInnerH    int
+		wantChildRect Rect
+		wantSentinelY int
+	}
+
+	tests := map[string]tc{
+		"horizontal margins items-start": {
+			innerOpts:     []Option{WithAlign(AlignStart)},
+			childOpts:     []Option{WithMarginTRBL(0, 2, 0, 2)},
+			wantInnerH:    3,
+			wantChildRect: Rect{X: 2, Y: 0, Width: 16, Height: 3},
+			wantSentinelY: 3,
+		},
+		"horizontal margins stretch default": {
+			childOpts:     []Option{WithMarginTRBL(0, 2, 0, 2)},
+			wantInnerH:    3,
+			wantChildRect: Rect{X: 2, Y: 0, Width: 16, Height: 3},
+			wantSentinelY: 3,
+		},
+		"vertical margins add rows": {
+			childOpts:     []Option{WithMarginTRBL(1, 0, 1, 0)},
+			wantInnerH:    4,
+			wantChildRect: Rect{X: 0, Y: 1, Width: 20, Height: 2},
+			wantSentinelY: 4,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			text := New(append([]Option{WithText(tableWrapCellText)}, tt.childOpts...)...)
+			innerOpts := append([]Option{WithDisplay(DisplayFlex), WithDirection(Column)}, tt.innerOpts...)
+			inner := New(innerOpts...)
+			inner.AddChild(text)
+			sentinel := New(WithText("SENTINEL"))
+			outer := New(WithDisplay(DisplayFlex), WithDirection(Column), WithWidth(20))
+			outer.AddChild(inner)
+			outer.AddChild(sentinel)
+
+			if got := inner.HeightForWidth(20); got != tt.wantInnerH {
+				t.Errorf("inner.HeightForWidth(20) = %d, want %d", got, tt.wantInnerH)
+			}
+
+			outer.Calculate(20, 24)
+
+			if got := text.Rect(); got != tt.wantChildRect {
+				t.Errorf("text rect = %+v, want %+v", got, tt.wantChildRect)
+			}
+			if got := inner.Rect().Height; got != tt.wantInnerH {
+				t.Errorf("inner column height = %d, want %d", got, tt.wantInnerH)
+			}
+			if got := sentinel.Rect().Y; got != tt.wantSentinelY {
+				t.Errorf("sentinel Y = %d, want %d (below the inner column)", got, tt.wantSentinelY)
+			}
+		})
+	}
+}
