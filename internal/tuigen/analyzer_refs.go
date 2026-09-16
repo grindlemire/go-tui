@@ -150,7 +150,7 @@ func (a *Analyzer) collectLetBindings(nodes []Node) {
 	for _, node := range nodes {
 		switch n := node.(type) {
 		case *LetBinding:
-			a.letBindings[n.Name] = false
+			a.letBindings[n.Name] = struct{}{}
 			if n.Element != nil {
 				a.collectLetBindings(n.Element.Children)
 			} else if n.Call != nil {
@@ -219,7 +219,6 @@ func (a *Analyzer) transformNode(node Node) Node {
 		// Check if this is a simple identifier that matches a := binding
 		if isSimpleIdentifier(n.Code) {
 			if _, ok := a.letBindings[n.Code]; ok {
-				a.letBindings[n.Code] = true
 				return &RawGoExpr{Code: n.Code, Position: n.Position}
 			}
 		}
