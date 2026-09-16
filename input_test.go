@@ -928,6 +928,39 @@ func TestInput_Render_Output(t *testing.T) {
 	}
 }
 
+func TestInput_BorderStyleWriteWhileFocused(t *testing.T) {
+	red := NewStyle().Foreground(Red)
+	green := NewStyle().Foreground(Green)
+	cyan := NewStyle().Foreground(Cyan)
+
+	for wname, write := range borderWriters {
+		t.Run(wname, func(t *testing.T) {
+			inp := newTestInput(
+				WithInputBorder(BorderSingle),
+				WithInputFocusColor(Cyan),
+				WithInputElementOptions(WithBorderStyle(red)),
+			)
+			inp.Focus()
+			root := inp.Render(testApp)
+			root.Focus()
+			if got := root.activeBorderStyle(); got != cyan {
+				t.Fatalf("focused: visible border = %+v, want %+v", got, cyan)
+			}
+			write(root, green)
+			if got := root.activeBorderStyle(); got != cyan {
+				t.Errorf("focused after write: visible border = %+v, want %+v", got, cyan)
+			}
+			root.Blur()
+			if inp.IsFocused() {
+				t.Fatal("element Blur() should blur the input")
+			}
+			if got := root.activeBorderStyle(); got != green {
+				t.Errorf("blurred: visible border = %+v, want %+v", got, green)
+			}
+		})
+	}
+}
+
 // viewportProbe renders a fixed-width column holding one component so the
 // component is laid out at a width the layout engine assigns.
 type viewportProbe struct {

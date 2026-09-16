@@ -231,6 +231,7 @@ func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, main
 	for i := range items {
 		child := items[i].node
 		childStyle := child.LayoutStyle()
+		intrinsicW, intrinsicH := child.IntrinsicSize()
 
 		var childWidth int
 		if isRow {
@@ -245,14 +246,18 @@ func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, main
 			if align == AlignStretch && crossStyleValue.IsAuto() {
 				childWidth = crossSize - crossMargin
 			} else if crossStyleValue.IsAuto() {
-				childWidth, _ = child.IntrinsicSize()
+				// Phase 5 clamps a non-stretch child to the available cross
+				// size, so measure at that width rather than the intrinsic one.
+				// A wrapped column line wider than the container over-allocates.
+				childWidth = min(intrinsicW, crossSize-crossMargin)
 			} else {
 				childWidth = crossStyleValue.Resolve(crossSize-crossMargin, 0)
 			}
+			// computeBorderBox applies min/max width to the assigned slot.
+			childWidth = ClampWidth(childStyle, childWidth)
 		}
 
 		wrappedHeight := child.HeightForWidth(childWidth)
-		_, intrinsicH := child.IntrinsicSize()
 
 		if wrappedHeight > intrinsicH {
 			if isRow {

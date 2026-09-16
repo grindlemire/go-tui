@@ -47,9 +47,7 @@ func (e *Element) Focus() {
 	} else if e.focusBorderStyle != nil {
 		e.MarkDirty()
 	} else if e.border != BorderNone {
-		e.savedBorderStyle = e.borderStyle
-		e.hasSavedBorder = true
-		e.borderStyle = NewStyle().Foreground(Cyan)
+		e.highlightBorder(NewStyle().Foreground(Cyan))
 		e.MarkDirty()
 	}
 }
@@ -58,28 +56,42 @@ func (e *Element) Focus() {
 // Idempotent: no-op if already blurred.
 // Does not cascade to children — only the FocusManager target loses focus.
 //
-// Restores the original border style if a default focus highlight was applied.
+// Restores the unfocused border style if a focus highlight was applied, then
+// calls onBlur, so a handler that refocuses starts from a clean element.
 func (e *Element) Blur() {
 	if !e.focused {
 		return
 	}
 	e.focused = false
-	if e.onBlur != nil {
-		e.onBlur(e)
-		if e.focusBorderStyle != nil {
-			e.MarkDirty()
-		}
-	} else if e.focusBorderStyle != nil {
-		if e.hasSavedBorder {
-			e.borderStyle = e.savedBorderStyle
-			e.hasSavedBorder = false
-		}
-		e.MarkDirty()
-	} else if e.hasSavedBorder {
+	if e.hasSavedBorder {
 		e.borderStyle = e.savedBorderStyle
 		e.hasSavedBorder = false
 		e.MarkDirty()
+	} else if e.focusBorderStyle != nil {
+		e.MarkDirty()
 	}
+	if e.onBlur != nil {
+		e.onBlur(e)
+	}
+}
+
+// highlightBorder shows s as the border until Blur. The unfocused style is
+// kept aside so writes made while highlighted land there and Blur restores it.
+func (e *Element) highlightBorder(s Style) {
+	if !e.hasSavedBorder {
+		e.savedBorderStyle = e.borderStyle
+		e.hasSavedBorder = true
+	}
+	e.borderStyle = s
+}
+
+// borderStyleSlot points at the unfocused border style: the saved copy while
+// a highlight occupies borderStyle, otherwise borderStyle itself.
+func (e *Element) borderStyleSlot() *Style {
+	if e.hasSavedBorder {
+		return &e.savedBorderStyle
+	}
+	return &e.borderStyle
 }
 
 // Activate triggers the onActivate callback if set.

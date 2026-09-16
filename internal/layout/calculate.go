@@ -199,19 +199,9 @@ func calculateNode(node Layoutable, available Rect, absoluteX, absoluteY float64
 // Only min/max constraints are applied; Width/Height were already used by the
 // flex algorithm to compute the slot size.
 func computeBorderBox(style Style, available Rect) Rect {
-	// Start with available dimensions (flex-computed or parent-allocated)
-	width := available.Width
-	height := available.Height
-
-	// Apply min/max width constraints
-	minWidth := style.MinWidth.Resolve(available.Width, 0)
-	maxWidth := style.MaxWidth.Resolve(available.Width, available.Width)
-	width = clamp(width, minWidth, maxWidth)
-
-	// Apply min/max height constraints
-	minHeight := style.MinHeight.Resolve(available.Height, 0)
-	maxHeight := style.MaxHeight.Resolve(available.Height, available.Height)
-	height = clamp(height, minHeight, maxHeight)
+	// Apply min/max constraints to the available (flex-computed) dimensions
+	width := clampToMinMax(available.Width, style.MinWidth, style.MaxWidth)
+	height := clampToMinMax(available.Height, style.MinHeight, style.MaxHeight)
 
 	// Clamp to non-negative
 	if width < 0 {
@@ -227,6 +217,17 @@ func computeBorderBox(style Style, available Rect) Rect {
 		Width:  width,
 		Height: height,
 	}
+}
+
+// ClampWidth applies style's MinWidth and MaxWidth to a slot width the way
+// computeBorderBox does, so wrap measurement agrees with the final layout.
+func ClampWidth(style Style, width int) int {
+	return clampToMinMax(width, style.MinWidth, style.MaxWidth)
+}
+
+// clampToMinMax resolves minVal and maxVal against size and clamps it.
+func clampToMinMax(size int, minVal, maxVal Value) int {
+	return clamp(size, minVal.Resolve(size, 0), maxVal.Resolve(size, size))
 }
 
 // clamp restricts v to the range [minVal, maxVal].
