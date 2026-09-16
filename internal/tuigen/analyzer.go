@@ -64,8 +64,9 @@ type Analyzer struct {
 	usesLayout  bool
 	usesTUI     bool
 
-	// Track := bindings for unused variable detection
-	letBindings map[string]bool // name -> used
+	// Names bound with := in the templ being analyzed; transformElementRefs
+	// rewrites {name} references to them into RawGoExpr.
+	letBindings map[string]struct{}
 
 	// Track component definitions for children validation
 	componentDefs map[string]bool // name -> accepts children
@@ -97,7 +98,7 @@ func (a *Analyzer) SetPackageContext(ctx *PackageContext) {
 func NewAnalyzer() *Analyzer {
 	return &Analyzer{
 		errors:        NewErrorList(),
-		letBindings:   make(map[string]bool),
+		letBindings:   make(map[string]struct{}),
 		componentDefs: make(map[string]bool),
 	}
 }
@@ -260,7 +261,7 @@ var attributeSimilar = map[string]string{
 func (a *Analyzer) Analyze(file *File) error {
 	a.errors = NewErrorList()
 	a.file = file
-	a.letBindings = make(map[string]bool)
+	a.letBindings = make(map[string]struct{})
 	a.componentDefs = make(map[string]bool)
 	a.currentComponent = nil
 	a.usesElement = false
@@ -293,33 +294,23 @@ func (a *Analyzer) Analyze(file *File) error {
 		}
 	}
 
-	// Second pass: collect := binding names from all components
+	// Second pass: rewrite {name} references to := bindings into RawGoExpr.
+	// Bindings are scoped to their templ, so the registry is rebuilt per
+	// component rather than collected for the whole file first.
 	for _, comp := range file.Components {
+		a.letBindings = make(map[string]struct{})
 		a.collectLetBindings(comp.Body)
-	}
-
-	// Third pass: transform GoExpr references to := bindings into RawGoExpr
-	for _, comp := range file.Components {
 		comp.Body = a.transformElementRefs(comp.Body)
 	}
 
-	// Fourth pass: validate refs
+	// Third pass: validate refs
 	for _, comp := range file.Components {
 		a.validateRefs(comp)
 	}
 
-	// Fifth pass: validate elements and attributes
+	// Fourth pass: validate elements and attributes
 	for _, comp := range file.Components {
 		a.analyzeComponent(comp)
-	}
-
-	// Check for unused := bindings
-	for name, used := range a.letBindings {
-		if !used {
-			// This is a warning, not an error - but we'll still report it
-			// For now, we'll skip this as it might have false positives
-			_ = name
-		}
 	}
 
 	// Add missing imports
@@ -542,9 +533,6 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 
 // analyzeLetBinding validates a let binding.
 func (a *Analyzer) analyzeLetBinding(let *LetBinding) {
-	// Register the binding
-	a.letBindings[let.Name] = false
-
 	if let.Element != nil {
 		a.analyzeElement(let.Element)
 	}
@@ -675,13 +663,6 @@ func (a *Analyzer) analyzeGoExpr(expr *GoExpr) {
 	if strings.Contains(expr.Code, "tui.") {
 		a.usesTUI = true
 	}
-
-	// Check if expression references a := binding
-	for name := range a.letBindings {
-		if strings.Contains(expr.Code, name) {
-			a.letBindings[name] = true
-		}
-	}
 }
 
 // analyzeGoCode validates raw Go code.
@@ -692,13 +673,6 @@ func (a *Analyzer) analyzeGoCode(code *GoCode) {
 	}
 	if strings.Contains(code.Code, "tui.") {
 		a.usesTUI = true
-	}
-
-	// Check if code references a := binding
-	for name := range a.letBindings {
-		if strings.Contains(code.Code, name) {
-			a.letBindings[name] = true
-		}
 	}
 }
 
