@@ -14,6 +14,9 @@ type testNode struct {
 	// Explicit intrinsic size for testing (simulates text content)
 	intrinsicW int
 	intrinsicH int
+
+	// Optional width-dependent height (simulates wrapping content).
+	heightForWidth func(width int) int
 }
 
 // newTestNode creates a new testNode with the given style.
@@ -42,6 +45,9 @@ func (n *testNode) IsDirty() bool      { return n.dirty }
 func (n *testNode) SetDirty(d bool)    { n.dirty = d }
 func (n *testNode) Tag() string        { return "" }
 func (n *testNode) HeightForWidth(width int) int {
+	if n.heightForWidth != nil {
+		return n.heightForWidth(width)
+	}
 	_, h := n.IntrinsicSize()
 	return h
 }

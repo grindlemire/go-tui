@@ -276,9 +276,9 @@ func (e *Element) HeightForWidth(width int) int {
 		return h
 	}
 
-	// Column containers: recursively compute from children.
-	// Each child gets the full content width (correct for AlignStretch + Auto width,
-	// which is the default). This propagates text wrapping heights up the tree.
+	// Column containers: recursively compute from children, measuring each
+	// at the width layout will give it. This propagates text wrapping heights
+	// up the tree.
 	isColumn := e.style.Direction == Column || e.style.Display == DisplayBlock
 	if len(e.children) > 0 && isColumn {
 		contentWidth := width - e.style.Padding.Horizontal()
@@ -291,7 +291,18 @@ func (e *Element) HeightForWidth(width int) int {
 			if child.hidden || child.overlay {
 				continue
 			}
-			childH := child.HeightForWidth(contentWidth)
+			// Stretched auto-width children fill the content width; other
+			// auto-width children are clamped to it, matching Phase 5.
+			childWidth := contentWidth
+			align := e.style.AlignItems
+			if child.style.AlignSelf != nil {
+				align = *child.style.AlignSelf
+			}
+			if align != AlignStretch && child.style.Width.IsAuto() {
+				intrinsicW, _ := child.IntrinsicSize()
+				childWidth = min(intrinsicW, contentWidth)
+			}
+			childH := child.HeightForWidth(childWidth)
 			totalH += childH
 			if visibleIdx > 0 {
 				totalH += e.style.Gap
