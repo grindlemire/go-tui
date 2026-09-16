@@ -592,9 +592,20 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Get the receiver type name without pointer
 	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
 
+	// Replacing a prop rendered through @expr counts as unmounting the old
+	// value, so the helper unbinds it before the copy. Fields bound by their
+	// known type (State/Events/TextArea) are rebound by BindApp instead.
+	var bindableProps []StructField
+	for _, f := range propFields {
+		if g.isAppBindableType(f.Type) {
+			bindableProps = append(bindableProps, f)
+		}
+	}
+	unbindFields, rangeUnbindFields := g.componentExprFieldLists(propFields, bindableProps)
+
 	// Always emit the updatePropsFields helper so user-defined UpdateProps
 	// overrides can call it instead of hand-maintaining the copy list.
-	g.emitUpdatePropsFieldsHelper(comp, propFields)
+	g.emitUpdatePropsFieldsHelper(comp, propFields, unbindFields, rangeUnbindFields)
 
 	if g.hasUserUpdatePropsMethod(comp.ReceiverType) {
 		// Still assert PropsUpdater so a user UpdateProps with the wrong
@@ -620,8 +631,9 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 
 // emitUpdatePropsFieldsHelper writes the unexported updatePropsFields method
 // containing the actual prop copying: type-asserting fresh to the receiver
-// type and copying each prop field onto the receiver.
-func (g *Generator) emitUpdatePropsFieldsHelper(comp *Component, propFields []StructField) {
+// type, unbinding the prop fields rendered through @expr, and copying each
+// prop field onto the receiver.
+func (g *Generator) emitUpdatePropsFieldsHelper(comp *Component, propFields []StructField, unbindFields, rangeUnbindFields []string) {
 	// Pick a local name for the type-asserted fresh component that does not
 	// shadow the receiver; shadowing would turn every prop copy below into a
 	// self-assignment.
@@ -641,6 +653,9 @@ func (g *Generator) emitUpdatePropsFieldsHelper(comp *Component, propFields []St
 	g.writeln("return")
 	g.indent--
 	g.writeln("}")
+
+	g.emitFieldAssertions(comp.ReceiverName, unbindFields, "unbinder", "tui.AppUnbinder", "UnbindApp()")
+	g.emitRangeAssertions(comp.ReceiverName, rangeUnbindFields, "unbinder", "tui.AppUnbinder", "UnbindApp()")
 
 	// Copy each prop field
 	for _, f := range propFields {
@@ -695,24 +710,9 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 		}
 	}
 
-	// Find component expression fields that may implement AppBinder.
-	// These are fields used as @receiver.field in the template (e.g., @c.settingsView).
-	// Since the generator can't do full type checking, we use a runtime type assertion.
-	componentExprFieldSet := make(map[string]bool)
-	for _, name := range g.componentExprFields {
-		componentExprFieldSet[name] = true
-	}
-	// Remove fields already in bindableFields to avoid duplicate binding
-	for _, f := range bindableFields {
-		delete(componentExprFieldSet, f.Name)
-	}
-	var componentBindFields []string
-	for _, f := range fields {
-		if componentExprFieldSet[f.Name] {
-			componentBindFields = append(componentBindFields, f.Name)
-		}
-	}
-	rangeBindFields := g.indexedComponentFields(fields, bindableFields, componentBindFields)
+	// Component expression fields (@c.settingsView) may implement AppBinder;
+	// the generator cannot type-check them, so they get a runtime assertion.
+	componentBindFields, rangeBindFields := g.componentExprFieldLists(fields, bindableFields)
 
 	if len(appFields) == 0 && len(bindableFields) == 0 && len(componentBindFields) == 0 && len(rangeBindFields) == 0 {
 		return
@@ -740,6 +740,35 @@ func (g *Generator) generateBindApp(comp *Component, decls []*GoDecl) {
 	// Add a compile-time check that the type implements AppBinder
 	g.writef("var _ tui.AppBinder = (*%s)(nil)\n", typeName)
 	g.writeln("")
+}
+
+// componentExprFieldLists returns the fields used as @receiver.field (plain)
+// and the literal slice/map fields rendered by index or loop (ranged), in
+// struct order. Fields in handled are skipped because the caller already
+// binds them by their known type.
+func (g *Generator) componentExprFieldLists(fields, handled []StructField) (plain, ranged []string) {
+	for _, f := range fields {
+		if !slices.Contains(g.componentExprFields, f.Name) {
+			continue
+		}
+		if slices.ContainsFunc(handled, func(h StructField) bool { return h.Name == f.Name }) {
+			continue
+		}
+		plain = append(plain, f.Name)
+	}
+	return plain, g.indexedComponentFields(fields, handled, plain)
+}
+
+// emitFieldAssertions type-asserts each receiver field against iface and
+// calls it as call.
+func (g *Generator) emitFieldAssertions(receiver string, fields []string, name, iface, call string) {
+	for _, field := range fields {
+		g.writef("if %s, ok := any(%s.%s).(%s); ok {\n", name, receiver, field, iface)
+		g.indent++
+		g.writef("%s.%s\n", name, call)
+		g.indent--
+		g.writeln("}")
+	}
 }
 
 // indexedComponentFields returns the literal slice/map fields rendered by index or loop that are not already bound directly.
@@ -795,13 +824,7 @@ func (g *Generator) emitBindAppFieldsHelper(comp *Component, appFields, bindable
 		g.indent--
 		g.writeln("}")
 	}
-	for _, name := range componentBindFields {
-		g.writef("if binder, ok := any(%s.%s).(tui.AppBinder); ok {\n", comp.ReceiverName, name)
-		g.indent++
-		g.writeln("binder.BindApp(app)")
-		g.indent--
-		g.writeln("}")
-	}
+	g.emitFieldAssertions(comp.ReceiverName, componentBindFields, "binder", "tui.AppBinder", "BindApp(app)")
 	g.emitRangeAssertions(comp.ReceiverName, rangeBindFields, "binder", "tui.AppBinder", "BindApp(app)")
 	g.indent--
 	g.writeln("}")
@@ -827,28 +850,13 @@ func (g *Generator) generateUnbindApp(comp *Component, decls []*GoDecl) {
 		return
 	}
 
-	componentExprFieldSet := make(map[string]bool)
-	for _, name := range g.componentExprFields {
-		componentExprFieldSet[name] = true
-	}
-
 	var unbindFields []StructField
 	for _, f := range fields {
 		if g.isTUIType(f.Type, "Events") {
 			unbindFields = append(unbindFields, f)
 		}
 	}
-	// Remove fields already handled explicitly
-	for _, f := range unbindFields {
-		delete(componentExprFieldSet, f.Name)
-	}
-	var componentUnbindFields []string
-	for _, f := range fields {
-		if componentExprFieldSet[f.Name] {
-			componentUnbindFields = append(componentUnbindFields, f.Name)
-		}
-	}
-	rangeUnbindFields := g.indexedComponentFields(fields, unbindFields, componentUnbindFields)
+	componentUnbindFields, rangeUnbindFields := g.componentExprFieldLists(fields, unbindFields)
 
 	if len(unbindFields) == 0 && len(componentUnbindFields) == 0 && len(rangeUnbindFields) == 0 {
 		return
@@ -888,13 +896,7 @@ func (g *Generator) emitUnbindAppFieldsHelper(comp *Component, unbindFields []St
 		g.indent--
 		g.writeln("}")
 	}
-	for _, name := range componentUnbindFields {
-		g.writef("if unbinder, ok := any(%s.%s).(tui.AppUnbinder); ok {\n", comp.ReceiverName, name)
-		g.indent++
-		g.writeln("unbinder.UnbindApp()")
-		g.indent--
-		g.writeln("}")
-	}
+	g.emitFieldAssertions(comp.ReceiverName, componentUnbindFields, "unbinder", "tui.AppUnbinder", "UnbindApp()")
 	g.emitRangeAssertions(comp.ReceiverName, rangeUnbindFields, "unbinder", "tui.AppUnbinder", "UnbindApp()")
 	g.indent--
 	g.writeln("}")

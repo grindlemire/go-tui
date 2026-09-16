@@ -79,8 +79,23 @@ func TestPanes_ForwardsBindAppToSliceComponents(t *testing.T) {
 		t.Fatal("BindApp was not forwarded to the widget in p.widgets")
 	}
 
-	p.UnbindApp()
+	// Mount calls UpdateProps then BindApp on a cached component, so the
+	// replaced widget must be unbound by UpdateProps and the new one bound.
+	next := &widget{}
+	p.UpdateProps(NewPanes(0, next))
+	p.BindApp(nil)
 	if !w.unbound {
+		t.Fatal("UnbindApp was not forwarded to the widget dropped by UpdateProps")
+	}
+	if !next.bound {
+		t.Fatal("BindApp was not forwarded to the widget added by UpdateProps")
+	}
+	if next.unbound {
+		t.Fatal("UnbindApp was forwarded to the widget added by UpdateProps")
+	}
+
+	p.UnbindApp()
+	if !next.unbound {
 		t.Fatal("UnbindApp was not forwarded to the widget in p.widgets")
 	}
 }

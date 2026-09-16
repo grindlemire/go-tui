@@ -263,6 +263,9 @@ func (c *chat) updatePropsFields(fresh tui.Component) {
 	if !ok {
 		return
 	}
+	if unbinder, ok := any(c.settingsView).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
 	c.app = f.app
 	c.width = f.width
 	c.settingsView = f.settingsView

@@ -51,6 +51,19 @@ func (p *panes) updatePropsFields(fresh tui.Component) {
 	if !ok {
 		return
 	}
+	if unbinder, ok := any(p.footer).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	for _, item := range p.content {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+	for _, item := range p.widgets {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
 	p.active = f.active
 	p.content = f.content
 	p.widgets = f.widgets

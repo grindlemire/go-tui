@@ -45,6 +45,19 @@ func (t *tabs) updatePropsFields(fresh tui.Component) {
 	if !ok {
 		return
 	}
+	if unbinder, ok := any(t.footer).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	for _, item := range t.content {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
+	for _, item := range t.items {
+		if unbinder, ok := any(item).(tui.AppUnbinder); ok {
+			unbinder.UnbindApp()
+		}
+	}
 	t.active = f.active
 	t.content = f.content
 	t.items = f.items

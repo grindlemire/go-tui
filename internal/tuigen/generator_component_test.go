@@ -111,6 +111,8 @@ templ (c *shell) Render() {
 }`,
 			wantContains: []string{bindItemsLoop, unbindItemsLoop},
 		},
+		// Unbind assertions appear twice: updatePropsFields unbinds the
+		// replaced values and unbindAppFields unbinds on eviction.
 		"plain and indexed fields are each emitted once": {
 			input: `package x
 
@@ -131,10 +133,10 @@ templ (c *shell) Render() {
 }`,
 			wantCount: map[string]int{
 				"if binder, ok := any(c.view).(tui.AppBinder); ok {":     1,
-				"if unbinder, ok := any(c.view).(tui.AppUnbinder); ok {": 1,
-				"for _, item := range c.views {":                         2,
+				"if unbinder, ok := any(c.view).(tui.AppUnbinder); ok {": 2,
+				"for _, item := range c.views {":                         3,
 				"if binder, ok := any(item).(tui.AppBinder); ok {":       1,
-				"if unbinder, ok := any(item).(tui.AppUnbinder); ok {":   1,
+				"if unbinder, ok := any(item).(tui.AppUnbinder); ok {":   2,
 			},
 		},
 		"named collection type is not forwarded": {
@@ -188,6 +190,122 @@ templ (c *shell) Render() {
 			for snippet, want := range tt.wantCount {
 				if got := strings.Count(code, snippet); got != want {
 					t.Errorf("output contains %q %d times, want %d\nGot:\n%s", snippet, got, want, code)
+				}
+			}
+		})
+	}
+}
+
+// updatePropsFieldsBody returns the body of the generated updatePropsFields
+// helper so assertions cannot accidentally match bindAppFields or unbindAppFields.
+func updatePropsFieldsBody(t *testing.T, code string) string {
+	t.Helper()
+	const sig = "updatePropsFields(fresh tui.Component) {\n"
+	start := strings.Index(code, sig)
+	if start < 0 {
+		t.Fatalf("output has no updatePropsFields helper\nGot:\n%s", code)
+	}
+	rest := code[start+len(sig):]
+	end := strings.Index(rest, "\n}\n")
+	if end < 0 {
+		t.Fatalf("updatePropsFields helper is unterminated\nGot:\n%s", code)
+	}
+	return rest[:end]
+}
+
+func TestGenerator_UpdatePropsUnbindsComponentExprFields(t *testing.T) {
+	type tc struct {
+		input           string
+		wantBefore      [2]string // wantBefore[0] must appear before wantBefore[1] in the helper body
+		wantNotContains []string
+	}
+
+	tests := map[string]tc{
+		"plain field is unbound before it is copied": {
+			input: `package x
+
+import "github.com/grindlemire/go-tui"
+
+type shell struct {
+	view tui.Component
+}
+
+templ (c *shell) Render() {
+	<div>@c.view</div>
+}`,
+			wantBefore: [2]string{
+				"if unbinder, ok := any(c.view).(tui.AppUnbinder); ok {\n\t\tunbinder.UnbindApp()\n\t}",
+				"c.view = f.view",
+			},
+		},
+		"indexed slice field is ranged before it is copied": {
+			input: `package x
+
+import "github.com/grindlemire/go-tui"
+
+type shell struct {
+	active int
+	items  []tui.Component
+}
+
+templ (c *shell) Render() {
+	<div>@c.items[c.active]</div>
+}`,
+			wantBefore: [2]string{
+				"for _, item := range c.items {\n\t\tif unbinder, ok := any(item).(tui.AppUnbinder); ok {\n\t\t\tunbinder.UnbindApp()\n\t\t}\n\t}",
+				"c.items = f.items",
+			},
+		},
+		"props not rendered through @expr are only copied": {
+			input: `package x
+
+type shell struct {
+	title string
+	count int
+}
+
+templ (c *shell) Render() {
+	<div>{c.title}</div>
+}`,
+			wantBefore:      [2]string{"c.title = f.title", "c.count = f.count"},
+			wantNotContains: []string{"AppUnbinder"},
+		},
+		"state field is neither copied nor unbound": {
+			input: `package x
+
+import "github.com/grindlemire/go-tui"
+
+type shell struct {
+	count *tui.State[int]
+	view  tui.Component
+}
+
+templ (c *shell) Render() {
+	<div>@c.view</div>
+}`,
+			wantBefore:      [2]string{"if unbinder, ok := any(c.view).(tui.AppUnbinder); ok {", "c.view = f.view"},
+			wantNotContains: []string{"c.count"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+			body := updatePropsFieldsBody(t, string(output))
+			first := strings.Index(body, tt.wantBefore[0])
+			second := strings.Index(body, tt.wantBefore[1])
+			if first < 0 || second < 0 {
+				t.Fatalf("updatePropsFields missing %q or %q\nGot:\n%s", tt.wantBefore[0], tt.wantBefore[1], body)
+			}
+			if first > second {
+				t.Errorf("updatePropsFields has %q after %q\nGot:\n%s", tt.wantBefore[0], tt.wantBefore[1], body)
+			}
+			for _, notWant := range tt.wantNotContains {
+				if strings.Contains(body, notWant) {
+					t.Errorf("updatePropsFields should not contain %q\nGot:\n%s", notWant, body)
 				}
 			}
 		})
