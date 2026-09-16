@@ -35,7 +35,7 @@ Creates a new `Input` with the given options. Default values:
 
 | Setting     | Default      | Description                              |
 |-------------|--------------|------------------------------------------|
-| Width       | 20           | Characters visible before scrolling      |
+| Width       | 20           | Characters visible before scrolling, unless the layout assigns another width |
 | Border      | `BorderNone` | No border                                |
 | TextStyle   | `Style{}`    | Default terminal style                   |
 | Placeholder | `""`         | No placeholder text                      |
@@ -156,7 +156,7 @@ inp.InsertText("> ") // prefix the line, cursor ends after the prefix
 
 | Function | Description |
 |----------|-------------|
-| `WithInputWidth(int)` | Width in characters (default 20) |
+| `WithInputWidth(int)` | Width in characters (default 20). The viewport follows the width the layout assigns once the root has been laid out |
 | `WithInputBorder(BorderStyle)` | Border style |
 | `WithInputTextStyle(Style)` | Text style |
 | `WithInputPlaceholder(string)` | Placeholder text |
@@ -165,7 +165,7 @@ inp.InsertText("> ") // prefix the line, cursor ends after the prefix
 | `WithInputValue(*State[string])` | Reactive two-way text binding |
 | `WithInputFocusColor(Color)` | Border color when focused (default Cyan) |
 | `WithInputBorderGradient(Gradient)` | Border gradient when unfocused |
-| `WithInputElementOptions(opts ...Option)` | Element options for the root element, applied after the input's own options (used by generated code for `class`). A fixed width or a border set this way also sizes the text viewport |
+| `WithInputElementOptions(opts ...Option)` | Element options for the root element, applied after the input's own options (used by generated code for `class`). A width or a border set this way also sizes the text viewport, which follows the laid-out width for percentage and flex widths |
 | `WithInputFocusGradient(Gradient)` | Border gradient when focused |
 | `WithInputOnSubmit(func(string))` | Enter key callback |
 | `WithInputOnChange(func(string))` | Text change callback |
@@ -201,7 +201,7 @@ Creates a new `TextArea` with the given options. Default values:
 
 | Setting     | Default      | Description                              |
 |-------------|--------------|------------------------------------------|
-| Width       | 40           | Characters per line before wrapping      |
+| Width       | 40           | Characters per line before wrapping, unless the layout assigns another width |
 | MaxHeight   | 0 (no limit) | Maximum rows of text visible             |
 | Border      | `BorderNone` | No border                                |
 | TextStyle   | `Style{}`    | Default terminal style                   |
@@ -377,7 +377,7 @@ Options follow the functional options pattern. Each returns a `TextAreaOption` (
 func WithTextAreaWidth(cells int) TextAreaOption
 ```
 
-Sets the width in characters. Text wraps at this boundary. Default: 40.
+Sets the width in characters. Text wraps at this boundary. Default: 40. When element options give the root a percentage, flex, or auto width instead, the text wraps at the width the layout assigns and the height follows the wrapped rows.
 
 ```go
 ta := tui.NewTextArea(tui.WithTextAreaWidth(80))
@@ -454,7 +454,7 @@ ta := tui.NewTextArea(
 func WithTextAreaElementOptions(opts ...Option) TextAreaOption
 ```
 
-Applies standard element options to the textarea's root element after its own options; generated code uses it for the `class` attribute. A fixed width or a border set this way also sizes the wrapping and reported height.
+Applies standard element options to the textarea's root element after its own options; generated code uses it for the `class` attribute. A width or a border set this way also sizes the wrapping and reported height; a percentage, flex, or auto width wraps at the width the layout assigns.
 
 ```go
 ta := tui.NewTextArea(tui.WithTextAreaElementOptions(tui.WithClass("border-rounded w-60")))

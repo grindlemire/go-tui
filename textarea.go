@@ -27,6 +27,11 @@ type TextArea struct {
 	onSubmit          func(string)
 	elementOpts       []Option
 
+	// Content width the layout engine last gave the root, valid once laidOut.
+	// Zero is a real width (a fully shrunk flex item), so it cannot mean unset.
+	layoutWidth int
+	laidOut     bool
+
 	// Reactive state
 	text      *State[string]
 	cursorPos *State[int]
@@ -166,13 +171,13 @@ func (t *TextArea) insertString(s string) {
 	}
 }
 
-// contentRows returns the number of content rows to render: the wrapped
-// lines plus the phantom cursor row, clamped to maxHeight. Note that when
-// content exceeds maxHeight the rows below the clamp (including the cursor's
-// row) are clipped; the textarea has no scroll-to-cursor.
-func (t *TextArea) contentRows(lines []string) int {
+// contentRows returns the number of content rows to render for lines wrapped
+// at width: the wrapped lines plus the phantom cursor row, clamped to
+// maxHeight. Note that when content exceeds maxHeight the rows below the clamp
+// (including the cursor's row) are clipped; the textarea has no scroll-to-cursor.
+func (t *TextArea) contentRows(lines []string, width int) int {
 	rows := len(lines)
-	if t.phantomCursorRow(lines) {
+	if t.phantomCursorRow(lines, width) {
 		rows++
 	}
 	rows = max(rows, 1)
@@ -184,7 +189,7 @@ func (t *TextArea) contentRows(lines []string) int {
 
 // Height returns the total rendered height including border.
 func (t *TextArea) Height() int {
-	height := t.contentRows(t.wrapText())
+	height := t.contentRows(t.wrapText(), t.wrapWidth())
 	if t.border != BorderNone {
 		height += 2
 	}
@@ -195,8 +200,9 @@ func (t *TextArea) Height() int {
 
 // Render returns the element tree for the text area.
 func (t *TextArea) Render(app *App) *Element {
-	lines := t.wrapText()
-	rows := t.contentRows(lines)
+	wrapWidth := t.wrapWidth()
+	lines := t.wrapTextAt(wrapWidth)
+	rows := t.contentRows(lines, wrapWidth)
 
 	opts := []Option{
 		WithDirection(Column),
@@ -211,6 +217,21 @@ func (t *TextArea) Render(app *App) *Element {
 	}
 	root := New(opts...)
 	root.Apply(t.elementOpts...)
+	// An auto-width root would otherwise size to the wrapped rows and pin the
+	// wrap width there; the configured width acts as its floor instead.
+	style := root.LayoutStyle()
+	if style.Width.IsAuto() && style.MinWidth.IsAuto() && t.width > 0 {
+		root.Apply(WithMinWidth(t.width))
+	}
+	// The rows were wrapped for this width; a frame laid out at another width
+	// re-renders so the rows match the box the engine gave it.
+	root.setOnLayout(func(e *Element) {
+		t.layoutWidth = e.ContentRect().Width
+		t.laidOut = true
+		if t.layoutWidth != wrapWidth {
+			e.MarkDirty()
+		}
+	})
 
 	// Height and focus styling depend on the final border, which element
 	// options (a class border) may have set.
@@ -227,8 +248,17 @@ func (t *TextArea) Render(app *App) *Element {
 			root.Apply(WithBorderGradient(*t.borderGradient))
 		}
 	}
+	// A fixed-width root knows its rows now. Otherwise the height is measured
+	// by the layout engine at the width it assigns, which breaks the cycle
+	// between wrap width and height.
 	if root.LayoutStyle().Height == Auto() {
-		root.Apply(WithHeight(totalHeight))
+		if style.Width.IsFixed() {
+			root.Apply(WithHeight(totalHeight))
+		} else {
+			root.setMeasure(func(contentWidth int) int {
+				return t.contentRows(t.wrapTextAt(contentWidth), contentWidth)
+			})
+		}
 	}
 
 	// Wire Element focus/blur to component focus/blur
@@ -489,10 +519,13 @@ func (t *TextArea) submit(ke KeyEvent) {
 
 // --- Text Wrapping and Cursor Position ---
 
-// wrapWidth returns the display columns available for text content. Borders
-// are drawn inside the element width, so they reduce the wrap width by one
-// column on each side.
+// wrapWidth returns the display columns available for text content: the
+// laid-out content width once the root has been laid out, and before that the
+// configured width minus the border, which is drawn inside the element width.
 func (t *TextArea) wrapWidth() int {
+	if t.laidOut {
+		return t.layoutWidth
+	}
 	w := t.width
 	if t.border != BorderNone {
 		w -= 2
@@ -500,19 +533,23 @@ func (t *TextArea) wrapWidth() int {
 	return w
 }
 
-// wrapText wraps the text to fit within the content width, respecting
+// wrapText wraps the text at the current wrap width.
+func (t *TextArea) wrapText() []string {
+	return t.wrapTextAt(t.wrapWidth())
+}
+
+// wrapTextAt wraps the text to fit within width columns, respecting
 // embedded newlines. Lines break at display-column boundaries, never
 // mid-grapheme-cluster: a wide cluster that does not fit moves to the next
 // line. Cursor math stays in rune indices, which remain consistent because
 // wrapping only changes where lines split, not their runes.
-func (t *TextArea) wrapText() []string {
+func (t *TextArea) wrapTextAt(width int) []string {
 	text := t.text.Get()
 	if text == "" {
 		return []string{""}
 	}
 
 	var lines []string
-	width := t.wrapWidth()
 
 	// Split on embedded newlines first
 	paragraphs := strings.SplitSeq(text, "\n")
@@ -549,7 +586,14 @@ func (t *TextArea) wrapText() []string {
 	return lines
 }
 
-// cursorRowCol returns the row and column of the cursor.
+// cursorRowCol returns the row and column of the cursor within lines wrapped
+// at the current wrap width.
+func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
+	return t.cursorRowColAt(lines, t.wrapWidth())
+}
+
+// cursorRowColAt returns the row and column of the cursor within lines, which
+// were wrapped at width.
 //
 // A cursor at the end of a display-full line has no column left to render in,
 // so it moves to the start of the next visual line (downstream affinity). This
@@ -557,7 +601,7 @@ func (t *TextArea) wrapText() []string {
 // is one past the last wrapped line (a phantom row that Render and Height
 // account for). A full line ended by a hard newline keeps the cursor at its
 // end, since the next row starts a different paragraph.
-func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
+func (t *TextArea) cursorRowColAt(lines []string, width int) (row, col int) {
 	text := t.text.Get()
 	pos := t.clampCursorPos()
 
@@ -565,7 +609,6 @@ func (t *TextArea) cursorRowCol(lines []string) (row, col int) {
 	currentRuneCol := 0    // rune index within the current line (returned as col)
 	currentDisplayCol := 0 // display column for wrap boundary detection
 	lineIdx := 0
-	width := t.wrapWidth()
 	wrapping := width > 0
 
 	runePos := 0
@@ -675,13 +718,13 @@ func (t *TextArea) posFromRowCol(lines []string, targetRow, targetCol int) int {
 }
 
 // phantomCursorRow reports whether the cursor sits one row past the last
-// wrapped line (end of text on a display-full line), which needs an extra
-// rendered row to host the cursor.
-func (t *TextArea) phantomCursorRow(lines []string) bool {
+// line wrapped at width (end of text on a display-full line), which needs an
+// extra rendered row to host the cursor.
+func (t *TextArea) phantomCursorRow(lines []string, width int) bool {
 	if !t.focused.Get() {
 		return false
 	}
-	row, _ := t.cursorRowCol(lines)
+	row, _ := t.cursorRowColAt(lines, width)
 	return row >= len(lines)
 }
 

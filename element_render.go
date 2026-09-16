@@ -82,6 +82,8 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 		e.onUpdate()
 	}
 
+	e.reportLayout()
+
 	rect := e.Rect()
 
 	// Skip if outside buffer bounds
@@ -210,6 +212,8 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	if e.hidden {
 		return
 	}
+
+	e.reportLayout()
 
 	childRect := e.Rect()
 

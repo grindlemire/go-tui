@@ -36,6 +36,27 @@ func (e *Element) SetLayout(l LayoutResult) {
 	e.layout = l
 }
 
+// setOnLayout installs a callback the render walk runs once per frame with
+// this element's final computed box.
+func (e *Element) setOnLayout(fn func(*Element)) {
+	e.onLayout = fn
+}
+
+// reportLayout runs the onLayout hook with this frame's final box. The render
+// walk calls it after every layout pass, including a scrollable parent's
+// scrollbar re-layout, so the hook sees each element once per frame.
+func (e *Element) reportLayout() {
+	if e.onLayout != nil {
+		e.onLayout(e)
+	}
+}
+
+// setMeasure installs the content measurer HeightForWidth consults instead of
+// the children: fn receives the content width and returns the content height.
+func (e *Element) setMeasure(fn func(contentWidth int) int) {
+	e.measure = fn
+}
+
 // GetLayout returns the last computed layout.
 func (e *Element) GetLayout() LayoutResult {
 	return e.layout
@@ -216,6 +237,19 @@ func (e *Element) HeightForWidth(width int) int {
 	// Scrollable elements have fixed viewport — don't expand based on content.
 	if e.scrollMode != ScrollNone {
 		_, h := e.IntrinsicSize()
+		return h
+	}
+
+	// Components that wrap their own content measure it at the assigned width.
+	if e.measure != nil {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		h := e.measure(max(contentWidth, 0)) + e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			h += 2
+		}
 		return h
 	}
 
