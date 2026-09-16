@@ -144,7 +144,7 @@ Use this section to quickly find the right files for a given change.
 
 ### Changing rendering / terminal output
 
-- `element_render.go` — RenderTree(), renderElement(): border drawing, text rendering, child recursion
+- `element_render.go` — Element.RenderTo() (layout + draw), Element.Render(app) (returns itself so Element satisfies Component), RenderTree(), renderElement(): border drawing, text rendering, child recursion
 - `render.go` — Render(), RenderFull(), RenderRegion(): diff computation, full redraw
 - `buffer.go` — Double-buffered character grid: front/back, Diff(), Swap(), SetCell(), Fill()
 - `cell.go` — Cell struct: Rune, Style, Width (CJK support)
@@ -406,6 +406,18 @@ templ App() {
         @Header("Hello")
         @Counter(0)
         @widgets.Footer("v1")
+    </div>
+}
+
+// Element expressions: @expr renders any *tui.Element or tui.Component value
+// ({expr} is text and must be a string). Index expressions are allowed.
+templ (t *tabs) Render() {
+    <div class="flex-col">
+        @t.content[t.active]
+        for _, el := range t.items {
+            @el
+        }
+        @t.footer
     </div>
 }
 
@@ -809,7 +821,7 @@ Additional optional interfaces add capabilities:
 | `Initializer` | `Init() func()` | Setup on mount; returned func is cleanup on unmount |
 | `WatcherProvider` | `Watchers() []Watcher` | Timers, tickers, channel watchers |
 | `PropsUpdater` | `UpdateProps(fresh Component)` | Receive updated props when re-rendered from cache |
-| `AppBinder` | `BindApp(app *App)` | Auto-called by mount system for State/Events fields |
+| `AppBinder` | `BindApp(app *App)` | Auto-called by mount system for State/Events and `@expr` component fields |
 | `AppUnbinder` | `UnbindApp()` | Detach app-bound resources on unmount |
 
 ## Event Handling

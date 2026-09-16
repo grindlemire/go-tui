@@ -384,7 +384,7 @@ func TestElement_Render_CalculatesIfDirty(t *testing.T) {
 	)
 
 	// Element starts dirty, Render should calculate
-	e.Render(buf, 30, 20)
+	e.RenderTo(buf, 30, 20)
 
 	if e.IsDirty() {
 		t.Error("Render should clear dirty flag after calculating")
@@ -409,7 +409,7 @@ func TestElement_Render_SkipsCalculateIfClean(t *testing.T) {
 	e.layout.Rect.X = 100
 
 	// Render should skip calculate since not dirty
-	e.Render(buf, 30, 20)
+	e.RenderTo(buf, 30, 20)
 
 	// Position should be unchanged (Calculate wasn't called)
 	if e.layout.Rect.X != 100 {
@@ -545,7 +545,7 @@ func TestRenderTree_TextWithBorder(t *testing.T) {
 			parent.AddChild(span)
 
 			buf := NewBuffer(40, 20)
-			parent.Render(buf, 40, 20)
+			parent.RenderTo(buf, 40, 20)
 
 			rect := span.Rect()
 			if rect.Width != tt.wantWidth {
@@ -601,7 +601,7 @@ func TestRenderTree_TextBorderInScrollable(t *testing.T) {
 	)
 	parent.AddChild(span)
 
-	parent.Render(buf, 40, 20)
+	parent.RenderTo(buf, 40, 20)
 
 	// Check span border corners in scrollable context
 	parentCR := parent.ContentRect()
@@ -681,7 +681,7 @@ func TestRenderTree_TextStyleInheritance(t *testing.T) {
 			parent.AddChild(child)
 
 			buf := NewBuffer(20, 10)
-			parent.Render(buf, 20, 10)
+			parent.RenderTo(buf, 20, 10)
 
 			childRect := child.Rect()
 			cell := buf.Cell(childRect.X, childRect.Y)
@@ -722,7 +722,7 @@ func TestRenderTree_BackgroundInheritance(t *testing.T) {
 			parent.AddChild(child)
 
 			buf := NewBuffer(20, 10)
-			parent.Render(buf, 20, 10)
+			parent.RenderTo(buf, 20, 10)
 
 			// Check text cell has inherited/overridden background
 			childRect := child.Rect()
@@ -745,7 +745,7 @@ func TestRenderTree_DeepInheritance(t *testing.T) {
 	parent.AddChild(child)
 
 	buf := NewBuffer(30, 10)
-	grandparent.Render(buf, 30, 10)
+	grandparent.RenderTo(buf, 30, 10)
 
 	childRect := child.Rect()
 	cell := buf.Cell(childRect.X, childRect.Y)
@@ -769,7 +769,7 @@ func TestRenderTree_BorderStyleDoesNotInherit(t *testing.T) {
 	parent.AddChild(child)
 
 	buf := NewBuffer(20, 10)
-	parent.Render(buf, 20, 10)
+	parent.RenderTo(buf, 20, 10)
 
 	// Child's border should use default style, not parent's red border style
 	childRect := child.Rect()
@@ -792,7 +792,7 @@ func TestRenderTree_HRInheritsTextStyle(t *testing.T) {
 	parent.AddChild(hr)
 
 	buf := NewBuffer(20, 10)
-	parent.Render(buf, 20, 10)
+	parent.RenderTo(buf, 20, 10)
 
 	// HR should render with inherited cyan color
 	hrRect := hr.Rect()
@@ -881,7 +881,7 @@ func TestRenderTree_AutoContrast(t *testing.T) {
 			parent.AddChild(child)
 
 			buf := NewBuffer(20, 10)
-			parent.Render(buf, 20, 10)
+			parent.RenderTo(buf, 20, 10)
 
 			childRect := child.Rect()
 			cell := buf.Cell(childRect.X, childRect.Y)

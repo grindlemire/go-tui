@@ -10,7 +10,7 @@ func TestElement_ElementAt_ReturnsNilForPointOutsideBounds(t *testing.T) {
 	e := New(WithWidth(10), WithHeight(10))
 	// Calculate layout so the element has a position
 	buf := NewBuffer(80, 25)
-	e.Render(buf, 80, 25)
+	e.RenderTo(buf, 80, 25)
 
 	result := e.ElementAt(50, 50)
 	if result != nil {
@@ -22,7 +22,7 @@ func TestElement_ElementAt_ReturnsSelfForPointInsideBounds(t *testing.T) {
 	e := New(WithWidth(10), WithHeight(10))
 	// Calculate layout so the element has a position
 	buf := NewBuffer(80, 25)
-	e.Render(buf, 80, 25)
+	e.RenderTo(buf, 80, 25)
 
 	result := e.ElementAt(5, 5)
 	if result != e {
@@ -41,7 +41,7 @@ func TestElement_ElementAt_ReturnsChildForPointInsideChild(t *testing.T) {
 
 	// Calculate layout
 	buf := NewBuffer(100, 100)
-	parent.Render(buf, 100, 100)
+	parent.RenderTo(buf, 100, 100)
 
 	// Point inside child bounds (child starts at 0,0 and is 50x50)
 	result := parent.ElementAt(10, 10)
@@ -65,7 +65,7 @@ func TestElement_ElementAt_ReturnsDeepestChild(t *testing.T) {
 
 	// Calculate layout
 	buf := NewBuffer(100, 100)
-	root.Render(buf, 100, 100)
+	root.RenderTo(buf, 100, 100)
 
 	// Point inside grandchild bounds (should be at 0,0)
 	result := root.ElementAt(10, 10)
@@ -89,7 +89,7 @@ func TestElement_ElementAt_LastChildTakesPrecedence(t *testing.T) {
 
 	// Calculate layout - both children will be at position (0,0)
 	buf := NewBuffer(100, 100)
-	parent.Render(buf, 100, 100)
+	parent.RenderTo(buf, 100, 100)
 
 	result := parent.ElementAt(10, 10)
 	// child2 was added last, so it should take precedence
@@ -104,7 +104,7 @@ func TestElement_ElementAtPoint_ReturnsFocusable(t *testing.T) {
 	// Test that ElementAtPoint returns a Focusable interface
 	e := New(WithWidth(10), WithHeight(10))
 	buf := NewBuffer(80, 25)
-	e.Render(buf, 80, 25)
+	e.RenderTo(buf, 80, 25)
 
 	result := e.ElementAtPoint(5, 5)
 	if result == nil {
@@ -119,7 +119,7 @@ func TestElement_ElementAtPoint_ReturnsFocusable(t *testing.T) {
 func TestElement_ElementAtPoint_ReturnsNilForPointOutsideBounds(t *testing.T) {
 	e := New(WithWidth(10), WithHeight(10))
 	buf := NewBuffer(80, 25)
-	e.Render(buf, 80, 25)
+	e.RenderTo(buf, 80, 25)
 
 	result := e.ElementAtPoint(50, 50)
 	if result != nil {

@@ -35,6 +35,10 @@ type Generator struct {
 	// These fields need BindApp calls in the generated BindApp method.
 	componentExprFields []string
 
+	// componentExprIndexedFields tracks receiver slice/map fields whose values are
+	// rendered through an index (@c.items[i]) or a loop over the field (@it).
+	componentExprIndexedFields []string
+
 	// Conditional counter for reactive if wrapper elements (__cond_0, __cond_1, etc.)
 	condCounter int
 
@@ -50,8 +54,8 @@ type Generator struct {
 	// to emit app.Mount(receiverVar, index, factory).
 	currentReceiver string
 
-	// loopIndexStack names synthetic loop index variables (__idx_N) by depth.
-	loopIndexStack []string
+	// loopVarStack records each enclosing loop's value variable and iterable by depth.
+	loopVarStack []loopVarEntry
 
 	// mountKeyParts holds the identity segments in scope for mount key expressions.
 	mountKeyParts []mountKeySegment
@@ -351,17 +355,17 @@ func (g *Generator) pushLoopIndex(loop *ForLoop) string {
 	if loop.Index != "" && loop.Index != "_" {
 		idxVar = loop.Index
 	} else {
-		idxVar = fmt.Sprintf("__idx_%d", len(g.loopIndexStack))
+		idxVar = fmt.Sprintf("__idx_%d", len(g.loopVarStack))
 	}
-	g.loopIndexStack = append(g.loopIndexStack, idxVar)
+	g.loopVarStack = append(g.loopVarStack, loopVarEntry{value: loop.Value, iterable: loop.Iterable})
 	g.mountKeyParts = append(slices.Clone(g.mountKeyParts), mountKeySegment{expr: idxVar, fromLoop: true})
 	return idxVar
 }
 
 // popLoopIndex removes the most recent loop index variable from the stack.
 func (g *Generator) popLoopIndex() {
-	if len(g.loopIndexStack) > 0 {
-		g.loopIndexStack = g.loopIndexStack[:len(g.loopIndexStack)-1]
+	if len(g.loopVarStack) > 0 {
+		g.loopVarStack = g.loopVarStack[:len(g.loopVarStack)-1]
 	}
 	if len(g.mountKeyParts) > 0 {
 		g.mountKeyParts = g.mountKeyParts[:len(g.mountKeyParts)-1]
@@ -565,4 +569,10 @@ func (g *Generator) getSetterForAttribute(attr string) string {
 	default:
 		return ""
 	}
+}
+
+// loopVarEntry is one enclosing for loop: its value variable and iterable expression.
+type loopVarEntry struct {
+	value    string
+	iterable string
 }

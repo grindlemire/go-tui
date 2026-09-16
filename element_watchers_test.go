@@ -74,7 +74,7 @@ func TestElement_SetOnUpdate(t *testing.T) {
 
 	// onUpdate is called during render
 	buf := NewBuffer(10, 10)
-	e.Render(buf, 10, 10)
+	e.RenderTo(buf, 10, 10)
 
 	if !called {
 		t.Error("SetOnUpdate callback should be called during Render")

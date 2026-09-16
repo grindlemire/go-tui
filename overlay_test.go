@@ -35,7 +35,7 @@ func TestRenderElement_SkipsOverlayChildren(t *testing.T) {
 	parent.AddChild(overlay)
 
 	buf := NewBuffer(20, 3)
-	parent.Render(buf, 20, 3)
+	parent.RenderTo(buf, 20, 3)
 
 	content := buf.String()
 	if !containsSubstring(content, "visible") {

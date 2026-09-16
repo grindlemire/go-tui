@@ -7,6 +7,8 @@ func collectComponentWatchers(rootComp Component, root *Element) []Watcher {
 
 	walkComponents(rootComp, root, func(comp Component) {
 		switch c := comp.(type) {
+		case *Element:
+			// Already started by the root tree walk.
 		case WatcherProvider:
 			watchers = append(watchers, c.Watchers()...)
 		case Viewable:

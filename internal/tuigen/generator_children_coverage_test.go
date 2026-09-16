@@ -455,6 +455,43 @@ templ (c *shell) Render() {
 				":= c.editor.Render(app)",
 			},
 		},
+		"indexed element expression as element child": {
+			input: `package x
+
+import "github.com/grindlemire/go-tui"
+
+type component struct {
+	active  int
+	content []*tui.Element
+}
+
+templ (c *component) Render() {
+	<div>@c.content[c.active]</div>
+}`,
+			wantContains: []string{
+				":= c.content[c.active].Render(app)",
+				".AddChild(__tui_",
+			},
+		},
+		"loop variable element expression": {
+			input: `package x
+
+type component struct {
+	items []*tui.Element
+}
+
+templ (c *component) Render() {
+	<div>
+		for _, el := range c.items {
+			@el
+		}
+	</div>
+}`,
+			wantContains: []string{
+				"for __idx_0, el := range c.items {",
+				":= el.Render(app)",
+			},
+		},
 	}
 
 	for name, tt := range tests {

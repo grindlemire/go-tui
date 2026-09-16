@@ -189,6 +189,8 @@ type AppUnbinder interface {
 
 Called by the framework when a component leaves the tree: on unmount during sweep, or when the root is replaced via `SetRootComponent`, `SetRoot`, or `SetRootView`. This detaches app-bound resources such as topic-based `Events[T]` subscriptions.
 
+A component held in a prop field that its host renders through `@expr` is also unbound every time the host receives new props, and rebound through `BindApp` in the same render when the same instance is passed again. A hand-written `UnbindApp` must therefore only release what `BindApp` reacquires.
+
 You usually don't implement this manually. Generated code handles it for `.gsx` components that contain `Events` fields.
 
 ## PropsUpdater
@@ -236,7 +238,7 @@ Each generated method is a thin wrapper around an unexported helper containing t
 
 | Generated method | Delegation helper |
 |------------------|-------------------|
-| `UpdateProps` | `updatePropsFields(fresh Component)` copies prop fields |
+| `UpdateProps` | `updatePropsFields(fresh Component)` unbinds `@expr` prop fields, then copies prop fields |
 | `BindApp` | `bindAppFields(app *App)` wires `State`, `Events`, and `*App` fields |
 | `UnbindApp` | `unbindAppFields()` detaches `Events` subscriptions |
 

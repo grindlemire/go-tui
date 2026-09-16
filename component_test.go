@@ -17,3 +17,14 @@ func (m *mockWatcherProvider) Watchers() []Watcher {
 func TestWatcherProvider_Interface(t *testing.T) {
 	var _ WatcherProvider = &mockWatcherProvider{}
 }
+
+func TestElement_Render_ReturnsSelf(t *testing.T) {
+	app := newTestApp(20, 5)
+	el := New(WithText("hi"))
+
+	var comp Component = el
+	got := comp.Render(app)
+	if got != el {
+		t.Fatalf("Element.Render(app) = %p, want the same element %p", got, el)
+	}
+}

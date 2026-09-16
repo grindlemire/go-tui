@@ -22,7 +22,7 @@ func TestIntegration_BasicFlow(t *testing.T) {
 
 	// Render to buffer
 	buf := NewBuffer(80, 24)
-	root.Render(buf, 80, 24)
+	root.RenderTo(buf, 80, 24)
 
 	// Verify layout was calculated
 	panelRect := panel.Rect()
@@ -75,7 +75,7 @@ func TestIntegration_NestedLayouts(t *testing.T) {
 
 	// Render
 	buf := NewBuffer(100, 50)
-	root.Render(buf, 100, 50)
+	root.RenderTo(buf, 100, 50)
 
 	// Verify topRow
 	topRect := topRow.Rect()
@@ -203,7 +203,7 @@ func TestIntegration_FlexGrowShrink(t *testing.T) {
 			}
 
 			buf := NewBuffer(tt.parentWidth, 50)
-			root.Render(buf, tt.parentWidth, 50)
+			root.RenderTo(buf, tt.parentWidth, 50)
 
 			for i, child := range children {
 				if child.Rect().Width != tt.expectedSizes[i] {
@@ -249,7 +249,7 @@ func TestIntegration_MixedElementAndText(t *testing.T) {
 	// Render elements first (for layout and borders)
 	// Text is now rendered automatically as part of RenderTree
 	buf := NewBuffer(80, 24)
-	root.Render(buf, 80, 24)
+	root.RenderTo(buf, 80, 24)
 
 	// Verify panel is centered in root
 	panelRect := panel.Rect()

@@ -24,7 +24,7 @@ func TestIntegration_DeepNesting(t *testing.T) {
 	}
 
 	buf := NewBuffer(100, 100)
-	root.Render(buf, 100, 100)
+	root.RenderTo(buf, 100, 100)
 
 	// Each level adds 2 padding on each side = 4 per level
 	// Root: 100x100, content = 96x96
@@ -92,7 +92,7 @@ func TestIntegration_Centering(t *testing.T) {
 			root.AddChild(child)
 
 			buf := NewBuffer(tt.parentWidth, tt.parentHeight)
-			root.Render(buf, tt.parentWidth, tt.parentHeight)
+			root.RenderTo(buf, tt.parentWidth, tt.parentHeight)
 
 			childRect := child.Rect()
 			if childRect.X != tt.expectedX {
@@ -114,7 +114,7 @@ func TestIntegration_RenderOutput(t *testing.T) {
 	)
 
 	buf := NewBuffer(10, 5)
-	panel.Render(buf, 10, 5)
+	panel.RenderTo(buf, 10, 5)
 
 	// Build expected output
 	// ┌────────┐
@@ -191,7 +191,7 @@ func TestIntegration_GapBetweenChildren(t *testing.T) {
 	root.AddChild(child1, child2, child3)
 
 	buf := NewBuffer(100, 100)
-	root.Render(buf, 100, 100)
+	root.RenderTo(buf, 100, 100)
 
 	// Verify positions with gap
 	// child1: x=0, width=20
@@ -391,7 +391,7 @@ func TestIntegration_BorderTitle(t *testing.T) {
 			)
 			el.Apply(tt.opts...)
 			buf := NewBuffer(tt.width, tt.height)
-			el.Render(buf, tt.width, tt.height)
+			el.RenderTo(buf, tt.width, tt.height)
 			term := NewMockTerminal(tt.width, tt.height)
 			Render(term, buf)
 			output := term.StringTrimmed()
@@ -462,7 +462,7 @@ func TestIntegration_BorderTitleClipped(t *testing.T) {
 			outer.AddChild(inner)
 
 			buf := NewBuffer(20, tt.outerHeight)
-			outer.Render(buf, 20, tt.outerHeight)
+			outer.RenderTo(buf, 20, tt.outerHeight)
 			term := NewMockTerminal(20, tt.outerHeight)
 			Render(term, buf)
 			output := term.StringTrimmed()

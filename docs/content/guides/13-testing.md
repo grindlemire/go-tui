@@ -149,7 +149,7 @@ func TestPanel_RendersBorder(t *testing.T) {
 
     // Render to a buffer
     buf := tui.NewBuffer(80, 24)
-    root.Render(buf, 80, 24)
+    root.RenderTo(buf, 80, 24)
 
     // Check the panel got the right dimensions
     rect := panel.Rect()
@@ -360,7 +360,7 @@ func TestLayout_AdaptsToResize(t *testing.T) {
             root.AddChild(panel)
 
             buf := tui.NewBuffer(tt.width, tt.height)
-            root.Render(buf, tt.width, tt.height)
+            root.RenderTo(buf, tt.width, tt.height)
 
             rect := panel.Rect()
             if rect.Width != tt.wantPanelW {

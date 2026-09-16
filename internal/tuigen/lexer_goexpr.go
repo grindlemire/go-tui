@@ -69,7 +69,7 @@ func (l *Lexer) ReadGoExpr() Token {
 // skipStringInExpr skips a string literal inside a Go expression.
 func (l *Lexer) skipStringInExpr() {
 	l.readChar() // consume opening "
-	for l.ch != '"' && l.ch != 0 {
+	for l.ch != '"' && l.ch != 0 && l.ch != '\n' {
 		if l.ch == '\\' {
 			l.readChar() // skip escape
 		}

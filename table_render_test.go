@@ -60,7 +60,7 @@ func TestTableRender(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			table := tt.buildTable()
 			buf := NewBuffer(tt.width, tt.height)
-			table.Render(buf, tt.width, tt.height)
+			table.RenderTo(buf, tt.width, tt.height)
 
 			for pos, expectedRune := range tt.expectCells {
 				cell := buf.Cell(pos[0], pos[1])

@@ -91,6 +91,26 @@ templ (c *shell) Render() {
 				"ed := c.editor.Render(app)",
 			},
 		},
+		"indexed element expression binding renders with app": {
+			input: `package x
+
+import "github.com/grindlemire/go-tui"
+
+type component struct {
+	active  int
+	content []*tui.Element
+}
+
+templ (c *component) Render() {
+	active := @c.content[c.active]
+	<div>{active}</div>
+}`,
+			useAnalyzer: true,
+			wantContains: []string{
+				"active := c.content[c.active].Render(app)",
+				".AddChild(active)",
+			},
+		},
 		"let binding inside element adds to parent": {
 			input: `package x
 templ App() {

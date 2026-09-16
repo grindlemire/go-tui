@@ -198,6 +198,25 @@ The generated code builds a `[]*tui.Element` slice from the children block and p
 
 This is useful when you need a wrapper component that carries its own state (timers, scroll position, internal selections) while still accepting arbitrary content from the parent.
 
+### Prebuilt Elements
+
+A struct component can also hold elements that were built ahead of time and insert them with `@expr`. The expression can be a field, an index into a slice or map, or a loop variable, as long as its value is a `*tui.Element` or a `tui.Component`:
+
+```gsx
+type tabs struct {
+    active  int
+    content []*tui.Element
+}
+
+templ (t *tabs) Render() {
+    <div class="flex-col">
+        @t.content[t.active]
+    </div>
+}
+```
+
+`{expr}` is reserved for text and must be a `string`, so `{t.content[t.active]}` is a Go compile error. When the values are components with their own `State` or `Events`, the generated `BindApp` binds them for you. See [Element expressions](../reference/gsx-syntax.md#element-expressions) in the syntax reference for the exact rules.
+
 ### The Component Interface
 
 Every struct component implements this interface:
@@ -207,6 +226,8 @@ type Component interface {
     Render(app *App) *Element
 }
 ```
+
+`Element` implements it too: its `Render(app)` returns the element itself, which is what lets `@expr` accept a plain element.
 
 You don't write `Render(app *App) *Element` by hand. The `templ` keyword handles the signature. You write `templ (c *counter) Render()` and `tui generate` produces the correct Go method.
 

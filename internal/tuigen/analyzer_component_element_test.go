@@ -192,6 +192,14 @@ templ Maybe(show bool, child tui.Component) {
 			wantError:     true,
 			errorContains: "component expression @child can only be used inside a struct component",
 		},
+		"indexed component expr in function templ errors": {
+			input: `package x
+templ Pick(content []*tui.Element, active int) {
+	<div>@content[active]</div>
+}`,
+			wantError:     true,
+			errorContains: "component expression @content[active] can only be used inside a struct component",
+		},
 		"component expr in method templ is allowed": {
 			input: `package x
 type host struct{ child tui.Component }

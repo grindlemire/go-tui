@@ -33,6 +33,44 @@ templ (c *card) Render() {
 }
 `,
 		},
+		"indexed component expression formats unchanged": {
+			input: `package main
+
+templ (c *card) Render() {
+	x := @c.items[i]
+	<div>
+		@c.content[c.active]
+		for i, el := range c.items {
+			if i == c.active {
+				@c.items[i].view
+			} else {
+				@c.m["fallback"]
+			}
+			@el
+		}
+		{x}
+	</div>
+}
+`,
+			want: `package main
+
+templ (c *card) Render() {
+	x := @c.items[i]
+	<div>
+		@c.content[c.active]
+		for i, el := range c.items {
+			if i == c.active {
+				@c.items[i].view
+			} else {
+				@c.m["fallback"]
+			}
+			@el
+		}
+		{x}
+	</div>
+}
+`,
+		},
 		"component expression with leading comment": {
 			input: `package main
 

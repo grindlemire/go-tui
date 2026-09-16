@@ -598,3 +598,127 @@ func TestLexer_QualifiedComponentCall(t *testing.T) {
 		})
 	}
 }
+
+func TestLexer_AtExprIndex(t *testing.T) {
+	type tc struct {
+		input       string
+		wantType    TokenType
+		wantLiteral string
+		wantNext    string // literal of the token after the @ token, "" to skip
+		wantErr     bool
+	}
+
+	tests := map[string]tc{
+		"index expression stays one TokenAtExpr": {
+			input:       "@c.content[c.active]",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.content[c.active]",
+		},
+		"index expression stops at closing tag": {
+			input:       "@c.content[c.active]</div>",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.content[c.active]",
+			wantNext:    "</",
+		},
+		"index expression stops at whitespace text": {
+			input:       "@c.content[c.active] (beta)",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.content[c.active]",
+		},
+		"field access after index continues the expression": {
+			input:       "@c.items[i].view",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.items[i].view",
+		},
+		"chained indexes": {
+			input:       "@c.grid[i][j]",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.grid[i][j]",
+		},
+		"nested index inside index": {
+			input:       "@c.rows[c.order[0]]",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.rows[c.order[0]]",
+		},
+		"string key": {
+			input:       `@c.m["key"]`,
+			wantType:    TokenAtExpr,
+			wantLiteral: `c.m["key"]`,
+		},
+		"string key containing a bracket": {
+			input:       `@c.m["]"]`,
+			wantType:    TokenAtExpr,
+			wantLiteral: `c.m["]"]`,
+		},
+		"rune key containing a bracket": {
+			input:       `@c.m[']']`,
+			wantType:    TokenAtExpr,
+			wantLiteral: `c.m[']']`,
+		},
+		"raw string key containing a bracket": {
+			input:       "@c.m[`]`]",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.m[`]`]",
+		},
+		"call inside index stays an expression": {
+			input:       "@c.items[idx(i)]",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.items[idx(i)]",
+		},
+		"uppercase name with index is an expression not a call": {
+			input:       "@Widgets[0]",
+			wantType:    TokenAtExpr,
+			wantLiteral: "Widgets[0]",
+		},
+		"paren after index does not make a call": {
+			input:       "@c.items[i](",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.items[i]",
+		},
+		"unterminated index at EOF reports an error": {
+			input:       "@c.items[i",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.items[i",
+			wantErr:     true,
+		},
+		"unterminated index stops at newline": {
+			input:       "@c.items[i\n<span>x</span>",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.items[i",
+			wantNext:    "<",
+			wantErr:     true,
+		},
+		"unterminated string in index stops at newline": {
+			input:       "@c.m[\"abc]\n<span>x</span>",
+			wantType:    TokenAtExpr,
+			wantLiteral: "c.m[\"abc]",
+			wantNext:    "<",
+			wantErr:     true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			l := NewLexer("test.gsx", tt.input)
+			tok := l.Next()
+			if tok.Type != tt.wantType {
+				t.Errorf("type = %s, want %s", tok.Type, tt.wantType)
+			}
+			if tok.Literal != tt.wantLiteral {
+				t.Errorf("literal = %q, want %q", tok.Literal, tt.wantLiteral)
+			}
+			if tt.wantNext != "" {
+				next := l.Next()
+				for next.Type == TokenNewline {
+					next = l.Next()
+				}
+				if next.Literal != tt.wantNext {
+					t.Errorf("next literal = %q, want %q", next.Literal, tt.wantNext)
+				}
+			}
+			if gotErr := l.Errors().HasErrors(); gotErr != tt.wantErr {
+				t.Errorf("HasErrors() = %v, want %v (errors: %v)", gotErr, tt.wantErr, l.Errors())
+			}
+		})
+	}
+}

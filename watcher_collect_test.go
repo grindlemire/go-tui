@@ -168,3 +168,46 @@ func TestCollectComponentWatchers_MountedView(t *testing.T) {
 		})
 	}
 }
+
+type countStartWatcher struct{ starts int }
+
+func (c *countStartWatcher) Start(chan<- func(), <-chan struct{}) { c.starts++ }
+
+type elementMountHost struct{ el *Element }
+
+func (h *elementMountHost) Render(app *App) *Element {
+	root := New()
+	root.AddChild(app.Mount(h, 0, func() Component { return h.el }))
+	return root
+}
+
+// An Element used directly as a component must not have its watchers
+// started twice (once by the tree walk, once by the component walk).
+func TestElementAsComponent_WatchersStartOnce(t *testing.T) {
+	type tc struct {
+		setRoot func(app *App, el *Element)
+	}
+
+	tests := map[string]tc{
+		"SetRootComponent(el)": {
+			setRoot: func(app *App, el *Element) { app.SetRootComponent(el) },
+		},
+		"Mount(el)": {
+			setRoot: func(app *App, el *Element) { app.SetRootComponent(&elementMountHost{el: el}) },
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			w := &countStartWatcher{}
+			el := New()
+			el.AddWatcher(w)
+			app := newTestApp(20, 5)
+			tt.setRoot(app, el)
+			app.Render()
+			if w.starts != 1 {
+				t.Fatalf("watcher Start calls = %d, want 1", w.starts)
+			}
+		})
+	}
+}
