@@ -45,9 +45,10 @@ func (e *Element) SetBorder(border BorderStyle) {
 	e.border = border
 }
 
-// BorderStyle returns the style used to render the border.
+// BorderStyle returns the unfocused border style, the one SetBorderStyle
+// sets and Blur restores. Rendering reads activeBorderStyle.
 func (e *Element) BorderStyle() Style {
-	return e.borderStyle
+	return *e.borderStyleSlot()
 }
 
 // FocusBorderStyle returns the border style used when focused, or nil.
@@ -70,9 +71,10 @@ func (e *Element) activeBorderStyle() Style {
 	return e.borderStyle
 }
 
-// SetBorderStyle sets the style used to render the border.
+// SetBorderStyle sets the style used to render the border. While a focus
+// highlight is showing, the new style takes effect on blur.
 func (e *Element) SetBorderStyle(style Style) {
-	e.borderStyle = style
+	*e.borderStyleSlot() = style
 }
 
 // BorderTitle returns the title string drawn in the top border, or "" if none.

@@ -221,7 +221,7 @@ func (t *TextArea) Render(app *App) *Element {
 			if t.focusGradient != nil {
 				root.Apply(WithBorderGradient(*t.focusGradient))
 			} else if t.focusColor != nil {
-				root.Apply(WithBorderStyle(NewStyle().Foreground(*t.focusColor)))
+				root.highlightBorder(NewStyle().Foreground(*t.focusColor))
 			}
 		} else if t.borderGradient != nil {
 			root.Apply(WithBorderGradient(*t.borderGradient))

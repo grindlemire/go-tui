@@ -238,7 +238,7 @@ func (inp *Input) Render(app *App) *Element {
 			if inp.focusGradient != nil {
 				root.Apply(WithBorderGradient(*inp.focusGradient))
 			} else if inp.focusColor != nil {
-				root.Apply(WithBorderStyle(NewStyle().Foreground(*inp.focusColor)))
+				root.highlightBorder(NewStyle().Foreground(*inp.focusColor))
 			}
 		} else if inp.borderGradient != nil {
 			root.Apply(WithBorderGradient(*inp.borderGradient))

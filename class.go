@@ -74,7 +74,7 @@ type classBase struct {
 
 func (e *Element) captureClassBase() *classBase {
 	return &classBase{
-		style: e.style, textAlign: e.textAlign, border: e.border, borderStyle: e.borderStyle,
+		style: e.style, textAlign: e.textAlign, border: e.border, borderStyle: *e.borderStyleSlot(),
 		background: e.background, scrollbarStyle: e.scrollbarStyle, scrollbarThumbStyle: e.scrollbarThumbStyle,
 		scrollMode: e.scrollMode, focusable: e.focusable, tabStop: e.tabStop, overflow: e.overflow,
 		hidden: e.hidden, truncate: e.truncate, scrollbarHidden: e.scrollbarHidden, noWrap: e.noWrap,
@@ -129,7 +129,7 @@ func classRestore(e *Element, b, a *classBase, op tailwind.Op) {
 	case tailwind.Border:
 		restore(&e.border, b.border, a.border)
 	case tailwind.BorderColor:
-		restore(&e.borderStyle, b.borderStyle, a.borderStyle)
+		restore(e.borderStyleSlot(), b.borderStyle, a.borderStyle)
 	case tailwind.Background:
 		restore(&e.background, b.background, a.background)
 	case tailwind.ScrollbarColor:
