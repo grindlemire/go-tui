@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.22.0](https://github.com/grindlemire/go-tui/compare/v0.21.1...v0.22.0) (2026-09-16)
+
+
+### Features
+
+* render element expressions with [@expr](https://github.com/expr) ([#156](https://github.com/grindlemire/go-tui/issues/156)) ([64e001a](https://github.com/grindlemire/go-tui/commit/64e001ad33927f01db0234c1cd1b67cde6e05965))
+
+
+### Bug Fixes
+
+* **gsx:** apply expression-valued class attributes at runtime ([#152](https://github.com/grindlemire/go-tui/issues/152)) ([e127b0d](https://github.com/grindlemire/go-tui/commit/e127b0dbb562c061a7e7b74af763787ad2516a0c))
+
 ## [0.21.1](https://github.com/grindlemire/go-tui/compare/v0.21.0...v0.21.1) (2026-09-15)
 
 
