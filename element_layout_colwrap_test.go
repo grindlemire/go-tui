@@ -101,27 +101,38 @@ func TestColumnNonStretchChildMeasuredAtClampedWidth(t *testing.T) {
 }
 
 // HeightForWidth on a column container measures each non-stretch child at
-// the width it will receive, min(intrinsic, content width), matching layout.
+// min(intrinsic, content width), matching Phase 5. Only observable when the
+// child's height depends on its own width: a percent-width text with min-w-0
+// wraps at the row's intrinsic 29 columns but not at the full 60.
 func TestColumnHeightForWidthClampsNonStretchChild(t *testing.T) {
-	type tc struct {
-		width int
-		want  int
+	text := New(WithText(tableWrapCellText), WithWidthPercent(50), WithMinWidth(0))
+	row := New(WithDisplay(DisplayFlex), WithDirection(Row))
+	row.AddChild(text)
+	inner := New(WithDisplay(DisplayFlex), WithDirection(Column), WithAlign(AlignStart))
+	inner.AddChild(row)
+	sentinel := New(WithText("SENTINEL"))
+	outer := New(WithDisplay(DisplayFlex), WithDirection(Column), WithWidth(60))
+	outer.AddChild(inner)
+	outer.AddChild(sentinel)
+
+	if got := inner.HeightForWidth(60); got != 3 {
+		t.Errorf("inner.HeightForWidth(60) = %d, want 3", got)
 	}
 
-	tests := map[string]tc{
-		"narrower than intrinsic wraps": {width: 20, want: 2},
-		"wider than intrinsic fits":     {width: 40, want: 1},
+	outer.Calculate(60, 24)
+
+	// The row is clamped to its intrinsic 29 columns, so the text gets 14
+	// and wraps to 3 rows; that height must reach the outer column.
+	if got := text.Rect(); got.Width != 14 || got.Height != 3 {
+		t.Errorf("text rect = %dx%d, want 14x3", got.Width, got.Height)
 	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			table, _ := newWrapTestTable()
-			container := New(WithDisplay(DisplayFlex), WithDirection(Column), WithAlign(AlignStart))
-			container.AddChild(table)
-
-			if got := container.HeightForWidth(tt.width); got != tt.want {
-				t.Errorf("HeightForWidth(%d) = %d, want %d", tt.width, got, tt.want)
-			}
-		})
+	if got := row.Rect().Height; got != 3 {
+		t.Errorf("row height = %d, want 3", got)
+	}
+	if got := inner.Rect().Height; got != 3 {
+		t.Errorf("inner column height = %d, want 3", got)
+	}
+	if got := sentinel.Rect().Y; got != 3 {
+		t.Errorf("sentinel Y = %d, want 3 (below the inner column)", got)
 	}
 }
