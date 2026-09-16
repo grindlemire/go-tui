@@ -138,13 +138,12 @@ func TestColumnHeightForWidthClampsNonStretchChild(t *testing.T) {
 }
 
 // Issue #164: computeBorderBox applies MinWidth/MaxWidth after the slot is
-// assigned, so a column child is laid out at the constrained width. The
-// wrapping measurement must use that same width or the allocated height is
-// wrong whenever the constraint changes how the text wraps.
+// assigned. The nested column pins both wrap measurements at that width:
+// recomputeTextWrapping for the child and Element.HeightForWidth for inner.
 func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 	type tc struct {
 		containerWidth int
-		containerOpts  []Option
+		innerOpts      []Option
 		childOpts      []Option
 		wantChildWidth int
 		wantHeight     int
@@ -153,7 +152,7 @@ func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 	tests := map[string]tc{
 		"max-w-15 items-start": {
 			containerWidth: 20,
-			containerOpts:  []Option{WithAlign(AlignStart)},
+			innerOpts:      []Option{WithAlign(AlignStart)},
 			childOpts:      []Option{WithMaxWidth(15)},
 			wantChildWidth: 15,
 			wantHeight:     3,
@@ -166,7 +165,7 @@ func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 		},
 		"max-w-10 items-start": {
 			containerWidth: 20,
-			containerOpts:  []Option{WithAlign(AlignStart)},
+			innerOpts:      []Option{WithAlign(AlignStart)},
 			childOpts:      []Option{WithMaxWidth(10)},
 			wantChildWidth: 10,
 			wantHeight:     5,
@@ -175,7 +174,7 @@ func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 		// be measured at the overflowing width, not the narrower slot.
 		"min-w-25 overflows 12 wide items-start": {
 			containerWidth: 12,
-			containerOpts:  []Option{WithAlign(AlignStart)},
+			innerOpts:      []Option{WithAlign(AlignStart)},
 			childOpts:      []Option{WithMinWidth(25)},
 			wantChildWidth: 25,
 			wantHeight:     2,
@@ -191,17 +190,19 @@ func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			child := New(append([]Option{WithText(tableWrapCellText)}, tt.childOpts...)...)
+			innerOpts := append([]Option{WithDisplay(DisplayFlex), WithDirection(Column)}, tt.innerOpts...)
+			inner := New(innerOpts...)
+			inner.AddChild(child)
 			sentinel := New(WithText("SENTINEL"))
+			outer := New(WithDisplay(DisplayFlex), WithDirection(Column), WithWidth(tt.containerWidth))
+			outer.AddChild(inner)
+			outer.AddChild(sentinel)
 
-			rootOpts := append([]Option{
-				WithDisplay(DisplayFlex),
-				WithDirection(Column),
-				WithWidth(tt.containerWidth),
-			}, tt.containerOpts...)
-			root := New(rootOpts...)
-			root.AddChild(child)
-			root.AddChild(sentinel)
-			root.Calculate(tt.containerWidth, 24)
+			if got := inner.HeightForWidth(tt.containerWidth); got != tt.wantHeight {
+				t.Errorf("inner.HeightForWidth(%d) = %d, want %d", tt.containerWidth, got, tt.wantHeight)
+			}
+
+			outer.Calculate(tt.containerWidth, 24)
 
 			rect := child.Rect()
 			if rect.Width != tt.wantChildWidth {
@@ -210,8 +211,11 @@ func TestColumnChildMeasuredAtMinMaxWidth(t *testing.T) {
 			if rect.Height != tt.wantHeight {
 				t.Errorf("child height = %d, want %d", rect.Height, tt.wantHeight)
 			}
-			if got := sentinel.Rect().Y; got != rect.Y+tt.wantHeight {
-				t.Errorf("sentinel Y = %d, want %d (below the child)", got, rect.Y+tt.wantHeight)
+			if got := inner.Rect().Height; got != tt.wantHeight {
+				t.Errorf("inner column height = %d, want %d", got, tt.wantHeight)
+			}
+			if got := sentinel.Rect().Y; got != tt.wantHeight {
+				t.Errorf("sentinel Y = %d, want %d (below the inner column)", got, tt.wantHeight)
 			}
 		})
 	}

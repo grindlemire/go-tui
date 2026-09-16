@@ -291,9 +291,8 @@ func (e *Element) HeightForWidth(width int) int {
 			if child.hidden || child.overlay {
 				continue
 			}
-			// Margins come out of the slot before alignment, as in
-			// recomputeTextWrapping. Stretched auto-width children fill the
-			// remainder; other auto-width children are clamped to it.
+			// Slot minus horizontal margin, then aligned and min/max clamped,
+			// as in recomputeTextWrapping.
 			availableWidth := contentWidth - child.style.Margin.Horizontal()
 			childWidth := availableWidth
 			align := e.style.AlignItems
@@ -304,7 +303,6 @@ func (e *Element) HeightForWidth(width int) int {
 				intrinsicW, _ := child.IntrinsicSize()
 				childWidth = min(intrinsicW, availableWidth)
 			}
-			// Layout applies min/max width to the slot after alignment.
 			childWidth = layout.ClampWidth(child.style, childWidth)
 			childH := child.HeightForWidth(childWidth)
 			totalH += childH + child.style.Margin.Vertical()
