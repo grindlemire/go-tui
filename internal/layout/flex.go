@@ -245,7 +245,10 @@ func recomputeTextWrapping(items []flexItem, parentStyle Style, isRow bool, main
 			if align == AlignStretch && crossStyleValue.IsAuto() {
 				childWidth = crossSize - crossMargin
 			} else if crossStyleValue.IsAuto() {
-				childWidth, _ = child.IntrinsicSize()
+				// Phase 5 clamps a non-stretch child to the available cross
+				// size, so measure at that width rather than the intrinsic one.
+				intrinsicW, _ := child.IntrinsicSize()
+				childWidth = min(intrinsicW, crossSize-crossMargin)
 			} else {
 				childWidth = crossStyleValue.Resolve(crossSize-crossMargin, 0)
 			}
