@@ -432,3 +432,144 @@ func TestTextArea_BlockCursor_AtHardNewline_DoesNotSplitCluster(t *testing.T) {
 		t.Errorf("lineWithCursor split the flag cluster: %q", result)
 	}
 }
+
+func TestTextArea_WrapFollowsLayoutWidth(t *testing.T) {
+	type tc struct {
+		opts      []TextAreaOption
+		layout    bool // lay the textarea out once before setting text
+		wantWrap  int
+		wantLines int
+	}
+
+	const rootWidth, rootHeight = 60, 8
+	text := strings.Repeat("0123456789", 5)
+
+	tests := map[string]tc{
+		"w-full wraps at the root width": {
+			opts:      []TextAreaOption{WithTextAreaElementOptions(WithClass("w-full"))},
+			layout:    true,
+			wantWrap:  60,
+			wantLines: 1,
+		},
+		"w-1/2 wraps at half the root": {
+			opts:      []TextAreaOption{WithTextAreaElementOptions(WithClass("w-1/2"))},
+			layout:    true,
+			wantWrap:  30,
+			wantLines: 2,
+		},
+		"w-full inside a border": {
+			opts:      []TextAreaOption{WithTextAreaElementOptions(WithClass("w-full border"))},
+			layout:    true,
+			wantWrap:  58,
+			wantLines: 1,
+		},
+		"fixed width keeps wrapping": {
+			opts:      []TextAreaOption{WithTextAreaWidth(30)},
+			layout:    true,
+			wantWrap:  30,
+			wantLines: 2,
+		},
+		"fixed class width keeps wrapping": {
+			opts:      []TextAreaOption{WithTextAreaElementOptions(WithClass("w-30"))},
+			layout:    true,
+			wantWrap:  30,
+			wantLines: 2,
+		},
+		"before any layout the configured width applies": {
+			opts:      []TextAreaOption{WithTextAreaElementOptions(WithClass("w-full"))},
+			wantWrap:  40,
+			wantLines: 2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ta := NewTextArea(tt.opts...)
+			ta.BindApp(testApp)
+			frame := func() []string {
+				root := New(WithWidth(rootWidth), WithHeight(rootHeight), WithDirection(Column))
+				root.AddChild(ta.Render(testApp))
+				return renderedRows(t, root, rootWidth)
+			}
+			if tt.layout {
+				frame()
+			}
+			ta.SetText(text)
+			if got := ta.wrapWidth(); got != tt.wantWrap {
+				t.Errorf("wrapWidth() = %d, want %d", got, tt.wantWrap)
+			}
+			lines := ta.wrapText()
+			if len(lines) != tt.wantLines {
+				t.Fatalf("wrapText() produced %d lines, want %d: %q", len(lines), tt.wantLines, lines)
+			}
+			rows := frame()
+			first := 0
+			if ta.border != BorderNone {
+				first = 1
+			}
+			for i, line := range lines {
+				if !strings.Contains(rows[first+i], line) {
+					t.Errorf("row %d missing wrapped line %q:\n%s", first+i, line, strings.Join(rows, "\n"))
+				}
+			}
+		})
+	}
+}
+
+// TestTextArea_LayoutHeightFollowsWrapWidth verifies the layout engine sizes a
+// non-fixed-width textarea from the rows its text needs at the width the
+// engine assigns, in the same pass, even though the rows were built for the
+// previous width.
+func TestTextArea_LayoutHeightFollowsWrapWidth(t *testing.T) {
+	ta := NewTextArea(WithTextAreaElementOptions(WithClass("w-full")))
+	ta.BindApp(testApp)
+	// 100 characters wrap into 3 rows at the default 40 columns and 4 at 30.
+	ta.SetText(strings.Repeat("0123456789", 10))
+
+	root := New(WithWidth(30), WithHeight(8), WithDirection(Column))
+	el := ta.Render(testApp)
+	root.AddChild(el)
+	renderedRows(t, root, 30)
+	if got := el.Rect().Height; got != 4 {
+		t.Fatalf("first layout height = %d, want 4 rows for a 30 column wrap", got)
+	}
+
+	root = New(WithWidth(30), WithHeight(8), WithDirection(Column))
+	el = ta.Render(testApp)
+	root.AddChild(el)
+	rows := renderedRows(t, root, 30)
+	if got := el.Rect().Height; got != 4 {
+		t.Fatalf("second layout height = %d, want 4", got)
+	}
+	for i, line := range ta.wrapText() {
+		if !strings.Contains(rows[i], line) {
+			t.Errorf("row %d = %q, want wrapped line %q", i, rows[i], line)
+		}
+	}
+}
+
+// TestTextArea_RerendersAfterLayoutWidthChange verifies a frame laid out at a
+// width the textarea did not wrap for requests another frame, so the second
+// frame shows the text wrapped at the laid-out width.
+func TestTextArea_RerendersAfterLayoutWidthChange(t *testing.T) {
+	app := newTestApp(60, 4)
+	ta := NewTextArea(WithTextAreaElementOptions(WithClass("w-full")))
+	app.SetRootComponent(&viewportProbe{width: 60, child: ta})
+	ta.BindApp(app)
+	text := strings.Repeat("0123456789", 5)
+	ta.SetText(text)
+
+	app.Render()
+	if !app.dirty.Load() {
+		t.Fatal("first frame laid the textarea out wider than it wrapped for but did not request another frame")
+	}
+	app.Render()
+	term := app.terminal.(*MockTerminal)
+	got := strings.Split(term.StringTrimmed(), "\n")
+	if got[0] != text || got[1] != "" {
+		t.Errorf("second frame does not show the text on one 60 column row:\n%s", term.StringTrimmed())
+	}
+	if app.dirty.Load() {
+		t.Error("frame at the laid-out width still requests another frame")
+	}
+}

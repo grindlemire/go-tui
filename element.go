@@ -134,6 +134,13 @@ type Element struct {
 	// Pre-render hook for custom update logic (polling, animations, etc.)
 	onUpdate func()
 
+	// measure, when set, gives HeightForWidth the content height for a content
+	// width, for components whose height depends on the width layout assigns.
+	measure func(contentWidth int) int
+
+	// onLayout runs when the layout engine stores this element's computed box.
+	onLayout func(*Element)
+
 	// Watchers attached to this element (timers, channel watchers, etc.)
 	watchers []Watcher
 

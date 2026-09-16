@@ -34,6 +34,21 @@ func (e *Element) LayoutChildren() []Layoutable {
 // SetLayout is called by the layout engine to store computed layout.
 func (e *Element) SetLayout(l LayoutResult) {
 	e.layout = l
+	if e.onLayout != nil {
+		e.onLayout(e)
+	}
+}
+
+// setOnLayout installs a callback that runs with the computed box each time
+// the layout engine lays this element out.
+func (e *Element) setOnLayout(fn func(*Element)) {
+	e.onLayout = fn
+}
+
+// setMeasure installs the content measurer HeightForWidth consults instead of
+// the children: fn receives the content width and returns the content height.
+func (e *Element) setMeasure(fn func(contentWidth int) int) {
+	e.measure = fn
 }
 
 // GetLayout returns the last computed layout.
@@ -216,6 +231,19 @@ func (e *Element) HeightForWidth(width int) int {
 	// Scrollable elements have fixed viewport — don't expand based on content.
 	if e.scrollMode != ScrollNone {
 		_, h := e.IntrinsicSize()
+		return h
+	}
+
+	// Components that wrap their own content measure it at the assigned width.
+	if e.measure != nil {
+		contentWidth := width - e.style.Padding.Horizontal()
+		if e.border != BorderNone {
+			contentWidth -= 2
+		}
+		h := e.measure(max(contentWidth, 0)) + e.style.Padding.Vertical()
+		if e.border != BorderNone {
+			h += 2
+		}
 		return h
 	}
 
