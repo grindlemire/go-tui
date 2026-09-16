@@ -46,7 +46,9 @@ type AppBinder interface {
 }
 
 // AppUnbinder is implemented by components that need to detach app-bound
-// resources (for example topic-based Events subscriptions) on unmount.
+// resources (for example topic-based Events subscriptions) on unmount. A prop
+// swap on a cached host also unbinds and rebinds the instances it renders
+// through @expr, so UnbindApp must only release what BindApp reacquires.
 type AppUnbinder interface {
 	UnbindApp()
 }

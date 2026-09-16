@@ -113,7 +113,7 @@ templ (c *shell) Render() {
 		},
 		// Unbind assertions appear twice: updatePropsFields unbinds the
 		// replaced values and unbindAppFields unbinds on eviction.
-		"plain and indexed fields are each emitted once": {
+		"fields used more than once are emitted once per helper": {
 			input: `package x
 
 import "github.com/grindlemire/go-tui"

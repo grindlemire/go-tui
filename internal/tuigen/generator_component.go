@@ -592,9 +592,8 @@ func (g *Generator) generateUpdateProps(comp *Component, decls []*GoDecl) {
 	// Get the receiver type name without pointer
 	typeName := strings.TrimPrefix(comp.ReceiverType, "*")
 
-	// Replacing a prop rendered through @expr counts as unmounting the old
-	// value, so the helper unbinds it before the copy. Fields bound by their
-	// known type (State/Events/TextArea) are rebound by BindApp instead.
+	// A prop swap unmounts the old @expr value, so the helper unbinds it before the
+	// copy. State/Events/TextArea props are skipped; BindApp rebinds those.
 	var bindableProps []StructField
 	for _, f := range propFields {
 		if g.isAppBindableType(f.Type) {
