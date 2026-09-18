@@ -107,12 +107,13 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.adjustRed(16) }),
 		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
 		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
 		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
 		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
 		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
+		tui.On(tui.Rune('x'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
 	}
 }
 
@@ -237,7 +238,7 @@ templ (c *colorMixer) Render() {
 		</div>
 
 		<div class="flex justify-center">
-			<span class="font-dim">r reset | g/b increase | G/B decrease | click buttons/presets | q quit</span>
+			<span class="font-dim">x reset | r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
 		</div>
 
 		// Confirmation modal for resetting colors
