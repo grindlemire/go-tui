@@ -299,7 +299,10 @@ func (c *complexApp) Render(app *tui.App) *tui.Element {
 	return __tui_0
 }
 
-func (c *complexApp) BindApp(app *tui.App) {
+// bindAppFields is generated. It wires the component's *tui.App,
+// State, Events, and TextArea fields to app. When you override BindApp,
+// call this helper instead of hand-maintaining the delegation list.
+func (c *complexApp) bindAppFields(app *tui.App) {
 	if c.count != nil {
 		c.count.BindApp(app)
 	}
@@ -321,6 +324,10 @@ func (c *complexApp) BindApp(app *tui.App) {
 	if c.messages != nil {
 		c.messages.BindApp(app)
 	}
+}
+
+func (c *complexApp) BindApp(app *tui.App) {
+	c.bindAppFields(app)
 }
 
 var _ tui.AppBinder = (*complexApp)(nil)
@@ -832,3 +839,10 @@ func AttributeTypes(enabled bool, size int) *AttributeTypesView {
 	}
 	return &view
 }
+
+// Compile-time interface satisfaction checks.
+var (
+	_ tui.KeyListener     = (*complexApp)(nil)
+	_ tui.MouseListener   = (*complexApp)(nil)
+	_ tui.WatcherProvider = (*complexApp)(nil)
+)
