@@ -1,6 +1,9 @@
 package tuigen
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 // Text coalescing stopped at any Go keyword token, and a keyword that did not
 // start valid control flow was skipped silently, so "Press Escape to return"
@@ -85,5 +88,82 @@ templ Test(items []string, show bool) {
 	}
 	if got := span.Children[0].(*TextContent).Text; got != "done for now" {
 		t.Errorf("Text = %q, want %q", got, "done for now")
+	}
+}
+
+// Control flow that starts on the same line as prose must still end the text
+// and parse as a loop or conditional, as it did before keywords became text.
+func TestParser_KeywordsInsideText_SameLineControlFlow(t *testing.T) {
+	type tc struct {
+		body     string
+		wantText string
+		wantNode string
+	}
+
+	tests := map[string]tc{
+		"if after prose": {
+			body:     `Hello if show { <span>y</span> }`,
+			wantText: "Hello",
+			wantNode: "*tuigen.IfStmt",
+		},
+		"range for after prose": {
+			body:     `Items: for _, x := range xs { <span>{x}</span> }`,
+			wantText: "Items:",
+			wantNode: "*tuigen.ForLoop",
+		},
+		"loop-like prose without := stays text": {
+			body:     `for each item in range`,
+			wantText: "for each item in range",
+			wantNode: "",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			input := "package x\ntempl Test(show bool, xs []string) {\n\t<div>" + tt.body + "</div>\n}"
+			file, err := NewParser(NewLexer("test.gsx", input)).ParseFile()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			div := file.Components[0].Body[0].(*Element)
+			if len(div.Children) == 0 {
+				t.Fatal("expected children")
+			}
+			text, ok := div.Children[0].(*TextContent)
+			if !ok {
+				t.Fatalf("child 0 = %T, want *TextContent", div.Children[0])
+			}
+			if text.Text != tt.wantText {
+				t.Errorf("Text = %q, want %q", text.Text, tt.wantText)
+			}
+			if tt.wantNode == "" {
+				if len(div.Children) != 1 {
+					t.Errorf("expected only text, got %d children", len(div.Children))
+				}
+				return
+			}
+			if len(div.Children) != 2 {
+				t.Fatalf("expected text + control flow, got %d children: %#v", len(div.Children), div.Children)
+			}
+			if got := fmt.Sprintf("%T", div.Children[1]); got != tt.wantNode {
+				t.Errorf("child 1 = %s, want %s", got, tt.wantNode)
+			}
+		})
+	}
+}
+
+// A Go expression splits prose into separate text nodes on either side.
+func TestParser_KeywordsInsideText_AroundExpr(t *testing.T) {
+	input := "package x\ntempl Test(key string) {\n\t<span>Press {key} to return</span>\n}"
+	file, err := NewParser(NewLexer("test.gsx", input)).ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	span := file.Components[0].Body[0].(*Element)
+	if len(span.Children) != 3 {
+		t.Fatalf("expected 3 children, got %d", len(span.Children))
+	}
+	if got := span.Children[2].(*TextContent).Text; got != "to return" {
+		t.Errorf("trailing text = %q, want %q", got, "to return")
 	}
 }

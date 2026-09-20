@@ -173,6 +173,22 @@ func (p *Parser) parseControlFlowOrBinding() Node {
 	return nil
 }
 
+// startsControlFlow reports whether the current keyword token begins a range
+// loop or a well-formed if statement. The if probe parses speculatively and
+// restores the cursor either way.
+func (p *Parser) startsControlFlow() bool {
+	switch p.current.Type {
+	case TokenFor:
+		return p.isRangeForLoop()
+	case TokenIf:
+		saved := p.saveState()
+		ok := p.parseIf() != nil
+		p.restoreState(saved)
+		return ok
+	}
+	return false
+}
+
 // parseElement parses an XML-like element.
 func (p *Parser) parseElement() *Element {
 	pos := p.position()
@@ -434,6 +450,11 @@ func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 				textPos := p.position()
 				prevTokenEnd := -1
 				for isTextOrKeywordToken(p.current.Type) {
+					// Prose on the same line as a real loop or conditional ends
+					// at the keyword so the control flow parses as before.
+					if text.Len() > 0 && p.startsControlFlow() {
+						break
+					}
 					// Use source positions to detect whitespace: if there's a gap
 					// between the end of the previous token and the start of the
 					// current one, the original source had whitespace there.
