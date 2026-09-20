@@ -1,9 +1,6 @@
 package tuigen
 
-import (
-	"strings"
-	"unicode/utf8"
-)
+import "strings"
 
 // parseGoExprNode parses a Go expression {expr} as a node.
 func (p *Parser) parseGoExprNode() *GoExpr {
@@ -93,37 +90,35 @@ func (p *Parser) parseGoStatement() *GoCode {
 	return &GoCode{Code: code, Position: pos}
 }
 
-// isRangeForLoop checks whether the current for-loop header is a
-// `:= range` for-loop by scanning the source forward for ":= range" before "{".
-// This correctly excludes Go 1.22+ forms like `for range ch {` (no :=, channel
-// drain) which parseFor() cannot handle. Called when the parser sees bare "for"
-// and needs to decide between DSL ForLoop and raw Go GoCode.
+// isRangeForLoop reports whether the current `for` opens a `:= range` loop,
+// judged from the header tokens (for x[, y] := range). Go 1.22 forms like
+// `for range ch {` and C-style loops return false and fall through to GoCode.
+// A source scan for ":= range" used to run into a later loop when prose
+// containing "for" preceded it on the same line.
 func (p *Parser) isRangeForLoop() bool {
-	pos := p.current.StartPos
-	src := p.lexer.Source()
-	for i := pos; i < len(src); i++ {
-		if src[i] == '{' {
+	saved := p.saveState()
+	defer p.restoreState(saved)
+	p.advance() // for
+	if !p.isLoopVar() {
+		return false
+	}
+	p.advance()
+	if p.current.Type == TokenComma {
+		p.advance()
+		if !p.isLoopVar() {
 			return false
 		}
-		// Look for ":=" followed by whitespace and "range"
-		if src[i] == ':' && i+1 < len(src) && src[i+1] == '=' {
-			// Found :=, now skip whitespace and check for "range"
-			j := i + 2
-			for j < len(src) && (src[j] == ' ' || src[j] == '\t') {
-				j++
-			}
-			if j+5 <= len(src) && src[j:j+5] == "range" {
-				if j+5 == len(src) {
-					return true
-				}
-				r, _ := utf8.DecodeRuneInString(src[j+5:])
-				if !isLetter(r) {
-					return true
-				}
-			}
-		}
+		p.advance()
 	}
-	return false
+	if p.current.Type != TokenColonEquals {
+		return false
+	}
+	p.advance()
+	return p.current.Type == TokenRange
+}
+
+func (p *Parser) isLoopVar() bool {
+	return p.current.Type == TokenIdent || p.current.Type == TokenUnderscore
 }
 
 // parseComponentCall parses @ComponentName(args) or @ComponentName(args) { children }
