@@ -341,10 +341,8 @@ func (a *Analyzer) analyzeComponent(comp *Component) {
 	a.checkSingleRoot(comp)
 }
 
-// checkSingleRoot rejects a body with more than one root-producing node. The
-// generator returns only the first, so anything after it would be built and
-// dropped; a trailing <modal> would even draw as an overlay without ever
-// joining the tree.
+// checkSingleRoot rejects a body with more than one root-producing node: the
+// generator returns only the first, so the rest would be built and dropped.
 func (a *Analyzer) checkSingleRoot(comp *Component) {
 	seenRoot := false
 	for _, node := range comp.Body {
@@ -358,7 +356,7 @@ func (a *Analyzer) checkSingleRoot(comp *Component) {
 			continue
 		}
 		a.errors.Add(NewErrorWithHint(node.Pos(),
-			fmt.Sprintf("templ %s has more than one top-level element; only the first is rendered", comp.Name),
+			fmt.Sprintf("templ %s has more than one top-level node; only the first is rendered", comp.Name),
 			"wrap them in a single root element such as <div>"))
 		return
 	}

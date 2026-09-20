@@ -5,10 +5,8 @@ import (
 	"testing"
 )
 
-// A templ renders only its first top-level element, but the generator still
-// emitted the rest, so a trailing <modal> mounted and drew as an overlay while
-// never joining the element tree (issue #169). The analyzer now rejects a body
-// with more than one top-level element.
+// The generator returns only the first root of a templ body; a trailing <modal>
+// used to mount and draw without joining the tree (issue #169).
 func TestAnalyzer_SingleRootElement(t *testing.T) {
 	type tc struct {
 		input         string
@@ -31,7 +29,7 @@ templ (a *app) Render() {
 	</modal>
 }`,
 			wantError:     true,
-			errorContains: "templ Render has more than one top-level element",
+			errorContains: "templ Render has more than one top-level node",
 			hintContains:  "wrap them in a single root element",
 			posContains:   "test.gsx:7:",
 		},
@@ -42,7 +40,7 @@ templ Page() {
 	@Footer()
 }`,
 			wantError:     true,
-			errorContains: "templ Page has more than one top-level element",
+			errorContains: "templ Page has more than one top-level node",
 			posContains:   "test.gsx:4:",
 		},
 		"element followed by component expr errors": {
@@ -53,7 +51,7 @@ templ (a *app) Render() {
 	@a.footer
 }`,
 			wantError:     true,
-			errorContains: "templ Render has more than one top-level element",
+			errorContains: "templ Render has more than one top-level node",
 		},
 		"element followed by for loop errors": {
 			input: `package x
@@ -64,7 +62,7 @@ templ List(items []string) {
 	}
 }`,
 			wantError:     true,
-			errorContains: "templ List has more than one top-level element",
+			errorContains: "templ List has more than one top-level node",
 		},
 		"if statement followed by element errors": {
 			input: `package x
@@ -75,7 +73,7 @@ templ Page(show bool) {
 	<div>hi</div>
 }`,
 			wantError:     true,
-			errorContains: "templ Page has more than one top-level element",
+			errorContains: "templ Page has more than one top-level node",
 		},
 		"three elements report once at the second": {
 			input: `package x
@@ -85,7 +83,16 @@ templ Page() {
 	<div>c</div>
 }`,
 			wantError:     true,
-			errorContains: "test.gsx:4:",
+			errorContains: "templ Page has more than one top-level node",
+			posContains:   "test.gsx:4:",
+		},
+		"let binding after the root is allowed": {
+			input: `package x
+templ Page() {
+	<div>hi</div>
+	label := <span>unused</span>
+}`,
+			wantError: false,
 		},
 		"let binding before the root is allowed": {
 			input: `package x
@@ -162,7 +169,7 @@ templ List(items []string) {
 			if tt.posContains != "" && !strings.Contains(msg, tt.posContains) {
 				t.Errorf("error %q is not anchored at %q", msg, tt.posContains)
 			}
-			if n := strings.Count(msg, "more than one top-level element"); n != 1 {
+			if n := strings.Count(msg, "more than one top-level node"); n != 1 {
 				t.Errorf("expected exactly one report, got %d in %q", n, msg)
 			}
 		})
