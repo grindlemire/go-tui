@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.22.1](https://github.com/grindlemire/go-tui/compare/v0.22.0...v0.22.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **gsx:** end keyword text at same-line control flow ([#175](https://github.com/grindlemire/go-tui/issues/175)) ([9447d49](https://github.com/grindlemire/go-tui/commit/9447d49ad13a46d5e463d2199e370dd10c933a63))
+* **gsx:** keep Go keywords inside element text ([#173](https://github.com/grindlemire/go-tui/issues/173)) ([766b5db](https://github.com/grindlemire/go-tui/commit/766b5db241780784d73bd2af0a25ee2614b68b97))
+* **gsx:** reject templ bodies with more than one top-level element ([#171](https://github.com/grindlemire/go-tui/issues/171)) ([4b0e6eb](https://github.com/grindlemire/go-tui/commit/4b0e6eb7ce94965b72ddb0a0f656bbe694a6ed6d))
+
 ## [0.22.0](https://github.com/grindlemire/go-tui/compare/v0.21.1...v0.22.0) (2026-09-16)
 
 
