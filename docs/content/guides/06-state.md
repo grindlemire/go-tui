@@ -363,7 +363,7 @@ templ (c *confirmApp) Render() {
 
 The modal opens when `showModal` becomes `true` and closes when either button sets it back to `false`. Escape closes it too (on by default). Tab cycles between the Yes and No buttons, and Enter activates whichever is focused.
 
-Keep the `<modal>` inside the root element of the templ. A templ renders its first top-level element, so a modal placed after the closing tag of the root div is drawn as an overlay but never joins the element tree. Its key bindings and focusables are never registered, so Escape reaches the parent's handler instead of closing the modal, and its buttons cannot be focused or activated.
+Keep the `<modal>` inside the root element of the templ. A templ renders only its first top-level element, and `tui generate` reports an error for a second one. Without that check, a modal placed after the closing tag of the root div would be drawn as an overlay without joining the element tree, so Escape would reach the parent's handler instead of closing the modal and its buttons could not be focused or activated.
 
 If you need to update multiple values when the modal closes, use batching (see [Batching Updates](#batching-updates) above).
 
