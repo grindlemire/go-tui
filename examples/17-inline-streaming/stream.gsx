@@ -37,9 +37,9 @@ type person struct {
 }
 
 var (
-	allNames   = []string{"Alice", "Bob", "Carol", "Dave", "Eve", "Frank"}
-	allRoles   = []string{"Engineer", "Designer", "PM", "Analyst", "DevOps", "QA"}
-	allStatuses = []string{"Active", "Away", "Busy", "Offline"}
+	allNames     = []string{"Alice", "Bob", "Carol", "Dave", "Eve", "Frank"}
+	allRoles     = []string{"Engineer", "Designer", "PM", "Analyst", "DevOps", "QA"}
+	allStatuses  = []string{"Active", "Away", "Busy", "Offline"}
 	statusColors = map[string]tui.Color{
 		"Active":  tui.Green,
 		"Away":    tui.Yellow,
