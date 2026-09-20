@@ -3,6 +3,7 @@ package tuigen
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 // Text coalescing stopped at any Go keyword token, and a keyword that did not
@@ -116,6 +117,16 @@ func TestParser_KeywordsInsideText_SameLineControlFlow(t *testing.T) {
 			wantText: "for each item in range",
 			wantNode: "",
 		},
+		"prose for before a later range loop": {
+			body:     `wait for now for _, v := range xs { <span>{v}</span> }`,
+			wantText: "wait for now",
+			wantNode: "*tuigen.ForLoop",
+		},
+		"if with no condition stays text": {
+			body:     `what if {x}`,
+			wantText: "what if",
+			wantNode: "*tuigen.GoExpr",
+		},
 	}
 
 	for name, tt := range tests {
@@ -149,6 +160,43 @@ func TestParser_KeywordsInsideText_SameLineControlFlow(t *testing.T) {
 				t.Errorf("child 1 = %s, want %s", got, tt.wantNode)
 			}
 		})
+	}
+}
+
+// A child that starts with a prose "for" must not be mistaken for a range loop
+// that appears later on the same line.
+func TestParser_KeywordsInsideText_ForBeforeLaterLoop(t *testing.T) {
+	input := "package x\ntempl Test(xs []string) {\n\t<div>for now<span>a</span>for _, v := range xs { <span>{v}</span> }</div>\n}"
+	file, err := NewParser(NewLexer("test.gsx", input)).ParseFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	div := file.Components[0].Body[0].(*Element)
+	if len(div.Children) != 3 {
+		t.Fatalf("expected text, element, loop; got %d children: %#v", len(div.Children), div.Children)
+	}
+	if got := div.Children[0].(*TextContent).Text; got != "for now" {
+		t.Errorf("Text = %q, want %q", got, "for now")
+	}
+	if _, ok := div.Children[2].(*ForLoop); !ok {
+		t.Errorf("child 2 = %T, want *ForLoop", div.Children[2])
+	}
+}
+
+// Classifying a mid-text "if" must not parse the whole conditional, or nested
+// same-line conditionals cost exponential time.
+func TestParser_KeywordsInsideText_NestedIfIsLinear(t *testing.T) {
+	body := "leaf"
+	for range 24 {
+		body = "a if x { <div>" + body + "</div> }"
+	}
+	input := "package x\ntempl Test(x bool) {\n\t<div>" + body + "</div>\n}"
+	start := time.Now()
+	if _, err := NewParser(NewLexer("test.gsx", input)).ParseFile(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if el := time.Since(start); el > 2*time.Second {
+		t.Fatalf("parsing 24 nested same-line conditionals took %v", el)
 	}
 }
 

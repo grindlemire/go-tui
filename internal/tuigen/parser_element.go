@@ -174,19 +174,30 @@ func (p *Parser) parseControlFlowOrBinding() Node {
 }
 
 // startsControlFlow reports whether the current keyword token begins a range
-// loop or a well-formed if statement. The if probe parses speculatively and
-// restores the cursor either way.
+// loop or an if statement, judged from the header tokens alone so the check
+// stays linear even for nested same-line conditionals.
 func (p *Parser) startsControlFlow() bool {
 	switch p.current.Type {
 	case TokenFor:
 		return p.isRangeForLoop()
 	case TokenIf:
-		saved := p.saveState()
-		ok := p.parseIf() != nil
-		p.restoreState(saved)
-		return ok
+		return p.hasIfHeader()
 	}
 	return false
+}
+
+// hasIfHeader reports whether `if` is followed by a non-empty condition and an
+// opening brace on the same line, the shape parseIf accepts.
+func (p *Parser) hasIfHeader() bool {
+	saved := p.saveState()
+	defer p.restoreState(saved)
+	p.advance() // if
+	n := 0
+	for p.current.Type != TokenLBrace && p.current.Type != TokenNewline && p.current.Type != TokenEOF {
+		n++
+		p.advance()
+	}
+	return p.current.Type == TokenLBrace && n > 0
 }
 
 // parseElement parses an XML-like element.
