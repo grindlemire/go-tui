@@ -346,28 +346,30 @@ templ (c *confirmApp) Render() {
     <div class="flex-col p-1 border-rounded border-cyan">
         <span class="font-bold text-cyan">Modal Demo</span>
         <span class="font-dim">{c.status.Get()}</span>
-    </div>
 
-    <modal open={c.showModal} class="justify-center items-center" backdrop="dim">
-        <div class="border-rounded p-2 flex-col gap-1 w-40">
-            <span class="font-bold text-cyan">Confirm Action</span>
-            <span>Are you sure?</span>
-            <div class="flex gap-2 justify-center">
-                <button class="px-2 border-rounded focusable" onActivate={c.onConfirm}>Yes</button>
-                <button class="px-2 border-rounded focusable" onActivate={c.onCancel}>No</button>
+        <modal open={c.showModal} class="justify-center items-center" backdrop="dim">
+            <div class="border-rounded p-2 flex-col gap-1 w-40">
+                <span class="font-bold text-cyan">Confirm Action</span>
+                <span>Are you sure?</span>
+                <div class="flex gap-2 justify-center">
+                    <button class="px-2 border-rounded focusable" onActivate={c.onConfirm}>Yes</button>
+                    <button class="px-2 border-rounded focusable" onActivate={c.onCancel}>No</button>
+                </div>
             </div>
-        </div>
-    </modal>
+        </modal>
+    </div>
 }
 ```
 
 The modal opens when `showModal` becomes `true` and closes when either button sets it back to `false`. Escape closes it too (on by default). Tab cycles between the Yes and No buttons, and Enter activates whichever is focused.
 
+Keep the `<modal>` inside the root element of the templ. A templ renders its first top-level element, so a modal placed after the closing tag of the root div is drawn as an overlay but never joins the element tree. Its key bindings and focusables are never registered, so Escape reaches the parent's handler instead of closing the modal, and its buttons cannot be focused or activated.
+
 If you need to update multiple values when the modal closes, use batching (see [Batching Updates](#batching-updates) above).
 
 ## Complete Example
 
-A counter, status display, selectable list, and a reset confirmation modal that uses batching:
+A counter, status display, selectable list, and a reset confirmation modal:
 
 ```gsx
 package main
@@ -396,7 +398,6 @@ func Demo() *demoApp {
 
 func (d *demoApp) confirmReset() {
     d.showReset.Set(false)
-    // Batch so count and selected update in a single re-render
     d.count.Set(0)
     d.selected.Set(0)
 }
@@ -507,19 +508,19 @@ templ (d *demoApp) Render() {
         <div class="flex justify-center">
             <span class="font-dim">+/- count | j/k navigate | r reset | esc quit</span>
         </div>
-    </div>
 
-    // Reset confirmation modal
-    <modal open={d.showReset} class="justify-center items-center">
-        <div class="border-rounded p-2 flex-col gap-1 w-40 border-cyan">
-            <span class="font-bold text-cyan">Reset?</span>
-            <span>This sets the counter and selection back to zero.</span>
-            <div class="flex gap-2 justify-center">
-                <button class="px-2 border-rounded focusable" onActivate={d.confirmReset}>Yes</button>
-                <button class="px-2 border-rounded focusable" onActivate={d.cancelReset}>No</button>
+        // Reset confirmation modal
+        <modal open={d.showReset} class="justify-center items-center">
+            <div class="border-rounded p-2 flex-col gap-1 w-40 border-cyan">
+                <span class="font-bold text-cyan">Reset?</span>
+                <span>This sets the counter and selection back to zero.</span>
+                <div class="flex gap-2 justify-center">
+                    <button class="px-2 border-rounded focusable" onActivate={d.confirmReset}>Yes</button>
+                    <button class="px-2 border-rounded focusable" onActivate={d.cancelReset}>No</button>
+                </div>
             </div>
-        </div>
-    </modal>
+        </modal>
+    </div>
 }
 ```
 
