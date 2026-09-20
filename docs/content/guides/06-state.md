@@ -363,13 +363,13 @@ templ (c *confirmApp) Render() {
 
 The modal opens when `showModal` becomes `true` and closes when either button sets it back to `false`. Escape closes it too (on by default). Tab cycles between the Yes and No buttons, and Enter activates whichever is focused.
 
-Keep the `<modal>` inside the root element of the templ. A templ renders its first top-level element, so a modal placed after the closing tag of the root div is drawn as an overlay but never joins the element tree, and its buttons never receive focus or input.
+Keep the `<modal>` inside the root element of the templ. A templ renders its first top-level element, so a modal placed after the closing tag of the root div is drawn as an overlay but never joins the element tree. Its key bindings and focusables are never registered, so Escape reaches the parent's handler instead of closing the modal, and its buttons cannot be focused or activated.
 
 If you need to update multiple values when the modal closes, use batching (see [Batching Updates](#batching-updates) above).
 
 ## Complete Example
 
-A counter, status display, selectable list, and a reset confirmation modal that uses batching:
+A counter, status display, selectable list, and a reset confirmation modal:
 
 ```gsx
 package main
@@ -398,7 +398,6 @@ func Demo() *demoApp {
 
 func (d *demoApp) confirmReset() {
     d.showReset.Set(false)
-    // Batch so count and selected update in a single re-render
     d.count.Set(0)
     d.selected.Set(0)
 }
