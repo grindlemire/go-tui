@@ -429,11 +429,11 @@ func (p *Parser) parseChildren(parentTag string) ([]Node, []*CommentGroup) {
 			// Coalesce consecutive text tokens into a single TextContent.
 			// In element content, we treat identifiers and various punctuation as text
 			// until we hit a special delimiter ({, <, @, newline, EOF, or closing tag).
-			if isTextToken(p.current.Type) {
+			if isTextOrKeywordToken(p.current.Type) {
 				var text strings.Builder
 				textPos := p.position()
 				prevTokenEnd := -1
-				for isTextToken(p.current.Type) {
+				for isTextOrKeywordToken(p.current.Type) {
 					// Use source positions to detect whitespace: if there's a gap
 					// between the end of the previous token and the start of the
 					// current one, the original source had whitespace there.

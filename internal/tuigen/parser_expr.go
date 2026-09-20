@@ -248,6 +248,22 @@ func (p *Parser) parseGoExprOrChildrenSlot() Node {
 	}
 }
 
+// isTextOrKeywordToken reports whether typ can begin or continue element text. Go
+// keywords count too: control flow is tried before text, so a keyword reaching
+// the text path is prose ("wait for it", "Press Escape to return").
+func isTextOrKeywordToken(typ TokenType) bool {
+	if isTextToken(typ) {
+		return true
+	}
+	switch typ {
+	case TokenFor, TokenIf, TokenElse, TokenFunc, TokenReturn, TokenVar,
+		TokenRange, TokenTypeKw, TokenConst, TokenPackage, TokenImport, TokenTempl:
+		return true
+	default:
+		return false
+	}
+}
+
 // isTextToken returns true if the token type is part of text content inside elements.
 // Text content can include identifiers and various punctuation that might appear in
 // user-facing text like "Use j/k to scroll, q to quit".
