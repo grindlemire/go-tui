@@ -195,12 +195,13 @@ Both input methods call the same `adjust*` methods, so the behavior stays consis
 Modals handle mouse clicks internally. You don't need refs or `HandleMouse` for buttons inside a modal. Use the `onActivate` attribute on focusable elements instead:
 
 ```gsx
-<modal open={s.showDialog} class="justify-center items-center">
-    <div class="border-rounded p-2 flex-col gap-1 w-40">
-        <span class="font-bold">Delete Item?</span>
+<modal open={c.showResetModal} class="justify-center items-center">
+    <div class="border-rounded p-2 flex-col gap-1 w-36 items-center">
+        <span class="font-bold text-yellow">Reset Colors?</span>
+        <span class="font-dim">This will restore default values.</span>
         <div class="flex gap-2 justify-center">
-            <button class="px-2 border-rounded focusable" onActivate={s.onDelete}>Delete</button>
-            <button class="px-2 border-rounded focusable" onActivate={s.onCancel}>Cancel</button>
+            <button class="px-2 text-green font-bold border-single focusable" onActivate={c.cancelReset}>Cancel</button>
+            <button class="px-2 text-red font-bold border-single focusable" onActivate={c.resetColors}>Yes, Reset</button>
         </div>
     </div>
 </modal>
@@ -229,31 +230,35 @@ type colorMixer struct {
     green *tui.State[int]
     blue  *tui.State[int]
 
-    redUpBtn     *tui.Ref
-    redDnBtn     *tui.Ref
-    greenUpBtn   *tui.Ref
-    greenDnBtn   *tui.Ref
-    blueUpBtn    *tui.Ref
-    blueDnBtn    *tui.Ref
-    presetBtns   *tui.RefMap[string]
-    activePreset *tui.State[string]
-    showReset    *tui.State[bool]
+    redUpBtn          *tui.Ref
+    redDnBtn          *tui.Ref
+    greenUpBtn        *tui.Ref
+    greenDnBtn        *tui.Ref
+    blueUpBtn         *tui.Ref
+    blueDnBtn         *tui.Ref
+    presetBtns        *tui.RefMap[string]
+    activePreset      *tui.State[string]
+
+    resetBtn          *tui.Ref
+    showResetModal    *tui.State[bool]
 }
 
 func ColorMixer() *colorMixer {
     return &colorMixer{
-        red:          tui.NewState(128),
-        green:        tui.NewState(64),
-        blue:         tui.NewState(200),
-        redUpBtn:     tui.NewRef(),
-        redDnBtn:     tui.NewRef(),
-        greenUpBtn:   tui.NewRef(),
-        greenDnBtn:   tui.NewRef(),
-        blueUpBtn:    tui.NewRef(),
-        blueDnBtn:    tui.NewRef(),
-        presetBtns:   tui.NewRefMap[string](),
-        activePreset: tui.NewState(""),
-        showReset:    tui.NewState(false),
+        red:               tui.NewState(128),
+        green:             tui.NewState(64),
+        blue:              tui.NewState(200),
+        redUpBtn:          tui.NewRef(),
+        redDnBtn:          tui.NewRef(),
+        greenUpBtn:        tui.NewRef(),
+        greenDnBtn:        tui.NewRef(),
+        blueUpBtn:         tui.NewRef(),
+        blueDnBtn:         tui.NewRef(),
+        presetBtns:        tui.NewRefMap[string](),
+        activePreset:      tui.NewState(""),
+
+        resetBtn:          tui.NewRef(),
+        showResetModal:    tui.NewState(false),
     }
 }
 
@@ -294,16 +299,16 @@ func (c *colorMixer) adjustBlue(delta int) {
     c.activePreset.Set("")
 }
 
-func (c *colorMixer) confirmReset() {
-    c.showReset.Set(false)
+func (c *colorMixer) resetColors() {
     c.red.Set(128)
     c.green.Set(64)
     c.blue.Set(200)
     c.activePreset.Set("")
+    c.showResetModal.Set(false)
 }
 
 func (c *colorMixer) cancelReset() {
-    c.showReset.Set(false)
+    c.showResetModal.Set(false)
 }
 
 func (c *colorMixer) applyPreset(name string) {
@@ -328,7 +333,7 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
         tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
         tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
         tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
-        tui.On(tui.Rune('x'), func(ke tui.KeyEvent) { c.showReset.Set(true) }),
+        tui.On(tui.Rune('x'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
     }
 }
 
@@ -341,6 +346,7 @@ func (c *colorMixer) HandleMouse(me tui.MouseEvent) bool {
         tui.Click(c.greenDnBtn, func() { c.adjustGreen(-16) }),
         tui.Click(c.blueUpBtn, func() { c.adjustBlue(16) }),
         tui.Click(c.blueDnBtn, func() { c.adjustBlue(-16) }),
+        tui.Click(c.resetBtn, func() { c.showResetModal.Set(true) }),
     ) {
         return true
     }
@@ -447,22 +453,26 @@ templ (c *colorMixer) Render() {
             }
         </div>
 
-        <div class="flex justify-center">
-            <span class="font-dim">r/g/b increase | R/G/B decrease | x reset | click buttons/presets | q quit</span>
+        <div class="flex gap-2 justify-center">
+            <button ref={c.resetBtn} class="px-1 text-red">Reset</button>
         </div>
-    </div>
 
-    // Reset confirmation modal (uses onActivate, not refs)
-    <modal open={c.showReset} class="justify-center items-center">
-        <div class="border-rounded p-2 flex-col gap-1 w-40 border-cyan">
-            <span class="font-bold text-cyan">Reset Colors?</span>
-            <span>This restores the default RGB values.</span>
-            <div class="flex gap-2 justify-center">
-                <button class="px-2 border-rounded focusable" onActivate={c.confirmReset}>Yes</button>
-                <button class="px-2 border-rounded focusable" onActivate={c.cancelReset}>No</button>
-            </div>
+        <div class="flex justify-center">
+            <span class="font-dim">x reset | r/g/b increase | R/G/B decrease | click buttons/presets | q quit</span>
         </div>
-    </modal>
+
+        // Reset confirmation modal (uses onActivate, not refs)
+        <modal open={c.showResetModal} class="justify-center items-center">
+            <div class="border-rounded p-2 flex-col gap-1 w-36 items-center">
+                <span class="font-bold text-yellow">Reset Colors?</span>
+                <span class="font-dim">This will restore default values.</span>
+                <div class="flex gap-2 justify-center">
+                    <button class="px-2 text-green font-bold border-single focusable" onActivate={c.cancelReset}>Cancel</button>
+                    <button class="px-2 text-red font-bold border-single focusable" onActivate={c.resetColors}>Yes, Reset</button>
+                </div>
+            </div>
+        </modal>
+    </div>
 }
 ```
 
@@ -506,7 +516,7 @@ Click the +/- buttons, use r/g/b keys to adjust colors, or click a preset to app
 
 ![Refs and Click Handling screenshot](/guides/09a.png)
 
-Click "reset" to open the confirmation dialog and click on an option.
+Click "Reset" to open the confirmation dialog and click on an option.
 
 ![Reset confirmation modal](/guides/09b.png)
 

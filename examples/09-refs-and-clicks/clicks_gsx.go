@@ -111,12 +111,13 @@ func (c *colorMixer) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
+		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { c.adjustRed(16) }),
 		tui.On(tui.Rune('R'), func(ke tui.KeyEvent) { c.adjustRed(-16) }),
 		tui.On(tui.Rune('g'), func(ke tui.KeyEvent) { c.adjustGreen(16) }),
 		tui.On(tui.Rune('G'), func(ke tui.KeyEvent) { c.adjustGreen(-16) }),
 		tui.On(tui.Rune('b'), func(ke tui.KeyEvent) { c.adjustBlue(16) }),
 		tui.On(tui.Rune('B'), func(ke tui.KeyEvent) { c.adjustBlue(-16) }),
+		tui.On(tui.Rune('x'), func(ke tui.KeyEvent) { c.showResetModal.Set(true) }),
 	}
 }
 
@@ -459,7 +460,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 		tui.WithJustify(tui.JustifyCenter),
 	)
 	__tui_58 := tui.New(
-		tui.WithText("r reset | g/b increase | G/B decrease | click buttons/presets | q quit"),
+		tui.WithText("x reset | r/g/b increase | R/G/B decrease | click buttons/presets | q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_57.AddChild(__tui_58)
