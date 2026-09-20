@@ -55,6 +55,8 @@ templ UserList(users []string, maxVisible int) {
 }
 ```
 
+A templ body renders exactly one root: a single element, component call, `@expr`, `for` loop, or `if` statement. Local bindings such as `label := <span>...</span>` may precede it. Anything after the root is an error, since only the first would be returned; wrap siblings in a container element instead. This applies to struct method components too, so a `<modal>` belongs inside the root `<div>` rather than after its closing tag.
+
 Pure components cannot host constructs that mount against a receiver: the component elements (`<input>`, `<textarea>`, `<modal>`, `<markdown>`), `@expr` component expressions, and `@Factory()` calls that return a component (a struct component, a `tui.Component`, or a type whose `Render` method is written in plain Go). Put those in a struct method component, which supplies the receiver they mount against. `tui generate` reports an error with a message pointing at the fix if you use one in a pure component.
 
 ### Children slot
