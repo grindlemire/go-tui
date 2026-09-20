@@ -10,12 +10,12 @@ type colorMixer struct {
 	green *tui.State[int]
 	blue  *tui.State[int]
 
-	redUpBtn   *tui.Ref
-	redDnBtn   *tui.Ref
-	greenUpBtn *tui.Ref
-	greenDnBtn *tui.Ref
-	blueUpBtn  *tui.Ref
-	blueDnBtn  *tui.Ref
+	redUpBtn     *tui.Ref
+	redDnBtn     *tui.Ref
+	greenUpBtn   *tui.Ref
+	greenDnBtn   *tui.Ref
+	blueUpBtn    *tui.Ref
+	blueDnBtn    *tui.Ref
 	presetBtns   *tui.RefMap[string]
 	activePreset *tui.State[string]
 
@@ -25,15 +25,15 @@ type colorMixer struct {
 
 func ColorMixer() *colorMixer {
 	return &colorMixer{
-		red:        tui.NewState(128),
-		green:      tui.NewState(64),
-		blue:       tui.NewState(200),
-		redUpBtn:   tui.NewRef(),
-		redDnBtn:   tui.NewRef(),
-		greenUpBtn: tui.NewRef(),
-		greenDnBtn: tui.NewRef(),
-		blueUpBtn:  tui.NewRef(),
-		blueDnBtn:  tui.NewRef(),
+		red:          tui.NewState(128),
+		green:        tui.NewState(64),
+		blue:         tui.NewState(200),
+		redUpBtn:     tui.NewRef(),
+		redDnBtn:     tui.NewRef(),
+		greenUpBtn:   tui.NewRef(),
+		greenDnBtn:   tui.NewRef(),
+		blueUpBtn:    tui.NewRef(),
+		blueDnBtn:    tui.NewRef(),
 		presetBtns:   tui.NewRefMap[string](),
 		activePreset: tui.NewState(""),
 
@@ -43,7 +43,7 @@ func ColorMixer() *colorMixer {
 }
 
 type preset struct {
-	name string
+	name    string
 	r, g, b int
 }
 
