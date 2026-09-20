@@ -87,7 +87,7 @@ func (a *myApp) Render(app *tui.App) *tui.Element {
 		)
 		__tui_1.AddChild(__tui_2)
 		__tui_3 := tui.New(
-			tui.WithText("Press Escape to"),
+			tui.WithText("Press Escape to return"),
 			tui.WithTextStyle(tui.NewStyle().Dim()),
 		)
 		__tui_1.AddChild(__tui_3)
