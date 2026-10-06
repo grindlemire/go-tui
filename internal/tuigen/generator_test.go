@@ -880,7 +880,7 @@ templ (c *myComp) Render() {
 }`,
 			wantContains: []string{
 				"tui.NewInput(",
-				"tui.WithInputElementOptions(tui.WithBorderTRBL(0, 0, 4, 0))",
+				"tui.WithInputElementOptions(tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone))",
 			},
 		},
 		"input with no options": {
@@ -973,7 +973,7 @@ templ (c *myComp) Render() {
 }`,
 			wantContains: []string{
 				"tui.NewTextArea(",
-				"tui.WithTextAreaElementOptions(tui.WithBorderTRBL(0, 4, 4, 0))",
+				"tui.WithTextAreaElementOptions(tui.WithBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderThick, tui.BorderNone))",
 			},
 		},
 		"textarea with no options": {

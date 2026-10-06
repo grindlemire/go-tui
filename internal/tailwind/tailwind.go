@@ -418,6 +418,9 @@ type sides struct {
 
 // op returns the accumulated sides as a border style op.
 func (s sides) op() Op {
+	if s.top == s.right && s.right == s.bottom && s.bottom == s.left {
+		return Border{Style: s.top}
+	}
 	return BorderSides{Top: s.top, Right: s.right, Bottom: s.bottom, Left: s.left}
 }
 

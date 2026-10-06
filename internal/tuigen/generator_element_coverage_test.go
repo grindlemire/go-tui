@@ -222,7 +222,7 @@ templ App(opts []tui.Option) {
 			wantContains: []string{
 				"__tui_0 := tui.New(append([]tui.Option{\n" +
 					"\t\ttui.WithPadding(1),\n" +
-					"\t\ttui.WithBorderTRBL(3, 3, 3, 3),\n" +
+					"\t\ttui.WithBorder(tui.BorderRounded),\n" +
 					"\t}, opts...)...)\n",
 			},
 			wantNotContains: []string{"tui.WithOptions"},
@@ -472,7 +472,7 @@ templ (c *shell) Render() {
 }`,
 			wantContains: []string{
 				"tui.WithModalElementOptions(",
-				"tui.WithBorderTRBL(3, 3, 3, 3)",
+				"tui.WithBorder(tui.BorderRounded)",
 				"tui.WithPadding(2)",
 				"Bold()",
 			},
@@ -485,7 +485,7 @@ type form struct{}
 templ (c *form) Render() {
 	<input class="border-rounded w-20" placeholder="x" />
 }`,
-			wantContains: []string{"tui.WithInputElementOptions(tui.WithWidth(20), tui.WithBorderTRBL(3, 3, 3, 3))"},
+			wantContains: []string{"tui.WithInputElementOptions(tui.WithWidth(20), tui.WithBorder(tui.BorderRounded))"},
 		},
 		"textarea class expression forwards WithClass through element options": {
 			input: `package x

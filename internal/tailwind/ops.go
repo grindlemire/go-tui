@@ -4,6 +4,8 @@
 // dependency on the root tui package so both can import it.
 package tailwind
 
+import "fmt"
+
 // Op is one element option produced by a class. Each concrete type below
 // corresponds to a With* option in the root package. Adding a type means a
 // case in tuigen.renderOp and tui.classOption; TestRenderCoversEveryClass and
@@ -111,6 +113,23 @@ const (
 	BorderRounded
 	BorderThick
 )
+
+func (s BorderStyle) String() string {
+	switch s {
+		case BorderNone:
+			return "BorderNone"
+		case BorderSingle:
+			return "BorderSingle"
+		case BorderDouble:
+			return "BorderDouble"
+		case BorderRounded:
+			return "BorderRounded"
+		case BorderThick:
+			return "BorderThick"
+		default:
+			return fmt.Sprintf("BorderStyle(%d)", s)
+	}
+}
 
 // Border sets the border style.
 type Border struct{ Style BorderStyle }

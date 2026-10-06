@@ -222,7 +222,7 @@ func TestWithBorder(t *testing.T) {
 
 func TestWithBorderTRBL(t *testing.T) {
 	e := New(WithBorderTRBL(BorderNone, BorderRounded, BorderThick, BorderSingle))
-	expected := BorderTRBL(0, 3, 4, 1)
+	expected := BorderTRBL(BorderNone, BorderRounded, BorderThick, BorderSingle)
 	if e.border != expected {
 		t.Errorf("WithBorderTRBL(BorderNone,BorderRounded,BorderThick,BorderSingle) = %+v, want %+v", e.border, expected)
 	}

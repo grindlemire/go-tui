@@ -32,7 +32,7 @@ func TestParseTailwindClasses_Multiple(t *testing.T) {
 			input: "flex-col border-rounded font-bold text-red",
 			wantOptions: []string{
 				"tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column)",
-				"tui.WithBorderTRBL(3, 3, 3, 3)",
+				"tui.WithBorder(tui.BorderRounded)",
 			},
 			wantTextMethods: []string{"Bold()", "Foreground(tui.Red)"},
 			wantImports:     []string{"tui"},
@@ -253,63 +253,63 @@ func TestParseTailwindClasses_BorderAccumulation(t *testing.T) {
 	tests := map[string]tc{
 		"no border (substractive)": {
 			input:       "border border-none",
-			wantOptions: []string{"tui.WithBorderTRBL(0, 0, 0, 0)"},
+			wantOptions: []string{"tui.WithBorder(tui.BorderNone)"},
 		},
 		"no border (substractive, symmetrical classes)": {
 			input:       "border border-x-none border-y-none",
-			wantOptions: []string{"tui.WithBorderTRBL(0, 0, 0, 0)"},
+			wantOptions: []string{"tui.WithBorder(tui.BorderNone)"},
 		},
 		"border in all sides (individual classes)": {
 			input:       "border-t-double border-r-thick border-b-rounded border-l-single",
-			wantOptions: []string{"tui.WithBorderTRBL(2, 4, 3, 1)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderDouble, tui.BorderThick, tui.BorderRounded, tui.BorderSingle)"},
 		},
 		"border in all sides (symmetric classes)": {
 			input:       "border-x-double border-y-thick",
-			wantOptions: []string{"tui.WithBorderTRBL(4, 2, 4, 2)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderDouble, tui.BorderThick, tui.BorderDouble)"},
 		},
 		"border in all sides (mixed classes)": {
 			input:       "border-b-thick border-x-double border-t-thick",
-			wantOptions: []string{"tui.WithBorderTRBL(4, 2, 4, 2)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderDouble, tui.BorderThick, tui.BorderDouble)"},
 		},
 		"border in all sides but top (substractive)": {
 			input:       "border-single border-t-none",
-			wantOptions: []string{"tui.WithBorderTRBL(0, 1, 1, 1)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderSingle, tui.BorderSingle)"},
 		},
 		"border in all sides but top (additive)": {
 			input:       "border-r-single border-b-single border-l-single",
-			wantOptions: []string{"tui.WithBorderTRBL(0, 1, 1, 1)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderSingle, tui.BorderSingle)"},
 		},
 		"border in all sides but right (substractive)": {
 			input:       "border-x-double border-y-thick border-r-none",
-			wantOptions: []string{"tui.WithBorderTRBL(4, 0, 4, 2)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderNone, tui.BorderThick, tui.BorderDouble)"},
 		},
 		"border in all sides but right (additive)": {
 			input:       "border-y-rounded border-l-single",
-			wantOptions: []string{"tui.WithBorderTRBL(3, 0, 3, 1)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderNone, tui.BorderRounded, tui.BorderSingle)"},
 		},
 		"border in all sides but bottom (substractive)": {
 			input:       "border-rounded border-b-none",
-			wantOptions: []string{"tui.WithBorderTRBL(3, 3, 0, 3)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderNone, tui.BorderRounded)"},
 		},
 		"border in all sides but bottom (additive)": {
 			input:       "border-t-rounded border-x-rounded",
-			wantOptions: []string{"tui.WithBorderTRBL(3, 3, 0, 3)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderNone, tui.BorderRounded)"},
 		},
 		"border in all sides but left (substractive)": {
 			input:       "border-x-rounded border-l-none border-t-rounded border-b-rounded",
-			wantOptions: []string{"tui.WithBorderTRBL(3, 3, 3, 0)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderRounded, tui.BorderNone)"},
 		},
 		"border in all sides but left (additive)": {
 			input:       "border-y-thick border-r-double",
-			wantOptions: []string{"tui.WithBorderTRBL(4, 2, 4, 0)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderDouble, tui.BorderThick, tui.BorderNone)"},
 		},
 		"border in all sides but left and right (substractive, symmetric classes)": {
 			input:       "border-double border-x-none",
-			wantOptions: []string{"tui.WithBorderTRBL(2, 0, 2, 0)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderDouble, tui.BorderNone, tui.BorderDouble, tui.BorderNone)"},
 		},
 		"border in all sides but top and bottom (substractive, symmetric classes)": {
 			input:       "border-double border-y-none",
-			wantOptions: []string{"tui.WithBorderTRBL(0, 2, 0, 2)"},
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderNone, tui.BorderDouble, tui.BorderNone, tui.BorderDouble)"},
 		},
 	}
 
