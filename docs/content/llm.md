@@ -241,8 +241,8 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 
 | Element | Description |
 |---------|-------------|
-| `<input />` | Single-line text input. Attrs: `value` (`*State[string]`), `placeholder`, `width`, `border`, `borders`, `focusColor`, `borderGradient`, `focusGradient`, `onSubmit`, `onChange` |
-| `<textarea />` | Multi-line text input. Attrs: `value` (`*State[string]`), `placeholder`, `width`, `maxHeight`, `border`, `borders`, `focusColor`, `borderGradient`, `focusGradient`, `submitKey`, `onSubmit` |
+| `<input />` | Single-line text input. Attrs: `value` (`*State[string]`), `placeholder`, `width`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `onSubmit`, `onChange` |
+| `<textarea />` | Multi-line text input. Attrs: `value` (`*State[string]`), `placeholder`, `width`, `maxHeight`, `border`, `focusColor`, `borderGradient`, `focusGradient`, `submitKey`, `onSubmit` |
 | `<progress />` | Progress bar. Attrs: `value`, `max` |
 | `<hr />` | Horizontal rule |
 | `<br />` | Line break |
@@ -304,12 +304,6 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `scrollbarStyle` | `tui.Style` | Track style |
 | `scrollbarThumbStyle` | `tui.Style` | Thumb style |
 | `hideScrollbar` | `bool` | Hide scrollbar and reclaim gutter width |
-
-### Textarea / Input
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `borders` | expression | Border styles specified by side, in order (Top, Right, Bottom, Left). Example: `{tui.BorderNone, tui.BorderThick, tui.BorderDouble, tui.BorderThick}` |
 
 ### Modal
 

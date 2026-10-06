@@ -77,7 +77,6 @@ All `<input>` attributes and their types:
 | `placeholderStyle` | `tui.Style` | Placeholder styling (default: dim) |
 | `width` | `int` | Width in characters (default 20) |
 | `border` | `tui.BorderStyle` | Border style |
-| `borders` | `expression` | BorderStyle by side ({Top, Right, Bottom, Left}) |
 | `textStyle` | `tui.Style` | Text styling |
 | `cursor` | `rune` | Cursor character (default '▌') |
 | `focusColor` | `tui.Color` | Border color when focused (default Cyan) |
@@ -107,7 +106,7 @@ In `.gsx`:
 ```gsx
 <input
     value={s.query}
-    borders={tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone}
+    class="border-b-thick"
     focusColor={tui.Magenta}
     borderGradient={tui.NewGradient(tui.Blue, tui.Cyan)}
     focusGradient={tui.NewGradient(tui.Cyan, tui.Magenta)}
@@ -231,7 +230,6 @@ All `<textarea>` attributes and their types:
 | `width` | `int` | Width in characters (default 40) |
 | `maxHeight` | `int` | Maximum visible rows (0 = unlimited) |
 | `border` | `tui.BorderStyle` | Border style |
-| `borders` | `expression` | BorderStyle by side ({Top, Right, Bottom, Left}) |
 | `textStyle` | `tui.Style` | Text styling |
 | `cursor` | `rune` | Cursor character (default '▌') |
 | `focusColor` | `tui.Color` | Border color when focused (default Cyan) |

@@ -287,7 +287,6 @@ func TestAnalyzer_ValidateAttribute(t *testing.T) {
 		"padding":     {attr: "padding", valid: true},
 		"margin":      {attr: "margin", valid: true},
 		"border":      {attr: "border", valid: true},
-		"borders":     {attr: "borders", valid: true},
 		"borderStyle": {attr: "borderStyle", valid: true},
 		"text":        {attr: "text", valid: true},
 		"textStyle":   {attr: "textStyle", valid: true},

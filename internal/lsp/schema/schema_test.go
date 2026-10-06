@@ -431,22 +431,3 @@ func TestEveryElementHasOptions(t *testing.T) {
 		}
 	}
 }
-
-func TestOnlyInputTextAreaElementsHaveBorders(t *testing.T) {
-	for tag := range Elements {
-		attr := GetAttribute(tag, "borders")
-		if tag != "input" && tag != "textarea" {
-			if attr != nil {
-				t.Errorf("%s: borders attribute is only supported for input and textarea elements", tag)
-			}
-			continue
-		}
-		if attr == nil {
-			t.Errorf("%s: missing borders attribute", tag)
-			continue
-		}
-		if attr.Category != "visual" {
-			t.Errorf("%s: borders category = %q, want visual", tag, attr.Category)
-		}
-	}
-}

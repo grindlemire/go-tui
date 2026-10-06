@@ -530,7 +530,6 @@ func helper(s string) string {
 |-----------|------|-------------|
 | `value` | `string` | Current input value |
 | `placeholder` | `string` | Placeholder text when empty |
-| `borders` | expression | Border styles specified by side, in order (Top, Right, Bottom, Left). Example: `{tui.BorderNone, tui.BorderThick, tui.BorderDouble, tui.BorderThick}` |
 
 ### Progress-specific Attributes
 
@@ -547,7 +546,6 @@ func helper(s string) string {
 | `width` | `int` | Width in characters (default 40) |
 | `maxHeight` | `int` | Maximum height in rows (0 = unlimited) |
 | `border` | `tui.BorderStyle` | Border style |
-| `borders` | expression | Border styles specified by side, in order (Top, Right, Bottom, Left). Example: `{tui.BorderNone, tui.BorderThick, tui.BorderDouble, tui.BorderThick}` |
 | `textStyle` | `tui.Style` | Text styling |
 | `placeholderStyle` | `tui.Style` | Placeholder styling (default: dim) |
 | `cursor` | `rune` | Cursor character (default '▌') |

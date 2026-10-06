@@ -491,7 +491,6 @@ Available on: `div`, `ul`, `li`, `table`.
 | `placeholder` | string | Placeholder text when empty |
 | `width` | int | Input width in characters (default 20) |
 | `border` | `tui.BorderStyle` | Border style |
-| `borders` | `expression` | BorderStyle by side ({Top, Right, Bottom, Left}) |
 | `textStyle` | `tui.Style` | Text styling |
 | `placeholderStyle` | `tui.Style` | Placeholder text styling (default: dim) |
 | `cursor` | rune | Cursor character (default '▌') |

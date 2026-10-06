@@ -153,7 +153,7 @@ Border sides can be set individually:
 
 ```gsx
 // Input with only a visible thick border at bottom
-<input value={s.name} placeholder="Type your name..." width={30} borders={tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone} />
+<input value={s.name} placeholder="Type your name..." width={30} class="border-b-thick" />
 ```
 
 You can also set `focusColor` to change the border color when focused, or use `focusGradient` and `borderGradient` for gradient borders:
@@ -199,7 +199,7 @@ Bind `value` to a `*State[string]` for two-way binding. Set `maxHeight` to cap t
 
 By default, Enter triggers `onSubmit` and Ctrl+J inserts a newline. Set `submitKey` to a different key (like `tui.KeyCtrlS`) to make Enter insert newlines instead.
 
-The same border styling options from Input apply here: `focusColor`, `borderGradient`, and `focusGradient`. And border sides can be set individually with the `borders` attribute too.
+The same border styling options from Input apply here: `focusColor`, `borderGradient`, and `focusGradient`.
 
 ## Progress Bars
 

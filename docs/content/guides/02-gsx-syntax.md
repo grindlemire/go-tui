@@ -284,7 +284,7 @@ Here's the full set of supported attributes, grouped by purpose:
 
 **Scroll**: `scrollable`, `scrollOffset`, `scrollbarStyle`, `scrollbarThumbStyle`
 
-**Input and TextArea specific**: `value`, `placeholder`, `placeholderStyle`, `borders`, `cursor`, `focusColor`, `borderGradient`, `focusGradient`, `autofocus`
+**Input and TextArea specific**: `value`, `placeholder`, `placeholderStyle`, `cursor`, `focusColor`, `borderGradient`, `focusGradient`, `autofocus`
 
 **TextArea-specific**: `submitKey`
 

@@ -876,11 +876,11 @@ templ (c *myComp) Render() {
 type myComp struct{}
 
 templ (c *myComp) Render() {
-	<input borders={tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone} />
+	<input class="border-b-thick" />
 }`,
 			wantContains: []string{
 				"tui.NewInput(",
-				"tui.WithInputBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone)",
+				"tui.WithInputElementOptions(tui.WithBorderTRBL(0, 0, 4, 0))",
 			},
 		},
 		"input with no options": {
@@ -969,11 +969,11 @@ templ (c *myComp) Render() {
 type myComp struct{}
 
 templ (c *myComp) Render() {
-	<textarea borders={tui.BorderNone, tui.BorderThick, tui.BorderThick, tui.BorderNone} />
+	<textarea class="border-r-thick border-b-thick" />
 }`,
 			wantContains: []string{
 				"tui.NewTextArea(",
-				"tui.WithTextAreaBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderThick, tui.BorderNone)",
+				"tui.WithTextAreaElementOptions(tui.WithBorderTRBL(0, 4, 4, 0))",
 			},
 		},
 		"textarea with no options": {

@@ -378,7 +378,6 @@ var textareaAttributeToOption = map[string]string{
 	"width":            "tui.WithTextAreaWidth(%s)",
 	"maxHeight":        "tui.WithTextAreaMaxHeight(%s)",
 	"border":           "tui.WithTextAreaBorder(%s)",
-	"borders":          "tui.WithTextAreaBorderTRBL(%s)",
 	"textStyle":        "tui.WithTextAreaTextStyle(%s)",
 	"value":            "tui.WithTextAreaValue(%s)",
 	"placeholder":      "tui.WithTextAreaPlaceholder(%s)",
@@ -400,7 +399,6 @@ var textareaHandlerAttributes = map[string]string{
 var inputAttributeToOption = map[string]string{
 	"width":            "tui.WithInputWidth(%s)",
 	"border":           "tui.WithInputBorder(%s)",
-	"borders":          "tui.WithInputBorderTRBL(%s)",
 	"textStyle":        "tui.WithInputTextStyle(%s)",
 	"value":            "tui.WithInputValue(%s)",
 	"placeholder":      "tui.WithInputPlaceholder(%s)",

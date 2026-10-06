@@ -226,7 +226,6 @@ var knownAttributes = map[string]bool{
 	"onSubmit":         true,
 	"value":            true,
 	"onChange":         true,
-	"borders":          true,
 
 	// Markdown
 	"source": true,
