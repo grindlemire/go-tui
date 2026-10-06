@@ -840,7 +840,7 @@ func TestInput_Render_BorderStates(t *testing.T) {
 
 			root := inp.Render(testApp)
 			if tt.wantBorders != nil {
-				if !EqualBorders(root.border, *tt.wantBorders) {
+				if root.border != *tt.wantBorders {
 					t.Errorf("border = %+v, want %+v", root.border, tt.wantBorders)
 				}
 			} else if !root.border.All(tt.wantBorder) {

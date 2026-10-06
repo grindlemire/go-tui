@@ -36,7 +36,7 @@ func TestInputOptions_ConfigureFields(t *testing.T) {
 			opt: WithInputBorderTRBL(BorderDouble, BorderNone, BorderSingle, BorderNone),
 			check: func(t *testing.T, inp *Input) {
 				want := Borders{Top: BorderDouble, Right: BorderNone, Bottom: BorderSingle, Left: BorderNone}
-				if !EqualBorders(inp.border, want) {
+				if inp.border != want {
 					t.Errorf("border = %+v, want %+v", inp.border, want)
 				}
 			},

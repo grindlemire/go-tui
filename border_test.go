@@ -4,35 +4,6 @@ import (
 	"testing"
 )
 
-func TestBorderStyles_EqualBorders(t *testing.T) {
-	type tc struct {
-		bordersA, bordersB Borders
-		want               bool
-	}
-
-	tests := map[string]tc{
-		"equal borders": {
-			bordersA: BorderTRBL(BorderSingle, BorderDouble, BorderThick, BorderRounded),
-			bordersB: BorderTRBL(BorderSingle, BorderDouble, BorderThick, BorderRounded),
-			want:     true,
-		},
-		"non equal borders": {
-			bordersA: BorderTRBL(BorderSingle, BorderDouble, BorderThick, BorderRounded),
-			bordersB: BorderTRBL(BorderSingle, BorderDouble, BorderThick, BorderDouble),
-			want:     false,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := EqualBorders(tt.bordersA, tt.bordersB)
-			if got != tt.want {
-				t.Errorf("EqualBorders(%+v, %+v) = %+v, want %+v", tt.bordersA, tt.bordersB, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestBorderStyles_Chars_Single(t *testing.T) {
 	b := BorderAll(BorderSingle)
 	chars := b.Chars()

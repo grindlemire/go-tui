@@ -69,7 +69,7 @@ func TestNew_WithOptions(t *testing.T) {
 		"WithBorderTRBL": {
 			opts: []Option{WithBorderTRBL(BorderRounded, BorderSingle, BorderThick, BorderDouble)},
 			check: func(e *Element) bool {
-				return EqualBorders(e.border, Borders{Top: BorderRounded, Right: BorderSingle, Bottom: BorderThick, Left: BorderDouble})
+				return e.border == Borders{Top: BorderRounded, Right: BorderSingle, Bottom: BorderThick, Left: BorderDouble}
 			},
 			message: "WithBorderTRBL should set individual border styles for each side of the element",
 		},
@@ -439,7 +439,7 @@ func TestElement_VisualProperties(t *testing.T) {
 		t.Error("Border() should return the uniform border style")
 	}
 
-	if !EqualBorders(eIndividualBorders.Border(), Borders{Top: BorderRounded, Right: BorderSingle, Bottom: BorderThick, Left: BorderNone}) {
+	if eIndividualBorders.Border() != (Borders{Top: BorderRounded, Right: BorderSingle, Bottom: BorderThick, Left: BorderNone}) {
 		t.Error("Border() should return the border styles")
 	}
 
@@ -458,7 +458,7 @@ func TestElement_VisualProperties(t *testing.T) {
 	}
 
 	eIndividualBorders.SetBorderTRBL(BorderDouble, BorderSingle, BorderSingle, BorderThick)
-	if !EqualBorders(eIndividualBorders.Border(), Borders{Top: BorderDouble, Right: BorderSingle, Bottom: BorderSingle, Left: BorderThick}) {
+	if eIndividualBorders.Border() != (Borders{Top: BorderDouble, Right: BorderSingle, Bottom: BorderSingle, Left: BorderThick}) {
 		t.Error("SetBorderTRBL() should update border style for all sides")
 	}
 

@@ -93,7 +93,7 @@ func TestTextAreaOptions(t *testing.T) {
 			opts: []TextAreaOption{WithTextAreaBorderTRBL(BorderNone, BorderDouble, BorderThick, BorderSingle)},
 			assert: func(t *testing.T, ta *TextArea) {
 				want := Borders{Top: BorderNone, Right: BorderDouble, Bottom: BorderThick, Left: BorderSingle}
-				if !EqualBorders(ta.border, want) {
+				if ta.border != want {
 					t.Fatalf("border = %+v, want %+v", ta.border, want)
 				}
 			},

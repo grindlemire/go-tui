@@ -21,11 +21,6 @@ type Borders struct {
 	Top, Right, Bottom, Left BorderStyle
 }
 
-// EqualBorders checks if the two given borders values are equal.
-func EqualBorders(b1, b2 Borders) bool {
-	return b1.Top == b2.Top && b1.Right == b2.Right && b1.Bottom == b2.Bottom && b1.Left == b2.Left
-}
-
 // BorderChars holds the characters used to draw a box border.
 type BorderChars struct {
 	TopLeft     rune
