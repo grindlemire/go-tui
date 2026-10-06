@@ -123,6 +123,7 @@ var static = map[string]Class{
 // borderStyles maps border style keywords from classnames to their BorderStyle.
 var borderStyles = map[string]BorderStyle{
 	"none":    BorderNone,
+	"":        BorderSingle,
 	"single":  BorderSingle,
 	"double":  BorderDouble,
 	"rounded": BorderRounded,
@@ -447,16 +448,13 @@ func (s *sides) merge(side byte, b BorderStyle) {
 
 // parseBorder matches border style classes like border, border-thick, border-t-none or border-x-double.
 func parseBorder(class string) (side byte, b BorderStyle, ok bool) {
-	if class == "border" {
-		return 0, BorderSingle, true
-	}
 	m := borderFullPattern.FindStringSubmatch(class)
 	if m != nil {
 		return 0, borderStyles[m[2]], true
 	}
 	m = borderSidePattern.FindStringSubmatch(class)
 	if m == nil {
-		return 0, borderStyles["none"], false
+		return 0, 0, false
 	}
 	return m[1][0], borderStyles[m[2]], true
 }

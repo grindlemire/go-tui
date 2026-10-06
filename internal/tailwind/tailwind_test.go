@@ -68,6 +68,10 @@ func TestParse(t *testing.T) {
 			wantOps: []Op{PaddingEdges{Top: 2, Right: 2, Bottom: 3, Left: 2}},
 		},
 		"zero denominator ignored": {input: "w-1/0"},
+		"border class without style keyword renders as single": {
+			input:   "border",
+			wantOps: []Op{Border{Style: BorderSingle}},
+		},
 		"border styles merge per side and accumulate at end": {
 			input:   "border border-rounded border-double border-thick border-single",
 			wantOps: []Op{Border{Style: BorderSingle}},
