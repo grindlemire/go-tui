@@ -40,7 +40,7 @@ func WithTextAreaBorder(b BorderStyle) TextAreaOption {
 // WithTextAreaBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
 func WithTextAreaBorderTRBL(top, right, bottom, left BorderStyle) TextAreaOption {
 	return func(t *TextArea) {
-		t.border = BorderTRBL(top, right, bottom, left)
+		t.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 	}
 }
 

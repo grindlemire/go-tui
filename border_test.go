@@ -107,14 +107,12 @@ func TestBorderStyles_Chars_None(t *testing.T) {
 func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 	type tc struct {
 		borders Borders
-		styles  string
 		want    BorderChars
 	}
 
 	tests := map[string]tc{
 		"all visible styles": {
-			borders: BorderTRBL(BorderSingle, BorderDouble, BorderThick, BorderRounded),
-			styles:  "BorderSingle, BorderDouble, BorderThick, BorderRounded",
+			borders: Borders{Top: BorderSingle, Right: BorderDouble, Bottom: BorderThick, Left: BorderRounded},
 			want: BorderChars{
 				TopLeft:     '┌',
 				Top:         '─',
@@ -127,8 +125,7 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 			},
 		},
 		"border top none": {
-			borders: BorderTRBL(BorderNone, BorderDouble, BorderRounded, BorderThick),
-			styles:  "BorderNone, BorderDouble, BorderRounded, BorderThick",
+			borders: Borders{Top: BorderNone, Right: BorderDouble, Bottom: BorderRounded, Left: BorderThick},
 			want: BorderChars{
 				TopLeft:     ' ',
 				Top:         ' ',
@@ -141,8 +138,7 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 			},
 		},
 		"border right none": {
-			borders: BorderTRBL(BorderRounded, BorderNone, BorderDouble, BorderSingle),
-			styles:  "BorderRounded, BorderNone, BorderDouble, BorderSingle",
+			borders: Borders{Top: BorderRounded, Right: BorderNone, Bottom: BorderDouble, Left: BorderSingle},
 			want: BorderChars{
 				TopLeft:     '╭',
 				Top:         '─',
@@ -155,8 +151,7 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 			},
 		},
 		"border bottom none": {
-			borders: BorderTRBL(BorderThick, BorderSingle, BorderNone, BorderDouble),
-			styles:  "BorderThick, BorderSingle, BorderNone, BorderDouble",
+			borders: Borders{Top: BorderThick, Right: BorderSingle, Bottom: BorderNone, Left: BorderDouble},
 			want: BorderChars{
 				TopLeft:     '┏',
 				Top:         '━',
@@ -169,8 +164,7 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 			},
 		},
 		"border left none": {
-			borders: BorderTRBL(BorderDouble, BorderThick, BorderSingle, BorderNone),
-			styles:  "BorderDouble, BorderThick, BorderSingle, BorderNone",
+			borders: Borders{Top: BorderDouble, Right: BorderThick, Bottom: BorderSingle, Left: BorderNone},
 			want: BorderChars{
 				TopLeft:     ' ',
 				Top:         '═',
@@ -189,7 +183,7 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 			chars := tt.borders.Chars()
 
 			if chars != tt.want {
-				t.Errorf("BorderTRBL(%q).Chars() = %+v, want %+v", tt.styles, chars, tt.want)
+				t.Errorf("Borders%+v.Chars() = %+v, want %+v", tt.borders, chars, tt.want)
 			}
 		})
 	}

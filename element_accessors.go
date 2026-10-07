@@ -47,7 +47,7 @@ func (e *Element) SetBorder(border BorderStyle) {
 
 // SetBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
 func (e *Element) SetBorderTRBL(top, right, bottom, left BorderStyle) {
-	e.border = BorderTRBL(top, right, bottom, left)
+	e.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 }
 
 // BorderStyle returns the unfocused border style, the one SetBorderStyle

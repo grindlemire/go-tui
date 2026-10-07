@@ -29,7 +29,7 @@ func WithInputBorder(b BorderStyle) InputOption {
 // WithInputBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
 func WithInputBorderTRBL(top, right, bottom, left BorderStyle) InputOption {
 	return func(inp *Input) {
-		inp.border = BorderTRBL(top, right, bottom, left)
+		inp.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 	}
 }
 

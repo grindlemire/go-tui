@@ -188,7 +188,7 @@ func WithBorder(style BorderStyle) Option {
 // WithBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
 func WithBorderTRBL(top, right, bottom, left BorderStyle) Option {
 	return func(e *Element) {
-		e.border = BorderTRBL(top, right, bottom, left)
+		e.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 	}
 }
 

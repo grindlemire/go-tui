@@ -160,11 +160,6 @@ func BorderAll(border BorderStyle) Borders {
 	return Borders{Top: border, Right: border, Bottom: border, Left: border}
 }
 
-// BorderTRBL creates border styles following CSS order: Top, Right, Bottom, Left.
-func BorderTRBL(t, r, b, l BorderStyle) Borders {
-	return Borders{Top: t, Right: r, Bottom: b, Left: l}
-}
-
 // All returns true if all border styles match the given border style.
 func (b Borders) All(s BorderStyle) bool {
 	return b.Top == s && b.Right == s && b.Bottom == s && b.Left == s
