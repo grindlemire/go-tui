@@ -116,18 +116,18 @@ const (
 
 func (s BorderStyle) String() string {
 	switch s {
-		case BorderNone:
-			return "BorderNone"
-		case BorderSingle:
-			return "BorderSingle"
-		case BorderDouble:
-			return "BorderDouble"
-		case BorderRounded:
-			return "BorderRounded"
-		case BorderThick:
-			return "BorderThick"
-		default:
-			return fmt.Sprintf("BorderStyle(%d)", s)
+	case BorderNone:
+		return "BorderNone"
+	case BorderSingle:
+		return "BorderSingle"
+	case BorderDouble:
+		return "BorderDouble"
+	case BorderRounded:
+		return "BorderRounded"
+	case BorderThick:
+		return "BorderThick"
+	default:
+		return fmt.Sprintf("BorderStyle(%d)", s)
 	}
 }
 
