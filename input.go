@@ -184,10 +184,8 @@ func (inp *Input) visibleWidth() int {
 	if inp.laidOut {
 		return inp.layoutWidth
 	}
-	w := inp.width
-	if !inp.border.All(BorderNone) {
-		return w - 2
-	}
+	insets := inp.border.insets()
+	w := inp.width - insets.Left - insets.Right
 	return w
 }
 
@@ -271,7 +269,8 @@ func (inp *Input) Render(app *App) *Element {
 	// element options (a class border) may have set.
 	totalHeight := 1
 	if !root.Border().All(BorderNone) {
-		totalHeight += 2
+		insets := root.Border().insets()
+		totalHeight += insets.Top + insets.Bottom
 		if inp.focused.Get() {
 			if inp.focusGradient != nil {
 				root.Apply(WithBorderGradient(*inp.focusGradient))

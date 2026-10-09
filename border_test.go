@@ -127,9 +127,9 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 		"border top none": {
 			borders: Borders{Top: BorderNone, Right: BorderDouble, Bottom: BorderRounded, Left: BorderThick},
 			want: BorderChars{
-				TopLeft:     ' ',
+				TopLeft:     '┃',
 				Top:         ' ',
-				TopRight:    ' ',
+				TopRight:    '║',
 				Left:        '┃',
 				Right:       '║',
 				BottomLeft:  '╰',
@@ -142,12 +142,12 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 			want: BorderChars{
 				TopLeft:     '╭',
 				Top:         '─',
-				TopRight:    ' ',
+				TopRight:    '─',
 				Left:        '│',
 				Right:       ' ',
 				BottomLeft:  '╚',
 				Bottom:      '═',
-				BottomRight: ' ',
+				BottomRight: '═',
 			},
 		},
 		"border bottom none": {
@@ -158,20 +158,20 @@ func TestBorderStyles_Chars_MixedStylesPerSide(t *testing.T) {
 				TopRight:    '┓',
 				Left:        '║',
 				Right:       '│',
-				BottomLeft:  ' ',
+				BottomLeft:  '║',
 				Bottom:      ' ',
-				BottomRight: ' ',
+				BottomRight: '│',
 			},
 		},
 		"border left none": {
 			borders: Borders{Top: BorderDouble, Right: BorderThick, Bottom: BorderSingle, Left: BorderNone},
 			want: BorderChars{
-				TopLeft:     ' ',
+				TopLeft:     '═',
 				Top:         '═',
 				TopRight:    '╗',
 				Left:        ' ',
 				Right:       '┃',
-				BottomLeft:  ' ',
+				BottomLeft:  '─',
 				Bottom:      '─',
 				BottomRight: '┘',
 			},
@@ -241,7 +241,7 @@ func TestDrawBox_SingleBorder(t *testing.T) {
 	}
 }
 
-func TestDrawBox_MinimalSize(t *testing.T) {
+func TestDrawBox_MinimalCompleteRect(t *testing.T) {
 	buf := NewBuffer(10, 5)
 	style := NewStyle()
 
@@ -263,32 +263,138 @@ func TestDrawBox_MinimalSize(t *testing.T) {
 	}
 }
 
-func TestDrawBox_TooSmall(t *testing.T) {
+func TestDrawBox_EmptyRect(t *testing.T) {
+	buf := NewBuffer(10, 10)
+	style := NewStyle()
+
+	buf.SetRune(5, 5, 'X', style)
+
+	DrawBox(buf, NewRect(0, 0, 0, 0), BorderAll(BorderSingle), style)
+
+	// An empty rect draws nothing.
+	if buf.Cell(5, 5).Rune != 'X' {
+		t.Error("DrawBox should draw nothing for an empty rect")
+	}
+}
+
+func TestDrawBox_IncompleteRectsWithSideBorders(t *testing.T) {
+	style := NewStyle()
 	type tc struct {
-		width  int
-		height int
+		width    int
+		height   int
+		borders  *Borders
+		wantRune map[[2]int]rune
 	}
 
 	tests := map[string]tc{
-		"1x1": {width: 1, height: 1},
-		"1x5": {width: 1, height: 5},
-		"5x1": {width: 5, height: 1},
-		"0x0": {width: 0, height: 0},
+		"only-right, 1-row rect": {
+			width:   6,
+			height:  1,
+			borders: &Borders{Right: BorderDouble},
+			wantRune: map[[2]int]rune{
+				{0, 0}: ' ',
+				{1, 0}: ' ',
+				{2, 0}: ' ',
+				{3, 0}: ' ',
+				{4, 0}: ' ',
+				{5, 0}: '║',
+			},
+		},
+		"only-left, 1-row rect": {
+			width:   4,
+			height:  1,
+			borders: &Borders{Left: BorderDouble},
+			wantRune: map[[2]int]rune{
+				{0, 0}: '║',
+				{1, 0}: ' ',
+				{2, 0}: ' ',
+				{3, 0}: ' ',
+			},
+		},
+		"left-and-right, 1-row rect": {
+			width:   6,
+			height:  1,
+			borders: &Borders{Right: BorderDouble, Left: BorderDouble},
+			wantRune: map[[2]int]rune{
+				{0, 0}: '║',
+				{1, 0}: ' ',
+				{2, 0}: ' ',
+				{3, 0}: ' ',
+				{4, 0}: ' ',
+				{5, 0}: '║',
+			},
+		},
+		"only-bottom, 1-row rect": {
+			width:   6,
+			height:  1,
+			borders: &Borders{Bottom: BorderSingle},
+			wantRune: map[[2]int]rune{
+				{0, 0}: '─',
+				{1, 0}: '─',
+				{2, 0}: '─',
+				{3, 0}: '─',
+				{4, 0}: '─',
+				{5, 0}: '─',
+			},
+		},
+		"only-top, 1-column rect": {
+			width:   1,
+			height:  3,
+			borders: &Borders{Top: BorderSingle},
+			wantRune: map[[2]int]rune{
+				{0, 0}: '─',
+				{0, 1}: ' ',
+				{0, 2}: ' ',
+			},
+		},
+		"only-bottom, 1-column rect": {
+			width:   1,
+			height:  3,
+			borders: &Borders{Bottom: BorderSingle},
+			wantRune: map[[2]int]rune{
+				{0, 0}: ' ',
+				{0, 1}: ' ',
+				{0, 2}: '─',
+			},
+		},
+		"top-and-bottom, 1-column rect": {
+			width:   1,
+			height:  6,
+			borders: &Borders{Top: BorderSingle, Bottom: BorderSingle},
+			wantRune: map[[2]int]rune{
+				{0, 0}: '─',
+				{0, 1}: ' ',
+				{0, 2}: ' ',
+				{0, 3}: ' ',
+				{0, 4}: ' ',
+				{0, 5}: '─',
+			},
+		},
+		"left-and-right, 1-column rect": {
+			width:   1,
+			height:  4,
+			borders: &Borders{Right: BorderDouble, Left: BorderDouble},
+			wantRune: map[[2]int]rune{
+				{0, 0}: '║',
+				{0, 1}: '║',
+				{0, 2}: '║',
+				{0, 3}: '║',
+			},
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			buf := NewBuffer(10, 10)
-			style := NewStyle()
-
-			// Mark a cell to verify nothing was drawn
-			buf.SetRune(0, 0, 'X', style)
-
-			DrawBox(buf, NewRect(0, 0, tt.width, tt.height), BorderAll(BorderSingle), style)
-
-			// The 'X' should still be there (nothing drawn)
-			if buf.Cell(0, 0).Rune != 'X' {
-				t.Error("DrawBox should do nothing for rect smaller than 2x2")
+			buf := NewBuffer(tt.width+1, tt.height+1)
+			DrawBox(buf, NewRect(0, 0, tt.width, tt.height), *tt.borders, style)
+			for pos, r := range tt.wantRune {
+				if got := buf.Cell(pos[0], pos[1]).Rune; got != r {
+					t.Errorf("cell (%d, %d) = %q, want %q", pos[0], pos[1], got, r)
+				}
+			}
+			// Off-rect cells are never written.
+			if offRect := buf.Cell(tt.width, tt.height).Rune; offRect != ' ' {
+				t.Errorf("off rect cell (%d,%d) = %q, want untouched ' '", tt.width, tt.height, offRect)
 			}
 		})
 	}

@@ -236,16 +236,14 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 		return
 	}
 
+	insets := e.border.insets()
+
 	// Capture the cursor at its draw site, using the same content origin and the
 	// active clip (already gutter-shrunk by the enclosing scrollable) the renderer
 	// uses for this element's text.
 	if e.cursorSource != nil {
-		ox := screenX + e.style.Padding.Left
-		oy := screenY + e.style.Padding.Top
-		if !e.border.All(BorderNone) {
-			ox++
-			oy++
-		}
+		ox := screenX + e.style.Padding.Left + insets.Left
+		oy := screenY + e.style.Padding.Top + insets.Top
 		e.captureCursor(ox, oy, clipRect)
 	}
 
@@ -287,16 +285,9 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	// Render rich text with clipping (parallel to the plain-text block below).
 	// An element has either plain text or rich text, never both.
 	if len(e.richText) > 0 {
-		textBaseX := screenX + e.style.Padding.Left
-		textBaseY := screenY + e.style.Padding.Top
-		if !e.border.All(BorderNone) {
-			textBaseX += 1
-			textBaseY += 1
-		}
-		availTextWidth := childRect.Width - e.style.Padding.Horizontal()
-		if !e.border.All(BorderNone) {
-			availTextWidth -= 2
-		}
+		textBaseX := screenX + e.style.Padding.Left + insets.Left
+		textBaseY := screenY + e.style.Padding.Top + insets.Top
+		availTextWidth := childRect.Width - e.style.Padding.Horizontal() - insets.Left - insets.Right
 
 		ts := rc.textStyle
 		if rc.bg != nil && !rc.bg.Bg.IsDefault() {
@@ -314,17 +305,10 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 
 	// Render text with clipping
 	if e.text != "" {
-		textBaseX := screenX + e.style.Padding.Left
-		textBaseY := screenY + e.style.Padding.Top
-		if !e.border.All(BorderNone) {
-			textBaseX += 1
-			textBaseY += 1
-		}
+		textBaseX := screenX + e.style.Padding.Left + insets.Left
+		textBaseY := screenY + e.style.Padding.Top + insets.Top
 
-		availTextWidth := childRect.Width - e.style.Padding.Horizontal()
-		if !e.border.All(BorderNone) {
-			availTextWidth -= 2
-		}
+		availTextWidth := childRect.Width - e.style.Padding.Horizontal() - insets.Left - insets.Right
 
 		var lines []string
 		if !e.noWrap && availTextWidth > 0 {
@@ -337,10 +321,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			if e.noWrap {
 				lines[0] = truncateText(lines[0], availTextWidth)
 			} else {
-				availTextHeight := childRect.Height - e.style.Padding.Vertical()
-				if !e.border.All(BorderNone) {
-					availTextHeight -= 2
-				}
+				availTextHeight := childRect.Height - e.style.Padding.Vertical() - insets.Top - insets.Bottom
 				if len(lines) > availTextHeight && availTextHeight > 0 {
 					lines = lines[:availTextHeight]
 					lines[availTextHeight-1] = truncateText(lines[availTextHeight-1], availTextWidth)

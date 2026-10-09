@@ -21,6 +21,23 @@ type Borders struct {
 	Top, Right, Bottom, Left BorderStyle
 }
 
+func (b Borders) insets() Edges {
+	top, right, bottom, left := 0, 0, 0, 0
+	if b.Top != BorderNone {
+		top = 1
+	}
+	if b.Right != BorderNone {
+		right = 1
+	}
+	if b.Bottom != BorderNone {
+		bottom = 1
+	}
+	if b.Left != BorderNone {
+		left = 1
+	}
+	return Edges{Top: top, Right: right, Bottom: bottom, Left: left}
+}
+
 // BorderChars holds the characters used to draw a box border.
 type BorderChars struct {
 	TopLeft     rune
@@ -42,7 +59,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 	case 't':
 		switch styles.Top {
 		case BorderSingle:
-			c.Top = '─'
+			c.Top, c.TopLeft, c.TopRight = '─', '─', '─'
 			if styles.Left != BorderNone {
 				c.TopLeft = '┌'
 			}
@@ -50,7 +67,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 				c.TopRight = '┐'
 			}
 		case BorderDouble:
-			c.Top = '═'
+			c.Top, c.TopLeft, c.TopRight = '═', '═', '═'
 			if styles.Left != BorderNone {
 				c.TopLeft = '╔'
 			}
@@ -58,7 +75,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 				c.TopRight = '╗'
 			}
 		case BorderRounded:
-			c.Top = '─'
+			c.Top, c.TopLeft, c.TopRight = '─', '─', '─'
 			if styles.Left != BorderNone {
 				c.TopLeft = '╭'
 			}
@@ -66,7 +83,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 				c.TopRight = '╮'
 			}
 		case BorderThick:
-			c.Top = '━'
+			c.Top, c.TopLeft, c.TopRight = '━', '━', '━'
 			if styles.Left != BorderNone {
 				c.TopLeft = '┏'
 			}
@@ -78,17 +95,41 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 		switch styles.Right {
 		case BorderSingle:
 			c.Right = '│'
+			if styles.Top == BorderNone {
+				c.TopRight = '│'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomRight = '│'
+			}
 		case BorderDouble:
 			c.Right = '║'
+			if styles.Top == BorderNone {
+				c.TopRight = '║'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomRight = '║'
+			}
 		case BorderRounded:
 			c.Right = '│'
+			if styles.Top == BorderNone {
+				c.TopRight = '│'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomRight = '│'
+			}
 		case BorderThick:
 			c.Right = '┃'
+			if styles.Top == BorderNone {
+				c.TopRight = '┃'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomRight = '┃'
+			}
 		}
 	case 'b':
 		switch styles.Bottom {
 		case BorderSingle:
-			c.Bottom = '─'
+			c.Bottom, c.BottomLeft, c.BottomRight = '─', '─', '─'
 			if styles.Left != BorderNone {
 				c.BottomLeft = '└'
 			}
@@ -96,7 +137,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 				c.BottomRight = '┘'
 			}
 		case BorderDouble:
-			c.Bottom = '═'
+			c.Bottom, c.BottomLeft, c.BottomRight = '═', '═', '═'
 			if styles.Left != BorderNone {
 				c.BottomLeft = '╚'
 			}
@@ -104,7 +145,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 				c.BottomRight = '╝'
 			}
 		case BorderRounded:
-			c.Bottom = '─'
+			c.Bottom, c.BottomLeft, c.BottomRight = '─', '─', '─'
 			if styles.Left != BorderNone {
 				c.BottomLeft = '╰'
 			}
@@ -112,7 +153,7 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 				c.BottomRight = '╯'
 			}
 		case BorderThick:
-			c.Bottom = '━'
+			c.Bottom, c.BottomLeft, c.BottomRight = '━', '━', '━'
 			if styles.Left != BorderNone {
 				c.BottomLeft = '┗'
 			}
@@ -124,12 +165,36 @@ func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
 		switch styles.Left {
 		case BorderSingle:
 			c.Left = '│'
+			if styles.Top == BorderNone {
+				c.TopLeft = '│'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomLeft = '│'
+			}
 		case BorderDouble:
 			c.Left = '║'
+			if styles.Top == BorderNone {
+				c.TopLeft = '║'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomLeft = '║'
+			}
 		case BorderRounded:
 			c.Left = '│'
+			if styles.Top == BorderNone {
+				c.TopLeft = '│'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomLeft = '│'
+			}
 		case BorderThick:
 			c.Left = '┃'
+			if styles.Top == BorderNone {
+				c.TopLeft = '┃'
+			}
+			if styles.Bottom == BorderNone {
+				c.BottomLeft = '┃'
+			}
 		}
 	}
 }
@@ -167,11 +232,10 @@ func (b Borders) All(s BorderStyle) bool {
 
 // DrawBox draws box borders on the buffer at the specified rectangle.
 // The box is drawn using the specified borders styles and style (colors/attributes).
-// If the rectangle is smaller than 2x2, the function does nothing.
+// Sides only render if they have a visible border style, so a single or just
+// horizontal sides render even in one-row/one-column rectangles.
+// If the rectangle is empty, the function does nothing.
 func DrawBox(buf *Buffer, rect Rect, borders Borders, style Style) {
-	if rect.Width < 2 || rect.Height < 2 {
-		return
-	}
 	if borders.All(BorderNone) {
 		return
 	}
@@ -181,7 +245,7 @@ func DrawBox(buf *Buffer, rect Rect, borders Borders, style Style) {
 	// Clip rect to buffer bounds
 	bufRect := buf.Rect()
 	rect = rect.Intersect(bufRect)
-	if rect.IsEmpty() || rect.Width < 2 || rect.Height < 2 {
+	if rect.IsEmpty() {
 		return
 	}
 
@@ -190,22 +254,40 @@ func DrawBox(buf *Buffer, rect Rect, borders Borders, style Style) {
 	top := rect.Y
 	bottom := rect.Bottom() - 1
 
+	drawCorner := func(x, y int, r rune) {
+		if r != ' ' {
+			buf.SetRune(x, y, r, style)
+		}
+	}
+
 	// Draw corners
-	buf.SetRune(left, top, chars.TopLeft, style)
-	buf.SetRune(right, top, chars.TopRight, style)
-	buf.SetRune(left, bottom, chars.BottomLeft, style)
-	buf.SetRune(right, bottom, chars.BottomRight, style)
+	drawCorner(left, top, chars.TopLeft)
+	drawCorner(right, top, chars.TopRight)
+	drawCorner(left, bottom, chars.BottomLeft)
+	drawCorner(right, bottom, chars.BottomRight)
 
 	// Draw top and bottom edges
-	for x := left + 1; x < right; x++ {
-		buf.SetRune(x, top, chars.Top, style)
-		buf.SetRune(x, bottom, chars.Bottom, style)
+	if borders.Top != BorderNone {
+		for x := left + 1; x < right; x++ {
+			buf.SetRune(x, top, chars.Top, style)
+		}
+	}
+	if borders.Bottom != BorderNone {
+		for x := left + 1; x < right; x++ {
+			buf.SetRune(x, bottom, chars.Bottom, style)
+		}
 	}
 
 	// Draw left and right edges
-	for y := top + 1; y < bottom; y++ {
-		buf.SetRune(left, y, chars.Left, style)
-		buf.SetRune(right, y, chars.Right, style)
+	if borders.Left != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			buf.SetRune(left, y, chars.Left, style)
+		}
+	}
+	if borders.Right != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			buf.SetRune(right, y, chars.Right, style)
+		}
 	}
 }
 
@@ -216,9 +298,6 @@ func DrawBox(buf *Buffer, rect Rect, borders Borders, style Style) {
 // - DiagonalDown: top-left to bottom-right
 // - DiagonalUp: bottom-left to top-right
 func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseStyle Style) {
-	if rect.Width < 2 || rect.Height < 2 {
-		return
-	}
 	if borders.All(BorderNone) {
 		return
 	}
@@ -228,7 +307,7 @@ func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseSt
 	// Clip rect to buffer bounds
 	bufRect := buf.Rect()
 	rect = rect.Intersect(bufRect)
-	if rect.IsEmpty() || rect.Width < 2 || rect.Height < 2 {
+	if rect.IsEmpty() {
 		return
 	}
 
@@ -239,6 +318,9 @@ func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseSt
 	width := float64(rect.Width)
 	height := float64(rect.Height)
 	perimeter := 2*width + 2*height - 4 // Subtract 4 for corners counted twice
+	if perimeter <= 0 {
+		return
+	}
 
 	// Helper to calculate t along the perimeter, mirrored so the gradient
 	// goes Start→End over the first half and End→Start over the second half.
@@ -269,45 +351,45 @@ func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseSt
 
 	// Draw corners with gradient
 	style := baseStyle
-	if borders.Top != BorderNone {
-		if borders.Left != BorderNone {
-			style.Fg = g.At(getPerimeterT(left, top))
-			buf.SetRune(left, top, chars.TopLeft, style)
+	drawCorner := func(x, y int, r rune) {
+		if r != ' ' {
+			buf.SetRune(x, y, r, style)
+			style.Fg = g.At(getPerimeterT(x, y))
+			buf.SetRune(x, y, r, style)
 		}
+	}
 
-		if borders.Right != BorderNone {
-			style.Fg = g.At(getPerimeterT(right, top))
-			buf.SetRune(right, top, chars.TopRight, style)
+	drawCorner(left, top, chars.TopLeft)
+	drawCorner(right, top, chars.TopRight)
+	drawCorner(left, bottom, chars.BottomLeft)
+	drawCorner(right, bottom, chars.BottomRight)
+
+	// Draw top and bottom edges with gradient
+	if borders.Top != BorderNone {
+		for x := left + 1; x < right; x++ {
+			style.Fg = g.At(getPerimeterT(x, top))
+			buf.SetRune(x, top, chars.Top, style)
 		}
 	}
 	if borders.Bottom != BorderNone {
-		if borders.Left != BorderNone {
-			style.Fg = g.At(getPerimeterT(left, bottom))
-			buf.SetRune(left, bottom, chars.BottomLeft, style)
+		for x := left + 1; x < right; x++ {
+			style.Fg = g.At(getPerimeterT(x, bottom))
+			buf.SetRune(x, bottom, chars.Bottom, style)
 		}
-
-		if borders.Right != BorderNone {
-			style.Fg = g.At(getPerimeterT(right, bottom))
-			buf.SetRune(right, bottom, chars.BottomRight, style)
-		}
-	}
-
-	// Draw top and bottom edges with gradient
-	for x := left + 1; x < right; x++ {
-		style.Fg = g.At(getPerimeterT(x, top))
-		buf.SetRune(x, top, chars.Top, style)
-
-		style.Fg = g.At(getPerimeterT(x, bottom))
-		buf.SetRune(x, bottom, chars.Bottom, style)
 	}
 
 	// Draw left and right edges with gradient
-	for y := top + 1; y < bottom; y++ {
-		style.Fg = g.At(getPerimeterT(left, y))
-		buf.SetRune(left, y, chars.Left, style)
-
-		style.Fg = g.At(getPerimeterT(right, y))
-		buf.SetRune(right, y, chars.Right, style)
+	if borders.Left != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			style.Fg = g.At(getPerimeterT(left, y))
+			buf.SetRune(left, y, chars.Left, style)
+		}
+	}
+	if borders.Right != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			style.Fg = g.At(getPerimeterT(right, y))
+			buf.SetRune(right, y, chars.Right, style)
+		}
 	}
 }
 
@@ -316,10 +398,10 @@ func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseSt
 // clipRect are actually drawn. This enables partial borders rendering
 // when an element is partially scrolled out of view.
 func DrawBoxClipped(buf *Buffer, rect Rect, borders Borders, style Style, clipRect Rect) {
-	if rect.Width < 2 || rect.Height < 2 {
+	if borders.All(BorderNone) {
 		return
 	}
-	if borders.All(BorderNone) {
+	if rect.IsEmpty() {
 		return
 	}
 
@@ -330,41 +412,46 @@ func DrawBoxClipped(buf *Buffer, rect Rect, borders Borders, style Style, clipRe
 	top := rect.Y
 	bottom := rect.Bottom() - 1
 
-	// Draw corners (only if within clip region)
-	if borders.Top != BorderNone {
-		if borders.Left != BorderNone && clipRect.Contains(left, top) {
-			buf.SetRune(left, top, chars.TopLeft, style)
+	// Draw corners
+	drawCorner := func(x, y int, r rune) {
+		if r != ' ' && clipRect.Contains(x, y) {
+			buf.SetRune(x, y, r, style)
 		}
-		if borders.Right != BorderNone && clipRect.Contains(right, top) {
-			buf.SetRune(right, top, chars.TopRight, style)
+	}
+	drawCorner(left, top, chars.TopLeft)
+	drawCorner(right, top, chars.TopRight)
+	drawCorner(left, bottom, chars.BottomLeft)
+	drawCorner(right, bottom, chars.BottomRight)
+
+	// Draw top and bottom edges (only if within clip region)
+	if borders.Top != BorderNone {
+		for x := left + 1; x < right; x++ {
+			if clipRect.Contains(x, top) {
+				buf.SetRune(x, top, chars.Top, style)
+			}
 		}
 	}
 	if borders.Bottom != BorderNone {
-		if borders.Left != BorderNone && clipRect.Contains(left, bottom) {
-			buf.SetRune(left, bottom, chars.BottomLeft, style)
-		}
-		if borders.Right != BorderNone && clipRect.Contains(right, bottom) {
-			buf.SetRune(right, bottom, chars.BottomRight, style)
-		}
-	}
-
-	// Draw top and bottom edges
-	for x := left + 1; x < right; x++ {
-		if clipRect.Contains(x, top) {
-			buf.SetRune(x, top, chars.Top, style)
-		}
-		if clipRect.Contains(x, bottom) {
-			buf.SetRune(x, bottom, chars.Bottom, style)
+		for x := left + 1; x < right; x++ {
+			if clipRect.Contains(x, bottom) {
+				buf.SetRune(x, bottom, chars.Bottom, style)
+			}
 		}
 	}
 
-	// Draw left and right edges
-	for y := top + 1; y < bottom; y++ {
-		if clipRect.Contains(left, y) {
-			buf.SetRune(left, y, chars.Left, style)
+	// Draw left and right edges (only if within clip region)
+	if borders.Left != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			if clipRect.Contains(left, y) {
+				buf.SetRune(left, y, chars.Left, style)
+			}
 		}
-		if clipRect.Contains(right, y) {
-			buf.SetRune(right, y, chars.Right, style)
+	}
+	if borders.Right != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			if clipRect.Contains(right, y) {
+				buf.SetRune(right, y, chars.Right, style)
+			}
 		}
 	}
 }
@@ -373,10 +460,10 @@ func DrawBoxClipped(buf *Buffer, rect Rect, borders Borders, style Style, clipRe
 // Positions and gradient colors are computed from the full rect, but only
 // characters within clipRect are actually drawn.
 func DrawBoxGradientClipped(buf *Buffer, rect Rect, borders Borders, g Gradient, baseStyle Style, clipRect Rect) {
-	if rect.Width < 2 || rect.Height < 2 {
+	if borders.All(BorderNone) {
 		return
 	}
-	if borders.All(BorderNone) {
+	if rect.IsEmpty() {
 		return
 	}
 
@@ -389,6 +476,9 @@ func DrawBoxGradientClipped(buf *Buffer, rect Rect, borders Borders, g Gradient,
 	width := float64(rect.Width)
 	height := float64(rect.Height)
 	perimeter := 2*width + 2*height - 4
+	if perimeter <= 0 {
+		return
+	}
 
 	// Mirrored perimeter t: Start→End over first half, End→Start over second half.
 	getPerimeterT := func(x, y int) float64 {
@@ -410,59 +500,59 @@ func DrawBoxGradientClipped(buf *Buffer, rect Rect, borders Borders, g Gradient,
 	}
 
 	style := baseStyle
-
-	// Draw corners with gradient (only if within clip region)
-	if borders.Top != BorderNone {
-		if borders.Left != BorderNone && clipRect.Contains(left, top) {
-			style.Fg = g.At(getPerimeterT(left, top))
-			buf.SetRune(left, top, chars.TopLeft, style)
+	// Draw corners with gradient
+	drawCorner := func(x, y int, r rune) {
+		if r != ' ' && clipRect.Contains(x, y) {
+			style.Fg = g.At(getPerimeterT(x, y))
+			buf.SetRune(x, y, r, style)
 		}
-		if borders.Right != BorderNone && clipRect.Contains(right, top) {
-			style.Fg = g.At(getPerimeterT(right, top))
-			buf.SetRune(right, top, chars.TopRight, style)
+	}
+	drawCorner(left, top, chars.TopLeft)
+	drawCorner(right, top, chars.TopRight)
+	drawCorner(left, bottom, chars.BottomLeft)
+	drawCorner(right, bottom, chars.BottomRight)
+
+	// Draw top and bottom edges with gradient
+	if borders.Top != BorderNone {
+		for x := left + 1; x < right; x++ {
+			if clipRect.Contains(x, top) {
+				style.Fg = g.At(getPerimeterT(x, top))
+				buf.SetRune(x, top, chars.Top, style)
+			}
 		}
 	}
 	if borders.Bottom != BorderNone {
-		if borders.Left != BorderNone && clipRect.Contains(left, bottom) {
-			style.Fg = g.At(getPerimeterT(left, bottom))
-			buf.SetRune(left, bottom, chars.BottomLeft, style)
-		}
-		if borders.Right != BorderNone && clipRect.Contains(right, bottom) {
-			style.Fg = g.At(getPerimeterT(right, bottom))
-			buf.SetRune(right, bottom, chars.BottomRight, style)
-		}
-	}
-
-	// Draw top and bottom edges with gradient
-	for x := left + 1; x < right; x++ {
-		if clipRect.Contains(x, top) {
-			style.Fg = g.At(getPerimeterT(x, top))
-			buf.SetRune(x, top, chars.Top, style)
-		}
-		if clipRect.Contains(x, bottom) {
-			style.Fg = g.At(getPerimeterT(x, bottom))
-			buf.SetRune(x, bottom, chars.Bottom, style)
+		for x := left + 1; x < right; x++ {
+			if clipRect.Contains(x, bottom) {
+				style.Fg = g.At(getPerimeterT(x, bottom))
+				buf.SetRune(x, bottom, chars.Bottom, style)
+			}
 		}
 	}
 
 	// Draw left and right edges with gradient
-	for y := top + 1; y < bottom; y++ {
-		if clipRect.Contains(left, y) {
-			style.Fg = g.At(getPerimeterT(left, y))
-			buf.SetRune(left, y, chars.Left, style)
+	if borders.Left != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			if clipRect.Contains(left, y) {
+				style.Fg = g.At(getPerimeterT(left, y))
+				buf.SetRune(left, y, chars.Left, style)
+			}
 		}
-		if clipRect.Contains(right, y) {
-			style.Fg = g.At(getPerimeterT(right, y))
-			buf.SetRune(right, y, chars.Right, style)
+	}
+	if borders.Right != BorderNone {
+		for y := top + 1; y < bottom; y++ {
+			if clipRect.Contains(right, y) {
+				style.Fg = g.At(getPerimeterT(right, y))
+				buf.SetRune(right, y, chars.Right, style)
+			}
 		}
 	}
 }
 
 // DrawBoxWithTitle draws the borders of a box with a title in the top border.
-// The title is aligned (default: center) and truncated if too long.
-// If the rectangle is smaller than 2x2, the function does nothing.
+// If the rectangle is empty, the function does nothing.
 func DrawBoxWithTitle(buf *Buffer, rect Rect, borders Borders, title string, style Style, align ...TextAlign) {
-	if rect.Width < 2 || rect.Height < 2 {
+	if rect.IsEmpty() {
 		return
 	}
 	if borders.All(BorderNone) {

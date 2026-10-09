@@ -189,11 +189,8 @@ func (t *TextArea) contentRows(lines []string, width int) int {
 
 // Height returns the total rendered height including border.
 func (t *TextArea) Height() int {
-	height := t.contentRows(t.wrapText(), t.wrapWidth())
-	if !t.border.All(BorderNone) {
-		height += 2
-	}
-	return height
+	insets := t.border.insets()
+	return t.contentRows(t.wrapText(), t.wrapWidth()) + insets.Top + insets.Bottom
 }
 
 // --- Component Interface ---
@@ -237,7 +234,8 @@ func (t *TextArea) Render(app *App) *Element {
 	// options (a class border) may have set.
 	totalHeight := rows
 	if !root.Border().All(BorderNone) {
-		totalHeight += 2
+		insets := root.Border().insets()
+		totalHeight += insets.Top + insets.Bottom
 		if t.focused.Get() {
 			if t.focusGradient != nil {
 				root.Apply(WithBorderGradient(*t.focusGradient))
@@ -526,11 +524,8 @@ func (t *TextArea) wrapWidth() int {
 	if t.laidOut {
 		return t.layoutWidth
 	}
-	w := t.width
-	if !t.border.All(BorderNone) {
-		w -= 2
-	}
-	return w
+	insets := t.border.insets()
+	return t.width - insets.Left - insets.Right
 }
 
 // wrapText wraps the text at the current wrap width.

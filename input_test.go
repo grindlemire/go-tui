@@ -116,12 +116,14 @@ func TestInput_VisibleWidth(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"no border uses full width":           {width: 20, border: BorderNone, want: 20},
-		"border reserves two columns":         {width: 20, border: BorderSingle, want: 18},
-		"rounded border also shrinks":         {width: 10, border: BorderRounded, want: 8},
-		"individual side borders shrinks too": {width: 16, borders: &Borders{Top: BorderNone, Right: BorderNone, Bottom: BorderThick, Left: BorderNone}, want: 14},
-		"zero width without border":           {width: 0, border: BorderNone, want: 0},
-		"narrow border can go negative":       {width: 1, border: BorderSingle, want: -1},
+		"no border uses full width":                  {width: 20, border: BorderNone, want: 20},
+		"border reserves two columns":                {width: 20, border: BorderSingle, want: 18},
+		"rounded border also shrinks":                {width: 10, border: BorderRounded, want: 8},
+		"both horizontal side borders shrinks too":   {width: 16, borders: &Borders{Top: BorderNone, Right: BorderThick, Bottom: BorderThick, Left: BorderDouble}, want: 14},
+		"one horizontal side border shrinks too":     {width: 16, borders: &Borders{Top: BorderNone, Right: BorderThick, Bottom: BorderThick, Left: BorderNone}, want: 15},
+		"zero width with no horizontal side borders": {width: 16, borders: &Borders{Top: BorderNone, Right: BorderNone, Bottom: BorderThick, Left: BorderNone}, want: 16},
+		"zero width without border":                  {width: 0, border: BorderNone, want: 0},
+		"narrow border can go negative":              {width: 1, border: BorderSingle, want: -1},
 	}
 
 	for name, tt := range tests {
