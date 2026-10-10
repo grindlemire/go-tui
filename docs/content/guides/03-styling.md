@@ -175,7 +175,13 @@ All four border styles can also be set separately for each box side. Several cla
 | `border-y-rounded` | Top and Bottom | Rounded corners | `─` |
 | `border-y-thick` | Top and Bottom | Heavy line | `━` |
 
-**About corners**: currently, corners are drawn only if adjacent sides have visible, non `none`, styles. Corners match the style of the top/bottom sides.
+**About corners**:
+- When adjacent sides are missing:
+  - When only top or bottom is set, corners use that side's horizontal char
+  - When only left or right is set, corners use that side's vertical char
+
+  This creates continuous lines instead of broken corners.
+- When adjacent sides are present: corners match the style of the top/bottom sides.
 
 ```gsx
 <div class="flex gap-2">

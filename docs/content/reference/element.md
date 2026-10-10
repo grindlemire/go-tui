@@ -434,7 +434,7 @@ func (e *Element) LayoutStyle() LayoutStyle
 func (e *Element) LayoutChildren() []Layoutable
 ```
 
-Part of the `Layoutable` interface. `LayoutStyle` returns the element's style with border padding added (borders consume 1 cell on each side). `LayoutChildren` returns visible children only; hidden elements are excluded.
+Part of the `Layoutable` interface. `LayoutStyle` returns the element's style with border padding added (borders consume 1 cell on each side they are set on). `LayoutChildren` returns visible children only; hidden elements are excluded.
 
 ### SetLayout / GetLayout
 

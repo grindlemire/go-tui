@@ -509,7 +509,6 @@ Available on: `div`, `ul`, `li`, `table`.
 | `width` | int | Width in characters (default 40) |
 | `maxHeight` | int | Maximum height in rows (0 = unlimited) |
 | `border` | `tui.BorderStyle` | Border style |
-| `borders` | `expression` | BorderStyle by side ({Top, Right, Bottom, Left}) |
 | `textStyle` | `tui.Style` | Text styling |
 | `placeholderStyle` | `tui.Style` | Placeholder text styling (default: dim) |
 | `cursor` | rune | Cursor character (default '▌') |

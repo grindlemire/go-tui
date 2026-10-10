@@ -455,7 +455,13 @@ For individual styles for each box side:
 | `border-y-rounded` | Top and Bottom | `BorderRounded` | `─` |
 | `border-y-thick` | Top and Bottom | `BorderThick` | `━` |
 
-**About corners**: currently, corners are drawn only if adjacent sides have visible, non `none`, styles. Corners match the style of the top/bottom sides.
+**About corners**:
+- When adjacent sides are missing:
+  - When only top or bottom is set, corners use that side's horizontal char
+  - When only left or right is set, corners use that side's vertical char
+
+  This creates continuous lines instead of broken corners.
+- When adjacent sides are present: corners match the style of the top/bottom sides.
 
 Border color classes: `border-red`, `border-cyan`, etc. apply a `Style` to the border characters.
 
