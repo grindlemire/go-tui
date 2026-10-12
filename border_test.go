@@ -400,6 +400,101 @@ func TestDrawBox_IncompleteRectsWithSideBorders(t *testing.T) {
 	}
 }
 
+func TestDrawBox_SidesOffUntouched(t *testing.T) {
+	bgStyle := NewStyle().Foreground(Red)
+	borderStyle := NewStyle().Foreground(Cyan)
+	seed := 'O'
+
+	seedBuffer := func(width, height int) *Buffer {
+		buf := NewBuffer(width, height)
+		for y := range height {
+			for x := range width {
+				buf.SetRune(x, y, seed, bgStyle)
+			}
+		}
+		return buf
+	}
+
+	type tc struct {
+		// Written border cells.
+		written map[[2]int]rune
+		// Cells the off sides must neither paint nor touch.
+		untouched  [][2]int
+		draw       func(buf *Buffer)
+		checkStyle bool
+	}
+
+	rect := NewRect(1, 1, 5, 3)
+
+	tests := map[string]tc{
+		"DrawBox top only": {
+			draw:       func(buf *Buffer) { DrawBox(buf, rect, Borders{Top: BorderSingle}, borderStyle) },
+			written:    map[[2]int]rune{{1, 1}: '─', {2, 1}: '─', {3, 1}: '─', {4, 1}: '─', {5, 1}: '─'},
+			untouched:  [][2]int{{1, 2}, {3, 2}, {5, 2}, {1, 3}, {3, 3}, {5, 3}},
+			checkStyle: true,
+		},
+		"DrawBox left only": {
+			draw:       func(buf *Buffer) { DrawBox(buf, rect, Borders{Left: BorderDouble}, borderStyle) },
+			written:    map[[2]int]rune{{1, 1}: '║', {1, 2}: '║', {1, 3}: '║'},
+			untouched:  [][2]int{{3, 1}, {5, 1}, {3, 2}, {3, 3}, {5, 3}},
+			checkStyle: true,
+		},
+		"DrawBoxGradient bottom only": {
+			draw: func(buf *Buffer) {
+				DrawBoxGradient(buf, rect, Borders{Bottom: BorderSingle}, NewGradient(Green, Blue), borderStyle)
+			},
+			written:   map[[2]int]rune{{1, 3}: '─', {2, 3}: '─', {3, 3}: '─', {4, 3}: '─', {5, 3}: '─'},
+			untouched: [][2]int{{1, 1}, {3, 1}, {5, 1}, {1, 2}, {3, 2}, {5, 2}},
+		},
+		"DrawBoxClipped top only": {
+			draw: func(buf *Buffer) {
+				DrawBoxClipped(buf, rect, Borders{Top: BorderSingle}, borderStyle, NewRect(0, 1, 10, 2))
+			},
+			written:    map[[2]int]rune{{1, 1}: '─', {2, 1}: '─', {3, 1}: '─', {4, 1}: '─', {5, 1}: '─'},
+			untouched:  [][2]int{{1, 2}, {3, 2}, {5, 2}, {1, 3}, {3, 3}, {5, 3}},
+			checkStyle: true,
+		},
+		"DrawBoxGradientClipped all sides": {
+			draw: func(buf *Buffer) {
+				DrawBoxGradientClipped(buf, rect, BorderAll(BorderThick), NewGradient(Green, Blue), borderStyle, NewRect(0, 0, 10, 5))
+			},
+			written: map[[2]int]rune{
+				{1, 1}: '┏', {2, 1}: '━', {3, 1}: '━', {4, 1}: '━', {5, 1}: '┓',
+				{1, 2}: '┃', {5, 2}: '┃',
+				{1, 3}: '┗', {2, 3}: '━', {3, 3}: '━', {4, 3}: '━', {5, 3}: '┛',
+			},
+			untouched: [][2]int{{3, 2}},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			buf := seedBuffer(7, 5)
+			tt.draw(buf)
+
+			for pos, r := range tt.written {
+				cell := buf.Cell(pos[0], pos[1])
+				if cell.Rune != r {
+					t.Errorf("cell (%d,%d) = %q, want %q", pos[0], pos[1], cell.Rune, r)
+				}
+				if tt.checkStyle && cell.Style != borderStyle {
+					t.Errorf("cell (%d,%d) style = %+v, want %+v", pos[0], pos[1], cell.Style, borderStyle)
+				}
+			}
+
+			for _, pos := range tt.untouched {
+				cell := buf.Cell(pos[0], pos[1])
+				if cell.Rune != seed {
+					t.Errorf("off-side cell (%d,%d) = %q, want untouched %q", pos[0], pos[1], cell.Rune, seed)
+				}
+				if cell.Style != bgStyle {
+					t.Errorf("off-side cell (%d,%d) style = %+v, want untouched %+v", pos[0], pos[1], cell.Style, bgStyle)
+				}
+			}
+		})
+	}
+}
+
 func TestDrawBox_BorderNone(t *testing.T) {
 	buf := NewBuffer(10, 5)
 	style := NewStyle()
