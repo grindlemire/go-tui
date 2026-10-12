@@ -506,7 +506,7 @@ func WithBorderTitleStyle(style Style) Option
 func WithFocusBorderStyle(style Style) Option
 ```
 
-`WithBorder` sets the same border shape for all sides of the element. `WithBorderTRBL` sets individually the border shape for each side of the element. `WithBorderTitle` draws a label in the top border line, truncated when wider than the top edge. `WithBorderTitleAlign` moves the title to `TextAlignLeft`, `TextAlignCenter` (the default), or `TextAlignRight`. The title matches the border style unless `WithBorderTitleStyle` gives it its own color and attributes. `WithFocusBorderStyle` sets a border style used only while the element is focused, falling back to `WithBorderStyle` otherwise:
+`WithBorder` sets the same border shape for all sides of the element. `WithBorderTRBL` sets individually the border shape for each side of the element. `WithBorderTitle` draws a label in the top border line, truncated when wider than the top edge; it is not drawn when the top border is `BorderNone`. `WithBorderTitleAlign` moves the title to `TextAlignLeft`, `TextAlignCenter` (the default), or `TextAlignRight`. The title matches the border style unless `WithBorderTitleStyle` gives it its own color and attributes. `WithFocusBorderStyle` sets a border style used only while the element is focused, falling back to `WithBorderStyle` otherwise:
 
 ```go
 el := tui.New(

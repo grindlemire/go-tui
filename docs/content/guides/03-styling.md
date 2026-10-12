@@ -228,7 +228,7 @@ The `borderTitle` attribute draws a label centered in the top border line:
 ╰────────────────────╯
 ```
 
-The title renders with the border's style, so border color classes and the `borderStyle` attribute color both the line and the label. Titles wider than the top edge are truncated. Wrapping the text in spaces (`" Status "`) keeps a gap between the label and the line characters.
+The title renders with the border's style, so border color classes and the `borderStyle` attribute color both the line and the label. Titles wider than the top edge are truncated. Wrapping the text in spaces (`" Status "`) keeps a gap between the label and the line characters. The title is not drawn when the top border is none (for example with `border-t-none`), since there is no line for it to sit on.
 
 Border titles also work with border gradients. The gradient draws first and the title overwrites the characters it covers.
 
