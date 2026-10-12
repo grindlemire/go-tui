@@ -563,7 +563,9 @@ func DrawBoxWithTitle(buf *Buffer, rect Rect, borders Borders, title string, sty
 	DrawBox(buf, rect, borders, style)
 
 	// Draw the title
-	drawBoxTitle(buf, rect, title, style, align...)
+	if borders.Top != BorderNone {
+		drawBoxTitle(buf, rect, title, style, align...)
+	}
 }
 
 // titleCluster is one grapheme cluster of a border title with its display width.

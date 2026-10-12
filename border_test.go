@@ -465,6 +465,12 @@ func TestDrawBox_SidesOffUntouched(t *testing.T) {
 			},
 			untouched: [][2]int{{3, 2}},
 		},
+		"DrawBoxWithTitle top none": {
+			draw:       func(buf *Buffer) { DrawBoxWithTitle(buf, rect, Borders{Bottom: BorderSingle}, "T", borderStyle) },
+			written:    map[[2]int]rune{{1, 3}: '─', {2, 3}: '─', {3, 3}: '─', {4, 3}: '─', {5, 3}: '─'},
+			untouched:  [][2]int{{1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}, {1, 2}, {3, 2}, {5, 2}},
+			checkStyle: true,
+		},
 	}
 
 	for name, tt := range tests {
