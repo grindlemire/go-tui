@@ -241,7 +241,7 @@ func TestDrawBox_SingleBorder(t *testing.T) {
 	}
 }
 
-func TestDrawBox_MinimalCompleteRect(t *testing.T) {
+func TestDrawBox_MinimalAllSidesRect(t *testing.T) {
 	buf := NewBuffer(10, 5)
 	style := NewStyle()
 
@@ -277,7 +277,7 @@ func TestDrawBox_EmptyRect(t *testing.T) {
 	}
 }
 
-func TestDrawBox_IncompleteRectsWithSideBorders(t *testing.T) {
+func TestDrawBox_SingleRowAndColumnRects(t *testing.T) {
 	style := NewStyle()
 	type tc struct {
 		width    int
