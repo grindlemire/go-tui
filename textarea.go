@@ -62,7 +62,7 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 		// Defaults
 		width:            40,
 		maxHeight:        0, // unlimited
-		border:           BorderAll(BorderNone),
+		border:           Borders{},
 		textStyle:        Style{},
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),

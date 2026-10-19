@@ -90,7 +90,7 @@ func (e *Element) captureClassBase() *classBase {
 // element but leave the input viewport and textarea wrap width at their defaults.
 func boxFromOptions(opts []Option) (border Borders, width int) {
 	if len(opts) == 0 {
-		return BorderAll(BorderNone), 0
+		return Borders{}, 0
 	}
 	probe := New(opts...)
 	if w := probe.LayoutStyle().Width; w.Unit == layout.UnitFixed {
@@ -126,9 +126,7 @@ func classRestore(e *Element, b, a *classBase, op tailwind.Op) {
 		restore(&e.style.AlignSelf, b.style.AlignSelf, a.style.AlignSelf)
 	case tailwind.TextAlign:
 		restore(&e.textAlign, b.textAlign, a.textAlign)
-	case tailwind.Border:
-		restore(&e.border, b.border, a.border)
-	case tailwind.BorderSides:
+	case tailwind.Border, tailwind.BorderSides:
 		restore(&e.border, b.border, a.border)
 	case tailwind.BorderColor:
 		restore(e.borderStyleSlot(), b.borderStyle, a.borderStyle)

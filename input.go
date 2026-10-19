@@ -61,7 +61,7 @@ func NewInput(opts ...InputOption) *Input {
 	inp := &Input{
 		// Defaults
 		width:            20,
-		border:           BorderAll(BorderNone),
+		border:           Borders{},
 		textStyle:        Style{},
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
