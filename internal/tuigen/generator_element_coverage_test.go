@@ -221,8 +221,8 @@ templ App(opts []tui.Option) {
 }`,
 			wantContains: []string{
 				"__tui_0 := tui.New(append([]tui.Option{\n" +
-					"\t\ttui.WithPadding(1),\n" +
 					"\t\ttui.WithBorder(tui.BorderRounded),\n" +
+					"\t\ttui.WithPadding(1),\n" +
 					"\t}, opts...)...)\n",
 			},
 			wantNotContains: []string{"tui.WithOptions"},
@@ -485,7 +485,7 @@ type form struct{}
 templ (c *form) Render() {
 	<input class="border-rounded w-20" placeholder="x" />
 }`,
-			wantContains: []string{"tui.WithInputElementOptions(tui.WithWidth(20), tui.WithBorder(tui.BorderRounded))"},
+			wantContains: []string{"tui.WithInputElementOptions(tui.WithBorder(tui.BorderRounded), tui.WithWidth(20))"},
 		},
 		"textarea class expression forwards WithClass through element options": {
 			input: `package x

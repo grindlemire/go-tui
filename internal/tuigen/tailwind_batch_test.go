@@ -253,7 +253,7 @@ func TestParseTailwindClasses_BorderAccumulation(t *testing.T) {
 	tests := map[string]tc{
 		"no border (substractive)": {
 			input:       "border border-none",
-			wantOptions: []string{"tui.WithBorder(tui.BorderNone)"},
+			wantOptions: []string{"tui.WithBorder(tui.BorderSingle)", "tui.WithBorder(tui.BorderNone)"},
 		},
 		"no border (substractive, symmetrical classes)": {
 			input:       "border border-x-none border-y-none",

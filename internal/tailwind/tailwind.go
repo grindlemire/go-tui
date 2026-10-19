@@ -17,8 +17,9 @@ type Class struct {
 
 // Result is the resolution of a whole class attribute. Classes are kept in
 // source order; per-side spacing classes are folded into one trailing
-// PaddingEdges and one trailing MarginEdges class; per-side border style
-// classes are folded into one trailing BorderSides class.
+// PaddingEdges and one trailing MarginEdges class; border style classes fold
+// into one trailing Border/BorderSides class when a per-side border class is
+// present, all-sides classes stay positional otherwise.
 type Result struct {
 	Classes []Class
 }
@@ -224,7 +225,7 @@ func StaticClasses() []string {
 	return out
 }
 
-// Resolve resolves one class. Per-side spacing classes (pt-1, mx-2, ...) and
+// Resolve resolves one class. Per-side spacing (pt-1, mx-2, ...) and per-side
 // border style classes (border-rounded, border-t-none, border-x-thick, ...)
 // are known but resolve to no ops on their own; Parse folds them into
 // PaddingEdges/MarginEdges/BorderSides.
@@ -304,13 +305,12 @@ func Resolve(class string) (Class, bool) {
 // classes (p-2, m-1) fold into the same per-side accumulator in class order,
 // so later classes win side by side (Tailwind instead always lets the
 // per-side class win). Without a per-side class an all-sides class stays a
-// positional op. For border (per-side or all-sides) style classes every class
-// folds into the same per-side accumulator in class order.
+// positional op. Border style classes behave the same.
 func Parse(classes string) Result {
 	var result Result
 	var padding, margin edges
 	var s sides
-	hasPadSide, hasMarSide := false, false
+	hasPadSide, hasMarSide, hasBorderSide := false, false, false
 	for class := range strings.FieldsSeq(classes) {
 		if isPadding, _, _, ok := parseSide(class); ok {
 			if isPadding {
@@ -318,6 +318,9 @@ func Parse(classes string) Result {
 			} else {
 				hasMarSide = true
 			}
+		}
+		if side, _, ok := parseBorder(class); ok && side != 0 {
+			hasBorderSide = true
 		}
 	}
 	for class := range strings.FieldsSeq(classes) {
@@ -329,7 +332,7 @@ func Parse(classes string) Result {
 			}
 			continue
 		}
-		if side, b, ok := parseBorder(class); ok {
+		if side, b, ok := parseBorder(class); ok && hasBorderSide {
 			s.merge(side, b)
 			continue
 		}

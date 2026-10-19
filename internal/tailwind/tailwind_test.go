@@ -72,10 +72,6 @@ func TestParse(t *testing.T) {
 			input:   "border",
 			wantOps: []Op{Border{Style: BorderSingle}},
 		},
-		"border styles merge per side and accumulate at end": {
-			input:   "border border-rounded border-double border-thick border-single",
-			wantOps: []Op{Border{Style: BorderSingle}},
-		},
 		"border sides accumulate at end": {
 			input:   "border-t-thick gap-1 border-x-double border-b-single",
 			wantOps: []Op{Gap{N: 1}, BorderSides{Top: 4, Right: 2, Bottom: 1, Left: 2}},
@@ -88,9 +84,9 @@ func TestParse(t *testing.T) {
 			input:   "border-x-rounded border-thick",
 			wantOps: []Op{Border{Style: BorderThick}},
 		},
-		"all-sides borders alone accumulate at end": {
+		"all-sides borders alone stays positional": {
 			input:   "border-thick gap-1 border-rounded",
-			wantOps: []Op{Gap{N: 1}, Border{Style: BorderRounded}},
+			wantOps: []Op{Border{Style: BorderThick}, Gap{N: 1}, Border{Style: BorderRounded}},
 		},
 		"per-side border without a side keyword is unknown": {
 			input: "border--none border--thick",
