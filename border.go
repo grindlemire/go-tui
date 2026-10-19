@@ -50,174 +50,94 @@ type BorderChars struct {
 	BottomRight rune
 }
 
-func (c *BorderChars) sideChars(side rune, style BorderStyle, styles *Borders) {
-	if style == BorderNone {
-		return
-	}
-
-	switch side {
-	case 't':
-		switch styles.Top {
-		case BorderSingle:
-			c.Top, c.TopLeft, c.TopRight = '─', '─', '─'
-			if styles.Left != BorderNone {
-				c.TopLeft = '┌'
-			}
-			if styles.Right != BorderNone {
-				c.TopRight = '┐'
-			}
-		case BorderDouble:
-			c.Top, c.TopLeft, c.TopRight = '═', '═', '═'
-			if styles.Left != BorderNone {
-				c.TopLeft = '╔'
-			}
-			if styles.Right != BorderNone {
-				c.TopRight = '╗'
-			}
-		case BorderRounded:
-			c.Top, c.TopLeft, c.TopRight = '─', '─', '─'
-			if styles.Left != BorderNone {
-				c.TopLeft = '╭'
-			}
-			if styles.Right != BorderNone {
-				c.TopRight = '╮'
-			}
-		case BorderThick:
-			c.Top, c.TopLeft, c.TopRight = '━', '━', '━'
-			if styles.Left != BorderNone {
-				c.TopLeft = '┏'
-			}
-			if styles.Right != BorderNone {
-				c.TopRight = '┓'
-			}
+// Chars returns the box-drawing characters for this border style.
+func (b BorderStyle) Chars() BorderChars {
+	switch b {
+	case BorderSingle:
+		return BorderChars{
+			TopLeft:     '┌',
+			Top:         '─',
+			TopRight:    '┐',
+			Left:        '│',
+			Right:       '│',
+			BottomLeft:  '└',
+			Bottom:      '─',
+			BottomRight: '┘',
 		}
-	case 'r':
-		switch styles.Right {
-		case BorderSingle:
-			c.Right = '│'
-			if styles.Top == BorderNone {
-				c.TopRight = '│'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomRight = '│'
-			}
-		case BorderDouble:
-			c.Right = '║'
-			if styles.Top == BorderNone {
-				c.TopRight = '║'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomRight = '║'
-			}
-		case BorderRounded:
-			c.Right = '│'
-			if styles.Top == BorderNone {
-				c.TopRight = '│'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomRight = '│'
-			}
-		case BorderThick:
-			c.Right = '┃'
-			if styles.Top == BorderNone {
-				c.TopRight = '┃'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomRight = '┃'
-			}
+	case BorderDouble:
+		return BorderChars{
+			TopLeft:     '╔',
+			Top:         '═',
+			TopRight:    '╗',
+			Left:        '║',
+			Right:       '║',
+			BottomLeft:  '╚',
+			Bottom:      '═',
+			BottomRight: '╝',
 		}
-	case 'b':
-		switch styles.Bottom {
-		case BorderSingle:
-			c.Bottom, c.BottomLeft, c.BottomRight = '─', '─', '─'
-			if styles.Left != BorderNone {
-				c.BottomLeft = '└'
-			}
-			if styles.Right != BorderNone {
-				c.BottomRight = '┘'
-			}
-		case BorderDouble:
-			c.Bottom, c.BottomLeft, c.BottomRight = '═', '═', '═'
-			if styles.Left != BorderNone {
-				c.BottomLeft = '╚'
-			}
-			if styles.Right != BorderNone {
-				c.BottomRight = '╝'
-			}
-		case BorderRounded:
-			c.Bottom, c.BottomLeft, c.BottomRight = '─', '─', '─'
-			if styles.Left != BorderNone {
-				c.BottomLeft = '╰'
-			}
-			if styles.Right != BorderNone {
-				c.BottomRight = '╯'
-			}
-		case BorderThick:
-			c.Bottom, c.BottomLeft, c.BottomRight = '━', '━', '━'
-			if styles.Left != BorderNone {
-				c.BottomLeft = '┗'
-			}
-			if styles.Right != BorderNone {
-				c.BottomRight = '┛'
-			}
+	case BorderRounded:
+		return BorderChars{
+			TopLeft:     '╭',
+			Top:         '─',
+			TopRight:    '╮',
+			Left:        '│',
+			Right:       '│',
+			BottomLeft:  '╰',
+			Bottom:      '─',
+			BottomRight: '╯',
 		}
-	case 'l':
-		switch styles.Left {
-		case BorderSingle:
-			c.Left = '│'
-			if styles.Top == BorderNone {
-				c.TopLeft = '│'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomLeft = '│'
-			}
-		case BorderDouble:
-			c.Left = '║'
-			if styles.Top == BorderNone {
-				c.TopLeft = '║'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomLeft = '║'
-			}
-		case BorderRounded:
-			c.Left = '│'
-			if styles.Top == BorderNone {
-				c.TopLeft = '│'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomLeft = '│'
-			}
-		case BorderThick:
-			c.Left = '┃'
-			if styles.Top == BorderNone {
-				c.TopLeft = '┃'
-			}
-			if styles.Bottom == BorderNone {
-				c.BottomLeft = '┃'
-			}
+	case BorderThick:
+		return BorderChars{
+			TopLeft:     '┏',
+			Top:         '━',
+			TopRight:    '┓',
+			Left:        '┃',
+			Right:       '┃',
+			BottomLeft:  '┗',
+			Bottom:      '━',
+			BottomRight: '┛',
+		}
+	default:
+		// BorderNone or unknown - return spaces
+		return BorderChars{
+			TopLeft:     ' ',
+			Top:         ' ',
+			TopRight:    ' ',
+			Left:        ' ',
+			Right:       ' ',
+			BottomLeft:  ' ',
+			Bottom:      ' ',
+			BottomRight: ' ',
 		}
 	}
 }
 
-// Chars returns the box-drawing characters for their border styles.
 func (b Borders) Chars() BorderChars {
-	c := &BorderChars{
-		TopLeft:     ' ',
-		Top:         ' ',
-		TopRight:    ' ',
-		Left:        ' ',
-		Right:       ' ',
-		BottomLeft:  ' ',
-		Bottom:      ' ',
-		BottomRight: ' ',
+	t, r, bt, l := b.Top.Chars(), b.Right.Chars(), b.Bottom.Chars(), b.Left.Chars()
+	return BorderChars{
+		TopLeft:     corner(b.Top, b.Left, t.TopLeft, t.Top, l.Left),
+		Top:         t.Top,
+		TopRight:    corner(b.Top, b.Right, t.TopRight, t.Top, r.Right),
+		Left:        l.Left,
+		Right:       r.Right,
+		BottomLeft:  corner(b.Bottom, b.Left, bt.BottomLeft, bt.Bottom, l.Left),
+		Bottom:      bt.Bottom,
+		BottomRight: corner(b.Bottom, b.Right, bt.BottomRight, bt.Bottom, r.Right),
 	}
+}
 
-	c.sideChars('t', b.Top, &b)
-	c.sideChars('r', b.Right, &b)
-	c.sideChars('b', b.Bottom, &b)
-	c.sideChars('l', b.Left, &b)
-
-	return *c
+// corner uses the horizontal side's corner when both sides are visible,
+// otherwise the line of whichever side is visible.
+func corner(h, v BorderStyle, both, hLine, vLine rune) rune {
+	switch {
+	case h != BorderNone && v != BorderNone:
+		return both
+	case h != BorderNone:
+		return hLine
+	case v != BorderNone:
+		return vLine
+	}
+	return ' '
 }
 
 // BorderAll creates Borders with the same border style for all sides.
@@ -353,7 +273,6 @@ func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseSt
 	style := baseStyle
 	drawCorner := func(x, y int, r rune) {
 		if r != ' ' {
-			buf.SetRune(x, y, r, style)
 			style.Fg = g.At(getPerimeterT(x, y))
 			buf.SetRune(x, y, r, style)
 		}
