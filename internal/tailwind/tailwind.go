@@ -197,7 +197,7 @@ var (
 	// Border style: border + optional border style keyword.
 	borderFullPattern = regexp.MustCompile(`^border(-(none|single|double|rounded|thick))?$`)
 	// Border side style: border + side (t r b l x y) + border style keyword.
-	borderSidePattern = regexp.MustCompile(`^border-([trblxy])?-(none|single|double|rounded|thick)$`)
+	borderSidePattern = regexp.MustCompile(`^border-([trblxy])-(none|single|double|rounded|thick)$`)
 	fractionPattern   = regexp.MustCompile(`^([wh])-(\d+)/(\d+)$`)
 	keywordPattern    = regexp.MustCompile(`^([wh])-(full|auto)$`)
 	hexPattern        = regexp.MustCompile(`^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)

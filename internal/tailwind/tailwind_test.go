@@ -92,6 +92,13 @@ func TestParse(t *testing.T) {
 			input:   "border-thick gap-1 border-rounded",
 			wantOps: []Op{Gap{N: 1}, Border{Style: BorderRounded}},
 		},
+		"per-side border without a side keyword is unknown": {
+			input: "border--none border--thick",
+		},
+		"border class without style keyword, all-sides borders and per-side borders together resolve too": {
+			input:   "border border-none border-t-thick border-x-double",
+			wantOps: []Op{BorderSides{Top: 4, Right: 2, Bottom: 0, Left: 2}},
+		},
 		"colors": {
 			input:   "border-red bg-bright-blue scrollbar-cyan scrollbar-thumb-white",
 			wantOps: []Op{BorderColor{Color: red}, Background{Color: Named("bright-blue")}, ScrollbarColor{Color: Named("cyan")}, ScrollbarThumbColor{Color: Named("white")}},
