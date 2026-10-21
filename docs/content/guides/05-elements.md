@@ -149,6 +149,13 @@ Bind `value` to a `*State[string]` for two-way binding. Typing updates the state
 <input value={s.name} placeholder="Type your name..." width={30} border={tui.BorderRounded} />
 ```
 
+Border sides can be set individually:
+
+```gsx
+// Input with only a visible thick border at bottom
+<input value={s.name} placeholder="Type your name..." width={30} class="border-b-thick" />
+```
+
 You can also set `focusColor` to change the border color when focused, or use `focusGradient` and `borderGradient` for gradient borders:
 
 ```gsx

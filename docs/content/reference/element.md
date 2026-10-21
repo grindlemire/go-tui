@@ -144,7 +144,8 @@ tui.New(
 
 | Function | Description |
 |----------|-------------|
-| `WithBorder(style BorderStyle)` | Border shape: `BorderNone`, `BorderSingle`, `BorderDouble`, `BorderRounded`, `BorderThick` |
+| `WithBorder(style BorderStyle)` | Uniform border shape: `BorderNone`, `BorderSingle`, `BorderDouble`, `BorderRounded`, `BorderThick` |
+| `WithBorderTRBL(t, r, b, l BorderStyle)` | Individual border shape for each side (top, right, bottom, left) |
 | `WithBorderStyle(style Style)` | Color and attributes for the border lines |
 | `WithBorderTitle(title string)` | Title text centered in the top border line |
 | `WithBackground(style Style)` | Background fill style |
@@ -277,8 +278,9 @@ dropdown.SetHeight(tui.Fixed(min(len(matches), 8)))
 ### Border
 
 ```go
-func (e *Element) Border() BorderStyle
+func (e *Element) Border() Borders
 func (e *Element) SetBorder(border BorderStyle)
+func (e *Element) SetBorderTRBL(top, right, bottom, left BorderStyle)
 func (e *Element) BorderStyle() Style
 func (e *Element) SetBorderStyle(style Style)
 func (e *Element) BorderTitle() string
@@ -291,7 +293,7 @@ func (e *Element) FocusBorderStyle() *Style
 func (e *Element) SetFocusBorderStyle(style *Style)
 ```
 
-`Border()` returns the border shape (`BorderSingle`, `BorderRounded`, etc.). `BorderStyle()` returns the color/attribute style used to draw the border lines when the element is not focused, which is the value `SetBorderStyle()` set even while a focus highlight is showing. `BorderTitle()` returns the title text drawn in the top border, or `""` when no title is set.
+`Border()` returns the border shape for each side (`Borders{ Top: BorderSingle, Right: BorderRounded, Bottom: ..., Left: ...}`). `BorderStyle()` returns the color/attribute style used to draw the border lines when the element is not focused, which is the value `SetBorderStyle()` set even while a focus highlight is showing. `BorderTitle()` returns the title text drawn in the top border, or `""` when no title is set.
 
 `BorderTitleAlign()` reports where the title sits on the top border, `TextAlignCenter` by default. `BorderTitleStyle()` and `FocusBorderStyle()` return `nil` when no override is set, so the title uses the active border style and the border keeps its base style while focused. Pass `nil` to either setter to clear the override.
 
@@ -432,7 +434,7 @@ func (e *Element) LayoutStyle() LayoutStyle
 func (e *Element) LayoutChildren() []Layoutable
 ```
 
-Part of the `Layoutable` interface. `LayoutStyle` returns the element's style with border padding added (borders consume 1 cell on each side). `LayoutChildren` returns visible children only; hidden elements are excluded.
+Part of the `Layoutable` interface. `LayoutStyle` returns the element's style with border padding added (borders consume 1 cell on each side they are set on). `LayoutChildren` returns visible children only; hidden elements are excluded.
 
 ### SetLayout / GetLayout
 

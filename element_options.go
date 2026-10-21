@@ -178,10 +178,17 @@ func WithMarginTRBL(top, right, bottom, left int) Option {
 
 // --- Visual Options ---
 
-// WithBorder sets the border style (e.g., BorderSingle, BorderRounded).
+// WithBorder sets uniform border style (e.g., BorderSingle, BorderRounded) on all sides.
 func WithBorder(style BorderStyle) Option {
 	return func(e *Element) {
-		e.border = style
+		e.border = BorderAll(style)
+	}
+}
+
+// WithBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
+func WithBorderTRBL(top, right, bottom, left BorderStyle) Option {
+	return func(e *Element) {
+		e.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 	}
 }
 

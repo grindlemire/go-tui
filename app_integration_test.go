@@ -41,7 +41,7 @@ func TestIntegration_BorderedBoxWithTitle(t *testing.T) {
 	style := NewStyle()
 
 	// Draw a bordered box with title
-	DrawBoxWithTitle(buf, NewRect(2, 1, 15, 4), BorderSingle, "Title", style)
+	DrawBoxWithTitle(buf, NewRect(2, 1, 15, 4), BorderAll(BorderSingle), "Title", style)
 
 	// Render to terminal
 	Render(term, buf)
@@ -79,7 +79,7 @@ func TestIntegration_StyledTextInBox(t *testing.T) {
 
 	// Draw a box
 	boxStyle := NewStyle().Foreground(Blue)
-	DrawBox(buf, NewRect(1, 1, 20, 5), BorderRounded, boxStyle)
+	DrawBox(buf, NewRect(1, 1, 20, 5), BorderAll(BorderRounded), boxStyle)
 
 	// Draw styled text inside
 	textStyle := NewStyle().Bold().Foreground(Red)
@@ -278,10 +278,10 @@ func TestIntegration_MultipleBorders(t *testing.T) {
 	style := NewStyle()
 
 	// Draw multiple boxes with different styles
-	DrawBox(buf, NewRect(0, 0, 10, 5), BorderSingle, style)
-	DrawBox(buf, NewRect(12, 0, 10, 5), BorderDouble, style)
-	DrawBox(buf, NewRect(0, 5, 10, 5), BorderRounded, style)
-	DrawBox(buf, NewRect(12, 5, 10, 5), BorderThick, style)
+	DrawBox(buf, NewRect(0, 0, 10, 5), BorderAll(BorderSingle), style)
+	DrawBox(buf, NewRect(12, 0, 10, 5), BorderAll(BorderDouble), style)
+	DrawBox(buf, NewRect(0, 5, 10, 5), BorderAll(BorderRounded), style)
+	DrawBox(buf, NewRect(12, 5, 10, 5), BorderAll(BorderThick), style)
 
 	Render(term, buf)
 
@@ -310,10 +310,10 @@ func TestIntegration_NestedBoxes(t *testing.T) {
 	style := NewStyle()
 
 	// Draw outer box
-	DrawBox(buf, NewRect(0, 0, 18, 8), BorderDouble, style)
+	DrawBox(buf, NewRect(0, 0, 18, 8), BorderAll(BorderDouble), style)
 
 	// Draw inner box
-	DrawBox(buf, NewRect(2, 1, 14, 6), BorderSingle, style)
+	DrawBox(buf, NewRect(2, 1, 14, 6), BorderAll(BorderSingle), style)
 
 	// Add text in inner box
 	buf.SetString(4, 4, "Content", style)
@@ -389,7 +389,7 @@ func TestIntegration_SnapshotTest(t *testing.T) {
 	style := NewStyle()
 
 	// Create a simple UI
-	DrawBoxWithTitle(buf, NewRect(1, 1, 20, 5), BorderSingle, "Demo", style)
+	DrawBoxWithTitle(buf, NewRect(1, 1, 20, 5), BorderAll(BorderSingle), "Demo", style)
 	buf.SetString(3, 3, "Hello, World!", style)
 
 	Render(term, buf)

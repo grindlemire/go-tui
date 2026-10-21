@@ -4,6 +4,8 @@
 // dependency on the root tui package so both can import it.
 package tailwind
 
+import "fmt"
+
 // Op is one element option produced by a class. Each concrete type below
 // corresponds to a With* option in the root package. Adding a type means a
 // case in tuigen.renderOp and tui.classOption; TestRenderCoversEveryClass and
@@ -105,14 +107,35 @@ type BorderStyle int
 
 // Border styles.
 const (
-	BorderSingle BorderStyle = iota
-	BorderRounded
+	BorderNone BorderStyle = iota
+	BorderSingle
 	BorderDouble
+	BorderRounded
 	BorderThick
 )
 
+func (s BorderStyle) String() string {
+	switch s {
+	case BorderNone:
+		return "BorderNone"
+	case BorderSingle:
+		return "BorderSingle"
+	case BorderDouble:
+		return "BorderDouble"
+	case BorderRounded:
+		return "BorderRounded"
+	case BorderThick:
+		return "BorderThick"
+	default:
+		return fmt.Sprintf("BorderStyle(%d)", s)
+	}
+}
+
 // Border sets the border style.
 type Border struct{ Style BorderStyle }
+
+// BorderSides sets per-side border style, accumulated from border-t-/border-r-/border-b-/border-l-/border-x-/border-y- classes.
+type BorderSides struct{ Top, Right, Bottom, Left BorderStyle }
 
 // BorderColor sets the border foreground color.
 type BorderColor struct{ Color Color }
@@ -279,6 +302,7 @@ func (AlignItems) op()          {}
 func (AlignSelf) op()           {}
 func (TextAlign) op()           {}
 func (Border) op()              {}
+func (BorderSides) op()         {}
 func (BorderColor) op()         {}
 func (Background) op()          {}
 func (ScrollbarColor) op()      {}

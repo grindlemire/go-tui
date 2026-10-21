@@ -68,9 +68,32 @@ func TestParse(t *testing.T) {
 			wantOps: []Op{PaddingEdges{Top: 2, Right: 2, Bottom: 3, Left: 2}},
 		},
 		"zero denominator ignored": {input: "w-1/0"},
-		"border styles": {
-			input:   "border border-rounded border-double border-thick border-single",
-			wantOps: []Op{Border{Style: BorderSingle}, Border{Style: BorderRounded}, Border{Style: BorderDouble}, Border{Style: BorderThick}, Border{Style: BorderSingle}},
+		"border class without style keyword renders as single": {
+			input:   "border",
+			wantOps: []Op{Border{Style: BorderSingle}},
+		},
+		"border sides accumulate at end": {
+			input:   "border-t-thick gap-1 border-x-double border-b-single",
+			wantOps: []Op{Gap{N: 1}, BorderSides{Top: 4, Right: 2, Bottom: 1, Left: 2}},
+		},
+		"all-sides then per-side borders merges per side": {
+			input:   "border-thick border-x-single",
+			wantOps: []Op{BorderSides{Top: 4, Right: 1, Bottom: 4, Left: 1}},
+		},
+		"per-side then all-sides borders is overridden": {
+			input:   "border-x-rounded border-thick",
+			wantOps: []Op{Border{Style: BorderThick}},
+		},
+		"all-sides borders alone stays positional": {
+			input:   "border-thick gap-1 border-rounded",
+			wantOps: []Op{Border{Style: BorderThick}, Gap{N: 1}, Border{Style: BorderRounded}},
+		},
+		"per-side border without a side keyword is unknown": {
+			input: "border--none border--thick",
+		},
+		"border class without style keyword, all-sides borders and per-side borders together resolve too": {
+			input:   "border border-none border-t-thick border-x-double",
+			wantOps: []Op{BorderSides{Top: 4, Right: 2, Bottom: 0, Left: 2}},
 		},
 		"colors": {
 			input:   "border-red bg-bright-blue scrollbar-cyan scrollbar-thumb-white",

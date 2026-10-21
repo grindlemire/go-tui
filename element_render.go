@@ -130,13 +130,13 @@ func renderElement(buf *Buffer, e *Element, inherited inheritedStyle) {
 		}
 	}
 
-	if e.border != BorderNone {
+	if !e.border.All(BorderNone) {
 		if e.borderGradient != nil {
 			DrawBoxGradient(buf, rect, e.border, *e.borderGradient, e.activeBorderStyle())
 		} else {
 			DrawBox(buf, rect, e.border, e.activeBorderStyle())
 		}
-		if e.borderTitle != "" {
+		if e.borderTitle != "" && e.border.Top != BorderNone {
 			drawBoxTitle(buf, rect, e.borderTitle, e.titleStyle(), e.borderTitleAlign)
 		}
 	}
@@ -236,16 +236,14 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 		return
 	}
 
+	insets := e.border.insets()
+
 	// Capture the cursor at its draw site, using the same content origin and the
 	// active clip (already gutter-shrunk by the enclosing scrollable) the renderer
 	// uses for this element's text.
 	if e.cursorSource != nil {
-		ox := screenX + e.style.Padding.Left
-		oy := screenY + e.style.Padding.Top
-		if e.border != BorderNone {
-			ox++
-			oy++
-		}
+		ox := screenX + e.style.Padding.Left + insets.Left
+		oy := screenY + e.style.Padding.Top + insets.Top
 		e.captureCursor(ox, oy, clipRect)
 	}
 
@@ -254,7 +252,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 
 	// Handle HR specially - draws a horizontal line and returns (no children)
 	if e.hr {
-		char := hrCharacter(e.border)
+		char := hrCharacter(firstVisibleBorder(e.border))
 		for x := visibleRect.X; x < visibleRect.Right(); x++ {
 			buf.SetRune(x, screenY, char, rc.textStyle)
 		}
@@ -273,13 +271,13 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	}
 
 	// Render border clipped to viewport (border style does NOT inherit)
-	if e.border != BorderNone {
+	if !e.border.All(BorderNone) {
 		if e.borderGradient != nil {
 			DrawBoxGradientClipped(buf, screenRect, e.border, *e.borderGradient, e.activeBorderStyle(), clipRect)
 		} else {
 			DrawBoxClipped(buf, screenRect, e.border, e.activeBorderStyle(), clipRect)
 		}
-		if e.borderTitle != "" {
+		if e.borderTitle != "" && e.border.Top != BorderNone {
 			drawBoxTitleClipped(buf, screenRect, e.borderTitle, e.titleStyle(), clipRect, e.borderTitleAlign)
 		}
 	}
@@ -287,16 +285,9 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 	// Render rich text with clipping (parallel to the plain-text block below).
 	// An element has either plain text or rich text, never both.
 	if len(e.richText) > 0 {
-		textBaseX := screenX + e.style.Padding.Left
-		textBaseY := screenY + e.style.Padding.Top
-		if e.border != BorderNone {
-			textBaseX += 1
-			textBaseY += 1
-		}
-		availTextWidth := childRect.Width - e.style.Padding.Horizontal()
-		if e.border != BorderNone {
-			availTextWidth -= 2
-		}
+		textBaseX := screenX + e.style.Padding.Left + insets.Left
+		textBaseY := screenY + e.style.Padding.Top + insets.Top
+		availTextWidth := childRect.Width - e.style.Padding.Horizontal() - insets.Left - insets.Right
 
 		ts := rc.textStyle
 		if rc.bg != nil && !rc.bg.Bg.IsDefault() {
@@ -314,17 +305,10 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 
 	// Render text with clipping
 	if e.text != "" {
-		textBaseX := screenX + e.style.Padding.Left
-		textBaseY := screenY + e.style.Padding.Top
-		if e.border != BorderNone {
-			textBaseX += 1
-			textBaseY += 1
-		}
+		textBaseX := screenX + e.style.Padding.Left + insets.Left
+		textBaseY := screenY + e.style.Padding.Top + insets.Top
 
-		availTextWidth := childRect.Width - e.style.Padding.Horizontal()
-		if e.border != BorderNone {
-			availTextWidth -= 2
-		}
+		availTextWidth := childRect.Width - e.style.Padding.Horizontal() - insets.Left - insets.Right
 
 		var lines []string
 		if !e.noWrap && availTextWidth > 0 {
@@ -337,10 +321,7 @@ func renderClippedElement(buf *Buffer, e *Element, clipRect Rect, scrollX, scrol
 			if e.noWrap {
 				lines[0] = truncateText(lines[0], availTextWidth)
 			} else {
-				availTextHeight := childRect.Height - e.style.Padding.Vertical()
-				if e.border != BorderNone {
-					availTextHeight -= 2
-				}
+				availTextHeight := childRect.Height - e.style.Padding.Vertical() - insets.Top - insets.Bottom
 				if len(lines) > availTextHeight && availTextHeight > 0 {
 					lines = lines[:availTextHeight]
 					lines[availTextHeight-1] = truncateText(lines[availTextHeight-1], availTextWidth)
@@ -736,9 +717,26 @@ func hrCharacter(border BorderStyle) rune {
 // renderHR draws a horizontal rule across the element's width.
 func renderHR(buf *Buffer, e *Element, textStyle Style) {
 	rect := e.ContentRect()
-	char := hrCharacter(e.border)
+	char := hrCharacter(firstVisibleBorder(e.border))
 
 	for x := rect.X; x < rect.Right(); x++ {
 		buf.SetRune(x, rect.Y, char, textStyle)
+	}
+}
+
+// firstVisibleBorder checks border styles in CSS order and returns
+// the first visible border found.
+func firstVisibleBorder(b Borders) BorderStyle {
+	switch {
+	case b.All(BorderNone):
+		return BorderNone
+	case b.Top != BorderNone:
+		return b.Top
+	case b.Right != BorderNone:
+		return b.Right
+	case b.Bottom != BorderNone:
+		return b.Bottom
+	default:
+		return b.Left
 	}
 }

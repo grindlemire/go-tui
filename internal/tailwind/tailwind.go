@@ -17,7 +17,9 @@ type Class struct {
 
 // Result is the resolution of a whole class attribute. Classes are kept in
 // source order; per-side spacing classes are folded into one trailing
-// PaddingEdges and one trailing MarginEdges class.
+// PaddingEdges and one trailing MarginEdges class; border style classes fold
+// into one trailing Border/BorderSides class when a per-side border class is
+// present, all-sides classes stay positional otherwise.
 type Result struct {
 	Classes []Class
 }
@@ -92,9 +94,10 @@ var static = map[string]Class{
 	"text-right":  {Ops: []Op{TextAlign{Value: TextRight}}},
 
 	"border":         {Ops: []Op{Border{Style: BorderSingle}}},
+	"border-none":    {Ops: []Op{Border{Style: BorderNone}}},
 	"border-single":  {Ops: []Op{Border{Style: BorderSingle}}},
-	"border-rounded": {Ops: []Op{Border{Style: BorderRounded}}},
 	"border-double":  {Ops: []Op{Border{Style: BorderDouble}}},
+	"border-rounded": {Ops: []Op{Border{Style: BorderRounded}}},
 	"border-thick":   {Ops: []Op{Border{Style: BorderThick}}},
 
 	"font-bold":     {Text: []TextOp{TextAttr{Attr: Bold}}},
@@ -116,6 +119,16 @@ var static = map[string]Class{
 	"nowrap":            {Ops: []Op{Wrap{Enabled: false}}},
 	"wrap":              {Ops: []Op{Wrap{Enabled: true}}},
 	"scrollbar-hidden":  {Ops: []Op{ScrollbarHidden{}}},
+}
+
+// borderStyles maps border style keywords from classnames to their BorderStyle.
+var borderStyles = map[string]BorderStyle{
+	"none":    BorderNone,
+	"":        BorderSingle,
+	"single":  BorderSingle,
+	"double":  BorderDouble,
+	"rounded": BorderRounded,
+	"thick":   BorderThick,
 }
 
 // Named-color families: prefix -> op constructor. Registered into static at init.
@@ -182,10 +195,14 @@ var gradientFamilies = []struct {
 }
 
 var (
-	fractionPattern = regexp.MustCompile(`^([wh])-(\d+)/(\d+)$`)
-	keywordPattern  = regexp.MustCompile(`^([wh])-(full|auto)$`)
-	hexPattern      = regexp.MustCompile(`^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
-	gradientPattern = regexp.MustCompile(`^[\w-]+-[\w-]+$`)
+	// Border style: border + optional border style keyword.
+	borderFullPattern = regexp.MustCompile(`^border(-(none|single|double|rounded|thick))?$`)
+	// Border side style: border + side (t r b l x y) + border style keyword.
+	borderSidePattern = regexp.MustCompile(`^border-([trblxy])-(none|single|double|rounded|thick)$`)
+	fractionPattern   = regexp.MustCompile(`^([wh])-(\d+)/(\d+)$`)
+	keywordPattern    = regexp.MustCompile(`^([wh])-(full|auto)$`)
+	hexPattern        = regexp.MustCompile(`^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\]$`)
+	gradientPattern   = regexp.MustCompile(`^[\w-]+-[\w-]+$`)
 	// Per-side spacing: p/m + side (t r b l x y) + number.
 	sidePattern = regexp.MustCompile(`^([pm])([trblxy])-(\d+)$`)
 )
@@ -197,7 +214,8 @@ func Known(class string) bool {
 }
 
 // StaticClasses returns every fixed-name class, sorted. Parameterized classes
-// (gap-N, w-N/M, hex colors, gradients, per-side spacing) are not listed.
+// (gap-N, w-N/M, hex colors, gradients, per-side spacing) and
+// per-side border style classes are not listed.
 func StaticClasses() []string {
 	out := make([]string, 0, len(static))
 	for name := range static {
@@ -207,9 +225,10 @@ func StaticClasses() []string {
 	return out
 }
 
-// Resolve resolves one class. Per-side spacing classes (pt-1, mx-2, ...) are
-// known but resolve to no ops on their own; Parse folds them into
-// PaddingEdges/MarginEdges.
+// Resolve resolves one class. Per-side spacing (pt-1, mx-2, ...) and per-side
+// border style classes (border-rounded, border-t-none, border-x-thick, ...)
+// are known but resolve to no ops on their own; Parse folds them into
+// PaddingEdges/MarginEdges/BorderSides.
 func Resolve(class string) (Class, bool) {
 	class = strings.TrimSpace(class)
 	if class == "" {
@@ -273,6 +292,11 @@ func Resolve(class string) (Class, bool) {
 		e.merge(side, n)
 		return Class{Ops: []Op{e.op(isPadding)}}, true
 	}
+	if side, b, ok := parseBorder(class); ok {
+		var s sides
+		s.merge(side, b)
+		return Class{Ops: []Op{s.op()}}, true
+	}
 	return Class{}, false
 }
 
@@ -281,11 +305,12 @@ func Resolve(class string) (Class, bool) {
 // classes (p-2, m-1) fold into the same per-side accumulator in class order,
 // so later classes win side by side (Tailwind instead always lets the
 // per-side class win). Without a per-side class an all-sides class stays a
-// positional op.
+// positional op. Border style classes behave the same.
 func Parse(classes string) Result {
 	var result Result
 	var padding, margin edges
-	hasPadSide, hasMarSide := false, false
+	var s sides
+	hasPadSide, hasMarSide, hasBorderSide := false, false, false
 	for class := range strings.FieldsSeq(classes) {
 		if isPadding, _, _, ok := parseSide(class); ok {
 			if isPadding {
@@ -293,6 +318,9 @@ func Parse(classes string) Result {
 			} else {
 				hasMarSide = true
 			}
+		}
+		if side, _, ok := parseBorder(class); ok && side != 0 {
+			hasBorderSide = true
 		}
 	}
 	for class := range strings.FieldsSeq(classes) {
@@ -302,6 +330,10 @@ func Parse(classes string) Result {
 			} else {
 				margin.merge(side, n)
 			}
+			continue
+		}
+		if side, b, ok := parseBorder(class); ok && hasBorderSide {
+			s.merge(side, b)
 			continue
 		}
 		c, ok := Resolve(class)
@@ -323,6 +355,9 @@ func Parse(classes string) Result {
 			}
 		}
 		result.Classes = append(result.Classes, c)
+	}
+	if s.set {
+		result.Classes = append(result.Classes, Class{Ops: []Op{s.op()}})
 	}
 	if padding.set {
 		result.Classes = append(result.Classes, Class{Ops: []Op{padding.op(true)}})
@@ -378,6 +413,53 @@ func parseSide(class string) (isPadding bool, side byte, n int, ok bool) {
 	}
 	n, _ = strconv.Atoi(m[3])
 	return m[1] == "p", m[2][0], n, true
+}
+
+type sides struct {
+	top, right, bottom, left BorderStyle
+	set                      bool
+}
+
+// op returns the accumulated sides as a border style op.
+func (s sides) op() Op {
+	if s.top == s.right && s.right == s.bottom && s.bottom == s.left {
+		return Border{Style: s.top}
+	}
+	return BorderSides{Top: s.top, Right: s.right, Bottom: s.bottom, Left: s.left}
+}
+
+func (s *sides) merge(side byte, b BorderStyle) {
+	s.set = true
+	switch side {
+	// 0 is for all-sides border.
+	case 0:
+		s.top, s.right, s.bottom, s.left = b, b, b, b
+	case 't':
+		s.top = b
+	case 'r':
+		s.right = b
+	case 'b':
+		s.bottom = b
+	case 'l':
+		s.left = b
+	case 'x':
+		s.left, s.right = b, b
+	case 'y':
+		s.top, s.bottom = b, b
+	}
+}
+
+// parseBorder matches border style classes like border, border-thick, border-t-none or border-x-double.
+func parseBorder(class string) (side byte, b BorderStyle, ok bool) {
+	m := borderFullPattern.FindStringSubmatch(class)
+	if m != nil {
+		return 0, borderStyles[m[2]], true
+	}
+	m = borderSidePattern.FindStringSubmatch(class)
+	if m == nil {
+		return 0, 0, false
+	}
+	return m[1][0], borderStyles[m[2]], true
 }
 
 var directionSuffixes = []struct {

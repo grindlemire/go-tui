@@ -822,6 +822,99 @@ templ (p *panel) Render() {
 	}
 }
 
+func TestGenerator_InputElement(t *testing.T) {
+	type tc struct {
+		input        string
+		wantContains []string
+	}
+
+	tests := map[string]tc{
+		"input generates mount with NewInput": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<input placeholder="Type here..." width={40} />
+}`,
+			wantContains: []string{
+				"app.MountPersistent(",
+				"tui.NewInput(",
+				`tui.WithInputPlaceholder("Type here...")`,
+				"tui.WithInputWidth(40)",
+			},
+		},
+		"input with onSubmit handler": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<input onSubmit={c.handleSubmit} />
+}`,
+			wantContains: []string{
+				"tui.NewInput(",
+				"tui.WithInputOnSubmit(c.handleSubmit)",
+			},
+		},
+		"input with border": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<input border={tui.BorderRounded} />
+}`,
+			wantContains: []string{
+				"tui.NewInput(",
+				"tui.WithInputBorder(tui.BorderRounded)",
+			},
+		},
+		"input with individual borders": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<input class="border-b-thick" />
+}`,
+			wantContains: []string{
+				"tui.NewInput(",
+				"tui.WithInputElementOptions(tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone))",
+			},
+		},
+		"input with no options": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<input />
+}`,
+			wantContains: []string{
+				"app.MountPersistent(",
+				"tui.NewInput()",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+
+			code := string(output)
+			for _, want := range tt.wantContains {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing %q.\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}
+
 func TestGenerator_TextareaElement(t *testing.T) {
 	type tc struct {
 		input        string
@@ -868,6 +961,19 @@ templ (c *myComp) Render() {
 			wantContains: []string{
 				"tui.NewTextArea(",
 				"tui.WithTextAreaBorder(tui.BorderRounded)",
+			},
+		},
+		"textarea with individual borders": {
+			input: `package x
+
+type myComp struct{}
+
+templ (c *myComp) Render() {
+	<textarea class="border-r-thick border-b-thick" />
+}`,
+			wantContains: []string{
+				"tui.NewTextArea(",
+				"tui.WithTextAreaElementOptions(tui.WithBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderThick, tui.BorderNone))",
 			},
 		},
 		"textarea with no options": {

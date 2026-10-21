@@ -11,7 +11,7 @@ import (
 // classState captures everything a class can touch on an element.
 type classState struct {
 	Layout              LayoutStyle
-	Border              BorderStyle
+	Border              Borders
 	BorderStyle         Style
 	Background          *Style
 	TextStyle           Style
@@ -159,7 +159,7 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 			opts: []Option{WithClass("hidden font-bold p-1 border")},
 			next: "",
 			check: func(t *testing.T, e *Element) {
-				if e.Hidden() || e.textStyleSet || e.style.Padding != (Edges{}) || e.Border() != BorderNone {
+				if e.Hidden() || e.textStyleSet || e.style.Padding != (Edges{}) || !e.Border().All(BorderNone) {
 					t.Errorf("previous classes not reset: hidden=%v textStyleSet=%v padding=%+v border=%v", e.Hidden(), e.textStyleSet, e.style.Padding, e.Border())
 				}
 			},
@@ -177,7 +177,7 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 			opts: []Option{WithBorder(BorderDouble), WithClass("p-1"), WithGap(2)},
 			next: "",
 			check: func(t *testing.T, e *Element) {
-				if e.Border() != BorderDouble || e.style.Gap != 2 {
+				if !e.Border().All(BorderDouble) || e.style.Gap != 2 {
 					t.Errorf("explicit options were reset: border=%v gap=%d", e.Border(), e.style.Gap)
 				}
 				if e.style.Padding != (Edges{}) {
@@ -208,7 +208,7 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 			opts: []Option{WithBorder(BorderDouble), WithClass("border-rounded")},
 			next: "p-1",
 			check: func(t *testing.T, e *Element) {
-				if e.Border() != BorderDouble || e.style.Padding != EdgeAll(1) {
+				if !e.Border().All(BorderDouble) || e.style.Padding != EdgeAll(1) {
 					t.Errorf("border=%v padding=%+v, want BorderDouble and EdgeAll(1)", e.Border(), e.style.Padding)
 				}
 			},
@@ -235,7 +235,7 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 			opts: []Option{WithClass("border-rounded"), WithBorder(BorderDouble)},
 			next: "p-1",
 			check: func(t *testing.T, e *Element) {
-				if e.Border() != BorderDouble || e.style.Padding != EdgeAll(1) {
+				if !e.Border().All(BorderDouble) || e.style.Padding != EdgeAll(1) {
 					t.Errorf("border=%v padding=%+v, want BorderDouble and EdgeAll(1)", e.Border(), e.style.Padding)
 				}
 			},
@@ -245,7 +245,7 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 			after: func(e *Element) { e.SetBorder(BorderDouble) },
 			next:  "",
 			check: func(t *testing.T, e *Element) {
-				if e.Border() != BorderDouble {
+				if !e.Border().All(BorderDouble) {
 					t.Errorf("border=%v, want BorderDouble from SetBorder", e.Border())
 				}
 			},
@@ -254,7 +254,7 @@ func TestSetClass_ReplacesPreviousClasses(t *testing.T) {
 			opts: []Option{WithClass("border-rounded"), WithGap(2)},
 			next: "",
 			check: func(t *testing.T, e *Element) {
-				if e.Border() != BorderNone || e.style.Gap != 2 {
+				if !e.Border().All(BorderNone) || e.style.Gap != 2 {
 					t.Errorf("border=%v gap=%d, want BorderNone and gap 2", e.Border(), e.style.Gap)
 				}
 			},
@@ -321,7 +321,7 @@ func sweepClasses() []string {
 func TestComponentElementOptions(t *testing.T) {
 	t.Run("input applies element options and sizes for a class border", func(t *testing.T) {
 		root := NewInput(WithInputElementOptions(WithClass("border-rounded w-30"))).Render(testApp)
-		if root.Border() != BorderRounded || root.LayoutStyle().Width != Fixed(30) {
+		if !root.Border().All(BorderRounded) || root.LayoutStyle().Width != Fixed(30) {
 			t.Errorf("border=%v width=%+v", root.Border(), root.LayoutStyle().Width)
 		}
 		if root.LayoutStyle().Height != Fixed(3) {
@@ -353,13 +353,13 @@ func TestComponentElementOptions(t *testing.T) {
 	})
 	t.Run("textarea applies element options and sizes for a class border", func(t *testing.T) {
 		root := NewTextArea(WithTextAreaElementOptions(WithBorder(BorderDouble))).Render(testApp)
-		if root.Border() != BorderDouble || root.LayoutStyle().Height != Fixed(3) {
+		if !root.Border().All(BorderDouble) || root.LayoutStyle().Height != Fixed(3) {
 			t.Errorf("border=%v height=%+v, want BorderDouble and Fixed(3)", root.Border(), root.LayoutStyle().Height)
 		}
 	})
 	t.Run("markdown applies element options to its root", func(t *testing.T) {
 		root := NewMarkdown(WithMarkdownSource("hi"), WithMarkdownElementOptions(WithClass("p-1 border"))).Render(testApp)
-		if root.style.Padding != EdgeAll(1) || root.Border() != BorderSingle {
+		if root.style.Padding != EdgeAll(1) || !root.Border().All(BorderSingle) {
 			t.Errorf("padding=%+v border=%v", root.style.Padding, root.Border())
 		}
 	})

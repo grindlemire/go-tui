@@ -386,18 +386,22 @@ func (b *Buffer) FillGradient(rect Rect, r rune, g Gradient, baseStyle Style)
 
 `SetStringGradient` writes a string with the gradient applied per-character as the foreground color. It returns the total display width consumed. `FillGradient` fills a rectangle with the gradient applied as the background color, respecting the gradient's direction setting.
 
-## BorderStyle
+## BorderStyle / Borders
 
-`BorderStyle` selects the character set used to draw element borders.
+`BorderStyle` represents the style of border used to draw one element border.
+`Borders` selects the style of border used to draw each side of an element.
 
 ```go
 type BorderStyle int
+type Borders struct {
+	Top, Right, Bottom, Left BorderStyle
+}
 ```
 
 ### Constants
 
 | Constant | Characters | Example |
-|----------|-----------|---------|
+|----------|------------|---------|
 | `BorderNone` | (no border) | |
 | `BorderSingle` | `┌─┐│└─┘` | `┌───┐` / `│   │` / `└───┘` |
 | `BorderDouble` | `╔═╗║╚═╝` | `╔═══╗` / `║   ║` / `╚═══╝` |
@@ -406,12 +410,58 @@ type BorderStyle int
 
 ### Tailwind Border Classes
 
+For an uniform border style:
+
 | Class | BorderStyle |
 |-------|-------------|
-| `border-single` | `BorderSingle` |
+| `border-none` | `BorderNone` |
+| `border`/`border-single` | `BorderSingle` |
 | `border-double` | `BorderDouble` |
 | `border-rounded` | `BorderRounded` |
 | `border-thick` | `BorderThick` |
+
+For individual styles for each box side:
+
+| Class | Side | BorderStyle | Character |
+|-------|------|-------------|-----------|
+| `border-t-none` | Top | `BorderNone` | ` ` |
+| `border-t-single` | Top | `BorderSingle` | `─` |
+| `border-t-double` | Top | `BorderDouble` | `═` |
+| `border-t-rounded` | Top | `BorderRounded` | `─` |
+| `border-t-thick` | Top | `BorderThick` | `━` |
+| `border-r-none` | Right | `BorderNone` | ` ` |
+| `border-r-single` | Right | `BorderSingle` | `│` |
+| `border-r-double` | Right | `BorderDouble` | `║` |
+| `border-r-rounded` | Right | `BorderRounded` | `│` |
+| `border-r-thick` | Right | `BorderThick` | `┃` |
+| `border-b-none` | Bottom | `BorderNone` | ` ` |
+| `border-b-single` | Bottom | `BorderSingle` | `─` |
+| `border-b-double` | Bottom | `BorderDouble` | `═` |
+| `border-b-rounded` | Bottom | `BorderRounded` | `─` |
+| `border-b-thick` | Bottom | `BorderThick` | `━` |
+| `border-l-none` | Left | `BorderNone` | ` ` |
+| `border-l-single` | Left | `BorderSingle` | `│` |
+| `border-l-double` | Left | `BorderDouble` | `║` |
+| `border-l-rounded` | Left | `BorderRounded` | `│` |
+| `border-l-thick` | Left | `BorderThick` | `┃` |
+| `border-x-none` | Left and Right | `BorderNone` | ` ` |
+| `border-x-single` | Left and Right | `BorderSingle` | `│` |
+| `border-x-double` | Left and Right | `BorderDouble` | `║` |
+| `border-x-rounded` | Left and Right | `BorderRounded` | `│` |
+| `border-x-thick` | Left and Right | `BorderThick` | `┃` |
+| `border-y-none` | Top and Bottom | `BorderNone` | ` ` |
+| `border-y-single` | Top and Bottom | `BorderSingle` | `─` |
+| `border-y-double` | Top and Bottom | `BorderDouble` | `═` |
+| `border-y-rounded` | Top and Bottom | `BorderRounded` | `─` |
+| `border-y-thick` | Top and Bottom | `BorderThick` | `━` |
+
+**About corners**:
+- When adjacent sides are missing:
+  - When only top or bottom is set, corners use that side's horizontal char
+  - When only left or right is set, corners use that side's vertical char
+
+  This creates continuous lines instead of broken corners.
+- When adjacent sides are present: corners match the style of the top/bottom sides.
 
 Border color classes: `border-red`, `border-cyan`, etc. apply a `Style` to the border characters.
 
@@ -423,10 +473,10 @@ Border color classes: `border-red`, `border-cyan`, etc. apply a `Style` to the b
 
 ### BorderChars
 
-`Chars()` returns the individual rune characters for a border style:
+`Chars()` returns the individual rune characters for a box's border styles:
 
 ```go
-func (b BorderStyle) Chars() BorderChars
+func (b Borders) Chars() BorderChars
 
 type BorderChars struct {
     TopLeft     rune
@@ -441,7 +491,7 @@ type BorderChars struct {
 ```
 
 ```go
-chars := tui.BorderRounded.Chars()
+chars := tui.BorderAll(BorderRounded).Chars()
 // chars.TopLeft == '╭', chars.Top == '─', chars.TopRight == '╮'
 ```
 
@@ -449,17 +499,20 @@ chars := tui.BorderRounded.Chars()
 
 ```go
 func WithBorder(style BorderStyle) Option
+func WithBorderTRBL(top, right, bottom, left BorderStyle) Option
 func WithBorderTitle(title string) Option
 func WithBorderTitleAlign(align TextAlign) Option
 func WithBorderTitleStyle(style Style) Option
 func WithFocusBorderStyle(style Style) Option
 ```
 
-`WithBorder` sets the border shape. `WithBorderTitle` draws a label in the top border line, truncated when wider than the top edge. `WithBorderTitleAlign` moves the title to `TextAlignLeft`, `TextAlignCenter` (the default), or `TextAlignRight`. The title matches the border style unless `WithBorderTitleStyle` gives it its own color and attributes. `WithFocusBorderStyle` sets a border style used only while the element is focused, falling back to `WithBorderStyle` otherwise:
+`WithBorder` sets the same border shape for all sides of the element. `WithBorderTRBL` sets individually the border shape for each side of the element. `WithBorderTitle` draws a label in the top border line, truncated when wider than the top edge; it is not drawn when the top border is `BorderNone`. `WithBorderTitleAlign` moves the title to `TextAlignLeft`, `TextAlignCenter` (the default), or `TextAlignRight`. The title matches the border style unless `WithBorderTitleStyle` gives it its own color and attributes. `WithFocusBorderStyle` sets a border style used only while the element is focused, falling back to `WithBorderStyle` otherwise:
 
 ```go
 el := tui.New(
     tui.WithBorder(tui.BorderRounded),
+    // Alternatively, to set individual border shapes for each side:
+    // tui.WithBorderTRBL(tui.BorderThick, tui.BorderSingle, tui.BorderRounded, tui.BorderSingle)
     tui.WithBorderStyle(tui.NewStyle().Foreground(tui.ANSIColor(tui.Cyan))),
     tui.WithBorderTitle(" Status "),
     tui.WithBorderTitleAlign(tui.TextAlignLeft),
@@ -473,21 +526,21 @@ el := tui.New(
 These functions render borders and fills directly to a `Buffer`. They're used internally by the rendering system, but are available for custom rendering needs.
 
 ```go
-func DrawBox(buf *Buffer, rect Rect, border BorderStyle, style Style)
-func DrawBoxGradient(buf *Buffer, rect Rect, border BorderStyle, g Gradient, baseStyle Style)
-func DrawBoxClipped(buf *Buffer, rect Rect, border BorderStyle, style Style, clipRect Rect)
-func DrawBoxGradientClipped(buf *Buffer, rect Rect, border BorderStyle, g Gradient, baseStyle Style, clipRect Rect)
-func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, style Style)
+func DrawBox(buf *Buffer, rect Rect, borders Borders, style Style)
+func DrawBoxGradient(buf *Buffer, rect Rect, borders Borders, g Gradient, baseStyle Style)
+func DrawBoxClipped(buf *Buffer, rect Rect, borders Borders, style Style, clipRect Rect)
+func DrawBoxGradientClipped(buf *Buffer, rect Rect, borders Borders, g Gradient, baseStyle Style, clipRect Rect)
+func DrawBoxWithTitle(buf *Buffer, rect Rect, borders Borders, title string, style Style)
 func FillBox(buf *Buffer, rect Rect, r rune, style Style)
 ```
 
 | Function | Description |
 |----------|-------------|
-| `DrawBox` | Draws a border around a rectangle |
-| `DrawBoxGradient` | Draws a border with gradient color applied around the perimeter |
-| `DrawBoxClipped` | Draws a border clipped to a visible region (for scrolling) |
-| `DrawBoxGradientClipped` | Draws a gradient border clipped to a visible region |
-| `DrawBoxWithTitle` | Draws a border with a centered title in the top edge |
+| `DrawBox` | Draws borders around a rectangle |
+| `DrawBoxGradient` | Draws borders with gradient color applied around the perimeter |
+| `DrawBoxClipped` | Draws borders clipped to a visible region (for scrolling) |
+| `DrawBoxGradientClipped` | Draws gradient borders clipped to a visible region |
+| `DrawBoxWithTitle` | Draws borders with a centered title in the top edge |
 | `FillBox` | Fills the interior of a rectangle with a rune and style |
 
 ```go
@@ -495,8 +548,8 @@ buf := tui.NewBuffer(40, 10)
 rect := tui.NewRect(0, 0, 40, 10)
 style := tui.NewStyle().Foreground(tui.ANSIColor(tui.Cyan))
 
-tui.DrawBox(buf, rect, tui.BorderRounded, style)
-tui.DrawBoxWithTitle(buf, rect, tui.BorderSingle, "My Panel", style)
+tui.DrawBox(buf, rect, tui.BorderAll(BorderRounded), style)
+tui.DrawBoxWithTitle(buf, rect, tui.BorderAll(BorderSingle), "My Panel", style)
 ```
 
 ## Capabilities

@@ -30,8 +30,8 @@ func TestTextAreaOptions(t *testing.T) {
 				if ta.maxHeight != 0 {
 					t.Fatalf("maxHeight = %d, want 0", ta.maxHeight)
 				}
-				if ta.border != BorderNone {
-					t.Fatalf("border = %v, want BorderNone", ta.border)
+				if !ta.border.All(BorderNone) {
+					t.Fatalf("border = %+v, want %+v", ta.border, BorderAll(BorderNone))
 				}
 				if ta.placeholder != "" {
 					t.Fatalf("placeholder = %q, want empty", ta.placeholder)
@@ -81,11 +81,20 @@ func TestTextAreaOptions(t *testing.T) {
 				}
 			},
 		},
-		"WithTextAreaBorder sets border style": {
+		"WithTextAreaBorder sets an uniform border style": {
 			opts: []TextAreaOption{WithTextAreaBorder(BorderRounded)},
 			assert: func(t *testing.T, ta *TextArea) {
-				if ta.border != BorderRounded {
-					t.Fatalf("border = %v, want BorderRounded", ta.border)
+				if !ta.border.All(BorderRounded) {
+					t.Fatalf("border = %+v, want %+v", ta.border, BorderAll(BorderRounded))
+				}
+			},
+		},
+		"WithTextAreaBorderTRBL sets individual border styles for each side": {
+			opts: []TextAreaOption{WithTextAreaBorderTRBL(BorderNone, BorderDouble, BorderThick, BorderSingle)},
+			assert: func(t *testing.T, ta *TextArea) {
+				want := Borders{Top: BorderNone, Right: BorderDouble, Bottom: BorderThick, Left: BorderSingle}
+				if ta.border != want {
+					t.Fatalf("border = %+v, want %+v", ta.border, want)
 				}
 			},
 		},
@@ -279,8 +288,8 @@ func TestTextAreaOptions(t *testing.T) {
 				if ta.width != 30 || ta.maxHeight != 4 {
 					t.Fatalf("size = (%d, %d), want (30, 4)", ta.width, ta.maxHeight)
 				}
-				if ta.border != BorderDouble {
-					t.Fatalf("border = %v, want BorderDouble", ta.border)
+				if !ta.border.All(BorderDouble) {
+					t.Fatalf("border = %+v, want %+v", ta.border, BorderAll(BorderDouble))
 				}
 				if ta.placeholder != "compose" {
 					t.Fatalf("placeholder = %q, want %q", ta.placeholder, "compose")

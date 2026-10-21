@@ -35,14 +35,19 @@ func (e *Element) Style() LayoutStyle {
 	return e.style
 }
 
-// Border returns the border style.
-func (e *Element) Border() BorderStyle {
+// Border returns the style for all borders.
+func (e *Element) Border() Borders {
 	return e.border
 }
 
-// SetBorder sets the border style.
+// SetBorder sets uniform border style on all sides.
 func (e *Element) SetBorder(border BorderStyle) {
-	e.border = border
+	e.border = BorderAll(border)
+}
+
+// SetBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
+func (e *Element) SetBorderTRBL(top, right, bottom, left BorderStyle) {
+	e.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 }
 
 // BorderStyle returns the unfocused border style, the one SetBorderStyle

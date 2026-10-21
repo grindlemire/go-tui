@@ -12,7 +12,7 @@ type TextArea struct {
 	// Configuration (set via options, immutable after construction)
 	width             int
 	maxHeight         int
-	border            BorderStyle
+	border            Borders
 	textStyle         Style
 	placeholder       string
 	placeholderStyle  Style
@@ -62,7 +62,7 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 		// Defaults
 		width:            40,
 		maxHeight:        0, // unlimited
-		border:           BorderNone,
+		border:           Borders{},
 		textStyle:        Style{},
 		placeholder:      "",
 		placeholderStyle: Style{}.Dim(),
@@ -84,7 +84,7 @@ func NewTextArea(opts ...TextAreaOption) *TextArea {
 	// Wrapping and Height() read these fields, so class-derived values must
 	// land here before the first render.
 	b, w := boxFromOptions(t.elementOpts)
-	if b != BorderNone {
+	if !b.All(BorderNone) {
 		t.border = b
 	}
 	if w > 0 {
@@ -189,11 +189,8 @@ func (t *TextArea) contentRows(lines []string, width int) int {
 
 // Height returns the total rendered height including border.
 func (t *TextArea) Height() int {
-	height := t.contentRows(t.wrapText(), t.wrapWidth())
-	if t.border != BorderNone {
-		height += 2
-	}
-	return height
+	insets := t.border.insets()
+	return t.contentRows(t.wrapText(), t.wrapWidth()) + insets.Top + insets.Bottom
 }
 
 // --- Component Interface ---
@@ -212,8 +209,8 @@ func (t *TextArea) Render(app *App) *Element {
 	if t.width > 0 {
 		opts = append(opts, WithWidth(t.width))
 	}
-	if t.border != BorderNone {
-		opts = append(opts, WithBorder(t.border))
+	if !t.border.All(BorderNone) {
+		opts = append(opts, WithBorderTRBL(t.border.Top, t.border.Right, t.border.Bottom, t.border.Left))
 	}
 	root := New(opts...)
 	root.Apply(t.elementOpts...)
@@ -236,8 +233,9 @@ func (t *TextArea) Render(app *App) *Element {
 	// Height and focus styling depend on the final border, which element
 	// options (a class border) may have set.
 	totalHeight := rows
-	if root.Border() != BorderNone {
-		totalHeight += 2
+	if !root.Border().All(BorderNone) {
+		insets := root.Border().insets()
+		totalHeight += insets.Top + insets.Bottom
 		if t.focused.Get() {
 			if t.focusGradient != nil {
 				root.Apply(WithBorderGradient(*t.focusGradient))
@@ -526,11 +524,8 @@ func (t *TextArea) wrapWidth() int {
 	if t.laidOut {
 		return t.layoutWidth
 	}
-	w := t.width
-	if t.border != BorderNone {
-		w -= 2
-	}
-	return w
+	insets := t.border.insets()
+	return t.width - insets.Left - insets.Right
 }
 
 // wrapText wraps the text at the current wrap width.

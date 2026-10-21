@@ -107,45 +107,61 @@ func TestIntegration_Centering(t *testing.T) {
 
 // TestIntegration_RenderOutput tests that rendered output matches expectations
 func TestIntegration_RenderOutput(t *testing.T) {
-	// Create a simple 10x5 panel with a border
-	panel := New(
-		WithSize(10, 5),
-		WithBorder(BorderSingle),
-	)
-
-	buf := NewBuffer(10, 5)
-	panel.RenderTo(buf, 10, 5)
-
-	// Build expected output
-	// ┌────────┐
-	// │        │
-	// │        │
-	// │        │
-	// └────────┘
-	expected := []string{
-		"┌────────┐",
-		"│        │",
-		"│        │",
-		"│        │",
-		"└────────┘",
+	type tc struct {
+		borderOpt Option
+		want      []string
 	}
 
-	for y := range 5 {
-		var row strings.Builder
-		for x := range 10 {
-			cell := buf.Cell(x, y)
-			r := cell.Rune
-			if r == 0 {
-				r = ' '
+	tests := map[string]tc{
+		"10x5 panel with simple border": {
+			borderOpt: WithBorder(BorderSingle),
+			want: []string{
+				"┌────────┐",
+				"│        │",
+				"│        │",
+				"│        │",
+				"└────────┘",
+			},
+		},
+		"10x5 panel with mixed borders": {
+			borderOpt: WithBorderTRBL(BorderSingle, BorderThick, BorderRounded, BorderDouble),
+			want: []string{
+				"┌────────┐",
+				"║        ┃",
+				"║        ┃",
+				"║        ┃",
+				"╰────────╯",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			panel := New(
+				WithSize(10, 5),
+				tt.borderOpt,
+			)
+			buf := NewBuffer(10, 5)
+			panel.RenderTo(buf, 10, 5)
+
+			for y := range 5 {
+				var row strings.Builder
+				for x := range 10 {
+					cell := buf.Cell(x, y)
+					r := cell.Rune
+					if r == 0 {
+						r = ' '
+					}
+					row.WriteRune(r)
+					if cell.Combining != "" {
+						row.WriteString(cell.Combining)
+					}
+				}
+				if row.String() != tt.want[y] {
+					t.Errorf("row %d = %q, want %q", y, row.String(), tt.want[y])
+				}
 			}
-			row.WriteRune(r)
-			if cell.Combining != "" {
-				row.WriteString(cell.Combining)
-			}
-		}
-		if row.String() != expected[y] {
-			t.Errorf("row %d = %q, want %q", y, row.String(), expected[y])
-		}
+		})
 	}
 }
 

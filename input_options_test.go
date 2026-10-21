@@ -24,11 +24,20 @@ func TestInputOptions_ConfigureFields(t *testing.T) {
 				}
 			},
 		},
-		"WithInputBorder sets border style": {
+		"WithInputBorder sets an uniform border style": {
 			opt: WithInputBorder(BorderDouble),
 			check: func(t *testing.T, inp *Input) {
-				if inp.border != BorderDouble {
-					t.Errorf("border = %v, want BorderDouble", inp.border)
+				if !inp.border.All(BorderDouble) {
+					t.Errorf("border = %+v, want %+v", inp.border, BorderAll(BorderDouble))
+				}
+			},
+		},
+		"WithInputBorderTRBL sets individual border styles for each side": {
+			opt: WithInputBorderTRBL(BorderDouble, BorderNone, BorderSingle, BorderNone),
+			check: func(t *testing.T, inp *Input) {
+				want := Borders{Top: BorderDouble, Right: BorderNone, Bottom: BorderSingle, Left: BorderNone}
+				if inp.border != want {
+					t.Errorf("border = %+v, want %+v", inp.border, want)
 				}
 			},
 		},

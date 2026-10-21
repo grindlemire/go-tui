@@ -184,6 +184,178 @@ func TestParseTailwindClass_IndividualMargin(t *testing.T) {
 	}
 }
 
+func TestParseTailwindClass_IndividualBorders(t *testing.T) {
+	type tc struct {
+		input      string
+		wantOK     bool
+		wantOption string
+		wantImport string
+	}
+
+	tests := map[string]tc{
+		"border-t-single": {
+			input:      "border-t-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderSingle, tui.BorderNone, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-r-single": {
+			input:      "border-r-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-b-single": {
+			input:      "border-b-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderSingle, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-l-single": {
+			input:      "border-l-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderSingle)",
+			wantImport: "tui",
+		},
+		"border-t-double": {
+			input:      "border-t-double",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderDouble, tui.BorderNone, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-r-double": {
+			input:      "border-r-double",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderDouble, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-b-double": {
+			input:      "border-b-double",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderDouble, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-l-double": {
+			input:      "border-l-double",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderDouble)",
+			wantImport: "tui",
+		},
+		"border-t-rounded": {
+			input:      "border-t-rounded",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderRounded, tui.BorderNone, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-r-rounded": {
+			input:      "border-r-rounded",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderRounded, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-b-rounded": {
+			input:      "border-b-rounded",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderRounded, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-l-rounded": {
+			input:      "border-l-rounded",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderRounded)",
+			wantImport: "tui",
+		},
+		"border-t-thick": {
+			input:      "border-t-thick",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderThick, tui.BorderNone, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-r-thick": {
+			input:      "border-r-thick",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderNone, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-b-thick": {
+			input:      "border-b-thick",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-l-thick": {
+			input:      "border-l-thick",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderThick)",
+			wantImport: "tui",
+		},
+		"border-x-single": {
+			input:      "border-x-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderNone, tui.BorderSingle)",
+			wantImport: "tui",
+		},
+		"border-y-single": {
+			input:      "border-y-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderSingle, tui.BorderNone, tui.BorderSingle, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-x-double": {
+			input:      "border-x-double",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderDouble, tui.BorderNone, tui.BorderDouble)",
+			wantImport: "tui",
+		},
+		"border-y-double": {
+			input:      "border-y-double",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderDouble, tui.BorderNone, tui.BorderDouble, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-x-rounded": {
+			input:      "border-x-rounded",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderRounded, tui.BorderNone, tui.BorderRounded)",
+			wantImport: "tui",
+		},
+		"border-y-rounded": {
+			input:      "border-y-rounded",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderRounded, tui.BorderNone, tui.BorderRounded, tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-x-thick": {
+			input:      "border-x-thick",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderNone, tui.BorderThick)",
+			wantImport: "tui",
+		},
+		"border-y-thick": {
+			input:      "border-y-thick",
+			wantOK:     true,
+			wantOption: "tui.WithBorderTRBL(tui.BorderThick, tui.BorderNone, tui.BorderThick, tui.BorderNone)",
+			wantImport: "tui",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mapping, ok := ParseTailwindClass(tt.input)
+			if ok != tt.wantOK {
+				t.Errorf("ParseTailwindClass(%q) ok = %v, want %v", tt.input, ok, tt.wantOK)
+				return
+			}
+			if mapping.Option != tt.wantOption {
+				t.Errorf("Option = %q, want %q", mapping.Option, tt.wantOption)
+			}
+			if mapping.NeedsImport != tt.wantImport {
+				t.Errorf("NeedsImport = %q, want %q", mapping.NeedsImport, tt.wantImport)
+			}
+		})
+	}
+}
+
 func TestParseTailwindClass_FlexUtilities(t *testing.T) {
 	type tc struct {
 		input      string

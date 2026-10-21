@@ -191,6 +191,7 @@ These must use the `/>` closing syntax and cannot have children:
 | Element | Description |
 |---------|-------------|
 | `<input />` | Text input field |
+| `<textarea />` | Multi-line text input field |
 | `<progress />` | Progress bar |
 | `<hr />` | Horizontal rule |
 | `<br />` | Line break |
@@ -283,7 +284,9 @@ Here's the full set of supported attributes, grouped by purpose:
 
 **Scroll**: `scrollable`, `scrollOffset`, `scrollbarStyle`, `scrollbarThumbStyle`
 
-**Input-specific**: `value`, `placeholder`
+**Input and TextArea specific**: `value`, `placeholder`, `placeholderStyle`, `cursor`, `focusColor`, `borderGradient`, `focusGradient`, `autofocus`
+
+**TextArea-specific**: `submitKey`
 
 **Progress-specific**: `value`, `max`
 

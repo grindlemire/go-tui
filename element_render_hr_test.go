@@ -65,6 +65,23 @@ func TestRenderHRThick(t *testing.T) {
 	}
 }
 
+func TestRenderHRWithMixedBorders(t *testing.T) {
+	buf := NewBuffer(20, 5)
+
+	hr := New(WithHR(), WithWidth(10), WithBorderTRBL(BorderNone, BorderThick, BorderSingle, BorderRounded))
+	hr.Calculate(20, 5)
+
+	RenderTree(buf, hr)
+
+	// HR should draw '━' characters (first visible border in TRBL order)
+	for x := range 10 {
+		cell := buf.Cell(x, 0)
+		if cell.Rune != '━' {
+			t.Errorf("HR thick at x=%d = %q, want '━'", x, cell.Rune)
+		}
+	}
+}
+
 func TestRenderHRWithColor(t *testing.T) {
 	buf := NewBuffer(20, 5)
 

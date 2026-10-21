@@ -140,7 +140,7 @@ The generated `_gsx.go` files are recreated every time you run `tui generate` an
 
 **Elements** are the HTML-like tags you use in `.gsx` files: `<div>` for block containers, `<span>` for inline text, `<input />` for text fields, `<progress />` for progress bars, and more. See [GSX Syntax](gsx-syntax).
 
-**Styling** uses Tailwind-inspired classes in the `class` attribute. Apply text colors (`text-cyan`), font styles (`font-bold`), borders (`border-rounded`), backgrounds (`bg-red`), and gradients (`text-gradient-cyan-magenta`). See [Styling and Colors](styling).
+**Styling** uses Tailwind-inspired classes in the `class` attribute. Apply text colors (`text-cyan`), font styles (`font-bold`), borders (`border-rounded`, `border-r-thick`), backgrounds (`bg-red`), and gradients (`text-gradient-cyan-magenta`). See [Styling and Colors](styling).
 
 **Layout** follows the CSS flexbox model. Every `<div>` is a flex container. Control direction (`flex-col`), alignment (`items-center`, `justify-between`), spacing (`gap-2`, `p-1`), and sizing (`w-full`, `h-full`, `grow`) through classes or attributes. See [Layout](layout).
 

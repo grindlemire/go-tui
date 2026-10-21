@@ -63,8 +63,15 @@ func TestNew_WithOptions(t *testing.T) {
 		},
 		"WithBorder": {
 			opts:    []Option{WithBorder(BorderRounded)},
-			check:   func(e *Element) bool { return e.border == BorderRounded },
-			message: "WithBorder should set border style",
+			check:   func(e *Element) bool { return e.border.All(BorderRounded) },
+			message: "WithBorder should set an uniform border style",
+		},
+		"WithBorderTRBL": {
+			opts: []Option{WithBorderTRBL(BorderRounded, BorderSingle, BorderThick, BorderDouble)},
+			check: func(e *Element) bool {
+				return e.border == Borders{Top: BorderRounded, Right: BorderSingle, Bottom: BorderThick, Left: BorderDouble}
+			},
+			message: "WithBorderTRBL should set individual border styles for each side of the element",
 		},
 	}
 
@@ -426,8 +433,14 @@ func TestElement_VisualProperties(t *testing.T) {
 		WithBackground(NewStyle().Background(Blue)),
 	)
 
-	if e.Border() != BorderRounded {
-		t.Error("Border() should return the border style")
+	eIndividualBorders := New(WithBorderTRBL(BorderRounded, BorderSingle, BorderThick, BorderNone))
+
+	if !e.Border().All(BorderRounded) {
+		t.Error("Border() should return the uniform border style")
+	}
+
+	if eIndividualBorders.Border() != (Borders{Top: BorderRounded, Right: BorderSingle, Bottom: BorderThick, Left: BorderNone}) {
+		t.Error("Border() should return the border styles")
 	}
 
 	if e.BorderStyle().Fg != Cyan {
@@ -440,8 +453,13 @@ func TestElement_VisualProperties(t *testing.T) {
 
 	// Test setters
 	e.SetBorder(BorderDouble)
-	if e.Border() != BorderDouble {
-		t.Error("SetBorder() should update border style")
+	if !e.Border().All(BorderDouble) {
+		t.Error("SetBorder() should set an uniform border style on all sides")
+	}
+
+	eIndividualBorders.SetBorderTRBL(BorderDouble, BorderSingle, BorderSingle, BorderThick)
+	if eIndividualBorders.Border() != (Borders{Top: BorderDouble, Right: BorderSingle, Bottom: BorderSingle, Left: BorderThick}) {
+		t.Error("SetBorderTRBL() should update border style for all sides")
 	}
 
 	e.SetBorderStyle(NewStyle().Foreground(Red))

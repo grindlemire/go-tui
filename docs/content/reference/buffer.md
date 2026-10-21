@@ -423,26 +423,26 @@ fmt.Println(buf.StringTrimmed())
 These functions draw borders and filled boxes directly into a buffer. They live in the `tui` package alongside the buffer types. For full details, see [Styling Reference](styling.md).
 
 ```go
-func DrawBox(buf *Buffer, rect Rect, border BorderStyle, style Style)
+func DrawBox(buf *Buffer, rect Rect, borders Borders, style Style)
 func DrawBoxGradient(buf *Buffer, rect Rect, border BorderStyle, g Gradient, baseStyle Style)
-func DrawBoxClipped(buf *Buffer, rect Rect, border BorderStyle, style Style, clipRect Rect)
-func DrawBoxGradientClipped(buf *Buffer, rect Rect, border BorderStyle, g Gradient, baseStyle Style, clipRect Rect)
-func DrawBoxWithTitle(buf *Buffer, rect Rect, border BorderStyle, title string, style Style)
+func DrawBoxClipped(buf *Buffer, rect Rect, borders Borders, style Style, clipRect Rect)
+func DrawBoxGradientClipped(buf *Buffer, rect Rect, borders Borders, g Gradient, baseStyle Style, clipRect Rect)
+func DrawBoxWithTitle(buf *Buffer, rect Rect, borders Borders, title string, style Style)
 func FillBox(buf *Buffer, rect Rect, r rune, style Style)
 ```
 
 | Function | Description |
 |----------|-------------|
-| `DrawBox` | Draws a border around a rectangle. |
-| `DrawBoxGradient` | Draws a border with a gradient applied to the border characters. |
-| `DrawBoxClipped` | Draws a border clipped to a visible region. |
-| `DrawBoxGradientClipped` | Draws a gradient border clipped to a visible region. |
-| `DrawBoxWithTitle` | Draws a border with a title string inset in the top edge. |
+| `DrawBox` | Draws borders around a rectangle. |
+| `DrawBoxGradient` | Draws borders with a gradient applied to the border characters. |
+| `DrawBoxClipped` | Draws borders clipped to a visible region. |
+| `DrawBoxGradientClipped` | Draws gradient borders clipped to a visible region. |
+| `DrawBoxWithTitle` | Draws borders with a title string inset in the top edge. |
 | `FillBox` | Fills the interior of a bordered rectangle (inside the border, not including it). |
 
 ## See also
 
 - [Element Reference](element.md) -- element tree that produces the content rendered into buffers
-- [Styling Reference](styling.md) -- Style, Color, Gradient, and BorderStyle types
+- [Styling Reference](styling.md) -- Style, Color, Gradient, and BorderStyle/Borders types
 - [Terminal Reference](terminal.md) -- the Terminal interface that receives flushed changes
 - [Testing Reference](testing.md) -- MockTerminal for reading buffer output in tests

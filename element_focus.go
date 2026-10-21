@@ -46,7 +46,7 @@ func (e *Element) Focus() {
 		}
 	} else if e.focusBorderStyle != nil {
 		e.MarkDirty()
-	} else if e.border != BorderNone {
+	} else if !e.border.All(BorderNone) {
 		e.highlightBorder(NewStyle().Foreground(Cyan))
 		e.MarkDirty()
 	}

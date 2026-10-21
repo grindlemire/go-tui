@@ -243,3 +243,90 @@ func TestParseTailwindClasses_PaddingAndMarginCombined(t *testing.T) {
 		}
 	}
 }
+
+func TestParseTailwindClasses_BorderAccumulation(t *testing.T) {
+	type tc struct {
+		input       string
+		wantOptions []string
+	}
+
+	tests := map[string]tc{
+		"no border (substractive)": {
+			input:       "border border-none",
+			wantOptions: []string{"tui.WithBorder(tui.BorderSingle)", "tui.WithBorder(tui.BorderNone)"},
+		},
+		"no border (substractive, symmetrical classes)": {
+			input:       "border border-x-none border-y-none",
+			wantOptions: []string{"tui.WithBorder(tui.BorderNone)"},
+		},
+		"border in all sides (individual classes)": {
+			input:       "border-t-double border-r-thick border-b-rounded border-l-single",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderDouble, tui.BorderThick, tui.BorderRounded, tui.BorderSingle)"},
+		},
+		"border in all sides (symmetric classes)": {
+			input:       "border-x-double border-y-thick",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderDouble, tui.BorderThick, tui.BorderDouble)"},
+		},
+		"border in all sides (mixed classes)": {
+			input:       "border-b-thick border-x-double border-t-thick",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderDouble, tui.BorderThick, tui.BorderDouble)"},
+		},
+		"border in all sides but top (substractive)": {
+			input:       "border-single border-t-none",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderSingle, tui.BorderSingle)"},
+		},
+		"border in all sides but top (additive)": {
+			input:       "border-r-single border-b-single border-l-single",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderSingle, tui.BorderSingle)"},
+		},
+		"border in all sides but right (substractive)": {
+			input:       "border-x-double border-y-thick border-r-none",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderNone, tui.BorderThick, tui.BorderDouble)"},
+		},
+		"border in all sides but right (additive)": {
+			input:       "border-y-rounded border-l-single",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderNone, tui.BorderRounded, tui.BorderSingle)"},
+		},
+		"border in all sides but bottom (substractive)": {
+			input:       "border-rounded border-b-none",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderNone, tui.BorderRounded)"},
+		},
+		"border in all sides but bottom (additive)": {
+			input:       "border-t-rounded border-x-rounded",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderNone, tui.BorderRounded)"},
+		},
+		"border in all sides but left (substractive)": {
+			input:       "border-x-rounded border-l-none border-t-rounded border-b-rounded",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderRounded, tui.BorderNone)"},
+		},
+		"border in all sides but left (additive)": {
+			input:       "border-y-thick border-r-double",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderThick, tui.BorderDouble, tui.BorderThick, tui.BorderNone)"},
+		},
+		"border in all sides but left and right (substractive, symmetric classes)": {
+			input:       "border-double border-x-none",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderDouble, tui.BorderNone, tui.BorderDouble, tui.BorderNone)"},
+		},
+		"border in all sides but top and bottom (substractive, symmetric classes)": {
+			input:       "border-double border-y-none",
+			wantOptions: []string{"tui.WithBorderTRBL(tui.BorderNone, tui.BorderDouble, tui.BorderNone, tui.BorderDouble)"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := ParseTailwindClasses(tt.input)
+
+			if len(result.Options) != len(tt.wantOptions) {
+				t.Errorf("Options count = %d, want %d. Got: %v", len(result.Options), len(tt.wantOptions), result.Options)
+				return
+			}
+
+			for i, opt := range tt.wantOptions {
+				if result.Options[i] != opt {
+					t.Errorf("Options[%d] = %q, want %q", i, result.Options[i], opt)
+				}
+			}
+		})
+	}
+}

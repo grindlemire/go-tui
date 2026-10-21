@@ -213,10 +213,18 @@ func TestWithBorder(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			e := New(WithBorder(tt.border))
-			if e.border != tt.border {
+			if !e.border.All(tt.border) {
 				t.Errorf("WithBorder(%v) = %v", tt.border, e.border)
 			}
 		})
+	}
+}
+
+func TestWithBorderTRBL(t *testing.T) {
+	e := New(WithBorderTRBL(BorderNone, BorderRounded, BorderThick, BorderSingle))
+	expected := Borders{Top: BorderNone, Right: BorderRounded, Bottom: BorderThick, Left: BorderSingle}
+	if e.border != expected {
+		t.Errorf("WithBorderTRBL(BorderNone,BorderRounded,BorderThick,BorderSingle) = %+v, want %+v", e.border, expected)
 	}
 }
 
@@ -283,7 +291,7 @@ func TestOptions_Compose(t *testing.T) {
 	if e.style.Padding != EdgeAll(5) {
 		t.Error("Padding not set correctly")
 	}
-	if e.border != BorderRounded {
+	if !e.border.All(BorderRounded) {
 		t.Error("Border not set correctly")
 	}
 	if e.borderStyle.Fg != Cyan {

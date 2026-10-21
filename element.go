@@ -59,7 +59,7 @@ type Element struct {
 	dirty  bool
 
 	// Visual properties
-	border           BorderStyle
+	border           Borders
 	borderStyle      Style
 	background       *Style    // nil = transparent
 	borderTitle      string    // title text drawn in the top border (DrawBoxWithTitle)

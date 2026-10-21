@@ -30,10 +30,17 @@ func WithTextAreaMaxHeight(rows int) TextAreaOption {
 
 // --- Visual Options ---
 
-// WithTextAreaBorder sets the border style.
+// WithTextAreaBorder sets uniform border style on all sides.
 func WithTextAreaBorder(b BorderStyle) TextAreaOption {
 	return func(t *TextArea) {
-		t.border = b
+		t.border = BorderAll(b)
+	}
+}
+
+// WithTextAreaBorderTRBL sets border style using CSS order: Top, Right, Bottom, Left.
+func WithTextAreaBorderTRBL(top, right, bottom, left BorderStyle) TextAreaOption {
+	return func(t *TextArea) {
+		t.border = Borders{Top: top, Right: right, Bottom: bottom, Left: left}
 	}
 }
 

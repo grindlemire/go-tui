@@ -245,6 +245,18 @@ func TestParseTailwindClass_Borders(t *testing.T) {
 			wantOption: "tui.WithBorder(tui.BorderSingle)",
 			wantImport: "tui",
 		},
+		"border-none": {
+			input:      "border-none",
+			wantOK:     true,
+			wantOption: "tui.WithBorder(tui.BorderNone)",
+			wantImport: "tui",
+		},
+		"border-single": {
+			input:      "border-single",
+			wantOK:     true,
+			wantOption: "tui.WithBorder(tui.BorderSingle)",
+			wantImport: "tui",
+		},
 		"border-rounded": {
 			input:      "border-rounded",
 			wantOK:     true,

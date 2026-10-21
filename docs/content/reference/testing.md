@@ -523,7 +523,7 @@ func TestBorderedBox(t *testing.T) {
     buf := tui.NewBuffer(20, 6)
     term := tui.NewMockTerminal(20, 6)
 
-    tui.DrawBox(buf, tui.NewRect(2, 1, 15, 4), tui.BorderSingle, tui.NewStyle())
+    tui.DrawBox(buf, tui.NewRect(2, 1, 15, 4), tui.BorderAll(tui.BorderSingle), tui.NewStyle())
     tui.Render(term, buf)
 
     if term.CellAt(2, 1).Rune != '┌' {

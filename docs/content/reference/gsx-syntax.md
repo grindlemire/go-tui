@@ -758,13 +758,46 @@ Fraction syntax (`w-N/D`) is emitted as a constant expression, so the compiled v
 
 ### Borders
 
+Uniform border style for all sides:
+
 | Class | Generated option |
 |-------|------------------|
-| `border` | `tui.WithBorder(tui.BorderSingle)` |
-| `border-single` | `tui.WithBorder(tui.BorderSingle)` |
-| `border-double` | `tui.WithBorder(tui.BorderDouble)` |
-| `border-rounded` | `tui.WithBorder(tui.BorderRounded)` |
-| `border-thick` | `tui.WithBorder(tui.BorderThick)` |
+| `border-none` | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderNone)` |
+| `border`/`border-single` | `tui.WithBorderTRBL(tui.BorderSingle, tui.BorderSingle, tui.BorderSingle, tui.BorderSingle)` |
+| `border-double` | `tui.WithBorderTRBL(tui.BorderDouble, tui.BorderDouble, tui.BorderDouble, tui.BorderDouble)` |
+| `border-rounded` | `tui.WithBorderTRBL(tui.BorderRounded, tui.BorderRounded, tui.BorderRounded, tui.BorderRounded)` |
+| `border-thick` | `tui.WithBorderTRBL(tui.BorderThick, tui.BorderThick, tui.BorderThick, tui.BorderThick)` |
+
+Individual borders by side:
+
+| Class | Side | Generated option |
+|-------|------|------------------|
+| `border-t-single` | Top | `tui.WithBorderTRBL(tui.BorderSingle, tui.BorderNone, tui.BorderNone, tui.BorderNone)` |
+| `border-t-double` | Top | `tui.WithBorderTRBL(tui.BorderDouble, tui.BorderNone, tui.BorderNone, tui.BorderNone)` |
+| `border-t-rounded` | Top | `tui.WithBorderTRBL(tui.BorderRounded, tui.BorderNone, tui.BorderNone, tui.BorderNone)` |
+| `border-t-thick` | Top | `tui.WithBorderTRBL(tui.BorderThick, tui.BorderNone, tui.BorderNone, tui.BorderNone)` |
+| `border-r-single` | Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderNone, tui.BorderNone)` |
+| `border-r-double` | Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderDouble, tui.BorderNone, tui.BorderNone)` |
+| `border-r-rounded` | Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderRounded, tui.BorderNone, tui.BorderNone)` |
+| `border-r-thick` | Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderNone, tui.BorderNone)` |
+| `border-b-single` | Bottom | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderSingle, tui.BorderNone)` |
+| `border-b-double` | Bottom | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderDouble, tui.BorderNone)` |
+| `border-b-rounded` | Bottom | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderRounded, tui.BorderNone)` |
+| `border-b-thick` | Bottom | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderThick, tui.BorderNone)` |
+| `border-l-single` | Left | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderSingle)` |
+| `border-l-double` | Left | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderDouble)` |
+| `border-l-rounded` | Left | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderRounded)` |
+| `border-l-thick` | Left | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderNone, tui.BorderNone, tui.BorderThick)` |
+| `border-x-single` | Left and Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderNone, tui.BorderSingle)` |
+| `border-x-double` | Left and Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderDouble, tui.BorderNone, tui.BorderDouble)` |
+| `border-x-rounded` | Left and Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderRounded, tui.BorderNone, tui.BorderRounded)` |
+| `border-x-thick` | Left and Right | `tui.WithBorderTRBL(tui.BorderNone, tui.BorderThick, tui.BorderNone, tui.BorderThick)` |
+| `border-y-single` | Top and Bottom | `tui.WithBorderTRBL(tui.BorderSingle, tui.BorderNone, tui.BorderSingle, tui.BorderNone)` |
+| `border-y-double` | Top and Bottom | `tui.WithBorderTRBL(tui.BorderDouble, tui.BorderNone, tui.BorderDouble, tui.BorderNone)` |
+| `border-y-rounded` | Top and Bottom | `tui.WithBorderTRBL(tui.BorderRounded, tui.BorderNone, tui.BorderRounded, tui.BorderNone)` |
+| `border-y-thick` | Top and Bottom | `tui.WithBorderTRBL(tui.BorderThick, tui.BorderNone, tui.BorderThick, tui.BorderNone)` |
+
+Empty borders: `border-t-none`, `border-r-none`, `border-b-none`, `border-l-none`, `border-x-none`, `border-y-none`. Each accumulates with other border style classes. For example, `border border-t-none` generates `tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderSingle, tui.BorderSingle)` (sets a single line border in all sides but top).
 
 Border colors: `border-red`, `border-green`, `border-blue`, `border-cyan`, `border-magenta`, `border-yellow`, `border-white`, `border-black`. Each generates `tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Color))`.
 

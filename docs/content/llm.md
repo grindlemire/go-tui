@@ -279,7 +279,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `textStyle` | `tui.Style` | Text styling |
 | `textAlign` | `string` | `"left"`, `"center"`, `"right"` |
 | `borderStyle` | `tui.Style` | Border line styling |
-| `borderTitle` | `string` | Title text centered in the top border |
+| `borderTitle` | `string` | Title text centered in the top border (not drawn when the top border is `BorderNone`) |
 
 ### Identity & Behavior
 
@@ -358,7 +358,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 
 ### Borders
 
-`border` `border-single` `border-double` `border-rounded` `border-thick` `border-COLOR` `border-[#hex]` `border-gradient-C1-C2[-dir]`
+`border` `border-none` `border-single` `border-double` `border-rounded` `border-thick` `border-t-single` `border-r-single` `border-b-single` `border-l-single` `border-x-single` `border-y-single` `border-t-double` `border-r-double` `border-b-double` `border-l-double` `border-x-double` `border-y-double` `border-t-rounded` `border-r-rounded` `border-b-rounded` `border-l-rounded` `border-x-rounded` `border-y-rounded` `border-t-thick` `border-r-thick` `border-b-thick` `border-l-thick` `border-x-thick` `border-y-thick` `border-t-none` `border-r-none` `border-b-none` `border-l-none` `border-x-none` `border-y-none` `border-COLOR` `border-[#hex]` `border-gradient-C1-C2[-dir]`
 
 ### Text Styling
 
@@ -829,7 +829,10 @@ el := tui.New(
     tui.WithFlexShrink(0),
     tui.WithPadding(2),
     tui.WithMargin(1),
+    // To set a uniform border for all sides
     tui.WithBorder(tui.BorderRounded),
+    // Alternatively, to set individual borders for all sides (in order: Top, Right, Bottom, Left)
+    // tui.WithBorderTRBL(tui.BorderNone, tui.BorderSingle, tui.BorderDouble, tui.BorderSingle)
     tui.WithBackground(tui.Cyan),
     tui.WithText("content"),
     tui.WithTextStyle(tui.NewStyle().Bold()),

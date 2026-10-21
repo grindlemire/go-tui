@@ -156,7 +156,7 @@ The default theme is glow-inspired and leans on text attributes plus a couple of
 | `BlockquoteBar`, `BlockquoteBarStyle`, `BlockquoteText` | The left bar glyph, its style, and quoted text |
 | `BulletMarker` | The unordered-list marker string, e.g. `"• "` |
 
-Tables draw as a full grid with an outer box, column separators, and a rule under the header. Blockquotes render a one-column glyph bar on the left rather than a box border, since a `BorderStyle` always draws a full box.
+Tables draw as a full grid with an outer box, column separators, and a rule under the header. Blockquotes render a one-column glyph bar on the left rather than a box border.
 
 ## Syntax Highlighting
 

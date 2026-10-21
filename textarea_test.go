@@ -55,10 +55,11 @@ func TestTextArea_MoveRight_UsesRuneLength(t *testing.T) {
 
 func TestTextArea_WrapText_DisplayWidth(t *testing.T) {
 	type tc struct {
-		width  int
-		border BorderStyle
-		text   string
-		want   []string
+		width   int
+		border  BorderStyle
+		borders Borders
+		text    string
+		want    []string
 	}
 
 	tests := map[string]tc{
@@ -82,11 +83,17 @@ func TestTextArea_WrapText_DisplayWidth(t *testing.T) {
 			text:  "ab界界",
 			want:  []string{"ab界", "界"},
 		},
-		"border reduces wrap width by two": {
+		"uniform border reduces wrap width by two": {
 			width:  10,
 			border: BorderSingle,
 			text:   "abcdefghijklmnop",
 			want:   []string{"abcdefgh", "ijklmnop"},
+		},
+		"individual borders for each side reduces wrap width by two": {
+			width:   10,
+			borders: Borders{Top: BorderNone, Right: BorderThick, Bottom: BorderDouble, Left: BorderThick},
+			text:    "abcdefghijklmnop",
+			want:    []string{"abcdefgh", "ijklmnop"},
 		},
 		"embedded newlines preserved": {
 			width: 10,
@@ -116,6 +123,9 @@ func TestTextArea_WrapText_DisplayWidth(t *testing.T) {
 			opts := []TextAreaOption{WithTextAreaWidth(tt.width)}
 			if tt.border != BorderNone {
 				opts = append(opts, WithTextAreaBorder(tt.border))
+			}
+			if !tt.borders.All(BorderNone) {
+				opts = append(opts, WithTextAreaBorderTRBL(tt.borders.Top, tt.borders.Right, tt.borders.Bottom, tt.borders.Left))
 			}
 			ta := NewTextArea(opts...)
 			ta.BindApp(testApp)
@@ -198,15 +208,19 @@ func renderedRows(t *testing.T, c Component, width int) []string {
 
 func TestTextArea_Render_NoClippedContent(t *testing.T) {
 	type tc struct {
-		width  int
-		border BorderStyle
-		text   string
+		width   int
+		border  BorderStyle
+		borders Borders
+		text    string
 	}
 
+	borders := Borders{Top: BorderSingle, Right: BorderNone, Bottom: BorderThick, Left: BorderNone}
 	tests := map[string]tc{
-		"cjk without border": {width: 10, text: "一二三四五六七八九十"},
-		"cjk with border":    {width: 10, border: BorderSingle, text: "一二三四五六七八"},
-		"ascii with border":  {width: 10, border: BorderSingle, text: "abcdefghijklmnop"},
+		"cjk without border":                          {width: 10, text: "一二三四五六七八九十"},
+		"cjk with uniform border":                     {width: 10, border: BorderSingle, text: "一二三四五六七八"},
+		"ascii with uniform border":                   {width: 10, border: BorderSingle, text: "abcdefghijklmnop"},
+		"cjk with individual borders for each side":   {width: 10, borders: borders, text: "一二三四五六七八"},
+		"ascii with individual borders for each side": {width: 10, borders: borders, text: "abcdefghijklmnop"},
 	}
 
 	for name, tt := range tests {
@@ -214,6 +228,9 @@ func TestTextArea_Render_NoClippedContent(t *testing.T) {
 			opts := []TextAreaOption{WithTextAreaWidth(tt.width)}
 			if tt.border != BorderNone {
 				opts = append(opts, WithTextAreaBorder(tt.border))
+			}
+			if !tt.borders.All(BorderNone) {
+				opts = append(opts, WithTextAreaBorderTRBL(tt.borders.Top, tt.borders.Right, tt.borders.Bottom, tt.borders.Left))
 			}
 			ta := NewTextArea(opts...)
 			ta.BindApp(testApp)
@@ -538,7 +555,7 @@ func TestTextArea_WrapFollowsLayoutWidth(t *testing.T) {
 			}
 			rows := frame()
 			first := 0
-			if ta.border != BorderNone {
+			if !ta.border.All(BorderNone) {
 				first = 1
 			}
 			for i, line := range lines {
