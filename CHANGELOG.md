@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/grindlemire/go-tui/compare/v0.22.1...v0.23.0) (2026-10-21)
+
+
+### Features
+
+* individual border side style ([#176](https://github.com/grindlemire/go-tui/issues/176)) ([6bd42c8](https://github.com/grindlemire/go-tui/commit/6bd42c80799fd8da60c37d561e747e5cb73c4590))
+
 ## [0.22.1](https://github.com/grindlemire/go-tui/compare/v0.22.0...v0.22.1) (2026-09-20)
 
 
