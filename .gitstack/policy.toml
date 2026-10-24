@@ -1,0 +1,4 @@
+[mirror]
+# release-please force-pushes its release branches on GitHub; GitStack
+# follows GitHub's version of them instead of keeping a stale copy.
+github_managed = ["release-please--*"]
