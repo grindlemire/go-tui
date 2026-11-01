@@ -304,13 +304,15 @@ func (a *App) rerenderComponent() {
 func (a *App) renderOverlays(width, height int) {
 	// Apply focus scoping so overlay elements get correct focus borders.
 	focusScoped := false
+	carriedInit := a.overlayFocusInit
+	a.overlayFocusInit = false
 	for i := len(a.overlays) - 1; i >= 0; i-- {
 		if a.overlays[i].trapFocus {
 			a.focus.ScopeTo(a.overlays[i].element)
 			focusScoped = true
 			// Move focus into the modal only on the first frame after open.
 			// This avoids calling Next()/MarkDirty() on every render frame.
-			if a.overlays[i].needsFocusInit {
+			if a.overlays[i].needsFocusInit || carriedInit {
 				a.overlays[i].needsFocusInit = false
 				current := a.focus.Focused()
 				if current == nil || !a.focus.isInScope(current) {

@@ -33,5 +33,8 @@ func (a *App) registerOverlay(el *Element, backdrop string, trapFocus bool, need
 // clearOverlays removes all registered overlays.
 // Called at the start of each render frame.
 func (a *App) clearOverlays() {
+	for _, ov := range a.overlays {
+		a.overlayFocusInit = a.overlayFocusInit || (ov.trapFocus && ov.needsFocusInit)
+	}
 	a.overlays = a.overlays[:0]
 }

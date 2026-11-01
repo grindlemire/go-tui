@@ -81,6 +81,9 @@ type App struct {
 
 	// Overlay rendering
 	overlays []*overlayEntry
+	// A trapping overlay opened in a frame that never reached renderOverlays
+	// (SetRootComponent's render); the next frame moves focus into it.
+	overlayFocusInit bool
 
 	// Dynamic alternate screen mode (for overlays like settings panels)
 	inAlternateScreen   bool // Currently in alternate screen overlay

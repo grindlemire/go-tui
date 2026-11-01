@@ -492,6 +492,30 @@ func TestModal_RenderFull_NeedsFocusInit(t *testing.T) {
 	}
 }
 
+// openDialogRoot renders a modal holding one focusable dialog element.
+type openDialogRoot struct {
+	modal *Modal
+}
+
+func (r *openDialogRoot) Render(app *App) *Element {
+	root := New(WithWidth(20), WithHeight(4))
+	overlay := app.MountInstance(r, 0, r.modal)
+	overlay.AddChild(New(WithFocusable(true), WithText("dialog"), WithWidth(6), WithHeight(1)))
+	root.AddChild(overlay)
+	return root
+}
+
+func TestModal_OpenAtStartFocusesDialog(t *testing.T) {
+	app := newTestApp(20, 4)
+	// SetRootComponent renders once before the first frame, so the modal's
+	// open transition happens outside Render.
+	app.SetRootComponent(&openDialogRoot{modal: NewModal(WithModalOpen(NewState(true)))})
+	app.Render()
+	if got := focusedText(app); got != "dialog" {
+		t.Errorf("focused %q after the first frame, want %q", got, "dialog")
+	}
+}
+
 func TestModal_KeyMap_InlineMode(t *testing.T) {
 	open := NewState(true)
 	m := NewModal(WithModalOpen(open))
