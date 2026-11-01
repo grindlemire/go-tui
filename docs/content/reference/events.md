@@ -587,9 +587,10 @@ Here's how events flow through the system.
 
 1. Terminal input is read and parsed into a `MouseEvent`. In `Run()` and `DispatchEvents()`, consecutive `MouseMove` events are coalesced to the latest.
 2. Once motion is on, hover is updated at the event's position and any `onMouseEnter`/`onMouseLeave` callbacks fire.
-3. The framework walks the component tree and dispatches to each `MouseListener`.
-4. If any listener returns `true`, the event is consumed.
-5. Otherwise, the event goes to `App.Dispatch()` which does hit-testing against the element tree.
+3. A left button press focuses the nearest element at or above the pointer that is in the Tab order. With none there, focus stays where it was.
+4. The framework walks the component tree and dispatches to each `MouseListener`.
+5. If any listener returns `true`, the event is consumed.
+6. Otherwise, the event goes to `App.Dispatch()` which does hit-testing against the element tree.
 
 **Resize events:**
 

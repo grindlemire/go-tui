@@ -592,7 +592,7 @@ el.IsAtBottom() bool
 // Element-level
 element.Focus() / element.Blur() / element.IsFocused()
 
-// App-level cycling
+// App-level cycling (a left click also focuses the tab stop under the pointer)
 app.FocusNext() / app.FocusPrev() / app.Focused()
 
 // FocusGroup for section-level switching

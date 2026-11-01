@@ -181,8 +181,9 @@ Use this section to quickly find the right files for a given change.
 
 ### Changing focus management
 
-- `focus.go` — Focusable interface, FocusManager: Register(), Next(), Prev(), SetFocus(), Dispatch()
+- `focus.go` — Focusable interface, FocusManager: Register(), Next(), Prev(), SetFocus(), Dispatch(); refreshFromTree re-finds the focused element after a render by focusTarget (owning component, plus key path or position among its focusables) and blurs it if gone
 - `focus_group.go` — FocusGroup for Tab/Shift+Tab cycling between components
+- `app_events.go` — focusAt: a left click focuses the nearest tab stop at or above the pointer (within the hit scope)
 - `element_focus.go` — Element focus API: IsFocusable, Focus(), Blur(), HandleEvent(), SetOnEvent()
 - `element_watchers.go` — Focus tree discovery: WalkFocusables(), SetOnFocusableAdded(); ElementAt() hit testing (maps points into scrollable containers' content space via scrollViewport)
 

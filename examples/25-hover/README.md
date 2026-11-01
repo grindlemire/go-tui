@@ -5,7 +5,7 @@ A five-page tour of hover in go-tui. The tabs switch pages; the panel at the bot
 - **Basics**: `hover:` classes on a scrollable inbox (the wheel scrolls it), and a card that stays lit while the pointer moves between its buttons.
 - **Lists**: a list keyed by message id. With the pointer resting on a row, press `s` to shuffle or `t` to insert a message every two seconds; the row that moved away gets its leave and the new one under the pointer gets its enter right away. Click a row to toggle unread; unread rows hover in a different color from a class expression.
 - **Styles**: `hover:text-*` cascading to children, `hover:font-bold` layering onto inherited color, and gradient hover classes.
-- **Components**: `<input>` and `<textarea>` with hover classes and callbacks (Tab focuses them so you can type; Escape leaves), and a drag area that reports drags.
+- **Components**: `<input>` and `<textarea>` with hover classes and callbacks (click or Tab to focus one and type; Escape leaves), and a drag area that reports drags.
 - **Edge cases**: a button that dodges the pointer. Its enter handler moves it away, and it gets its leave right after, with the pointer still.
 
 Press `m` for a modal whose backdrop blocks hover and the wheel on everything behind it.

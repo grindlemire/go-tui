@@ -5,7 +5,7 @@
 Focus determines which element receives keyboard input. go-tui provides three layers of focus management:
 
 - **Element-level** -- individual elements marked as focusable, with `Focus()` and `Blur()` methods
-- **focusManager** -- internal tracking used by `App` to cycle through focusable elements with `FocusNext()` and `FocusPrev()`
+- **focusManager** -- internal tracking used by `App` to cycle through focusable elements with `FocusNext()` and `FocusPrev()`, and to focus the element under a left click
 - **FocusGroup** -- a state-driven helper for Tab/Shift+Tab cycling between logical sections of your UI
 - **Modal focus trapping** -- when a modal is open with `trapFocus`, Tab/Shift+Tab only cycle through elements inside the modal overlay, and unhandled keys don't reach parent handlers
 

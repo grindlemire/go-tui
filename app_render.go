@@ -294,8 +294,8 @@ func (a *App) rerenderComponent() {
 	a.syncHoverStyles(false)
 	// Refresh focusManager references: re-renders produce new Element
 	// objects, so the focusManager's old references become stale.
-	// Rebuild the focusable list from the current tree, preserving
-	// the focus index so the focused element stays focused.
+	// Rebuild the focusable list from the current tree; refreshFromTree
+	// finds the focused element again.
 	a.focus.refreshFromTree(el)
 }
 

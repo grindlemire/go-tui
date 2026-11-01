@@ -15,10 +15,11 @@ type Modal struct {
 	customKeyMap KeyMap
 
 	// Internal state
-	app              *App
-	element          *Element
-	previousFocusIdx int // focus index before modal opened (-1 = none)
-	wasOpen          bool
+	app           *App
+	element       *Element
+	previousFocus focusTarget // focused element before the modal opened
+	hasPrevious   bool
+	wasOpen       bool
 }
 
 var (
@@ -31,11 +32,10 @@ var (
 // NewModal creates a new Modal with the given options.
 func NewModal(opts ...ModalOption) *Modal {
 	m := &Modal{
-		backdrop:         "dim",
-		closeOnEscape:    true,
-		closeOnBackdrop:  true,
-		trapFocus:        true,
-		previousFocusIdx: -1,
+		backdrop:        "dim",
+		closeOnEscape:   true,
+		closeOnBackdrop: true,
+		trapFocus:       true,
 	}
 	for _, opt := range opts {
 		opt(m)
@@ -64,9 +64,9 @@ func (m *Modal) Render(app *App) *Element {
 			if m.trapFocus && m.app != nil {
 				m.app.focus.ClearScope()
 			}
-			if m.trapFocus && m.previousFocusIdx >= 0 && m.app != nil {
-				m.app.focus.setFocusIndex(m.previousFocusIdx)
-				m.previousFocusIdx = -1
+			if m.trapFocus && m.hasPrevious && m.app != nil {
+				m.app.focus.setFocusIndex(m.app.focus.find(m.previousFocus))
+				m.hasPrevious = false
 			}
 			m.wasOpen = false
 		}
@@ -80,11 +80,11 @@ func (m *Modal) Render(app *App) *Element {
 		opt(m.element)
 	}
 
-	// Handle open transition: save previous focus index when trapping focus
+	// Handle open transition: remember the focused element when trapping focus
 	needsFocusInit := false
 	if !m.wasOpen {
 		if m.trapFocus && m.app != nil {
-			m.previousFocusIdx = m.app.focus.focusedIndex()
+			m.previousFocus, m.hasPrevious = m.app.focus.currentTarget()
 		}
 		m.wasOpen = true
 		needsFocusInit = true

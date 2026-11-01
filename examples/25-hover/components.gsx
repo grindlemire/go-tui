@@ -50,7 +50,7 @@ func (p *componentsPage) HandleMouse(me tui.MouseEvent) bool {
 templ (p *componentsPage) Render() {
 	<div class="flex gap-2 w-full h-full">
 		<div class="flex-col">
-			<span class="font-dim">input (Tab to focus, Esc to leave):</span>
+			<span class="font-dim">input (click or Tab, Esc to leave):</span>
 			<input
 				value={p.name}
 				placeholder="hover me"

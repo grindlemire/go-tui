@@ -73,6 +73,10 @@ func (f *myForm) KeyMap() tui.KeyMap {
 
 When the app starts, the first focusable element in the tree is automatically focused. If no elements are focusable, nothing receives focus.
 
+Clicking also moves focus, as in a browser. A left click focuses the element under the pointer, or its nearest ancestor that is in the Tab order, so clicking an `<input>` lets you type in it. A click on something with nothing focusable leaves focus where it was. Scrollable containers are focusable but not in the Tab order, so clicking one doesn't take focus. Inside an open modal, clicks only reach the modal's content.
+
+Re-renders rebuild every element, so go-tui finds the focused element again after each one: within the component that rendered it, by its `key` when it or a parent has one, or by its position among that component's focusable elements. Give list items a `key` so focus follows an item when the list reorders or grows above it. Two lists in one component that reuse the same keys need a `key` on each list's container too. If the focused element is gone after a render (its keyed row was removed, or the component that rendered it stopped rendering), it gets its blur and nothing is focused until the user picks something again.
+
 ## FocusGroup
 
 `FocusGroup` manages Tab/Shift+Tab cycling between logical sections of your UI. Instead of tracking individual elements, it works with `*State[bool]` values. Each member state is `true` when that section is active and `false` otherwise. The group maintains mutual exclusion: exactly one member is active at a time.

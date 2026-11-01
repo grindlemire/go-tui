@@ -1,8 +1,11 @@
 package tui
 
-import "slices"
+import (
+	"reflect"
+	"slices"
 
-import "github.com/grindlemire/go-tui/internal/debug"
+	"github.com/grindlemire/go-tui/internal/debug"
+)
 
 // Focusable is implemented by elements that can receive keyboard focus.
 // Element implements this interface directly. For custom focus handling,
@@ -119,11 +122,10 @@ func (f *focusManager) focusedIndex() int {
 	return f.current
 }
 
-// setFocusIndex restores focus to the element at the given index.
-// Used by modal to restore focus after close. The Blur/Focus calls here
-// target stale elements from the previous render tree, but are harmless;
-// refreshFromTree runs immediately after and calls Focus on the fresh
-// element at the preserved index.
+// setFocusIndex focuses the element at the given index. Used by modal to
+// restore focus after close. The Blur/Focus calls here target stale elements
+// from the previous render tree, but are harmless; refreshFromTree runs
+// immediately after and finds the same element in the fresh tree.
 func (f *focusManager) setFocusIndex(idx int) {
 	if idx < 0 || idx >= len(f.elements) {
 		return
@@ -288,30 +290,168 @@ func (f *focusManager) Dispatch(event Event) bool {
 }
 
 // refreshFromTree rebuilds the focusable element list from the current
-// element tree while preserving the focus index. This is needed because
-// re-renders produce new Element objects, making old references stale.
+// element tree. Re-renders produce new Element objects, so the focused one is
+// found again by its focusTarget; if it is gone, it gets its Blur and nothing
+// is focused.
 func (f *focusManager) refreshFromTree(root *Element) {
 	if root == nil {
 		return
 	}
+	prev := f.Focused()
+	target, known := f.currentTarget()
 	savedIdx := f.current
 	f.elements = f.elements[:0]
 	root.WalkFocusables(func(elem Focusable) {
 		f.elements = append(f.elements, elem)
 	})
-	if savedIdx >= 0 && savedIdx < len(f.elements) {
+	f.current = -1
+	switch {
+	case known:
+		f.current = f.find(target)
+	case prev != nil && savedIdx < len(f.elements):
+		// Not an *Element, so it has no target; keep its index.
 		f.current = savedIdx
+	}
+	if f.current >= 0 {
 		// The new element was just created by Render() and doesn't know
 		// it's focused. Call Focus() to sync so that Blur() on the next
 		// Tab press targets the correct element state.
-		f.elements[savedIdx].Focus()
-	} else {
-		f.current = -1
-		// On first refresh with no prior focus, check for autoFocus elements
-		if !f.focusApplied {
-			f.applyAutoFocus(root)
+		f.elements[f.current].Focus()
+		return
+	}
+	if prev != nil {
+		// Its owner (an unmounted Input, say) stops claiming focus.
+		prev.Blur()
+	}
+	// On first refresh with no prior focus, check for autoFocus elements
+	if !f.focusApplied {
+		f.applyAutoFocus(root)
+	}
+}
+
+// focusTarget names a focused element across re-renders: the component that
+// rendered it, plus its path below that component when the path crosses a
+// key (so it follows a reordered row), or else its position among that
+// component's other unkeyed focusables. Scoping to the component keeps focus
+// from landing on another page's element at the same position.
+type focusTarget struct {
+	owner   Component
+	path    []pathSeg
+	ordinal int
+}
+
+// focusOwner returns the nearest component that rendered el (nil for the
+// root's own elements) and whether an element below that component has a key.
+func focusOwner(el *Element) (owner Component, keyed bool) {
+	for e := el; e != nil; e = e.parent {
+		if e.component != nil {
+			return e.component, keyed
+		}
+		keyed = keyed || (e.hasKey && e.parent != nil)
+	}
+	return nil, keyed
+}
+
+// pathBelowOwner is el's path from the element of the component that
+// rendered it.
+func pathBelowOwner(el *Element) []pathSeg {
+	var path []pathSeg
+	for e := el; e != nil && e.component == nil && e.parent != nil; e = e.parent {
+		path = append(path, segmentOf(e))
+	}
+	slices.Reverse(path)
+	return path
+}
+
+func sameOwner(a, b Component) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	// A struct value holding a slice or map never equals itself, so match
+	// it by type; focus then keeps its position among such siblings.
+	if v := reflect.ValueOf(a); v.Kind() == reflect.Struct && !v.Comparable() {
+		return v.Type() == reflect.TypeOf(b)
+	}
+	return sameInstance(a, b)
+}
+
+// currentTarget describes the focused element; ok is false when nothing is
+// focused or the focused Focusable is not an *Element.
+func (f *focusManager) currentTarget() (focusTarget, bool) {
+	el, ok := f.Focused().(*Element)
+	if !ok {
+		return focusTarget{}, false
+	}
+	owner, keyed := focusOwner(el)
+	t := focusTarget{owner: owner}
+	if keyed {
+		t.path = pathBelowOwner(el)
+		return t, true
+	}
+	for _, e := range f.elements[:f.current] {
+		if o, ok := e.(*Element); ok {
+			if oo, k := focusOwner(o); !k && sameOwner(oo, owner) {
+				t.ordinal++
+			}
 		}
 	}
+	return t, true
+}
+
+// find returns the index of the element t names, or -1. A keyed path that
+// no longer matches exactly (a line was added above the list) falls back to
+// its keys alone when exactly one element shares them.
+func (f *focusManager) find(t focusTarget) int {
+	n, loose, looseHits := 0, -1, 0
+	tail := keyedTail(t.path)
+	for i, e := range f.elements {
+		el, ok := e.(*Element)
+		if !ok {
+			continue
+		}
+		owner, keyed := focusOwner(el)
+		switch {
+		case !sameOwner(owner, t.owner):
+		case t.path != nil:
+			if !keyed {
+				break
+			}
+			p := pathBelowOwner(el)
+			if slices.Equal(p, t.path) {
+				return i
+			}
+			if slices.Equal(keyedTail(p), tail) {
+				loose, looseHits = i, looseHits+1
+			}
+		case keyed:
+		case n == t.ordinal:
+			return i
+		default:
+			n++
+		}
+	}
+	if looseHits == 1 {
+		return loose
+	}
+	return -1
+}
+
+// keyedTail keeps a path's keyed segments and everything below the deepest
+// key, dropping the sibling indexes above it.
+func keyedTail(path []pathSeg) []pathSeg {
+	last := -1
+	for i, s := range path {
+		if s.keyed {
+			last = i
+		}
+	}
+	var tail []pathSeg
+	for i, s := range path {
+		if s.keyed || i > last {
+			tail = append(tail, s)
+		}
+	}
+	return tail
 }
 
 // applyAutoFocus finds the first autoFocus element in the tree and sets

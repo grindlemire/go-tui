@@ -52,6 +52,9 @@ func (a *App) Dispatch(event Event) bool {
 			}
 		}
 		a.dispatchMouseHover(e.X, e.Y, true)
+		if e.Button == MouseLeft && e.Action == MousePress {
+			a.focusAt(e.X, e.Y)
+		}
 		// Component model: dispatch to MouseListener components first
 		if a.dispatchMouseToComponents(e) {
 			return true
@@ -90,6 +93,27 @@ func (a *App) Dispatch(event Event) bool {
 
 	// Unknown event types fall through to the focus manager.
 	return a.focus.Dispatch(event)
+}
+
+// focusAt focuses the nearest tab stop at or above the element under (x, y),
+// like a browser click. A click with no tab stop there leaves focus alone.
+func (a *App) focusAt(x, y int) {
+	scope := a.hitScope()
+	if scope == nil {
+		return
+	}
+	for el := scope.ElementAt(x, y); el != nil; el = el.parent {
+		if el.IsFocusable() && el.IsTabStop() {
+			// A modal that traps focus keeps clicks out, as it does Tab.
+			if a.focus.isInScope(el) {
+				a.focus.SetFocus(el)
+			}
+			return
+		}
+		if el == scope {
+			return
+		}
+	}
 }
 
 // dispatchMouseToComponents walks the component tree and dispatches a mouse

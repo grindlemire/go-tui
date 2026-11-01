@@ -60,7 +60,7 @@ func (p *componentsPage) Render(app *tui.App) *tui.Element {
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 	)
 	__tui_2 := tui.New(
-		tui.WithText("input (Tab to focus, Esc to leave):"),
+		tui.WithText("input (click or Tab, Esc to leave):"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_1.AddChild(__tui_2)
