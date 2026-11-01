@@ -149,7 +149,8 @@ for i, item := range items {
 badge := <span class="font-bold">{label}</span>
 <div>{badge}</div>
 
-// Element expression: @expr renders a *tui.Element or tui.Component value
+// Element expression: @expr renders a *tui.Element or tui.Component value;
+// components are mounted like @Component(...) calls (keymaps, mouse, Init)
 // ({expr} must be a string). Works with fields, index expressions, and loop vars.
 <div>
     @c.content[c.active]

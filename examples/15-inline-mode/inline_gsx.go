@@ -22,6 +22,7 @@ func InlineApp() *myApp {
 		tui.WithTextAreaBorder(tui.BorderRounded),
 		tui.WithTextAreaPlaceholder("Type here..."),
 		tui.WithTextAreaOnSubmit(a.send),
+		tui.WithTextAreaAutoFocus(true),
 	)
 	return a
 }
@@ -58,17 +59,13 @@ func (a *myApp) KeyMap() tui.KeyMap {
 		}
 	}
 
-	km := a.textarea.KeyMap()
-	km = append(km,
+	// The textarea is rendered with @a.textarea, which mounts it, so its own
+	// KeyMap and Watchers are already active.
+	return tui.KeyMap{
 		tui.OnStop(tui.Rune('s').Ctrl(), func(ke tui.KeyEvent) { a.toggleSettings() }),
 		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('c').Ctrl(), func(ke tui.KeyEvent) { ke.App().Stop() }),
-	)
-	return km
-}
-
-func (a *myApp) Watchers() []tui.Watcher {
-	return a.textarea.Watchers()
+	}
 }
 
 func (a *myApp) Render(app *tui.App) *tui.Element {
@@ -95,7 +92,7 @@ func (a *myApp) Render(app *tui.App) *tui.Element {
 			__tui_0 = __tui_1
 		}
 	} else {
-		__tui_4 := a.textarea.Render(app)
+		__tui_4 := app.MountInstance(a, 0, a.textarea)
 		if __tui_0 == nil {
 			__tui_0 = __tui_4
 		}
@@ -152,6 +149,5 @@ var _ tui.AppUnbinder = (*myApp)(nil)
 
 // Compile-time interface satisfaction checks.
 var (
-	_ tui.KeyListener     = (*myApp)(nil)
-	_ tui.WatcherProvider = (*myApp)(nil)
+	_ tui.KeyListener = (*myApp)(nil)
 )

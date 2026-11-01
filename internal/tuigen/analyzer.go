@@ -394,8 +394,9 @@ func (a *Analyzer) analyzeNode(node Node) {
 }
 
 // analyzeComponentExpr validates a component expression (@expr). Rendering it
-// lowers to expr.Render(app), which a function templ cannot satisfy: its body
-// has no app in scope. Only struct components (with a Render(app) receiver) can.
+// lowers to app.MountInstance(receiver, key, expr), which a function templ
+// cannot satisfy: its body has no app or receiver in scope. Only struct
+// components (with a Render(app) receiver) can.
 func (a *Analyzer) analyzeComponentExpr(expr *ComponentExpr) {
 	a.rejectComponentExprInFunctionTempl(expr.Expr, expr.Position)
 }

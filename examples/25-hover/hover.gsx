@@ -50,19 +50,6 @@ func HoverDemo(inline bool) *hoverDemo {
 	return d
 }
 
-// Pages are mounted with @Page(d) so their KeyMap, HandleMouse, and child
-// components are wired up. Each constructor returns the instance the root
-// already holds, so a page keeps its state while another page is shown.
-func BasicsPage(d *hoverDemo) *basicsPage { return d.basics }
-
-func ListsPage(d *hoverDemo) *listsPage { return d.lists }
-
-func StylesPage(d *hoverDemo) *stylesPage { return d.styles }
-
-func ComponentsPage(d *hoverDemo) *componentsPage { return d.components }
-
-func EdgesPage(d *hoverDemo) *edgesPage { return d.edges }
-
 func (d *hoverDemo) record(event string) {
 	entries := append(d.log.Get(), event)
 	if len(entries) > maxLog {
@@ -167,15 +154,15 @@ templ (d *hoverDemo) Render() {
 		</div>
 		<div class="flex mt-1" height={12}>
 			if d.page.Get() == "Basics" {
-				@BasicsPage(d)
+				@d.basics
 			} else if d.page.Get() == "Lists" {
-				@ListsPage(d)
+				@d.lists
 			} else if d.page.Get() == "Styles" {
-				@StylesPage(d)
+				@d.styles
 			} else if d.page.Get() == "Components" {
-				@ComponentsPage(d)
+				@d.components
 			} else {
-				@EdgesPage(d)
+				@d.edges
 			}
 		</div>
 		<div class="flex-col border-rounded px-1 h-6" borderTitle="Hover events (newest last)">

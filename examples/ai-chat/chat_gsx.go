@@ -188,12 +188,12 @@ func (c *chat) toggleSettings() {
 }
 
 func (c *chat) KeyMap() tui.KeyMap {
+	// The settings view is rendered with @c.settingsView, which mounts it, so
+	// its own KeyMap is active while it is shown.
 	if c.showSettings.Get() {
-		km := c.settingsView.KeyMap()
-		km = append(km,
+		return tui.KeyMap{
 			tui.On(tui.Rune('c').Ctrl(), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		)
-		return km
+		}
 	}
 
 	// While streaming, only allow Ctrl+C (kills subprocess) and Escape
@@ -231,13 +231,13 @@ func (c *chat) updateHeight() {
 func (c *chat) Render(app *tui.App) *tui.Element {
 	var __tui_0 *tui.Element
 	if c.showSettings.Get() {
-		__tui_1 := c.settingsView.Render(app)
+		__tui_1 := app.MountInstance(c, 0, c.settingsView)
 		if __tui_0 == nil {
 			__tui_0 = __tui_1
 		}
 	} else {
 		c.updateHeight()
-		__tui_2 := app.MountPersistent(c, 0, func() tui.Component {
+		__tui_2 := app.MountPersistent(c, 1, func() tui.Component {
 			return tui.NewTextArea(
 				tui.WithTextAreaAutoFocus(true),
 				tui.WithTextAreaPlaceholder("Type a message..."),

@@ -286,10 +286,10 @@ func (g *Generator) generateFunctionComponentCall(call *ComponentCall, parentVar
 }
 
 // generateComponentExpr generates code for a component expression like @c.textarea.
-// It calls .Render() on the expression and adds the result to the parent.
+// It mounts the expression's value and adds the result to the parent.
 func (g *Generator) generateComponentExpr(expr *ComponentExpr, parentVar string) {
 	varName := g.nextVar()
-	g.writef("%s := %s.Render(app)\n", varName, expr.Expr)
+	g.writef("%s := %s\n", varName, g.componentExprRender(expr.Expr))
 	if parentVar != "" {
 		g.writef("%s.AddChild(%s)\n", parentVar, varName)
 	}
@@ -297,6 +297,15 @@ func (g *Generator) generateComponentExpr(expr *ComponentExpr, parentVar string)
 	// Track receiver field accesses for BindApp generation in method components.
 	// e.g., @c.settingsView → track "settingsView" so generateBindApp can bind it.
 	g.trackComponentExprField(expr.Expr)
+}
+
+// componentExprRender returns the code rendering an @expr value: the exact
+// instance mounted against the receiver, keyed like a component call site so
+// a loop gets one mount per item. Elements render as themselves.
+func (g *Generator) componentExprRender(expr string) string {
+	baseIndex := g.mountIndex
+	g.mountIndex++
+	return fmt.Sprintf("app.MountInstance(%s, %s, %s)", g.currentReceiver, g.mountKeyExpr(baseIndex), expr)
 }
 
 // childrenExpr returns the expression holding the current templ's children:
@@ -326,7 +335,7 @@ func (g *Generator) generateSliceChild(node Node, sliceVar string, inConditional
 		}
 	case *ComponentExpr:
 		elemVar := g.nextVar()
-		g.writef("%s := %s.Render(app)\n", elemVar, n.Expr)
+		g.writef("%s := %s\n", elemVar, g.componentExprRender(n.Expr))
 		g.writef("%s = append(%s, %s)\n", sliceVar, sliceVar, elemVar)
 		g.trackComponentExprField(n.Expr)
 	case *LetBinding:

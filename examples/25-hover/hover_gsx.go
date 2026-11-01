@@ -52,16 +52,6 @@ func HoverDemo(inline bool) *hoverDemo {
 	return d
 }
 
-func BasicsPage(d *hoverDemo) *basicsPage { return d.basics }
-
-func ListsPage(d *hoverDemo) *listsPage { return d.lists }
-
-func StylesPage(d *hoverDemo) *stylesPage { return d.styles }
-
-func ComponentsPage(d *hoverDemo) *componentsPage { return d.components }
-
-func EdgesPage(d *hoverDemo) *edgesPage { return d.edges }
-
 func (d *hoverDemo) record(event string) {
 	entries := append(d.log.Get(), event)
 	if len(entries) > maxLog {
@@ -191,29 +181,19 @@ func (d *hoverDemo) Render(app *tui.App) *tui.Element {
 		tui.WithHeight(12),
 	)
 	if d.page.Get() == "Basics" {
-		__tui_6 := app.Mount(d, 0, func() tui.Component {
-			return BasicsPage(d)
-		})
+		__tui_6 := app.MountInstance(d, 0, d.basics)
 		__tui_5.AddChild(__tui_6)
 	} else if d.page.Get() == "Lists" {
-		__tui_7 := app.Mount(d, 1, func() tui.Component {
-			return ListsPage(d)
-		})
+		__tui_7 := app.MountInstance(d, 1, d.lists)
 		__tui_5.AddChild(__tui_7)
 	} else if d.page.Get() == "Styles" {
-		__tui_8 := app.Mount(d, 2, func() tui.Component {
-			return StylesPage(d)
-		})
+		__tui_8 := app.MountInstance(d, 2, d.styles)
 		__tui_5.AddChild(__tui_8)
 	} else if d.page.Get() == "Components" {
-		__tui_9 := app.Mount(d, 3, func() tui.Component {
-			return ComponentsPage(d)
-		})
+		__tui_9 := app.MountInstance(d, 3, d.components)
 		__tui_5.AddChild(__tui_9)
 	} else {
-		__tui_10 := app.Mount(d, 4, func() tui.Component {
-			return EdgesPage(d)
-		})
+		__tui_10 := app.MountInstance(d, 4, d.edges)
 		__tui_5.AddChild(__tui_10)
 	}
 	__tui_0.AddChild(__tui_5)
@@ -292,6 +272,21 @@ func (d *hoverDemo) updatePropsFields(fresh tui.Component) {
 	if !ok {
 		return
 	}
+	if unbinder, ok := any(d.basics).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.lists).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.styles).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.components).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.edges).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
 	d.inline = f.inline
 	d.basics = f.basics
 	d.lists = f.lists
@@ -331,6 +326,21 @@ func (d *hoverDemo) bindAppFields(app *tui.App) {
 	if d.showModal != nil {
 		d.showModal.BindApp(app)
 	}
+	if binder, ok := any(d.basics).(tui.AppBinder); ok {
+		binder.BindApp(app)
+	}
+	if binder, ok := any(d.lists).(tui.AppBinder); ok {
+		binder.BindApp(app)
+	}
+	if binder, ok := any(d.styles).(tui.AppBinder); ok {
+		binder.BindApp(app)
+	}
+	if binder, ok := any(d.components).(tui.AppBinder); ok {
+		binder.BindApp(app)
+	}
+	if binder, ok := any(d.edges).(tui.AppBinder); ok {
+		binder.BindApp(app)
+	}
 }
 
 func (d *hoverDemo) BindApp(app *tui.App) {
@@ -338,6 +348,33 @@ func (d *hoverDemo) BindApp(app *tui.App) {
 }
 
 var _ tui.AppBinder = (*hoverDemo)(nil)
+
+// unbindAppFields is generated. It detaches topic-based Events
+// subscriptions and any component-expression AppUnbinder fields.
+// Call this from your UnbindApp if you override it.
+func (d *hoverDemo) unbindAppFields() {
+	if unbinder, ok := any(d.basics).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.lists).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.styles).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.components).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+	if unbinder, ok := any(d.edges).(tui.AppUnbinder); ok {
+		unbinder.UnbindApp()
+	}
+}
+
+func (d *hoverDemo) UnbindApp() {
+	d.unbindAppFields()
+}
+
+var _ tui.AppUnbinder = (*hoverDemo)(nil)
 
 // Compile-time interface satisfaction checks.
 var (

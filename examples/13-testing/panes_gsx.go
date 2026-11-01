@@ -30,14 +30,14 @@ func (p *panes) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 	)
-	__tui_1 := p.content[p.active].Render(app)
+	__tui_1 := app.MountInstance(p, 0, p.content[p.active])
 	__tui_0.AddChild(__tui_1)
 	for __idx_0, w := range p.widgets {
 		_ = __idx_0
-		__tui_2 := w.Render(app)
+		__tui_2 := app.MountInstance(p, tui.MountKey(1, __idx_0), w)
 		__tui_0.AddChild(__tui_2)
 	}
-	__tui_3 := p.footer.Render(app)
+	__tui_3 := app.MountInstance(p, 2, p.footer)
 	__tui_0.AddChild(__tui_3)
 
 	return __tui_0

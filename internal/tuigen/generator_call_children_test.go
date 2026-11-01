@@ -282,7 +282,7 @@ templ (c *host) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				"c.widget.Render(app)",
+				"app.MountInstance(c, 0, c.widget)",
 				"any(c.widget).(tui.AppBinder)",
 			},
 		},

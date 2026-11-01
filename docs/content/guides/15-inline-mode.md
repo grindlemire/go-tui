@@ -74,6 +74,7 @@ func ChatInput() *chatInput {
         tui.WithTextAreaBorder(tui.BorderRounded),
         tui.WithTextAreaPlaceholder("Type a message..."),
         tui.WithTextAreaOnSubmit(c.send),
+        tui.WithTextAreaAutoFocus(true),
     )
     return c
 }
@@ -91,16 +92,11 @@ func (c *chatInput) send(text string) {
     c.app.PrintAboveln("You: %s", text)
 }
 
+// @c.textarea mounts the textarea, so its own KeyMap and Watchers are active.
 func (c *chatInput) KeyMap() tui.KeyMap {
-    km := c.textarea.KeyMap()
-    km = append(km,
+    return tui.KeyMap{
         tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
-    )
-    return km
-}
-
-func (c *chatInput) Watchers() []tui.Watcher {
-    return c.textarea.Watchers()
+    }
 }
 
 templ (c *chatInput) Render() {
@@ -226,6 +222,7 @@ func MyApp() *myApp {
         tui.WithTextAreaBorder(tui.BorderRounded),
         tui.WithTextAreaPlaceholder("Type here..."),
         tui.WithTextAreaOnSubmit(a.send),
+        tui.WithTextAreaAutoFocus(true),
     )
     return a
 }
@@ -262,17 +259,12 @@ func (a *myApp) KeyMap() tui.KeyMap {
         }
     }
 
-    km := a.textarea.KeyMap()
-    km = append(km,
+    // @a.textarea mounts the textarea, so its own KeyMap and Watchers are active.
+    return tui.KeyMap{
         tui.OnStop(tui.KeyCtrlS, func(ke tui.KeyEvent) { a.toggleSettings() }),
         tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
         tui.On(tui.KeyCtrlC, func(ke tui.KeyEvent) { ke.App().Stop() }),
-    )
-    return km
-}
-
-func (a *myApp) Watchers() []tui.Watcher {
-    return a.textarea.Watchers()
+    }
 }
 
 templ (a *myApp) Render() {

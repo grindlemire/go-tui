@@ -17,6 +17,7 @@ func InlineApp() *myApp {
 		tui.WithTextAreaBorder(tui.BorderRounded),
 		tui.WithTextAreaPlaceholder("Type here..."),
 		tui.WithTextAreaOnSubmit(a.send),
+		tui.WithTextAreaAutoFocus(true),
 	)
 	return a
 }
@@ -53,17 +54,13 @@ func (a *myApp) KeyMap() tui.KeyMap {
 		}
 	}
 
-	km := a.textarea.KeyMap()
-	km = append(km,
+	// The textarea is rendered with @a.textarea, which mounts it, so its own
+	// KeyMap and Watchers are already active.
+	return tui.KeyMap{
 		tui.OnStop(tui.Rune('s').Ctrl(), func(ke tui.KeyEvent) { a.toggleSettings() }),
 		tui.On(tui.KeyEscape, func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('c').Ctrl(), func(ke tui.KeyEvent) { ke.App().Stop() }),
-	)
-	return km
-}
-
-func (a *myApp) Watchers() []tui.Watcher {
-	return a.textarea.Watchers()
+	}
 }
 
 templ (a *myApp) Render() {

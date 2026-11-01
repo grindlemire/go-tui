@@ -417,7 +417,7 @@ templ (c *shell) Render() {
 	</div>
 }`,
 			wantContains: []string{
-				":= c.editor.Render(app)",
+				":= app.MountInstance(c, 0, c.editor)",
 				".AddChild(__tui_",
 			},
 		},
@@ -435,7 +435,7 @@ templ (c *shell) Render() {
 }`,
 			wantContains: []string{
 				"if c.open {",
-				":= c.editor.Render(app)",
+				":= app.MountInstance(c, 0, c.editor)",
 			},
 		},
 		"component expr inside for loop": {
@@ -452,7 +452,7 @@ templ (c *shell) Render() {
 }`,
 			wantContains: []string{
 				"for __idx_0, p := range c.panes {",
-				":= c.editor.Render(app)",
+				":= app.MountInstance(c, tui.MountKey(0, __idx_0), c.editor)",
 			},
 		},
 		"indexed element expression as element child": {
@@ -469,7 +469,7 @@ templ (c *component) Render() {
 	<div>@c.content[c.active]</div>
 }`,
 			wantContains: []string{
-				":= c.content[c.active].Render(app)",
+				":= app.MountInstance(c, 0, c.content[c.active])",
 				".AddChild(__tui_",
 			},
 		},
@@ -489,7 +489,7 @@ templ (c *component) Render() {
 }`,
 			wantContains: []string{
 				"for __idx_0, el := range c.items {",
-				":= el.Render(app)",
+				":= app.MountInstance(c, tui.MountKey(0, __idx_0), el)",
 			},
 		},
 	}

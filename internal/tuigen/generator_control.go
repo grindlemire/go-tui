@@ -22,7 +22,7 @@ func (g *Generator) generateLetBinding(let *LetBinding, parentVar string, inCond
 
 	if let.Expr != "" && let.Element == nil {
 		// RHS is a Go expression (component expression like c.textarea)
-		g.writef("%s := %s.Render(app)\n", let.Name, let.Expr)
+		g.writef("%s := %s\n", let.Name, g.componentExprRender(let.Expr))
 		g.trackComponentExprField(let.Expr)
 		if parentVar != "" {
 			g.writef("%s.AddChild(%s)\n", parentVar, let.Name)
@@ -245,7 +245,7 @@ func (g *Generator) generateNodesToRoot(nodes []Node, rootVar string, inLoop boo
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()
-			g.writef("%s := %s.Render(app)\n", varName, n.Expr)
+			g.writef("%s := %s\n", varName, g.componentExprRender(n.Expr))
 			g.assignIfNil(rootVar, varName)
 			g.trackComponentExprField(n.Expr)
 		case *IfStmt:

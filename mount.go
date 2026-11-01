@@ -78,21 +78,7 @@ func (a *App) mount(parent Component, key any, factory func() Component) *Elemen
 		} else {
 			instance = factory()
 		}
-		ms.cache[k] = instance
-		debug.Log("Mount: NEW component at key %v, type %T", key, instance)
-
-		// Bind app before Init so state/events are wired up
-		if binder, ok := instance.(AppBinder); ok {
-			binder.BindApp(app)
-		}
-
-		// Call Init() if component implements Initializer
-		if init, ok := instance.(Initializer); ok {
-			cleanup := init.Init()
-			if cleanup != nil {
-				ms.cleanups[k] = cleanup
-			}
-		}
+		app.attach(k, instance)
 	} else {
 		// Component is cached - check if it can receive updated props.
 		// fresh was already constructed (and type-checked) above.
@@ -112,6 +98,74 @@ func (a *App) mount(parent Component, key any, factory func() Component) *Elemen
 	el := instance.Render(a)
 	el.component = instance
 	return el
+}
+
+// attach caches a newly mounted instance, binds it to the app, and runs its
+// Init, recording the cleanup for evict.
+func (a *App) attach(k mountKey, instance Component) {
+	ms := a.mounts
+	ms.cache[k] = instance
+	debug.Log("Mount: NEW component at key %v, type %T", k.key, instance)
+
+	// Bind app before Init so state/events are wired up
+	if binder, ok := instance.(AppBinder); ok {
+		binder.BindApp(a)
+	}
+	if init, ok := instance.(Initializer); ok {
+		if cleanup := init.Init(); cleanup != nil {
+			ms.cleanups[k] = cleanup
+		}
+	}
+}
+
+// MountInstance renders a component the caller already holds, mounting that
+// exact instance at (parent, key). Generated code calls it for @expr, so a
+// component kept in a field gets the same treatment as one from
+// @Component(...): its KeyMap and HandleMouse take part in dispatch, Init runs
+// when it first appears, and its cleanup runs when it stops being rendered.
+// Pointer components are keyed by the instance alone, so reordering them or
+// moving one to another parent never remounts it, and an instance rendered at
+// several sites is mounted once. Other values are keyed by (parent, key), and
+// a different value there unmounts the old one first. An *Element renders as
+// itself.
+func (a *App) MountInstance(parent Component, key any, c Component) *Element {
+	if el, ok := c.(*Element); ok {
+		return el
+	}
+	ms := a.mounts
+	if reflect.ValueOf(c).Kind() == reflect.Pointer {
+		parent, key = nil, instanceKey{c}
+	}
+	k := mountKey{parent: parent, key: key}
+	ms.activeKeys[k] = true
+	if cached, ok := ms.cache[k]; ok && !sameInstance(cached, c) {
+		ms.evict(k)
+	}
+	if _, ok := ms.cache[k]; !ok {
+		a.attach(k, c)
+	} else if binder, ok := c.(AppBinder); ok {
+		binder.BindApp(a)
+	}
+	el := c.Render(a)
+	el.component = c
+	return el
+}
+
+// instanceKey keys a mount by component identity rather than call site.
+type instanceKey struct{ c Component }
+
+// sameInstance reports whether two components are the same instance: the
+// same pointer for pointer types, equal values for comparable ones.
+func sameInstance(x, y Component) bool {
+	vx, vy := reflect.ValueOf(x), reflect.ValueOf(y)
+	if vx.Type() != vy.Type() {
+		return false
+	}
+	switch vx.Kind() {
+	case reflect.Pointer, reflect.Map, reflect.Chan, reflect.Func, reflect.UnsafePointer:
+		return vx.Pointer() == vy.Pointer()
+	}
+	return vx.Comparable() && vx.Equal(vy)
 }
 
 // Mount creates or retrieves a cached component instance and returns

@@ -219,7 +219,7 @@ type LetBinding struct {
 	Name            string
 	Element         *Element       // RHS is an element (e.g., <span>Hello</span>)
 	Call            *ComponentCall // RHS is a component call (e.g., @MyComponent())
-	Expr            string         // RHS is a component expression from @expr (e.g., "c.textarea"); rendered via <expr>.Render(app)
+	Expr            string         // RHS is a component expression from @expr (e.g., "c.textarea"); rendered via app.MountInstance
 	IsShortForm     bool           // true for :=, false for var
 	IsVarForm       bool           // true for var form, false for := form
 	Position        Position

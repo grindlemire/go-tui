@@ -215,7 +215,7 @@ templ (t *tabs) Render() {
 }
 ```
 
-`{expr}` is reserved for text and must be a `string`, so `{t.content[t.active]}` is a Go compile error. When the values are components with their own `State` or `Events`, the generated `BindApp` binds them for you. See [Element expressions](../reference/gsx-syntax.md#element-expressions) in the syntax reference for the exact rules.
+`{expr}` is reserved for text and must be a `string`, so `{t.content[t.active]}` is a Go compile error. When the values are components with their own `State` or `Events`, the generated `BindApp` binds them for you. Components inserted this way are mounted like `@Component(...)` calls, so their key bindings and mouse handlers work, and since the instance lives in your field it keeps its state while hidden. See [Element expressions](../reference/gsx-syntax.md#element-expressions) in the syntax reference for the exact rules.
 
 ### The Component Interface
 

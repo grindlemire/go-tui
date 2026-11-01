@@ -127,7 +127,7 @@ Use this section to quickly find the right files for a given change.
 - `keymap.go` — KeyMap, KeyBinding, KeyPattern, On(), OnStop(), Rune(), etc.
 - `component.go` — Component, KeyListener, MouseListener, Initializer, WatcherProvider interfaces
 - `events.go` — Events[T] generic event bus for cross-component communication
-- `mount.go` — Component caching and lifecycle (Mount, PropsUpdater)
+- `mount.go` — Component caching and lifecycle (Mount, PropsUpdater, MountInstance for @expr)
 - `modal.go` -- Modal struct, Render, KeyMap (Escape/Tab/Enter/catch-all), HandleMouse (backdrop + onActivate click)
 - `modal_options.go` -- ModalOption funcs: WithModalOpen, WithModalBackdrop, WithModalCloseOnEscape, WithModalCloseOnBackdropClick, WithModalTrapFocus, WithModalElementOptions
 - `app_overlay.go` -- Overlay registration: overlayEntry, registerOverlay, clearOverlays
@@ -412,7 +412,8 @@ templ App() {
     </div>
 }
 
-// Element expressions: @expr renders any *tui.Element or tui.Component value
+// Element expressions: @expr renders any *tui.Element or tui.Component value;
+// components are mounted (KeyMap, HandleMouse, Init/cleanup) keyed by instance
 // ({expr} is text and must be a string). Index expressions are allowed.
 templ (t *tabs) Render() {
     <div class="flex-col">

@@ -184,12 +184,12 @@ func (c *chat) toggleSettings() {
 }
 
 func (c *chat) KeyMap() tui.KeyMap {
+	// The settings view is rendered with @c.settingsView, which mounts it, so
+	// its own KeyMap is active while it is shown.
 	if c.showSettings.Get() {
-		km := c.settingsView.KeyMap()
-		km = append(km,
+		return tui.KeyMap{
 			tui.On(tui.Rune('c').Ctrl(), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		)
-		return km
+		}
 	}
 
 	// While streaming, only allow Ctrl+C (kills subprocess) and Escape

@@ -88,7 +88,7 @@ templ (c *shell) Render() {
 	<div>{ed}</div>
 }`,
 			wantContains: []string{
-				"ed := c.editor.Render(app)",
+				"ed := app.MountInstance(c, 0, c.editor)",
 			},
 		},
 		"indexed element expression binding renders with app": {
@@ -107,7 +107,7 @@ templ (c *component) Render() {
 }`,
 			useAnalyzer: true,
 			wantContains: []string{
-				"active := c.content[c.active].Render(app)",
+				"active := app.MountInstance(c, 0, c.content[c.active])",
 				".AddChild(active)",
 			},
 		},
@@ -254,7 +254,7 @@ templ (c *shell) Render() {
 	}
 }`,
 			wantContains: []string{
-				":= c.editor.Render(app)",
+				":= app.MountInstance(c, 0, c.editor)",
 				"if __tui_0 == nil {",
 			},
 		},

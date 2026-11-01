@@ -604,7 +604,25 @@ current := @t.content[t.active]
 <div>{current}</div>
 ```
 
-The compiler does not type-check the expression. `{t.content[t.active]}` compiles to a `tui.WithText` call and fails in `go build` because the value is not a `string`, and `@t.title` with a `string` field fails the same way because a `string` has no `Render` method. Element expressions require a struct component (a `templ` with a receiver), since they render against the component's `app`.
+The compiler does not type-check the expression. `{t.content[t.active]}` compiles to a `tui.WithText` call and fails in `go build` because the value is not a `string`, and `@t.title` with a `string` field fails the same way because a `string` is not a `tui.Component`. Element expressions require a struct component (a `templ` with a receiver), since they mount against the component and its `app`.
+
+A component rendered with `@expr` is mounted the same way as one from `@Component(...)`: its `KeyMap` and `HandleMouse` take part in dispatch, `Init` runs when it first appears, and its cleanup runs when it stops being rendered. The mount follows the instance, so reordering a slice of components does not remount them, and assigning a different instance to the field mounts the new one and unmounts the old. Because state lives in the instance, a component kept in a field keeps its state while it is not shown, which makes `@expr` a natural fit for tabs and pages:
+
+```gsx
+templ (a *app) Render() {
+    <div class="flex-col">
+        if a.page.Get() == "inbox" {
+            @a.inbox
+        } else {
+            @a.settings
+        }
+    </div>
+}
+```
+
+As with any mounted component, `Watchers()` are collected at the app's first render.
+
+Earlier versions only called `Render` on an `@expr` component, so hosts often forwarded its hooks by hand, for example `km := c.textarea.KeyMap()` merged into the host's `KeyMap`, or a host `Watchers()` returning the child's. Remove that forwarding: the child's own hooks are active now, and keeping both registers them twice. Inputs and text areas rendered this way also need focus to accept typing, as they do from `<input>` and `<textarea>` tags; give the one that should start focused `tui.WithTextAreaAutoFocus(true)` or `tui.WithInputAutoFocus(true)`, or let the user Tab to it.
 
 The generated `BindApp` and `UnbindApp` are forwarded to the components a struct component renders this way. A field used as `@t.footer` is asserted against `tui.AppBinder` directly. A slice or map field rendered through a single index (`@t.content[t.active]`) or a `for` loop over the field (`for _, el := range t.items { @el }`) is ranged over, and each value is asserted the same way. Only fields declared with a literal `[]T` or `map[K]V` type get the range loop; a named collection type, an array, or a pointer to a slice must be bound by hand. When a cached component receives new props, the previous values of these fields are unbound before the new ones are bound, so a component dropped from the collection stops receiving events. An instance passed again is unbound and rebound in the same render, so a hand-written `UnbindApp` must only release what `BindApp` reacquires.
 

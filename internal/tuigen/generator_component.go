@@ -94,7 +94,7 @@ func (g *Generator) generateMethodComponent(comp *Component) {
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()
-			g.writef("%s := %s.Render(app)\n", varName, n.Expr)
+			g.writef("%s := %s\n", varName, g.componentExprRender(n.Expr))
 			if rootVar == "" {
 				rootVar = varName
 			}
@@ -215,7 +215,7 @@ func (g *Generator) generateFunctionComponent(comp *Component) {
 			}
 		case *ComponentExpr:
 			varName := g.nextVar()
-			g.writef("%s := %s.Render(app)\n", varName, n.Expr)
+			g.writef("%s := %s\n", varName, g.componentExprRender(n.Expr))
 			if rootVar == "" {
 				rootVar = varName
 			}
