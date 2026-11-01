@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.24.0](https://github.com/grindlemire/go-tui/compare/v0.23.0...v0.24.0) (2026-11-01)
+
+
+### Features
+
+* add hover events, hover: classes, and scroll hit-testing fixes ([050cdd3](https://github.com/grindlemire/go-tui/commit/050cdd31f514fa6bb6eb18a82da58f6650193d36))
+* focus the element under a left click ([9599fc1](https://github.com/grindlemire/go-tui/commit/9599fc123558db386795867d4e8b1ded3a5c6f2c))
+* **gsx:** mount components rendered with [@expr](https://github.com/expr) ([143d95b](https://github.com/grindlemire/go-tui/commit/143d95b99040aabfd61bce6b7e2c29291fe20f3b))
+* make onFocus and onBlur take func() ([11bd2e6](https://github.com/grindlemire/go-tui/commit/11bd2e6407a439c782f7edd87a130ee97c0dc78a))
+* turn on mouse motion automatically when hover is used ([ff85355](https://github.com/grindlemire/go-tui/commit/ff853558d7105613b5a3689f24e0c533fc6ae056))
+
+
+### Bug Fixes
+
+* focus a modal that is open on the first frame ([da5a4cd](https://github.com/grindlemire/go-tui/commit/da5a4cd876b0ebb0ed4c1eb2727313d4859e7947))
+* start and stop watchers with mounted components ([88a5053](https://github.com/grindlemire/go-tui/commit/88a50534aa68f747ddb1b8be798dc762fc94674b))
+
 ## [0.23.0](https://github.com/grindlemire/go-tui/compare/v0.22.1...v0.23.0) (2026-10-21)
 
 
