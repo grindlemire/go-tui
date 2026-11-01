@@ -5,48 +5,62 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
-var tabs = []string{"Inbox", "Drafts", "Sent", "Archive"}
+var pages = []string{"Basics", "Lists", "Styles", "Components", "Edge cases"}
 
-var rows = []string{
-	"Quarterly report draft",
-	"Lunch on Thursday?",
-	"Build failed on main",
-	"Re: hover support",
-	"Your invoice is ready",
-	"Standup moved to 10:30",
-	"New comment on #178",
-	"Weekend plans",
-	"Release notes v0.23",
-	"Password expires soon",
-}
-
-const maxLog = 6
+const maxLog = 4
 
 type hoverDemo struct {
-	activeTab  *tui.State[string]
+	inline     bool
+	page       *tui.State[string]
 	hoveredTab *tui.State[string]
 	log        *tui.State[[]string]
 	pointer    *tui.State[string]
 	moves      *tui.State[int]
+	drags      *tui.State[int]
 	showModal  *tui.State[bool]
 	tabRefs    *tui.RefMap[string]
+
+	basics     *basicsPage
+	lists      *listsPage
+	styles     *stylesPage
+	components *componentsPage
+	edges      *edgesPage
 }
 
-func HoverDemo() *hoverDemo {
-	return &hoverDemo{
-		activeTab:  tui.NewState("Inbox"),
+func HoverDemo(inline bool) *hoverDemo {
+	d := &hoverDemo{
+		inline:     inline,
+		page:       tui.NewState("Basics"),
 		hoveredTab: tui.NewState(""),
 		log:        tui.NewState([]string{}),
 		pointer:    tui.NewState("-"),
 		moves:      tui.NewState(0),
+		drags:      tui.NewState(0),
 		showModal:  tui.NewState(false),
 		tabRefs:    tui.NewRefMap[string](),
 	}
+	d.basics = &basicsPage{d: d}
+	d.lists = newListsPage(d)
+	d.styles = &stylesPage{d: d}
+	d.components = newComponentsPage(d)
+	d.edges = newEdgesPage(d)
+	return d
 }
+
+func BasicsPage(d *hoverDemo) *basicsPage { return d.basics }
+
+func ListsPage(d *hoverDemo) *listsPage { return d.lists }
+
+func StylesPage(d *hoverDemo) *stylesPage { return d.styles }
+
+func ComponentsPage(d *hoverDemo) *componentsPage { return d.components }
+
+func EdgesPage(d *hoverDemo) *edgesPage { return d.edges }
 
 func (d *hoverDemo) record(event string) {
 	entries := append(d.log.Get(), event)
@@ -79,22 +93,39 @@ func (d *hoverDemo) closeModal() {
 }
 
 func (d *hoverDemo) KeyMap() tui.KeyMap {
-	return tui.KeyMap{
+	km := tui.KeyMap{
 		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.On(tui.Rune('m'), func(ke tui.KeyEvent) { d.showModal.Set(true) }),
 		tui.On(tui.Rune('c'), func(ke tui.KeyEvent) { d.log.Set([]string{}) }),
+		tui.On(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+		tui.On(tui.KeyTab.Shift(), func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
+	}
+	for i, p := range pages {
+		km = append(km, tui.On(tui.Rune(rune('1'+i)), func(ke tui.KeyEvent) { d.page.Set(p) }))
+	}
+	if !d.inline {
+		km = append(km, tui.On(tui.Rune('m'), func(ke tui.KeyEvent) { d.showModal.Set(true) }))
+	}
+	return km
+}
+
+func (d *hoverDemo) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.OnTimer(2*time.Second, d.lists.tick),
 	}
 }
 
 func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
 	d.pointer.Set(fmt.Sprintf("%d,%d", me.X, me.Y))
-	if me.Action == tui.MouseMove {
+	switch me.Action {
+	case tui.MouseMove:
 		d.moves.Set(d.moves.Get() + 1)
+	case tui.MouseDrag:
+		d.drags.Set(d.drags.Get() + 1)
 	}
 	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
 		for name, el := range d.tabRefs.All() {
 			if el != nil && el.ContainsPoint(me.X, me.Y) {
-				d.activeTab.Set(name)
+				d.page.Set(name)
 				return true
 			}
 		}
@@ -104,7 +135,7 @@ func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
 
 func (d *hoverDemo) tabClass(tab string) string {
 	switch {
-	case tab == d.activeTab.Get():
+	case tab == d.page.Get():
 		return "px-1 font-bold bg-cyan text-black"
 	case tab == d.hoveredTab.Get():
 		return "px-1 underline text-bright-cyan"
@@ -112,150 +143,113 @@ func (d *hoverDemo) tabClass(tab string) string {
 	return "px-1 text-white"
 }
 
+func (d *hoverDemo) help() string {
+	if d.inline {
+		return "1-5 or click: pages | Tab focus | c clear log | q quit | no modal inline"
+	}
+	return "1-5 or click: pages | Tab focus | m modal | c clear log | q quit"
+}
+
 func (d *hoverDemo) Render(app *tui.App) *tui.Element {
 	__tui_0 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithPadding(1),
-		tui.WithGap(1),
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+		tui.WithPaddingTRBL(0, 1, 0, 1),
+		tui.WithHeight(24),
 	)
 	__tui_1 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+		tui.WithGap(2),
+	)
+	__tui_2 := tui.New(
 		tui.WithText("Hover Demo"),
 		tui.WithTextGradient(tui.NewGradient(tui.Cyan, tui.Magenta).WithDirection(tui.GradientHorizontal)),
 		tui.WithTextStyle(tui.NewStyle().Bold()),
 	)
+	__tui_1.AddChild(__tui_2)
+	__tui_3 := tui.New(
+		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
+	)
+	for i, page := range pages {
+		_ = i
+		__tui_4 := tui.New(
+			tui.WithText(fmt.Sprintf("%d %s", i+1, page)),
+			tui.WithKey(page),
+			tui.WithClass(d.tabClass(page)),
+			tui.WithOnMouseEnter(d.enterTab(page)),
+			tui.WithOnMouseLeave(d.leaveTab(page)),
+		)
+		d.tabRefs.Put(page, __tui_4)
+		__tui_3.AddChild(__tui_4)
+	}
+	__tui_1.AddChild(__tui_3)
 	__tui_0.AddChild(__tui_1)
-	__tui_2 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
-	)
-	for __idx_0, tab := range tabs {
-		_ = __idx_0
-		__tui_3 := tui.New(
-			tui.WithText(tab),
-			tui.WithKey(tab),
-			tui.WithClass(d.tabClass(tab)),
-			tui.WithOnMouseEnter(d.enterTab(tab)),
-			tui.WithOnMouseLeave(d.leaveTab(tab)),
-		)
-		d.tabRefs.Put(tab, __tui_3)
-		__tui_2.AddChild(__tui_3)
-	}
-	__tui_0.AddChild(__tui_2)
-	__tui_4 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
-		tui.WithGap(2),
-	)
 	__tui_5 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithWidth(32),
-		tui.WithScrollable(tui.ScrollVertical),
-		tui.WithScrollbarStyle(tui.NewStyle().Foreground(tui.BrightBlack)),
-		tui.WithHeight(7),
-		tui.WithBorderTitle(d.activeTab.Get()+" (scroll me)"),
-	)
-	for __idx_0, row := range rows {
-		_ = __idx_0
-		__tui_6 := tui.New(
-			tui.WithText(row),
-			tui.WithKey(row),
-			tui.WithPaddingTRBL(0, 1, 0, 1),
-			tui.WithHoverClass("bg-blue text-bright-white"),
-			tui.WithOnMouseEnter(d.logged("enter row "+row)),
-			tui.WithOnMouseLeave(d.logged("leave row "+row)),
-		)
-		__tui_5.AddChild(__tui_6)
-	}
-	__tui_4.AddChild(__tui_5)
-	__tui_7 := tui.New(
-		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
-		tui.WithBorder(tui.BorderRounded),
-		tui.WithBorderStyle(tui.NewStyle().Foreground(tui.RGBColor(102, 102, 102))),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
-		tui.WithHoverClass("border-magenta"),
-		tui.WithOnMouseEnter(d.logged("enter card")),
-		tui.WithOnMouseLeave(d.logged("leave card")),
-	)
-	__tui_8 := tui.New(
-		tui.WithText("Nested card"),
-		tui.WithTextStyle(tui.NewStyle().Bold()),
-	)
-	__tui_7.AddChild(__tui_8)
-	__tui_9 := tui.New(
-		tui.WithText("The border stays lit"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_7.AddChild(__tui_9)
-	__tui_10 := tui.New(
-		tui.WithText("while you move between"),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_7.AddChild(__tui_10)
-	__tui_11 := tui.New(
-		tui.WithText("the buttons inside it."),
-		tui.WithTextStyle(tui.NewStyle().Dim()),
-	)
-	__tui_7.AddChild(__tui_11)
-	__tui_12 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Row),
-		tui.WithGap(1),
 		tui.WithMarginTRBL(1, 0, 0, 0),
+		tui.WithHeight(12),
 	)
-	__tui_13 := tui.New(
-		tui.WithText("Save"),
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
-		tui.WithHoverClass("border-yellow text-yellow font-bold"),
-		tui.WithOnMouseEnter(d.logged("  enter button Save")),
-		tui.WithOnMouseLeave(d.logged("  leave button Save")),
-	)
-	__tui_12.AddChild(__tui_13)
-	__tui_14 := tui.New(
-		tui.WithText("Discard"),
-		tui.WithBorder(tui.BorderSingle),
-		tui.WithPaddingTRBL(0, 1, 0, 1),
-		tui.WithHoverClass("border-yellow text-yellow font-bold"),
-		tui.WithOnMouseEnter(d.logged("  enter button Discard")),
-		tui.WithOnMouseLeave(d.logged("  leave button Discard")),
-	)
-	__tui_12.AddChild(__tui_14)
-	__tui_7.AddChild(__tui_12)
-	__tui_4.AddChild(__tui_7)
-	__tui_0.AddChild(__tui_4)
-	__tui_15 := tui.New(
+	if d.page.Get() == "Basics" {
+		__tui_6 := app.Mount(d, 0, func() tui.Component {
+			return BasicsPage(d)
+		})
+		__tui_5.AddChild(__tui_6)
+	} else if d.page.Get() == "Lists" {
+		__tui_7 := app.Mount(d, 1, func() tui.Component {
+			return ListsPage(d)
+		})
+		__tui_5.AddChild(__tui_7)
+	} else if d.page.Get() == "Styles" {
+		__tui_8 := app.Mount(d, 2, func() tui.Component {
+			return StylesPage(d)
+		})
+		__tui_5.AddChild(__tui_8)
+	} else if d.page.Get() == "Components" {
+		__tui_9 := app.Mount(d, 3, func() tui.Component {
+			return ComponentsPage(d)
+		})
+		__tui_5.AddChild(__tui_9)
+	} else {
+		__tui_10 := app.Mount(d, 4, func() tui.Component {
+			return EdgesPage(d)
+		})
+		__tui_5.AddChild(__tui_10)
+	}
+	__tui_0.AddChild(__tui_5)
+	__tui_11 := tui.New(
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
 		tui.WithBorder(tui.BorderRounded),
-		tui.WithHeight(8),
+		tui.WithHeight(6),
 		tui.WithPaddingTRBL(0, 1, 0, 1),
 		tui.WithBorderTitle("Hover events (newest last)"),
 	)
 	for __idx_0, entry := range d.log.Get() {
 		_ = __idx_0
-		__tui_16 := tui.New(
+		__tui_12 := tui.New(
 			tui.WithText(entry),
 			tui.WithTextStyle(tui.NewStyle().Dim()),
 		)
-		__tui_15.AddChild(__tui_16)
+		__tui_11.AddChild(__tui_12)
 	}
-	__tui_0.AddChild(__tui_15)
-	__tui_17 := tui.New(
-		tui.WithText(fmt.Sprintf("pointer %s | %d move events", d.pointer.Get(), d.moves.Get())),
+	__tui_0.AddChild(__tui_11)
+	__tui_13 := tui.New(
+		tui.WithText(fmt.Sprintf("pointer %s | %d move events | %d drag events", d.pointer.Get(), d.moves.Get(), d.drags.Get())),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_17)
-	__tui_18 := tui.New(
-		tui.WithText("click tabs to select | wheel scrolls the list | m modal | c clear log | q quit"),
+	__tui_0.AddChild(__tui_13)
+	__tui_14 := tui.New(
+		tui.WithText(d.help()),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_0.AddChild(__tui_18)
-	__tui_19 := app.MountPersistent(d, 0, func() tui.Component {
+	__tui_0.AddChild(__tui_14)
+	__tui_15 := app.MountPersistent(d, 5, func() tui.Component {
 		return tui.NewModal(
 			tui.WithModalOpen(d.showModal),
 			tui.WithModalElementOptions(tui.WithJustify(tui.JustifyCenter), tui.WithAlign(tui.AlignCenter)),
 		)
 	})
-	__tui_20 := tui.New(
+	__tui_16 := tui.New(
 		tui.WithBorder(tui.BorderRounded),
 		tui.WithPadding(2),
 		tui.WithDisplay(tui.DisplayFlex), tui.WithDirection(tui.Column),
@@ -263,17 +257,17 @@ func (d *hoverDemo) Render(app *tui.App) *tui.Element {
 		tui.WithWidth(40),
 		tui.WithAlign(tui.AlignCenter),
 	)
-	__tui_21 := tui.New(
+	__tui_17 := tui.New(
 		tui.WithText("Modal open"),
 		tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Yellow)),
 	)
-	__tui_20.AddChild(__tui_21)
-	__tui_22 := tui.New(
-		tui.WithText("Content behind the backdrop ignores hover."),
+	__tui_16.AddChild(__tui_17)
+	__tui_18 := tui.New(
+		tui.WithText("Content behind the backdrop ignores hover and the wheel."),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
-	__tui_20.AddChild(__tui_22)
-	__tui_23 := tui.New(
+	__tui_16.AddChild(__tui_18)
+	__tui_19 := tui.New(
 		tui.WithBorder(tui.BorderSingle),
 		tui.WithPaddingTRBL(0, 2, 0, 2),
 		tui.WithHoverClass("border-green text-green font-bold"),
@@ -281,21 +275,43 @@ func (d *hoverDemo) Render(app *tui.App) *tui.Element {
 		tui.WithOnMouseLeave(d.logged("leave modal button")),
 		tui.WithOnActivate(d.closeModal),
 	)
-	__tui_24 := tui.New(tui.WithText("Close"))
-	__tui_23.AddChild(__tui_24)
-	__tui_20.AddChild(__tui_23)
+	__tui_20 := tui.New(tui.WithText("Close"))
 	__tui_19.AddChild(__tui_20)
-	__tui_0.AddChild(__tui_19)
+	__tui_16.AddChild(__tui_19)
+	__tui_15.AddChild(__tui_16)
+	__tui_0.AddChild(__tui_15)
 
 	return __tui_0
 }
+
+// updatePropsFields is generated. It copies prop fields from fresh onto
+// the receiver. When you override UpdateProps, call this helper instead
+// of hand-maintaining the copy list.
+func (d *hoverDemo) updatePropsFields(fresh tui.Component) {
+	f, ok := fresh.(*hoverDemo)
+	if !ok {
+		return
+	}
+	d.inline = f.inline
+	d.basics = f.basics
+	d.lists = f.lists
+	d.styles = f.styles
+	d.components = f.components
+	d.edges = f.edges
+}
+
+func (d *hoverDemo) UpdateProps(fresh tui.Component) {
+	d.updatePropsFields(fresh)
+}
+
+var _ tui.PropsUpdater = (*hoverDemo)(nil)
 
 // bindAppFields is generated. It wires the component's *tui.App,
 // State, Events, and TextArea fields to app. When you override BindApp,
 // call this helper instead of hand-maintaining the delegation list.
 func (d *hoverDemo) bindAppFields(app *tui.App) {
-	if d.activeTab != nil {
-		d.activeTab.BindApp(app)
+	if d.page != nil {
+		d.page.BindApp(app)
 	}
 	if d.hoveredTab != nil {
 		d.hoveredTab.BindApp(app)
@@ -308,6 +324,9 @@ func (d *hoverDemo) bindAppFields(app *tui.App) {
 	}
 	if d.moves != nil {
 		d.moves.BindApp(app)
+	}
+	if d.drags != nil {
+		d.drags.BindApp(app)
 	}
 	if d.showModal != nil {
 		d.showModal.BindApp(app)
@@ -322,6 +341,7 @@ var _ tui.AppBinder = (*hoverDemo)(nil)
 
 // Compile-time interface satisfaction checks.
 var (
-	_ tui.KeyListener   = (*hoverDemo)(nil)
-	_ tui.MouseListener = (*hoverDemo)(nil)
+	_ tui.KeyListener     = (*hoverDemo)(nil)
+	_ tui.MouseListener   = (*hoverDemo)(nil)
+	_ tui.WatcherProvider = (*hoverDemo)(nil)
 )

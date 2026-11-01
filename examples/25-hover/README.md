@@ -1,23 +1,29 @@
 # Hover
 
-Demonstrates hover in two styles:
+A five-page tour of hover in go-tui. The tabs switch pages; the panel at the bottom logs every enter and leave event, and the status line counts move and drag events.
 
-- `hover:` classes for pure styling (list rows, the card border, the card and modal buttons), with no state involved.
-- `onMouseEnter` / `onMouseLeave` callbacks driving state (the tabs), and logging every enter and leave event to the panel at the bottom.
+- **Basics**: `hover:` classes on a scrollable inbox (the wheel scrolls it), and a card that stays lit while the pointer moves between its buttons.
+- **Lists**: a list keyed by message id. With the pointer resting on a row, press `s` to shuffle or `t` to insert a message every two seconds; the row that moved away gets its leave and the new one under the pointer gets its enter right away. Click a row to toggle unread; unread rows hover in a different color from a class expression.
+- **Styles**: `hover:text-*` cascading to children, `hover:font-bold` layering onto inherited color, and gradient hover classes.
+- **Components**: `<input>` and `<textarea>` with hover classes and callbacks (Tab focuses them so you can type; Escape leaves), and a drag area that reports drags.
+- **Edge cases**: a button that dodges the pointer. Its enter handler moves it away, and it gets its leave right after, with the pointer still.
 
-The list scrolls with the mouse wheel; the highlight follows whatever row ends up under the pointer. The card stays lit while the pointer moves between its buttons, and while the modal is open only the modal reacts to hover.
+Press `m` for a modal whose backdrop blocks hover and the wheel on everything behind it.
 
 Hover needs pointer motion reporting, which is opt-in:
 
 ```go
 app, err := tui.NewApp(
     tui.WithMouseMotion(),
-    tui.WithRootComponent(HoverDemo()),
+    tui.WithRootComponent(HoverDemo(false)),
 )
 ```
 
 ## Run
 
 ```bash
-go run .
+go run .          # full screen
+go run . -inline  # inline mode: move the pointer above the app to leave everything
 ```
+
+See the [Hover guide](https://www.go-tui.dev/guide/hover) for a walkthrough.

@@ -1,25 +1,35 @@
-// Package main demonstrates hover callbacks (onMouseEnter/onMouseLeave).
+// Package main demonstrates hover: hover: classes, onMouseEnter/onMouseLeave
+// callbacks, keyed lists, component tags, drags, and edge cases.
 //
 // To build and run:
 //
-//	go run ../../cmd/tui generate hover.gsx
-//	go run .
+//	go run ../../cmd/tui generate .
+//	go run .          # full screen
+//	go run . -inline  # inline mode (24 rows below the prompt)
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
 	tui "github.com/grindlemire/go-tui"
 )
 
-//go:generate go run ../../cmd/tui generate hover.gsx
+//go:generate go run ../../cmd/tui generate .
 
 func main() {
-	app, err := tui.NewApp(
+	inline := flag.Bool("inline", false, "run in inline mode instead of full screen")
+	flag.Parse()
+
+	opts := []tui.AppOption{
 		tui.WithMouseMotion(),
-		tui.WithRootComponent(HoverDemo()),
-	)
+		tui.WithRootComponent(HoverDemo(*inline)),
+	}
+	if *inline {
+		opts = append(opts, tui.WithInlineHeight(24))
+	}
+	app, err := tui.NewApp(opts...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create app: %v\n", err)
 		os.Exit(1)

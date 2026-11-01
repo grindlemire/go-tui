@@ -2,47 +2,66 @@ package main
 
 import (
 	"fmt"
+	"time"
 	tui "github.com/grindlemire/go-tui"
 )
 
-var tabs = []string{"Inbox", "Drafts", "Sent", "Archive"}
+var pages = []string{"Basics", "Lists", "Styles", "Components", "Edge cases"}
 
-var rows = []string{
-	"Quarterly report draft",
-	"Lunch on Thursday?",
-	"Build failed on main",
-	"Re: hover support",
-	"Your invoice is ready",
-	"Standup moved to 10:30",
-	"New comment on #178",
-	"Weekend plans",
-	"Release notes v0.23",
-	"Password expires soon",
-}
+const maxLog = 4
 
-const maxLog = 6
-
+// hoverDemo is the root: a tab bar that switches pages, a shared log of hover
+// events, and a status line. Each page is its own component in its own file.
 type hoverDemo struct {
-	activeTab  *tui.State[string]
+	inline     bool
+	page       *tui.State[string]
 	hoveredTab *tui.State[string]
 	log        *tui.State[[]string]
 	pointer    *tui.State[string]
 	moves      *tui.State[int]
+	drags      *tui.State[int]
 	showModal  *tui.State[bool]
 	tabRefs    *tui.RefMap[string]
+
+	basics     *basicsPage
+	lists      *listsPage
+	styles     *stylesPage
+	components *componentsPage
+	edges      *edgesPage
 }
 
-func HoverDemo() *hoverDemo {
-	return &hoverDemo{
-		activeTab:  tui.NewState("Inbox"),
+func HoverDemo(inline bool) *hoverDemo {
+	d := &hoverDemo{
+		inline:     inline,
+		page:       tui.NewState("Basics"),
 		hoveredTab: tui.NewState(""),
 		log:        tui.NewState([]string{}),
 		pointer:    tui.NewState("-"),
 		moves:      tui.NewState(0),
+		drags:      tui.NewState(0),
 		showModal:  tui.NewState(false),
 		tabRefs:    tui.NewRefMap[string](),
 	}
+	d.basics = &basicsPage{d: d}
+	d.lists = newListsPage(d)
+	d.styles = &stylesPage{d: d}
+	d.components = newComponentsPage(d)
+	d.edges = newEdgesPage(d)
+	return d
 }
+
+// Pages are mounted with @Page(d) so their KeyMap, HandleMouse, and child
+// components are wired up. Each constructor returns the instance the root
+// already holds, so a page keeps its state while another page is shown.
+func BasicsPage(d *hoverDemo) *basicsPage { return d.basics }
+
+func ListsPage(d *hoverDemo) *listsPage { return d.lists }
+
+func StylesPage(d *hoverDemo) *stylesPage { return d.styles }
+
+func ComponentsPage(d *hoverDemo) *componentsPage { return d.components }
+
+func EdgesPage(d *hoverDemo) *edgesPage { return d.edges }
 
 func (d *hoverDemo) record(event string) {
 	entries := append(d.log.Get(), event)
@@ -57,7 +76,7 @@ func (d *hoverDemo) logged(event string) func() {
 	return func() { d.record(event) }
 }
 
-// Tabs drive their hover look from state, to show callbacks.
+// The tabs drive their hover look from state, to show callbacks.
 func (d *hoverDemo) enterTab(tab string) func() {
 	return func() {
 		d.record("enter tab " + tab)
@@ -77,22 +96,41 @@ func (d *hoverDemo) closeModal() {
 }
 
 func (d *hoverDemo) KeyMap() tui.KeyMap {
-	return tui.KeyMap{
+	km := tui.KeyMap{
 		tui.On(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
-		tui.On(tui.Rune('m'), func(ke tui.KeyEvent) { d.showModal.Set(true) }),
 		tui.On(tui.Rune('c'), func(ke tui.KeyEvent) { d.log.Set([]string{}) }),
+		tui.On(tui.KeyTab, func(ke tui.KeyEvent) { ke.App().FocusNext() }),
+		tui.On(tui.KeyTab.Shift(), func(ke tui.KeyEvent) { ke.App().FocusPrev() }),
+	}
+	for i, p := range pages {
+		km = append(km, tui.On(tui.Rune(rune('1'+i)), func(ke tui.KeyEvent) { d.page.Set(p) }))
+	}
+	if !d.inline {
+		km = append(km, tui.On(tui.Rune('m'), func(ke tui.KeyEvent) { d.showModal.Set(true) }))
+	}
+	return km
+}
+
+// The live-insert timer lives on the root: component watchers start after
+// the first render, when only the first page exists.
+func (d *hoverDemo) Watchers() []tui.Watcher {
+	return []tui.Watcher{
+		tui.OnTimer(2*time.Second, d.lists.tick),
 	}
 }
 
 func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
 	d.pointer.Set(fmt.Sprintf("%d,%d", me.X, me.Y))
-	if me.Action == tui.MouseMove {
+	switch me.Action {
+	case tui.MouseMove:
 		d.moves.Set(d.moves.Get() + 1)
+	case tui.MouseDrag:
+		d.drags.Set(d.drags.Get() + 1)
 	}
 	if me.Button == tui.MouseLeft && me.Action == tui.MousePress {
 		for name, el := range d.tabRefs.All() {
 			if el != nil && el.ContainsPoint(me.X, me.Y) {
-				d.activeTab.Set(name)
+				d.page.Set(name)
 				return true
 			}
 		}
@@ -102,7 +140,7 @@ func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
 
 func (d *hoverDemo) tabClass(tab string) string {
 	switch {
-	case tab == d.activeTab.Get():
+	case tab == d.page.Get():
 		return "px-1 font-bold bg-cyan text-black"
 	case tab == d.hoveredTab.Get():
 		return "px-1 underline text-bright-cyan"
@@ -110,45 +148,47 @@ func (d *hoverDemo) tabClass(tab string) string {
 	return "px-1 text-white"
 }
 
+func (d *hoverDemo) help() string {
+	if d.inline {
+		return "1-5 or click: pages | Tab focus | c clear log | q quit | no modal inline"
+	}
+	return "1-5 or click: pages | Tab focus | m modal | c clear log | q quit"
+}
+
 templ (d *hoverDemo) Render() {
-	<div class="flex-col p-1 gap-1 border-rounded border-cyan">
-		<span class="text-gradient-cyan-magenta font-bold">Hover Demo</span>
-		<div class="flex">
-			for _, tab := range tabs {
-				<span ref={d.tabRefs} key={tab} class={d.tabClass(tab)} onMouseEnter={d.enterTab(tab)} onMouseLeave={d.leaveTab(tab)}>{tab}</span>
-			}
-		</div>
+	<div class="flex-col px-1 border-rounded border-cyan" height={24}>
 		<div class="flex gap-2">
-			<div
-				class="flex-col border-rounded w-32 overflow-y-scroll scrollbar-bright-black"
-				height={7}
-				borderTitle={d.activeTab.Get() + " (scroll me)"}>
-				for _, row := range rows {
-					<span key={row} class="px-1 hover:bg-blue hover:text-bright-white" onMouseEnter={d.logged("enter row " + row)} onMouseLeave={d.logged("leave row " + row)}>{row}</span>
+			<span class="text-gradient-cyan-magenta font-bold">Hover Demo</span>
+			<div class="flex">
+				for i, page := range pages {
+					<span ref={d.tabRefs} key={page} class={d.tabClass(page)} onMouseEnter={d.enterTab(page)} onMouseLeave={d.leaveTab(page)}>{fmt.Sprintf("%d %s", i+1, page)}</span>
 				}
 			</div>
-			<div class="flex-col px-1 border-rounded border-[#666666] hover:border-magenta" onMouseEnter={d.logged("enter card")} onMouseLeave={d.logged("leave card")}>
-				<span class="font-bold">Nested card</span>
-				<span class="font-dim">The border stays lit</span>
-				<span class="font-dim">while you move between</span>
-				<span class="font-dim">the buttons inside it.</span>
-				<div class="flex gap-1 mt-1">
-					<span class="px-1 border-single hover:border-yellow hover:text-yellow hover:font-bold" onMouseEnter={d.logged("  enter button Save")} onMouseLeave={d.logged("  leave button Save")}>Save</span>
-					<span class="px-1 border-single hover:border-yellow hover:text-yellow hover:font-bold" onMouseEnter={d.logged("  enter button Discard")} onMouseLeave={d.logged("  leave button Discard")}>Discard</span>
-				</div>
-			</div>
 		</div>
-		<div class="flex-col border-rounded px-1 h-8" borderTitle="Hover events (newest last)">
+		<div class="flex mt-1" height={12}>
+			if d.page.Get() == "Basics" {
+				@BasicsPage(d)
+			} else if d.page.Get() == "Lists" {
+				@ListsPage(d)
+			} else if d.page.Get() == "Styles" {
+				@StylesPage(d)
+			} else if d.page.Get() == "Components" {
+				@ComponentsPage(d)
+			} else {
+				@EdgesPage(d)
+			}
+		</div>
+		<div class="flex-col border-rounded px-1 h-6" borderTitle="Hover events (newest last)">
 			for _, entry := range d.log.Get() {
 				<span class="font-dim">{entry}</span>
 			}
 		</div>
-		<span class="font-dim">{fmt.Sprintf("pointer %s | %d move events", d.pointer.Get(), d.moves.Get())}</span>
-		<span class="font-dim">click tabs to select | wheel scrolls the list | m modal | c clear log | q quit</span>
+		<span class="font-dim">{fmt.Sprintf("pointer %s | %d move events | %d drag events", d.pointer.Get(), d.moves.Get(), d.drags.Get())}</span>
+		<span class="font-dim">{d.help()}</span>
 		<modal open={d.showModal} class="justify-center items-center">
 			<div class="border-rounded p-2 flex-col gap-1 w-40 items-center">
 				<span class="font-bold text-yellow">Modal open</span>
-				<span class="font-dim">Content behind the backdrop ignores hover.</span>
+				<span class="font-dim">Content behind the backdrop ignores hover and the wheel.</span>
 				<button class="px-2 border-single hover:border-green hover:text-green hover:font-bold" onMouseEnter={d.logged("enter modal button")} onMouseLeave={d.logged("leave modal button")} onActivate={d.closeModal}>Close</button>
 			</div>
 		</modal>
