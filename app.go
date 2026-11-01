@@ -52,7 +52,7 @@ type App struct {
 	eventQueueSize   int           // Capacity of event queue (default 256, used during construction)
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
-	mouseMotion      bool          // Whether no-button pointer motion is reported (WithMouseMotion)
+	mouseMotion      bool          // Whether no-button pointer motion is reported (WithMouseMotion, or on once hover renders)
 	manualCursor     bool          // Disable framework-driven cursor placement (WithManualCursor)
 	legacyKeyboard   bool          // Force legacy keyboard mode (skip Kitty protocol negotiation)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
@@ -67,6 +67,7 @@ type App struct {
 	pointerX, pointerY int
 	pointerInside      bool
 	hoverStale         bool
+	hoverUsed          bool // an attached element has hover callbacks or classes
 
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight       int               // Number of rows for inline widget (0 = full screen mode)

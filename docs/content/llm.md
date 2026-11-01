@@ -184,7 +184,7 @@ func main() {
         tui.WithRootComponent(MyComponent()),
         // Optional:
         // tui.WithMouse(),
-        // tui.WithMouseMotion(),   // mouse + pointer motion, required for hover
+        // tui.WithMouseMotion(),   // MouseMove events without hover (hover turns motion on by itself)
         // tui.WithFrameRate(60),
         // tui.WithInlineHeight(10),
         // tui.WithGlobalKeyHandler(func(ke tui.KeyEvent) bool { return false }),
@@ -296,7 +296,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `focusable` | `bool` | Enable focus |
 | `onFocus` / `onBlur` | `func()` | Focus callbacks |
 | `onActivate` | `func()` | Enter activation callback |
-| `onMouseEnter` / `onMouseLeave` | `func()` | Hover callbacks (require `tui.WithMouseMotion()`) |
+| `onMouseEnter` / `onMouseLeave` | `func()` | Hover callbacks |
 | `key` | expression | Sibling identity in loops: component cache key, `RefMap` key, hover identity (`tui.WithKey`) |
 
 ### Scroll
@@ -389,7 +389,7 @@ Directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagonal down), 
 
 ### Hover Variants
 
-`hover:CLASS` applies a class only while the pointer is over the element or a descendant (requires `tui.WithMouseMotion()`). Compiles to `tui.WithHoverClass("...")`.
+`hover:CLASS` applies a class only while the pointer is over the element or a descendant. Compiles to `tui.WithHoverClass("...")`.
 
 ```gsx
 <span class="px-1 hover:bg-blue hover:font-bold">Inbox</span>
@@ -540,11 +540,11 @@ func (c *myComp) HandleMouse(me tui.MouseEvent) bool {
 
 **MouseEvent fields:** `me.Button` (MouseLeft, MouseMiddle, MouseRight, MouseWheelUp, MouseWheelDown, MouseNone), `me.Action` (MousePress, MouseRelease, MouseDrag, MouseMove), `me.X`, `me.Y`, `me.App()`
 
-`MouseDrag` (motion with a button held) is reported whenever the mouse is enabled. `MouseMove` (motion with no button, `Button == MouseNone`) is only reported with `tui.WithMouseMotion()`. `Run()` and `DispatchEvents()` coalesce consecutive moves to the latest; `Dispatch` and `Events()` see every move.
+`MouseDrag` (motion with a button held) is reported whenever the mouse is enabled. `MouseMove` (motion with no button, `Button == MouseNone`) is only reported once motion is on: with `tui.WithMouseMotion()`, or automatically after the first render that uses hover. `Run()` and `DispatchEvents()` coalesce consecutive moves to the latest; `Dispatch` and `Events()` see every move.
 
 ### Hover
 
-Requires `tui.WithMouseMotion()`.
+No app option needed: the app turns on pointer motion the first time a rendered element uses hover. Inline mode needs `tui.WithMouse()`, since its mouse is off by default.
 
 ```gsx
 for _, row := range s.rows {
@@ -632,7 +632,7 @@ ke.App().Batch(func() {
 ```go
 tui.WithRootComponent(comp)              // Required: root component
 tui.WithMouse()                          // Enable mouse support
-tui.WithMouseMotion()                    // Mouse + pointer motion (MouseMove); required for hover
+tui.WithMouseMotion()                    // Mouse + pointer motion (MouseMove) even without hover
 tui.WithFrameRate(fps int)               // Default: 60
 tui.WithInlineHeight(rows int)           // Inline mode (not fullscreen)
 tui.WithGlobalKeyHandler(func(KeyEvent) bool)  // Global key intercept
@@ -882,7 +882,7 @@ el := tui.New(
     tui.WithBorderTitleStyle(tui.NewStyle().Bold()),
     tui.WithFocusBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
     tui.WithCursorSource(func() (col, row int, visible bool) { return 0, 0, true }),
-    tui.WithOnMouseEnter(func() {}),     // hover callbacks (need WithMouseMotion)
+    tui.WithOnMouseEnter(func() {}),     // hover callbacks
     tui.WithOnMouseLeave(func() {}),
     tui.WithHoverClass("bg-blue font-bold"), // classes without the hover: prefix
     tui.WithKey(id),                     // sibling identity for hover tracking

@@ -252,7 +252,7 @@ func TestHover_ContentChangingUnderPointerKeepsEnterLeaveBalanced(t *testing.T) 
 	}
 }
 
-func TestHover_RequiresMouseMotion(t *testing.T) {
+func TestHover_OffWithoutMotion(t *testing.T) {
 	root := &hoverTestRoot{}
 	app := newHoverTestApp(root)
 	app.mouseMotion = false
@@ -260,7 +260,7 @@ func TestHover_RequiresMouseMotion(t *testing.T) {
 	app.Dispatch(MouseEvent{Button: MouseLeft, Action: MousePress, X: 1, Y: 0})
 	app.Render()
 	if len(root.log) != 0 {
-		t.Errorf("hover fired without WithMouseMotion: %v", root.log)
+		t.Errorf("hover fired with motion off: %v", root.log)
 	}
 }
 
@@ -422,5 +422,122 @@ func TestHover_WheelScrollUnderStillPointer(t *testing.T) {
 	app.Render()
 	if want := []string{"leave r2"}; !slices.Equal(root.log, want) {
 		t.Errorf("moving onto the list border fired %v, want %v", root.log, want)
+	}
+}
+
+// motionReader records setMouseMotion calls, like the Windows reader.
+type motionReader struct {
+	*MockEventReader
+	motion bool
+}
+
+func (r *motionReader) setMouseMotion(enabled bool) { r.motion = enabled }
+
+// toggleHoverRoot renders hover only once hover is set.
+type toggleHoverRoot struct {
+	hover Option
+}
+
+func (r *toggleHoverRoot) Render(app *App) *Element {
+	child := New(WithWidth(5), WithHeight(1))
+	if r.hover != nil {
+		child = New(WithWidth(5), WithHeight(1), r.hover)
+	}
+	root := New(WithWidth(20), WithHeight(4))
+	root.AddChild(child)
+	return root
+}
+
+func TestHover_TurnsOnMotionWhenHoverRenders(t *testing.T) {
+	type tc struct {
+		hover        Option
+		mouseEnabled bool
+		wantMotion   bool
+	}
+
+	tests := map[string]tc{
+		"enter callback": {
+			hover:        WithOnMouseEnter(func() {}),
+			mouseEnabled: true,
+			wantMotion:   true,
+		},
+		"leave callback": {
+			hover:        WithOnMouseLeave(func() {}),
+			mouseEnabled: true,
+			wantMotion:   true,
+		},
+		"hover class": {
+			hover:        WithHoverClass("bg-blue"),
+			mouseEnabled: true,
+			wantMotion:   true,
+		},
+		"no hover": {
+			mouseEnabled: true,
+		},
+		"mouse disabled": {
+			hover: WithOnMouseEnter(func() {}),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			app := newTestApp(20, 4)
+			reader := &motionReader{MockEventReader: NewMockEventReader()}
+			app.reader = reader
+			app.mouseEnabled = tt.mouseEnabled
+			root := &toggleHoverRoot{}
+			app.rootComponent = root
+			app.MarkDirty()
+			app.Render()
+			term := app.terminal.(*MockTerminal)
+			if term.IsMouseMotionEnabled() || reader.motion {
+				t.Fatal("motion on before any element used hover")
+			}
+
+			root.hover = tt.hover
+			app.MarkDirty()
+			app.Render()
+			if term.IsMouseMotionEnabled() != tt.wantMotion {
+				t.Errorf("terminal motion = %v, want %v", term.IsMouseMotionEnabled(), tt.wantMotion)
+			}
+			if reader.motion != tt.wantMotion {
+				t.Errorf("reader motion = %v, want %v", reader.motion, tt.wantMotion)
+			}
+			if app.mouseMotion != tt.wantMotion {
+				t.Errorf("app.mouseMotion = %v, want %v", app.mouseMotion, tt.wantMotion)
+			}
+		})
+	}
+}
+
+func TestHover_AutoMotionFiresCallbacks(t *testing.T) {
+	var log []string
+	root := New(WithWidth(20), WithHeight(4))
+	root.AddChild(New(WithWidth(5), WithHeight(1), WithOnMouseEnter(func() { log = append(log, "enter") })))
+	app := newTestApp(20, 4)
+	app.mouseEnabled = true
+	app.SetRoot(root)
+	app.Render()
+
+	app.Dispatch(MouseEvent{Button: MouseNone, Action: MouseMove, X: 1, Y: 0})
+	if !slices.Equal(log, []string{"enter"}) {
+		t.Errorf("hover without WithMouseMotion fired %v, want [enter]", log)
+	}
+}
+
+func TestHover_SetterOnLiveElementTurnsOnMotion(t *testing.T) {
+	child := New(WithWidth(5), WithHeight(1))
+	root := New(WithWidth(20), WithHeight(4))
+	root.AddChild(child)
+	app := newTestApp(20, 4)
+	app.mouseEnabled = true
+	app.SetRoot(root)
+	app.Render()
+
+	child.SetOnMouseEnter(func() {})
+	app.MarkDirty()
+	app.Render()
+	if !app.terminal.(*MockTerminal).IsMouseMotionEnabled() {
+		t.Error("SetOnMouseEnter on a rendered element did not turn on motion")
 	}
 }

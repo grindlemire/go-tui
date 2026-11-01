@@ -10,20 +10,29 @@ import (
 // element or one of its descendants.
 func (e *Element) SetOnMouseEnter(fn func()) {
 	e.onMouseEnter = fn
+	e.noteHover()
 }
 
 // SetOnMouseLeave sets the callback for when the pointer moves off this
 // element and all of its descendants.
 func (e *Element) SetOnMouseLeave(fn func()) {
 	e.onMouseLeave = fn
+	e.noteHover()
+}
+
+// noteHover tells an attached app that hover is in use, so it turns on motion
+// reporting after the next render. Detached elements are noted when attached.
+func (e *Element) noteHover() {
+	if e.app != nil && hasHover(e) {
+		e.app.hoverUsed = true
+	}
 }
 
 // WithHoverClass adds classes applied only while the pointer is over this
 // element or a descendant, written without the hover: prefix ("bg-blue
 // font-bold"). Only color and text style classes take effect, since a class
 // that changed layout could move the element out from under the pointer.
-// Requires WithMouseMotion on the App. Generated code emits it for hover:
-// classes in a class attribute.
+// Generated code emits it for hover: classes in a class attribute.
 func WithHoverClass(classes string) Option {
 	return func(e *Element) {
 		e.addHoverClass(classes)
@@ -51,6 +60,7 @@ func (e *Element) addHoverClass(classes string) {
 	e.setHoverStyle(false)
 	e.hoverClass = classes
 	e.setHoverStyle(active)
+	e.noteHover()
 }
 
 // setHoverStyle applies or removes the hover: classes. Removal restores only

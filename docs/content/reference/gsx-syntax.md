@@ -475,7 +475,7 @@ Available on: `div`, `ul`, `li`, `table`, `span`, `p`, `button`, `input`.
 | `onMouseEnter` | `func()` | `tui.WithOnMouseEnter(fn)` |
 | `onMouseLeave` | `func()` | `tui.WithOnMouseLeave(fn)` |
 
-`onMouseEnter` fires when the pointer moves onto the element or any descendant. `onMouseLeave` fires when the pointer is off the element and all of its descendants, so moving between children does not leave the parent. Both require `tui.WithMouseMotion()` on the app. On `<input>`, `<textarea>`, `<markdown>`, and `<modal>`, they apply to the component's root element, as do `hover:` classes. See the [Hover guide](../guides/25-hover).
+`onMouseEnter` fires when the pointer moves onto the element or any descendant. `onMouseLeave` fires when the pointer is off the element and all of its descendants, so moving between children does not leave the parent. The app turns on pointer motion reporting by itself once an element uses them (inline mode needs `tui.WithMouse()`). On `<input>`, `<textarea>`, `<markdown>`, and `<modal>`, they apply to the component's root element, as do `hover:` classes. See the [Hover guide](../guides/25-hover).
 
 ### Modal attributes
 
@@ -943,7 +943,7 @@ Only color and text style classes are allowed: `bg-*`, `text-*` colors, `font-bo
 hover: only supports color and text style classes, not "p-2", which changes layout
 ```
 
-`class={expr}` accepts `hover:` too; at runtime, unknown or layout classes after `hover:` are ignored. Hover requires `tui.WithMouseMotion()` on the app. See the [Styling Reference](styling.md#hover-variants) for how hover styles combine with the element's own.
+`class={expr}` accepts `hover:` too; at runtime, unknown or layout classes after `hover:` are ignored. See the [Styling Reference](styling.md#hover-variants) for how hover styles combine with the element's own.
 
 ## Code generation
 

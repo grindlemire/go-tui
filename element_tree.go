@@ -77,6 +77,9 @@ func (e *Element) setAppRecursive(app *App) {
 		return
 	}
 	e.app = app
+	if app != nil && hasHover(e) {
+		app.hoverUsed = true
+	}
 	for _, child := range e.children {
 		child.setAppRecursive(app)
 	}

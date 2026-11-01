@@ -118,7 +118,7 @@ type MouseEvent struct {
 }
 ```
 
-Represents a mouse input event. Mouse events are only delivered when mouse reporting is enabled (see [App Reference](app.md), `WithMouse()`). Motion with no button held (`MouseMove`) is only reported when the app also enables `WithMouseMotion()`.
+Represents a mouse input event. Mouse events are only delivered when mouse reporting is enabled (see [App Reference](app.md), `WithMouse()`). Motion with no button held (`MouseMove`) is only reported once motion is on: with `WithMouseMotion()`, or automatically after an element uses hover.
 
 **Fields:**
 
@@ -295,7 +295,7 @@ type MouseAction int
 | `MousePress` | A button was pressed down. |
 | `MouseRelease` | A button was released. |
 | `MouseDrag` | Mouse moved while a button is held. Reported on every platform whenever the mouse is enabled. |
-| `MouseMove` | Mouse moved with no button held (`Button` is `MouseNone`). Only reported with `WithMouseMotion()`. |
+| `MouseMove` | Mouse moved with no button held (`Button` is `MouseNone`). Only reported once motion is on (`WithMouseMotion()` or hover in use). |
 
 ## KeyMap
 
@@ -547,7 +547,7 @@ func (c *counter) HandleMouse(me tui.MouseEvent) bool {
 
 ## Hover
 
-Elements can react to the pointer moving over them through callbacks and `hover:` classes. Both require `WithMouseMotion()` on the app; without it they never fire or apply. See the [Hover guide](../guides/25-hover) for a full walkthrough.
+Elements can react to the pointer moving over them through callbacks and `hover:` classes. The app turns on pointer motion reporting the first time a rendered element uses either one, as long as the mouse is enabled (inline mode needs `WithMouse()`). See the [Hover guide](../guides/25-hover) for a full walkthrough.
 
 ### onMouseEnter / onMouseLeave
 
@@ -586,7 +586,7 @@ Here's how events flow through the system.
 **Mouse events:**
 
 1. Terminal input is read and parsed into a `MouseEvent`. In `Run()` and `DispatchEvents()`, consecutive `MouseMove` events are coalesced to the latest.
-2. With `WithMouseMotion()`, hover is updated at the event's position and any `onMouseEnter`/`onMouseLeave` callbacks fire.
+2. Once motion is on, hover is updated at the event's position and any `onMouseEnter`/`onMouseLeave` callbacks fire.
 3. The framework walks the component tree and dispatches to each `MouseListener`.
 4. If any listener returns `true`, the event is consumed.
 5. Otherwise, the event goes to `App.Dispatch()` which does hit-testing against the element tree.

@@ -208,7 +208,7 @@ tui.New(
 
 ### Hover
 
-Hover options require `WithMouseMotion()` on the App. Without it, callbacks never fire and hover classes never apply. See the [Hover guide](../guides/25-hover).
+The App turns on pointer motion reporting the first time a rendered element uses one of these options. In inline mode the mouse is off by default, so hover also needs `WithMouse()` there. See the [Hover guide](../guides/25-hover).
 
 | Function | Description |
 |----------|-------------|
@@ -577,7 +577,7 @@ func (e *Element) SetOnMouseEnter(fn func())
 func (e *Element) SetOnMouseLeave(fn func())
 ```
 
-Set or replace the hover callbacks after creation. They behave the same as `WithOnMouseEnter` and `WithOnMouseLeave`, and require `WithMouseMotion()` on the App.
+Set or replace the hover callbacks after creation. They behave the same as `WithOnMouseEnter` and `WithOnMouseLeave`.
 
 ## Scroll Methods
 

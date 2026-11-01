@@ -123,8 +123,10 @@ func WithMouse() AppOption {
 }
 
 // WithMouseMotion enables mouse reporting plus pointer motion with no button
-// held, delivered as MouseMove events. This powers onMouseEnter/onMouseLeave
-// hover callbacks. Motion reports are frequent, so it is opt-in.
+// held, delivered as MouseMove events. Hover (onMouseEnter, onMouseLeave, and
+// hover: classes) turns motion on by itself once an element uses it, so this
+// is only needed to receive MouseMove in HandleMouse without any hover, or to
+// enable the mouse in inline mode along with motion.
 func WithMouseMotion() AppOption {
 	return func(a *App) error {
 		a.mouseEnabled = true

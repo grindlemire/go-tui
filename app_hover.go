@@ -45,6 +45,17 @@ func (a *App) dispatchMouseHover(x, y int, inside bool) {
 	a.updateHover()
 }
 
+// enableHoverMotion turns on motion reporting the first time a rendered tree
+// uses hover, so hover works without WithMouseMotion. It stays on afterwards:
+// toggling per page would churn terminal modes for no real saving.
+func (a *App) enableHoverMotion() {
+	if !a.hoverUsed || a.mouseMotion || !a.mouseEnabled {
+		return
+	}
+	a.mouseMotion = true
+	a.setMouseMotion(true)
+}
+
 // recheckHover re-runs hover at the last pointer position after a render, if
 // an event was dispatched since the last check.
 func (a *App) recheckHover() {

@@ -12,6 +12,7 @@ func (a *App) Render() {
 	}
 	a.renderFrame()
 	a.rebuildDispatchTable()
+	a.enableHoverMotion()
 	a.recheckHover()
 }
 
@@ -251,6 +252,7 @@ func (a *App) RenderFull() {
 		a.postRenderHook()
 	}
 	a.placeCursor()
+	a.enableHoverMotion()
 	a.recheckHover()
 }
 

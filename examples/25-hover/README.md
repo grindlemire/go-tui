@@ -10,14 +10,7 @@ A five-page tour of hover in go-tui. The tabs switch pages; the panel at the bot
 
 Press `m` for a modal whose backdrop blocks hover and the wheel on everything behind it.
 
-Hover needs pointer motion reporting, which is opt-in:
-
-```go
-app, err := tui.NewApp(
-    tui.WithMouseMotion(),
-    tui.WithRootComponent(HoverDemo(false)),
-)
-```
+Hover needs no app option: the app turns on pointer motion reporting once an element uses hover. Inline mode leaves the mouse off by default, so the `-inline` run adds `tui.WithMouse()`.
 
 ## Run
 

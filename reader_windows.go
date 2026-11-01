@@ -108,8 +108,8 @@ type stdinReader struct {
 	// MOUSE_MOVED event indicates a drag.
 	lastMouseButtons uint32
 
-	// The console reports every move; only surface no-button moves when the
-	// app asked for motion (WithMouseMotion).
+	// The console reports every move; only surface no-button moves once the
+	// app turns motion on (WithMouseMotion, or an element using hover).
 	mouseMotion atomic.Bool
 }
 

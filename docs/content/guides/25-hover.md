@@ -12,20 +12,26 @@ This guide builds around the hover example in `examples/25-hover`. Its tabs swit
 - **Components**: `<input>` and `<textarea>` with hover, and a drag area.
 - **Edge cases**: a button whose enter handler moves it out from under the pointer.
 
-## Enabling Pointer Motion
+## Pointer Motion
 
-Terminals only report pointer movement when an app asks for it, and they report it often. Every cell the pointer crosses produces an event, which adds up over SSH or inside tmux. So hover is opt-in. Pass `tui.WithMouseMotion()` when you create the app:
+Terminals only report pointer movement when an app asks for it, and they report it often. Every cell the pointer crosses produces an event, which adds up over SSH or inside tmux. So go-tui keeps motion reporting off until something needs it.
+
+You don't have to turn it on yourself. After the first render in which any element has `onMouseEnter`, `onMouseLeave`, or a `hover:` class, the app asks the terminal for motion reports, and it keeps them on from then on. Apps that never use hover never pay for them.
+
+Hover needs the mouse enabled. It is on by default in full screen mode. Inline mode leaves it off so the terminal's own text selection and scrollback keep working, so pass `tui.WithMouse()` to use hover there, as the example does with `-inline`:
 
 ```go
-app, err := tui.NewApp(
-    tui.WithMouseMotion(),
-    tui.WithRootComponent(HoverDemo()),
-)
+opts := []tui.AppOption{
+    tui.WithRootComponent(HoverDemo(*inline)),
+}
+if *inline {
+    opts = append(opts, tui.WithInlineHeight(24), tui.WithMouse())
+}
 ```
 
-`WithMouseMotion` turns on mouse reporting (clicks, wheel, and drags) plus motion with no button held. Without it, hover callbacks never fire and `hover:` classes never apply. It also turns the mouse on in inline mode, where mouse reporting is otherwise off by default.
+`tui.WithoutMouse()` turns hover off along with the rest of the mouse.
 
-With motion enabled, your `HandleMouse` method also receives the moves themselves as `MouseEvent` values with `Action: tui.MouseMove` and `Button: tui.MouseNone`. The example uses them, and drags, for its status line:
+Once motion is on, your `HandleMouse` method also receives the moves themselves as `MouseEvent` values with `Action: tui.MouseMove` and `Button: tui.MouseNone`. The example uses them, and drags, for its status line:
 
 ```go
 func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
@@ -40,7 +46,7 @@ func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
 }
 ```
 
-Most apps never look at `MouseMove` directly. The hover attributes and classes cover the common cases.
+Most apps never look at `MouseMove` directly. The hover attributes and classes cover the common cases. If you do want moves without using hover, pass `tui.WithMouseMotion()` to turn motion on from the start.
 
 ## Styling with hover: Classes
 
@@ -283,7 +289,7 @@ row := tui.New(
 
 - Terminals do not report the pointer leaving the window. If the pointer exits the terminal while over an element, that element stays hovered until the pointer comes back.
 - `hover:` cannot change layout. Use callbacks and state when hovering needs to show or hide content or resize something.
-- Motion reports cost bandwidth on every pointer movement, so enable `WithMouseMotion` only in apps that use hover.
+- Once motion is on it stays on, even if you switch to a screen without hover.
 
 ## Run
 

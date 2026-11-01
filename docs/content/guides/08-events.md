@@ -206,7 +206,7 @@ me.App()   // The running App instance
 
 Return `true` from `HandleMouse` to indicate you handled the event. Return `false` to let other components try.
 
-`MouseDrag` reports motion while a button is held. Motion with no button held (`MouseMove`) only arrives when the app opts in with `tui.WithMouseMotion()`, which also enables `onMouseEnter`/`onMouseLeave` and `hover:` classes. See [Hover](hover).
+`MouseDrag` reports motion while a button is held. Motion with no button held (`MouseMove`) only arrives once motion is on. The app turns it on by itself the first time an element uses `onMouseEnter`, `onMouseLeave`, or a `hover:` class; pass `tui.WithMouseMotion()` to get moves without any hover. See [Hover](hover).
 
 ## Click Handling with Refs
 

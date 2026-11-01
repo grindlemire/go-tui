@@ -22,7 +22,7 @@ func GetClassDoc(class string) string {
 			return ""
 		}
 		if doc := GetClassDoc(inner); doc != "" {
-			return "While the pointer is over the element (requires `tui.WithMouseMotion()`): " + doc
+			return "While the pointer is over the element: " + doc
 		}
 		return ""
 	}
@@ -75,7 +75,7 @@ func MatchClasses(prefix string) []TailwindClassDef {
 // lists the classes allowed as hover variants.
 var hoverVariantDef = TailwindClassDef{
 	Name:        tailwind.HoverPrefix,
-	Description: "Variant: apply a color or text style class only while the pointer is over the element (requires `tui.WithMouseMotion()`), e.g. `hover:bg-blue`.",
+	Description: "Variant: apply a color or text style class only while the pointer is over the element, e.g. `hover:bg-blue`.",
 	Category:    "visual",
 }
 

@@ -23,11 +23,11 @@ func main() {
 	flag.Parse()
 
 	opts := []tui.AppOption{
-		tui.WithMouseMotion(),
 		tui.WithRootComponent(HoverDemo(*inline)),
 	}
 	if *inline {
-		opts = append(opts, tui.WithInlineHeight(24))
+		// Inline mode leaves the mouse off by default.
+		opts = append(opts, tui.WithInlineHeight(24), tui.WithMouse())
 	}
 	app, err := tui.NewApp(opts...)
 	if err != nil {

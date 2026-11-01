@@ -507,8 +507,8 @@ func helper(s string) string {
 | `onFocus` | `func()` | Called when the element gains focus |
 | `onBlur` | `func()` | Called when the element loses focus |
 | `onActivate` | `func()` | Called when Enter is pressed while focused |
-| `onMouseEnter` | `func()` | Called when the pointer moves onto the element or a descendant (requires `tui.WithMouseMotion()`) |
-| `onMouseLeave` | `func()` | Called when the pointer moves off the element and its descendants (requires `tui.WithMouseMotion()`) |
+| `onMouseEnter` | `func()` | Called when the pointer moves onto the element or a descendant |
+| `onMouseLeave` | `func()` | Called when the pointer moves off the element and its descendants |
 
 ### Scroll Attributes
 
@@ -730,7 +730,8 @@ Gradient directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagona
 
 Prefix a color or text style class with `hover:` to apply it only while the
 pointer is over the element or one of its descendants: `class="px-1
-hover:bg-blue hover:font-bold"`. Requires `tui.WithMouseMotion()` on the App.
+hover:bg-blue hover:font-bold"`. The App turns on pointer motion reporting
+the first time a rendered element uses hover (inline mode needs `tui.WithMouse()`).
 Classes that change layout (padding, size, borders on/off, visibility) are
 rejected, since they could move the element out from under the pointer.
 Compiles to `tui.WithHoverClass("bg-blue font-bold")`; `class={expr}` and

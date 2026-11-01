@@ -531,7 +531,7 @@ Prefix a class with `hover:` to apply it only while the pointer is over the elem
 <div class="border-rounded border-[#666666] hover:border-magenta">...</div>
 ```
 
-Hover requires `tui.WithMouseMotion()` on the app. Without it, `hover:` classes never apply. See the [Hover guide](../guides/25-hover) for callbacks, nesting, and lists.
+The app turns on pointer motion reporting the first time a rendered element uses hover. In inline mode the mouse is off by default, so pass `tui.WithMouse()` there. See the [Hover guide](../guides/25-hover) for callbacks, nesting, and lists.
 
 ### Allowed classes
 

@@ -294,7 +294,7 @@ func WithOnBlur(fn func()) Option {
 // --- Hover Options ---
 
 // WithOnMouseEnter sets the callback for when the pointer moves onto this
-// element or one of its descendants. Requires WithMouseMotion on the App.
+// element or one of its descendants.
 func WithOnMouseEnter(fn func()) Option {
 	return func(e *Element) {
 		e.onMouseEnter = fn
@@ -302,7 +302,7 @@ func WithOnMouseEnter(fn func()) Option {
 }
 
 // WithOnMouseLeave sets the callback for when the pointer moves off this
-// element and all of its descendants. Requires WithMouseMotion on the App.
+// element and all of its descendants.
 func WithOnMouseLeave(fn func()) Option {
 	return func(e *Element) {
 		e.onMouseLeave = fn

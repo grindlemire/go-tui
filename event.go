@@ -96,8 +96,8 @@ const (
 	// MouseDrag indicates motion while a button is held. Reported whenever
 	// mouse events are enabled.
 	MouseDrag
-	// MouseMove indicates motion with no button held. Only reported when the
-	// app enables motion tracking with WithMouseMotion.
+	// MouseMove indicates motion with no button held. Only reported once
+	// motion is on: WithMouseMotion, or automatically when an element uses hover.
 	MouseMove
 )
 
