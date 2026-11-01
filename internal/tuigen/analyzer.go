@@ -215,6 +215,10 @@ var knownAttributes = map[string]bool{
 	// Activation
 	"onActivate": true,
 
+	// Hover
+	"onMouseEnter": true,
+	"onMouseLeave": true,
+
 	// Textarea / Input
 	"placeholder":      true,
 	"placeholderStyle": true,
@@ -245,6 +249,9 @@ var attributeSimilar = map[string]string{
 	"color":        "background",
 	"onfocus":      "onFocus",
 	"onblur":       "onBlur",
+	"onmouseenter": "onMouseEnter",
+	"onmouseleave": "onMouseLeave",
+	"onhover":      "onMouseEnter",
 	"flexgrow":     "flexGrow",
 	"flexshrink":   "flexShrink",
 	"textstyle":    "textStyle",
@@ -530,6 +537,9 @@ func (a *Analyzer) analyzeAttribute(attr *Attribute, tagName string) {
 					}
 
 					msg := "unknown Tailwind class \"" + cwp.Class + "\""
+					if cwp.Reason != "" {
+						msg = cwp.Reason
+					}
 					var err *Error
 					if cwp.Suggestion != "" {
 						err = NewErrorWithRangeAndHint(classPos, classEndPos, msg, "did you mean \""+cwp.Suggestion+"\"?")

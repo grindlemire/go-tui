@@ -7,7 +7,7 @@
 You can create elements two ways: in `.gsx` templates (the common path) or programmatically with `tui.New()`.
 
 ```gsx
-// In .gsx — the compiler turns this into tui.New(...) calls
+// In .gsx, the compiler turns this into tui.New(...) calls
 <div class="flex-col gap-1 p-1 border-rounded">
     <span class="font-bold text-cyan">Hello</span>
     <span>World</span>
@@ -155,7 +155,7 @@ tui.New(
 | `WithBorderTitleAlign(align TextAlign)` | Border title position: `TextAlignLeft`, `TextAlignCenter` (default), or `TextAlignRight` |
 | `WithBorderTitleStyle(style Style)` | Color and attributes for the border title text. Falls back to the active border style when unset |
 | `WithFocusBorderStyle(style Style)` | Border style applied while the element is focused. Falls back to `WithBorderStyle` when unset |
-| `WithClass(classes string)` | Applies Tailwind-style classes at runtime, the same set a literal `class` attribute compiles to. Unknown classes are ignored |
+| `WithClass(classes string)` | Applies Tailwind-style classes at runtime, the same set a literal `class` attribute compiles to, including `hover:` variants. Unknown classes are ignored |
 
 ```go
 // Cyan-bordered box with bold white text on a blue background
@@ -208,6 +208,29 @@ tui.New(
     }),
 )
 ```
+
+### Hover
+
+Hover options require `WithMouseMotion()` on the App. Without it, callbacks never fire and hover classes never apply. See the [Hover guide](../guides/25-hover).
+
+| Function | Description |
+|----------|-------------|
+| `WithOnMouseEnter(fn func())` | Callback when the pointer moves onto this element or any descendant |
+| `WithOnMouseLeave(fn func())` | Callback when the pointer moves off this element and all of its descendants. Moving between children does not leave the parent |
+| `WithHoverClass(classes string)` | Classes applied only while the element is hovered, written without the `hover:` prefix (`"bg-blue font-bold"`). Only color and text style classes take effect; others are ignored |
+| `WithKey(key any)` | Identity among siblings for hover tracking: when siblings are inserted, removed, or reordered, the element that moved away from the pointer gets its leave and the one now under it gets its enter. Keys must be comparable. Generated code emits it for `key={...}` on plain elements |
+
+```go
+tui.New(
+    tui.WithText(msg.Subject),
+    tui.WithKey(msg.ID),
+    tui.WithHoverClass("bg-blue text-bright-white"),
+    tui.WithOnMouseEnter(func() { preview.Set(msg.ID) }),
+    tui.WithOnMouseLeave(func() { preview.Set("") }),
+)
+```
+
+Leaves fire deepest first and enters fire outermost first. Every enter is followed by exactly one leave, using the `onMouseLeave` the element had when it was entered. When hover ends, properties the hover classes changed return to their pre-hover values, except ones your code set while the element was hovered.
 
 ### Scroll
 
@@ -325,7 +348,7 @@ func (e *Element) SetTextAlign(align TextAlign)
 func (e *Element) SetClass(classes string)
 ```
 
-Replaces the classes applied by `WithClass` or a previous `SetClass`. Every property the previous class string set is restored to the value it had before that string was applied, then the new string is applied, so omitting a class removes it. Properties changed by other options or setters after the class keep their values. Marks the element dirty. Generated code calls it for a `class={expr}` attribute that reads state.
+Replaces the classes applied by `WithClass` or a previous `SetClass`, including any `hover:` variants. Every property the previous class string set is restored to the value it had before that string was applied, then the new string is applied, so omitting a class removes it. Properties changed by other options or setters after the class keep their values. Marks the element dirty. Generated code calls it for a `class={expr}` attribute that reads state.
 
 ### Truncate
 
@@ -547,6 +570,17 @@ func (e *Element) ContainsPoint(x, y int) bool
 ```
 
 Returns `true` if the point falls within the element's computed layout bounds. Useful for hit testing in `HandleMouse` implementations.
+
+## Hover Methods
+
+### SetOnMouseEnter / SetOnMouseLeave
+
+```go
+func (e *Element) SetOnMouseEnter(fn func())
+func (e *Element) SetOnMouseLeave(fn func())
+```
+
+Set or replace the hover callbacks after creation. They behave the same as `WithOnMouseEnter` and `WithOnMouseLeave`, and require `WithMouseMotion()` on the App.
 
 ## Scroll Methods
 

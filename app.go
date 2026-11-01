@@ -52,11 +52,21 @@ type App struct {
 	eventQueueSize   int           // Capacity of event queue (default 256, used during construction)
 	mouseEnabled     bool          // Whether mouse events are enabled
 	mouseExplicit    bool          // Whether mouse setting was explicitly configured
+	mouseMotion      bool          // Whether no-button pointer motion is reported (WithMouseMotion)
 	manualCursor     bool          // Disable framework-driven cursor placement (WithManualCursor)
 	legacyKeyboard   bool          // Force legacy keyboard mode (skip Kitty protocol negotiation)
 	onSuspend        func()        // Called before suspending (Ctrl+Z / SIGTSTP)
 	onResume         func()        // Called after resuming (SIGCONT)
 	pendingRootApply func(*App)    // Root setter to run after initialization (used by WithRoot* options)
+
+	// Hover tracking (app_hover.go): entered elements deepest first, elements
+	// showing hover: classes, the last pointer position, and whether an event
+	// arrived since the last re-check.
+	hovered            []hoverEntry
+	hoverStyled        []*Element
+	pointerX, pointerY int
+	pointerInside      bool
+	hoverStale         bool
 
 	// Inline mode (set via WithInlineHeight)
 	inlineHeight       int               // Number of rows for inline widget (0 = full screen mode)

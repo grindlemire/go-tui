@@ -45,6 +45,21 @@ func TestParseMouseSGR(t *testing.T) {
 			expectedEvent:    MouseEvent{Button: MouseLeft, Action: MouseDrag, X: 14, Y: 24},
 			expectedConsumed: 12,
 		},
+		"move with no button held": {
+			input:            []byte("\x1b[<35;10;5M"),
+			expectedEvent:    MouseEvent{Button: MouseNone, Action: MouseMove, X: 9, Y: 4},
+			expectedConsumed: 11,
+		},
+		"move with no button held and shift": {
+			input:            []byte("\x1b[<39;10;5M"),
+			expectedEvent:    MouseEvent{Button: MouseNone, Action: MouseMove, X: 9, Y: 4, Mod: ModShift},
+			expectedConsumed: 11,
+		},
+		"right drag": {
+			input:            []byte("\x1b[<34;10;5M"),
+			expectedEvent:    MouseEvent{Button: MouseRight, Action: MouseDrag, X: 9, Y: 4},
+			expectedConsumed: 11,
+		},
 		"shift+left click": {
 			input:            []byte("\x1b[<4;5;5M"),
 			expectedEvent:    MouseEvent{Button: MouseLeft, Action: MousePress, X: 4, Y: 4, Mod: ModShift},

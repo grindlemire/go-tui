@@ -151,19 +151,19 @@ func (e *Element) HandleEvent(event Event) bool {
 // automatically accounts for scroll offsets by adjusting the click point
 // through scrollable ancestors.
 func (e *Element) ContainsPoint(x, y int) bool {
-	// The element's layout.Rect is in content-space (unscrolled coordinates).
-	// Screen-space coordinates need the cumulative scroll offset added so
-	// they match content-space. Each scrollable ancestor shifts content
-	// upward/leftward by its scroll offset, so we add scroll offsets to
-	// convert the screen point into the same coordinate system as the rect.
-	cx, cy := x, y
+	// Inside a scrollable ancestor the rect is in that ancestor's content
+	// space, which starts at (0, 0). Map it out through each scrollable
+	// ancestor the way rendering does (viewport origin minus scroll offset)
+	// and clip it to the viewport, so only the visible part matches.
+	r := e.layout.Rect
 	for p := e.parent; p != nil; p = p.parent {
-		if p.scrollMode != ScrollNone {
-			cx += p.scrollX
-			cy += p.scrollY
+		if p.scrollMode == ScrollNone {
+			continue
 		}
+		vp := p.scrollViewport()
+		r = Rect{X: r.X + vp.X - p.scrollX, Y: r.Y + vp.Y - p.scrollY, Width: r.Width, Height: r.Height}.Intersect(vp)
 	}
-	return e.layout.Rect.Contains(cx, cy)
+	return r.Contains(x, y)
 }
 
 // hasWrapOverflow returns true if this element has wrapped text that overflows

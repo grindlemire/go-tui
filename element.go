@@ -87,6 +87,14 @@ type Element struct {
 	savedBorderStyle Style  // border style saved before focus highlight
 	hasSavedBorder   bool   // true if savedBorderStyle is valid
 
+	// Hover callbacks, fired by App on pointer movement (see app_hover.go)
+	onMouseEnter func()
+	onMouseLeave func()
+
+	// Identity among siblings for hover tracking (key={...} in .gsx)
+	key    any
+	hasKey bool
+
 	// Tree notification
 	onChildAdded     func(*Element)
 	onFocusableAdded func(Focusable)
@@ -98,6 +106,7 @@ type Element struct {
 	scrollMode            ScrollMode
 	scrollX               int  // Current horizontal scroll offset
 	scrollY               int  // Current vertical scroll offset
+	scrollOffsetSet       bool // offset controlled by WithScrollOffset; not carried across re-renders
 	contentWidth          int  // Computed content width (may exceed viewport)
 	contentHeight         int  // Computed content height (may exceed viewport)
 	scrollToBottomPending bool // Scroll to bottom after next layout
@@ -130,6 +139,14 @@ type Element struct {
 	classText    bool
 	classBase    *classBase
 	classApplied *classBase
+
+	// hover: classes and, while hovered, what they overwrote and wrote (element_hover.go)
+	hoverClass   string
+	hoverActive  bool
+	hoverOps     []tailwind.Op
+	hoverText    []tailwind.TextOp // layered onto the effective text style at render
+	hoverBase    *classBase
+	hoverApplied *classBase
 
 	// Pre-render hook for custom update logic (polling, animations, etc.)
 	onUpdate func()

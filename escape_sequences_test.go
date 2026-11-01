@@ -41,13 +41,21 @@ func TestEscBuilder_Mouse(t *testing.T) {
 	}
 
 	tests := map[string]tc{
-		"enable mouse emits X10 then SGR": {
+		"enable mouse emits button tracking, drag tracking, then SGR": {
 			fn:       func(e *escBuilder) { e.EnableMouse() },
-			expected: "\x1b[?1000h\x1b[?1006h",
+			expected: "\x1b[?1000h\x1b[?1002h\x1b[?1006h",
 		},
-		"disable mouse emits SGR then X10": {
+		"disable mouse undoes enable in reverse": {
 			fn:       func(e *escBuilder) { e.DisableMouse() },
-			expected: "\x1b[?1006l\x1b[?1000l",
+			expected: "\x1b[?1006l\x1b[?1002l\x1b[?1000l",
+		},
+		"enable mouse motion emits any-motion tracking": {
+			fn:       func(e *escBuilder) { e.EnableMouseMotion() },
+			expected: "\x1b[?1003h",
+		},
+		"disable mouse motion": {
+			fn:       func(e *escBuilder) { e.DisableMouseMotion() },
+			expected: "\x1b[?1003l",
 		},
 	}
 

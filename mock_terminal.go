@@ -15,6 +15,7 @@ type MockTerminal struct {
 	inRawMode     bool
 	inAltScreen   bool
 	mouseEnabled  bool
+	mouseMotion   bool
 	altScroll     bool
 	caps          Capabilities
 
@@ -145,6 +146,16 @@ func (m *MockTerminal) EnableMouse() {
 // DisableMouse simulates disabling mouse event reporting.
 func (m *MockTerminal) DisableMouse() {
 	m.mouseEnabled = false
+}
+
+// EnableMouseMotion simulates enabling pointer motion reporting.
+func (m *MockTerminal) EnableMouseMotion() {
+	m.mouseMotion = true
+}
+
+// DisableMouseMotion simulates disabling pointer motion reporting.
+func (m *MockTerminal) DisableMouseMotion() {
+	m.mouseMotion = false
 }
 
 // EnableAltScroll simulates enabling alternate-scroll mode.
@@ -294,6 +305,11 @@ func (m *MockTerminal) IsMouseEnabled() bool {
 	return m.mouseEnabled
 }
 
+// IsMouseMotionEnabled returns whether pointer motion reporting is enabled.
+func (m *MockTerminal) IsMouseMotionEnabled() bool {
+	return m.mouseMotion
+}
+
 // Reset resets the mock terminal to its initial state.
 func (m *MockTerminal) Reset() {
 	m.Clear()
@@ -301,6 +317,7 @@ func (m *MockTerminal) Reset() {
 	m.inRawMode = false
 	m.inAltScreen = false
 	m.mouseEnabled = false
+	m.mouseMotion = false
 	m.altScreenEnterCount = 0
 	m.altScreenExitCount = 0
 }

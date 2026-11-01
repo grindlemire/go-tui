@@ -9,6 +9,7 @@ package tui
 // UpdateEvent executes the queued closure.
 // Returns true if the event was consumed.
 func (a *App) Dispatch(event Event) bool {
+	a.hoverStale = true
 	switch e := event.(type) {
 	case UpdateEvent:
 		if e.fn != nil {
@@ -46,19 +47,29 @@ func (a *App) Dispatch(event Event) bool {
 		if !a.inAlternateScreen && a.inlineHeight > 0 {
 			e.Y -= a.inlineStartRow
 			if e.Y < 0 || e.Y >= a.inlineHeight {
+				a.dispatchMouseHover(e.X, e.Y, false)
 				return false
 			}
 		}
+		a.dispatchMouseHover(e.X, e.Y, true)
 		// Component model: dispatch to MouseListener components first
 		if a.dispatchMouseToComponents(e) {
 			return true
 		}
-		// Element hit testing
-		if a.root == nil {
+		// Element hit testing: the event bubbles from the element under the
+		// pointer up to the hit scope, so a wheel over a row scrolls the
+		// nearest scrollable ancestor.
+		scope := a.hitScope()
+		if scope == nil {
 			return false
 		}
-		if target := a.root.ElementAtPoint(e.X, e.Y); target != nil {
-			return target.HandleEvent(e)
+		for el := scope.ElementAt(e.X, e.Y); el != nil; el = el.parent {
+			if el.HandleEvent(e) {
+				return true
+			}
+			if el == scope {
+				break
+			}
 		}
 		return false
 

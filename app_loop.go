@@ -82,17 +82,19 @@ func (a *App) Run() error {
 		eventDeadline := frameStart.Add(a.frameDuration / 2)
 
 		// Drain events for up to half the frame budget
+		var moves moveCoalescer
 	drain:
 		for time.Now().Before(eventDeadline) {
 			select {
 			case ev := <-a.merged:
-				a.Dispatch(ev)
+				a.dispatchCoalescing(ev, &moves)
 			case <-a.stopCh:
 				return nil
 			default:
 				break drain
 			}
 		}
+		a.flushMove(&moves)
 
 		a.Render()
 
@@ -138,13 +140,16 @@ func (a *App) Events() <-chan Event {
 
 // DispatchEvents reads and dispatches all pending events from the Events channel.
 // Returns false if the app has been stopped, true otherwise.
+// Consecutive MouseMove events are merged so only the latest is dispatched.
 func (a *App) DispatchEvents() bool {
+	var moves moveCoalescer
+	defer a.flushMove(&moves)
 	for {
 		select {
 		case <-a.stopCh:
 			return false
 		case ev := <-a.merged:
-			a.Dispatch(ev)
+			a.dispatchCoalescing(ev, &moves)
 		default:
 			return true
 		}

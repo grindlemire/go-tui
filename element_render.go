@@ -27,6 +27,10 @@ func effectiveStyles(e *Element, inherited inheritedStyle) (textStyle Style, bg 
 		textStyle = inherited.textStyle
 	}
 
+	if e.hoverActive && len(e.hoverText) > 0 {
+		textStyle = chainTextOps(textStyle, e.hoverText)
+	}
+
 	if e.background != nil {
 		bg = e.background
 	} else {
@@ -188,13 +192,8 @@ func renderScrollableChildren(buf *Buffer, e *Element, childInherited inheritedS
 	// First, do scroll-aware layout
 	e.layoutScrollContent()
 
-	// Get viewport (clip region)
-	clipRect := e.ContentRect()
-
-	// Reserve space for vertical scrollbar if needed
-	if e.needsVerticalScrollbar() {
-		clipRect.Width = max(0, clipRect.Width-1)
-	}
+	// Get viewport (clip region), minus the vertical scrollbar gutter
+	clipRect := e.scrollViewport()
 
 	// Render each child with scroll offset and clipping
 	for _, child := range e.children {

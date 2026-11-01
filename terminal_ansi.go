@@ -254,6 +254,20 @@ func (t *ANSITerminal) DisableMouse() {
 	t.out.Write(t.esc.Bytes())
 }
 
+// EnableMouseMotion enables reporting of pointer motion with no button held.
+func (t *ANSITerminal) EnableMouseMotion() {
+	t.esc.Reset()
+	t.esc.EnableMouseMotion()
+	t.out.Write(t.esc.Bytes())
+}
+
+// DisableMouseMotion disables pointer motion reporting.
+func (t *ANSITerminal) DisableMouseMotion() {
+	t.esc.Reset()
+	t.esc.DisableMouseMotion()
+	t.out.Write(t.esc.Bytes())
+}
+
 // EnableAltScroll enables alternate-scroll mode (mouse wheel -> cursor keys).
 func (t *ANSITerminal) EnableAltScroll() {
 	t.esc.Reset()

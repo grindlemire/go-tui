@@ -160,6 +160,16 @@ var EventHandlers = map[string]*EventHandlerDef{
 		Description: "Called when the element loses focus.",
 		Signature:   "func()",
 	},
+	"onMouseEnter": {
+		Name:        "onMouseEnter",
+		Description: "Called when the pointer moves onto the element or a descendant. Requires tui.WithMouseMotion().",
+		Signature:   "func()",
+	},
+	"onMouseLeave": {
+		Name:        "onMouseLeave",
+		Description: "Called when the pointer moves off the element and all its descendants. Requires tui.WithMouseMotion().",
+		Signature:   "func()",
+	},
 }
 
 // VoidElements returns the set of elements that cannot have children.
@@ -315,6 +325,8 @@ func eventAttrs() []AttributeDef {
 		{Name: "onFocus", Type: "func", Description: "Focus gained handler", Category: "event"},
 		{Name: "onBlur", Type: "func", Description: "Focus lost handler", Category: "event"},
 		{Name: "onActivate", Type: "func", Description: "Called when Enter is pressed while focused: func()", Category: "event"},
+		{Name: "onMouseEnter", Type: "func", Description: "Called when the pointer moves onto the element (requires tui.WithMouseMotion()): func()", Category: "event"},
+		{Name: "onMouseLeave", Type: "func", Description: "Called when the pointer moves off the element (requires tui.WithMouseMotion()): func()", Category: "event"},
 		{Name: "focusable", Type: "bool", Description: "Whether the element can receive focus", Category: "event"},
 		{Name: "autoFocus", Type: "bool", Description: "Automatically focus this element on startup", Category: "event"},
 	}

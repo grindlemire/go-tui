@@ -93,8 +93,12 @@ const (
 	MousePress MouseAction = iota
 	// MouseRelease indicates a button was released.
 	MouseRelease
-	// MouseDrag indicates motion while a button is held.
+	// MouseDrag indicates motion while a button is held. Reported whenever
+	// mouse events are enabled.
 	MouseDrag
+	// MouseMove indicates motion with no button held. Only reported when the
+	// app enables motion tracking with WithMouseMotion.
+	MouseMove
 )
 
 // MouseEvent represents a mouse input event.

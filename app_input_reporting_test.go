@@ -9,8 +9,10 @@ import "testing"
 func TestInputReporting(t *testing.T) {
 	type tc struct {
 		mouseEnabled  bool
+		mouseMotion   bool
 		inlineHeight  int
 		wantMouse     bool
+		wantMotion    bool
 		wantAltScroll bool
 	}
 
@@ -20,6 +22,27 @@ func TestInputReporting(t *testing.T) {
 			inlineHeight:  0,
 			wantMouse:     true,
 			wantAltScroll: false,
+		},
+		"full-screen with mouse motion": {
+			mouseEnabled:  true,
+			mouseMotion:   true,
+			wantMouse:     true,
+			wantMotion:    true,
+			wantAltScroll: false,
+		},
+		"inline with mouse motion": {
+			mouseEnabled: true,
+			mouseMotion:  true,
+			inlineHeight: 5,
+			wantMouse:    true,
+			wantMotion:   true,
+		},
+		"motion requested but mouse disabled afterwards": {
+			mouseEnabled:  false,
+			mouseMotion:   true,
+			wantMouse:     false,
+			wantMotion:    false,
+			wantAltScroll: true,
 		},
 		"full-screen without mouse": {
 			mouseEnabled:  false,
@@ -41,12 +64,16 @@ func TestInputReporting(t *testing.T) {
 			app := &App{
 				terminal:     term,
 				mouseEnabled: tt.mouseEnabled,
+				mouseMotion:  tt.mouseMotion,
 				inlineHeight: tt.inlineHeight,
 			}
 
 			app.enableInputReporting()
 			if term.IsMouseEnabled() != tt.wantMouse {
 				t.Errorf("after enable: mouse = %v, want %v", term.IsMouseEnabled(), tt.wantMouse)
+			}
+			if term.IsMouseMotionEnabled() != tt.wantMotion {
+				t.Errorf("after enable: motion = %v, want %v", term.IsMouseMotionEnabled(), tt.wantMotion)
 			}
 			if term.IsAltScrollEnabled() != tt.wantAltScroll {
 				t.Errorf("after enable: altScroll = %v, want %v", term.IsAltScrollEnabled(), tt.wantAltScroll)
@@ -55,6 +82,9 @@ func TestInputReporting(t *testing.T) {
 			app.disableInputReporting()
 			if term.IsMouseEnabled() {
 				t.Error("after disable: mouse still enabled")
+			}
+			if term.IsMouseMotionEnabled() {
+				t.Error("after disable: motion still enabled")
 			}
 			if term.IsAltScrollEnabled() {
 				t.Error("after disable: altScroll still enabled")

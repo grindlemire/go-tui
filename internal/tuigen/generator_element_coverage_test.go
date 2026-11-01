@@ -89,8 +89,8 @@ templ App() {
 
 func TestGenerator_HandlerAttributes(t *testing.T) {
 	input := `package x
-templ App(onF func(), onB func(), onA func()) {
-	<div focusable={true} onFocus={onF} onBlur={onB} onActivate={onA}></div>
+templ App(onF func(), onB func(), onA func(), onE func(), onL func()) {
+	<div focusable={true} onFocus={onF} onBlur={onB} onActivate={onA} onMouseEnter={onE} onMouseLeave={onL}></div>
 }`
 
 	output, err := parseAndGenerateSkipImports("test.gsx", input)
@@ -103,6 +103,8 @@ templ App(onF func(), onB func(), onA func()) {
 		"tui.WithOnFocus(onF)",
 		"tui.WithOnBlur(onB)",
 		"tui.WithOnActivate(onA)",
+		"tui.WithOnMouseEnter(onE)",
+		"tui.WithOnMouseLeave(onL)",
 	} {
 		if !strings.Contains(code, want) {
 			t.Errorf("output missing %q\nGot:\n%s", want, code)
@@ -568,6 +570,70 @@ templ (c *form) Render() {
 			for _, want := range tt.wantContains {
 				if !strings.Contains(code, want) {
 					t.Errorf("output missing %q\nGot:\n%s", want, code)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerator_HoverOutput(t *testing.T) {
+	type tc struct {
+		input string
+		want  []string
+		avoid []string
+	}
+
+	tests := map[string]tc{
+		"hover classes become one WithHoverClass": {
+			input: `package x
+templ App() {
+	<div class="px-1 hover:bg-blue text-white hover:font-bold"></div>
+}`,
+			want:  []string{`tui.WithHoverClass("bg-blue font-bold")`, "tui.WithPaddingTRBL(0, 1, 0, 1)"},
+			avoid: []string{"hover:"},
+		},
+		"key on a plain element": {
+			input: `package x
+templ App(items []string) {
+	<div>
+		for _, item := range items {
+			<span key={item}>{item}</span>
+		}
+	</div>
+}`,
+			want: []string{"tui.WithKey(item)"},
+		},
+		"hover attributes on component tags reach the root element": {
+			input: `package x
+type c struct{ f func() }
+templ (c *c) Render() {
+	<div>
+		<input onMouseEnter={c.f} onMouseLeave={c.f} />
+		<textarea class="hover:border-cyan" onMouseEnter={c.f} />
+	</div>
+}`,
+			want: []string{
+				"tui.WithInputElementOptions(tui.WithOnMouseEnter(c.f), tui.WithOnMouseLeave(c.f))",
+				`tui.WithTextAreaElementOptions(tui.WithHoverClass("border-cyan"), tui.WithOnMouseEnter(c.f))`,
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := parseAndGenerateSkipImports("test.gsx", tt.input)
+			if err != nil {
+				t.Fatalf("generation failed: %v", err)
+			}
+			code := string(output)
+			for _, want := range tt.want {
+				if !strings.Contains(code, want) {
+					t.Errorf("output missing %q\nGot:\n%s", want, code)
+				}
+			}
+			for _, avoid := range tt.avoid {
+				if strings.Contains(code, avoid) {
+					t.Errorf("output contains %q\nGot:\n%s", avoid, code)
 				}
 			}
 		})

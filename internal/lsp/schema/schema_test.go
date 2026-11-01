@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -313,6 +314,8 @@ func TestGetClassDoc(t *testing.T) {
 		"w-full":         {class: "w-full", wantDoc: true},
 		"grow":           {class: "grow", wantDoc: true},
 		"unknown-class":  {class: "unknown-class", wantDoc: false},
+		"hover:bg-blue":  {class: "hover:bg-blue", wantDoc: true},
+		"hover:p-2":      {class: "hover:p-2", wantDoc: false},
 	}
 
 	for name, tt := range tests {
@@ -353,6 +356,11 @@ func TestMatchClasses(t *testing.T) {
 		"no matches": {
 			prefix:  "zzz-nonexistent",
 			wantMin: 0,
+		},
+		"hover variants": {
+			prefix:  "hover:bg-",
+			wantMin: 8,
+			wantAll: true,
 		},
 	}
 
@@ -428,6 +436,17 @@ func TestEveryElementHasOptions(t *testing.T) {
 		}
 		if attr.Category != "generic" {
 			t.Errorf("%s: options category = %q, want %q", tag, attr.Category, "generic")
+		}
+	}
+}
+
+func TestMatchClasses_Hover(t *testing.T) {
+	if !slices.ContainsFunc(MatchClasses("ho"), func(c TailwindClassDef) bool { return c.Name == "hover:" }) {
+		t.Error(`MatchClasses("ho") should offer the hover: variant`)
+	}
+	for _, m := range MatchClasses("hover:") {
+		if m.Name == "hover:p-1" || m.Name == "hover:hidden" || m.Name == "hover:flex" {
+			t.Errorf("layout class %q offered as a hover variant", m.Name)
 		}
 	}
 }

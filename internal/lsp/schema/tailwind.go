@@ -3,6 +3,8 @@ package schema
 import (
 	"fmt"
 	"strings"
+
+	"github.com/grindlemire/go-tui/internal/tailwind"
 )
 
 // TailwindClassDef describes a Tailwind-style utility class.
@@ -15,6 +17,16 @@ type TailwindClassDef struct {
 // GetClassDoc returns hover documentation for a Tailwind-style class.
 // Returns empty string if the class is not recognized.
 func GetClassDoc(class string) string {
+	if inner, ok := strings.CutPrefix(class, tailwind.HoverPrefix); ok {
+		if !hoverAllowed(inner) {
+			return ""
+		}
+		if doc := GetClassDoc(inner); doc != "" {
+			return "While the pointer is over the element (requires `tui.WithMouseMotion()`): " + doc
+		}
+		return ""
+	}
+
 	// Check static classes first
 	if doc, ok := staticClassDocs[class]; ok {
 		return doc
@@ -36,13 +48,40 @@ func GetClassDoc(class string) string {
 // MatchClasses returns all class definitions that match the given prefix.
 // Used for completion filtering.
 func MatchClasses(prefix string) []TailwindClassDef {
+	if inner, ok := strings.CutPrefix(prefix, tailwind.HoverPrefix); ok {
+		var matches []TailwindClassDef
+		for _, cls := range MatchClasses(inner) {
+			if hoverAllowed(cls.Name) {
+				cls.Name = tailwind.HoverPrefix + cls.Name
+				cls.Description = "While hovered: " + cls.Description
+				matches = append(matches, cls)
+			}
+		}
+		return matches
+	}
 	var matches []TailwindClassDef
 	for _, cls := range AllClasses {
 		if prefix == "" || strings.HasPrefix(cls.Name, prefix) {
 			matches = append(matches, cls)
 		}
 	}
+	if prefix != "" && strings.HasPrefix(tailwind.HoverPrefix, prefix) {
+		matches = append(matches, hoverVariantDef)
+	}
 	return matches
+}
+
+// hoverVariantDef completes the hover: prefix itself; completing after it
+// lists the classes allowed as hover variants.
+var hoverVariantDef = TailwindClassDef{
+	Name:        tailwind.HoverPrefix,
+	Description: "Variant: apply a color or text style class only while the pointer is over the element (requires `tui.WithMouseMotion()`), e.g. `hover:bg-blue`.",
+	Category:    "visual",
+}
+
+func hoverAllowed(class string) bool {
+	c, ok := tailwind.Resolve(class)
+	return ok && tailwind.HoverAllowed(c)
 }
 
 // paramPattern describes a parameterized class prefix with its documentation format.

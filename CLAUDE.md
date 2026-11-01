@@ -117,8 +117,8 @@ Use this section to quickly find the right files for a given change.
 - `class.go` — WithClass(classes) and Element.SetClass: runtime Tailwind class application (used by generated code for `class={expr}`)
 - `element_accessors.go` — Getters/setters: SetText, SetBorder, SetBorderTRBL, SetStyle, Background, SetWidth, SetHeight, SetBorderTitleAlign, SetBorderTitleStyle, SetFocusBorderStyle, etc.
 - `element_tree.go` — Tree manipulation: AddChild, RemoveChild, RemoveAllChildren
-- `element_scroll.go` — Scroll methods: ScrollTo, ScrollOffset, MaxScroll, ViewportSize
-- `app_options.go` — AppOption funcs: WithFrameRate, WithMouseEnabled, WithInlineHeight, WithGlobalKeyHandler, WithInputLatency, WithEventQueueSize, WithPreRenderHook, WithPostRenderHook, WithManualCursor, etc.
+- `element_scroll.go` — Scroll methods: ScrollTo, ScrollOffset, MaxScroll, ViewportSize; scrollViewport (shared by render and hit testing); carryScrollOffsets keeps offsets across re-renders unless set via WithScrollOffset
+- `app_options.go` — AppOption funcs: WithFrameRate, WithMouseEnabled, WithInlineHeight, WithGlobalKeyHandler, WithInputLatency, WithEventQueueSize, WithPreRenderHook, WithPostRenderHook, WithManualCursor, WithMouseMotion, etc.
 - `layout.go` — Re-exports from internal/layout (Direction, Justify, Align, Value, etc.)
 - `color.go` — Color type, ANSIColor(), RGBColor(), HexColor(), Gradient, GradientDirection
 - `style.go` — Style type with chainable methods (Bold, Dim, Italic, Foreground, etc.)
@@ -172,7 +172,10 @@ Use this section to quickly find the right files for a given change.
 - `reader_unix.go` — Unix-specific: selectWithTimeout(), selectWithTimeoutAndInterrupt()
 - `reader_windows.go` — Windows-specific terminal input
 - `click.go` — ClickBinding, Click(), HandleClicks() for ref-based mouse hit testing
-- `app_events.go` — App.Dispatch(): routes ResizeEvent, MouseEvent, key events via FocusManager
+- `app_hover.go` — Hover dispatch: tracks entered elements by tree path (key or sibling index; elements are rebuilt every render), one re-check after a render that followed input, hover: style sync, MouseMove coalescing in Run/DispatchEvents
+- `element_hover.go` — SetOnMouseEnter, SetOnMouseLeave, WithHoverClass, WithKey, hover: style apply/restore
+- `internal/tailwind/hover.go` — SplitHover, HoverAllowed, ParseHover for `hover:` variants
+- `app_events.go` — App.Dispatch(): routes ResizeEvent, MouseEvent, key events via FocusManager; mouse events bubble from the hit element to the hit scope (topmost modal or root), so wheels reach scrollable ancestors
 - `app_resize_unix.go` — SIGWINCH handler: registerResizeSignal(), dispatches ResizeEvent via event queue
 - `app_resize_windows.go` — No-op (Windows has no SIGWINCH)
 
@@ -181,7 +184,7 @@ Use this section to quickly find the right files for a given change.
 - `focus.go` — Focusable interface, FocusManager: Register(), Next(), Prev(), SetFocus(), Dispatch()
 - `focus_group.go` — FocusGroup for Tab/Shift+Tab cycling between components
 - `element_focus.go` — Element focus API: IsFocusable, Focus(), Blur(), HandleEvent(), SetOnEvent()
-- `element_watchers.go` — Focus tree discovery: WalkFocusables(), SetOnFocusableAdded()
+- `element_watchers.go` — Focus tree discovery: WalkFocusables(), SetOnFocusableAdded(); ElementAt() hit testing (maps points into scrollable containers' content space via scrollViewport)
 
 ### Changing reactive state / watchers
 
@@ -457,7 +460,7 @@ func helper(s string) string {
 | `class` | `string` | Tailwind-style classes (on `<input>`/`<textarea>`/`<markdown>`/`<modal>` applied to the root element after its own attributes) |
 | `disabled` | `bool` | Disable interaction |
 | `ref` | expression | Bind element to a `tui.Ref`/`RefList`/`RefMap` variable |
-| `key` | expression | Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): mount cache key for component elements, RefMap key with `ref`; a key on a container element keys the components mounted inside it |
+| `key` | expression | Stable identity for a loop item, unique among siblings of the innermost loop (like React keys): mount cache key for component elements, RefMap key with `ref`; a key on a container element keys the components mounted inside it; on a plain element also `tui.WithKey`, so hover tracks items (not positions) when siblings reorder |
 | `deps` | expression | Explicit state dependencies for reactive bindings |
 | `options` | expression | Option slice forwarded to the element constructor after attribute-derived options, so it can override them; the type follows the tag (`[]tui.Option` for plain elements, `[]tui.ModalOption`/`[]tui.TextAreaOption`/`[]tui.InputOption`/`[]tui.MarkdownOption` for component elements) |
 
@@ -503,6 +506,8 @@ func helper(s string) string {
 | `onFocus` | `func()` | Called when the element gains focus |
 | `onBlur` | `func()` | Called when the element loses focus |
 | `onActivate` | `func()` | Called when Enter is pressed while focused |
+| `onMouseEnter` | `func()` | Called when the pointer moves onto the element or a descendant (requires `tui.WithMouseMotion()`) |
+| `onMouseLeave` | `func()` | Called when the pointer moves off the element and its descendants (requires `tui.WithMouseMotion()`) |
 
 ### Scroll Attributes
 
@@ -719,6 +724,16 @@ Gradient directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagona
 |-------|-------------|
 | `focusable` | Make element focusable |
 | `hidden` | Hide element from layout and rendering |
+
+**Hover variants**
+
+Prefix a color or text style class with `hover:` to apply it only while the
+pointer is over the element or one of its descendants: `class="px-1
+hover:bg-blue hover:font-bold"`. Requires `tui.WithMouseMotion()` on the App.
+Classes that change layout (padding, size, borders on/off, visibility) are
+rejected, since they could move the element out from under the pointer.
+Compiles to `tui.WithHoverClass("bg-blue font-bold")`; `class={expr}` and
+SetClass accept `hover:` too.
 
 ## Key Types
 

@@ -140,11 +140,13 @@ func (s *scrollApp) scrollBy(delta int) {
 }
 ```
 
-`ScrollBy` clamps automatically, so you don't need the bounds check. The trade-off: the element manages its own position internally rather than through your `State[int]`. The state-driven approach gives you more control (you can read the position in your render method to display "line X of Y"). The element method is more concise.
+`ScrollBy` clamps automatically, so you don't need the bounds check. The element keeps its offset when your component re-renders: go-tui carries it to the rebuilt element at the same place in the tree (or with the same `key`). The trade-off: the element manages its own position internally rather than through your `State[int]`. The state-driven approach gives you more control (you can read the position in your render method to display "line X of Y"). The element method is more concise.
 
 ## Mouse Scrolling
 
-Mouse wheel events arrive as `MouseEvent` values with `MouseWheelUp` and `MouseWheelDown` buttons. Enable mouse support on the app and implement `HandleMouse`:
+A scrollable element whose offset you don't set with `scrollOffset` scrolls with the wheel on its own once the mouse is enabled. A wheel event goes to the element under the pointer and then up to the nearest scrollable ancestor, so wheeling over any row of a list scrolls the list. While a modal is open, only scrollable content inside the modal reacts.
+
+When you drive the offset from state with `scrollOffset`, handle the wheel yourself. Wheel events arrive as `MouseEvent` values with `MouseWheelUp` and `MouseWheelDown` buttons. Enable mouse support on the app and implement `HandleMouse`:
 
 ```go
 app, err := tui.NewApp(

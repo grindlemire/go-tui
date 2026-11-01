@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+	"slices"
 	"testing"
 )
 
@@ -294,6 +296,71 @@ func TestElement_SetClassWhileFocused_Clear(t *testing.T) {
 			e.Blur()
 			if got := e.activeBorderStyle(); got != red {
 				t.Errorf("after second cycle: visible border = %+v, want %+v", got, red)
+			}
+		})
+	}
+}
+
+// newScrolledList builds a bordered, scrollable list under a title, scrolled
+// down two rows, and renders it:
+//
+//	y=0 title
+//	y=1 ┌ border
+//	y=2 r2  (r0, r1 scrolled out above)
+//	y=3 r3
+//	y=4 └ border (r4 is clipped here)
+func newScrolledList() (root *Element, rows []*Element) {
+	root = New(WithDirection(Column), WithWidth(12), WithHeight(6))
+	root.AddChild(New(WithText("title"), WithHeight(1)))
+	list := New(WithDirection(Column), WithHeight(4), WithWidth(12), WithBorder(BorderSingle), WithScrollable(ScrollVertical))
+	for i := range 6 {
+		row := New(WithText(fmt.Sprintf("r%d", i)), WithHeight(1))
+		rows = append(rows, row)
+		list.AddChild(row)
+	}
+	root.AddChild(list)
+	buf := NewBuffer(12, 6)
+	root.RenderTo(buf, 12, 6)
+	list.ScrollBy(0, 2)
+	root.RenderTo(buf, 12, 6)
+	return root, rows
+}
+
+func TestElement_HitTestingInsideScrolledContainer(t *testing.T) {
+	type tc struct {
+		x, y int
+		want int // index of the row hit, -1 for none
+	}
+
+	tests := map[string]tc{
+		"first visible row":                {x: 2, y: 2, want: 2},
+		"second visible row":               {x: 2, y: 3, want: 3},
+		"bottom border clips the next row": {x: 2, y: 4, want: -1},
+		"top border":                       {x: 2, y: 1, want: -1},
+		"title above the list":             {x: 2, y: 0, want: -1},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			root, rows := newScrolledList()
+
+			hit := root.ElementAt(tt.x, tt.y)
+			gotAt := slices.Index(rows, hit)
+			if gotAt != tt.want {
+				t.Errorf("ElementAt(%d,%d) hit row %d, want %d", tt.x, tt.y, gotAt, tt.want)
+			}
+
+			gotContains := -1
+			for i, row := range rows {
+				if row.ContainsPoint(tt.x, tt.y) {
+					if gotContains != -1 {
+						t.Errorf("ContainsPoint(%d,%d) true for rows %d and %d", tt.x, tt.y, gotContains, i)
+					}
+					gotContains = i
+				}
+			}
+			if gotContains != tt.want {
+				t.Errorf("ContainsPoint(%d,%d) matched row %d, want %d", tt.x, tt.y, gotContains, tt.want)
 			}
 		})
 	}

@@ -63,6 +63,8 @@ func (e *Element) WalkWatchers(fn func(Watcher)) {
 // ElementAt finds the deepest element containing the point (x, y).
 // Returns nil if no element contains the point.
 // Children are checked in reverse order since last child renders on top.
+// Inside a scrollable element the point is mapped into its content space,
+// and points on its border, padding, or scrollbar hit the element itself.
 func (e *Element) ElementAt(x, y int) *Element {
 	if e.hidden {
 		return nil
@@ -70,6 +72,14 @@ func (e *Element) ElementAt(x, y int) *Element {
 	bounds := e.Rect()
 	if !bounds.Contains(x, y) {
 		return nil
+	}
+
+	if e.scrollMode != ScrollNone {
+		vp := e.scrollViewport()
+		if !vp.Contains(x, y) {
+			return e
+		}
+		x, y = x-vp.X+e.scrollX, y-vp.Y+e.scrollY
 	}
 
 	// Check children in reverse order (last child renders on top)

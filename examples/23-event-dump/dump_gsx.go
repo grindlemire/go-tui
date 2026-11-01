@@ -171,6 +171,8 @@ func actionString(a tui.MouseAction) string {
 		return "Release"
 	case tui.MouseDrag:
 		return "Drag"
+	case tui.MouseMove:
+		return "Move"
 	}
 	return "?"
 }

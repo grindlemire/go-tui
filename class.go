@@ -24,6 +24,9 @@ func WithClass(classes string) Option {
 // alone, so options set outside the class string keep their effect in either
 // order.
 func (e *Element) SetClass(classes string) {
+	hovered := e.hoverActive
+	e.setHoverStyle(false)
+	e.hoverClass = ""
 	if b, a := e.classBase, e.classApplied; b != nil && a != nil {
 		for _, op := range e.classOps {
 			classRestore(e, b, a, op)
@@ -34,6 +37,7 @@ func (e *Element) SetClass(classes string) {
 	}
 	e.classOps, e.classText, e.classBase, e.classApplied = nil, false, nil, nil
 	e.applyClasses(classes)
+	e.setHoverStyle(hovered)
 	e.MarkDirty()
 }
 
@@ -41,6 +45,8 @@ func (e *Element) applyClasses(classes string) {
 	if e.classBase == nil {
 		e.classBase = e.captureClassBase()
 	}
+	classes, hover := tailwind.SplitHover(classes)
+	e.addHoverClass(hover)
 	result := tailwind.Parse(classes)
 	ops := result.Ops()
 	for _, op := range ops {
@@ -194,7 +200,11 @@ func restore[T comparable](dst *T, base, applied T) {
 // classTextStyle chains text modifiers onto a fresh style in class order, so
 // a later color class overrides an earlier one just like the compiled form.
 func classTextStyle(ops []tailwind.TextOp) Style {
-	s := NewStyle()
+	return chainTextOps(NewStyle(), ops)
+}
+
+// chainTextOps chains text modifiers onto s in class order.
+func chainTextOps(s Style, ops []tailwind.TextOp) Style {
 	for _, op := range ops {
 		switch op := op.(type) {
 		case tailwind.TextAttr:

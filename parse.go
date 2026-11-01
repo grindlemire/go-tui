@@ -498,7 +498,9 @@ func parseMouseSGR(data []byte) (MouseEvent, int) {
 				}
 
 				// Determine action from final byte and motion bit
-				if button&32 != 0 {
+				if button&32 != 0 && buttonNum == 3 {
+					event.Action = MouseMove
+				} else if button&32 != 0 {
 					event.Action = MouseDrag
 				} else if b == 'M' {
 					event.Action = MousePress

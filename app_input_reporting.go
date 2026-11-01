@@ -1,5 +1,19 @@
 package tui
 
+// mouseMotionTerminal is implemented by terminals that can report pointer
+// motion with no button held. Optional so custom Terminal implementations
+// keep compiling.
+type mouseMotionTerminal interface {
+	EnableMouseMotion()
+	DisableMouseMotion()
+}
+
+// mouseMotionReader is implemented by readers that filter motion themselves
+// (the Windows console reports every move regardless of terminal modes).
+type mouseMotionReader interface {
+	setMouseMotion(enabled bool)
+}
+
 // enableInputReporting turns on the input-reporting mode appropriate for the
 // run. With mouse enabled we report mouse events (clicks, wheel). With mouse
 // disabled in full-screen mode we instead enable alternate-scroll, so the mouse
@@ -12,6 +26,9 @@ package tui
 func (a *App) enableInputReporting() {
 	if a.mouseEnabled {
 		a.terminal.EnableMouse()
+		if a.mouseMotion {
+			a.setMouseMotion(true)
+		}
 		return
 	}
 	if a.baseFullScreenNoMouse() {
@@ -23,11 +40,29 @@ func (a *App) enableInputReporting() {
 // selection so we only disable what we turned on.
 func (a *App) disableInputReporting() {
 	if a.mouseEnabled {
+		if a.mouseMotion {
+			a.setMouseMotion(false)
+		}
 		a.terminal.DisableMouse()
 		return
 	}
 	if a.baseFullScreenNoMouse() {
 		a.terminal.DisableAltScroll()
+	}
+}
+
+// setMouseMotion toggles motion reporting on whichever of the terminal and
+// reader support it.
+func (a *App) setMouseMotion(enabled bool) {
+	if mt, ok := a.terminal.(mouseMotionTerminal); ok {
+		if enabled {
+			mt.EnableMouseMotion()
+		} else {
+			mt.DisableMouseMotion()
+		}
+	}
+	if mr, ok := a.reader.(mouseMotionReader); ok {
+		mr.setMouseMotion(enabled)
 	}
 }
 

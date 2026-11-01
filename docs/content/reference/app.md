@@ -45,6 +45,7 @@ Mouse behavior defaults:
 - **Full screen mode**: mouse events enabled
 - **Inline mode**: mouse events disabled (preserves terminal scrollback)
 - Use `WithMouse()` or `WithoutMouse()` to override
+- Use `WithMouseMotion()` to also report pointer motion for hover
 
 ```go
 app, err := tui.NewApp(
@@ -169,6 +170,25 @@ func WithoutMouse() AppOption
 ```
 
 Explicitly disables mouse event reporting. Use this to turn off mouse support in full screen mode, where it's on by default.
+
+### WithMouseMotion
+
+```go
+func WithMouseMotion() AppOption
+```
+
+Enables mouse reporting plus pointer motion with no button held, delivered to `MouseListener` components as `MouseEvent` values with `Action: MouseMove` and `Button: MouseNone`. It turns the mouse on in inline mode too.
+
+Motion is required for hover: `onMouseEnter`/`onMouseLeave` callbacks and `hover:` classes do nothing without it. It is opt-in because terminals send a report for every cell the pointer crosses, which is noticeable over SSH or inside tmux. `Run()` and `DispatchEvents()` coalesce bursts of moves so only the latest position is dispatched.
+
+```go
+app, err := tui.NewApp(
+    tui.WithMouseMotion(),
+    tui.WithRootComponent(MyApp()),
+)
+```
+
+See the [Hover guide](../guides/25-hover) for usage.
 
 ### WithCursor
 
@@ -407,7 +427,7 @@ Returns the current frame as a trimmed string. Useful for debugging and testing.
 func (a *App) Events() <-chan Event
 ```
 
-Returns a read-only channel carrying all events: key, mouse, resize, and queued updates. Input events are prioritized over background updates internally. Use this with `select` to multiplex go-tui events with your own channels.
+Returns a read-only channel carrying all events: key, mouse, resize, and queued updates. Input events are prioritized over background updates internally. With `WithMouseMotion()`, every `MouseMove` arrives on this channel; coalescing only happens inside `Run()` and `DispatchEvents()`. Use this with `select` to multiplex go-tui events with your own channels.
 
 ```go
 for {
@@ -433,10 +453,10 @@ Routes a single event through the dispatch system. Returns `true` if the event w
 
 - **UpdateEvent**: executes the queued closure.
 - **KeyEvent**: goes through the dispatch table (component model) or global key handler (legacy path), then falls through to the focus manager.
-- **MouseEvent**: translated for inline mode, dispatched to MouseListener components, then hit-tested against elements.
+- **MouseEvent**: translated for inline mode, used to update hover (with `WithMouseMotion()`), dispatched to MouseListener components, then hit-tested against elements.
 - **ResizeEvent**: updates buffer size, marks root dirty, schedules a full redraw.
 
-Used in manual event loops with `Events()`, and in tests.
+Used in manual event loops with `Events()`, and in tests. `Dispatch` handles every event it is given; it does not coalesce `MouseMove` events.
 
 ```go
 app.Dispatch(tui.KeyEvent{Key: tui.KeyEnter})
@@ -448,7 +468,7 @@ app.Dispatch(tui.KeyEvent{Key: tui.KeyEnter})
 func (a *App) DispatchEvents() bool
 ```
 
-Reads and dispatches all pending events from the Events channel. Returns `false` if the app has been stopped, `true` otherwise. Non-blocking: returns immediately when no events are pending.
+Reads and dispatches all pending events from the Events channel. Returns `false` if the app has been stopped, `true` otherwise. Non-blocking: returns immediately when no events are pending. Consecutive `MouseMove` events are coalesced so only the latest is dispatched, in its original order relative to other events. `Run()` does the same on each frame.
 
 ```go
 if !app.DispatchEvents() {

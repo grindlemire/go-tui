@@ -1,4 +1,4 @@
-# go-tui — Complete Reference for LLMs
+# go-tui: Complete Reference for LLMs
 
 > Declarative terminal UI framework for Go with templ-like syntax and flexbox layout.
 > Pure Go, minimal dependencies, generates type-safe code from `.gsx` templates.
@@ -183,6 +183,7 @@ func main() {
         tui.WithRootComponent(MyComponent()),
         // Optional:
         // tui.WithMouse(),
+        // tui.WithMouseMotion(),   // mouse + pointer motion, required for hover
         // tui.WithFrameRate(60),
         // tui.WithInlineHeight(10),
         // tui.WithGlobalKeyHandler(func(ke tui.KeyEvent) bool { return false }),
@@ -229,12 +230,12 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | Element | Description | Default Direction |
 |---------|-------------|-------------------|
 | `<div>` | Block flex container (primary layout element) | Row |
-| `<span>` | Inline text container | — |
-| `<p>` | Paragraph with automatic text wrapping | — |
+| `<span>` | Inline text container | n/a |
+| `<p>` | Paragraph with automatic text wrapping | n/a |
 | `<ul>` | Unordered list container | Column |
-| `<li>` | List item (auto bullet prefix) | — |
-| `<button>` | Clickable element | — |
-| `<modal>` | Full-screen overlay dialog with backdrop | — |
+| `<li>` | List item (auto bullet prefix) | n/a |
+| `<button>` | Clickable element | n/a |
+| `<modal>` | Full-screen overlay dialog with backdrop | n/a |
 | `<table>` | Table container | Column |
 
 ### Self-Closing (Void) Elements
@@ -294,6 +295,8 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `focusable` | `bool` | Enable focus |
 | `onFocus` / `onBlur` | `func(*tui.Element)` | Focus callbacks |
 | `onActivate` | `func()` | Enter activation callback |
+| `onMouseEnter` / `onMouseLeave` | `func()` | Hover callbacks (require `tui.WithMouseMotion()`) |
+| `key` | expression | Sibling identity in loops: component cache key, `RefMap` key, hover identity (`tui.WithKey`) |
 
 ### Scroll
 
@@ -382,6 +385,16 @@ Directions: `-h` (horizontal, default), `-v` (vertical), `-dd` (diagonal down), 
 ### Other
 
 `focusable` `hidden`
+
+### Hover Variants
+
+`hover:CLASS` applies a class only while the pointer is over the element or a descendant (requires `tui.WithMouseMotion()`). Compiles to `tui.WithHoverClass("...")`.
+
+```gsx
+<span class="px-1 hover:bg-blue hover:font-bold">Inbox</span>
+```
+
+Allowed after `hover:`: `bg-*`, `text-*` colors, `font-bold` `font-dim` `text-dim` `italic` `underline` `strikethrough` `blink` `reverse`, `border-COLOR` `border-[#hex]` (color only), text/bg/border gradients, `scrollbar-COLOR` `scrollbar-thumb-COLOR`. Layout classes (`p-*`, `m-*`, `w-*`, `border`, `border-rounded`, `hidden`, `text-center`, flex) are a compile error. `class={expr}` and `SetClass` accept `hover:` too (invalid ones ignored at runtime).
 
 ## Key Types
 
@@ -509,7 +522,7 @@ func (c *myComp) KeyMap() tui.KeyMap {
 
 **KeyEvent fields:** `ke.Key`, `ke.Rune`, `ke.Mod` (ModCtrl, ModAlt, ModShift), `ke.App()`
 
-**Special keys:** `KeyUp` `KeyDown` `KeyLeft` `KeyRight` `KeyEnter` `KeyTab` `KeyEscape` `KeyBackspace` `KeyDelete` `KeyHome` `KeyEnd` `KeyPageUp` `KeyPageDown` `KeyInsert` `KeyCtrlA`–`KeyCtrlZ` `KeyF1`–`KeyF12`
+**Special keys:** `KeyUp` `KeyDown` `KeyLeft` `KeyRight` `KeyEnter` `KeyTab` `KeyEscape` `KeyBackspace` `KeyDelete` `KeyHome` `KeyEnd` `KeyPageUp` `KeyPageDown` `KeyInsert` `KeyCtrlA` through `KeyCtrlZ`, `KeyF1` through `KeyF12`
 
 ## Mouse Handling
 
@@ -524,7 +537,25 @@ func (c *myComp) HandleMouse(me tui.MouseEvent) bool {
 }
 ```
 
-**MouseEvent fields:** `me.Button` (MouseLeft, MouseRight, MouseWheelUp, MouseWheelDown), `me.Action` (MousePress, MouseRelease, MouseDrag), `me.X`, `me.Y`, `me.App()`
+**MouseEvent fields:** `me.Button` (MouseLeft, MouseMiddle, MouseRight, MouseWheelUp, MouseWheelDown, MouseNone), `me.Action` (MousePress, MouseRelease, MouseDrag, MouseMove), `me.X`, `me.Y`, `me.App()`
+
+`MouseDrag` (motion with a button held) is reported whenever the mouse is enabled. `MouseMove` (motion with no button, `Button == MouseNone`) is only reported with `tui.WithMouseMotion()`. `Run()` and `DispatchEvents()` coalesce consecutive moves to the latest; `Dispatch` and `Events()` see every move.
+
+### Hover
+
+Requires `tui.WithMouseMotion()`.
+
+```gsx
+for _, row := range s.rows {
+    <span key={row.ID} class="px-1 hover:bg-blue" onMouseEnter={s.enter(row.ID)} onMouseLeave={s.leave(row.ID)}>{row.Title}</span>
+}
+```
+
+- DOM `mouseenter`/`mouseleave` semantics: enter when the pointer is on the element or any descendant, leave when off all of them. Moving between children does not leave the parent. Leaves fire deepest first, enters outermost first. Every enter gets exactly one leave (the callback captured at enter).
+- Evaluated on every mouse event (before `HandleMouse`) and once after a render that followed input, so scrolling, reordering, or opening a modal updates hover under a still pointer. Hover-callback-only renders do not re-check, so setting state in a callback cannot loop.
+- Identity is tree position; `key={...}` on a plain element compiles to `tui.WithKey(...)` so after a reorder the item that moved away gets its leave and the item now under the pointer gets its enter.
+- Works inside scrolled containers. While a modal is open only the topmost modal's content hovers. Leaving the inline region leaves everything. Terminals do not report the pointer leaving the window, so the last hovered element stays hovered until the pointer returns.
+- `<input>`, `<textarea>`, `<markdown>`, `<modal>` accept `onMouseEnter`/`onMouseLeave`/`hover:` on their root element.
 
 ## Watchers
 
@@ -600,6 +631,7 @@ ke.App().Batch(func() {
 ```go
 tui.WithRootComponent(comp)              // Required: root component
 tui.WithMouse()                          // Enable mouse support
+tui.WithMouseMotion()                    // Mouse + pointer motion (MouseMove); required for hover
 tui.WithFrameRate(fps int)               // Default: 60
 tui.WithInlineHeight(rows int)           // Inline mode (not fullscreen)
 tui.WithGlobalKeyHandler(func(KeyEvent) bool)  // Global key intercept
@@ -623,7 +655,7 @@ app.StopCh() <-chan struct{} // Closed when app stops
 app.Open() error             // Initialize without blocking (signals, input reader, initial render)
 app.Events() <-chan Event    // Read-only channel for select multiplexing (input prioritized)
 app.Dispatch(Event) bool     // Route a single event through key/mouse/resize dispatch
-app.DispatchEvents() bool    // Drain all pending events (non-blocking), false if stopped
+app.DispatchEvents() bool    // Drain all pending events (non-blocking, coalesces MouseMove), false if stopped
 app.Step() bool              // DispatchEvents + Render in one call, false if stopped
 app.Render()                 // Re-render if dirty (no-op when clean)
 app.RenderFull()             // Force full redraw
@@ -849,7 +881,12 @@ el := tui.New(
     tui.WithBorderTitleStyle(tui.NewStyle().Bold()),
     tui.WithFocusBorderStyle(tui.NewStyle().Foreground(tui.Magenta)),
     tui.WithCursorSource(func() (col, row int, visible bool) { return 0, 0, true }),
+    tui.WithOnMouseEnter(func() {}),     // hover callbacks (need WithMouseMotion)
+    tui.WithOnMouseLeave(func() {}),
+    tui.WithHoverClass("bg-blue font-bold"), // classes without the hover: prefix
+    tui.WithKey(id),                     // sibling identity for hover tracking
 )
+// el.SetOnMouseEnter(fn) / el.SetOnMouseLeave(fn) replace callbacks later
 ```
 
 ## Input / TextArea Runtime API

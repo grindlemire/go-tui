@@ -293,6 +293,24 @@ func WithOnBlur(fn func(*Element)) Option {
 	}
 }
 
+// --- Hover Options ---
+
+// WithOnMouseEnter sets the callback for when the pointer moves onto this
+// element or one of its descendants. Requires WithMouseMotion on the App.
+func WithOnMouseEnter(fn func()) Option {
+	return func(e *Element) {
+		e.onMouseEnter = fn
+	}
+}
+
+// WithOnMouseLeave sets the callback for when the pointer moves off this
+// element and all of its descendants. Requires WithMouseMotion on the App.
+func WithOnMouseLeave(fn func()) Option {
+	return func(e *Element) {
+		e.onMouseLeave = fn
+	}
+}
+
 // WithFocusable sets whether this element can receive focus and appear in Tab navigation.
 func WithFocusable(focusable bool) Option {
 	return func(e *Element) {
@@ -354,6 +372,7 @@ func WithScrollOffset(x, y int) Option {
 	return func(e *Element) {
 		e.scrollX = x
 		e.scrollY = y
+		e.scrollOffsetSet = true
 	}
 }
 

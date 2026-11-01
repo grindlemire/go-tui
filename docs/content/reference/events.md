@@ -118,14 +118,14 @@ type MouseEvent struct {
 }
 ```
 
-Represents a mouse input event. Mouse events are only delivered when mouse reporting is enabled (see [App Reference](app.md), `WithMouse()`).
+Represents a mouse input event. Mouse events are only delivered when mouse reporting is enabled (see [App Reference](app.md), `WithMouse()`). Motion with no button held (`MouseMove`) is only reported when the app also enables `WithMouseMotion()`.
 
 **Fields:**
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `Button` | `MouseButton` | Which button was involved. |
-| `Action` | `MouseAction` | The type of action (press, release, drag). |
+| `Action` | `MouseAction` | The type of action (press, release, drag, move). |
 | `X` | `int` | Column position, 0-indexed from the left edge. |
 | `Y` | `int` | Row position, 0-indexed from the top edge. |
 | `Mod` | `Modifier` | Modifier flags held during the mouse event. |
@@ -190,7 +190,7 @@ Emitted when the terminal window changes size. The framework handles resize inte
 
 | Constant | String |
 |----------|--------|
-| `KeyF1` – `KeyF12` | `"F1"` – `"F12"` |
+| `KeyF1` to `KeyF12` | `"F1"` to `"F12"` |
 
 All twelve function keys are defined: `KeyF1`, `KeyF2`, `KeyF3`, `KeyF4`, `KeyF5`, `KeyF6`, `KeyF7`, `KeyF8`, `KeyF9`, `KeyF10`, `KeyF11`, `KeyF12`.
 
@@ -198,7 +198,7 @@ All twelve function keys are defined: `KeyF1`, `KeyF2`, `KeyF3`, `KeyF4`, `KeyF5
 
 | Constant | String |
 |----------|--------|
-| `KeyCtrlA` – `KeyCtrlZ` | `"Ctrl+A"` – `"Ctrl+Z"` |
+| `KeyCtrlA` to `KeyCtrlZ` | `"Ctrl+A"` to `"Ctrl+Z"` |
 | `KeyCtrlSpace` | `"Ctrl+Space"` |
 
 Each constant is a `RuneSpec` matching the corresponding `Rune(letter).Ctrl()` pattern. `On(tui.KeyCtrlS, handler)` and `On(tui.Rune('s').Ctrl(), handler)` are equivalent.
@@ -294,7 +294,8 @@ type MouseAction int
 |----------|-------------|
 | `MousePress` | A button was pressed down. |
 | `MouseRelease` | A button was released. |
-| `MouseDrag` | Mouse moved while a button is held. |
+| `MouseDrag` | Mouse moved while a button is held. Reported on every platform whenever the mouse is enabled. |
+| `MouseMove` | Mouse moved with no button held (`Button` is `MouseNone`). Only reported with `WithMouseMotion()`. |
 
 ## KeyMap
 
@@ -544,6 +545,31 @@ func (c *counter) HandleMouse(me tui.MouseEvent) bool {
 }
 ```
 
+## Hover
+
+Elements can react to the pointer moving over them through callbacks and `hover:` classes. Both require `WithMouseMotion()` on the app; without it they never fire or apply. See the [Hover guide](../guides/25-hover) for a full walkthrough.
+
+### onMouseEnter / onMouseLeave
+
+```gsx
+<span onMouseEnter={s.showPreview} onMouseLeave={s.hidePreview}>{name}</span>
+```
+
+Both attributes take a `func()` (Go API: `WithOnMouseEnter`, `WithOnMouseLeave`, `SetOnMouseEnter`, `SetOnMouseLeave`; see [Element Reference](element.md)). They follow DOM `mouseenter`/`mouseleave` semantics:
+
+- Enter fires when the pointer moves onto the element or any descendant.
+- Leave fires when the pointer is off the element and all of its descendants. Moving between children does not leave the parent.
+- When one move crosses several elements, leaves fire deepest first and enters fire outermost first.
+- Every enter is followed by exactly one leave: the `onMouseLeave` the element had when it was entered.
+
+Hover is evaluated on every mouse event, before the event reaches `MouseListener` components, and once more after a render that followed any input (key, click, wheel, or background update). The second check means content that changes under a still pointer, such as a scrolled list, a reordered list, or a modal opening, updates hover right away. Renders caused only by hover callbacks do not re-check, so a callback that sets state cannot loop.
+
+Elements are rebuilt on every render, so hover identifies them by tree position. A `key` on an element (`tui.WithKey`) makes its identity follow it when siblings are inserted, removed, or reordered. Hit testing accounts for scrollable containers (borders, scrollbar, and scroll offset). While a modal is open, only the topmost modal's contents receive hover. In inline mode, moving the pointer out of the inline region leaves everything.
+
+### Motion coalescing
+
+`MouseMove` events arrive in bursts. `App.Run()` and `App.DispatchEvents()` coalesce consecutive moves within one drain of the event queue, so only the latest is dispatched, in its original order relative to other events. `MouseDrag` events are not coalesced. Calling `App.Dispatch` directly dispatches every event as given, and a custom loop reading `App.Events()` sees every move.
+
 ## Event Dispatch Flow
 
 Here's how events flow through the system.
@@ -559,10 +585,11 @@ Here's how events flow through the system.
 
 **Mouse events:**
 
-1. Terminal input is read and parsed into a `MouseEvent`.
-2. The framework walks the component tree and dispatches to each `MouseListener`.
-3. If any listener returns `true`, the event is consumed.
-4. Otherwise, the event goes to `App.Dispatch()` which does hit-testing against the element tree.
+1. Terminal input is read and parsed into a `MouseEvent`. In `Run()` and `DispatchEvents()`, consecutive `MouseMove` events are coalesced to the latest.
+2. With `WithMouseMotion()`, hover is updated at the event's position and any `onMouseEnter`/`onMouseLeave` callbacks fire.
+3. The framework walks the component tree and dispatches to each `MouseListener`.
+4. If any listener returns `true`, the event is consumed.
+5. Otherwise, the event goes to `App.Dispatch()` which does hit-testing against the element tree.
 
 **Resize events:**
 
@@ -604,7 +631,8 @@ Sets or replaces the global key handler at runtime. Pass `nil` to remove it.
 
 ## See Also
 
-- [State Reference](state.md) — reactive state that key handlers typically modify
-- [Refs Reference](refs.md) — element references used for click hit-testing
-- [Focus Reference](focus.md) — focus management and Tab navigation
-- [App Reference](app.md) — app lifecycle, `WithMouse()`, `Dispatch()`
+- [State Reference](state.md): reactive state that key handlers typically modify
+- [Refs Reference](refs.md): element references used for click hit-testing
+- [Focus Reference](focus.md): focus management and Tab navigation
+- [App Reference](app.md): app lifecycle, `WithMouse()`, `WithMouseMotion()`, `Dispatch()`
+- [Hover guide](../guides/25-hover): hover callbacks and `hover:` classes in depth

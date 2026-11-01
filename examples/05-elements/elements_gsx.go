@@ -334,6 +334,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 		_ = __idx_0
 		if label == "Disabled" {
 			__tui_40 := tui.New(
+				tui.WithKey(label),
 				tui.WithTextStyle(tui.NewStyle().Dim()),
 			)
 			e.btnRefs.Put(label, __tui_40)
@@ -342,6 +343,7 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 			__tui_39.AddChild(__tui_40)
 		} else if label == e.selectedBtn.Get() {
 			__tui_42 := tui.New(
+				tui.WithKey(label),
 				tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 			)
 			e.btnRefs.Put(label, __tui_42)
@@ -349,7 +351,9 @@ func (e *elementsApp) Render(app *tui.App) *tui.Element {
 			__tui_42.AddChild(__tui_43)
 			__tui_39.AddChild(__tui_42)
 		} else {
-			__tui_44 := tui.New()
+			__tui_44 := tui.New(
+				tui.WithKey(label),
+			)
 			e.btnRefs.Put(label, __tui_44)
 			__tui_45 := tui.New(tui.WithText(label))
 			__tui_44.AddChild(__tui_45)

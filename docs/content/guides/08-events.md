@@ -198,13 +198,15 @@ A `MouseEvent` has these fields:
 
 ```go
 me.Button  // MouseLeft, MouseMiddle, MouseRight, MouseWheelUp, MouseWheelDown, MouseNone
-me.Action  // MousePress, MouseRelease, MouseDrag
+me.Action  // MousePress, MouseRelease, MouseDrag, MouseMove
 me.X, me.Y // 0-indexed column and row
 me.Mod     // Modifier flags (Ctrl, Alt, Shift)
 me.App()   // The running App instance
 ```
 
 Return `true` from `HandleMouse` to indicate you handled the event. Return `false` to let other components try.
+
+`MouseDrag` reports motion while a button is held. Motion with no button held (`MouseMove`) only arrives when the app opts in with `tui.WithMouseMotion()`, which also enables `onMouseEnter`/`onMouseLeave` and `hover:` classes. See [Hover](hover).
 
 ## Click Handling with Refs
 

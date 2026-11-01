@@ -294,7 +294,7 @@ See the [Refs Reference](refs.md) for `Ref`, `RefList`, and `RefMap` details.
 
 ### Key attributes
 
-Inside `for` loops, the `key` attribute gives an element a stable identity among its siblings, like keys in React. It does two things. With a `ref` bound to a `RefMap`, it provides the map key:
+Inside `for` loops, the `key` attribute gives an element a stable identity among its siblings, like keys in React. With a `ref` bound to a `RefMap`, it provides the map key:
 
 ```gsx
 for _, name := range items {
@@ -325,6 +325,14 @@ for _, msg := range s.messages {
 ```
 
 Keys compose by depth. A `key` replaces the loop position at its own level, loops nested inside a keyed wrapper still contribute their own identity, and a `key` nested under another `key` appends to it rather than erasing it. One caveat: components passed into a children slot are mounted at the caller's site, so a keyed wrapper inside the receiving component does not re-key them.
+
+On plain elements, `key` also compiles to `tui.WithKey(key)`, which hover tracking uses to identify the element. Without a key, hover identifies elements by position, so when a list reorders the hover stays at the same slot. With a key, when siblings are inserted, removed, or reordered under a still pointer, the item that moved away gets its leave and the item now under the pointer gets its enter:
+
+```gsx
+for _, row := range s.rows {
+    <span key={row.ID} class="hover:bg-blue" onMouseEnter={s.preview(row.ID)}>{row.Title}</span>
+}
+```
 
 ### Options attribute
 
@@ -387,7 +395,7 @@ An element accepts one `options` attribute; a second is a compile error. Compone
 | `disabled` | bool | -- | Disables the element |
 | `ref` | expression | `ref.Set(el)` | Binds element to a ref |
 | `deps` | expression | -- | Explicit state dependencies |
-| `key` | expression | -- | Loop item identity: component cache key, RefMap key with `ref` |
+| `key` | expression | `tui.WithKey(k)` (plain elements) | Loop item identity: component cache key, RefMap key with `ref`, hover identity |
 | `options` | expression | `append([]tui.Option{...}, opts...)...` | Option slice forwarded to the constructor after attribute options; type follows the tag |
 
 ### Layout attributes
@@ -459,6 +467,15 @@ Available on: `span`, `p`, `button`.
 | `onActivate` | `func()` | `tui.WithOnActivate(fn)` |
 
 Available on: `div`, `ul`, `li`, `table`, `span`, `p`, `button`, `input`.
+
+### Hover attributes
+
+| Attribute | Type | Generated option |
+|-----------|------|------------------|
+| `onMouseEnter` | `func()` | `tui.WithOnMouseEnter(fn)` |
+| `onMouseLeave` | `func()` | `tui.WithOnMouseLeave(fn)` |
+
+`onMouseEnter` fires when the pointer moves onto the element or any descendant. `onMouseLeave` fires when the pointer is off the element and all of its descendants, so moving between children does not leave the parent. Both require `tui.WithMouseMotion()` on the app. On `<input>`, `<textarea>`, `<markdown>`, and `<modal>`, they apply to the component's root element, as do `hover:` classes. See the [Hover guide](../guides/25-hover).
 
 ### Modal attributes
 
@@ -890,6 +907,26 @@ Thumb: `scrollbar-thumb-red`, `scrollbar-thumb-green`, etc. (all 16 standard and
 | `hidden` | `tui.WithHidden(true)` |
 | `truncate` | `tui.WithTruncate(true)` |
 
+### Hover variants
+
+Prefix a class with `hover:` to apply it only while the pointer is over the element or a descendant. Hover classes in a literal `class` attribute are collected into one option:
+
+```gsx
+<span class="px-1 hover:bg-blue hover:font-bold">Inbox</span>
+```
+
+| Class | Generated option |
+|-------|------------------|
+| `hover:bg-blue hover:font-bold` | `tui.WithHoverClass("bg-blue font-bold")` |
+
+Only color and text style classes are allowed: `bg-*`, `text-*` colors, `font-bold`, `font-dim`/`text-dim`, `italic`, `underline`, `strikethrough`, `blink`, `reverse`, `border-COLOR`/`border-[#hex]` (border color, not shape), text/bg/border gradients, and `scrollbar-COLOR`/`scrollbar-thumb-COLOR`. A class that changes layout is a compile error:
+
+```
+hover: only supports color and text style classes, not "p-2", which changes layout
+```
+
+`class={expr}` accepts `hover:` too; at runtime, unknown or layout classes after `hover:` are ignored. Hover requires `tui.WithMouseMotion()` on the app. See the [Styling Reference](styling.md#hover-variants) for how hover styles combine with the element's own.
+
 ## Code generation
 
 ### Commands
@@ -908,7 +945,7 @@ tui fmt --check [path...] # check formatting without modifying
 3. The generator produces a `_gsx.go` file in the same directory with the same package name.
 4. Each `templ` block becomes a Go function or method returning `*tui.Element`.
 5. Elements become calls to `tui.New(options...)` with `AddChild` calls for children.
-6. Literal Tailwind classes become element option arguments at compile time. Expression-valued `class` attributes become a `tui.WithClass(...)` option that resolves the classes at runtime.
+6. Literal Tailwind classes become element option arguments at compile time, with `hover:` classes collected into `tui.WithHoverClass(...)`. Expression-valued `class` attributes become a `tui.WithClass(...)` option that resolves the classes at runtime.
 7. Control flow (`if`, `for`, `:=`) becomes standard Go control flow.
 
 Re-run `tui generate` after any `.gsx` change. The generated `_gsx.go` files should be committed to version control but never edited by hand.

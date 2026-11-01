@@ -131,6 +131,11 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 		}
 	}
 
+	// key={...} also identifies the element among its siblings for hover tracking.
+	if elem.RefKey != nil {
+		result.options = append(result.options, fmt.Sprintf("tui.WithKey(%s)", elem.RefKey.Code))
+	}
+
 	// Track text style methods from class attribute separately
 	var classTextMethods []string
 
@@ -248,12 +253,14 @@ func textExpr(code string) string {
 	return code
 }
 
-// handlerAttributes maps focus callback attribute names to their With* option functions.
-// Handlers are emitted as inline options during element creation (self-inject pattern).
+// handlerAttributes maps callback attribute names to their With* option functions.
+// Handlers are emitted as inline options during element creation.
 var handlerAttributes = map[string]string{
-	"onFocus":    "tui.WithOnFocus",
-	"onBlur":     "tui.WithOnBlur",
-	"onActivate": "tui.WithOnActivate",
+	"onFocus":      "tui.WithOnFocus",
+	"onBlur":       "tui.WithOnBlur",
+	"onActivate":   "tui.WithOnActivate",
+	"onMouseEnter": "tui.WithOnMouseEnter",
+	"onMouseLeave": "tui.WithOnMouseLeave",
 }
 
 // attributeToOption maps DSL attribute names to tui.With* functions.
@@ -616,11 +623,18 @@ func componentElementOptions(tag string) string {
 	}
 }
 
-// buildComponentClassOptions extracts element options from the class
-// attribute of a component element, for wrapping in With*ElementOptions.
+// buildComponentClassOptions extracts element options from the class and
+// hover handler attributes of a component element, for wrapping in
+// With*ElementOptions so they reach the component's root element.
 func (g *Generator) buildComponentClassOptions(elem *Element) []string {
 	var opts []string
 	for _, attr := range elem.Attributes {
+		if attr.Name == "onMouseEnter" || attr.Name == "onMouseLeave" {
+			if expr := g.generateAttributeValue(attr.Value); expr != "" {
+				opts = append(opts, fmt.Sprintf("%s(%s)", handlerAttributes[attr.Name], expr))
+			}
+			continue
+		}
 		if attr.Name != "class" {
 			continue
 		}

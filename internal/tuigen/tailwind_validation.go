@@ -11,6 +11,7 @@ type TailwindValidationResult struct {
 	Valid      bool
 	Class      string
 	Suggestion string // "did you mean...?" hint
+	Reason     string // why a known class is rejected here; empty means unknown
 }
 
 // TailwindClassWithPosition tracks a class and its position within the attribute value
@@ -20,6 +21,7 @@ type TailwindClassWithPosition struct {
 	EndCol     int // column offset relative to attribute value start
 	Valid      bool
 	Suggestion string
+	Reason     string
 }
 
 // similarClasses maps common typos/alternatives to correct class names
@@ -214,6 +216,24 @@ func ValidateTailwindClass(class string) TailwindValidationResult {
 		return TailwindValidationResult{Valid: false, Class: class}
 	}
 
+	if inner, ok := strings.CutPrefix(class, tailwind.HoverPrefix); ok {
+		c, known := tailwind.Resolve(inner)
+		switch {
+		case known && tailwind.HoverAllowed(c):
+			return TailwindValidationResult{Valid: true, Class: class}
+		case known:
+			return TailwindValidationResult{
+				Class:  class,
+				Reason: "hover: only supports color and text style classes, not \"" + inner + "\", which changes layout",
+			}
+		}
+		suggestion := ""
+		if s := findSimilarClass(inner); s != "" {
+			suggestion = tailwind.HoverPrefix + s
+		}
+		return TailwindValidationResult{Class: class, Suggestion: suggestion}
+	}
+
 	// Check if it's a valid class using ParseTailwindClass
 	_, ok := ParseTailwindClass(class)
 	if ok {
@@ -263,6 +283,7 @@ func ParseTailwindClassesWithPositions(classes string, attrStartCol int) []Tailw
 			EndCol:     attrStartCol + endPos,
 			Valid:      validation.Valid,
 			Suggestion: validation.Suggestion,
+			Reason:     validation.Reason,
 		})
 	}
 

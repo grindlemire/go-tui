@@ -122,6 +122,18 @@ func WithMouse() AppOption {
 	}
 }
 
+// WithMouseMotion enables mouse reporting plus pointer motion with no button
+// held, delivered as MouseMove events. This powers onMouseEnter/onMouseLeave
+// hover callbacks. Motion reports are frequent, so it is opt-in.
+func WithMouseMotion() AppOption {
+	return func(a *App) error {
+		a.mouseEnabled = true
+		a.mouseExplicit = true
+		a.mouseMotion = true
+		return nil
+	}
+}
+
 // WithPreRenderHook sets a callback that runs at the start of every render cycle,
 // after the buffer is cleared but before the component tree is re-rendered.
 // This is useful for state updates that must happen before the render.

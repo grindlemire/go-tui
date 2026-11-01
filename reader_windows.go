@@ -107,6 +107,14 @@ type stdinReader struct {
 	// the previous record yields press/release; non-zero state during a
 	// MOUSE_MOVED event indicates a drag.
 	lastMouseButtons uint32
+
+	// The console reports every move; only surface no-button moves when the
+	// app asked for motion (WithMouseMotion).
+	mouseMotion atomic.Bool
+}
+
+func (r *stdinReader) setMouseMotion(enabled bool) {
+	r.mouseMotion.Store(enabled)
 }
 
 var (
@@ -389,7 +397,8 @@ func windowsKeyMod(state uint32) Modifier {
 
 // translateMouseEvent converts a MOUSE_EVENT_RECORD into a MouseEvent. Press
 // and release are derived by diffing against the previously latched button
-// state. Pure hover motion (no buttons held) is dropped.
+// state. Pure hover motion (no buttons held) becomes MouseMove when motion
+// reporting is on and is dropped otherwise.
 func (r *stdinReader) translateMouseEvent(mev *mouseEventRecord) (MouseEvent, bool) {
 	ev := MouseEvent{
 		X:   int(mev.mousePosition.X),
@@ -410,7 +419,12 @@ func (r *stdinReader) translateMouseEvent(mev *mouseEventRecord) (MouseEvent, bo
 
 	case mev.eventFlags&windows.MOUSE_MOVED != 0:
 		if r.lastMouseButtons == 0 {
-			return MouseEvent{}, false
+			if !r.mouseMotion.Load() {
+				return MouseEvent{}, false
+			}
+			ev.Button = MouseNone
+			ev.Action = MouseMove
+			return ev, true
 		}
 		ev.Button = buttonFromState(r.lastMouseButtons)
 		ev.Action = MouseDrag

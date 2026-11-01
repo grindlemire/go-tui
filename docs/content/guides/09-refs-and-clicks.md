@@ -524,3 +524,4 @@ Click "Reset" to open the confirmation dialog and click on an option.
 
 - [Built-in Elements](elements) - Reference guide to every HTML-like element in go-tui
 - [Streaming Data](streaming) - Build a live data viewer with channels and auto-scroll
+- [Hover](hover) - React to the pointer moving over elements with `hover:` classes and `onMouseEnter`/`onMouseLeave`

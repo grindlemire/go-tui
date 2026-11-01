@@ -128,7 +128,7 @@ func TestAnalyzer_AllKnownAttributes(t *testing.T) {
 		"padding", "margin",
 		"border", "borderStyle", "background",
 		"text", "textStyle", "textAlign",
-		"onFocus", "onBlur",
+		"onFocus", "onBlur", "onMouseEnter", "onMouseLeave",
 		"scrollable", "scrollbarStyle", "scrollbarThumbStyle", "hideScrollbar",
 		"disabled", "id",
 	}
@@ -439,6 +439,30 @@ templ Test() {
 }`,
 			wantError:     true,
 			errorContains: `unknown Tailwind class`,
+		},
+		"valid hover classes": {
+			input: `package x
+templ Test() {
+	<div class="px-1 hover:bg-blue hover:text-white hover:font-bold hover:border-[#ff6600]"></div>
+}`,
+			wantError: false,
+		},
+		"hover with a layout class": {
+			input: `package x
+templ Test() {
+	<div class="hover:p-2"></div>
+}`,
+			wantError:     true,
+			errorContains: `hover: only supports color and text style classes, not "p-2"`,
+		},
+		"hover with a typo": {
+			input: `package x
+templ Test() {
+	<div class="hover:bg-bleu"></div>
+}`,
+			wantError:     true,
+			errorContains: `unknown Tailwind class "hover:bg-bleu"`,
+			hintContains:  `hover:bg-blue`,
 		},
 		"mix of valid and invalid classes": {
 			input: `package x

@@ -32,10 +32,12 @@ func ParseTailwindClass(class string) (TailwindMapping, bool) {
 	return renderClass(c), true
 }
 
-// ParseTailwindClasses renders a full class attribute string.
+// ParseTailwindClasses renders a full class attribute string. hover: variants
+// become one tui.WithHoverClass option, resolved at runtime when hovered.
 func ParseTailwindClasses(classes string) TailwindParseResult {
 	result := TailwindParseResult{NeedsImports: make(map[string]bool)}
-	for _, c := range tailwind.Parse(classes).Classes {
+	base, hover := tailwind.SplitHover(classes)
+	for _, c := range tailwind.Parse(base).Classes {
 		m := renderClass(c)
 		if m.IsTextStyle {
 			result.TextMethods = append(result.TextMethods, m.TextMethod)
@@ -45,6 +47,10 @@ func ParseTailwindClasses(classes string) TailwindParseResult {
 		if m.NeedsImport != "" {
 			result.NeedsImports[m.NeedsImport] = true
 		}
+	}
+	if hover != "" {
+		result.Options = append(result.Options, "tui.WithHoverClass("+strconv.Quote(hover)+")")
+		result.NeedsImports["tui"] = true
 	}
 	return result
 }

@@ -91,7 +91,8 @@ Or use the equivalent `Option` functions when building elements in Go:
 | `WithBorderStyle` | `func WithBorderStyle(style Style) Option` | Sets border style (color, attributes) |
 | `WithBackground` | `func WithBackground(style Style) Option` | Sets background fill style |
 | `WithTextAlign` | `func WithTextAlign(align TextAlign) Option` | Sets text alignment |
-| `WithClass` | `func WithClass(classes string) Option` | Applies Tailwind-style classes at runtime (the same set literal `class` attributes compile to) |
+| `WithClass` | `func WithClass(classes string) Option` | Applies Tailwind-style classes at runtime (the same set literal `class` attributes compile to, including `hover:` variants) |
+| `WithHoverClass` | `func WithHoverClass(classes string) Option` | Applies color and text style classes only while the element is hovered (see [Hover Variants](#hover-variants)) |
 
 ```go
 el := tui.New(
@@ -521,6 +522,43 @@ el := tui.New(
 )
 ```
 
+## Hover Variants
+
+Prefix a class with `hover:` to apply it only while the pointer is over the element or one of its descendants:
+
+```gsx
+<span class="px-1 hover:bg-blue hover:font-bold">Inbox</span>
+<div class="border-rounded border-[#666666] hover:border-magenta">...</div>
+```
+
+Hover requires `tui.WithMouseMotion()` on the app. Without it, `hover:` classes never apply. See the [Hover guide](../guides/25-hover) for callbacks, nesting, and lists.
+
+### Allowed classes
+
+Only classes that change color or text style are allowed after `hover:`, since a layout change could move the element out from under the pointer.
+
+| Group | Classes |
+|-------|---------|
+| Text color | `text-COLOR`, `text-bright-COLOR`, `text-[#hex]` |
+| Background | `bg-COLOR`, `bg-bright-COLOR`, `bg-[#hex]` |
+| Text style | `font-bold`, `font-dim`, `text-dim`, `italic`, `underline`, `strikethrough`, `blink`, `reverse` |
+| Border color | `border-COLOR`, `border-[#hex]` |
+| Gradients | `text-gradient-*`, `bg-gradient-*`, `border-gradient-*` |
+| Scrollbar colors | `scrollbar-COLOR`, `scrollbar-thumb-COLOR`, and their `[#hex]` forms |
+
+`hover:border-COLOR` changes the color of an existing border. The border shape classes (`border`, `border-rounded`, and so on) are layout classes and must be in the element's normal classes. Padding, margin, sizes, `hidden`, text alignment, and flex classes are also rejected. In a literal `class` attribute they are a compile error:
+
+```
+hover: only supports color and text style classes, not "p-2", which changes layout
+```
+
+### Behavior
+
+- Hover text styles layer on top of the element's effective style, including styles inherited from its parent, and cascade to children like other text styles. Hover backgrounds cascade too.
+- When hover ends, each property the hover classes changed returns to its pre-hover value. A value your code set on that property while the element was hovered is kept.
+- Literal hover classes compile to `tui.WithHoverClass("bg-blue font-bold")`. `class={expr}`, `tui.WithClass`, and `Element.SetClass` also accept `hover:`; at runtime, unknown or layout classes after `hover:` are ignored.
+- The language server autocompletes `hover:` and lists the allowed classes after it.
+
 ## Drawing Functions
 
 These functions render borders and fills directly to a `Buffer`. They're used internally by the rendering system, but are available for custom rendering needs.
@@ -573,10 +611,10 @@ func DetectCapabilities() Capabilities
 
 Reads environment variables to determine terminal support. Detection checks, in order:
 
-1. `COLORTERM` — `"truecolor"` or `"24bit"` sets `ColorTrue`
-2. Terminal-specific variables — `WT_SESSION`, `ITERM_SESSION_ID`, `KITTY_WINDOW_ID`, `KONSOLE_VERSION`, `VTE_VERSION` each set `ColorTrue`
-3. `TERM` — contains `"256color"` sets `Color256`, contains `"truecolor"` sets `ColorTrue`, equals `"dumb"` sets `ColorNone` with Unicode and AltScreen disabled
-4. Default — `Color16`
+1. `COLORTERM`: `"truecolor"` or `"24bit"` sets `ColorTrue`
+2. Terminal-specific variables: `WT_SESSION`, `ITERM_SESSION_ID`, `KITTY_WINDOW_ID`, `KONSOLE_VERSION`, `VTE_VERSION` each set `ColorTrue`
+3. `TERM`: contains `"256color"` sets `Color256`, contains `"truecolor"` sets `ColorTrue`, equals `"dumb"` sets `ColorNone` with Unicode and AltScreen disabled
+4. Default: `Color16`
 
 ### ColorCapability
 
@@ -622,6 +660,6 @@ if caps.SupportsColor(coral) {
 
 ## See Also
 
-- [Element Reference](element.md) — Element option functions for styling
-- [GSX Syntax Reference](gsx-syntax.md) — Complete Tailwind class listing
-- [Layout Reference](layout.md) — Layout-related element options
+- [Element Reference](element.md): Element option functions for styling
+- [GSX Syntax Reference](gsx-syntax.md): Complete Tailwind class listing
+- [Layout Reference](layout.md): Layout-related element options

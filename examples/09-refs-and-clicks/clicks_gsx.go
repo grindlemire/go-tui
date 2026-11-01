@@ -422,6 +422,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 		_ = __idx_0
 		if p.name == c.activePreset.Get() {
 			__tui_50 := tui.New(
+				tui.WithKey(p.name),
 				tui.WithPaddingTRBL(0, 1, 0, 1),
 				tui.WithTextStyle(tui.NewStyle().Bold().Foreground(tui.Cyan)),
 			)
@@ -431,6 +432,7 @@ func (c *colorMixer) Render(app *tui.App) *tui.Element {
 			__tui_48.AddChild(__tui_50)
 		} else {
 			__tui_52 := tui.New(
+				tui.WithKey(p.name),
 				tui.WithPaddingTRBL(0, 1, 0, 1),
 				tui.WithTextStyle(tui.NewStyle().Dim()),
 			)

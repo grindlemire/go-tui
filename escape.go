@@ -176,13 +176,17 @@ func (e *escBuilder) EndSyncUpdate() {
 }
 
 // EnableMouse enables mouse reporting using SGR-1006 extended mode.
-// This enables button events (press/release) with SGR encoding for better
-// coordinate support (works beyond column 223).
+// This enables button events (press/release) and drags (motion while a
+// button is held) with SGR encoding for better coordinate support (works
+// beyond column 223).
 // Supported by most modern terminals: iTerm2, Terminal.app, kitty, alacritty, etc.
 func (e *escBuilder) EnableMouse() {
 	// Enable X10 mouse button tracking (basic click events)
 	e.writeCSI()
 	e.buf = append(e.buf, '?', '1', '0', '0', '0', 'h')
+	// Enable button-event tracking (drags)
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '2', 'h')
 	// Enable SGR extended mouse mode (better coordinate encoding)
 	e.writeCSI()
 	e.buf = append(e.buf, '?', '1', '0', '0', '6', 'h')
@@ -193,9 +197,25 @@ func (e *escBuilder) DisableMouse() {
 	// Disable SGR extended mouse mode
 	e.writeCSI()
 	e.buf = append(e.buf, '?', '1', '0', '0', '6', 'l')
+	// Disable button-event tracking
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '2', 'l')
 	// Disable X10 mouse button tracking
 	e.writeCSI()
 	e.buf = append(e.buf, '?', '1', '0', '0', '0', 'l')
+}
+
+// EnableMouseMotion enables any-motion tracking (?1003h): the terminal reports
+// pointer movement even when no button is held. Layered on top of EnableMouse.
+func (e *escBuilder) EnableMouseMotion() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '3', 'h')
+}
+
+// DisableMouseMotion disables any-motion tracking.
+func (e *escBuilder) DisableMouseMotion() {
+	e.writeCSI()
+	e.buf = append(e.buf, '?', '1', '0', '0', '3', 'l')
 }
 
 // EnableAltScroll enables alternate-scroll mode (DEC private mode 1007).

@@ -117,6 +117,7 @@ The `generate` command compiles `.gsx` files into plain Go source (`*_gsx.go`) t
 - Generic `State[T]` with automatic re-rendering, batched updates, and bindings
 - Struct components with keyboard/mouse handlers, watchers for timers and channels, refs, and a `{children...}` slot
 - Modal dialogs with backdrop, focus trapping, and preemptive key handling
+- Mouse hover through `onMouseEnter`/`onMouseLeave` callbacks and `hover:` style classes
 - Language server, formatter, and tree-sitter grammar for VS Code
 - Only depends on `golang.org/x/{sys,tools}`, pure Go from terminal to layout
 
@@ -169,6 +170,8 @@ The [`examples/`](examples/) directory has runnable programs for each feature ar
 | [21-directory-tree](examples/21-directory-tree) | Foldable directory tree, lazy loading, scroll-to-cursor, path highlighting |
 | [22-event-loop](examples/22-event-loop) | Custom event loops via `Open`, `Step`, `Events`, `Dispatch`, `Render` |
 | [23-event-dump](examples/23-event-dump) | Diagnostic event log for verifying key, mouse, and resize handling |
+| [24-markdown](examples/24-markdown) | `<markdown>` viewer with syntax-highlighted code blocks, scrolling, native selection |
+| [25-hover](examples/25-hover) | Hover callbacks, `hover:` classes, nested and keyed elements, scrolled lists, modals |
 
 See also [`ai-chat`](examples/ai-chat) and [`docs-example`](examples/docs-example).
 

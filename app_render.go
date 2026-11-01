@@ -12,6 +12,7 @@ func (a *App) Render() {
 	}
 	a.renderFrame()
 	a.rebuildDispatchTable()
+	a.recheckHover()
 }
 
 // renderFrame performs the actual render cycle: clear buffer, re-render
@@ -246,6 +247,7 @@ func (a *App) RenderFull() {
 		a.postRenderHook()
 	}
 	a.placeCursor()
+	a.recheckHover()
 }
 
 // syncUpdater is an optional capability in the http.Flusher style: only
@@ -280,7 +282,10 @@ func (a *App) rerenderComponent() {
 	}
 	el := a.rootComponent.Render(a)
 	el.setAppRecursive(a)
+	carryScrollOffsets(a.root, el)
 	a.root = el
+	// Fresh elements: re-apply hover: classes before layout.
+	a.syncHoverStyles(false)
 	// Refresh focusManager references: re-renders produce new Element
 	// objects, so the focusManager's old references become stale.
 	// Rebuild the focusable list from the current tree, preserving

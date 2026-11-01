@@ -1,5 +1,7 @@
 package tui
 
+import "fmt"
+
 // --- Scroll Query Methods ---
 
 // IsScrollable returns whether this element has scrolling enabled.
@@ -236,6 +238,18 @@ func (e *Element) clampScrollOffset() {
 
 // --- Internal Helpers ---
 
+// scrollViewport is the screen region a scrollable element shows its content
+// in: the content rect minus the vertical scrollbar gutter. Descendants are
+// laid out in content space from (0, 0) and drawn at viewport origin minus
+// the scroll offset, clipped to this region.
+func (e *Element) scrollViewport() Rect {
+	clip := e.ContentRect()
+	if e.needsVerticalScrollbar() {
+		clip.Width = max(0, clip.Width-1)
+	}
+	return clip
+}
+
 // needsVerticalScrollbar returns whether a vertical scrollbar should be shown.
 func (e *Element) needsVerticalScrollbar() bool {
 	if e.scrollMode != ScrollVertical && e.scrollMode != ScrollBoth {
@@ -257,4 +271,40 @@ func clamp(v, minVal, maxVal int) int {
 		return maxVal
 	}
 	return v
+}
+
+// carryScrollOffsets copies scroll offsets from the previous tree to the
+// rebuilt one, matching scrollable elements by tree path (key or sibling
+// index), so offsets set by the wheel, keys, or ScrollBy survive re-renders.
+// Elements whose offset the app sets with WithScrollOffset keep that value.
+func carryScrollOffsets(prev, next *Element) {
+	if prev == nil || next == nil {
+		return
+	}
+	offsets := map[string][2]int{}
+	walkScrollable(prev, func(el *Element) {
+		if el.scrollX != 0 || el.scrollY != 0 {
+			offsets[fmt.Sprint(elementPath(el))] = [2]int{el.scrollX, el.scrollY}
+		}
+	})
+	if len(offsets) == 0 {
+		return
+	}
+	walkScrollable(next, func(el *Element) {
+		if el.scrollOffsetSet {
+			return
+		}
+		if off, ok := offsets[fmt.Sprint(elementPath(el))]; ok {
+			el.scrollX, el.scrollY = off[0], off[1]
+		}
+	})
+}
+
+func walkScrollable(e *Element, fn func(*Element)) {
+	if e.scrollMode != ScrollNone {
+		fn(e)
+	}
+	for _, c := range e.children {
+		walkScrollable(c, fn)
+	}
 }
