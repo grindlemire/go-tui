@@ -620,7 +620,7 @@ templ (a *app) Render() {
 }
 ```
 
-As with any mounted component, `Watchers()` are collected at the app's first render.
+As with any mounted component, its `Watchers()` start when it mounts and stop when it unmounts.
 
 Earlier versions only called `Render` on an `@expr` component, so hosts often forwarded its hooks by hand, for example `km := c.textarea.KeyMap()` merged into the host's `KeyMap`, or a host `Watchers()` returning the child's. Remove that forwarding: the child's own hooks are active now, and keeping both registers them twice. Inputs and text areas rendered this way also need focus to accept typing, as they do from `<input>` and `<textarea>` tags; give the one that should start focused `tui.WithTextAreaAutoFocus(true)` or `tui.WithInputAutoFocus(true)`, or let the user Tab to it.
 

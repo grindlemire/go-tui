@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"slices"
+	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
@@ -34,6 +35,10 @@ func newListsPage(d *hoverDemo) *listsPage {
 	p.nextID = len(msgs)
 	p.msgs = tui.NewState(msgs)
 	return p
+}
+
+func (p *listsPage) Watchers() []tui.Watcher {
+	return []tui.Watcher{tui.OnTimer(2*time.Second, p.tick)}
 }
 
 func (p *listsPage) tick() {
@@ -218,6 +223,7 @@ var _ tui.AppBinder = (*listsPage)(nil)
 
 // Compile-time interface satisfaction checks.
 var (
-	_ tui.KeyListener   = (*listsPage)(nil)
-	_ tui.MouseListener = (*listsPage)(nil)
+	_ tui.KeyListener     = (*listsPage)(nil)
+	_ tui.MouseListener   = (*listsPage)(nil)
+	_ tui.WatcherProvider = (*listsPage)(nil)
 )

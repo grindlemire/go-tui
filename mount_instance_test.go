@@ -196,3 +196,22 @@ func TestMountInstance_SameInstanceIsOneMountWhereverRendered(t *testing.T) {
 		})
 	}
 }
+
+func TestSetRootComponent_MountsOncePerSession(t *testing.T) {
+	var events []string
+	parent := &exprParent{child: &exprChild{name: "a", events: &events}, show: true}
+	app := newTestApp(10, 2)
+	app.SetRootComponent(parent)
+	app.Render()
+	app.MarkDirty()
+	app.Render()
+	if want := []string{"a init"}; !slices.Equal(events, want) {
+		t.Fatalf("startup hooks = %v, want %v", events, want)
+	}
+
+	events = nil
+	app.SetRootComponent(&exprParent{})
+	if want := []string{"a cleanup"}; !slices.Equal(events, want) {
+		t.Errorf("replacing the root ran %v, want %v", events, want)
+	}
+}

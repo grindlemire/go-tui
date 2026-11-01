@@ -57,7 +57,9 @@ func (w *ChannelWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct
 				v := val
 				select {
 				case eventQueue <- func() {
-					w.handler(v)
+					if !stopped(stopCh) {
+						w.handler(v)
+					}
 				}:
 				case <-stopCh:
 					return
@@ -94,7 +96,9 @@ func (w *stateWatcher[T]) Start(eventQueue chan<- func(), stopCh <-chan struct{}
 	w.handler(w.state.Get())
 
 	unbind := w.state.Bind(func(v T) {
-		w.handler(v)
+		if !stopped(stopCh) {
+			w.handler(v)
+		}
 	})
 
 	go func() {
@@ -132,11 +136,26 @@ func (w *timerWatcher) Start(eventQueue chan<- func(), stopCh <-chan struct{}) {
 			case <-ticker.C:
 				debug.Log("timerWatcher ticked")
 				select {
-				case eventQueue <- w.handler:
+				case eventQueue <- func() {
+					if !stopped(stopCh) {
+						w.handler()
+					}
+				}:
 				case <-stopCh:
 					return
 				}
 			}
 		}
 	}()
+}
+
+// stopped reports whether stopCh is closed. Handlers check it when they run on
+// the main loop, so one queued just before its watcher stopped is dropped.
+func stopped(stopCh <-chan struct{}) bool {
+	select {
+	case <-stopCh:
+		return true
+	default:
+		return false
+	}
 }

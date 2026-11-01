@@ -83,12 +83,13 @@ func (a *App) renderFrame() {
 	// Mount() marks active keys during Render(); sweep removes the rest.
 	if a.mounts != nil {
 		a.mounts.sweep()
+		a.startPendingWatchers()
 	}
 
 	// Collect and start component watchers (once after first render)
 	if !a.componentWatchersStarted {
 		if a.root != nil {
-			a.componentWatchers = collectComponentWatchers(a.rootComponent, a.root)
+			a.componentWatchers = collectComponentWatchers(a.rootComponent)
 			for _, w := range a.componentWatchers {
 				w.Start(a.watcherQueue, a.rootWatcherCh)
 			}
@@ -236,6 +237,9 @@ func (a *App) RenderFull() {
 	}
 
 	a.renderOverlays(width, height)
+	if a.mounts != nil {
+		a.startPendingWatchers()
+	}
 
 	// Full render to terminal, wrapped like renderFrame's output phase.
 	a.beginSyncUpdate()

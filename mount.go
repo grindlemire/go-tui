@@ -2,6 +2,8 @@ package tui
 
 import (
 	"reflect"
+	"slices"
+	"sync"
 
 	"github.com/grindlemire/go-tui/internal/debug"
 )
@@ -22,9 +24,27 @@ type mountKey struct {
 type mountState struct {
 	cache       map[mountKey]Component
 	cleanups    map[mountKey]func()
-	activeKeys  map[mountKey]bool // Marked during render, swept after
-	persistKeys map[mountKey]bool // keys that survive sweep even when not rendered
+	activeKeys  map[mountKey]bool       // Marked during render, swept after
+	persistKeys map[mountKey]bool       // keys that survive sweep even when not rendered
+	watchStops  map[mountKey]*watchStop // closed on evict to stop the instance's watchers
+	pending     []pendingWatchers       // mounted this frame; started after layout
 }
+
+// pendingWatchers are an instance's watchers waiting for the frame's layout.
+type pendingWatchers struct {
+	key mountKey
+	ws  []Watcher
+}
+
+// watchStop stops one instance's watchers. evict closes it on the main loop,
+// so handlers already queued see it closed and skip; ending the root session
+// closes it too.
+type watchStop struct {
+	ch   chan struct{}
+	once sync.Once
+}
+
+func (s *watchStop) close() { s.once.Do(func() { close(s.ch) }) }
 
 // newMountState creates a new mountState with initialized maps.
 func newMountState() *mountState {
@@ -33,6 +53,7 @@ func newMountState() *mountState {
 		cleanups:    make(map[mountKey]func()),
 		activeKeys:  make(map[mountKey]bool),
 		persistKeys: make(map[mountKey]bool),
+		watchStops:  make(map[mountKey]*watchStop),
 	}
 }
 
@@ -100,8 +121,8 @@ func (a *App) mount(parent Component, key any, factory func() Component) *Elemen
 	return el
 }
 
-// attach caches a newly mounted instance, binds it to the app, and runs its
-// Init, recording the cleanup for evict.
+// attach caches a newly mounted instance, binds it to the app, runs its Init,
+// and queues its watchers to start once the frame is laid out.
 func (a *App) attach(k mountKey, instance Component) {
 	ms := a.mounts
 	ms.cache[k] = instance
@@ -116,6 +137,31 @@ func (a *App) attach(k mountKey, instance Component) {
 			ms.cleanups[k] = cleanup
 		}
 	}
+	if ws := instanceWatchers(instance); len(ws) > 0 {
+		ms.pending = append(ms.pending, pendingWatchers{key: k, ws: ws})
+	}
+}
+
+// startPendingWatchers starts the watchers of instances mounted this frame.
+// It runs after layout, like root watchers, so a first OnChange call sees
+// refs and sizes.
+func (a *App) startPendingWatchers() {
+	ms := a.mounts
+	for _, p := range ms.pending {
+		stop := &watchStop{ch: make(chan struct{})}
+		ms.watchStops[p.key] = stop
+		go func(root <-chan struct{}) {
+			select {
+			case <-root:
+				stop.close()
+			case <-stop.ch:
+			}
+		}(a.rootWatcherCh)
+		for _, w := range p.ws {
+			w.Start(a.watcherQueue, stop.ch)
+		}
+	}
+	ms.pending = nil
 }
 
 // MountInstance renders a component the caller already holds, mounting that
@@ -214,5 +260,10 @@ func (ms *mountState) evict(key mountKey) {
 		cleanup()
 		delete(ms.cleanups, key)
 	}
+	if stop, ok := ms.watchStops[key]; ok {
+		stop.close()
+		delete(ms.watchStops, key)
+	}
+	ms.pending = slices.DeleteFunc(ms.pending, func(p pendingWatchers) bool { return p.key == key })
 	delete(ms.cache, key)
 }

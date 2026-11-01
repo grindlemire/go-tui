@@ -371,12 +371,20 @@ func (a *App) SetRootComponent(component Component) {
 	if u, ok := component.(AppUnbinder); ok {
 		a.rootUnbinder = u
 	}
+	// Reset before rendering, so the components this render mounts belong to
+	// the new session instead of being discarded and mounted again.
+	a.resetRootSession()
 	el := component.Render(a)
-	a.applyRoot(el)
+	a.applyRootTree(el)
 }
 
 func (a *App) applyRoot(root *Element) {
 	a.resetRootSession()
+	a.applyRootTree(root)
+}
+
+// applyRootTree installs root as the element tree of the current session.
+func (a *App) applyRootTree(root *Element) {
 	a.root = root
 	if root == nil {
 		return
@@ -409,15 +417,14 @@ func (a *App) resetRootSession() {
 	a.focus = newFocusManager()
 	a.dispatchTable = nil
 
-	// Drain cached mounts via UnbindApp before tossing the cache so their
-	// Events subscriptions deregister themselves from a.topics. This replaces
-	// the former blanket wipe of a.topics, which also nuked valid subscriptions
-	// owned by the root component and required Events.BindApp to fight back.
+	// Unmount cached components before tossing the cache: UnbindApp
+	// deregisters their Events subscriptions from a.topics, and their Init
+	// cleanups and watchers stop with them. Unbinding here replaces the former
+	// blanket wipe of a.topics, which also nuked valid subscriptions owned by
+	// the root component and required Events.BindApp to fight back.
 	if a.mounts != nil {
-		for _, comp := range a.mounts.cache {
-			if unbinder, ok := comp.(AppUnbinder); ok {
-				unbinder.UnbindApp()
-			}
+		for k := range a.mounts.cache {
+			a.mounts.evict(k)
 		}
 	}
 	a.mounts = newMountState()

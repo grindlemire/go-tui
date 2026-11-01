@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	tui "github.com/grindlemire/go-tui"
 )
@@ -96,12 +95,6 @@ func (d *hoverDemo) KeyMap() tui.KeyMap {
 		km = append(km, tui.On(tui.Rune('m'), func(ke tui.KeyEvent) { d.showModal.Set(true) }))
 	}
 	return km
-}
-
-func (d *hoverDemo) Watchers() []tui.Watcher {
-	return []tui.Watcher{
-		tui.OnTimer(2*time.Second, d.lists.tick),
-	}
 }
 
 func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {
@@ -378,7 +371,6 @@ var _ tui.AppUnbinder = (*hoverDemo)(nil)
 
 // Compile-time interface satisfaction checks.
 var (
-	_ tui.KeyListener     = (*hoverDemo)(nil)
-	_ tui.MouseListener   = (*hoverDemo)(nil)
-	_ tui.WatcherProvider = (*hoverDemo)(nil)
+	_ tui.KeyListener   = (*hoverDemo)(nil)
+	_ tui.MouseListener = (*hoverDemo)(nil)
 )

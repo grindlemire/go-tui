@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -96,14 +95,6 @@ func (d *hoverDemo) KeyMap() tui.KeyMap {
 		km = append(km, tui.On(tui.Rune('m'), func(ke tui.KeyEvent) { d.showModal.Set(true) }))
 	}
 	return km
-}
-
-// The live-insert timer lives on the root: component watchers start after
-// the first render, when only the first page exists.
-func (d *hoverDemo) Watchers() []tui.Watcher {
-	return []tui.Watcher{
-		tui.OnTimer(2*time.Second, d.lists.tick),
-	}
 }
 
 func (d *hoverDemo) HandleMouse(me tui.MouseEvent) bool {

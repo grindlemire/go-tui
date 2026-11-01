@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"slices"
+	"time"
 	tui "github.com/grindlemire/go-tui"
 )
 
@@ -35,8 +36,13 @@ func newListsPage(d *hoverDemo) *listsPage {
 	return p
 }
 
-// tick runs every two seconds on the root's timer; it inserts only while
-// live inserts are on.
+// Watchers run while the page is mounted, so the timer stops when another
+// page is shown.
+func (p *listsPage) Watchers() []tui.Watcher {
+	return []tui.Watcher{tui.OnTimer(2*time.Second, p.tick)}
+}
+
+// tick inserts a message every two seconds while live inserts are on.
 func (p *listsPage) tick() {
 	if !p.live.Get() {
 		return
