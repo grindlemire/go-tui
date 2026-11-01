@@ -81,10 +81,10 @@ In `.gsx`:
 #### WithOnFocus
 
 ```go
-func WithOnFocus(fn func(*Element)) Option
+func WithOnFocus(fn func()) Option
 ```
 
-Sets a callback that fires when the element gains focus. The callback receives the element itself. Implicitly sets `focusable = true`.
+Sets a callback that fires when the element gains focus. Implicitly sets `focusable = true`. An element with its own `onFocus` skips the default cyan focus border; set `WithFocusBorderStyle` to keep a highlight.
 
 In `.gsx`:
 
@@ -97,10 +97,10 @@ In `.gsx`:
 #### WithOnBlur
 
 ```go
-func WithOnBlur(fn func(*Element)) Option
+func WithOnBlur(fn func()) Option
 ```
 
-Sets a callback that fires when the element loses focus. The callback receives the element itself. Implicitly sets `focusable = true`.
+Sets a callback that fires when the element loses focus. Implicitly sets `focusable = true`.
 
 In `.gsx`:
 
@@ -147,7 +147,7 @@ Changes whether the element can receive focus at runtime.
 #### SetOnFocus
 
 ```go
-func (e *Element) SetOnFocus(fn func(*Element))
+func (e *Element) SetOnFocus(fn func())
 ```
 
 Sets the focus callback at runtime. Implicitly sets `focusable = true`.
@@ -155,7 +155,7 @@ Sets the focus callback at runtime. Implicitly sets `focusable = true`.
 #### SetOnBlur
 
 ```go
-func (e *Element) SetOnBlur(fn func(*Element))
+func (e *Element) SetOnBlur(fn func())
 ```
 
 Sets the blur callback at runtime. Implicitly sets `focusable = true`.

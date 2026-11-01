@@ -59,7 +59,7 @@ func TestElement_SetOnFocusableAdded_Callback(t *testing.T) {
 		addedFocusables = append(addedFocusables, f)
 	})
 
-	focusable := New(WithOnFocus(func(*Element) {}))
+	focusable := New(WithOnFocus(func() {}))
 	root.AddChild(focusable)
 
 	if len(addedFocusables) != 1 {
@@ -98,14 +98,14 @@ func TestElement_WalkFocusables(t *testing.T) {
 		},
 		"root is focusable": {
 			setupTree: func() *Element {
-				return New(WithOnFocus(func(*Element) {}))
+				return New(WithOnFocus(func() {}))
 			},
 			expectedCount: 1,
 		},
 		"child is focusable": {
 			setupTree: func() *Element {
 				root := New()
-				root.AddChild(New(WithOnFocus(func(*Element) {})))
+				root.AddChild(New(WithOnFocus(func() {})))
 				return root
 			},
 			expectedCount: 1,
@@ -113,8 +113,8 @@ func TestElement_WalkFocusables(t *testing.T) {
 		"multiple focusables in tree": {
 			setupTree: func() *Element {
 				root := New()
-				root.AddChild(New(WithOnFocus(func(*Element) {})))
-				root.AddChild(New(WithOnBlur(func(*Element) {})))
+				root.AddChild(New(WithOnFocus(func() {})))
+				root.AddChild(New(WithOnBlur(func() {})))
 				middle := New()
 				middle.AddChild(New(WithFocusable(true)))
 				root.AddChild(middle)
@@ -125,9 +125,9 @@ func TestElement_WalkFocusables(t *testing.T) {
 		"mixed focusable and non-focusable": {
 			setupTree: func() *Element {
 				root := New()
-				root.AddChild(New(WithOnFocus(func(*Element) {})))
+				root.AddChild(New(WithOnFocus(func() {})))
 				root.AddChild(New()) // non-focusable
-				root.AddChild(New(WithOnBlur(func(*Element) {})))
+				root.AddChild(New(WithOnBlur(func() {})))
 				return root
 			},
 			expectedCount: 2,

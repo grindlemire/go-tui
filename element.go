@@ -81,8 +81,8 @@ type Element struct {
 	tabStop          bool // whether this element appears in Tab/Shift+Tab navigation
 	focused          bool
 	autoFocus        bool // request initial focus on this element
-	onFocus          func(*Element)
-	onBlur           func(*Element)
+	onFocus          func()
+	onBlur           func()
 	onActivate       func() // called when Enter is pressed while focused (e.g. modal buttons)
 	savedBorderStyle Style  // border style saved before focus highlight
 	hasSavedBorder   bool   // true if savedBorderStyle is valid

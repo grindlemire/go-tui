@@ -338,8 +338,8 @@ func TestWithFocusable_True(t *testing.T) {
 func TestWithFocusable_False(t *testing.T) {
 	// First make it focusable via another option
 	e := New(
-		WithOnFocus(func(*Element) {}), // This sets focusable = true
-		WithFocusable(false),           // This should override to false
+		WithOnFocus(func() {}), // This sets focusable = true
+		WithFocusable(false),   // This should override to false
 	)
 
 	if e.focusable {

@@ -462,8 +462,8 @@ Available on: `span`, `p`, `button`.
 | Attribute | Type | Generated option |
 |-----------|------|------------------|
 | `focusable` | bool | `tui.WithFocusable(b)` |
-| `onFocus` | `func(*tui.Element)` | `tui.WithOnFocus(fn)` |
-| `onBlur` | `func(*tui.Element)` | `tui.WithOnBlur(fn)` |
+| `onFocus` | `func()` | `tui.WithOnFocus(fn)` |
+| `onBlur` | `func()` | `tui.WithOnBlur(fn)` |
 | `onActivate` | `func()` | `tui.WithOnActivate(fn)` |
 
 Available on: `div`, `ul`, `li`, `table`, `span`, `p`, `button`, `input`.

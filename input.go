@@ -286,12 +286,8 @@ func (inp *Input) Render(app *App) *Element {
 	}
 
 	// Wire Element focus/blur to component focus/blur
-	root.SetOnFocus(func(e *Element) {
-		inp.Focus()
-	})
-	root.SetOnBlur(func(e *Element) {
-		inp.Blur()
-	})
+	root.SetOnFocus(inp.Focus)
+	root.SetOnBlur(inp.Blur)
 
 	// Drive the real terminal cursor unless the drawn glyph is opted in.
 	if inp.hideVirtualCursor {

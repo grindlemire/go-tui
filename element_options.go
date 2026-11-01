@@ -272,9 +272,8 @@ func WithTextAlign(align TextAlign) Option {
 // --- Focus Options ---
 
 // WithOnFocus sets the callback for when this element gains focus.
-// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true and tabStop = true.
-func WithOnFocus(fn func(*Element)) Option {
+func WithOnFocus(fn func()) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.tabStop = true
@@ -283,9 +282,8 @@ func WithOnFocus(fn func(*Element)) Option {
 }
 
 // WithOnBlur sets the callback for when this element loses focus.
-// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true and tabStop = true.
-func WithOnBlur(fn func(*Element)) Option {
+func WithOnBlur(fn func()) Option {
 	return func(e *Element) {
 		e.focusable = true
 		e.tabStop = true

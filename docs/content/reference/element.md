@@ -193,19 +193,16 @@ tui.New(
 | Function | Description |
 |----------|-------------|
 | `WithFocusable(focusable bool)` | Whether this element can receive focus |
-| `WithOnFocus(fn func(*Element))` | Callback when focus is gained. Implicitly sets `focusable = true` |
-| `WithOnBlur(fn func(*Element))` | Callback when focus is lost. Implicitly sets `focusable = true` |
+| `WithOnFocus(fn func())` | Callback when focus is gained. Implicitly sets `focusable = true` |
+| `WithOnBlur(fn func())` | Callback when focus is lost. Implicitly sets `focusable = true` |
 | `WithOnActivate(fn func())` | Callback when Enter is pressed while focused. Implicitly sets `focusable = true` |
 
 ```go
 tui.New(
-    tui.WithFocusable(true),
-    tui.WithOnFocus(func(el *tui.Element) {
-        el.SetBorderStyle(tui.NewStyle().Foreground(tui.ANSIColor(tui.Cyan)))
-    }),
-    tui.WithOnBlur(func(el *tui.Element) {
-        el.SetBorderStyle(tui.NewStyle())
-    }),
+    tui.WithBorder(tui.BorderSingle),
+    tui.WithFocusBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+    tui.WithOnFocus(func() { editing.Set(true) }),
+    tui.WithOnBlur(func() { editing.Set(false) }),
 )
 ```
 
@@ -541,8 +538,8 @@ func (e *Element) Blur()
 ### SetOnFocus / SetOnBlur
 
 ```go
-func (e *Element) SetOnFocus(fn func(*Element))
-func (e *Element) SetOnBlur(fn func(*Element))
+func (e *Element) SetOnFocus(fn func())
+func (e *Element) SetOnBlur(fn func())
 ```
 
 Register focus/blur callbacks after creation. Both implicitly set `focusable = true`.

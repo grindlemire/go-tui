@@ -24,8 +24,8 @@ func (c *testInputComponent) BindApp(app *App) {
 
 func (c *testInputComponent) Render(app *App) *Element {
 	root := New(WithFocusable(true))
-	root.SetOnFocus(func(e *Element) { c.Focus() })
-	root.SetOnBlur(func(e *Element) { c.Blur() })
+	root.SetOnFocus(c.Focus)
+	root.SetOnBlur(c.Blur)
 	return root
 }
 

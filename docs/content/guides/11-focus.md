@@ -12,13 +12,12 @@ Mark an element as focusable with the `focusable` attribute in your `.gsx` templ
 <button focusable={true} class="px-2 border-single">Click me</button>
 ```
 
-You can also attach focus and blur callbacks. These fire when the element gains or loses focus:
+You can also attach focus and blur callbacks. Both take a `func()` and fire when the element gains or loses focus. Use them to update state, for example to show which field is being edited:
 
 ```gsx
 <div
-    focusable={true}
-    onFocus={func(el *tui.Element) { el.SetBorderStyle(tui.NewStyle().Foreground(tui.ANSIColor(tui.Cyan))) }}
-    onBlur={func(el *tui.Element) { el.SetBorderStyle(tui.NewStyle()) }}
+    onFocus={func() { s.editing.Set("name") }}
+    onBlur={func() { s.editing.Set("") }}
     class="border-single p-1"
 >
     <span>Focus me</span>
@@ -27,17 +26,16 @@ You can also attach focus and blur callbacks. These fire when the element gains 
 
 Setting `onFocus` or `onBlur` implicitly makes the element focusable, so you don't need to also set `focusable={true}`.
 
+The focus look rarely needs a callback: a bordered element gets a cyan border while focused. An element with its own `onFocus` skips that default, so set `tui.WithFocusBorderStyle` when you want both. Changing the element itself from a callback does not last, because elements are rebuilt on every render; keep what the callback changes in state.
+
 In Go code, the same behavior is available through option functions:
 
 ```go
 elem := tui.New(
-    tui.WithFocusable(true),
-    tui.WithOnFocus(func(el *tui.Element) {
-        el.SetBorderStyle(tui.NewStyle().Foreground(tui.ANSIColor(tui.Cyan)))
-    }),
-    tui.WithOnBlur(func(el *tui.Element) {
-        el.SetBorderStyle(tui.NewStyle())
-    }),
+    tui.WithBorder(tui.BorderSingle),
+    tui.WithFocusBorderStyle(tui.NewStyle().Foreground(tui.Cyan)),
+    tui.WithOnFocus(func() { editing.Set("name") }),
+    tui.WithOnBlur(func() { editing.Set("") }),
 )
 ```
 
@@ -185,10 +183,10 @@ element.SetFocusable(bool)   // enable or disable focusability at runtime
 You can also set callbacks programmatically after creation:
 
 ```go
-element.SetOnFocus(func(el *tui.Element) {
+element.SetOnFocus(func() {
     // called when element gains focus
 })
-element.SetOnBlur(func(el *tui.Element) {
+element.SetOnBlur(func() {
     // called when element loses focus
 })
 ```

@@ -294,7 +294,7 @@ tui.WithPrintWidth(w int)  // Explicit width; default: auto-detect, fallback 80
 | `deps` | expression | Explicit state dependencies |
 | `options` | expression | Option slice forwarded to the constructor after attribute options (`[]tui.Option`, or the component's option type such as `[]tui.ModalOption`) |
 | `focusable` | `bool` | Enable focus |
-| `onFocus` / `onBlur` | `func(*tui.Element)` | Focus callbacks |
+| `onFocus` / `onBlur` | `func()` | Focus callbacks |
 | `onActivate` | `func()` | Enter activation callback |
 | `onMouseEnter` / `onMouseLeave` | `func()` | Hover callbacks (require `tui.WithMouseMotion()`) |
 | `key` | expression | Sibling identity in loops: component cache key, `RefMap` key, hover identity (`tui.WithKey`) |

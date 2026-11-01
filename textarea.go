@@ -260,12 +260,8 @@ func (t *TextArea) Render(app *App) *Element {
 	}
 
 	// Wire Element focus/blur to component focus/blur
-	root.SetOnFocus(func(e *Element) {
-		t.Focus()
-	})
-	root.SetOnBlur(func(e *Element) {
-		t.Blur()
-	})
+	root.SetOnFocus(t.Focus)
+	root.SetOnBlur(t.Blur)
 
 	// Drive the real terminal cursor unless the drawn glyph is opted in.
 	if t.hideVirtualCursor {

@@ -189,7 +189,7 @@ func TestElement_BorderStyleWriteWhileFocused(t *testing.T) {
 			wantFocused: magenta,
 		},
 		"no highlight applies immediately": {
-			opts:        []Option{WithBorder(BorderSingle), WithBorderStyle(red), WithOnFocus(func(*Element) {})},
+			opts:        []Option{WithBorder(BorderSingle), WithBorderStyle(red), WithOnFocus(func() {})},
 			wantFocused: green,
 		},
 		"write before focus survives focus and blur": {
@@ -229,8 +229,9 @@ func TestElement_Blur_RefocusInOnBlurKeepsHighlight(t *testing.T) {
 	red := NewStyle().Foreground(Red)
 	cyan := NewStyle().Foreground(Cyan)
 
-	e := New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true),
-		WithOnBlur(func(el *Element) { el.Focus() }))
+	var e *Element
+	e = New(WithBorder(BorderSingle), WithBorderStyle(red), WithFocusable(true),
+		WithOnBlur(func() { e.Focus() }))
 	e.Focus()
 	e.Blur()
 	if !e.IsFocused() {

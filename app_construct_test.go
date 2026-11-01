@@ -140,7 +140,7 @@ func TestApp_BlurFocused(t *testing.T) {
 			defer close(app.stopCh)
 
 			blurCalled := false
-			first := New(WithFocusable(true), WithOnBlur(func(*Element) {
+			first := New(WithFocusable(true), WithOnBlur(func() {
 				blurCalled = true
 			}))
 			second := New(WithFocusable(true))

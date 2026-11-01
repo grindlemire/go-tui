@@ -161,7 +161,7 @@ func (g *Generator) buildElementOptions(elem *Element) elementOptions {
 			continue
 		}
 
-		// Handle handler attributes — emit as inline With* options (self-inject)
+		// Handle handler attributes — emit as inline With* options
 		if optionFunc, isHandler := handlerAttributes[attr.Name]; isHandler {
 			handlerExpr := g.generateAttributeValue(attr.Value)
 			if handlerExpr != "" {

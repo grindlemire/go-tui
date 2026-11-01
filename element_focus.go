@@ -40,7 +40,7 @@ func (e *Element) Focus() {
 	}
 	e.focused = true
 	if e.onFocus != nil {
-		e.onFocus(e)
+		e.onFocus()
 		if e.focusBorderStyle != nil {
 			e.MarkDirty()
 		}
@@ -71,7 +71,7 @@ func (e *Element) Blur() {
 		e.MarkDirty()
 	}
 	if e.onBlur != nil {
-		e.onBlur(e)
+		e.onBlur()
 	}
 }
 
@@ -112,18 +112,16 @@ func (e *Element) SetFocusable(focusable bool) {
 }
 
 // SetOnFocus sets a handler that's called when this element gains focus.
-// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true and tabStop = true.
-func (e *Element) SetOnFocus(fn func(*Element)) {
+func (e *Element) SetOnFocus(fn func()) {
 	e.focusable = true
 	e.tabStop = true
 	e.onFocus = fn
 }
 
 // SetOnBlur sets a handler that's called when this element loses focus.
-// The handler receives the element as its first parameter (self-inject).
 // Implicitly sets focusable = true and tabStop = true.
-func (e *Element) SetOnBlur(fn func(*Element)) {
+func (e *Element) SetOnBlur(fn func()) {
 	e.focusable = true
 	e.tabStop = true
 	e.onBlur = fn
